@@ -19,86 +19,81 @@
  *
  *************************************************************/
 
-
 #ifndef CONNECTIVITY_IPARSECONTEXT_HXX
 #define CONNECTIVITY_IPARSECONTEXT_HXX
 
-namespace connectivity { class OSQLParseNode; }
+namespace connectivity {
+class OSQLParseNode;
+}
 
-
-//#include <rtl/ustring.hxx>
+// #include <rtl/ustring.hxx>
 #if WIP_LOCALE_SUPPORT
 #include <com/sun/star/lang/Locale.hpp>
 #endif
 
 #include "SqlTypes.h"
 
-namespace connectivity
-    {
-    //==========================================================================
-    //= IParseContext
-    //==========================================================================
-    class IParseContext
-        {
-        public:
-            enum    ErrorCode
-                {
-                ERROR_NONE = 0,
-                ERROR_GENERAL,                    // "Syntax error in SQL expression"
-                ERROR_VALUE_NO_LIKE,            // "The value #1 can not be used with LIKE."
-                ERROR_FIELD_NO_LIKE,            // "LIKE can not be used with this field."
-                ERROR_INVALID_COMPARE,            // "The entered criterion can not be compared with this field."
-                ERROR_INVALID_INT_COMPARE,        // "The field can not be compared with a number."
-                ERROR_INVALID_DATE_COMPARE,        // "The field can not be compared with a date."
-                ERROR_INVALID_REAL_COMPARE,        // "The field can not be compared with a floating point number."
-                ERROR_INVALID_TABLE,            // "The database does not contain a table named \"#\"."
-                ERROR_INVALID_TABLE_OR_QUERY,   // "The database does contain neither a table nor a query named \"#\"."
-                ERROR_INVALID_COLUMN,            // "The column \"#1\" is unknown in the table \"#2\"."
-                ERROR_INVALID_TABLE_EXIST,        // "The database already contains a table or view with name \"#\"."
-                ERROR_INVALID_QUERY_EXIST       // "The database already contains a query with name \"#\".";
-                };
+namespace connectivity {
+//==========================================================================
+//= IParseContext
+//==========================================================================
+class IParseContext {
+   public:
+    enum ErrorCode {
+        ERROR_NONE = 0,
+        ERROR_GENERAL,                 // "Syntax error in SQL expression"
+        ERROR_VALUE_NO_LIKE,           // "The value #1 can not be used with LIKE."
+        ERROR_FIELD_NO_LIKE,           // "LIKE can not be used with this field."
+        ERROR_INVALID_COMPARE,         // "The entered criterion can not be compared with this field."
+        ERROR_INVALID_INT_COMPARE,     // "The field can not be compared with a number."
+        ERROR_INVALID_DATE_COMPARE,    // "The field can not be compared with a date."
+        ERROR_INVALID_REAL_COMPARE,    // "The field can not be compared with a floating point number."
+        ERROR_INVALID_TABLE,           // "The database does not contain a table named \"#\"."
+        ERROR_INVALID_TABLE_OR_QUERY,  // "The database does contain neither a table nor a query named \"#\"."
+        ERROR_INVALID_COLUMN,          // "The column \"#1\" is unknown in the table \"#2\"."
+        ERROR_INVALID_TABLE_EXIST,     // "The database already contains a table or view with name \"#\"."
+        ERROR_INVALID_QUERY_EXIST      // "The database already contains a query with name \"#\".";
+    };
 
-            enum    InternationalKeyCode
-                {
-                KEY_NONE = 0,
-                KEY_LIKE,
-                KEY_NOT,
-                KEY_NULL,
-                KEY_TRUE,
-                KEY_FALSE,
-                KEY_IS,
-                KEY_BETWEEN,
-                KEY_OR,
-                KEY_AND,
-                KEY_AVG,
-                KEY_COUNT,
-                KEY_MAX,
-                KEY_MIN,
-                KEY_SUM,
-                KEY_EVERY,
-                KEY_ANY,
-                KEY_SOME,
-                KEY_COLLECT,
-                KEY_FUSION,
-                KEY_INTERSECTION
-                };
+    enum InternationalKeyCode {
+        KEY_NONE = 0,
+        KEY_LIKE,
+        KEY_NOT,
+        KEY_NULL,
+        KEY_TRUE,
+        KEY_FALSE,
+        KEY_IS,
+        KEY_BETWEEN,
+        KEY_OR,
+        KEY_AND,
+        KEY_AVG,
+        KEY_COUNT,
+        KEY_MAX,
+        KEY_MIN,
+        KEY_SUM,
+        KEY_EVERY,
+        KEY_ANY,
+        KEY_SOME,
+        KEY_COLLECT,
+        KEY_FUSION,
+        KEY_INTERSECTION
+    };
 
-        public:
-            // retrieves language specific error messages
-            virtual Utf8String getErrorMessage (ErrorCode _eCodes) const = 0;
+   public:
+    // retrieves language specific error messages
+    virtual Utf8String getErrorMessage(ErrorCode _eCodes) const = 0;
 
-            // retrieves language specific keyword strings (only ASCII allowed)
-            virtual Utf8String getIntlKeywordAscii (InternationalKeyCode _eKey) const = 0;
+    // retrieves language specific keyword strings (only ASCII allowed)
+    virtual Utf8String getIntlKeywordAscii(InternationalKeyCode _eKey) const = 0;
 
-            // finds out, if we have an international keyword (only ASCII allowed)
-            virtual InternationalKeyCode getIntlKeyCode (const Utf8String& rToken) const = 0;
+    // finds out, if we have an international keyword (only ASCII allowed)
+    virtual InternationalKeyCode getIntlKeyCode(const Utf8String& rToken) const = 0;
 
-            /** get's a locale instance which should be used when parsing in the context specified by this instance
-                <p>if this is not overridden by derived classes, it returns the static default locale.</p>
-                */
-            virtual ::com::sun::star::lang::Locale getPreferredLocale () const = 0;
-        };
-    }
+    /** get's a locale instance which should be used when parsing in the context specified by this instance
+        <p>if this is not overridden by derived classes, it returns the static default locale.</p>
+        */
+    virtual ::com::sun::star::lang::Locale getPreferredLocale() const = 0;
+};
+}  // namespace connectivity
 
-#endif // CONNECTIVITY_IPARSECONTEXT_HXX
-
+#endif  // CONNECTIVITY_IPARSECONTEXT_HXX

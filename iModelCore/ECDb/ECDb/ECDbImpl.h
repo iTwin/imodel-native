@@ -1,83 +1,90 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
+#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include <ECDb/ECDb.h>
 #include <ECDb/SchemaManager.h>
-#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
-#include "ChangeManager.h"
-#include "ProfileManager.h"
-#include "IssueReporter.h"
+
 #include <atomic>
+
+#include "ChangeManager.h"
+#include "IssueReporter.h"
+#include "ProfileManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct IdFactory final: NonCopyableClass {
-    struct IdSequence final: NonCopyableClass {
-        private:
-            mutable std::atomic<uint64_t> m_id;
-            bool m_isInitializedFromTable;
-        public:
-            explicit IdSequence(uint64_t id, bool isInitializedFromTable) :m_id(id), m_isInitializedFromTable(isInitializedFromTable){}
-            BeInt64Id NextId() const { BeAssert(m_isInitializedFromTable); return BeInt64Id(++m_id); }
-            bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
-            static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
+struct IdFactory final : NonCopyableClass {
+    struct IdSequence final : NonCopyableClass {
+       private:
+        mutable std::atomic<uint64_t> m_id;
+        bool m_isInitializedFromTable;
+
+       public:
+        explicit IdSequence(uint64_t id, bool isInitializedFromTable) : m_id(id), m_isInitializedFromTable(isInitializedFromTable) {}
+        BeInt64Id NextId() const {
+            BeAssert(m_isInitializedFromTable);
+            return BeInt64Id(++m_id);
+        }
+        bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
+        static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
     };
 
-    private:
-        mutable std::unique_ptr<IdSequence> m_classIdSeq;
-        mutable std::unique_ptr<IdSequence> m_classHasBaseClassesIdSeq;
-        mutable std::unique_ptr<IdSequence> m_columnIdSeq;
-        mutable std::unique_ptr<IdSequence> m_customAttributeIdSeq;
-        mutable std::unique_ptr<IdSequence> m_enumerationIdSeq;
-        mutable std::unique_ptr<IdSequence> m_formatIdSeq;
-        mutable std::unique_ptr<IdSequence> m_formatCompositeUnitIdSeq;
-        mutable std::unique_ptr<IdSequence> m_indexIdSeq;
-        mutable std::unique_ptr<IdSequence> m_indexColumnIdSeq;
-        mutable std::unique_ptr<IdSequence> m_kindOfQuantityIdSeq;
-        mutable std::unique_ptr<IdSequence> m_phenomenonIdSeq;
-        mutable std::unique_ptr<IdSequence> m_propertyIdSeq;
-        mutable std::unique_ptr<IdSequence> m_propertyCategoryIdSeq;
-        mutable std::unique_ptr<IdSequence> m_propertyMapSeq;
-        mutable std::unique_ptr<IdSequence> m_propertyPathIdSeq;
-        mutable std::unique_ptr<IdSequence> m_relationshipConstraintIdSeq;
-        mutable std::unique_ptr<IdSequence> m_relationshipConstraintClassIdSeq;
-        mutable std::unique_ptr<IdSequence> m_schemaIdSeq;
-        mutable std::unique_ptr<IdSequence> m_schemaReferenceIdSeq;
-        mutable std::unique_ptr<IdSequence> m_tableIdSeq;
-        mutable std::unique_ptr<IdSequence> m_unitIdSeq;
-        mutable std::unique_ptr<IdSequence> m_unitSystemIdSeq;
-        ECDbCR m_ecdb;
-    public:
-        explicit IdFactory(ECDbCR);
-        IdSequence& Class() const { return *m_classIdSeq; }
-        IdSequence& ClassHasBaseClasses() const { return *m_classHasBaseClassesIdSeq; }
-        IdSequence& Column() const { return *m_columnIdSeq; }
-        IdSequence& CustomAttribute() const { return *m_customAttributeIdSeq; }
-        IdSequence& Enumeration() const { return *m_enumerationIdSeq; }
-        IdSequence& Format() const { return *m_formatIdSeq; }
-        IdSequence& FormatCompositeUnit() const { return *m_formatCompositeUnitIdSeq; }
-        IdSequence& Index() const { return *m_indexIdSeq; }
-        IdSequence& IndexColumn() const { return *m_indexColumnIdSeq; }
-        IdSequence& KindOfQuantity() const { return *m_kindOfQuantityIdSeq; }
-        IdSequence& Phenomenon() const { return *m_phenomenonIdSeq; }
-        IdSequence& Property() const { return *m_propertyIdSeq; }
-        IdSequence& PropertyCategory() const { return *m_propertyCategoryIdSeq; }
-        IdSequence& PropertyMap() const { return *m_propertyMapSeq; }
-        IdSequence& PropertyPath() const { return *m_propertyPathIdSeq; }
-        IdSequence& RelationshipConstraint() const { return *m_relationshipConstraintIdSeq; }
-        IdSequence& RelationshipConstraintClass() const { return *m_relationshipConstraintClassIdSeq; }
-        IdSequence& Schema() const { return *m_schemaIdSeq; }
-        IdSequence& SchemaReference() const { return *m_schemaReferenceIdSeq; }
-        IdSequence& Table() const { return *m_tableIdSeq; }
-        IdSequence& Unit() const { return *m_unitIdSeq; }
-        IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
-        bool IsValid() const;
-        bool Reset() const;
-        static std::unique_ptr<IdFactory> Create(ECDbCR ecdb);
+   private:
+    mutable std::unique_ptr<IdSequence> m_classIdSeq;
+    mutable std::unique_ptr<IdSequence> m_classHasBaseClassesIdSeq;
+    mutable std::unique_ptr<IdSequence> m_columnIdSeq;
+    mutable std::unique_ptr<IdSequence> m_customAttributeIdSeq;
+    mutable std::unique_ptr<IdSequence> m_enumerationIdSeq;
+    mutable std::unique_ptr<IdSequence> m_formatIdSeq;
+    mutable std::unique_ptr<IdSequence> m_formatCompositeUnitIdSeq;
+    mutable std::unique_ptr<IdSequence> m_indexIdSeq;
+    mutable std::unique_ptr<IdSequence> m_indexColumnIdSeq;
+    mutable std::unique_ptr<IdSequence> m_kindOfQuantityIdSeq;
+    mutable std::unique_ptr<IdSequence> m_phenomenonIdSeq;
+    mutable std::unique_ptr<IdSequence> m_propertyIdSeq;
+    mutable std::unique_ptr<IdSequence> m_propertyCategoryIdSeq;
+    mutable std::unique_ptr<IdSequence> m_propertyMapSeq;
+    mutable std::unique_ptr<IdSequence> m_propertyPathIdSeq;
+    mutable std::unique_ptr<IdSequence> m_relationshipConstraintIdSeq;
+    mutable std::unique_ptr<IdSequence> m_relationshipConstraintClassIdSeq;
+    mutable std::unique_ptr<IdSequence> m_schemaIdSeq;
+    mutable std::unique_ptr<IdSequence> m_schemaReferenceIdSeq;
+    mutable std::unique_ptr<IdSequence> m_tableIdSeq;
+    mutable std::unique_ptr<IdSequence> m_unitIdSeq;
+    mutable std::unique_ptr<IdSequence> m_unitSystemIdSeq;
+    ECDbCR m_ecdb;
+
+   public:
+    explicit IdFactory(ECDbCR);
+    IdSequence& Class() const { return *m_classIdSeq; }
+    IdSequence& ClassHasBaseClasses() const { return *m_classHasBaseClassesIdSeq; }
+    IdSequence& Column() const { return *m_columnIdSeq; }
+    IdSequence& CustomAttribute() const { return *m_customAttributeIdSeq; }
+    IdSequence& Enumeration() const { return *m_enumerationIdSeq; }
+    IdSequence& Format() const { return *m_formatIdSeq; }
+    IdSequence& FormatCompositeUnit() const { return *m_formatCompositeUnitIdSeq; }
+    IdSequence& Index() const { return *m_indexIdSeq; }
+    IdSequence& IndexColumn() const { return *m_indexColumnIdSeq; }
+    IdSequence& KindOfQuantity() const { return *m_kindOfQuantityIdSeq; }
+    IdSequence& Phenomenon() const { return *m_phenomenonIdSeq; }
+    IdSequence& Property() const { return *m_propertyIdSeq; }
+    IdSequence& PropertyCategory() const { return *m_propertyCategoryIdSeq; }
+    IdSequence& PropertyMap() const { return *m_propertyMapSeq; }
+    IdSequence& PropertyPath() const { return *m_propertyPathIdSeq; }
+    IdSequence& RelationshipConstraint() const { return *m_relationshipConstraintIdSeq; }
+    IdSequence& RelationshipConstraintClass() const { return *m_relationshipConstraintClassIdSeq; }
+    IdSequence& Schema() const { return *m_schemaIdSeq; }
+    IdSequence& SchemaReference() const { return *m_schemaReferenceIdSeq; }
+    IdSequence& Table() const { return *m_tableIdSeq; }
+    IdSequence& Unit() const { return *m_unitIdSeq; }
+    IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
+    bool IsValid() const;
+    bool Reset() const;
+    static std::unique_ptr<IdFactory> Create(ECDbCR ecdb);
 };
 
 struct PragmaManager;
@@ -86,18 +93,18 @@ struct PragmaManager;
 //! (PIMPL idiom)
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECDb::Impl final
-    {
-friend struct ECDb;
-friend struct DisableDDLTracking;
+struct ECDb::Impl final {
+    friend struct ECDb;
+    friend struct DisableDDLTracking;
 
-public:
+   public:
     struct DisableDDLTracking {
-        private:
-            ECDbCR m_ecdb;
-        public:
-            DisableDDLTracking(ECDbCR ecdb): m_ecdb(ecdb) {m_ecdb.GetImpl().m_disableDDLTracking = true; }
-            ~DisableDDLTracking() { m_ecdb.GetImpl().m_disableDDLTracking = false; }
+       private:
+        ECDbCR m_ecdb;
+
+       public:
+        DisableDDLTracking(ECDbCR ecdb) : m_ecdb(ecdb) { m_ecdb.GetImpl().m_disableDDLTracking = true; }
+        ~DisableDDLTracking() { m_ecdb.GetImpl().m_disableDDLTracking = false; }
     };
     //=======================================================================================
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
@@ -106,41 +113,36 @@ public:
     //! an error from any of its methods.
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct ClearCacheCounter final
-        {
-        private:
-            uint32_t m_value;
+    struct ClearCacheCounter final {
+       private:
+        uint32_t m_value;
 
-        public:
-            ClearCacheCounter() : m_value(0) {}
+       public:
+        ClearCacheCounter() : m_value(0) {}
 
-            bool operator==(ClearCacheCounter const& rhs) const { return m_value == rhs.m_value; }
-            bool operator!=(ClearCacheCounter const& rhs) const { return m_value != rhs.m_value; }
+        bool operator==(ClearCacheCounter const& rhs) const { return m_value == rhs.m_value; }
+        bool operator!=(ClearCacheCounter const& rhs) const { return m_value != rhs.m_value; }
 
-            void Increment() { m_value++; }
-            uint32_t GetValue() const { return m_value; }
-        };
+        void Increment() { m_value++; }
+        uint32_t GetValue() const { return m_value; }
+    };
 
-private:
-    struct DbFunctionKey final
-        {
+   private:
+    struct DbFunctionKey final {
         Utf8String m_functionName;
         int m_argCount;
 
-        DbFunctionKey(): m_argCount(-1) {}
+        DbFunctionKey() : m_argCount(-1) {}
         DbFunctionKey(Utf8CP functionName, int argCount) : m_functionName(functionName), m_argCount(argCount) {}
         explicit DbFunctionKey(DbFunction& function) : m_functionName(function.GetName()), m_argCount(function.GetNumArgs()) {}
 
-        struct Comparer
-            {
-            bool operator() (DbFunctionKey const& lhs, DbFunctionKey const& rhs) const
-                {
+        struct Comparer {
+            bool operator()(DbFunctionKey const& lhs, DbFunctionKey const& rhs) const {
                 int nameCompareResult = BeStringUtilities::StricmpAscii(lhs.m_functionName.c_str(), rhs.m_functionName.c_str());
                 return nameCompareResult < 0 || nameCompareResult == 0 && lhs.m_argCount < rhs.m_argCount;
-                }
-            };
+            }
         };
-
+    };
 
     static bool s_isInitialized;
     mutable BeMutex m_mutex;
@@ -174,10 +176,10 @@ private:
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     mutable SnappyFromMemory m_snappyReader;
     mutable SnappyToBlob m_snappyWriter;
-    //Mirrored ECDb methods are only called by ECDb (friend), therefore private
+    // Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
-    //not copyable
+    // not copyable
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;
 
@@ -193,7 +195,10 @@ private:
     BentleyStatus Purge(ECDb::PurgeMode) const;
     BentleyStatus PurgeFileInfos() const;
 
-    BentleyStatus AddIssueListener(ECN::IIssueListener const& issueListener) { m_issueReporter.SetOldStyleListener(&issueListener); return SUCCESS; }
+    BentleyStatus AddIssueListener(ECN::IIssueListener const& issueListener) {
+        m_issueReporter.SetOldStyleListener(&issueListener);
+        return SUCCESS;
+    }
     void RemoveIssueListener() { m_issueReporter.SetOldStyleListener(nullptr); }
 
     void AddECDbCacheClearListener(IECDbCacheClearListener& listener) { m_ecdbCacheClearListeners.push_back(&listener); }
@@ -224,7 +229,8 @@ private:
 
     static DbResult InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
     static bool IsInitialized() { return s_isInitialized; }
-public:
+
+   public:
     ~Impl() { m_sqliteStatementCache.Empty(); }
     EC::ECSqlConfig& GetECSqlConfig() const { return m_ecSqlConfig; }
     bvector<DbFunction*> GetSqlFunctions() const;
@@ -234,17 +240,17 @@ public:
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
-    BeGuid GetId() const  {return m_id; }
+    BeGuid GetId() const { return m_id; }
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
 
-    template<typename T>
+    template <typename T>
     T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {
         BeMutexHolder holder(m_mutex);
         return func(m_snappyReader);
     }
-    template<typename T>
+    template <typename T>
     T WithSnappyWriter(std::function<T(SnappyToBlob&)> func) const {
         BeMutexHolder holder(m_mutex);
         m_snappyWriter.Init();
@@ -288,6 +294,6 @@ public:
         return m_profileManager.GetProfileVersion();
     }
     BeMutex& GetMutex() const { return m_mutex; }
-    };
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

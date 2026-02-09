@@ -1,10 +1,12 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
-#include "ECDbPch.h"
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include <Formatting/FormattingApi.h>
+
 #include <limits>
+
+#include "ECDbPch.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -12,14 +14,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReader::SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaManager(manager), m_cache(manager.GetECDb(), manager.GetTableSpace())
-    {}
+SchemaReader::SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaManager(manager), m_cache(manager.GetECDb(), manager.GetTableSpace()) {}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus SchemaReader::GetSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities) const
-    {
+BentleyStatus SchemaReader::GetSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities) const {
     CachedStatementPtr stmt = nullptr;
     if (GetTableSpace().IsMain())
         stmt = GetCachedStatement("SELECT Id FROM main." TABLE_Schema);
@@ -30,27 +30,23 @@ SchemaReader::SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaMan
         return ERROR;
 
     std::vector<ECSchemaId> schemaIds;
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         schemaIds.push_back(stmt->GetValueId<ECSchemaId>(0));
-        }
+    }
 
-    stmt = nullptr; // in case the child call needs to reuse this statement
+    stmt = nullptr;  // in case the child call needs to reuse this statement
 
-    for (ECSchemaId schemaId : schemaIds)
-        {
+    for (ECSchemaId schemaId : schemaIds) {
         ECSchemaCP schema = GetSchema(schemaId, loadSchemaEntities);
         if (schema == nullptr)
             return ERROR;
 
         schemas.push_back(schema);
-        }
-
+    }
 
     // Legacy Units and Formats hack: ECDb deserializes the units and formats schemas from disk
     // if the legacy file contains KOQ
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         if (SUCCESS != m_cache.GetLegacyUnitsHelper().Initialize())
             return ERROR;
 
@@ -59,41 +55,37 @@ SchemaReader::SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaMan
 
         if (m_cache.GetLegacyUnitsHelper().GetFormatsSchema() != nullptr)
             schemas.push_back(m_cache.GetLegacyUnitsHelper().GetFormatsSchema());
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaReader::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode mode) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+ECSchemaCP SchemaReader::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode mode) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         const bool isUnitsSchema = m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, mode);
         const bool isFormatsSchema = m_cache.GetLegacyUnitsHelper().IsValidFormatsSchemaName(schemaNameOrAlias, mode);
-        if (isUnitsSchema || isFormatsSchema)
-            {
+        if (isUnitsSchema || isFormatsSchema) {
             if (isUnitsSchema)
                 return m_cache.GetLegacyUnitsHelper().GetUnitsSchema();
 
             return m_cache.GetLegacyUnitsHelper().GetFormatsSchema();
-            }
         }
+    }
 
     const ECSchemaId schemaId = SchemaPersistenceHelper::GetSchemaId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), mode);
     if (!schemaId.IsValid())
         return nullptr;
 
     return GetSchema(schemaId, loadSchemaEntities);
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaReader::GetSchema(ECSchemaId ecSchemaId, bool loadSchemaEntities) const
-    {
+ECSchemaCP SchemaReader::GetSchema(ECSchemaId ecSchemaId, bool loadSchemaEntities) const {
     Context ctx;
     ECSchemaCP schema = GetSchema(ctx, ecSchemaId, loadSchemaEntities);
     if (schema == nullptr)
@@ -103,104 +95,92 @@ ECSchemaCP SchemaReader::GetSchema(ECSchemaId ecSchemaId, bool loadSchemaEntitie
         return nullptr;
 
     return schema;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaReader::GetSchema(Context& ctx, ECSchemaId ecSchemaId, bool loadSchemaEntities) const
-    {
+ECSchemaCP SchemaReader::GetSchema(Context& ctx, ECSchemaId ecSchemaId, bool loadSchemaEntities) const {
     SchemaDbEntry* outECSchemaKey = nullptr;
     if (SUCCESS != ReadSchema(outECSchemaKey, ctx, ecSchemaId, loadSchemaEntities))
         return nullptr;
 
     return outECSchemaKey->m_cachedSchema.get();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSchemaId SchemaReader::GetSchemaId(ECSchemaCR ecSchema) const
-    {
-    if (ecSchema.HasId())
-        {
+ECSchemaId SchemaReader::GetSchemaId(ECSchemaCR ecSchema) const {
+    if (ecSchema.HasId()) {
         BeAssert(ecSchema.GetId() == SchemaPersistenceHelper::GetSchemaId(GetECDb(), GetTableSpace(), ecSchema.GetName().c_str(), SchemaLookupMode::ByName));
         return ecSchema.GetId();
-        }
+    }
 
     const ECSchemaId schemaId = SchemaPersistenceHelper::GetSchemaId(GetECDb(), GetTableSpace(), ecSchema.GetName().c_str(), SchemaLookupMode::ByName);
-    if (schemaId.IsValid())
-        {
-        //it is possible that the schema was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (schemaId.IsValid()) {
+        // it is possible that the schema was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<ECSchemaR>(ecSchema).SetId(schemaId);
-        }
+    }
 
     return schemaId;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP SchemaReader::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode) const
-    {
+ECClassCP SchemaReader::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode) const {
     const ECClassId id = GetClassId(schemaNameOrAlias, className, mode);
     if (!id.IsValid())
         return nullptr;
 
     return GetClass(id);
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
-    {
+ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const {
     if (!ecClassId.IsValid())
         return nullptr;
 
     BeMutexHolder ecdbLock(GetECDbMutex());
     ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
-    if (cacheEntry == nullptr)
-        {
-        //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
-        //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
-        //can be returned right away.
+    if (cacheEntry == nullptr) {
+        // ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
+        // to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
+        // can be returned right away.
         if (m_cache.HasClassEntry(ecClassId))
             return nullptr;
-        }
-    else
+    } else
         return cacheEntry->m_cachedClass;
 
     Context ctx;
     ECClassCP ecclass = GetClass(ctx, ecClassId);
-    if (ecclass != nullptr)
-        {
+    if (ecclass != nullptr) {
         if (SUCCESS == ctx.Postprocess(*this))
             return ecclass;
-        }
+    }
 
     return nullptr;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
-    {
+ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const {
     if (!ecClassId.IsValid())
         return nullptr;
 
     ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
-    if (cacheEntry == nullptr)
-        {
-        //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
-        //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
-        //can be returned right away.
+    if (cacheEntry == nullptr) {
+        // ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
+        // to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
+        // can be returned right away.
         if (m_cache.HasClassEntry(ecClassId))
             return nullptr;
-        }
-    else
+    } else
         return cacheEntry->m_cachedClass;
 
     ECDbExpressionSymbolContext symbolsContext(GetECDb());
@@ -240,28 +220,22 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
 
     ECSchemaR schema = *schemaKey->m_cachedSchema;
 
-    if (classType.IsNull() || classModifier.IsNull())
-        {
-        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
-            {
-            CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId); // Schema is of a newer version and class contains new unknown features. Mark this class to not be loaded.
+    if (classType.IsNull() || classModifier.IsNull()) {
+        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest)) {
+            CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId);  // Schema is of a newer version and class contains new unknown features. Mark this class to not be loaded.
             m_cache.SetClassEntryToNull(ecClassId);
             LOG.warningv("The ECClass %s.%s contains an ECClassType or ECClassModifier which is unsupported. The schema uses a newer version of the standard than is known to the current software. The class will not be loaded.",
-                   schema.GetName().c_str(), className);
-            }
-        else
-            {
+                         schema.GetName().c_str(), className);
+        } else {
             LOG.errorv("Failed to load ECClass %s.%s. Its ECClassType or ECClassModifier is unsupported.",
-                   schema.GetName().c_str(), className);
-            }
-        return nullptr;
+                       schema.GetName().c_str(), className);
         }
+        return nullptr;
+    }
 
     ECClassP ecClass = nullptr;
-    switch (classType.Value())
-        {
-            case ECClassType::CustomAttribute:
-            {
+    switch (classType.Value()) {
+        case ECClassType::CustomAttribute: {
             ECCustomAttributeClassP newClass = nullptr;
             if (schema.CreateCustomAttributeClass(newClass, className) != ECObjectsStatus::Success)
                 return nullptr;
@@ -273,51 +247,44 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
 
             ecClass = newClass;
             break;
-            }
+        }
 
-            case ECClassType::Entity:
-            {
+        case ECClassType::Entity: {
             ECEntityClassP newClass = nullptr;
             if (schema.CreateEntityClass(newClass, className) != ECObjectsStatus::Success)
                 return nullptr;
 
             ecClass = newClass;
             break;
-            }
+        }
 
-            case ECClassType::Struct:
-            {
+        case ECClassType::Struct: {
             ECStructClassP newClass = nullptr;
             if (schema.CreateStructClass(newClass, className) != ECObjectsStatus::Success)
                 return nullptr;
 
             ecClass = newClass;
             break;
-            }
+        }
 
-            case ECClassType::Relationship:
-            {
+        case ECClassType::Relationship: {
             BeAssert(!stmt->IsColumnNull(relStrengthColIx) && !stmt->IsColumnNull(relStrengthDirColIx));
 
             Nullable<StrengthType> strengthType = SchemaPersistenceHelper::ToStrengthType(stmt->GetValueInt(relStrengthColIx));
             Nullable<ECRelatedInstanceDirection> strengthDir = SchemaPersistenceHelper::ToECRelatedInstanceDirection(stmt->GetValueInt(relStrengthDirColIx));
-            if (strengthType.IsNull() || strengthDir.IsNull())
-                {
-                if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
-                    {
-                    CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId); // Schema is of a newer version and the relationship class contains new unknown features. Mark this class to not be loaded.
+            if (strengthType.IsNull() || strengthDir.IsNull()) {
+                if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest)) {
+                    CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId);  // Schema is of a newer version and the relationship class contains new unknown features. Mark this class to not be loaded.
                     m_cache.SetClassEntryToNull(ecClassId);
                     LOG.warningv("The ECRelationshipClass %s.%s has a StrengthType or ECRelatedInstanceDirection which is unsupported. The schema uses a newer version of the standard than is known to the current software. The class will not be loaded.",
-                           schema.GetName().c_str(), className);
-                    }
-                else
-                    {
+                                 schema.GetName().c_str(), className);
+                } else {
                     LOG.errorv("Failed to load ECRelationshipClass %s.%s. Its StrengthType or ECRelatedInstanceDirection is unsupported.",
-                        schema.GetName().c_str(), className);
-                    }
-                return nullptr;
+                               schema.GetName().c_str(), className);
                 }
-            
+                return nullptr;
+            }
+
             ECRelationshipClassP newClass = nullptr;
             if (schema.CreateRelationshipClass(newClass, className, false) != ECObjectsStatus::Success)
                 return nullptr;
@@ -326,12 +293,12 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
             newClass->SetStrengthDirection(strengthDir.Value());
             ecClass = newClass;
             break;
-            }
-
-            default:
-                BeAssert(false);
-                return nullptr;
         }
+
+        default:
+            BeAssert(false);
+            return nullptr;
+    }
 
     ecClass->SetId(ecClassId);
     ecClass->SetClassModifier(classModifier.Value());
@@ -343,29 +310,27 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
         ecClass->SetDescription(description);
 
     BeAssert(stmt->Step() == BE_SQLITE_DONE);
-    stmt = nullptr; //to release it, so that it can be reused without repreparation
+    stmt = nullptr;  // to release it, so that it can be reused without repreparation
 
-    //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
+    // cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
     m_cache.Insert(std::unique_ptr<ClassDbEntry>(new ClassDbEntry(*ecClass)));
-    if (SUCCESS != LoadClassComponentsFromDb(ctx, *ecClass))
-        {
-        //set the cache entry to nullptr if the class could not be loaded so that future calls will return nullptr without querying into the DB
+    if (SUCCESS != LoadClassComponentsFromDb(ctx, *ecClass)) {
+        // set the cache entry to nullptr if the class could not be loaded so that future calls will return nullptr without querying into the DB
         //(It is not expected that a future call will succeed, so returning nullptr is correct)
         m_cache.SetClassEntryToNull(ecClassId);
         if (SchemaElementContainsUnknowns(TABLE_Class, ecClassId))
             schema.DeleteClass(*ecClass);  // One or more class components contain new unknown features. Don't load the class.
         return nullptr;
-        }
+    }
 
     schemaKey->m_loadedTypeCount++;
     return ecClass;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::LoadClassComponentsFromDb(Context& ctx, ECN::ECClassR ecClass) const
-    {
+BentleyStatus SchemaReader::LoadClassComponentsFromDb(Context& ctx, ECN::ECClassR ecClass) const {
     if (SUCCESS != LoadCAFromDb(ecClass, ctx, ECContainerId(ecClass.GetId()), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class))
         return ERROR;
 
@@ -379,76 +344,67 @@ BentleyStatus SchemaReader::LoadClassComponentsFromDb(Context& ctx, ECN::ECClass
         return ERROR;
 
     ECRelationshipClassP relClass = ecClass.GetRelationshipClassP();
-    if (relClass != nullptr)
-        {
+    if (relClass != nullptr) {
         if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, relClass->GetId(), ECRelationshipEnd_Source))
             return ERROR;
 
         if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, relClass->GetId(), ECRelationshipEnd_Target))
             return ERROR;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
+ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const {
+    if (ecClass.HasId())  // This is unsafe but since we do not delete ecclass any class that hasId does exist in db
     {
-    if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
-        {
         BeAssert(ecClass.GetId() == GetClassId(ecClass.GetSchema().GetName(), ecClass.GetName(), SchemaLookupMode::ByName));
         return ecClass.GetId();
-        }
-
-    ECClassId classId;
-    if (ecClass.GetSchema().HasId())
-        {
-        //If the ECSchema already has an id, we can run a faster SQL to get the class id
-        BeAssert(ecClass.GetSchema().GetId() == SchemaPersistenceHelper::GetSchemaId(GetECDb(), GetTableSpace(), ecClass.GetSchema().GetName().c_str(), SchemaLookupMode::ByName));
-        classId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
-        }
-    else
-        classId = GetClassId(ecClass.GetSchema().GetName(), ecClass.GetName(), SchemaLookupMode::ByName);
-
-    if (classId.IsValid())
-        {
-        //it is possible that the ECClass was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<ECClassR>(ecClass).SetId(classId);
-        }
-
-    return classId;
     }
 
+    ECClassId classId;
+    if (ecClass.GetSchema().HasId()) {
+        // If the ECSchema already has an id, we can run a faster SQL to get the class id
+        BeAssert(ecClass.GetSchema().GetId() == SchemaPersistenceHelper::GetSchemaId(GetECDb(), GetTableSpace(), ecClass.GetSchema().GetName().c_str(), SchemaLookupMode::ByName));
+        classId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), ecClass.GetSchema().GetId(), ecClass.GetName().c_str());
+    } else
+        classId = GetClassId(ecClass.GetSchema().GetName(), ecClass.GetName(), SchemaLookupMode::ByName);
+
+    if (classId.IsValid()) {
+        // it is possible that the ECClass was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
+        const_cast<ECClassR>(ecClass).SetId(classId);
+    }
+
+    return classId;
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, SchemaLookupMode lookupMode) const
-    {
-    //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
+ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, SchemaLookupMode lookupMode) const {
+    // Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     ECClassId ecClassId;
     BeMutexHolder ecdbLock(GetECDbMutex());
     ecClassId = m_cache.Find(schemaName, className);
     if (ecClassId.IsValid())
         return ecClassId;
 
-
     ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
-    //add id to cache (only if valid class id to avoid overflow of the cache)
+    // add id to cache (only if valid class id to avoid overflow of the cache)
     if (ecClassId.IsValid())
         m_cache.Insert(schemaName, className, ecClassId);
 
     return ecClassId;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECEnumerationCP SchemaReader::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode schemaLookupMode) const
-    {
+ECEnumerationCP SchemaReader::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode schemaLookupMode) const {
     ECEnumerationId enumId = SchemaPersistenceHelper::GetEnumerationId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), enumName.c_str(), schemaLookupMode);
     if (!enumId.IsValid())
         return nullptr;
@@ -463,35 +419,32 @@ ECEnumerationCP SchemaReader::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf
         return nullptr;
 
     return ecEnum;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECEnumerationId SchemaReader::GetEnumerationId(ECEnumerationCR ecEnum) const
+ECEnumerationId SchemaReader::GetEnumerationId(ECEnumerationCR ecEnum) const {
+    if (ecEnum.HasId())  // This is unsafe but since we do not delete ecenum any class that hasId does exist in db
     {
-    if (ecEnum.HasId()) //This is unsafe but since we do not delete ecenum any class that hasId does exist in db
-        {
         BeAssert(ecEnum.GetId() == SchemaPersistenceHelper::GetEnumerationId(GetECDb(), GetTableSpace(), ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str(), SchemaLookupMode::ByName));
         return ecEnum.GetId();
-        }
+    }
 
     const ECEnumerationId id = SchemaPersistenceHelper::GetEnumerationId(GetECDb(), GetTableSpace(), ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the ECEnumeration was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (id.IsValid()) {
+        // it is possible that the ECEnumeration was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<ECEnumerationR>(ecEnum).SetId(id);
-        }
+    }
 
     return id;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode schemaLookupMode) const
-    {
+KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode schemaLookupMode) const {
     KindOfQuantityId koqId = SchemaPersistenceHelper::GetKindOfQuantityId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), koqName.c_str(), schemaLookupMode);
     if (!koqId.IsValid())
         return nullptr;
@@ -506,35 +459,32 @@ KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias,
         return nullptr;
 
     return koq;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-KindOfQuantityId SchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) const
+KindOfQuantityId SchemaReader::GetKindOfQuantityId(KindOfQuantityCR koq) const {
+    if (koq.HasId())  // This is unsafe but since we do not delete KOQ any class that hasId does exist in db
     {
-    if (koq.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
-        {
         BeAssert(koq.GetId() == SchemaPersistenceHelper::GetKindOfQuantityId(GetECDb(), GetTableSpace(), koq.GetSchema().GetName().c_str(), koq.GetName().c_str(), SchemaLookupMode::ByName));
         return koq.GetId();
-        }
+    }
 
     const KindOfQuantityId id = SchemaPersistenceHelper::GetKindOfQuantityId(GetECDb(), GetTableSpace(), koq.GetSchema().GetName().c_str(), koq.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (id.IsValid()) {
+        // it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<KindOfQuantityR>(koq).SetId(id);
-        }
+    }
 
     return id;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode schemaLookupMode) const
-    {
+PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode schemaLookupMode) const {
     PropertyCategoryId catId = SchemaPersistenceHelper::GetPropertyCategoryId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), catName.c_str(), schemaLookupMode);
     if (!catId.IsValid())
         return nullptr;
@@ -549,49 +499,44 @@ PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8StringCR schemaNameOrAl
         return nullptr;
 
     return cat;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PropertyCategoryId SchemaReader::GetPropertyCategoryId(PropertyCategoryCR cat) const
+PropertyCategoryId SchemaReader::GetPropertyCategoryId(PropertyCategoryCR cat) const {
+    if (cat.HasId())  // This is unsafe but since we do not delete PropertyCategory any class that hasId does exist in db
     {
-    if (cat.HasId()) //This is unsafe but since we do not delete PropertyCategory any class that hasId does exist in db
-        {
         BeAssert(cat.GetId() == SchemaPersistenceHelper::GetPropertyCategoryId(GetECDb(), GetTableSpace(), cat.GetSchema().GetName().c_str(), cat.GetName().c_str(), SchemaLookupMode::ByName));
         return cat.GetId();
-        }
+    }
 
     const PropertyCategoryId id = SchemaPersistenceHelper::GetPropertyCategoryId(GetECDb(), GetTableSpace(), cat.GetSchema().GetName().c_str(), cat.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the PropertyCategory was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (id.IsValid()) {
+        // it is possible that the PropertyCategory was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<PropertyCategoryR>(cat).SetId(id);
-        }
+    }
 
     return id;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-UnitSystemCP SchemaReader::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode schemaLookupMode) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
-        if (!m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, schemaLookupMode))
-            {
+UnitSystemCP SchemaReader::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode schemaLookupMode) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
+        if (!m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, schemaLookupMode)) {
             LOG.errorv("Cannot read UnitSystem '%s.%s'. This version of the file only supports UnitSystems from the standard Units ECSchema.", schemaNameOrAlias.c_str(), systemName.c_str());
             return nullptr;
-            }
+        }
 
         ECSchemaCP unitsSchema = m_cache.GetLegacyUnitsHelper().GetUnitsSchema();
         if (unitsSchema == nullptr)
             return nullptr;
 
         return unitsSchema->GetUnitSystemCP(systemName.c_str());
-        }
+    }
 
     UnitSystemId id = SchemaPersistenceHelper::GetUnitSystemId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), systemName.c_str(), schemaLookupMode);
     if (!id.IsValid())
@@ -605,55 +550,49 @@ UnitSystemCP SchemaReader::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8Str
         return nullptr;
 
     return m_cache.Find(id);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-UnitSystemId SchemaReader::GetUnitSystemId(UnitSystemCR us) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+UnitSystemId SchemaReader::GetUnitSystemId(UnitSystemCR us) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         LOG.errorv("Cannot read UnitSystemId for UnitSystem '%s'. This version of the file does not support UnitSystems yet.", us.GetFullName().c_str());
         return UnitSystemId();
-        }
+    }
 
-    if (us.HasId()) //This is unsafe but since we do not delete UnitSystem any class that hasId does exist in db
-        {
+    if (us.HasId())  // This is unsafe but since we do not delete UnitSystem any class that hasId does exist in db
+    {
         BeAssert(us.GetId() == SchemaPersistenceHelper::GetUnitSystemId(GetECDb(), GetTableSpace(), us.GetSchema().GetName().c_str(), us.GetName().c_str(), SchemaLookupMode::ByName));
         return us.GetId();
-        }
+    }
 
     const UnitSystemId id = SchemaPersistenceHelper::GetUnitSystemId(GetECDb(), GetTableSpace(), us.GetSchema().GetName().c_str(), us.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the UnitSystem was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (id.IsValid()) {
+        // it is possible that the UnitSystem was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<UnitSystemR>(us).SetId(id);
-        }
+    }
 
     return id;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-PhenomenonCP SchemaReader::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode schemaLookupMode) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
-        if (!m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, schemaLookupMode))
-            {
+PhenomenonCP SchemaReader::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode schemaLookupMode) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
+        if (!m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, schemaLookupMode)) {
             LOG.errorv("Cannot read Phenomenon '%s.%s'. This version of the file only supports Phenomena from the standard Units ECSchema.", schemaNameOrAlias.c_str(), phenName.c_str());
             return nullptr;
-            }
+        }
 
         ECSchemaCP unitsSchema = m_cache.GetLegacyUnitsHelper().GetUnitsSchema();
         if (unitsSchema == nullptr)
             return nullptr;
 
         return unitsSchema->GetPhenomenonCP(phenName.c_str());
-        }
+    }
 
     PhenomenonId id = SchemaPersistenceHelper::GetPhenomenonId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), phenName.c_str(), schemaLookupMode);
     if (!id.IsValid())
@@ -667,55 +606,49 @@ PhenomenonCP SchemaReader::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8Str
         return nullptr;
 
     return m_cache.Find(id);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PhenomenonId SchemaReader::GetPhenomenonId(PhenomenonCR ph) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+PhenomenonId SchemaReader::GetPhenomenonId(PhenomenonCR ph) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         LOG.errorv("Cannot read PhenomenonId for Phenomenon '%s'. This version of the file does not support Phenomena yet.", ph.GetFullName().c_str());
         return PhenomenonId();
-        }
+    }
 
-    if (ph.HasId()) //This is unsafe but since we do not delete Phenomenon any class that hasId does exist in db
-        {
+    if (ph.HasId())  // This is unsafe but since we do not delete Phenomenon any class that hasId does exist in db
+    {
         BeAssert(ph.GetId() == SchemaPersistenceHelper::GetPhenomenonId(GetECDb(), GetTableSpace(), ph.GetSchema().GetName().c_str(), ph.GetName().c_str(), SchemaLookupMode::ByName));
         return ph.GetId();
-        }
+    }
 
     const PhenomenonId id = SchemaPersistenceHelper::GetPhenomenonId(GetECDb(), GetTableSpace(), ph.GetSchema().GetName().c_str(), ph.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the Phenomenon was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (id.IsValid()) {
+        // it is possible that the Phenomenon was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<PhenomenonR>(ph).SetId(id);
-        }
+    }
 
     return id;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECUnitCP SchemaReader::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode schemaLookupMode) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
-        if (!m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, schemaLookupMode))
-            {
+ECUnitCP SchemaReader::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode schemaLookupMode) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
+        if (!m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(schemaNameOrAlias, schemaLookupMode)) {
             LOG.errorv("Cannot read Unit '%s.%s'. This version of the file only supports standard Units from the Units ECSchema.", schemaNameOrAlias.c_str(), unitName.c_str());
             return nullptr;
-            }
+        }
 
         ECSchemaCP unitsSchema = m_cache.GetLegacyUnitsHelper().GetUnitsSchema();
         if (unitsSchema == nullptr)
             return nullptr;
 
         return unitsSchema->GetUnitCP(unitName.c_str());
-        }
+    }
 
     UnitId unitId = SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), unitName.c_str(), schemaLookupMode);
     if (!unitId.IsValid())
@@ -729,55 +662,49 @@ ECUnitCP SchemaReader::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unit
         return nullptr;
 
     return m_cache.Find(unitId);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-UnitId SchemaReader::GetUnitId(ECUnitCR unit) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+UnitId SchemaReader::GetUnitId(ECUnitCR unit) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         LOG.errorv("Cannot read UnitId for Unit '%s'. This version of the file does not support Units yet.", unit.GetFullName().c_str());
         return UnitId();
-        }
+    }
 
-    if (unit.HasId()) //This is unsafe but since we do not delete Unit any class that hasId does exist in db
-        {
+    if (unit.HasId())  // This is unsafe but since we do not delete Unit any class that hasId does exist in db
+    {
         BeAssert(unit.GetId() == SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), unit.GetSchema().GetName().c_str(), unit.GetName().c_str(), SchemaLookupMode::ByName));
         return unit.GetId();
-        }
+    }
 
     const UnitId id = SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), unit.GetSchema().GetName().c_str(), unit.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the Unit was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (id.IsValid()) {
+        // it is possible that the Unit was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<ECUnitR>(unit).SetId(id);
-        }
+    }
 
     return id;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECFormatCP SchemaReader::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode schemaLookupMode) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
-        if (!m_cache.GetLegacyUnitsHelper().IsValidFormatsSchemaName(schemaNameOrAlias, schemaLookupMode))
-            {
+ECFormatCP SchemaReader::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode schemaLookupMode) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
+        if (!m_cache.GetLegacyUnitsHelper().IsValidFormatsSchemaName(schemaNameOrAlias, schemaLookupMode)) {
             LOG.errorv("Cannot read Format '%s.%s'. This version of the file only supports standard formats from the Formats ECSchema.", schemaNameOrAlias.c_str(), formatName.c_str());
             return nullptr;
-            }
+        }
 
         ECSchemaCP formatsSchema = m_cache.GetLegacyUnitsHelper().GetFormatsSchema();
         if (formatsSchema == nullptr)
             return nullptr;
 
         return formatsSchema->GetFormatCP(formatName.c_str());
-        }
+    }
 
     FormatId formatId = SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), formatName.c_str(), schemaLookupMode);
     if (!formatId.IsValid())
@@ -791,74 +718,65 @@ ECFormatCP SchemaReader::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR 
         return nullptr;
 
     return m_cache.Find(formatId);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-FormatId SchemaReader::GetFormatId(ECFormatCR format) const
-    {
-    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+FormatId SchemaReader::GetFormatId(ECFormatCR format) const {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         LOG.errorv("Cannot read FormatId for Format '%s'. This version of the file does not support Formats yet.", format.GetFullName().c_str());
         return FormatId();
-        }
-
-    if (format.HasId()) //This is unsafe but since we do not delete Format any class that hasId does exist in db
-        {
-        BeAssert(format.GetId() == SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName));
-        return format.GetId();
-        }
-
-    const FormatId id = SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName);
-    if (id.IsValid())
-        {
-        //it is possible that the Format was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
-        const_cast<ECFormatR>(format).SetId(id);
-        }
-
-    return id;
     }
 
+    if (format.HasId())  // This is unsafe but since we do not delete Format any class that hasId does exist in db
+    {
+        BeAssert(format.GetId() == SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName));
+        return format.GetId();
+    }
+
+    const FormatId id = SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName);
+    if (id.IsValid()) {
+        // it is possible that the Format was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
+        const_cast<ECFormatR>(format).SetId(id);
+    }
+
+    return id;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
+ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const {
+    if (prop.HasId())  // This is unsafe but since we do not delete KOQ any class that hasId does exist in db
     {
-    if (prop.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
-        {
         BeAssert(prop.GetId() == SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str(), SchemaLookupMode::ByName));
         return prop.GetId();
-        }
+    }
 
     ECPropertyId propId;
-    if (prop.GetClass().HasId())
-        {
-        //If the ECClass already has an id, we can run a faster SQL to get the property id
+    if (prop.GetClass().HasId()) {
+        // If the ECClass already has an id, we can run a faster SQL to get the property id
         BeAssert(prop.GetClass().GetId() == SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), SchemaLookupMode::ByName));
 
         propId = SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), prop.GetClass().GetId(), prop.GetName().c_str());
-        }
-    else
+    } else
         propId = SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str(), SchemaLookupMode::ByName);
 
-    if (propId.IsValid())
-        {
-        //it is possible that the property was already imported before, but the given C++ object comes from another source.
-        //in that case we assign it here on the fly.
+    if (propId.IsValid()) {
+        // it is possible that the property was already imported before, but the given C++ object comes from another source.
+        // in that case we assign it here on the fly.
         const_cast<ECPropertyR>(prop).SetId(propId);
-        }
+    }
 
     return propId;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
-    {
+BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
     ClassDbEntry* entry = m_cache.Find(ecClassId);
     if (entry != nullptr && entry->m_derivedClassesAreLoaded)
@@ -869,34 +787,30 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
         return ERROR;
 
     return ctx.Postprocess(*this);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::ECDerivedClassesList SchemaReader::GetAllDerivedClasses(ECClassId ecClassId) const
-    {
+ECN::ECDerivedClassesList SchemaReader::GetAllDerivedClasses(ECClassId ecClassId) const {
     ECDerivedClassesList derivedClasses;
     ECSqlStatement statement;
     SqlPrintfString sqlStr("select SourceECInstanceId from meta.ClassHasAllBaseClasses where SourceECInstanceId != TargetECInstanceId and TargetECInstanceId=%d", ecClassId.GetValue());
 
     Context ctx;
-    if (statement.Prepare(GetECDb(), sqlStr.GetUtf8CP()) == ECSqlStatus::Success)
-        {
-        while (statement.Step() == BE_SQLITE_ROW)
-            {
+    if (statement.Prepare(GetECDb(), sqlStr.GetUtf8CP()) == ECSqlStatus::Success) {
+        while (statement.Step() == BE_SQLITE_ROW) {
             if (const auto derivedClass = GetClass(ctx, statement.GetValueId<ECClassId>(0)); derivedClass != nullptr)
                 derivedClasses.push_back(derivedClass);
-            }
         }
-    return derivedClasses;
     }
+    return derivedClasses;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ecClassId) const
-    {
+BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ecClassId) const {
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT ClassId FROM [%s]." TABLE_ClassHasBaseClasses " WHERE BaseClassId=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -904,23 +818,20 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
         return ERROR;
 
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
+    while (stmt->Step() == BE_SQLITE_ROW) {
         if (GetClass(ctx, stmt->GetValueId<ECClassId>(0)) == nullptr)
             return ERROR;
-        }
+    }
 
     ClassDbEntry* entry = m_cache.Find(ecClassId);
     entry->m_derivedClassesAreLoaded = true;
     return SUCCESS;
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ctx, ECEnumerationId enumId) const
-    {
+BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ctx, ECEnumerationId enumId) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
     ecEnum = m_cache.Find(enumId);
     if (ecEnum != nullptr)
@@ -952,17 +863,16 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
     Utf8CP enumName = stmt->GetValueText(nameIx);
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
-    const PrimitiveType underlyingType = (PrimitiveType) stmt->GetValueInt(typeColIx);
+    const PrimitiveType underlyingType = (PrimitiveType)stmt->GetValueInt(typeColIx);
     const bool isStrict = stmt->GetValueBoolean(isStrictColIx);
     Utf8CP enumValuesJsonStr = stmt->GetValueText(valuesColIx);
 
-    if (schemaKey->m_cachedSchema->OriginalECXmlVersionGreaterThan(ECVersion::Latest) && SchemaPersistenceHelper::ToPrimitiveType(underlyingType).IsNull())
-        {
+    if (schemaKey->m_cachedSchema->OriginalECXmlVersionGreaterThan(ECVersion::Latest) && SchemaPersistenceHelper::ToPrimitiveType(underlyingType).IsNull()) {
         LOG.warningv("Failed to load ECEnumeration %s.%s. It contains an unsupported underlying type. The schema uses a newer version of the standard than is known to the current software. The ECEnumeration will be ignored.",
-            schemaKey->m_cachedSchema->GetName().c_str(), enumName);
-        CacheSchemaElementWithUnknowns(TABLE_Enumeration, enumId); // Schema is of a newer version and enum contains new unknown features. Mark this class to not be loaded
+                     schemaKey->m_cachedSchema->GetName().c_str(), enumName);
+        CacheSchemaElementWithUnknowns(TABLE_Enumeration, enumId);  // Schema is of a newer version and enum contains new unknown features. Mark this class to not be loaded
         return ERROR;
-        }
+    }
 
     ECEnumerationP newEnum = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateEnumeration(newEnum, enumName, underlyingType))
@@ -976,29 +886,26 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
     newEnum->SetDescription(description);
     newEnum->SetIsStrict(isStrict);
 
-    if (Utf8String::IsNullOrEmpty(enumValuesJsonStr))
-        {
+    if (Utf8String::IsNullOrEmpty(enumValuesJsonStr)) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     if (SUCCESS != SchemaPersistenceHelper::DeserializeEnumerationValues(*newEnum, GetECDb(), enumValuesJsonStr))
         return ERROR;
 
-    //cache the enum
+    // cache the enum
     m_cache.Insert(*newEnum);
     schemaKey->m_loadedTypeCount++;
     ecEnum = newEnum;
     return SUCCESS;
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
-    {
-    //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
+BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const {
+    // no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
 
     BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
 
@@ -1006,8 +913,7 @@ BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
     if (stmt == nullptr)
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         const UnitSystemId id = stmt->GetValueId<UnitSystemId>(0);
 
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(1);
@@ -1026,17 +932,16 @@ BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
         newSystem->SetId(id);
         m_cache.Insert(*newSystem);
         schemaKey->m_loadedTypeCount++;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
-    {
-    //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
+BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const {
+    // no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
 
     BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
 
@@ -1044,8 +949,7 @@ BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
     if (stmt == nullptr)
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         const PhenomenonId id = stmt->GetValueId<PhenomenonId>(0);
 
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(1);
@@ -1065,17 +969,16 @@ BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
         newPhen->SetId(id);
         m_cache.Insert(*newPhen);
         schemaKey->m_loadedTypeCount++;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
-    {
-    //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
+BentleyStatus SchemaReader::ReadUnits(Context& ctx) const {
+    // no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
 
     BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
 
@@ -1083,8 +986,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     if (stmt == nullptr)
         return ERROR;
 
-    struct UnitColumnIndexes final
-        {
+    struct UnitColumnIndexes final {
         int m_unitId = 0;
         int m_schemaId = 1;
         int m_name = 2;
@@ -1098,12 +1000,11 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         int m_offset = 10;
         int m_isConstant = 11;
         int m_invertingUnitId = 12;
-        };
+    };
 
     UnitColumnIndexes colIndexes;
 
-    struct InvertedUnitInfo
-        {
+    struct InvertedUnitInfo {
         ECN::UnitId m_id;
         SchemaDbEntry* m_schema = nullptr;
         Utf8String m_name;
@@ -1112,24 +1013,21 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         Nullable<Utf8String> m_description;
         ECN::UnitSystemCP m_unitSystem = nullptr;
 
-        InvertedUnitInfo(ECN::UnitId id, SchemaDbEntry& schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) :
-            m_id(id), m_schema(&schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system)
-            {
+        InvertedUnitInfo(ECN::UnitId id, SchemaDbEntry& schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) : m_id(id), m_schema(&schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system) {
             if (displayLabel != nullptr)
                 m_displayLabel = Utf8String(displayLabel);
 
             if (description != nullptr)
                 m_description = Utf8String(description);
-            }
+        }
 
         Utf8CP GetDisplayLabel() const { return m_displayLabel.IsValid() ? m_displayLabel.Value().c_str() : nullptr; }
         Utf8CP GetDescription() const { return m_description.IsValid() ? m_description.Value().c_str() : nullptr; }
-        };
+    };
 
     std::vector<InvertedUnitInfo> invertedUnitInfos;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         UnitId id = stmt->GetValueId<UnitId>(colIndexes.m_unitId);
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(colIndexes.m_schemaId);
         SchemaDbEntry* schema = nullptr;
@@ -1141,36 +1039,32 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         Utf8CP description = stmt->IsColumnNull(colIndexes.m_description) ? nullptr : stmt->GetValueText(colIndexes.m_description);
 
         UnitSystemCP us = nullptr;
-        if (!stmt->IsColumnNull(colIndexes.m_unitSystemId))
-            {
+        if (!stmt->IsColumnNull(colIndexes.m_unitSystemId)) {
             UnitSystemId usId = stmt->GetValueId<UnitSystemId>(colIndexes.m_unitSystemId);
             us = m_cache.Find(usId);
-            if (us == nullptr)
-                {
+            if (us == nullptr) {
                 BeAssert(false && "UnitSystems should have been loaded before Units");
                 return ERROR;
-                }
             }
+        }
 
-        if (!stmt->IsColumnNull(colIndexes.m_invertingUnitId))
-            {
-            //cache inverted units as they need their inverting unit to be exist before. They are loaded once the regular units have been loaded.
+        if (!stmt->IsColumnNull(colIndexes.m_invertingUnitId)) {
+            // cache inverted units as they need their inverting unit to be exist before. They are loaded once the regular units have been loaded.
             UnitId invertingUnitId = stmt->GetValueId<UnitId>(colIndexes.m_invertingUnitId);
             BeAssert(stmt->IsColumnNull(colIndexes.m_definition) && stmt->IsColumnNull(colIndexes.m_numerator) && stmt->IsColumnNull(colIndexes.m_denominator) && stmt->IsColumnNull(colIndexes.m_offset));
-            PUSH_STATIC_ANALYSIS_WARNING(6011); // NEEDS WORK STATIC ANALYSIS - Dereferencing NULL pointer 'us' - shouldn't we check us != nullptr? is that an error, and should we bail out if so?
+            PUSH_STATIC_ANALYSIS_WARNING(6011);  // NEEDS WORK STATIC ANALYSIS - Dereferencing NULL pointer 'us' - shouldn't we check us != nullptr? is that an error, and should we bail out if so?
             invertedUnitInfos.push_back(InvertedUnitInfo(id, *schema, name, invertingUnitId, displayLabel, description, *us));
             POP_STATIC_ANALYSIS_WARNING
             continue;
-            }
+        }
 
         const bool isConstant = stmt->GetValueBoolean(colIndexes.m_isConstant);
         const PhenomenonId phId = stmt->GetValueId<PhenomenonId>(colIndexes.m_phenId);
         PhenomenonCP ph = m_cache.Find(phId);
-        if (ph == nullptr)
-            {
+        if (ph == nullptr) {
             BeAssert(false && "Phenomena should have been loaded before Units");
             return ERROR;
-            }
+        }
 
         BeAssert((isConstant && us == nullptr) || (!isConstant && us != nullptr));
         BeAssert(!stmt->IsColumnNull(colIndexes.m_definition));
@@ -1189,56 +1083,49 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             offset = stmt->GetValueDouble(colIndexes.m_offset);
 
         ECUnitP newUnit = nullptr;
-        if (isConstant)
-            {
+        if (isConstant) {
             BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
             if (ECObjectsStatus::Success != schema->m_cachedSchema->CreateConstant(newUnit, name, definition, *ph, numerator.Value(), denominator, displayLabel, description))
                 return ERROR;
-            }
-        else
-            {
-            _Analysis_assume_(us != nullptr); // See Assertion above
+        } else {
+            _Analysis_assume_(us != nullptr);  // See Assertion above
             if (ECObjectsStatus::Success != schema->m_cachedSchema->CreateUnit(newUnit, name, definition, *ph, *us, numerator, denominator, offset, displayLabel, description))
                 return ERROR;
-            }
+        }
 
         newUnit->SetId(id);
         m_cache.Insert(*newUnit);
         schema->m_loadedTypeCount++;
-        }
+    }
 
-    //now load inverted units as their inverting units have been loaded now
-    for (InvertedUnitInfo const& invertedUnitInfo : invertedUnitInfos)
-        {
+    // now load inverted units as their inverting units have been loaded now
+    for (InvertedUnitInfo const& invertedUnitInfo : invertedUnitInfos) {
         SchemaDbEntry& schema = *invertedUnitInfo.m_schema;
         ECUnitCP invertingUnit = m_cache.Find(invertedUnitInfo.m_invertingUnitId);
-        if (invertingUnit == nullptr)
-            {
+        if (invertingUnit == nullptr) {
             BeAssert("Inverting unit for an inverted unit should have been loaded already");
             return ERROR;
-            }
+        }
 
         ECUnitP newUnit = nullptr;
         if (ECObjectsStatus::Success != schema.m_cachedSchema->CreateInvertedUnit(newUnit, *invertingUnit, invertedUnitInfo.m_name.c_str(), *invertedUnitInfo.m_unitSystem,
-                                                                                  invertedUnitInfo.GetDisplayLabel(), invertedUnitInfo.GetDescription()))
-            {
+                                                                                  invertedUnitInfo.GetDisplayLabel(), invertedUnitInfo.GetDescription())) {
             return ERROR;
-            }
+        }
 
         newUnit->SetId(invertedUnitInfo.m_id);
         m_cache.Insert(*newUnit);
         schema.m_loadedTypeCount++;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
-    {
-    //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
+BentleyStatus SchemaReader::ReadFormats(Context& ctx) const {
+    // no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
 
     BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
 
@@ -1254,8 +1141,7 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
     if (stmt == nullptr)
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         const FormatId id = stmt->GetValueId<FormatId>(idIx);
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
         SchemaDbEntry* schemaKey = nullptr;
@@ -1269,15 +1155,14 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
         Utf8CP numericSpecJsonStr = stmt->IsColumnNull(numSpecColIx) ? nullptr : stmt->GetValueText(numSpecColIx);
         const bool hasNumericSpec = !Utf8String::IsNullOrEmpty(numericSpecJsonStr);
         Formatting::NumericFormatSpec numSpec;
-        if (hasNumericSpec)
-            {
+        if (hasNumericSpec) {
             Json::Value numericSpecJson;
             if (!Json::Reader::Parse(numericSpecJsonStr, numericSpecJson))
                 return ERROR;
 
             if (!Formatting::NumericFormatSpec::FromJson(numSpec, numericSpecJson))
                 return ERROR;
-            }
+        }
 
         Utf8CP compSpecJsonStr = stmt->IsColumnNull(compositeSpecColIx) ? nullptr : stmt->GetValueText(compositeSpecColIx);
 
@@ -1295,17 +1180,16 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
         newFormat->SetId(id);
         m_cache.Insert(*newFormat);
         schemaKey->m_loadedTypeCount++;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, FormatId formatId, Utf8CP compositeSpecJsonWithoutUnits) const
-    {
-    //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
+BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, FormatId formatId, Utf8CP compositeSpecJsonWithoutUnits) const {
+    // no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
 
     BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
 
@@ -1318,60 +1202,55 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
 
     bvector<Nullable<Utf8String>> labels;
     bvector<ECN::UnitId> unitIds;
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         Utf8CP label = stmt->GetValueText(0);
         labels.push_back(label ? Nullable<Utf8String>(label) : nullptr);
 
         unitIds.push_back(stmt->GetValueId<UnitId>(1));
-        }
+    }
     stmt = nullptr;
 
-    if (unitIds.empty()) // format doesn't have a composite spec
-        {
+    if (unitIds.empty())  // format doesn't have a composite spec
+    {
         BeAssert(Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits));
         return SUCCESS;
-        }
+    }
 
     BeAssert(labels.size() <= 4 && unitIds.size() <= 4);
 
     bvector<Units::UnitCP> units;
-    for (UnitId unitId : unitIds)
-        {
+    for (UnitId unitId : unitIds) {
         ECUnitCP unit = m_cache.Find(unitId);
-        if (unit == nullptr)
-            {
+        if (unit == nullptr) {
             BeAssert(false && "Units should have been loaded before creating the Format CompositeSpec");
             return ERROR;
-            }
-        units.push_back(unit);
         }
+        units.push_back(unit);
+    }
     Formatting::CompositeValueSpec spec;
-	bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(spec, units);
-	if (!compStatus)
-		return ERROR;
+    bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(spec, units);
+    if (!compStatus)
+        return ERROR;
 
-    if (!Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits))
-        {
+    if (!Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits)) {
         Json::Value compSpecJson;
         if (!Json::Reader::Parse(compositeSpecJsonWithoutUnits, compSpecJson))
             return ERROR;
 
         if (!Formatting::CompositeValueSpec::FromJson(spec, compSpecJson, units, labels))
             return ERROR;
-        }
+    }
 
     if (spec.IsProblem())
         return ERROR;
 
     return format.SetCompositeSpec(spec) ? SUCCESS : ERROR;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& ctx, KindOfQuantityId koqId) const
-    {
+BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& ctx, KindOfQuantityId koqId) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
     koq = m_cache.Find(koqId);
     if (koq != nullptr)
@@ -1424,77 +1303,64 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     newKoq->SetRelativeError(relError);
 
     // Persistence Unit and Presentation Formats
-    bvector<Utf8CP> presFormats; //can use Utf8CP as the string is owned by the rapidjson::Document
+    bvector<Utf8CP> presFormats;  // can use Utf8CP as the string is owned by the rapidjson::Document
     rapidjson::Document presFormatsJson;
-    if (!Utf8String::IsNullOrEmpty(presFormatsStr))
-        {
-        if (presFormatsJson.Parse<0>(presFormatsStr).HasParseError())
-            {
+    if (!Utf8String::IsNullOrEmpty(presFormatsStr)) {
+        if (presFormatsJson.Parse<0>(presFormatsStr).HasParseError()) {
             BeAssert(false && "Could not parse KindOfQuantity Presentation Formats values JSON string.");
             return ERROR;
-            }
-
-        BeAssert(presFormatsJson.IsArray());
-        for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
-            {
-            BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
-            presFormats.push_back(presFormatJson.GetString());
-            }
         }
 
-    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+        BeAssert(presFormatsJson.IsArray());
+        for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray()) {
+            BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
+            presFormats.push_back(presFormatJson.GetString());
+        }
+    }
+
+    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         // The persistence unit is persisted as fully qualified name to preserve backwards compatibility
         BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-        auto lookupUnit = [this] (Utf8StringCR unitAlias, Utf8StringCR unitName)
-            {
+        auto lookupUnit = [this](Utf8StringCR unitAlias, Utf8StringCR unitName) {
             BeAssert(!unitAlias.empty());
             return m_schemaManager.GetUnit(unitAlias, unitName, SchemaLookupMode::ByAlias);
-            };
+        };
 
-        if (ECObjectsStatus::Success != newKoq->AddPersistenceUnitByName(persUnitStr, lookupUnit))
-            {
+        if (ECObjectsStatus::Success != newKoq->AddPersistenceUnitByName(persUnitStr, lookupUnit)) {
             LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);
             return ERROR;
-            }
+        }
 
-        //PresentationFormats
-        if (!presFormats.empty())
-            {
-            auto lookupFormat = [this] (Utf8String alias, Utf8StringCR formatName)
-                {
+        // PresentationFormats
+        if (!presFormats.empty()) {
+            auto lookupFormat = [this](Utf8String alias, Utf8StringCR formatName) {
                 return m_schemaManager.GetFormat(alias, formatName, SchemaLookupMode::ByAlias);
-                };
+            };
 
-            for (Utf8CP presFormat : presFormats)
-                {
-                if (ECObjectsStatus::Success != newKoq->AddPresentationFormatByString(presFormat, lookupFormat, lookupUnit))
-                    {
+            for (Utf8CP presFormat : presFormats) {
+                if (ECObjectsStatus::Success != newKoq->AddPresentationFormatByString(presFormat, lookupFormat, lookupUnit)) {
                     LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation format '%s' could not be parsed.", newKoq->GetFullName().c_str(), presFormat);
                     return ERROR;
-                    }
                 }
             }
         }
-    else
-        {
-        //Handle legacy KOQs
+    } else {
+        // Handle legacy KOQs
         if (SUCCESS != m_cache.GetLegacyUnitsHelper().AssignPersistenceUnitAndPresentationFormats(*newKoq, persUnitStr, presFormats))
             return ERROR;
-        }
+    }
 
-    //cache the koq
+    // cache the koq
     m_cache.Insert(*newKoq);
     schemaKey->m_loadedTypeCount++;
     koq = newKoq;
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Context& ctx, PropertyCategoryId catId) const
-    {
+BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Context& ctx, PropertyCategoryId catId) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
     cat = m_cache.Find(catId);
     if (cat != nullptr)
@@ -1525,11 +1391,10 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
     Nullable<uint32_t> prio;
-    if (!stmt->IsColumnNull(priorityColIx))
-        {
-        //uint32_t is persisted as int64 to not lose unsigned-ness
-        prio = (uint32_t) stmt->GetValueInt64(priorityColIx);
-        }
+    if (!stmt->IsColumnNull(priorityColIx)) {
+        // uint32_t is persisted as int64 to not lose unsigned-ness
+        prio = (uint32_t)stmt->GetValueInt64(priorityColIx);
+    }
 
     PropertyCategoryP newCat = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePropertyCategory(newCat, catName))
@@ -1545,51 +1410,45 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
     if (!prio.IsNull())
         newCat->SetPriority(prio.Value());
 
-    //cache the category
+    // cache the category
     m_cache.Insert(*newCat);
     schemaKey->m_loadedTypeCount++;
     cat = newCat;
     return SUCCESS;
-    }
-
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
-    {
-    if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
-        {
+BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const {
+    if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId)) {
         if (schemaEntry != nullptr)
             schemaEntry->SetKnownBad();
         return ERROR;
-        }
+    }
 
     BeAssert(schemaEntry != nullptr);
-    if (loadSchemaEntities && !schemaEntry->IsFullyLoaded())
-        {
+    if (loadSchemaEntities && !schemaEntry->IsFullyLoaded()) {
         std::set<SchemaDbEntry*> fullyLoadedSchemas;
         if (SUCCESS != ReadSchemaElements(*schemaEntry, ctx, fullyLoadedSchemas))
             return ERROR;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const
-    {
+BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (schemaEntry = m_cache.Find(schemaId))
-        {
+    if (schemaEntry = m_cache.Find(schemaId)) {
         BeAssert(schemaEntry->m_cachedSchema != nullptr);
         return (schemaEntry->IsKnownBad() ? ERROR : SUCCESS);
-        }
+    }
 
-    //Following method is not by itself thread safe as it write to cache but
-    //this is the only call to it which is thread safe.
+    // Following method is not by itself thread safe as it write to cache but
+    // this is the only call to it which is thread safe.
     if (SUCCESS != ReadSchemaStub(schemaEntry, ctx, schemaId))
         return ERROR;
 
@@ -1600,52 +1459,46 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
     if (BE_SQLITE_OK != stmt->BindId(1, schemaId))
         return ERROR;
 
-    //cache schema ids before loading reference schemas, so that statement can be reused.
+    // cache schema ids before loading reference schemas, so that statement can be reused.
     std::vector<ECSchemaId> referencedSchemaIds;
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         BeAssert(!stmt->IsColumnNull(0));
         ECSchemaId referencedSchemaId = stmt->GetValueId<ECSchemaId>(0);
         BeAssert(referencedSchemaId.IsValid());
         referencedSchemaIds.push_back(referencedSchemaId);
-        }
+    }
 
-    //release stmt so that it can be reused when loading schema reference
+    // release stmt so that it can be reused when loading schema reference
     stmt = nullptr;
 
-    for (ECSchemaId referencedSchemaId : referencedSchemaIds)
-        {
+    for (ECSchemaId referencedSchemaId : referencedSchemaIds) {
         SchemaDbEntry* referenceSchemaKey = nullptr;
-        if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
-            {
+        if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId)) {
             schemaEntry->SetKnownBad();
             if (referenceSchemaKey != nullptr)
                 referenceSchemaKey->SetKnownBad();
             return ERROR;
-            }
+        }
 
         ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedSchema);
-        if (s != ECObjectsStatus::Success)
-            {
+        if (s != ECObjectsStatus::Success) {
             schemaEntry->SetKnownBad();
             referenceSchemaKey->SetKnownBad();
             return ERROR;
-            }
         }
+    }
 
     return SUCCESS;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId ecSchemaId) const
-    {
+BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId ecSchemaId) const {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
     CachedStatementPtr stmt = nullptr;
     const bool hasECVersionsAndUnits = FeatureManager::IsAvailable(GetECDb(), {Feature::ECVersions, Feature::UnitsAndFormats});
-    if (hasECVersionsAndUnits)
-        {
+    if (hasECVersionsAndUnits) {
         stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name,s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
@@ -1655,17 +1508,19 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Phenomenon " ph WHERE s.Id = ph.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Format " f WHERE s.Id = f.SchemaId) "
-                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
-        }
-    else
-        {
+                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?",
+                                                   tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace)
+                                      .c_str());
+    } else {
         stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,"
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) "
-                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
-        }
+                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?",
+                                                   tableSpace, tableSpace, tableSpace, tableSpace, tableSpace)
+                                      .c_str());
+    }
 
     if (stmt == nullptr)
         return ERROR;
@@ -1688,27 +1543,26 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
     colIx++;
     Utf8CP alias = stmt->GetValueText(colIx);
 
-    //uint32_t is persisted as int64 to not lose unsigned-ness
+    // uint32_t is persisted as int64 to not lose unsigned-ness
     colIx++;
-    uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(colIx);
+    uint32_t versionMajor = (uint32_t)stmt->GetValueInt64(colIx);
 
     colIx++;
-    uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(colIx);
+    uint32_t versionWrite = (uint32_t)stmt->GetValueInt64(colIx);
 
     colIx++;
-    uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(colIx);
+    uint32_t versionMinor = (uint32_t)stmt->GetValueInt64(colIx);
 
     Nullable<uint32_t> originalECVersionMajor, originalECVersionMinor;
-    if (hasECVersionsAndUnits)
-        {
+    if (hasECVersionsAndUnits) {
         colIx++;
         if (!stmt->IsColumnNull(colIx))
-            originalECVersionMajor = (uint32_t) stmt->GetValueInt64(colIx);
+            originalECVersionMajor = (uint32_t)stmt->GetValueInt64(colIx);
 
         colIx++;
         if (!stmt->IsColumnNull(colIx))
-            originalECVersionMinor = (uint32_t) stmt->GetValueInt64(colIx);
-        }
+            originalECVersionMinor = (uint32_t)stmt->GetValueInt64(colIx);
+    }
 
     colIx++;
     const int typesInSchema = stmt->GetValueInt(colIx);
@@ -1720,7 +1574,7 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
     if (hasECVersionsAndUnits && originalECVersionMajor != nullptr)
         schema->SetOriginalECXmlVersion(originalECVersionMajor.Value(), originalECVersionMinor.IsNull() ? 0 : originalECVersionMinor.Value());
     else
-        schema->SetOriginalECXmlVersion(0, 0); // ECObjects set by default ECVersion as the original version. ECDb must not do that, as profile upgrade logic is based on the original version in case it was not set
+        schema->SetOriginalECXmlVersion(0, 0);  // ECObjects set by default ECVersion as the original version. ECDb must not do that, as profile upgrade logic is based on the original version in case it was not set
 
     schema->SetId(ecSchemaId);
     Utf8PrintfString origin("ECDb file %s, schemaId %" PRIu64, m_schemaManager.GetECDb().GetDbFileName(), ecSchemaId.GetValue());
@@ -1738,50 +1592,44 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
     // We set a token to ensure we know which connection owns the schema
     ECSchemaOwnershipClaimAppData::TakeOwnership(m_schemaManager.GetECDb(), *schema);
     return SUCCESS;
-    }
-
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Context& ctx, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const
-    {
+BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Context& ctx, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (fullyLoadedSchemas.find(&schemaEntry) != fullyLoadedSchemas.end())
         return SUCCESS;
 
-    //Accessing cache object not safe. Parent function make sure its a thread safe call
-    //Ensure all reference schemas also loaded
-    for (auto& refSchemaKey : schemaEntry.m_cachedSchema->GetReferencedSchemas())
-        {
-        if (!refSchemaKey.second->HasId())
-            {
+    // Accessing cache object not safe. Parent function make sure its a thread safe call
+    // Ensure all reference schemas also loaded
+    for (auto& refSchemaKey : schemaEntry.m_cachedSchema->GetReferencedSchemas()) {
+        if (!refSchemaKey.second->HasId()) {
             // schemas without id are only valid in a particular case: If this is a 4.0.0.1 file (pre EC3.2) and if the schema
             // is the units or formats schema - which in this case is deserialized by ECDb from disk (without assigning an id)
             if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) &&
                 (m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(refSchemaKey.first.GetName(), SchemaLookupMode::ByName) ||
-                 m_cache.GetLegacyUnitsHelper().IsValidFormatsSchemaName(refSchemaKey.first.GetName(), SchemaLookupMode::ByName)))
-                {
+                 m_cache.GetLegacyUnitsHelper().IsValidFormatsSchemaName(refSchemaKey.first.GetName(), SchemaLookupMode::ByName))) {
                 continue;
-                }
-
-            BeAssert(false && "Referenced schema is expected to be in cache already at this point");
-            return ERROR;
             }
 
-        ECSchemaId referenceSchemaId = refSchemaKey.second->GetId();
-        SchemaDbEntry* key = m_cache.Find(referenceSchemaId);
-        if (key == nullptr)
-            {
             BeAssert(false && "Referenced schema is expected to be in cache already at this point");
-            return ERROR;
-            }
-
-        if (SUCCESS != ReadSchemaElements(*key, ctx, fullyLoadedSchemas))
             return ERROR;
         }
 
-    //Ensure load all the classes in the schema
+        ECSchemaId referenceSchemaId = refSchemaKey.second->GetId();
+        SchemaDbEntry* key = m_cache.Find(referenceSchemaId);
+        if (key == nullptr) {
+            BeAssert(false && "Referenced schema is expected to be in cache already at this point");
+            return ERROR;
+        }
+
+        if (SUCCESS != ReadSchemaElements(*key, ctx, fullyLoadedSchemas))
+            return ERROR;
+    }
+
+    // Ensure load all the classes in the schema
     fullyLoadedSchemas.insert(&schemaEntry);
     if (schemaEntry.IsFullyLoaded())
         return SUCCESS;
@@ -1794,19 +1642,17 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
     if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         const ECClassId classId = stmt->GetValueId<ECClassId>(0);
-        if (nullptr == GetClass(ctx, classId))
-            {
+        if (nullptr == GetClass(ctx, classId)) {
             LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), schemaEntry.m_cachedSchema->GetName().c_str());
             if (!SchemaElementContainsUnknowns(TABLE_Class, classId))
                 return ERROR;
-            }
+        }
 
         if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
-        }
+    }
 
     stmt = nullptr;
 
@@ -1818,19 +1664,17 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
     if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         ECEnumerationCP ecEnum = nullptr;
-        if (SUCCESS != ReadEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0)))
-            {
+        if (SUCCESS != ReadEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0))) {
             if (SchemaElementContainsUnknowns(TABLE_Enumeration, stmt->GetValueId<ECEnumerationId>(0)))
                 continue;
             return ERROR;
-            }
+        }
 
         if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
-        }
+    }
 
     stmt = nullptr;
 
@@ -1842,15 +1686,14 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
     if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         KindOfQuantityCP koq = nullptr;
         if (SUCCESS != ReadKindOfQuantity(koq, ctx, stmt->GetValueId<KindOfQuantityId>(0)))
             return ERROR;
 
         if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
-        }
+    }
 
     stmt = nullptr;
 
@@ -1862,27 +1705,26 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
     if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
+    while (BE_SQLITE_ROW == stmt->Step()) {
         PropertyCategoryCP cat = nullptr;
         if (SUCCESS != ReadPropertyCategory(cat, ctx, stmt->GetValueId<PropertyCategoryId>(0)))
             return ERROR;
 
         if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
-        }
+    }
 
     stmt = nullptr;
 
-    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
+    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats)) {
         // Load Units (are loaded at once for unit conversion API)
-        if (!m_cache.m_areUnitsAndFormatsLoaded)
-            {
+        if (!m_cache.m_areUnitsAndFormatsLoaded) {
             stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=:schemaid UNION ALL "
                                                        "SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=:schemaid UNION ALL "
                                                        "SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=:schemaid UNION ALL "
-                                                       "SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=:schemaid", GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str()).c_str());
+                                                       "SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=:schemaid",
+                                                       GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str())
+                                          .c_str());
             if (stmt == nullptr)
                 return ERROR;
 
@@ -1892,84 +1734,73 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
             const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
             stmt = nullptr;
 
-            if (schemaHasUnits)
-                {
+            if (schemaHasUnits) {
                 if (SUCCESS != LoadUnitsAndFormats(ctx))
                     return ERROR;
 
                 if (schemaEntry.IsFullyLoaded())
                     return SUCCESS;
-                }
             }
         }
-
-    return SUCCESS;
     }
 
+    return SUCCESS;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::LoadMixinAppliesToClass(Context& ctx, ECN::ECClassCR mixinClass) const
-    {
+BentleyStatus SchemaReader::LoadMixinAppliesToClass(Context& ctx, ECN::ECClassCR mixinClass) const {
     IECInstancePtr mixinCA = mixinClass.GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
     if (mixinCA == nullptr)
         return SUCCESS;
 
     ECValue appliesToValue;
-    if (ECObjectsStatus::Success != mixinCA->GetValue(appliesToValue, "AppliesToEntityClass"))
-        {
+    if (ECObjectsStatus::Success != mixinCA->GetValue(appliesToValue, "AppliesToEntityClass")) {
         LOG.errorv("Could not load Mixin ECClass %s. Could not read the IsMixin Custom Attribute's property 'AppliesToEntityClass'.", mixinClass.GetFullName());
         return ERROR;
-        }
+    }
 
     Utf8CP val = nullptr;
-    if (appliesToValue.IsNull() || !appliesToValue.IsString() || Utf8String::IsNullOrEmpty((val = appliesToValue.GetUtf8CP())))
-        {
+    if (appliesToValue.IsNull() || !appliesToValue.IsString() || Utf8String::IsNullOrEmpty((val = appliesToValue.GetUtf8CP()))) {
         LOG.errorv("Could not load Mixin ECClass %s. The IsMixin Custom Attribute's property 'AppliesToEntityClass' is unset or has an invalid value.", mixinClass.GetFullName());
         return ERROR;
-        }
+    }
 
     Utf8String appliesToSchemaAlias;
     Utf8String appliesToClassName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(appliesToSchemaAlias, appliesToClassName, val))
-        {
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(appliesToSchemaAlias, appliesToClassName, val)) {
         LOG.errorv("Could not load Mixin ECClass %s. The IsMixin Custom Attribute has an invalid value for 'AppliesToEntityClass': %s", mixinClass.GetFullName(), val);
         return ERROR;
-        }
+    }
 
     SchemaLookupMode schemaLookupMode = SchemaLookupMode::AutoDetect;
     Utf8StringCP effectiveSchemaName = &appliesToSchemaAlias;
-    if (appliesToSchemaAlias.empty())
-        {
+    if (appliesToSchemaAlias.empty()) {
         effectiveSchemaName = &mixinClass.GetSchema().GetName();
         schemaLookupMode = SchemaLookupMode::ByName;
-        }
+    }
 
     BeAssert(effectiveSchemaName != nullptr);
 
     ECClassId appliesToClassId = GetClassId(*effectiveSchemaName, appliesToClassName, schemaLookupMode);
     if (!appliesToClassId.IsValid() ||
-        //this is the important step and the mere purpose of the routine. We need to load the applies to class into memory
-        //so that ECObjects can validate the mixin.
-        GetClass(ctx, appliesToClassId) == nullptr)
-        {
+        // this is the important step and the mere purpose of the routine. We need to load the applies to class into memory
+        // so that ECObjects can validate the mixin.
+        GetClass(ctx, appliesToClassId) == nullptr) {
         LOG.errorv("Could not load Mixin ECClass %s. The 'applies to' class '%s.%s' does not exist.", mixinClass.GetFullName(), appliesToSchemaAlias.c_str(), appliesToClassName.c_str());
         return ERROR;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass) const
-    {
-    struct PropReaderHelper
-        {
-        struct RowInfo
-            {
+BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass) const {
+    struct PropReaderHelper {
+        struct RowInfo {
             ECPropertyId m_id;
             PropertyKind m_kind;
             Utf8String m_name;
@@ -1991,10 +1822,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
             Nullable<int64_t> m_arrayMaxOccurs;
             ECClassId m_navPropRelClassId;
             Nullable<int> m_navPropDirection;
-            };
+        };
 
-        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassCR ecClass)
-            {
+        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassCR ecClass) {
             const int idIx = 0;
             const int kindIx = 1;
             const int nameIx = 2;
@@ -2019,17 +1849,20 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
             CachedStatementPtr stmt = nullptr;
             if (tableSpace.IsMain())
-                stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
-                                                              "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
-                                                              "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
-                                                              "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
-                                                              "FROM main." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal");
+                stmt = ecdb.GetImpl().GetCachedSqliteStatement(
+                    "SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
+                    "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
+                    "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
+                    "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
+                    "FROM main." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal");
             else
                 stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
-                                                               "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
-                                                               "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
-                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
-                                                               "FROM [%s]." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal", tableSpace.GetName().c_str()).c_str());
+                                                                                "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
+                                                                                "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
+                                                                                "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
+                                                                                "FROM [%s]." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal",
+                                                                                tableSpace.GetName().c_str())
+                                                                   .c_str());
 
             if (stmt == nullptr)
                 return ERROR;
@@ -2037,28 +1870,24 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
             if (BE_SQLITE_OK != stmt->BindId(1, ecClass.GetId()))
                 return ERROR;
 
-            while (BE_SQLITE_ROW == stmt->Step())
-                {
+            while (BE_SQLITE_ROW == stmt->Step()) {
                 RowInfo rowInfo;
                 rowInfo.m_id = stmt->GetValueId<ECPropertyId>(idIx);
                 rowInfo.m_name.assign(stmt->GetValueText(nameIx));
 
                 Nullable<PropertyKind> kind = SchemaPersistenceHelper::ToPropertyKind(stmt->GetValueInt(kindIx));
-                if (kind.IsNull())
+                if (kind.IsNull()) {
+                    if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))  // Ignore the unsupported ECProperty row only if the schema is newer than the current version
                     {
-                    if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
-                        {
                         LOG.warningv("The ECProperty %s.%s has an unsupported type of ECProperty. The schema uses a newer version of the standard than is known to the current software. The ECProperty will be ignored.",
-                               ecClass.GetFullName(), rowInfo.m_name.c_str());
+                                     ecClass.GetFullName(), rowInfo.m_name.c_str());
                         continue;
-                        }
-                    else
-                        {
+                    } else {
                         LOG.errorv("Failed to load ECProperty %s.%s. It is an unsupported type of ECProperty.",
-                               ecClass.GetFullName(), rowInfo.m_name.c_str());
-                        }
-                    return ERROR;
+                                   ecClass.GetFullName(), rowInfo.m_name.c_str());
                     }
+                    return ERROR;
+                }
 
                 rowInfo.m_kind = kind.Value();
 
@@ -2071,28 +1900,26 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 if (!stmt->IsColumnNull(isReadonlyIx))
                     rowInfo.m_isReadonly = stmt->GetValueBoolean(isReadonlyIx);
 
-                //uint32_t are persisted as int64 to not lose unsigned-ness
+                // uint32_t are persisted as int64 to not lose unsigned-ness
                 if (!stmt->IsColumnNull(priorityIx))
                     rowInfo.m_priority = stmt->GetValueInt64(priorityIx);
 
-                if (!stmt->IsColumnNull(primTypeIx))
-                    {
+                if (!stmt->IsColumnNull(primTypeIx)) {
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
-                    if (SchemaPersistenceHelper::ToPrimitiveType(rowInfo.m_primType.Value()).IsNull())
+                    if (SchemaPersistenceHelper::ToPrimitiveType(rowInfo.m_primType.Value()).IsNull()) {
+                        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))  // Ignore the unsupported ECProperty row only if the schema is newer than the current version
                         {
-                        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
-                            {
                             LOG.warningv("The ECProperty %s.%s has an unsupported primitive data type. The schema uses a newer version of the standard than is known to the current software. The ECProperty will be ignored.",
-                                   ecClass.GetFullName(), rowInfo.m_name.c_str());
+                                         ecClass.GetFullName(), rowInfo.m_name.c_str());
                             continue;
-                            }
+                        }
                         LOG.errorv("Failed to load ECProperty %s.%s. It has an unsupported primitive data type.",
                                    ecClass.GetFullName(), rowInfo.m_name.c_str());
                         return ERROR;
-                        }
                     }
+                }
 
-                //MinLength/MaxLength is persisted as int64 to not lose unsigned-ness
+                // MinLength/MaxLength is persisted as int64 to not lose unsigned-ness
                 if (!stmt->IsColumnNull(primTypeMinLengthIx))
                     rowInfo.m_primTypeMinLength = stmt->GetValueInt64(primTypeMinLengthIx);
 
@@ -2108,15 +1935,12 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 if (!stmt->IsColumnNull(enumIdIx))
                     rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIdIx);
 
-                if (stmt->IsColumnNull(structClassIdIx))
-                    {
-                    if (kind == PropertyKind::Struct || kind == PropertyKind::StructArray)
-                        {
+                if (stmt->IsColumnNull(structClassIdIx)) {
+                    if (kind == PropertyKind::Struct || kind == PropertyKind::StructArray) {
                         BeAssert(false && "StructClassId column must not be NULL for struct or struct array property");
                         return ERROR;
-                        }
                     }
-                else
+                } else
                     rowInfo.m_structClassId = stmt->GetValueId<ECClassId>(structClassIdIx);
 
                 if (!stmt->IsColumnNull(extendedTypeIx))
@@ -2125,142 +1949,118 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 if (!stmt->IsColumnNull(koqIdIx))
                     rowInfo.m_koqId = stmt->GetValueId<KindOfQuantityId>(koqIdIx);
 
-                if (rowInfo.m_koqId.IsValid() && kind == PropertyKind::Navigation)
-                    {
+                if (rowInfo.m_koqId.IsValid() && kind == PropertyKind::Navigation) {
                     BeAssert(false && "KindOfQuantityId must only be set for primitive or primitive array props");
                     return ERROR;
-                    }
+                }
 
                 if (!stmt->IsColumnNull(catIdIx))
                     rowInfo.m_catId = stmt->GetValueId<PropertyCategoryId>(catIdIx);
 
-                if (stmt->IsColumnNull(minOccursIx))
-                    {
-                    if (kind == PropertyKind::PrimitiveArray || kind == PropertyKind::StructArray)
-                        {
+                if (stmt->IsColumnNull(minOccursIx)) {
+                    if (kind == PropertyKind::PrimitiveArray || kind == PropertyKind::StructArray) {
                         BeAssert(false && "ArrayMinOccurs column must not be NULL for array property");
                         return ERROR;
-                        }
                     }
-                else
-                    {
-                    //uint32_t are persisted as int64 to not lose the unsigned-ness.
+                } else {
+                    // uint32_t are persisted as int64 to not lose the unsigned-ness.
                     rowInfo.m_arrayMinOccurs = stmt->GetValueInt64(minOccursIx);
-                    //unbound maxOccurs is persisted as DB NULL.
+                    // unbound maxOccurs is persisted as DB NULL.
                     if (!stmt->IsColumnNull(maxOccursIx))
                         rowInfo.m_arrayMaxOccurs = stmt->GetValueInt64(maxOccursIx);
-                    }
-
-                if (stmt->IsColumnNull(navRelationshipClassId))
-                    {
-                    if (kind == PropertyKind::Navigation)
-                        {
-                        BeAssert(false && "NavigationRelationshipClassId column must not be NULL for navigation property");
-                        return ERROR;
-                        }
-                    }
-                else
-                    rowInfo.m_navPropRelClassId = stmt->GetValueId<ECClassId>(navRelationshipClassId);
-
-                if (stmt->IsColumnNull(navPropDirectionIx))
-                    {
-                    if (kind == PropertyKind::Navigation)
-                        {
-                        BeAssert(false && "NavigationDirection column must not be NULL for navigation property");
-                        return ERROR;
-                        }
-                    }
-                else
-                    {
-                    rowInfo.m_navPropDirection = stmt->GetValueInt(navPropDirectionIx);
-                    if (SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value()).IsNull())
-                        {
-                        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
-                            {
-                            LOG.warningv("The NavigationECProperty %s.%s has a relationship direction which is unsupported. The schema uses a newer version of the standard than is known to the current software. The property will not be loaded.",
-                                ecClass.GetFullName(), rowInfo.m_name.c_str());
-                            continue;
-                            }
-                        else
-                            {
-                            LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported.",
-                                ecClass.GetFullName(), rowInfo.m_name.c_str());
-                            }
-                        return ERROR;
-                        }
-                    }
-
-
-                rows.push_back(rowInfo);
                 }
 
-            return SUCCESS;
+                if (stmt->IsColumnNull(navRelationshipClassId)) {
+                    if (kind == PropertyKind::Navigation) {
+                        BeAssert(false && "NavigationRelationshipClassId column must not be NULL for navigation property");
+                        return ERROR;
+                    }
+                } else
+                    rowInfo.m_navPropRelClassId = stmt->GetValueId<ECClassId>(navRelationshipClassId);
+
+                if (stmt->IsColumnNull(navPropDirectionIx)) {
+                    if (kind == PropertyKind::Navigation) {
+                        BeAssert(false && "NavigationDirection column must not be NULL for navigation property");
+                        return ERROR;
+                    }
+                } else {
+                    rowInfo.m_navPropDirection = stmt->GetValueInt(navPropDirectionIx);
+                    if (SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value()).IsNull()) {
+                        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))  // Ignore the unsupported ECProperty row only if the schema is newer than the current version
+                        {
+                            LOG.warningv("The NavigationECProperty %s.%s has a relationship direction which is unsupported. The schema uses a newer version of the standard than is known to the current software. The property will not be loaded.",
+                                         ecClass.GetFullName(), rowInfo.m_name.c_str());
+                            continue;
+                        } else {
+                            LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported.",
+                                       ecClass.GetFullName(), rowInfo.m_name.c_str());
+                        }
+                        return ERROR;
+                    }
+                }
+
+                rows.push_back(rowInfo);
             }
 
-        static BentleyStatus ReadMinMaxValue(ECN::ECValueR val, RowInfo const& rowInfo, Statement& stmt, int colIx)
-            {
+            return SUCCESS;
+        }
+
+        static BentleyStatus ReadMinMaxValue(ECN::ECValueR val, RowInfo const& rowInfo, Statement& stmt, int colIx) {
             if (stmt.IsColumnNull(colIx))
                 return SUCCESS;
 
-            if (rowInfo.m_primType.IsNull())
-                {
+            if (rowInfo.m_primType.IsNull()) {
                 BeAssert(false && "PrimitiveTypeMinValue or PrimitiveTypeMaxValue must not be set if PrimitiveType is NULL");
                 return ERROR;
-                }
+            }
 
-            switch (rowInfo.m_primType.Value())
-                {
-                    case PrimitiveType::PRIMITIVETYPE_DateTime:
-                    {
+            switch (rowInfo.m_primType.Value()) {
+                case PrimitiveType::PRIMITIVETYPE_DateTime: {
                     double jd = stmt.GetValueDouble(colIx);
                     const uint64_t jdMsec = DateTime::RationalDayToMsec(jd);
                     val.SetDateTimeTicks(DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000);
                     break;
-                    }
-                    case PrimitiveType::PRIMITIVETYPE_Double:
-                        val.SetDouble(stmt.GetValueDouble(colIx));
-                        break;
-
-                    case PrimitiveType::PRIMITIVETYPE_Integer:
-                        val.SetInteger(stmt.GetValueInt(colIx));
-                        break;
-
-                    case PrimitiveType::PRIMITIVETYPE_Long:
-                        val.SetLong(stmt.GetValueInt64(colIx));
-                        break;
-
-                    case PrimitiveType::PRIMITIVETYPE_String:
-                        val.SetUtf8CP(stmt.GetValueText(colIx), true);
-                        break;
-
-                    default:
-                        BeAssert(false && "ECProperty MinimumValue/MaximumValue is of unexpected type");
-                        return ERROR;
                 }
+                case PrimitiveType::PRIMITIVETYPE_Double:
+                    val.SetDouble(stmt.GetValueDouble(colIx));
+                    break;
 
-            return SUCCESS;
+                case PrimitiveType::PRIMITIVETYPE_Integer:
+                    val.SetInteger(stmt.GetValueInt(colIx));
+                    break;
+
+                case PrimitiveType::PRIMITIVETYPE_Long:
+                    val.SetLong(stmt.GetValueInt64(colIx));
+                    break;
+
+                case PrimitiveType::PRIMITIVETYPE_String:
+                    val.SetUtf8CP(stmt.GetValueText(colIx), true);
+                    break;
+
+                default:
+                    BeAssert(false && "ECProperty MinimumValue/MaximumValue is of unexpected type");
+                    return ERROR;
             }
 
-        static BentleyStatus AssignArrayBounds(ArrayECProperty& prop, RowInfo const& rowInfo)
-            {
-            //uint32_t was persisted as int64 to not lose unsigned-ness
-            if (ECObjectsStatus::Success != prop.SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs))
+            return SUCCESS;
+        }
+
+        static BentleyStatus AssignArrayBounds(ArrayECProperty& prop, RowInfo const& rowInfo) {
+            // uint32_t was persisted as int64 to not lose unsigned-ness
+            if (ECObjectsStatus::Success != prop.SetMinOccurs((uint32_t)rowInfo.m_arrayMinOccurs))
                 return ERROR;
 
-            if (!rowInfo.m_arrayMaxOccurs.IsNull())
-                {
-                //if maxoccurs is DB NULL, it means unbound. This is the default in ArrayECProperty
-                if (ECObjectsStatus::Success != prop.SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs.Value()))
+            if (!rowInfo.m_arrayMaxOccurs.IsNull()) {
+                // if maxoccurs is DB NULL, it means unbound. This is the default in ArrayECProperty
+                if (ECObjectsStatus::Success != prop.SetMaxOccurs((uint32_t)rowInfo.m_arrayMaxOccurs.Value()))
                     return ERROR;
-                }
-            else
-                {
+            } else {
                 BeAssert(prop.IsStoredMaxOccursUnbounded());
-                }
+            }
 
             return SUCCESS;
-            }
-        };
+        }
+    };
 
     std::vector<PropReaderHelper::RowInfo> rowInfos;
     if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, GetECDb(), GetTableSpace(), ecClass))
@@ -2271,62 +2071,53 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
         Utf8String extendTypeName;
         if (ExtendedTypeHelper::TryGetSystemExtendedType(extendTypeName, ecClass.GetName(), rowInfo.m_name)) {
             if (rowInfo.m_extendedTypeName != extendTypeName) {
-                LOG.debugv("patching extended type for '%s.%s' from '%s' to '%s'", 
-                    ecClass.GetName().c_str(),
-                    rowInfo.m_name.c_str(),
-                    rowInfo.m_extendedTypeName.c_str(),
-                    extendTypeName.c_str());
+                LOG.debugv("patching extended type for '%s.%s' from '%s' to '%s'",
+                           ecClass.GetName().c_str(),
+                           rowInfo.m_name.c_str(),
+                           rowInfo.m_extendedTypeName.c_str(),
+                           extendTypeName.c_str());
                 rowInfo.m_extendedTypeName.assign(extendTypeName);
             }
         }
     };
 
-    for (PropReaderHelper::RowInfo const& rowInfo : rowInfos)
-        {
+    for (PropReaderHelper::RowInfo const& rowInfo : rowInfos) {
         ECPropertyP prop = nullptr;
         if (isSystemSchema && (GetECDb().GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 3))) {
             patchExtendedTypeForClassIdSystemProperty(const_cast<PropReaderHelper::RowInfo&>(rowInfo));
         }
 
-        switch (rowInfo.m_kind)
-            {
-                case PropertyKind::Primitive:
-                {
+        switch (rowInfo.m_kind) {
+            case PropertyKind::Primitive: {
                 BeAssert(!rowInfo.m_primType.IsNull() || rowInfo.m_enumId.IsValid());
 
                 PrimitiveECPropertyP primProp = nullptr;
 
-                if (rowInfo.m_enumId.IsValid())
-                    {
+                if (rowInfo.m_enumId.IsValid()) {
                     ECEnumerationCP ecenum = nullptr;
-                    if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
-                        {
+                    if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId)) {
                         if (SchemaElementContainsUnknowns(TABLE_Enumeration, rowInfo.m_enumId))
                             continue;
                         return ERROR;
-                        }
+                    }
 
                     if (ECObjectsStatus::Success != ecClass.CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
                         return ERROR;
-                    }
-                else
-                    {
-                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
+                } else {
+                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType)rowInfo.m_primType.Value()))
                         return ERROR;
-                    }
+                }
 
-                if (!rowInfo.m_extendedTypeName.empty())
-                    {
+                if (!rowInfo.m_extendedTypeName.empty()) {
                     if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
-                    }
+                }
 
                 prop = primProp;
                 break;
-                }
+            }
 
-                case PropertyKind::Struct:
-                {
+            case PropertyKind::Struct: {
                 BeAssert(rowInfo.m_structClassId.IsValid());
 
                 ECClassCP structClassRaw = GetClass(ctx, rowInfo.m_structClassId);
@@ -2334,11 +2125,10 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                     return ERROR;
 
                 ECStructClassCP structClass = structClassRaw->GetStructClassCP();
-                if (nullptr == structClass)
-                    {
+                if (nullptr == structClass) {
                     BeAssert(false);
                     return ERROR;
-                    }
+                }
 
                 StructECPropertyP structProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass.CreateStructProperty(structProp, rowInfo.m_name, *structClass))
@@ -2346,56 +2136,49 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
                 prop = structProp;
                 break;
-                }
+            }
 
-                case PropertyKind::PrimitiveArray:
-                {
+            case PropertyKind::PrimitiveArray: {
                 BeAssert(!rowInfo.m_primType.IsNull() || rowInfo.m_enumId.IsValid());
 
                 PrimitiveArrayECPropertyP arrayProp = nullptr;
 
-                if (rowInfo.m_enumId.IsValid())
-                    {
+                if (rowInfo.m_enumId.IsValid()) {
                     ECEnumerationCP ecenum = nullptr;
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
                         return ERROR;
 
                     if (ECObjectsStatus::Success != ecClass.CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, *ecenum))
                         return ERROR;
-                    }
-                else
-                    {
+                } else {
                     BeAssert(!rowInfo.m_primType.IsNull());
-                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
+                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, (PrimitiveType)rowInfo.m_primType.Value()))
                         return ERROR;
-                    }
+                }
 
-                if (!rowInfo.m_extendedTypeName.empty())
-                    {
+                if (!rowInfo.m_extendedTypeName.empty()) {
                     if (ECObjectsStatus::Success != arrayProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
-                    }
+                }
 
                 if (SUCCESS != PropReaderHelper::AssignArrayBounds(*arrayProp, rowInfo))
                     return ERROR;
 
                 prop = arrayProp;
                 break;
-                }
+            }
 
-                case PropertyKind::StructArray:
-                {
+            case PropertyKind::StructArray: {
                 BeAssert(rowInfo.m_structClassId.IsValid());
                 ECClassCP structClassRaw = GetClass(ctx, rowInfo.m_structClassId);
                 if (structClassRaw == nullptr)
                     return ERROR;
 
                 ECStructClassCP structClass = structClassRaw->GetStructClassCP();
-                if (nullptr == structClass)
-                    {
+                if (nullptr == structClass) {
                     BeAssert(false);
                     return ERROR;
-                    }
+                }
 
                 StructArrayECPropertyP arrayProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass.CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
@@ -2406,58 +2189,50 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
                 prop = arrayProp;
                 break;
-                }
+            }
 
-                case PropertyKind::Navigation:
-                {
+            case PropertyKind::Navigation: {
                 BeAssert(ecClass.IsEntityClass() || ecClass.IsRelationshipClass());
                 BeAssert(rowInfo.m_navPropRelClassId.IsValid() && rowInfo.m_navPropDirection.IsValid());
 
                 ECClassCP relClassRaw = GetClass(ctx, rowInfo.m_navPropRelClassId);
-                if (relClassRaw == nullptr)
-                    {
+                if (relClassRaw == nullptr) {
                     if (SchemaElementContainsUnknowns(TABLE_Class, rowInfo.m_navPropRelClassId))
                         continue;
                     return ERROR;
-                    }
+                }
 
                 BeAssert(relClassRaw->IsRelationshipClass());
                 NavigationECPropertyP navProp = nullptr;
                 const auto direction = SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value());
-                if (ecClass.IsEntityClass())
-                    {
+                if (ecClass.IsEntityClass()) {
                     if (ECObjectsStatus::Success != ecClass.GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), false))
                         return ERROR;
-                    }
-                else if (ecClass.IsRelationshipClass())
-                    {
+                } else if (ecClass.IsRelationshipClass()) {
                     if (ECObjectsStatus::Success != ecClass.GetRelationshipClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), false))
                         return ERROR;
-                    }
-                else
-                    {
+                } else {
                     BeAssert(false && "Can only create nav props for entity and relationship classes. Should have been caught at import time");
                     return ERROR;
-                    }
+                }
 
-                //keep track of nav prop as we need to validate them when everything else is loaded
+                // keep track of nav prop as we need to validate them when everything else is loaded
                 ctx.AddNavigationProperty(*navProp);
                 prop = navProp;
                 break;
-                }
-
-                default:
-                    BeAssert(false);
-                    return ERROR;
-
             }
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
 
         BeAssert(prop != nullptr);
         prop->SetId(rowInfo.m_id);
         prop->SetIsReadOnly(rowInfo.m_isReadonly);
 
         if (!rowInfo.m_priority.IsNull())
-            prop->SetPriority((int32_t) rowInfo.m_priority.Value());
+            prop->SetPriority((int32_t)rowInfo.m_priority.Value());
 
         if (!rowInfo.m_description.empty())
             prop->SetDescription(rowInfo.m_description);
@@ -2466,10 +2241,10 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
             prop->SetDisplayLabel(rowInfo.m_displayLabel);
 
         if (!rowInfo.m_primTypeMinLength.IsNull())
-            prop->SetMinimumLength((uint32_t) rowInfo.m_primTypeMinLength.Value());
+            prop->SetMinimumLength((uint32_t)rowInfo.m_primTypeMinLength.Value());
 
         if (!rowInfo.m_primTypeMaxLength.IsNull())
-            prop->SetMaximumLength((uint32_t) rowInfo.m_primTypeMaxLength.Value());
+            prop->SetMaximumLength((uint32_t)rowInfo.m_primTypeMaxLength.Value());
 
         if (!rowInfo.m_primTypeMinValue.IsNull())
             prop->SetMinimumValue(rowInfo.m_primTypeMinValue);
@@ -2477,36 +2252,33 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
         if (!rowInfo.m_primTypeMaxValue.IsNull())
             prop->SetMaximumValue(rowInfo.m_primTypeMaxValue);
 
-        if (rowInfo.m_koqId.IsValid())
-            {
+        if (rowInfo.m_koqId.IsValid()) {
             KindOfQuantityCP koq = nullptr;
             if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
                 return ERROR;
 
             prop->SetKindOfQuantity(koq);
-            }
+        }
 
-        if (rowInfo.m_catId.IsValid())
-            {
+        if (rowInfo.m_catId.IsValid()) {
             PropertyCategoryCP cat = nullptr;
             if (SUCCESS != ReadPropertyCategory(cat, ctx, rowInfo.m_catId))
                 return ERROR;
 
             prop->SetCategory(cat);
-            }
+        }
 
         if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))
             return ERROR;
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadBaseClassesFromDb(Context& ctx, ECClassR ecClass) const
-    {
+BentleyStatus SchemaReader::LoadBaseClassesFromDb(Context& ctx, ECClassR ecClass) const {
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT BaseClassId FROM [%s]." TABLE_ClassHasBaseClasses " s WHERE ClassId=? ORDER BY Ordinal", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -2514,42 +2286,36 @@ BentleyStatus SchemaReader::LoadBaseClassesFromDb(Context& ctx, ECClassR ecClass
     if (BE_SQLITE_OK != stmt->BindId(1, ecClass.GetId()))
         return ERROR;
 
-    //cache base class ids before loading base classes so that statement can be reused for fetching base class ids
+    // cache base class ids before loading base classes so that statement can be reused for fetching base class ids
     std::vector<ECClassId> baseClassIds;
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
+    while (stmt->Step() == BE_SQLITE_ROW) {
         ECClassId baseClassId = stmt->GetValueId<ECClassId>(0);
         BeAssert(baseClassId.IsValid());
         baseClassIds.push_back(baseClassId);
-        }
+    }
 
-    //release stmt so that it can be reused for loading base classes
+    // release stmt so that it can be reused for loading base classes
     stmt = nullptr;
 
-    for (ECClassId baseClassId : baseClassIds)
-        {
+    for (ECClassId baseClassId : baseClassIds) {
         ECClassCP baseClass = GetClass(ctx, baseClassId);
-        if (baseClass == nullptr)
-            {
+        if (baseClass == nullptr) {
             if (SchemaElementContainsUnknowns(TABLE_Class, baseClassId))
-                CacheSchemaElementWithUnknowns(TABLE_Class, ecClass.GetId());   // Base class contains newer unknown features and wasn't loaded, mark this child class to not load
+                CacheSchemaElementWithUnknowns(TABLE_Class, ecClass.GetId());  // Base class contains newer unknown features and wasn't loaded, mark this child class to not load
             return ERROR;
-            }
+        }
 
         if (ECObjectsStatus::Success != ecClass.AddBaseClass(*baseClass, false, false, false))
             return ERROR;
-        }
-
-    return SUCCESS;
     }
 
-
+    return SUCCESS;
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const
-    {
+BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const {
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT ClassId,Instance FROM [%s]." TABLE_CustomAttribute " WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -2560,8 +2326,7 @@ BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caCon
     if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
         return ERROR;
 
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
+    while (stmt->Step() == BE_SQLITE_ROW) {
         ECClassId caClassId = stmt->GetValueId<ECClassId>(0);
         ECClassCP caClass = GetClass(ctx, caClassId);
         if (caClass == nullptr)
@@ -2574,16 +2339,15 @@ BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caCon
             return ERROR;
         BeAssert(deserializedCa != nullptr);
         caConstainer.SetCustomAttribute(*deserializedCa);
-        }
+    }
 
     return SUCCESS;
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
-    {
+BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const {
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId FROM [%s]." TABLE_RelationshipConstraint " WHERE RelationshipClassId=? AND RelationshipEnd=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -2608,16 +2372,14 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
-    //uint32_t was persisted as int64 to not lose signed-ness.
-    const uint32_t multiplicityLowerLimit = (uint32_t) stmt->GetValueInt64(lowerLimitIx);
-    if (stmt->IsColumnNull(upperLimitIx))
-        {
-        //If upper limit  DB NULL, this means it is unbounded -> Use ctor that only takes lower limit
+    // uint32_t was persisted as int64 to not lose signed-ness.
+    const uint32_t multiplicityLowerLimit = (uint32_t)stmt->GetValueInt64(lowerLimitIx);
+    if (stmt->IsColumnNull(upperLimitIx)) {
+        // If upper limit  DB NULL, this means it is unbounded -> Use ctor that only takes lower limit
         constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit));
         BeAssert(constraint.GetMultiplicity().IsUpperLimitUnbounded());
-        }
-    else
-        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit, (uint32_t) stmt->GetValueInt64(upperLimitIx)));
+    } else
+        constraint.SetMultiplicity(RelationshipMultiplicity(multiplicityLowerLimit, (uint32_t)stmt->GetValueInt64(upperLimitIx)));
 
     constraint.SetIsPolymorphic(stmt->GetValueBoolean(isPolymorphicIx));
 
@@ -2628,34 +2390,27 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
     if (!stmt->IsColumnNull(abstractConstraintClassIdIx))
         abstractConstraintClassId = stmt->GetValueId<ECClassId>(abstractConstraintClassIdIx);
 
-    //release statement as we have read all information and so that child calls can reuse the same statement without repreparation.
+    // release statement as we have read all information and so that child calls can reuse the same statement without repreparation.
     stmt = nullptr;
 
-    if (abstractConstraintClassId.IsValid())
-        {
+    if (abstractConstraintClassId.IsValid()) {
         ECClassCP abstractConstraintClass = GetClass(ctx, abstractConstraintClassId);
-        if (abstractConstraintClass == nullptr)
-            {
+        if (abstractConstraintClass == nullptr) {
             BeAssert(false && "Could not load abstract constraint class or it is neither an entity class nor a relationship class");
             return ERROR;
-            }
+        }
 
-        if (abstractConstraintClass->IsEntityClass())
-            {
+        if (abstractConstraintClass->IsEntityClass()) {
             if (ECObjectsStatus::Success != constraint.SetAbstractConstraint(*abstractConstraintClass->GetEntityClassCP()))
                 return ERROR;
-            }
-        else if (abstractConstraintClass->IsRelationshipClass())
-            {
+        } else if (abstractConstraintClass->IsRelationshipClass()) {
             if (ECObjectsStatus::Success != constraint.SetAbstractConstraint(*abstractConstraintClass->GetRelationshipClassCP()))
                 return ERROR;
-            }
-        else
-            {
+        } else {
             BeAssert(false && "Should have been caught before");
             return ERROR;
-            }
         }
+    }
 
     if (SUCCESS != LoadRelationshipConstraintClassesFromDb(constraint, ctx, constraintId))
         return ERROR;
@@ -2664,13 +2419,12 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
         relationshipEnd == ECRelationshipEnd_Target ? SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint : SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint;
 
     return LoadCAFromDb(constraint, ctx, ECContainerId(constraintId), containerType);
-    }
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECRelationshipConstraintId constraintId) const
-    {
+BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECRelationshipConstraintId constraintId) const {
     CachedStatementPtr statement = GetCachedStatement(Utf8PrintfString("SELECT ClassId FROM [%s]." TABLE_RelationshipConstraintClass " WHERE ConstraintId=?", GetTableSpace().GetName().c_str()).c_str());
     if (statement == nullptr)
         return ERROR;
@@ -2678,48 +2432,39 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationsh
     if (BE_SQLITE_OK != statement->BindId(1, constraintId))
         return ERROR;
 
-    while (statement->Step() == BE_SQLITE_ROW)
-        {
+    while (statement->Step() == BE_SQLITE_ROW) {
         const ECClassId constraintClassId = statement->GetValueId<ECClassId>(0);
         ECClassCP constraintClass = GetClass(ctx, constraintClassId);
-        if (constraintClass == nullptr)
-            {
+        if (constraintClass == nullptr) {
             if (SchemaElementContainsUnknowns(TABLE_Class, constraintClassId))
-                CacheSchemaElementWithUnknowns(TABLE_Class, constraint.GetRelationshipClass().GetId());   // One or both constraint classes contain newer unknown features and weren't loaded, mark relationship class to not load
+                CacheSchemaElementWithUnknowns(TABLE_Class, constraint.GetRelationshipClass().GetId());  // One or both constraint classes contain newer unknown features and weren't loaded, mark relationship class to not load
             return ERROR;
-            }
-
-        if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass())
-            {
-            BeAssert(false && "Relationship constraint classes are expected to be entity classes.");
-            return ERROR;
-            }
-
-        if (constraintClass->IsEntityClass())
-            {
-            if (ECObjectsStatus::Success != constraint.AddClass(*constraintClass->GetEntityClassCP()))
-                return ERROR;
-            }
-        else if (constraintClass->IsRelationshipClass())
-            {
-            if (ECObjectsStatus::Success != constraint.AddClass(*constraintClass->GetRelationshipClassCP()))
-                return ERROR;
-            }
-        else
-            {
-            BeAssert(false && "Relationship constraint classes are expected to be entity classes or relationships.");
-            return ERROR;
-            }
         }
 
-    return SUCCESS;
+        if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass()) {
+            BeAssert(false && "Relationship constraint classes are expected to be entity classes.");
+            return ERROR;
+        }
+
+        if (constraintClass->IsEntityClass()) {
+            if (ECObjectsStatus::Success != constraint.AddClass(*constraintClass->GetEntityClassCP()))
+                return ERROR;
+        } else if (constraintClass->IsRelationshipClass()) {
+            if (ECObjectsStatus::Success != constraint.AddClass(*constraintClass->GetRelationshipClassCP()))
+                return ERROR;
+        } else {
+            BeAssert(false && "Relationship constraint classes are expected to be entity classes or relationships.");
+            return ERROR;
+        }
     }
+
+    return SUCCESS;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::LoadUnitsAndFormats(Context& ctx) const
-    {
+BentleyStatus SchemaReader::LoadUnitsAndFormats(Context& ctx) const {
     BeMutexHolder ecdbLock(GetECDbMutex());
 
     if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
@@ -2740,98 +2485,100 @@ BentleyStatus SchemaReader::LoadUnitsAndFormats(Context& ctx) const
         return ERROR;
 
     return ReadFormats(ctx);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECDbCR SchemaReader::GetECDb() const { return m_schemaManager.GetECDb(); }
+ECDbCR SchemaReader::GetECDb() const {
+    return m_schemaManager.GetECDb();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECDb& SchemaReader::GetECDbR() const { return const_cast<ECDb&>(m_schemaManager.GetECDb()); }
+ECDb& SchemaReader::GetECDbR() const {
+    return const_cast<ECDb&>(m_schemaManager.GetECDb());
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BeMutex& SchemaReader::GetECDbMutex() const { return m_schemaManager.GetECDb().GetImpl().GetMutex(); }
+BeMutex& SchemaReader::GetECDbMutex() const {
+    return m_schemaManager.GetECDb().GetImpl().GetMutex();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbTableSpace const& SchemaReader::GetTableSpace() const { return m_schemaManager.GetTableSpace(); }
+DbTableSpace const& SchemaReader::GetTableSpace() const {
+    return m_schemaManager.GetTableSpace();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-CachedStatementPtr SchemaReader::GetCachedStatement(Utf8CP sql) const { return GetECDb().GetImpl().GetCachedSqliteStatement(sql); }
+CachedStatementPtr SchemaReader::GetCachedStatement(Utf8CP sql) const {
+    return GetECDb().GetImpl().GetCachedSqliteStatement(sql);
+}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaReader::ClearCache() const { m_cache.Clear(); }
+void SchemaReader::ClearCache() const {
+    m_cache.Clear();
+}
 
-void SchemaReader::CacheSchemaElementWithUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const
-    {
-    if (auto iter = m_schemaElementsWithUnknowns.find(tableName); iter != m_schemaElementsWithUnknowns.end())
-        {
+void SchemaReader::CacheSchemaElementWithUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const {
+    if (auto iter = m_schemaElementsWithUnknowns.find(tableName); iter != m_schemaElementsWithUnknowns.end()) {
         iter->second.insert(elementId);
-        }
-    else
-        {
+    } else {
         bset<BeInt64Id> set;
         set.insert(elementId);
         m_schemaElementsWithUnknowns.emplace(tableName, set);
-        }
     }
+}
 
-bool SchemaReader::SchemaElementContainsUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const
-    {
+bool SchemaReader::SchemaElementContainsUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const {
     if (const auto iter = m_schemaElementsWithUnknowns.find(tableName); iter != m_schemaElementsWithUnknowns.end())
         return iter->second.find(elementId) != iter->second.end();
 
     return false;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaReader::Context::Postprocess(SchemaReader const& reader) const
-    {
-    for (ECN::NavigationECProperty* navProp : m_navProps)
-        {
+BentleyStatus SchemaReader::Context::Postprocess(SchemaReader const& reader) const {
+    for (ECN::NavigationECProperty* navProp : m_navProps) {
         if (!navProp->Verify())
             return ERROR;
 
-        if (!const_cast<ECN::ECRelationshipClassP>(navProp->GetRelationshipClass())->GetIsVerified())
-            {
+        if (!const_cast<ECN::ECRelationshipClassP>(navProp->GetRelationshipClass())->GetIsVerified()) {
             if (!navProp->GetRelationshipClass()->Verify())
                 return ERROR;
-            }
         }
+    }
 
     if (m_schemasToLoadCAInstancesFor.empty())
         return SUCCESS;
 
-    //load CAs for gatherer schemas now and in a separate context.
-    //delaying CA loading on schemas is necessary for the case where a schema defines a CA class
-    //and at the same time carries an instance of it.
+    // load CAs for gatherer schemas now and in a separate context.
+    // delaying CA loading on schemas is necessary for the case where a schema defines a CA class
+    // and at the same time carries an instance of it.
     Context ctx;
-    for (ECN::ECSchema* schema : m_schemasToLoadCAInstancesFor)
-        {
+    for (ECN::ECSchema* schema : m_schemasToLoadCAInstancesFor) {
         if (SUCCESS != reader.LoadCAFromDb(*schema, ctx, ECContainerId(schema->GetId()), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
             return ERROR;
-        }
+    }
 
     return ctx.Postprocess(reader);
-    }
+}
 //////////////////////////////SchemaReader::ReaderCache////////////////////////////////////
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void SchemaReader::ReaderCache::Clear() const
-    {
+void SchemaReader::ReaderCache::Clear() const {
     BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
     for (auto& schemaEntry : m_schemaCache) {
         ECSchemaOwnershipClaimAppData::RelinquishOwnership(m_ecdb, *(schemaEntry.second->m_cachedSchema));
@@ -2848,61 +2595,56 @@ void SchemaReader::ReaderCache::Clear() const
     m_formatCache.clear();
     m_areUnitsAndFormatsLoaded = false;
     m_legacyUnitsHelper.ClearCache();
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-SchemaDbEntry* SchemaReader::ReaderCache::Find(ECN::ECSchemaId id) const
-    {
+SchemaDbEntry* SchemaReader::ReaderCache::Find(ECN::ECSchemaId id) const {
     auto itor = m_schemaCache.find(id);
     if (itor != m_schemaCache.end())
         return itor->second.get();
 
     return nullptr;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(std::unique_ptr<SchemaDbEntry> entry) const
-    {
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<SchemaDbEntry> entry) const {
     BeAssert(entry != nullptr);
     const ECN::ECSchemaId id = entry->GetId();
     BeAssert(id.IsValid());
     auto itor = m_schemaCache.insert(std::make_pair(id, std::move(entry)));
     return itor.second;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassDbEntry* SchemaReader::ReaderCache::Find(ECN::ECClassId id) const
-    {
+ClassDbEntry* SchemaReader::ReaderCache::Find(ECN::ECClassId id) const {
     auto itor = m_classCache.find(id);
     if (itor != m_classCache.end())
         return itor->second.get();
 
     return nullptr;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(std::unique_ptr<ClassDbEntry> entry) const
-    {
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<ClassDbEntry> entry) const {
     BeAssert(entry != nullptr);
     const ECN::ECClassId id = entry->m_classId;
     BeAssert(id.IsValid());
     auto itor = m_classCache.insert(std::make_pair(id, std::move(entry)));
     return itor.second;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECN::ECClassId SchemaReader::ReaderCache::Find(Utf8StringCR schemaName, Utf8StringCR className) const
-    {
+ECN::ECClassId SchemaReader::ReaderCache::Find(Utf8StringCR schemaName, Utf8StringCR className) const {
     auto itorA = m_classIdCache.find(schemaName);
     if (itorA == m_classIdCache.end())
         return ECN::ECClassId();
@@ -2912,40 +2654,35 @@ ECN::ECClassId SchemaReader::ReaderCache::Find(Utf8StringCR schemaName, Utf8Stri
     if (itorB == classes.end())
         return ECN::ECClassId();
 
-
     return itorB->second;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const
-    {
+bool SchemaReader::ReaderCache::Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const {
     BeAssert(id.IsValid());
     BeAssert(!schemaName.empty());
     BeAssert(!className.empty());
     m_classIdCache[schemaName][className] = id;
     return true;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::HasClassEntry(ECN::ECClassId id) const
-    {
+bool SchemaReader::ReaderCache::HasClassEntry(ECN::ECClassId id) const {
     BeAssert(id.IsValid());
     return m_classCache.find(id) != m_classCache.end();
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void SchemaReader::ReaderCache::SetClassEntryToNull(ECN::ECClassId id) const
-    {
+void SchemaReader::ReaderCache::SetClassEntryToNull(ECN::ECClassId id) const {
     BeAssert(id.IsValid());
     m_classCache[id] = nullptr;
-
-    }
+}
 
 //***********************************************************************************
 // SchemaReader::LegacyUnitsHelper
@@ -2953,43 +2690,42 @@ void SchemaReader::ReaderCache::SetClassEntryToNull(ECN::ECClassId id) const
 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SchemaReader::LegacyUnitsHelper::AssignPersistenceUnitAndPresentationFormats(ECN::KindOfQuantityR koq, Utf8CP legacyPersUnit, bvector<Utf8CP> const& legacyPresUnits) const
-    {
+BentleyStatus SchemaReader::LegacyUnitsHelper::AssignPersistenceUnitAndPresentationFormats(ECN::KindOfQuantityR koq, Utf8CP legacyPersUnit, bvector<Utf8CP> const& legacyPresUnits) const {
     BeAssert(m_isInitialized && m_unitsSchema != nullptr && m_formatsSchema != nullptr);
 
-    if (SUCCESS != AddReferences(koq.GetSchema()))
-        {
-        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
-                   "Could not add Units and Formats schemas references to the KindOfQuantity's schema.", koq.GetFullName().c_str());
+    if (SUCCESS != AddReferences(koq.GetSchema())) {
+        LOG.errorv(
+            "Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+            "Could not add Units and Formats schemas references to the KindOfQuantity's schema.",
+            koq.GetFullName().c_str());
         return ERROR;
-        }
+    }
 
-    if (ECObjectsStatus::Success != koq.FromFUSDescriptors(legacyPersUnit, legacyPresUnits, *m_formatsSchema, *m_unitsSchema))
-        {
+    if (ECObjectsStatus::Success != koq.FromFUSDescriptors(legacyPersUnit, legacyPresUnits, *m_formatsSchema, *m_unitsSchema)) {
         Utf8String legacyPresUnitsString;
         bool isFirstPresUnit = true;
-        for (Utf8CP presUnit : legacyPresUnits)
-            {
+        for (Utf8CP presUnit : legacyPresUnits) {
             if (!isFirstPresUnit)
                 legacyPresUnitsString.append("; ");
 
             legacyPresUnitsString.append(presUnit);
             isFirstPresUnit = false;
-            }
-
-        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
-                   "Could not convert the legacy persistence '%s' and presentation units '%s'.", koq.GetFullName().c_str(), legacyPersUnit, legacyPresUnitsString.c_str());
-        return ERROR;
         }
 
-    return SUCCESS;
+        LOG.errorv(
+            "Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+            "Could not convert the legacy persistence '%s' and presentation units '%s'.",
+            koq.GetFullName().c_str(), legacyPersUnit, legacyPresUnitsString.c_str());
+        return ERROR;
     }
+
+    return SUCCESS;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const
-    {
+BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const {
     if (m_isInitialized)
         return SUCCESS;
 
@@ -2999,22 +2735,20 @@ BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const
         return SUCCESS;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT 1 FROM %s." TABLE_KindOfQuantity " LIMIT 1", m_tableSpace.GetName().c_str()).c_str()))
-        {
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT 1 FROM %s." TABLE_KindOfQuantity " LIMIT 1", m_tableSpace.GetName().c_str()).c_str())) {
         LOG.error("Legacy Units support (pre EC3.1 units): Failed to determine whether the file contains KindOfQuantities.");
         return ERROR;
-        }
+    }
 
     const DbResult stat = stmt.Step();
     // no KOQs in the file -> units and formats schemas are not deserialized
     if (BE_SQLITE_DONE == stat)
         return SUCCESS;
 
-    if (BE_SQLITE_ROW != stat)
-        {
+    if (BE_SQLITE_ROW != stat) {
         LOG.error("Legacy Units support (pre EC3.1 units): Failed to determine whether the file contains KindOfQuantities.");
         return ERROR;
-        }
+    }
 
     ECSchemaReadContextPtr schemaReadCtx = ECSchemaReadContext::CreateContext();
     schemaReadCtx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
@@ -3029,26 +2763,25 @@ BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const
 
     LOG.error("Legacy Units support (pre EC3.1 units): Failed to deserialize the Units or Formats ECSchemas from disk.");
     return ERROR;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SchemaReader::LegacyUnitsHelper::AddReferences(ECN::ECSchemaCR koqSchema) const
-    {
+BentleyStatus SchemaReader::LegacyUnitsHelper::AddReferences(ECN::ECSchemaCR koqSchema) const {
     BeAssert(m_unitsSchema != nullptr && m_formatsSchema != nullptr);
     ECSchemaR koqSchemaR = const_cast<ECSchemaR>(koqSchema);
     ECObjectsStatus stat = koqSchemaR.AddReferencedSchema(*m_unitsSchema);
-    //if it is referenced already, don't treat as error
+    // if it is referenced already, don't treat as error
     if (ECObjectsStatus::Success != stat && ECObjectsStatus::NamedItemAlreadyExists != stat)
         return ERROR;
 
     stat = koqSchemaR.AddReferencedSchema(*m_formatsSchema);
-    //if it is referenced already, don't treat as error
+    // if it is referenced already, don't treat as error
     if (ECObjectsStatus::Success != stat && ECObjectsStatus::NamedItemAlreadyExists != stat)
         return ERROR;
 
     return SUCCESS;
-    }
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

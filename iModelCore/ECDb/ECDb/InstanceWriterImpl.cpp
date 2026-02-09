@@ -2,10 +2,11 @@
  * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
-#include "ECDbPch.h"
 #include <ECDb/InstanceWriter.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
+
+#include "ECDbPch.h"
 // #include <Napi/napi.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -52,13 +53,15 @@ ECSqlStatus BindContext::NotifyUserProperty(Utf8CP name, BeJsConst val, CachedWr
     auto handler = m_options.GetUserPropertyHandler();
     ECSqlStatus rc;
     if (handler != nullptr) {
-        auto status =  handler(name, val, [&](Utf8CP name) -> std::optional<PropertyBinder> {
+        auto status = handler(name, val, [&](Utf8CP name) -> std::optional<PropertyBinder> {
             auto prop = stmt.FindBinder(name);
             if (prop != nullptr) {
                 return PropertyBinder(prop->GetProperty(), prop->GetBinder());
             }
             return std::nullopt; }, rc);
-        if (status == PropertyHandlerResult::Handled) { return rc; }
+        if (status == PropertyHandlerResult::Handled) {
+            return rc;
+        }
     }
     return ECSqlStatus::Success;
 }
@@ -291,7 +294,6 @@ std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key) {
 CachedWriteStatement* MruStatementCache::TryGet(CacheKey key) {
     auto it = m_cache.find(key);
     if (it == m_cache.end()) {
-
         auto cachedStmt = Prepare(key);
         if (cachedStmt == nullptr)
             return nullptr;
@@ -401,7 +403,6 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
         }
         return binder.BindInt64(val.asInt64());
     } else if (type == ECN::PRIMITIVETYPE_Binary) {
-
         if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !val.isBinary()) {
             BeGuid guid;
             if (guid.FromString(val.asCString()) != SUCCESS) {
@@ -562,27 +563,26 @@ ECSqlStatus Impl::BindDataProperty(BindContext& ctx, ECPropertyCR propMap, IECSq
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 ECSqlStatus Impl::BindSystemProperty(BindContext& ctx, SystemPropertyMap const& prop, IECSqlBinder& binder, BeJsConst val) {
-
     switch (prop.GetType()) {
-    case PropertyMap::Type::ECInstanceId:
+        case PropertyMap::Type::ECInstanceId:
 
-        return ECSqlStatus::Success;
+            return ECSqlStatus::Success;
 
-    case PropertyMap::Type::ConstraintECInstanceId: {
-        if (!val.isNumeric() && !val.isString()) {
-            ctx.SetError("Expected id for ECInstanceId property, got %s", val.Stringify().c_str());
-            return ECSqlStatus(BE_SQLITE_ERROR);
+        case PropertyMap::Type::ConstraintECInstanceId: {
+            if (!val.isNumeric() && !val.isString()) {
+                ctx.SetError("Expected id for ECInstanceId property, got %s", val.Stringify().c_str());
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            }
+            return binder.BindId(val.GetId64<ECInstanceId>());
         }
-        return binder.BindId(val.GetId64<ECInstanceId>());
-    }
-    case PropertyMap::Type::ECClassId:
-    case PropertyMap::Type::ConstraintECClassId: {
-        if (!val.isNumeric() && !val.isString()) {
-            ctx.SetError("Expected id for ECClassId property, got %s", val.Stringify().c_str());
-            return ECSqlStatus(BE_SQLITE_ERROR);
+        case PropertyMap::Type::ECClassId:
+        case PropertyMap::Type::ConstraintECClassId: {
+            if (!val.isNumeric() && !val.isString()) {
+                ctx.SetError("Expected id for ECClassId property, got %s", val.Stringify().c_str());
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            }
+            return binder.BindId(val.GetId64<ECClassId>());
         }
-        return binder.BindId(val.GetId64<ECClassId>());
-    }
     };
     BeAssert(false && "Unknown property type");
     return ECSqlStatus(BE_SQLITE_ERROR);
@@ -686,18 +686,18 @@ ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropert
 }
 
 namespace {
-    bool IsHexadecimalOrDecimal(Utf8StringCR str) {
-        if (std::all_of(str.begin(), str.end(), ::isdigit))
-            return true;
+bool IsHexadecimalOrDecimal(Utf8StringCR str) {
+    if (std::all_of(str.begin(), str.end(), ::isdigit))
+        return true;
 
-        if (str.size() < 3 || str[0] != '0' || (str[1] != 'x' && str[1] != 'X'))
-            return false;
+    if (str.size() < 3 || str[0] != '0' || (str[1] != 'x' && str[1] != 'X'))
+        return false;
 
-        return std::all_of(str.begin() + 2, str.end(), [](char c) {
-            return std::isxdigit(static_cast<unsigned char>(c));
-        });
-    }
+    return std::all_of(str.begin() + 2, str.end(), [](char c) {
+        return std::isxdigit(static_cast<unsigned char>(c));
+    });
 }
+}  // namespace
 
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -979,10 +979,10 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
                 if (bindStatus != ECSqlStatus::Success) {
                     return FOREACH_ABORT;
                 }
-                return FOREACH_CONTINUE; // continue
+                return FOREACH_CONTINUE;  // continue
             }
             if (binder->GetPropertyMap().GetType() == PropertyMap::Type::ECInstanceId) {
-                return false; // skip ECInstanceId property, we will bind it later
+                return false;  // skip ECInstanceId property, we will bind it later
             }
             if (auto canBind = ctx.GetOptions().GetCanBindHandler()) {
                 if (!canBind(binder->GetProperty())) {
@@ -1099,7 +1099,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                     if (bindStatus != ECSqlStatus::Success) {
                         return FOREACH_ABORT;
                     }
-                    return FOREACH_CONTINUE; // continue
+                    return FOREACH_CONTINUE;  // continue
                 }
 
                 if (auto canBind = ctx.GetOptions().GetCanBindHandler()) {
@@ -1199,7 +1199,9 @@ InstanceWriter::InstanceWriter(ECDbCR ecdb, uint32_t cacheSize) : m_pImpl(new Im
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::~InstanceWriter() { delete m_pImpl; }
+InstanceWriter::~InstanceWriter() {
+    delete m_pImpl;
+}
 
 //----------------------------------------------------------------------------------
 // @bsimethod

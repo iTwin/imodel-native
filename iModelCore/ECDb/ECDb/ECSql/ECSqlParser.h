@@ -1,80 +1,76 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "SelectStatementExp.h"
-#include "InsertStatementExp.h"
-#include "UpdateStatementExp.h"
-#include "DeleteStatementExp.h"
-#include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
-#include "WindowFunctionExp.h"
+#include "DeleteStatementExp.h"
+#include "InsertStatementExp.h"
+#include "PragmaStatementExp.h"
+#include "SelectStatementExp.h"
+#include "UpdateStatementExp.h"
 #include "ValueCreationFuncExp.h"
+#include "WindowFunctionExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECSqlParseContext final
-    {
-public:
+struct ECSqlParseContext final {
+   public:
     typedef bmap<ECN::ECClassId, ECN::ECClassCP> ClassListById;
-    struct ParseArg
-        {
-        enum class Type
-            {
+    struct ParseArg {
+        enum class Type {
             RangeClass,
             UnionOrderBy
-            };
-
-        private:
-            Type m_type;
-
-        protected:
-            explicit ParseArg(Type type) :m_type(type) {}
-
-        public:
-            virtual ~ParseArg() {}
-            Type GetType() const { return m_type; }
         };
 
-    struct RangeClassArg final : ParseArg
-        {
-        private:
-            std::vector<RangeClassInfo> const& m_arg;
+       private:
+        Type m_type;
 
-        public:
-            explicit RangeClassArg(std::vector<RangeClassInfo> const& arg) : ParseArg(Type::RangeClass), m_arg(arg) {}
-            ~RangeClassArg() {};
-            std::vector<RangeClassInfo> const& GetRangeClassInfos() const { return m_arg; }
-        };
+       protected:
+        explicit ParseArg(Type type) : m_type(type) {}
 
-    struct UnionOrderByArg final : ParseArg
-        {
-        private:
-            std::vector<SingleSelectStatementExp const*> const& m_arg;
-        public:
-            explicit UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg) : ParseArg(Type::UnionOrderBy), m_arg(arg) {}
-            ~UnionOrderByArg() {}
-            std::vector<SingleSelectStatementExp const*> const& GetUnionClauses() const { return m_arg; }
-        };
+       public:
+        virtual ~ParseArg() {}
+        Type GetType() const { return m_type; }
+    };
+
+    struct RangeClassArg final : ParseArg {
+       private:
+        std::vector<RangeClassInfo> const& m_arg;
+
+       public:
+        explicit RangeClassArg(std::vector<RangeClassInfo> const& arg) : ParseArg(Type::RangeClass), m_arg(arg) {}
+        ~RangeClassArg() {};
+        std::vector<RangeClassInfo> const& GetRangeClassInfos() const { return m_arg; }
+    };
+
+    struct UnionOrderByArg final : ParseArg {
+       private:
+        std::vector<SingleSelectStatementExp const*> const& m_arg;
+
+       public:
+        explicit UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg) : ParseArg(Type::UnionOrderBy), m_arg(arg) {}
+        ~UnionOrderByArg() {}
+        std::vector<SingleSelectStatementExp const*> const& GetUnionClauses() const { return m_arg; }
+    };
 
     struct ClassViewPrepareStack final {
-        private:
-            ECSqlParseContext& m_ctx;
+       private:
+        ECSqlParseContext& m_ctx;
 
-        public:
-            ClassViewPrepareStack(ECSqlParseContext& ctx, ECN::ECClassCR viewClass);
-            bool IsOnStack(ECN::ECClassCR viewClass) const;
-            ~ClassViewPrepareStack();
-            Utf8String GetStackAsString() const;
+       public:
+        ClassViewPrepareStack(ECSqlParseContext& ctx, ECN::ECClassCR viewClass);
+        bool IsOnStack(ECN::ECClassCR viewClass) const;
+        ~ClassViewPrepareStack();
+        Utf8String GetStackAsString() const;
     };
     friend struct ClassViewPrepareStack;
 
-private:
+   private:
     ECDbCR m_ecdb;
     IssueDataSource const& m_issues;
     bool m_deferFinalize;
@@ -88,28 +84,26 @@ private:
     std::vector<Utf8String> m_attachedTableSpaceCache;
     bool m_isAttachedTableSpaceCacheSetup = false;
 
-    std::vector<Utf8String> const& GetAttachedTableSpaces()
-        {
-        if (!m_isAttachedTableSpaceCacheSetup)
-            {
+    std::vector<Utf8String> const& GetAttachedTableSpaces() {
+        if (!m_isAttachedTableSpaceCacheSetup) {
             m_isAttachedTableSpaceCacheSetup = true;
-            if (SUCCESS != DbUtilities::GetTableSpaces(m_attachedTableSpaceCache, m_ecdb, true))
-                {
+            if (SUCCESS != DbUtilities::GetTableSpaces(m_attachedTableSpaceCache, m_ecdb, true)) {
                 BeAssert(false);
-                }
             }
+        }
 
         return m_attachedTableSpaceCache;
-        }
-public:
-    ECSqlParseContext(ECDbCR ecdb, IssueDataSource const& issues) : m_ecdb(ecdb), m_issues(issues),m_deferFinalize(false) {}
+    }
+
+   public:
+    ECSqlParseContext(ECDbCR ecdb, IssueDataSource const& issues) : m_ecdb(ecdb), m_issues(issues), m_deferFinalize(false) {}
     BentleyStatus FinalizeParsing(Exp& rootExp);
     void PushArg(std::unique_ptr<ParseArg>);
     ParseArg const* CurrentArg() const;
     void PopArg();
 
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias,
-        Utf8StringCR className, ECSqlType, bool isPolymorphicExp, connectivity::OSQLParseNode const& node);
+                                  Utf8StringCR className, ECSqlType, bool isPolymorphicExp, connectivity::OSQLParseNode const& node);
     BentleyStatus GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     BentleyStatus GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();
@@ -119,47 +113,44 @@ public:
     ECDbCR GetECDb() const { return m_ecdb; }
     void SetDeferFinalize(bool defer) { m_deferFinalize = defer; }
     bool GetDeferFinalize() const { return m_deferFinalize; }
-    };
+};
 
 //=======================================================================================
-//!The name convention here is different as parse_<parser_rule>() style naming is used
-//! so that it easy to lookup rule corresponding to the function that parsing it.
+//! The name convention here is different as parse_<parser_rule>() style naming is used
+//!  so that it easy to lookup rule corresponding to the function that parsing it.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECSqlParser final
-    {
-private:
+struct ECSqlParser final {
+   private:
     //=======================================================================================
     // Creates a context on construction and deletes the context on destruction
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct ScopedContext final
-        {
-    private:
+    struct ScopedContext final {
+       private:
         ECSqlParser const& m_parser;
-    public:
-        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IssueDataSource const& issues, const ECSqlParser* parentParser) : m_parser(parser)
-            {
+
+       public:
+        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IssueDataSource const& issues, const ECSqlParser* parentParser) : m_parser(parser) {
             if (parentParser)
                 m_parser.m_context = parentParser->m_context;
             else
                 m_parser.m_context = std::make_shared<ECSqlParseContext>(ecdb, issues);
-            }
+        }
 
         ~ScopedContext() { m_parser.m_context = nullptr; }
-        };
-
+    };
 
     mutable std::shared_ptr<ECSqlParseContext> m_context;
 
-    //root nodes
+    // root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseSelectStatement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseUpdateStatementSearched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParsePragmaStatement(std::unique_ptr<PragmaStatementExp>&, connectivity::OSQLParseNode const&) const;
 
-    //Common expressions
+    // Common expressions
     BentleyStatus ParseAllOrDistinctToken(SqlSetQuantifier&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseAllToken(bool& isAll, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseAnyOrAllOrSomeToken(SqlCompareListType&, connectivity::OSQLParseNode const*) const;
@@ -196,7 +187,7 @@ private:
 
     BentleyStatus ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>&, connectivity::OSQLParseNode const*, bool const&) const;
     BentleyStatus ParseCTE(std::unique_ptr<CommonTableExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseCommonTableBlockName(std::unique_ptr<CommonTableBlockNameExp> &exp, connectivity::OSQLParseNode const &tableNode) const;
+    BentleyStatus ParseCommonTableBlockName(std::unique_ptr<CommonTableBlockNameExp>& exp, connectivity::OSQLParseNode const& tableNode) const;
 
     BentleyStatus ParseHavingClause(std::unique_ptr<HavingExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseInPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
@@ -214,7 +205,7 @@ private:
     BentleyStatus ParseLimitOffsetClause(std::unique_ptr<LimitOffsetExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseLiteral(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const&) const;
 
-    BentleyStatus ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>&, connectivity::OSQLParseNode const&, bool ) const;
+    BentleyStatus ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>&, connectivity::OSQLParseNode const&, bool) const;
 
     BentleyStatus ParseNamedColumnsJoin(std::unique_ptr<NamedPropertiesJoinExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNotToken(bool& isNot, connectivity::OSQLParseNode const*) const;
@@ -257,10 +248,10 @@ private:
     BentleyStatus ParseValuesCommalist(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseWindowFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp> &, connectivity::OSQLParseNode const *) const;
+    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseTableValuedFunction(std::unique_ptr<TableValuedFunctionExp>&, connectivity::OSQLParseNode const&) const;
-    BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
-    BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
+    BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp>& valueExp, connectivity::OSQLParseNode const* parseNode) const;
+    BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp>& valueExp, connectivity::OSQLParseNode const* parseNode) const;
     BentleyStatus ParseWindowClause(std::unique_ptr<WindowFunctionClauseExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowDefinitionListExp(std::unique_ptr<WindowDefinitionListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowDefinitionExp(std::unique_ptr<WindowDefinitionExp>&, connectivity::OSQLParseNode const*) const;
@@ -270,7 +261,7 @@ private:
     BentleyStatus ParseLeadOrLagFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOptLeadOrLagFunctionArguments(std::unique_ptr<FunctionCallExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFirstOrLastValueFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseNthValueFunction(std::unique_ptr<ValueExp>&exp, connectivity::OSQLParseNode const* parseNode) const;
+    BentleyStatus ParseNthValueFunction(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const* parseNode) const;
     BentleyStatus ParseWindowSpecification(std::unique_ptr<WindowSpecification>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>&, connectivity::OSQLParseNode const*) const;
@@ -283,19 +274,23 @@ private:
     BentleyStatus ParseWindowFrameBetween(std::unique_ptr<WindowFrameBetweenExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFirstWindowFrameBound(std::unique_ptr<FirstWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
-    BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
+    BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const*) const;
 
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     static BentleyStatus ParseALLorONLY(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
-    IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
+    IssueDataSource const& Issues() const {
+        BeAssert(m_context != nullptr);
+        return m_context->Issues();
+    }
     static bool IsPredicate(connectivity::OSQLParseNode const&);
     static Utf8CP SqlDataTypeKeywordToString(sal_uInt32 sqlKeywordId);
-public:
+
+   public:
     ECSqlParser() {}
     ~ECSqlParser() {}
 
     std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, IssueDataSource const&, const ECSqlParser* parentParser = nullptr) const;
-    };
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1,24 +1,21 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct ECSqlToSqlGenerationTests : ECDbTestFixture
-{
-void AssertFrequencyCount(Utf8CP ecsql, std::vector<std::pair<Utf8CP, int>> substringCountPairs, bool removeUnnecessaryJoinForClassIds = true)
-    {
-    m_ecdb.GetECSqlConfig().SetOptimizationOption(OptimizationOptions::OptimizeJoinForClassIds, removeUnnecessaryJoinForClassIds);
-    Utf8String sql = GetHelper().ECSqlToSql(ecsql);
-    for (auto substringCountPair : substringCountPairs)
-        {
-        EXPECT_EQ(substringCountPair.second, GetHelper().GetFrequencyCount(sql, substringCountPair.first)) << substringCountPair.first << " count should be " << substringCountPair.second
-            << " in converted query with removeUnnecessaryJoinForClassIds flag set to " << (removeUnnecessaryJoinForClassIds ? "true" : "false")
-            << "\nECSql: " << ecsql << "\nSql:   " << sql.c_str();
+struct ECSqlToSqlGenerationTests : ECDbTestFixture {
+    void AssertFrequencyCount(Utf8CP ecsql, std::vector<std::pair<Utf8CP, int>> substringCountPairs, bool removeUnnecessaryJoinForClassIds = true) {
+        m_ecdb.GetECSqlConfig().SetOptimizationOption(OptimizationOptions::OptimizeJoinForClassIds, removeUnnecessaryJoinForClassIds);
+        Utf8String sql = GetHelper().ECSqlToSql(ecsql);
+        for (auto substringCountPair : substringCountPairs) {
+            EXPECT_EQ(substringCountPair.second, GetHelper().GetFrequencyCount(sql, substringCountPair.first)) << substringCountPair.first << " count should be " << substringCountPair.second
+                                                                                                               << " in converted query with removeUnnecessaryJoinForClassIds flag set to " << (removeUnnecessaryJoinForClassIds ? "true" : "false")
+                                                                                                               << "\nECSql: " << ecsql << "\nSql:   " << sql.c_str();
         }
     }
 };
@@ -26,10 +23,9 @@ void AssertFrequencyCount(Utf8CP ecsql, std::vector<std::pair<Utf8CP, int>> subs
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite)
-    {
+TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IndexOnSharedColumnIsUsedBySQLite.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                                              R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                   <ECEntityClass typeName="Parent" modifier="None">
                     <ECCustomAttributes>
@@ -65,87 +61,86 @@ TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite)
                     <ECProperty propertyName="PS3" typeName="string"/>
                   </ECEntityClass>
             </ECSchema>)xml")));
-    
+
     const int detailColumn = 3;
     m_ecdb.SaveChanges();
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
-    ASSERT_STREQ("SEARCH main.ts_Parent USING COVERING INDEX ix_parent_ps1ps2 (ps1=?)", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SEARCH main.ts_Parent USING COVERING INDEX ix_parent_ps1ps2 (ps1=?)", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
 
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps2=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SCAN main.ts_Parent USING COVERING INDEX ix_parent_ps1ps2", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps2=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SCAN main.ts_Parent USING COVERING INDEX ix_parent_ps1ps2", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
 
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps3=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SEARCH main.ts_Parent USING COVERING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps3=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SEARCH main.ts_Parent USING COVERING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
 
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps2=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SEARCH main.ts_Parent USING COVERING INDEX ix_parent_ps1ps2 (ps1=? AND ps2=?)", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps2=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SEARCH main.ts_Parent USING COVERING INDEX ix_parent_ps1ps2 (ps1=? AND ps2=?)", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
 
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps2=? and ps3=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps2=? and ps3=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
 
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps3=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps3=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
 
     {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps2=? and ps3=?"));
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
-    ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
-    ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
+        ECSqlStatement ecsqlStmt;
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "select null from ts.parent where ps1=? and ps2=? and ps3=?"));
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
+        ASSERT_STREQ("SEARCH main.ts_Parent USING INDEX ix_parent_ps3 (ps3=?)", sqlStmt.GetValueText(detailColumn));
+        ASSERT_EQ(BE_SQLITE_DONE, sqlStmt.Step());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
-    {
+TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnCasting.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                                       R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
           <ECEntityClass typeName="Parent" modifier="none">
               <ECProperty propertyName="Name" typeName="string" />
@@ -192,19 +187,20 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
                  GetHelper().ECSqlToSql("SELECT D,S,Parent.Id,Parent.RelECClassId FROM ts.Child").c_str());
 
     EXPECT_STREQ(Utf8PrintfString("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId] "
-        "FROM (SELECT [ts_Child].[Id] ECInstanceId,[ts_Child].[ps4] ECClassId,[ts_Child].[ps3] SourceECInstanceId,%s SourceECClassId,[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId "
-        "FROM [main].[ts_Child] WHERE [ts_Child].[ps3] IS NOT NULL AND [ts_Child].[ps4]=%s AND [ts_Child].[ECClassId] IN "
-        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [Rel]", parentClassId.ToString().c_str(), relClassId.ToString().c_str(), childClassId.ToString().c_str()).c_str(),
+                                  "FROM (SELECT [ts_Child].[Id] ECInstanceId,[ts_Child].[ps4] ECClassId,[ts_Child].[ps3] SourceECInstanceId,%s SourceECClassId,[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId "
+                                  "FROM [main].[ts_Child] WHERE [ts_Child].[ps3] IS NOT NULL AND [ts_Child].[ps4]=%s AND [ts_Child].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [Rel]",
+                                  parentClassId.ToString().c_str(), relClassId.ToString().c_str(), childClassId.ToString().c_str())
+                     .c_str(),
                  GetHelper().ECSqlToSql("SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel").c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsNormalRelationships)
-    {
+TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsNormalRelationships) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnConstraints.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                                           R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
         <ECEntityClass typeName="Base" modifier="none">
             <ECCustomAttributes>
@@ -281,31 +277,36 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsNormalRelationsh
     ASSERT_TRUE(catHasMouseClassId.IsValid());
 
     EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBone].[TargetECInstanceId],[DogHasBone].[TargetECClassId] FROM "
-        "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps2] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,%s TargetECClassId "
-        "FROM [main].[ts_Base] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ps2]=%s AND [ts_Base].[ECClassId] IN "
-        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBone]", boneClassId.ToString().c_str(), dogHasBoneClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
+                                  "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps2] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,%s TargetECClassId "
+                                  "FROM [main].[ts_Base] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ps2]=%s AND [ts_Base].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBone]",
+                                  boneClassId.ToString().c_str(), dogHasBoneClassId.ToString().c_str(), dogClassId.ToString().c_str())
+                     .c_str(),
                  GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBone").c_str());
 
     EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBall].[TargetECInstanceId],[DogHasBall].[TargetECClassId] FROM "
-        "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps4] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps3] TargetECInstanceId,[ts_Ball].[ECClassId] TargetECClassId "
-        "FROM [main].[ts_Base] INNER JOIN [main].[ts_Ball] ON [ts_Ball].[Id]=[ts_Base].[ps3] WHERE [ts_Base].[ps3] IS NOT NULL AND [ts_Base].[ps4]=%s AND [ts_Base].[ECClassId] IN "
-        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBall]", dogHasBallClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
+                                  "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps4] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps3] TargetECInstanceId,[ts_Ball].[ECClassId] TargetECClassId "
+                                  "FROM [main].[ts_Base] INNER JOIN [main].[ts_Ball] ON [ts_Ball].[Id]=[ts_Base].[ps3] WHERE [ts_Base].[ps3] IS NOT NULL AND [ts_Base].[ps4]=%s AND [ts_Base].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBall]",
+                                  dogHasBallClassId.ToString().c_str(), dogClassId.ToString().c_str())
+                     .c_str(),
                  GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBall").c_str());
 
     EXPECT_STREQ(Utf8PrintfString("SELECT [CatHasMouse].[TargetECInstanceId],[CatHasMouse].[TargetECClassId] FROM "
-        "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps2] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,[_ReferencedEnd].[ECClassId] TargetECClassId "
-        "FROM [main].[ts_Base] INNER JOIN [main].[ts_Base] _ReferencedEnd ON [_ReferencedEnd].[Id]=[ts_Base].[ps1] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ps2]=%s AND [ts_Base].[ECClassId] IN "
-        "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [CatHasMouse]", catHasMouseClassId.ToString().c_str(), catClassId.ToString().c_str()).c_str(),
+                                  "(SELECT [ts_Base].[Id] ECInstanceId,[ts_Base].[ps2] ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,[_ReferencedEnd].[ECClassId] TargetECClassId "
+                                  "FROM [main].[ts_Base] INNER JOIN [main].[ts_Base] _ReferencedEnd ON [_ReferencedEnd].[Id]=[ts_Base].[ps1] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ps2]=%s AND [ts_Base].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [CatHasMouse]",
+                                  catHasMouseClassId.ToString().c_str(), catClassId.ToString().c_str())
+                     .c_str(),
                  GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.CatHasMouse").c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsSealedRelationships)
-    {
+TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsSealedRelationships) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnConstraintsSealedRelationships.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                                                              R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
             <ECEntityClass typeName="Base" modifier="none">
                 <ECCustomAttributes>
@@ -363,50 +364,55 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnConstraintsSealedRelationsh
             </ECRelationshipClass>
         </ECSchema>)xml")));
 
-        ECClassId dogClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Dog");
-        ASSERT_TRUE(dogClassId.IsValid());
-    
-        ECClassId catClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Cat");
-        ASSERT_TRUE(catClassId.IsValid());
-    
-        ECClassId boneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Bone");
-        ASSERT_TRUE(boneClassId.IsValid());
-    
-        ECClassId dogHasBoneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBone");
-        ASSERT_TRUE(dogHasBoneClassId.IsValid());
-    
-        ECClassId dogHasBallClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBall");
-        ASSERT_TRUE(dogHasBallClassId.IsValid());
-    
-        ECClassId catHasMouseClassId = m_ecdb.Schemas().GetClassId("TestSchema", "CatHasMouse");
-        ASSERT_TRUE(catHasMouseClassId.IsValid());
-    
-        EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBone].[TargetECInstanceId],[DogHasBone].[TargetECClassId] FROM "
-            "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,%s TargetECClassId "
-            "FROM [main].[ts_Base] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ECClassId] IN "
-            "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBone]", dogHasBoneClassId.ToString().c_str(), boneClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
-                     GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBone").c_str());
-    
-        EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBall].[TargetECInstanceId],[DogHasBall].[TargetECClassId] FROM "
-            "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps2] TargetECInstanceId,[ts_Ball].[ECClassId] TargetECClassId "
-            "FROM [main].[ts_Base] INNER JOIN [main].[ts_Ball] ON [ts_Ball].[Id]=[ts_Base].[ps2] WHERE [ts_Base].[ps2] IS NOT NULL AND [ts_Base].[ECClassId] IN "
-            "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBall]", dogHasBallClassId.ToString().c_str(), dogClassId.ToString().c_str()).c_str(),
-                     GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBall").c_str());
-    
-        EXPECT_STREQ(Utf8PrintfString("SELECT [CatHasMouse].[TargetECInstanceId],[CatHasMouse].[TargetECClassId] FROM "
-            "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,[_ReferencedEnd].[ECClassId] TargetECClassId "
-            "FROM [main].[ts_Base] INNER JOIN [main].[ts_Base] _ReferencedEnd ON [_ReferencedEnd].[Id]=[ts_Base].[ps1] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ECClassId] IN "
-            "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [CatHasMouse]", catHasMouseClassId.ToString().c_str(), catClassId.ToString().c_str()).c_str(),
-                     GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.CatHasMouse").c_str());
-    }
+    ECClassId dogClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Dog");
+    ASSERT_TRUE(dogClassId.IsValid());
+
+    ECClassId catClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Cat");
+    ASSERT_TRUE(catClassId.IsValid());
+
+    ECClassId boneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Bone");
+    ASSERT_TRUE(boneClassId.IsValid());
+
+    ECClassId dogHasBoneClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBone");
+    ASSERT_TRUE(dogHasBoneClassId.IsValid());
+
+    ECClassId dogHasBallClassId = m_ecdb.Schemas().GetClassId("TestSchema", "DogHasBall");
+    ASSERT_TRUE(dogHasBallClassId.IsValid());
+
+    ECClassId catHasMouseClassId = m_ecdb.Schemas().GetClassId("TestSchema", "CatHasMouse");
+    ASSERT_TRUE(catHasMouseClassId.IsValid());
+
+    EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBone].[TargetECInstanceId],[DogHasBone].[TargetECClassId] FROM "
+                                  "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,%s TargetECClassId "
+                                  "FROM [main].[ts_Base] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBone]",
+                                  dogHasBoneClassId.ToString().c_str(), boneClassId.ToString().c_str(), dogClassId.ToString().c_str())
+                     .c_str(),
+                 GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBone").c_str());
+
+    EXPECT_STREQ(Utf8PrintfString("SELECT [DogHasBall].[TargetECInstanceId],[DogHasBall].[TargetECClassId] FROM "
+                                  "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps2] TargetECInstanceId,[ts_Ball].[ECClassId] TargetECClassId "
+                                  "FROM [main].[ts_Base] INNER JOIN [main].[ts_Ball] ON [ts_Ball].[Id]=[ts_Base].[ps2] WHERE [ts_Base].[ps2] IS NOT NULL AND [ts_Base].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [DogHasBall]",
+                                  dogHasBallClassId.ToString().c_str(), dogClassId.ToString().c_str())
+                     .c_str(),
+                 GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.DogHasBall").c_str());
+
+    EXPECT_STREQ(Utf8PrintfString("SELECT [CatHasMouse].[TargetECInstanceId],[CatHasMouse].[TargetECClassId] FROM "
+                                  "(SELECT [ts_Base].[Id] ECInstanceId,%s ECClassId,[ts_Base].[Id] SourceECInstanceId,[ts_Base].[ECClassId] SourceECClassId,[ts_Base].[ps1] TargetECInstanceId,[_ReferencedEnd].[ECClassId] TargetECClassId "
+                                  "FROM [main].[ts_Base] INNER JOIN [main].[ts_Base] _ReferencedEnd ON [_ReferencedEnd].[Id]=[ts_Base].[ps1] WHERE [ts_Base].[ps1] IS NOT NULL AND [ts_Base].[ECClassId] IN "
+                                  "(SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [CatHasMouse]",
+                                  catHasMouseClassId.ToString().c_str(), catClassId.ToString().c_str())
+                     .c_str(),
+                 GetHelper().ECSqlToSql("SELECT TargetECInstanceId, TargetECClassId FROM ts.CatHasMouse").c_str());
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, LinkTableSharedColumnCasting)
-    {
+TEST_F(ECSqlToSqlGenerationTests, LinkTableSharedColumnCasting) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnCasting.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                                                       R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
           <ECEntityClass typeName="Parent" modifier="none">
               <ECProperty propertyName="Name" typeName="string" />
@@ -440,7 +446,6 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableSharedColumnCasting)
     ECClassId childClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Child");
     ASSERT_TRUE(childClassId.IsValid());
 
-
     EXPECT_STREQ(Utf8PrintfString("INSERT INTO [ts_Rel] ([Id],[SourceId],[TargetId],[ps1],ECClassId) VALUES (:_ecdb_ecsqlparam_id_col1,:_ecdb_ecsqlparam_ix1_col1,:_ecdb_ecsqlparam_ix2_col1,:_ecdb_ecsqlparam_ix3_col1,%s)", relClassId.ToString().c_str()).c_str(),
                  GetHelper().ECSqlToSql("INSERT INTO ts.Rel(SourceECInstanceId,TargetECInstanceId,Name) VALUES(?,?,?)").c_str());
 
@@ -449,13 +454,12 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableSharedColumnCasting)
 
     EXPECT_STREQ(Utf8PrintfString("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId],[Rel].[ps1] FROM (SELECT [ts_Rel].[Id] [ECInstanceId],[ts_Rel].[ECClassId],[ts_Rel].[SourceId] [SourceECInstanceId],%s [SourceECClassId],[ts_Rel].[TargetId] [TargetECInstanceId],%s [TargetECClassId],[ps1] FROM [main].[ts_Rel]) [Rel]", parentClassId.ToString().c_str(), childClassId.ToString().c_str()).c_str(),
                  GetHelper().ECSqlToSql("SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId,Name FROM ts.Rel").c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, OptimisedJoins)
-    {
+TEST_F(ECSqlToSqlGenerationTests, OptimisedJoins) {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="RoadRailPhysical" alias="rrphys" version="03.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -616,13 +620,12 @@ TEST_F(ECSqlToSqlGenerationTests, OptimisedJoins)
     EXPECT_EQ(2, GetHelper().GetFrequencyCount(sql, "ModelId"));
 
     m_ecdb.CloseDb();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_TablePerHierarchy)
-    {
+TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_TablePerHierarchy) {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -659,53 +662,52 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_TablePerHierarchy)
     ASSERT_TRUE(linkTableRelClass != nullptr);
 
     AssertFrequencyCount("SELECT SourceECInstanceId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 2 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 2}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT SourceECInstanceId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 2 }, { "SourceECClassId", 2 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 2}, {"SourceECClassId", 2}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 1 }, { "SourceECClassId", 2 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 2}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId, TargetECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 2 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, false);
+                         {{"JOIN", 2}, {"SourceECClassId", 2}, {"TargetECClassId", 2}}, false);
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId, TargetECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 2 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, true);
+                         {{"JOIN", 2}, {"SourceECClassId", 2}, {"TargetECClassId", 2}}, true);
 
     AssertFrequencyCount("SELECT e.ElementProperty, r.ElRefElProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 3 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 3}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT e.ElementProperty, r.ElRefElProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 1 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT e.ElementProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 3 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 3}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT e.ElementProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 1 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements",
-        {{ "JOIN", 2 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 2}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE SourceECClassId = 123",
-        {{ "JOIN", 2 }, { "SourceECClassId", 2 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 2}, {"SourceECClassId", 2}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE SourceECClassId = 123",
-        {{ "JOIN", 1 }, { "SourceECClassId", 2 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 2}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE TargetECClassId = 123",
-        {{ "JOIN", 2 }, { "SourceECClassId", 1 }, { "TargetECClassId", 2 }}, false);
+                         {{"JOIN", 2}, {"SourceECClassId", 1}, {"TargetECClassId", 2}}, false);
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE TargetECClassId = 123",
-        {{ "JOIN", 1 }, { "SourceECClassId", 0 }, { "TargetECClassId", 2 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 0}, {"TargetECClassId", 2}}, true);
 
     m_ecdb.CloseDb();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_OwnTable)
-    {
+TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_OwnTable) {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -738,53 +740,52 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_OwnTable)
     ASSERT_TRUE(linkTableRelClass != nullptr);
 
     AssertFrequencyCount("SELECT SourceECInstanceId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT SourceECInstanceId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId, TargetECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 2}}, false);
     AssertFrequencyCount("SELECT SourceECInstanceId, SourceECClassId, TargetECClassId FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 2}}, true);
 
     AssertFrequencyCount("SELECT e.ElementProperty, r.ElRefElProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 1 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 1}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT e.ElementProperty, r.ElRefElProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 1 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT e.ElementProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 1 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 1}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT e.ElementProperty FROM ts.ElementRefersToElements r JOIN ts.Element e ON e.ECInstanceId=r.SourceECInstanceId",
-        {{ "JOIN", 1 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 1}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements",
-        {{ "JOIN", 0 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE SourceECClassId = 123",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 1}}, false);
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE SourceECClassId = 123",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 0}}, true);
 
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE TargetECClassId = 123",
-        {{ "JOIN", 0 }, { "SourceECClassId", 1 }, { "TargetECClassId", 2 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 1}, {"TargetECClassId", 2}}, false);
     AssertFrequencyCount("SELECT ElRefElProperty FROM ts.ElementRefersToElements WHERE TargetECClassId = 123",
-        {{ "JOIN", 0 }, { "SourceECClassId", 0 }, { "TargetECClassId", 2 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 0}, {"TargetECClassId", 2}}, true);
 
     m_ecdb.CloseDb();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_MixinConstraintAndJoinedTablePerSubClass)
-    {
+TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_MixinConstraintAndJoinedTablePerSubClass) {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -829,25 +830,24 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_MixinConstraintAndJoin
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("LinkTableJoinGeneration_OwnTable.ecdb", schemaItem));
 
     AssertFrequencyCount("SELECT SourceECClassId, TargetECClassId FROM ts.ElementHasPeelableFruit",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 2}}, false);
 
     AssertFrequencyCount("SELECT SourceECClassId, TargetECClassId FROM ts.ElementHasPeelableFruit",
-        {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 2}, {"TargetECClassId", 2}}, true);
 
     AssertFrequencyCount("SELECT SourceECInstanceId, TargetECInstanceId FROM ts.ElementHasPeelableFruit",
-        {{ "JOIN", 0 }, { "SourceECClassId", 1 }, { "TargetECClassId", 1 }}, false);
+                         {{"JOIN", 0}, {"SourceECClassId", 1}, {"TargetECClassId", 1}}, false);
 
     AssertFrequencyCount("SELECT SourceECInstanceId, TargetECInstanceId FROM ts.ElementHasPeelableFruit",
-        {{ "JOIN", 0 }, { "SourceECClassId", 0 }, { "TargetECClassId", 0 }}, true);
+                         {{"JOIN", 0}, {"SourceECClassId", 0}, {"TargetECClassId", 0}}, true);
 
     m_ecdb.CloseDb();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins)
-    {
+TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins) {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="RoadRailPhysical" alias="rrphys" version="03.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -1094,7 +1094,7 @@ TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins)
         )schema");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RoadRailPhysicalManyJoins.ecdb", schemaItem));
-    
+
     Utf8String sql = "";
 
     // Original query with optimization turned off
@@ -1123,7 +1123,7 @@ TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins)
     EXPECT_EQ(8, GetHelper().GetFrequencyCount(sql, "JOIN"));
     EXPECT_EQ(2, GetHelper().GetFrequencyCount(sql, "SourceECClassId"));
     EXPECT_EQ(2, GetHelper().GetFrequencyCount(sql, "TargetECClassId"));
-    
+
     // Optimized query with optimization turned on
     m_ecdb.GetECSqlConfig().SetOptimizationOption(OptimizationOptions::OptimizeJoinForClassIds, true);
     sql = GetHelper().ECSqlToSql(R"statement(
@@ -1218,15 +1218,14 @@ TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins)
     EXPECT_EQ(0, GetHelper().GetFrequencyCount(sql, "JOIN"));
     EXPECT_EQ(0, GetHelper().GetFrequencyCount(sql, "SourceECClassId"));
     EXPECT_EQ(0, GetHelper().GetFrequencyCount(sql, "TargetECClassId"));
-    
+
     m_ecdb.CloseDb();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin)
-    {
+TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin) {
     SchemaItem schemaItem(R"schema(
         <?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -1243,35 +1242,35 @@ TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin)
 
     m_ecdb.SaveChanges();
     {
-    // Self join with only one table having alias
-    ECSqlStatement ecsqlStmt;
-    Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo1";
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
-    AssertFrequencyCount(ecsql, {{ "JOIN", 0 }, { "Prop", 2 }});
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+        // Self join with only one table having alias
+        ECSqlStatement ecsqlStmt;
+        Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo1";
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
+        AssertFrequencyCount(ecsql, {{"JOIN", 0}, {"Prop", 2}});
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
     }
 
     {
-    // Self join with a table having different aliases
-    ECSqlStatement ecsqlStmt;
-    Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo1 f2";
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
-    AssertFrequencyCount(ecsql, {{ "JOIN", 0 }, { "Prop", 2 }});
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+        // Self join with a table having different aliases
+        ECSqlStatement ecsqlStmt;
+        Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo1 f2";
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
+        AssertFrequencyCount(ecsql, {{"JOIN", 0}, {"Prop", 2}});
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
     }
-    
+
     {
-    ECSqlStatement ecsqlStmt;
-    Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo2 f2";
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
-    AssertFrequencyCount(ecsql, {{ "JOIN", 0 }, { "Prop", 2 }});
-    Statement sqlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
-    ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
+        ECSqlStatement ecsqlStmt;
+        Utf8CP ecsql = "SELECT f1.Prop FROM ts.Foo1 f1, ts.Foo2 f2";
+        ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, ecsql));
+        AssertFrequencyCount(ecsql, {{"JOIN", 0}, {"Prop", 2}});
+        Statement sqlStmt;
+        ASSERT_EQ(BE_SQLITE_OK, sqlStmt.Prepare(m_ecdb, SqlPrintfString("EXPLAIN QUERY PLAN %s", ecsqlStmt.GetNativeSql())));
+        ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());
     }
-    }
+}
 END_ECDBUNITTESTS_NAMESPACE

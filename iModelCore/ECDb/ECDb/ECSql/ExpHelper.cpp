@@ -1,9 +1,10 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
-#include "ECDbPch.h"
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ExpHelper.h"
+
+#include "ECDbPch.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -12,8 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8StringCR type)
-    {
+BentleyStatus ExpHelper::ToPrimitiveType(PrimitiveType& primitiveType, Utf8StringCR type) {
     if (type.EqualsI("int") || type.EqualsI("integer") || type.EqualsI("int32"))
         primitiveType = PRIMITIVETYPE_Integer;
     else if (type.EqualsI("float") || type.EqualsI("double") || type.EqualsI("real"))
@@ -38,15 +38,13 @@ BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8Stri
         return ERROR;
 
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
-    {
-    switch (type)
-        {
+Utf8CP ExpHelper::ToString(ECN::PrimitiveType type) {
+    switch (type) {
         case PRIMITIVETYPE_Binary:
             return "Binary";
         case PRIMITIVETYPE_Boolean:
@@ -71,219 +69,243 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
         default:
             BeAssert(false && "Unhandled case");
             return nullptr;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToECSql (JoinDirection direction)
-    {
-    switch (direction)
-        {
-        case JoinDirection::Forward: return "FORWARD";
-        case JoinDirection::Backward: return "BACKWARD";
-        case JoinDirection::Implied: return "";
-        }
+Utf8CP ExpHelper::ToECSql(JoinDirection direction) {
+    switch (direction) {
+        case JoinDirection::Forward:
+            return "FORWARD";
+        case JoinDirection::Backward:
+            return "BACKWARD";
+        case JoinDirection::Implied:
+            return "";
+    }
     BeAssert(false && "unhandled case");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql (ECSqlJoinType joinType)
-    {
-    switch (joinType)
-        {
-        case ECSqlJoinType::LeftOuterJoin: return "LEFT OUTER JOIN";
-        case ECSqlJoinType::RightOuterJoin: return "RIGHT OUTER JOIN";
-        case ECSqlJoinType::FullOuterJoin: return "FULL OUTER JOIN";
-        case ECSqlJoinType::InnerJoin: return "INNER JOIN";
-        case ECSqlJoinType::CrossJoin: return "CROSS JOIN";
-        case ECSqlJoinType::NaturalJoin: return "NATURAL";
-        case ECSqlJoinType::JoinUsingRelationship: return "USING";
-        }
+Utf8CP ExpHelper::ToSql(ECSqlJoinType joinType) {
+    switch (joinType) {
+        case ECSqlJoinType::LeftOuterJoin:
+            return "LEFT OUTER JOIN";
+        case ECSqlJoinType::RightOuterJoin:
+            return "RIGHT OUTER JOIN";
+        case ECSqlJoinType::FullOuterJoin:
+            return "FULL OUTER JOIN";
+        case ECSqlJoinType::InnerJoin:
+            return "INNER JOIN";
+        case ECSqlJoinType::CrossJoin:
+            return "CROSS JOIN";
+        case ECSqlJoinType::NaturalJoin:
+            return "NATURAL";
+        case ECSqlJoinType::JoinUsingRelationship:
+            return "USING";
+    }
     BeAssert(false && "unhandled case");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(SqlSetQuantifier setQuantifier)
-    {
-    switch (setQuantifier)
-        {
-        case SqlSetQuantifier::All: return "ALL";
-        case SqlSetQuantifier::Distinct: return "DISTINCT";
-        case SqlSetQuantifier::NotSpecified: return "";
-        }
+Utf8CP ExpHelper::ToSql(SqlSetQuantifier setQuantifier) {
+    switch (setQuantifier) {
+        case SqlSetQuantifier::All:
+            return "ALL";
+        case SqlSetQuantifier::Distinct:
+            return "DISTINCT";
+        case SqlSetQuantifier::NotSpecified:
+            return "";
+    }
     BeAssert(false && "unhandled case");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(SubqueryTestOperator op)
-    {
-    switch (op)
-        {
-        case SubqueryTestOperator::Unique: return "UNIQUE";
-        case SubqueryTestOperator::Exists: return "EXISTS";
-        }
+Utf8CP ExpHelper::ToSql(SubqueryTestOperator op) {
+    switch (op) {
+        case SubqueryTestOperator::Unique:
+            return "UNIQUE";
+        case SubqueryTestOperator::Exists:
+            return "EXISTS";
+    }
     BeAssert(false && "unhandled case");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(BinarySqlOperator op)
-    {
-    switch(op)
-        {
-        //Arthimatics
-        case BinarySqlOperator::Divide:        return "/";
-        case BinarySqlOperator::Minus:         return "-";
-        case BinarySqlOperator::Modulo:        return "%";
-        case BinarySqlOperator::Multiply:      return "*";
-        case BinarySqlOperator::Plus:          return "+";
-        //string concatenation
-        case BinarySqlOperator::Concat:        return "||";
-        //Bitwise
-        case BinarySqlOperator::ShiftLeft:    return "<<";
-        case BinarySqlOperator::ShiftRight:   return ">>";
-        case BinarySqlOperator::BitwiseAnd:   return "&";
-        case BinarySqlOperator::BitwiseOr:    return "|";
-        case BinarySqlOperator::BitwiseXOr:   return "^";
-        }
+Utf8CP ExpHelper::ToSql(BinarySqlOperator op) {
+    switch (op) {
+        // Arthimatics
+        case BinarySqlOperator::Divide:
+            return "/";
+        case BinarySqlOperator::Minus:
+            return "-";
+        case BinarySqlOperator::Modulo:
+            return "%";
+        case BinarySqlOperator::Multiply:
+            return "*";
+        case BinarySqlOperator::Plus:
+            return "+";
+        // string concatenation
+        case BinarySqlOperator::Concat:
+            return "||";
+        // Bitwise
+        case BinarySqlOperator::ShiftLeft:
+            return "<<";
+        case BinarySqlOperator::ShiftRight:
+            return ">>";
+        case BinarySqlOperator::BitwiseAnd:
+            return "&";
+        case BinarySqlOperator::BitwiseOr:
+            return "|";
+        case BinarySqlOperator::BitwiseXOr:
+            return "^";
+    }
     BeAssert(false && "case not handled");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(BooleanSqlOperator op)
-    {
-    switch(op)
-        {
-        //Relational
-        case BooleanSqlOperator::And:           return "AND";
-        case BooleanSqlOperator::Or:            return "OR";
-        //Boolean
-        case BooleanSqlOperator::EqualTo:            return "=";
-        case BooleanSqlOperator::GreaterThanOrEqualTo:            return ">=";
-        case BooleanSqlOperator::GreaterThan:            return ">";
-        case BooleanSqlOperator::LessThanOrEqualTo:            return "<=";
-        case BooleanSqlOperator::LessThan:            return "<";
-        case BooleanSqlOperator::NotEqualTo:            return "<>";
+Utf8CP ExpHelper::ToSql(BooleanSqlOperator op) {
+    switch (op) {
+        // Relational
+        case BooleanSqlOperator::And:
+            return "AND";
+        case BooleanSqlOperator::Or:
+            return "OR";
+        // Boolean
+        case BooleanSqlOperator::EqualTo:
+            return "=";
+        case BooleanSqlOperator::GreaterThanOrEqualTo:
+            return ">=";
+        case BooleanSqlOperator::GreaterThan:
+            return ">";
+        case BooleanSqlOperator::LessThanOrEqualTo:
+            return "<=";
+        case BooleanSqlOperator::LessThan:
+            return "<";
+        case BooleanSqlOperator::NotEqualTo:
+            return "<>";
 
-        case BooleanSqlOperator::In:            return "IN";
-        case BooleanSqlOperator::NotIn:        return "NOT IN";
-        case BooleanSqlOperator::Between:       return "BETWEEN";
-        case BooleanSqlOperator::NotBetween:   return "NOT BETWEEN";
-        case BooleanSqlOperator::Is:            return "IS";
-        case BooleanSqlOperator::IsNot:        return "IS NOT";
-        //Pattern
-        case BooleanSqlOperator::Like:          return "LIKE";
-        case BooleanSqlOperator::NotLike:      return "NOT LIKE";
+        case BooleanSqlOperator::In:
+            return "IN";
+        case BooleanSqlOperator::NotIn:
+            return "NOT IN";
+        case BooleanSqlOperator::Between:
+            return "BETWEEN";
+        case BooleanSqlOperator::NotBetween:
+            return "NOT BETWEEN";
+        case BooleanSqlOperator::Is:
+            return "IS";
+        case BooleanSqlOperator::IsNot:
+            return "IS NOT";
+        // Pattern
+        case BooleanSqlOperator::Like:
+            return "LIKE";
+        case BooleanSqlOperator::NotLike:
+            return "NOT LIKE";
 
-        case BooleanSqlOperator::Match:         return "MATCH";
-        case BooleanSqlOperator::NotMatch:     return "NOT MATCH";
-        }
+        case BooleanSqlOperator::Match:
+            return "MATCH";
+        case BooleanSqlOperator::NotMatch:
+            return "NOT MATCH";
+    }
     BeAssert(false && "case not handled");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql (SqlCompareListType type)
-    {
-    switch (type)
-        {
+Utf8CP ExpHelper::ToSql(SqlCompareListType type) {
+    switch (type) {
         case SqlCompareListType::All:
             return "ALL";
         case SqlCompareListType::Any:
             return "ANY";
         case SqlCompareListType::Some:
             return "SOME";
-        }
+    }
 
     BeAssert(false && "case not handled");
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(UnaryValueExp::Operator op)
-    {
-    switch(op)
-        {
-        case UnaryValueExp::Operator::Plus:       return "+";
-        case UnaryValueExp::Operator::Minus:      return "-";
-        case UnaryValueExp::Operator::BitwiseNot: return "~";
-        }
+Utf8CP ExpHelper::ToSql(UnaryValueExp::Operator op) {
+    switch (op) {
+        case UnaryValueExp::Operator::Plus:
+            return "+";
+        case UnaryValueExp::Operator::Minus:
+            return "-";
+        case UnaryValueExp::Operator::BitwiseNot:
+            return "~";
+    }
     BeAssert(false && "case not handled");
     return nullptr;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP ExpHelper::ToSql(ECSqlType type)
-    {
-    switch (type)
-        {
-            case ECSqlType::Delete:
-                return "DELETE";
-            case ECSqlType::Insert:
-                return "INSERT";
-            case ECSqlType::Select:
-                return "SELECT";
-            case ECSqlType::Update:
-                return "UPDATE";
-
-            default:
-                BeAssert(false && "ExpHelper::ToSql(ECSqlType) needs to be updated to a new value of the ECSqlType enum.");
-                return "";
-        }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction collateFunction)
-    {
-    switch (collateFunction)
-            {
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
-                return "BINARY";
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
-                return "NOCASE";
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
-                return "RTRIM";
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified:
-                return "";
-            default:
-                BeAssert(false && "ExpHelper::ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction) needs to be updated to a new value of the ECSqlType enum.");
-                return "";
-            }
+// static
+Utf8CP ExpHelper::ToSql(ECSqlType type) {
+    switch (type) {
+        case ECSqlType::Delete:
+            return "DELETE";
+        case ECSqlType::Insert:
+            return "INSERT";
+        case ECSqlType::Select:
+            return "SELECT";
+        case ECSqlType::Update:
+            return "UPDATE";
+
+        default:
+            BeAssert(false && "ExpHelper::ToSql(ECSqlType) needs to be updated to a new value of the ECSqlType enum.");
+            return "";
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameUnit frameUnit)
-    {
-    switch (frameUnit)
-        {
+Utf8CP ExpHelper::ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction collateFunction) {
+    switch (collateFunction) {
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
+            return "BINARY";
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
+            return "NOCASE";
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
+            return "RTRIM";
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified:
+            return "";
+        default:
+            BeAssert(false && "ExpHelper::ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction) needs to be updated to a new value of the ECSqlType enum.");
+            return "";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameUnit frameUnit) {
+    switch (frameUnit) {
         case WindowFrameClauseExp::WindowFrameUnit::Groups:
             return "GROUPS";
         case WindowFrameClauseExp::WindowFrameUnit::Range:
@@ -293,16 +315,14 @@ Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameUnit frameUnit)
         default:
             BeAssert(false && "ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameUnit) needs to be updated to a new value of the ECSqlType enum.");
             return "";
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType exclusionType)
-    {
-    switch (exclusionType)
-        {
+Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType exclusionType) {
+    switch (exclusionType) {
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeCurrentRow:
             return "EXCLUDE CURRENT ROW";
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup:
@@ -316,7 +336,7 @@ Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType exclusion
         default:
             BeAssert(false && "ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType) needs to be updated to a new value of the ECSqlType enum.");
             return "";
-        }
     }
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

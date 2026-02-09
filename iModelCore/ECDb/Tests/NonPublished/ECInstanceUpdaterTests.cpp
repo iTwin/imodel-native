@@ -1,111 +1,97 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct ECInstanceUpdaterTests : ECDbTestFixture
-    {};
+struct ECInstanceUpdaterTests : ECDbTestFixture {};
 
-struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
-    {
-    protected:
-        void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
-            {
-            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
-            ECClassCP testClass = m_ecdb.Schemas().GetClass(schemaName, className);
+struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests {
+   protected:
+    void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties) {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+        ECClassCP testClass = m_ecdb.Schemas().GetClass(schemaName, className);
 
-            ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
-            ECInstanceUpdater* updater = nullptr;
-            for (int i = 0; i < numberOfInstances; i++)
-                {
-                IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-                ECInstancePopulator::Populate(*instance);
-                ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance));
-                
-                IECInstancePtr updatedInstance;
-                if (populateAllProperties)
-                    {
-                    updatedInstance = instance->CreateCopyThroughSerialization();
-                    ECInstancePopulator::Populate(*updatedInstance);
-                    }
-                else
-                    {
-                    updatedInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-                    ECValue v;
-                    v.SetLong(101);
-                    updatedInstance->SetValue("LongMember", v);
-                    instance->GetValue(v, "BooleanMember");
-                    updatedInstance->SetValue("BooleanMember", ECValue(!(v.GetBoolean())));
-                    // updatedInstance->SetValue("DoubleMember", ECValue(3.1415));
-                    }
-                updatedInstance->SetInstanceId(instance->GetInstanceId().c_str());
+        ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
+        ECInstanceUpdater* updater = nullptr;
+        for (int i = 0; i < numberOfInstances; i++) {
+            IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            ECInstancePopulator::Populate(*instance);
+            ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance));
 
-                if (nullptr == updater)
-                    {
-                    if (populateAllProperties)
-                        updater = new ECInstanceUpdater(m_ecdb, *testClass, nullptr);
-                    else
-                        updater = new ECInstanceUpdater(m_ecdb, *updatedInstance, nullptr);
-                    }
-
-                if (testClass->GetPropertyCount(true) == 0)
-                    {
-                    ASSERT_FALSE(updater->IsValid());
-                    return;
-                    }
-                else
-                    ASSERT_TRUE(updater->IsValid());
-
-                ASSERT_EQ(BE_SQLITE_OK, updater->Update(*updatedInstance));
-
-                SqlPrintfString ecSql("SELECT c0.[ECInstanceId], c0.ECClassId, * FROM %s.%s c0 WHERE ECInstanceId=%s", Utf8String(schemaName).c_str(), Utf8String(className).c_str(), Utf8String(instance->GetInstanceId()).c_str());
-                ECSqlStatement statement;
-                ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, ecSql.GetUtf8CP());
-                ECInstanceECSqlSelectAdapter dataAdapter(statement);
-                ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
-                DbResult result;
-
-                instance->GetAsMemoryECInstanceP()->MergePropertiesFromInstance(*updatedInstance);
-
-                while ((result = statement.Step()) == BE_SQLITE_ROW)
-                    {
-                    IECInstancePtr selectedInstance = dataAdapter.GetInstance();
-
-                    BeJsDocument expectedInstanceJson, selectedInstanceJson;
-                    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedInstanceJson, *instance, nullptr, true));
-                    ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(selectedInstanceJson, *selectedInstance, nullptr, true));
-                    ASSERT_EQ(expectedInstanceJson, selectedInstanceJson) << "Updated instance from ecdb not as expected.";
-                    }
-                }
-            delete updater;
+            IECInstancePtr updatedInstance;
+            if (populateAllProperties) {
+                updatedInstance = instance->CreateCopyThroughSerialization();
+                ECInstancePopulator::Populate(*updatedInstance);
+            } else {
+                updatedInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+                ECValue v;
+                v.SetLong(101);
+                updatedInstance->SetValue("LongMember", v);
+                instance->GetValue(v, "BooleanMember");
+                updatedInstance->SetValue("BooleanMember", ECValue(!(v.GetBoolean())));
+                // updatedInstance->SetValue("DoubleMember", ECValue(3.1415));
             }
-    };
+            updatedInstance->SetInstanceId(instance->GetInstanceId().c_str());
 
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClass)
-    {
+            if (nullptr == updater) {
+                if (populateAllProperties)
+                    updater = new ECInstanceUpdater(m_ecdb, *testClass, nullptr);
+                else
+                    updater = new ECInstanceUpdater(m_ecdb, *updatedInstance, nullptr);
+            }
+
+            if (testClass->GetPropertyCount(true) == 0) {
+                ASSERT_FALSE(updater->IsValid());
+                return;
+            } else
+                ASSERT_TRUE(updater->IsValid());
+
+            ASSERT_EQ(BE_SQLITE_OK, updater->Update(*updatedInstance));
+
+            SqlPrintfString ecSql("SELECT c0.[ECInstanceId], c0.ECClassId, * FROM %s.%s c0 WHERE ECInstanceId=%s", Utf8String(schemaName).c_str(), Utf8String(className).c_str(), Utf8String(instance->GetInstanceId()).c_str());
+            ECSqlStatement statement;
+            ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, ecSql.GetUtf8CP());
+            ECInstanceECSqlSelectAdapter dataAdapter(statement);
+            ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
+            DbResult result;
+
+            instance->GetAsMemoryECInstanceP()->MergePropertiesFromInstance(*updatedInstance);
+
+            while ((result = statement.Step()) == BE_SQLITE_ROW) {
+                IECInstancePtr selectedInstance = dataAdapter.GetInstance();
+
+                BeJsDocument expectedInstanceJson, selectedInstanceJson;
+                ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedInstanceJson, *instance, nullptr, true));
+                ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(selectedInstanceJson, *selectedInstance, nullptr, true));
+                ASSERT_EQ(expectedInstanceJson, selectedInstanceJson) << "Updated instance from ecdb not as expected.";
+            }
+        }
+        delete updater;
+    }
+};
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsitest
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClass) {
     UpdateInstances("PrimitiveClass", "KitchenSink", 1, true);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClassWithIncompleteInstance)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsitest
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClassWithIncompleteInstance) {
     UpdateInstances("PrimitiveClass", "KitchenSink", 1, false);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
-    {
+TEST_F(ECInstanceUpdaterTests, UpdateRelationships) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UpdateRelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
@@ -118,19 +104,17 @@ TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
 
     ECInstanceUpdater updater2(m_ecdb, *linkTableRelClass, nullptr);
     ASSERT_TRUE(updater2.IsValid()) << "Expected to be able to update into link table relationship class " << linkTableRelClass->GetFullName();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
-    {
+TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updatewithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE(testClass != nullptr);
 
-    auto tryGetLastMod = [] (DateTime& lastMod, ECDbR ecdb, ECInstanceId id)
-        {
+    auto tryGetLastMod = [](DateTime& lastMod, ECDbR ecdb, ECInstanceId id) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
 
@@ -139,9 +123,9 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
         ASSERT_FALSE(stmt.IsValueNull(0));
 
         lastMod = stmt.GetValueDateTime(0);
-        };
+    };
 
-    //insert test instance
+    // insert test instance
     StandaloneECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue v(1);
@@ -156,18 +140,18 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
 
     ECInstanceId testId;
     {
-    ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
-    ASSERT_TRUE(inserter.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*testInstance));
-    ASSERT_EQ(SUCCESS, ECInstanceId::FromString(testId, testInstance->GetInstanceId().c_str()));
+        ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
+        ASSERT_TRUE(inserter.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*testInstance));
+        ASSERT_EQ(SUCCESS, ECInstanceId::FromString(testId, testInstance->GetInstanceId().c_str()));
     }
 
     DateTime firstLastMod;
     tryGetLastMod(firstLastMod, m_ecdb, testId);
     ASSERT_TRUE(firstLastMod.IsValid());
 
-    //now update an ECInstance
-    BeThreadUtilities::BeSleep(1000); //so that new last mod differs significantly from old last mod
+    // now update an ECInstance
+    BeThreadUtilities::BeSleep(1000);  // so that new last mod differs significantly from old last mod
     v.Clear();
 
     v.SetInteger(2);
@@ -189,21 +173,20 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
 
     uint64_t timeSpan = newLastModJdMsec - firstLastModJdMsec;
     ASSERT_GT(timeSpan, 100) << "New LastMod must be later than old LastMod. Just test that it is a bit older (versus the exact difference) to keep the test robust.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, ReadonlyProperties)
-    {
+TEST_F(ECInstanceUpdaterTests, ReadonlyProperties) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updatereadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                                     "<ECSchema schemaName='testSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-                                                                     "    <ECEntityClass typeName='A' >"
-                                                                     "        <ECProperty propertyName='RInt' typeName='int' readOnly='True'/>"
-                                                                     "        <ECProperty propertyName='RString' typeName='string' readOnly='True'/>"
-                                                                     "        <ECProperty propertyName='Length' typeName='int' />"
-                                                                     "    </ECEntityClass>"
-                                                                     "</ECSchema>")));
+                                                                                          "<ECSchema schemaName='testSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+                                                                                          "    <ECEntityClass typeName='A' >"
+                                                                                          "        <ECProperty propertyName='RInt' typeName='int' readOnly='True'/>"
+                                                                                          "        <ECProperty propertyName='RString' typeName='string' readOnly='True'/>"
+                                                                                          "        <ECProperty propertyName='Length' typeName='int' />"
+                                                                                          "    </ECEntityClass>"
+                                                                                          "</ECSchema>")));
 
     const int oldRInt = 100;
     const int newRInt = 200;
@@ -215,12 +198,12 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyProperties)
     ECInstanceKey key;
 
     {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (RInt, RString, Length) VALUES(?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, oldRInt));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, oldRString, IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(3, oldLength));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (RInt, RString, Length) VALUES(?,?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, oldRInt));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, oldRString, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(3, oldLength));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
     }
 
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
@@ -243,9 +226,9 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyProperties)
     v.SetInteger(newLength);
     ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("Length", v));
 
-    //calc prop gets reevaluated automatically, so no need to set it here
+    // calc prop gets reevaluated automatically, so no need to set it here
 
-    //Be default readonly props cannot be updated, so updater skips readonly props
+    // Be default readonly props cannot be updated, so updater skips readonly props
     ECInstanceUpdater updater(m_ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
 
@@ -253,72 +236,71 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyProperties)
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(m_ecdb, "SELECT RInt, RString, Length FROM ts.A WHERE ECInstanceId=?"));
 
     {
-    Savepoint sp(m_ecdb, "default updater");
+        Savepoint sp(m_ecdb, "default updater");
 
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*updatedInstance));
+        ASSERT_EQ(BE_SQLITE_OK, updater.Update(*updatedInstance));
 
-    ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+        ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
 
-    ASSERT_EQ(oldRInt, validateStmt.GetValueInt(0)) << "Readonly property RInt is expected to not be modified";
-    ASSERT_STREQ(oldRString, validateStmt.GetValueText(1)) << "Readonly property RInt is expected to not be modified";
-    ASSERT_EQ(newLength, validateStmt.GetValueInt(2)) << "Read-write property Length is expected to be modified";
-    validateStmt.Reset();
-    validateStmt.ClearBindings();
+        ASSERT_EQ(oldRInt, validateStmt.GetValueInt(0)) << "Readonly property RInt is expected to not be modified";
+        ASSERT_STREQ(oldRString, validateStmt.GetValueText(1)) << "Readonly property RInt is expected to not be modified";
+        ASSERT_EQ(newLength, validateStmt.GetValueInt(2)) << "Read-write property Length is expected to be modified";
+        validateStmt.Reset();
+        validateStmt.ClearBindings();
 
-    sp.Cancel();
+        sp.Cancel();
     }
 
     {
-    //now use updater with option to update readonly props
-    ECInstanceUpdater readonlyUpdater(m_ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
-    ASSERT_TRUE(readonlyUpdater.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, readonlyUpdater.Update(*updatedInstance));
+        // now use updater with option to update readonly props
+        ECInstanceUpdater readonlyUpdater(m_ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
+        ASSERT_TRUE(readonlyUpdater.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, readonlyUpdater.Update(*updatedInstance));
 
-    ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+        ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
+        ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
 
-    ASSERT_EQ(newRInt, validateStmt.GetValueInt(0)) << "Readonly property RInt is expected to be modified";
-    ASSERT_STREQ(newRString, validateStmt.GetValueText(1)) << "Readonly property RInt is expected to be modified";
-    ASSERT_EQ(newLength, validateStmt.GetValueInt(2)) << "Read-write property Length is expected to be modified";
+        ASSERT_EQ(newRInt, validateStmt.GetValueInt(0)) << "Readonly property RInt is expected to be modified";
+        ASSERT_STREQ(newRString, validateStmt.GetValueText(1)) << "Readonly property RInt is expected to be modified";
+        ASSERT_EQ(newLength, validateStmt.GetValueInt(2)) << "Read-write property Length is expected to be modified";
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
-    {
+TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A' >"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "        <ECProperty propertyName='P2' typeName='string' />"
-        "        <ECProperty propertyName='P3' typeName='long' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
+                                                                                           "<?xml version='1.0' encoding='utf-8'?>"
+                                                                                           "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                           "    <ECEntityClass typeName='A' >"
+                                                                                           "        <ECProperty propertyName='P1' typeName='int' />"
+                                                                                           "        <ECProperty propertyName='P2' typeName='string' />"
+                                                                                           "        <ECProperty propertyName='P3' typeName='long' />"
+                                                                                           "    </ECEntityClass>"
+                                                                                           "</ECSchema>")));
 
     ECInstanceKey key;
     {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (P1,P2,P3) VALUES(100, 'old', 1000)"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (P1,P2,P3) VALUES(100, 'old', 1000)"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
     }
 
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
 
-    bvector<uint32_t> propertiesToBind {1, 2, 3};
+    bvector<uint32_t> propertiesToBind{1, 2, 3};
     ECInstanceUpdater instanceUpdater(m_ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_TRUE(instanceUpdater.IsValid());
 
-    //new values for properties
+    // new values for properties
     const int newP1Value = 200;
     Utf8CP newP2Value = "new";
     const int64_t newP3Value = INT64_C(2000);
 
-    //create New Instance
+    // create New Instance
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
     key.GetInstanceId().ToString(idStrBuffer);
@@ -336,10 +318,10 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
     v.SetLong(newP3Value);
     ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
 
-    //update inserted instance
+    // update inserted instance
     ASSERT_EQ(BE_SQLITE_OK, instanceUpdater.Update(*updatedInstance));
 
-    //validate updated Instance
+    // validate updated Instance
     Utf8String validateECSql;
     validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%s AND P1=%d AND P2 LIKE '%s' AND P3=%" PRId64,
                           key.GetInstanceId().ToString().c_str(), newP1Value, newP2Value, newP3Value);
@@ -347,28 +329,27 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
     ECSqlStatement validateStmt;
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(m_ecdb, validateECSql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
-    {
+TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonlistofproperties.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A' >"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "        <ECProperty propertyName='P2' typeName='string' />"
-        "        <ECProperty propertyName='P3' typeName='long' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
+                                                                                           "<?xml version='1.0' encoding='utf-8'?>"
+                                                                                           "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                           "    <ECEntityClass typeName='A' >"
+                                                                                           "        <ECProperty propertyName='P1' typeName='int' />"
+                                                                                           "        <ECProperty propertyName='P2' typeName='string' />"
+                                                                                           "        <ECProperty propertyName='P3' typeName='long' />"
+                                                                                           "    </ECEntityClass>"
+                                                                                           "</ECSchema>")));
 
     ECInstanceKey key;
     {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (P1,P2,P3) VALUES(100, 'old', 1000)"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A (P1,P2,P3) VALUES(100, 'old', 1000)"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
     }
 
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
@@ -383,16 +364,16 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     ECPropertyCP p3 = ecClass->GetPropertyP("P3");
     ASSERT_TRUE(p3 != nullptr);
 
-    bvector<ECPropertyCP> propertiesToBind {p1, p2, p3};
+    bvector<ECPropertyCP> propertiesToBind{p1, p2, p3};
     ECInstanceUpdater instanceUpdater(m_ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_TRUE(instanceUpdater.IsValid());
 
-    //new values for properties
+    // new values for properties
     const int newP1Value = 200;
     Utf8CP newP2Value = "new";
     const int64_t newP3Value = INT64_C(2000);
 
-    //create New Instance
+    // create New Instance
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
     key.GetInstanceId().ToString(idStrBuffer);
@@ -410,10 +391,10 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     v.SetLong(newP3Value);
     ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
 
-    //update inserted instance
+    // update inserted instance
     ASSERT_EQ(BE_SQLITE_OK, instanceUpdater.Update(*updatedInstance));
 
-    //validate updated Instance
+    // validate updated Instance
     Utf8String validateECSql;
     validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%s AND P1=%d AND P2 LIKE '%s' AND P3=%" PRId64,
                           key.GetInstanceId().ToString().c_str(), newP1Value, newP2Value, newP3Value);
@@ -421,13 +402,12 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     ECSqlStatement validateStmt;
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(m_ecdb, validateECSql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
-    {
+TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateArrayProperty.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECN::ECClassCP testClass = m_ecdb.Schemas().GetClass("KitchenSink", "TestClass");
@@ -488,100 +468,96 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     ASSERT_TRUE(v.IsArray());
     ArrayInfo info2 = v.GetArrayInfo();
     ASSERT_EQ(2, info2.GetCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//Failing case, if number of property indices less then 1, updater should be invalid
-TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
-    {
+// Failing case, if number of property indices less then 1, updater should be invalid
+TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
+                                                                                           "<?xml version='1.0' encoding='utf-8'?>"
+                                                                                           "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                           "    <ECEntityClass typeName='A'>"
+                                                                                           "        <ECProperty propertyName='P1' typeName='int' />"
+                                                                                           "    </ECEntityClass>"
+                                                                                           "</ECSchema>")));
 
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
 
-    bvector<uint32_t> propertiesToBind {};
+    bvector<uint32_t> propertiesToBind{};
     ECInstanceUpdater instanceUpdater(m_ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_FALSE(instanceUpdater.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//Failing case, Update should fail it updater is invalid
-TEST_F(ECInstanceUpdaterTests, InvalidUpdater)
-    {
+// Failing case, Update should fail it updater is invalid
+TEST_F(ECInstanceUpdaterTests, InvalidUpdater) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='A' >"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
+                                                                                           "<?xml version='1.0' encoding='utf-8'?>"
+                                                                                           "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                           "    <ECEntityClass typeName='A' >"
+                                                                                           "        <ECProperty propertyName='P1' typeName='int' />"
+                                                                                           "    </ECEntityClass>"
+                                                                                           "</ECSchema>")));
 
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
 
-    bvector<uint32_t> propertiesToBind {};
+    bvector<uint32_t> propertiesToBind{};
     ECInstanceUpdater instanceUpdater(m_ecdb, *ecClass, nullptr, propertiesToBind);
     ASSERT_FALSE(instanceUpdater.IsValid());
 
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ASSERT_EQ(BE_SQLITE_ERROR, instanceUpdater.Update(*updatedInstance));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
-    {
-    std::vector<int> propCounts {60, 63, 64, 70, 126, 127, 140, 189, 190, 210, 280};
-    for (int propCount : propCounts)
-        {
+TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow) {
+    std::vector<int> propCounts{60, 63, 64, 70, 126, 127, 140, 189, 190, 210, 280};
+    for (int propCount : propCounts) {
         Utf8String propertiesXml;
-        for (int i = 0; i < propCount; i++)
-            {
+        for (int i = 0; i < propCount; i++) {
             Utf8String propertyXml;
             propertyXml.Sprintf("<ECProperty propertyName='Prop%d' typeName='string'/>", i + 1);
             propertiesXml.append(propertyXml);
-            }
-
+        }
 
         Utf8String ecschemaXml;
-        ecschemaXml.Sprintf("<?xml version='1.0' encoding='utf-8'?>"
-                            "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                            "    <ECEntityClass typeName='ClassWithPrimitiveProps'>"
-                            "        <ECCustomAttributes>"
-                            "           <ClassMap xmlns='ECDbMap.02.00'>"
-                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                            "            </ClassMap>"
-                            "           <ShareColumns xmlns='ECDbMap.02.00'>"
-                            "           </ShareColumns>"
-                            "        </ECCustomAttributes>"
-                            "%s"
-                            "    </ECEntityClass>"
-                            "    <ECStructClass typeName='LargeStruct'>"
-                            "%s"
-                            "    </ECStructClass>"
-                            "    <ECEntityClass typeName='ClassWithStruct'>"
-                            "        <ECCustomAttributes>"
-                            "           <ClassMap xmlns='ECDbMap.02.00'>"
-                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                            "            </ClassMap>"
-                            "           <ShareColumns xmlns='ECDbMap.02.00'>"
-                            "           </ShareColumns>"
-                            "        </ECCustomAttributes>"
-                            "        <ECStructProperty propertyName='MyStructProp' typeName='LargeStruct'/>"
-                            "    </ECEntityClass>"
-                            "</ECSchema>", propertiesXml.c_str(), propertiesXml.c_str());
+        ecschemaXml.Sprintf(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECEntityClass typeName='ClassWithPrimitiveProps'>"
+            "        <ECCustomAttributes>"
+            "           <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+            "           </ShareColumns>"
+            "        </ECCustomAttributes>"
+            "%s"
+            "    </ECEntityClass>"
+            "    <ECStructClass typeName='LargeStruct'>"
+            "%s"
+            "    </ECStructClass>"
+            "    <ECEntityClass typeName='ClassWithStruct'>"
+            "        <ECCustomAttributes>"
+            "           <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+            "           </ShareColumns>"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='MyStructProp' typeName='LargeStruct'/>"
+            "    </ECEntityClass>"
+            "</ECSchema>",
+            propertiesXml.c_str(), propertiesXml.c_str());
 
         Utf8String fileName;
         fileName.Sprintf("ecinstanceupdater_%d_propsmappedtooverflow.ecdb", propCount);
@@ -621,14 +597,13 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
         ASSERT_EQ(ECObjectsStatus::Success, instance->SetInstanceId(classWithStructKey.GetInstanceId().ToString().c_str())) << "ECClass: " << classWithStruct->GetName().c_str() << " Prop count: " << propCount;
 
         ASSERT_EQ(BE_SQLITE_OK, classWithStructUpdater.Update(*instance)) << "ECClass: " << classWithStruct->GetName().c_str() << "Prop count: " << propCount;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
-    {
+TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
@@ -657,32 +632,29 @@ TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
     ECClassCP calendarEntryClass = m_ecdb.Schemas().GetClass("TestSchema", "CalendarEntry");
     ASSERT_TRUE(calendarEntryClass != nullptr);
 
-
-
     {
+        IECInstancePtr inst = calendarEntryClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        ECValue val(DateTime::CreateTimeOfDay(8, 30));
+        ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("StartTime", val));
+        val = ECValue(DateTime::CreateTimeOfDay(20, 0));
+        ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("EndTime", val));
+        inst->SetInstanceId(key1.GetInstanceId().ToString().c_str());
 
-    IECInstancePtr inst = calendarEntryClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECValue val(DateTime::CreateTimeOfDay(8, 30));
-    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("StartTime", val));
-    val = ECValue(DateTime::CreateTimeOfDay(20, 0));
-    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("EndTime", val));
-    inst->SetInstanceId(key1.GetInstanceId().ToString().c_str());
+        ECInstanceUpdater updater(m_ecdb, *inst, nullptr);
+        ASSERT_TRUE(updater.IsValid());
 
-    ECInstanceUpdater updater(m_ecdb, *inst, nullptr);
-    ASSERT_TRUE(updater.IsValid());
-
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*inst));
+        ASSERT_EQ(BE_SQLITE_OK, updater.Update(*inst));
     }
 
     {
-    // just update end date for the second instance
-    IECInstancePtr inst = calendarEntryClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECValue val(DateTime::CreateTimeOfDay(23, 59, 59, 999));
-    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("EndTime", val));
-    inst->SetInstanceId(key2.GetInstanceId().ToString().c_str());
-    ECInstanceUpdater updater(m_ecdb, *inst, nullptr);
-    ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*inst));
+        // just update end date for the second instance
+        IECInstancePtr inst = calendarEntryClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        ECValue val(DateTime::CreateTimeOfDay(23, 59, 59, 999));
+        ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("EndTime", val));
+        inst->SetInstanceId(key2.GetInstanceId().ToString().c_str());
+        ECInstanceUpdater updater(m_ecdb, *inst, nullptr);
+        ASSERT_TRUE(updater.IsValid());
+        ASSERT_EQ(BE_SQLITE_OK, updater.Update(*inst));
     }
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -695,8 +667,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,StartTime,EndTime FROM ts.CalendarEntry"));
     ECInstanceECSqlSelectAdapter adapter(stmt);
     ASSERT_TRUE(adapter.IsValid());
-    auto assertTimeOfDay = [] (DateTime const& expectedStartTime, DateTime const& expectedEndTime, IECInstanceCR instance)
-        {
+    auto assertTimeOfDay = [](DateTime const& expectedStartTime, DateTime const& expectedEndTime, IECInstanceCR instance) {
         ECValue v;
         ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(v, "StartTime"));
         DateTime actualStartTime = v.GetDateTime();
@@ -707,17 +678,16 @@ TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
         DateTime actualEndTime = v.GetDateTime();
         EXPECT_TRUE(actualStartTime.IsTimeOfDay());
         ASSERT_EQ(expectedEndTime, actualEndTime.GetTimeOfDay());
-        };
+    };
 
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
+    while (stmt.Step() == BE_SQLITE_ROW) {
         IECInstancePtr inst = adapter.GetInstance();
         ASSERT_TRUE(inst != nullptr);
         if (inst->GetInstanceId().EqualsIAscii(key1.GetInstanceId().ToString()))
             assertTimeOfDay(DateTime::CreateTimeOfDay(8, 30), DateTime::CreateTimeOfDay(20, 0), *inst);
         else
             assertTimeOfDay(DateTime::CreateTimeOfDay(0, 0), DateTime::CreateTimeOfDay(23, 59, 59, 999), *inst);
-        }
     }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

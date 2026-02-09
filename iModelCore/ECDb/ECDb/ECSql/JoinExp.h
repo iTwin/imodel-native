@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "ClassRefExp.h"
@@ -11,8 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-enum class ECSqlJoinType
-    {
+enum class ECSqlJoinType {
     None,
     LeftOuterJoin,
     RightOuterJoin,
@@ -21,7 +20,7 @@ enum class ECSqlJoinType
     CrossJoin,
     NaturalJoin,
     JoinUsingRelationship
-    };
+};
 
 //=======================================================================================
 //! For a JOIN USING clause the values of this enum specify which end of the relationship
@@ -37,212 +36,196 @@ enum class ECSqlJoinType
 //! @ingroup ECDbGroup
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-enum class JoinDirection
-    {
-    Implied = 0, //!< The direction can be implied from the ECSQL statement.
-    Forward = 1, //!< JOIN expression goes from source to target constraint of the ECN::ECRelationshipClass.
-    Backward = 2 //!< JOIN expression goes from target to source constraint of the ECN::ECRelationshipClass.
-    };
+enum class JoinDirection {
+    Implied = 0,  //!< The direction can be implied from the ECSQL statement.
+    Forward = 1,  //!< JOIN expression goes from source to target constraint of the ECN::ECRelationshipClass.
+    Backward = 2  //!< JOIN expression goes from target to source constraint of the ECN::ECRelationshipClass.
+};
 
 struct FromExp;
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct JoinExp : ClassRefExp
-    {
-    private:
-        ECSqlJoinType  m_joinType;
-        size_t m_nFromClassRefIndex;
-        size_t m_nToClassRefIndex;
+struct JoinExp : ClassRefExp {
+   private:
+    ECSqlJoinType m_joinType;
+    size_t m_nFromClassRefIndex;
+    size_t m_nToClassRefIndex;
 
-    protected:
-        JoinExp(Type type, ECSqlJoinType joinType, std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
-            : ClassRefExp(type), m_joinType(joinType)
-            {
-            m_nFromClassRefIndex = AddChild(std::move(from));
-            m_nToClassRefIndex = AddChild(std::move(to));
-            }
+   protected:
+    JoinExp(Type type, ECSqlJoinType joinType, std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
+        : ClassRefExp(type), m_joinType(joinType) {
+        m_nFromClassRefIndex = AddChild(std::move(from));
+        m_nToClassRefIndex = AddChild(std::move(to));
+    }
 
-    public:
-        virtual ~JoinExp() {}
+   public:
+    virtual ~JoinExp() {}
 
-        ECSqlJoinType GetJoinType() const { return m_joinType; }
-        ClassRefExp const& GetFromClassRef() const { return *GetChild<ClassRefExp>(m_nFromClassRefIndex); }
-        ClassRefExp const& GetToClassRef() const { return *GetChild<ClassRefExp>(m_nToClassRefIndex); }
+    ECSqlJoinType GetJoinType() const { return m_joinType; }
+    ClassRefExp const& GetFromClassRef() const { return *GetChild<ClassRefExp>(m_nFromClassRefIndex); }
+    ClassRefExp const& GetToClassRef() const { return *GetChild<ClassRefExp>(m_nToClassRefIndex); }
 
-        FromExp const* FindFromExpression() const;
-    };
-
+    FromExp const* FindFromExpression() const;
+};
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct JoinSpecExp : Exp
-    {
-    protected:
-        explicit JoinSpecExp(Type type) : Exp(type) {}
+struct JoinSpecExp : Exp {
+   protected:
+    explicit JoinSpecExp(Type type) : Exp(type) {}
 
-    public:
-        virtual ~JoinSpecExp() {}
-    };
-
+   public:
+    virtual ~JoinSpecExp() {}
+};
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct CrossJoinExp final : JoinExp
-    {
-    private:
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override { return "CrossJoin"; }
-    public:
-        CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
-            :JoinExp(Type::CrossJoin, ECSqlJoinType::CrossJoin, std::move(from), std::move(to))
-            {}
-    };
+struct CrossJoinExp final : JoinExp {
+   private:
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+    Utf8String _ToString() const override { return "CrossJoin"; }
+
+   public:
+    CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
+        : JoinExp(Type::CrossJoin, ECSqlJoinType::CrossJoin, std::move(from), std::move(to)) {}
+};
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct NaturalJoinExp final : JoinExp
-    {
-    private:
-        ECSqlJoinType m_appliedJoinType;
+struct NaturalJoinExp final : JoinExp {
+   private:
+    ECSqlJoinType m_appliedJoinType;
 
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override;
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+    Utf8String _ToString() const override;
 
-    public:
-        NaturalJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType appliedJoinType)
-            :JoinExp(Type::NaturalJoin, ECSqlJoinType::NaturalJoin, std::move(from), std::move(to)), m_appliedJoinType(appliedJoinType)
-            {}
-    };
+   public:
+    NaturalJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType appliedJoinType)
+        : JoinExp(Type::NaturalJoin, ECSqlJoinType::NaturalJoin, std::move(from), std::move(to)), m_appliedJoinType(appliedJoinType) {}
+};
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct QualifiedJoinExp final : JoinExp
-    {
-    private:
-        size_t m_nJoinSpecIndex;
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override { return "QualifiedJoin"; }
+struct QualifiedJoinExp final : JoinExp {
+   private:
+    size_t m_nJoinSpecIndex;
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+    Utf8String _ToString() const override { return "QualifiedJoin"; }
 
-    public:
-        QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp);
+   public:
+    QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp);
 
-        JoinSpecExp const* GetJoinSpec() const { return GetChild<JoinSpecExp>(m_nJoinSpecIndex); }
+    JoinSpecExp const* GetJoinSpec() const { return GetChild<JoinSpecExp>(m_nJoinSpecIndex); }
+};
+
+struct BinaryBooleanExp;
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct UsingRelationshipJoinExp final : JoinExp {
+   public:
+    enum class ClassLocation {
+        NotResolved = 0,
+        ExistInSource = 1,
+        ExistInTarget = 2,
+        ExistInBoth = ExistInSource | ExistInTarget
     };
 
-    struct BinaryBooleanExp;
-    //=======================================================================================
-    //! @bsiclass
-    //+===============+===============+===============+===============+===============+======
-    struct UsingRelationshipJoinExp final : JoinExp {
-    public:
-        enum class ClassLocation
-            {
-            NotResolved = 0,
-            ExistInSource = 1,
-            ExistInTarget = 2,
-            ExistInBoth = ExistInSource | ExistInTarget
-            };
+    struct ResolvedEndPoint {
+        friend UsingRelationshipJoinExp;
 
-        struct ResolvedEndPoint
-            {
-            friend UsingRelationshipJoinExp;
-            private:
-                ClassNameExp const*    m_classRef;
-                ClassLocation           m_location;
-            protected:
-                ResolvedEndPoint() :m_classRef(nullptr), m_location(ClassLocation::NotResolved){}
-                void SetClassRef(ClassNameExp const* classRef)
-                    {
-                    m_classRef = classRef;
-                    }
-                void SetLocation(ClassLocation location, bool append)
-                    {
-                    if (append)
-                        m_location = static_cast<ClassLocation>((int) m_location | (int) location);
-                    else
-                        m_location = location;
-                    }
-            public:
-                ClassNameExp const* GetClassNameRef() const { return m_classRef; }
-                ClassLocation       GetLocation() const { return m_location; }
-                bool IsViewClass() const { return m_classRef != nullptr && m_classRef->GetParent() != nullptr && m_classRef->GetParent()->GetType() == Exp::Type::SubqueryRef; }
-            };
-    private:
-        JoinDirection           m_direction;
-        size_t                  m_relationshipClassNameExpIndex;
-        ResolvedEndPoint        m_resolvedFrom;
-        ResolvedEndPoint        m_resolvedTo;
-        size_t                  m_fromSpecFilterIdx = 0;
-        size_t                  m_toSpecFilterIdx = 0;
+       private:
+        ClassNameExp const* m_classRef;
+        ClassLocation m_location;
 
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override;
-        BentleyStatus ResolveRelationshipEnds(ECSqlParseContext&);
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+       protected:
+        ResolvedEndPoint() : m_classRef(nullptr), m_location(ClassLocation::NotResolved) {}
+        void SetClassRef(ClassNameExp const* classRef) {
+            m_classRef = classRef;
+        }
+        void SetLocation(ClassLocation location, bool append) {
+            if (append)
+                m_location = static_cast<ClassLocation>((int)m_location | (int)location);
+            else
+                m_location = location;
+        }
 
-    public:
-        UsingRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
-            : JoinExp(Type::ECRelationshipJoin, ECSqlJoinType::JoinUsingRelationship, std::move(from), std::move(to)), m_direction(direction)
-            {
-            m_relationshipClassNameExpIndex = AddChild(std::move(relationship));
-            }
-
-        ClassNameExp const& GetRelationshipClassNameExp() const { return *GetChild<ClassNameExp>(m_relationshipClassNameExpIndex); }
-
-        ResolvedEndPoint const&  GetResolvedFromEndPoint() const { return m_resolvedFrom; }
-        ResolvedEndPoint const&  GetResolvedToEndPoint() const { return m_resolvedTo; }
-
-        BinaryBooleanExp const* GetFromSpecExp() const { return m_fromSpecFilterIdx == 0 ? nullptr : GetChild<BinaryBooleanExp>(m_fromSpecFilterIdx); }
-        BinaryBooleanExp const* GetToSpecExp() const   { return m_toSpecFilterIdx   == 0 ? nullptr : GetChild<BinaryBooleanExp>(m_toSpecFilterIdx); }
-        JoinDirection GetDirection() const { return m_direction; }
+       public:
+        ClassNameExp const* GetClassNameRef() const { return m_classRef; }
+        ClassLocation GetLocation() const { return m_location; }
+        bool IsViewClass() const { return m_classRef != nullptr && m_classRef->GetParent() != nullptr && m_classRef->GetParent()->GetType() == Exp::Type::SubqueryRef; }
     };
 
+   private:
+    JoinDirection m_direction;
+    size_t m_relationshipClassNameExpIndex;
+    ResolvedEndPoint m_resolvedFrom;
+    ResolvedEndPoint m_resolvedTo;
+    size_t m_fromSpecFilterIdx = 0;
+    size_t m_toSpecFilterIdx = 0;
+
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+    Utf8String _ToString() const override;
+    BentleyStatus ResolveRelationshipEnds(ECSqlParseContext&);
+    FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+
+   public:
+    UsingRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
+        : JoinExp(Type::ECRelationshipJoin, ECSqlJoinType::JoinUsingRelationship, std::move(from), std::move(to)), m_direction(direction) {
+        m_relationshipClassNameExpIndex = AddChild(std::move(relationship));
+    }
+
+    ClassNameExp const& GetRelationshipClassNameExp() const { return *GetChild<ClassNameExp>(m_relationshipClassNameExpIndex); }
+
+    ResolvedEndPoint const& GetResolvedFromEndPoint() const { return m_resolvedFrom; }
+    ResolvedEndPoint const& GetResolvedToEndPoint() const { return m_resolvedTo; }
+
+    BinaryBooleanExp const* GetFromSpecExp() const { return m_fromSpecFilterIdx == 0 ? nullptr : GetChild<BinaryBooleanExp>(m_fromSpecFilterIdx); }
+    BinaryBooleanExp const* GetToSpecExp() const { return m_toSpecFilterIdx == 0 ? nullptr : GetChild<BinaryBooleanExp>(m_toSpecFilterIdx); }
+    JoinDirection GetDirection() const { return m_direction; }
+};
 
 //************* JoinSpecExp subclasses **********************
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct NamedPropertiesJoinExp final : JoinSpecExp
-    {
-    private:
-        std::vector<Utf8String> m_properties;
+struct NamedPropertiesJoinExp final : JoinSpecExp {
+   private:
+    std::vector<Utf8String> m_properties;
 
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override;
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+    Utf8String _ToString() const override;
 
-    public:
-        NamedPropertiesJoinExp() : JoinSpecExp(Type::NamedPropertiesJoin) {}
-        void Append(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
-    };
+   public:
+    NamedPropertiesJoinExp() : JoinSpecExp(Type::NamedPropertiesJoin) {}
+    void Append(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
+};
 
 struct BooleanExp;
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct JoinConditionExp final : JoinSpecExp
-    {
-    private:
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override { return "JoinCondition"; }
+struct JoinConditionExp final : JoinSpecExp {
+   private:
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+    Utf8String _ToString() const override { return "JoinCondition"; }
 
-    public:
-        explicit JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition);
-        BooleanExp const* GetSearchCondition() const;
-    };
-
+   public:
+    explicit JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition);
+    BooleanExp const* GetSearchCondition() const;
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

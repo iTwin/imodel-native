@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -24,21 +24,21 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     }
 
     DbValue const& classIdVal = args[0];
-    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
+    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal)
         return;
 
     DbValue const& instanceIdVal = args[1];
-    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal)
         return;
 
     DbValue const& accessStringVal = args[2];
-    if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
+    if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal)
         return;
 
     unsigned int jsonFlags = 0;
     if (nArgs > 3) {
         DbValue const& jsonFlagsVal = args[3];
-        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal ) {
+        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal) {
             jsonFlags = static_cast<unsigned int>(jsonFlagsVal.GetValueInt());
         }
     }
@@ -65,59 +65,66 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
 
     ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
     ECN::ECClassId classId(classIdVal.GetValueUInt64());
-    if (field) field->SetDynamicColumnInfo(ECSqlColumnInfo());
+    if (field)
+        field->SetDynamicColumnInfo(ECSqlColumnInfo());
     m_ecdb.GetInstanceReader().Seek(
         InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
-        [&](InstanceReader::IRowContext const& row, auto _){
-        auto& val = row.GetValue(0);
-        if (val.IsNull()) {
-            return;
-        }
-        auto& ci = val.GetColumnInfo();
-        if (ci.GetDataType().IsPrimitive()){
-            const auto type = ci.GetDataType().GetPrimitiveType();
-            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Binary) {
-                int blobSize = 0;
-                auto blob = val.GetBlob(&blobSize);
-                ctx.SetResultBlob(blob, blobSize);
-                if (field) field->SetDynamicColumnInfo(ci);
+        [&](InstanceReader::IRowContext const& row, auto _) {
+            auto& val = row.GetValue(0);
+            if (val.IsNull()) {
                 return;
             }
-            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Boolean) {
-                ctx.SetResultInt(val.GetBoolean()?1:0);
-                if (field) field->SetDynamicColumnInfo(ci);
-                return;
+            auto& ci = val.GetColumnInfo();
+            if (ci.GetDataType().IsPrimitive()) {
+                const auto type = ci.GetDataType().GetPrimitiveType();
+                if (type == ECN::PrimitiveType::PRIMITIVETYPE_Binary) {
+                    int blobSize = 0;
+                    auto blob = val.GetBlob(&blobSize);
+                    ctx.SetResultBlob(blob, blobSize);
+                    if (field)
+                        field->SetDynamicColumnInfo(ci);
+                    return;
+                }
+                if (type == ECN::PrimitiveType::PRIMITIVETYPE_Boolean) {
+                    ctx.SetResultInt(val.GetBoolean() ? 1 : 0);
+                    if (field)
+                        field->SetDynamicColumnInfo(ci);
+                    return;
+                }
+                if (type == ECN::PrimitiveType::PRIMITIVETYPE_DateTime) {
+                    ctx.SetResultDouble(val.GetDouble());
+                    if (field)
+                        field->SetDynamicColumnInfo(ci);
+                    return;
+                }
+                if (type == ECN::PrimitiveType::PRIMITIVETYPE_Double) {
+                    ctx.SetResultDouble(val.GetDouble());
+                    if (field)
+                        field->SetDynamicColumnInfo(ci);
+                    return;
+                }
+                if (type == ECN::PrimitiveType::PRIMITIVETYPE_Integer ||
+                    type == ECN::PrimitiveType::PRIMITIVETYPE_Long) {
+                    ctx.SetResultInt64(val.GetInt64());
+                    if (field)
+                        field->SetDynamicColumnInfo(ci);
+                    return;
+                }
+                if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
+                    ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes);
+                    if (field)
+                        field->SetDynamicColumnInfo(ci);
+                    return;
+                }
             }
-            if (type == ECN::PrimitiveType::PRIMITIVETYPE_DateTime) {
-                ctx.SetResultDouble(val.GetDouble());
-                if (field) field->SetDynamicColumnInfo(ci);
-                return;
-            }
-            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Double) {
-                ctx.SetResultDouble(val.GetDouble());
-                if (field) field->SetDynamicColumnInfo(ci);
-                return;
-            }
-            if (type == ECN::PrimitiveType::PRIMITIVETYPE_Integer ||
-                type == ECN::PrimitiveType::PRIMITIVETYPE_Long) {
-                ctx.SetResultInt64(val.GetInt64());
-                if (field) field->SetDynamicColumnInfo(ci);
-                return;
-            }
-            if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
-                ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes );
-                if (field) field->SetDynamicColumnInfo(ci);
-                return;
-            }
-        }
 
-        JsReadOptions params;
-        params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
-        params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
+            JsReadOptions params;
+            params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+            params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
-        const auto json = row.GetJson(params).Stringify();
-        ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
-    });
+            const auto json = row.GetJson(params).Stringify();
+            ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
+        });
 }
 
 //==================================[ExtractInstFunc]=======================================
@@ -141,16 +148,14 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (classIdVal.IsNull())
         return;
 
-
     DbValue const& instanceIdVal = args[1];
-    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
+    if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal)
         return;
-
 
     unsigned int jsonFlags = 0;
     if (nArgs > 2) {
         DbValue const& jsonFlagsVal = args[2];
-        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal ) {
+        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal) {
             jsonFlags = static_cast<unsigned int>(jsonFlagsVal.GetValueInt());
         }
     }
@@ -168,7 +173,7 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (classIdVal.GetValueType() == DbValueType::IntegerVal) {
         ECN::ECClassId classId(classIdVal.GetValueUInt64());
         m_ecdb.GetInstanceReader().Seek(
-            InstanceReader::Position(instanceId,classId, nullptr),
+            InstanceReader::Position(instanceId, classId, nullptr),
             setResult);
         return;
     }
@@ -184,8 +189,7 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db)
-    {
+ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, DbValueType::TextVal), m_db(&db) {
     m_options["s:c"] = FormatOptions::s_semicolon_c;
     m_options["a:c"] = FormatOptions::a_semicolon_c;
     m_options["s.c"] = FormatOptions::s_dot_c;
@@ -193,46 +197,39 @@ ClassNameFunc::ClassNameFunc(DbCR db) : ScalarFunction(SQLFUNC_ClassName, -1, Db
     m_options["a"] = FormatOptions::a;
     m_options["s"] = FormatOptions::s;
     m_options["c"] = FormatOptions::c;
-    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    if (nArgs < 1 || nArgs > 2)
-        {
+void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs < 1 || nArgs > 2) {
         ctx.SetResultError("ec_classname(I[,S]) expect one or two args");
         return;
-        }
+    }
 
     DbValue const& classId = args[0];
     if (classId.IsNull())
         return;
 
     auto fmt = FormatOptions::default_fmt;
-    if (nArgs == 2)
-        {
+    if (nArgs == 2) {
         DbValue const& fmtOption = args[1];
-        if (!fmtOption.IsNull())
-            {
-            if (fmtOption.GetValueType() == DbValueType::TextVal)
-                {
+        if (!fmtOption.IsNull()) {
+            if (fmtOption.GetValueType() == DbValueType::TextVal) {
                 auto it = m_options.find(fmtOption.GetValueText());
                 if (it == m_options.end())
                     return;
 
                 fmt = it->second;
-                }
-            else if (fmtOption.GetValueType() == DbValueType::IntegerVal)
-                {
+            } else if (fmtOption.GetValueType() == DbValueType::IntegerVal) {
                 const auto fmtId = fmtOption.GetValueInt();
                 if (fmtId < (int)FormatOptions::s_semicolon_c && fmtId > (int)FormatOptions::a_dot_c)
                     return;
 
                 fmt = (FormatOptions)fmtId;
-                }
             }
         }
+    }
 
     auto stmt = m_db->GetCachedStatement(R"sql(
         select
@@ -244,11 +241,10 @@ void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
                s.name  || '.' || c.name sn_dot_cn,
                s.alias || '.' || c.name sa_dot_cn
         from ec_class c join ec_schema s on c.SchemaId = s.Id where c.Id = ?)sql");
-    if (stmt == nullptr)
-        {
+    if (stmt == nullptr) {
         ctx.SetResultError("ec_classname(I[,S]) db is close");
         return;
-        }
+    }
     stmt->BindUInt64(1, classId.GetValueUInt64());
     if (stmt->Step() != BE_SQLITE_ROW)
         return;
@@ -256,24 +252,24 @@ void ClassNameFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     const auto strOut = stmt->GetValueText((int)fmt);
     const auto strSize = stmt->GetColumnBytes((int)fmt);
     ctx.SetResultText(strOut, strSize, DbFunction::Context::CopyData::Yes);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
- std::unique_ptr<ClassNameFunc> ClassNameFunc::Create(DbCR db) { return std::unique_ptr<ClassNameFunc>(new ClassNameFunc(db));}
+std::unique_ptr<ClassNameFunc> ClassNameFunc::Create(DbCR db) {
+    return std::unique_ptr<ClassNameFunc>(new ClassNameFunc(db));
+}
 
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    if (nArgs < 1 || nArgs > 2)
-        {
+void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs < 1 || nArgs > 2) {
         ctx.SetResultError("ec_classid(X[,Y]) expects one or two args.");
         return;
-        }
+    }
 
     DbValue const& a0 = args[0];
     if (a0.GetValueType() != DbValueType::TextVal)
@@ -282,22 +278,19 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     Utf8String tokenFirst = a0.GetValueText();
     const int tokenFirstLen = a0.GetValueBytes();
     Utf8String tokenSecond;
-    if (nArgs == 2)
-        {
+    if (nArgs == 2) {
         DbValue const& a1 = args[1];
-        if (!a1.IsNull())
-            {
+        if (!a1.IsNull()) {
             if (a1.GetValueType() != DbValueType::TextVal)
                 return;
 
             tokenSecond = a1.GetValueText();
-            }
         }
+    }
 
     Utf8String schemaNameOrAlias;
     Utf8String className;
-    if (Utf8String::IsNullOrEmpty(tokenSecond.c_str()))
-        {
+    if (Utf8String::IsNullOrEmpty(tokenSecond.c_str())) {
         const auto delimiterPos = tokenFirst.find_first_of(".:");
         schemaNameOrAlias = tokenFirst.substr(0, delimiterPos);
         if (Utf8String::IsNullOrEmpty(schemaNameOrAlias.c_str()))
@@ -307,19 +300,16 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
             className = tokenFirst.substr(delimiterPos + 1U, tokenFirstLen);
         if (Utf8String::IsNullOrEmpty(className.c_str()))
             return;
-        }
-    else
-        {
+    } else {
         schemaNameOrAlias = tokenFirst;
         className = tokenSecond;
-        }
+    }
 
     auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");
-    if (stmt == nullptr)
-        {
+    if (stmt == nullptr) {
         ctx.SetResultError("ec_class() db is close");
         return;
-        }
+    }
 
     stmt->BindText(1, className, Statement::MakeCopy::No);
     stmt->BindText(2, schemaNameOrAlias, Statement::MakeCopy::No);
@@ -328,52 +318,48 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         return;
 
     ctx.SetResultInt64(stmt->GetValueInt64(0));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<ClassIdFunc> ClassIdFunc::Create(DbCR db) { return std::unique_ptr<ClassIdFunc>(new ClassIdFunc(db));}
+std::unique_ptr<ClassIdFunc> ClassIdFunc::Create(DbCR db) {
+    return std::unique_ptr<ClassIdFunc>(new ClassIdFunc(db));
+}
 
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    if (nArgs <= 1)
-        {
+void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs <= 1) {
         ctx.SetResultError("ec_instanceof(C[,Y1,...]) expects more than one arg.");
         return;
-        }
+    }
 
     ECN::ECClassId curId;
     IdSet<ECN::ECClassId> classIds;
-    for (int i = 0; i < nArgs; i++)
-        {
-        DbValue const &arg = args[i];
+    for (int i = 0; i < nArgs; i++) {
+        DbValue const& arg = args[i];
         if (arg.IsNull())
             continue;
 
-        if (arg.GetValueType() == DbValueType::IntegerVal)
-            {
+        if (arg.GetValueType() == DbValueType::IntegerVal) {
             if (i == 0)
                 curId = ECN::ECClassId(arg.GetValueUInt64());
             else
                 classIds.insert(ECN::ECClassId(arg.GetValueUInt64()));
-            }
-        if (arg.GetValueType() == DbValueType::TextVal)
-            {
+        }
+        if (arg.GetValueType() == DbValueType::TextVal) {
             Utf8String name = arg.GetValueText();
             auto it = m_cache.find(name);
-            if (it != m_cache.end())
-                {
+            if (it != m_cache.end()) {
                 if (i == 0)
                     curId = it->second;
                 else
                     classIds.insert(it->second);
                 continue;
-                }
+            }
 
             // resolve name into classid
             const auto delimiterPos = name.find_first_of(".:");
@@ -388,11 +374,10 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
                 return;
 
             auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");
-            if (stmt == nullptr)
-                {
+            if (stmt == nullptr) {
                 ctx.SetResultError("ec_instanceof() db is close");
                 return;
-                }
+            }
             stmt->BindText(1, className, Statement::MakeCopy::No);
             stmt->BindText(2, schemaNameOrAlias, Statement::MakeCopy::No);
             if (stmt->Step() != BE_SQLITE_ROW)
@@ -404,57 +389,52 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
                 curId = cid;
             else
                 classIds.insert(cid);
-            }
         }
-
+    }
 
     auto stmt = m_db->GetCachedStatement("select classid from ec_cache_ClassHierarchy where InVirtualSet(?,baseClassId) and classid=? limit 1");
-    if (stmt == nullptr)
-        {
+    if (stmt == nullptr) {
         ctx.SetResultError("ec_instanceof() db is close");
         return;
-        }
+    }
     stmt->BindVirtualSet(1, classIds);
     stmt->BindId(2, curId);
     ctx.SetResultInt(stmt->Step() == BE_SQLITE_ROW ? 1 : 0);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<InstanceOfFunc> InstanceOfFunc::Create(DbCR db) { return std::unique_ptr<InstanceOfFunc>(new InstanceOfFunc(db));}
+std::unique_ptr<InstanceOfFunc> InstanceOfFunc::Create(DbCR db) {
+    return std::unique_ptr<InstanceOfFunc>(new InstanceOfFunc(db));
+}
 
 //************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-StrToGuid& StrToGuid::GetSingleton()
-    {
+StrToGuid& StrToGuid::GetSingleton() {
     static StrToGuid s_singleton;
     return s_singleton;
-    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void StrToGuid::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
+void StrToGuid::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
-        {
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) {
         ctx.SetResultNull();
         return;
-        }
-
-    BeGuid guid;
-    if (guid.FromString(v.GetValueText()) != BentleyStatus::SUCCESS)
-        {
-        ctx.SetResultNull();
-        return;
-        }
-
-    ctx.SetResultBlob(&guid, sizeof(BeGuid), DbFunction::Context::CopyData::Yes);
     }
 
+    BeGuid guid;
+    if (guid.FromString(v.GetValueText()) != BentleyStatus::SUCCESS) {
+        ctx.SetResultNull();
+        return;
+    }
+
+    ctx.SetResultBlob(&guid, sizeof(BeGuid), DbFunction::Context::CopyData::Yes);
+}
 
 //************************************************************************************
 // GuidToStr
@@ -463,29 +443,26 @@ void StrToGuid::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 
-GuidToStr& GuidToStr::GetSingleton()
-    {
+GuidToStr& GuidToStr::GetSingleton() {
     static GuidToStr s_singleton;
     return s_singleton;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void GuidToStr::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
+void GuidToStr::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid))
-        {
+    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid)) {
         ctx.SetResultNull();
         return;
-        }
+    }
 
     BeGuid guid;
     memcpy(&guid, v.GetValueBlob(), sizeof(BeGuid));
     Utf8String str = guid.ToString();
     ctx.SetResultText(str.c_str(), static_cast<int>(str.size()), DbFunction::Context::CopyData::Yes);
-    }
+}
 
 //************************************************************************************
 // IdToHex
@@ -494,29 +471,26 @@ void GuidToStr::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 
-IdToHex& IdToHex::GetSingleton()
-    {
+IdToHex& IdToHex::GetSingleton() {
     static IdToHex s_singleton;
     return s_singleton;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void IdToHex::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
+void IdToHex::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal)
-        {
+    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal) {
         ctx.SetResultNull();
         return;
-        }
+    }
 
     static const size_t stringBufferLength = 19;
     Utf8Char stringBuffer[stringBufferLength];
     BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, v.GetValueUInt64(), HexFormatOptions::IncludePrefix);
-    ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
-    }
+    ctx.SetResultText(stringBuffer, (int)strlen(stringBuffer), Context::CopyData::Yes);
+}
 
 //************************************************************************************
 // HexToId
@@ -525,49 +499,43 @@ void IdToHex::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 
-HexToId& HexToId::GetSingleton()
-    {
+HexToId& HexToId::GetSingleton() {
     static HexToId s_singleton;
     return s_singleton;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void HexToId::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
+void HexToId::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
-        {
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) {
         ctx.SetResultNull();
         return;
-        }
-    ctx.SetResultInt64(BeStringUtilities::ParseHex(v.GetValueText(), nullptr));
     }
+    ctx.SetResultInt64(BeStringUtilities::ParseHex(v.GetValueText(), nullptr));
+}
 //************************************************************************************
 // ChangedValueStateToOpCodeSqlFunction
 //************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-ChangedValueStateToOpCodeSqlFunction& ChangedValueStateToOpCodeSqlFunction::GetSingleton()
-    {
+// static
+ChangedValueStateToOpCodeSqlFunction& ChangedValueStateToOpCodeSqlFunction::GetSingleton() {
     static ChangedValueStateToOpCodeSqlFunction s_singleton;
     return s_singleton;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
+void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     DbValue const& stateValue = args[0];
-    if (stateValue.GetValueType() != DbValueType::IntegerVal && stateValue.GetValueType() != DbValueType::TextVal)
-        {
+    if (stateValue.GetValueType() != DbValueType::IntegerVal && stateValue.GetValueType() != DbValueType::TextVal) {
         ctx.SetResultError("Argument 1 of function " SQLFUNC_ChangedValueStateToOpCode " is expected to be the ChangedValueState and must be of integer or text type and cannot be null");
         return;
-        }
+    }
 
     const bool isIntegerVal = stateValue.GetValueType() == DbValueType::IntegerVal;
     Nullable<ChangedValueState> state;
@@ -577,8 +545,7 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
         state = ChangeManager::ToChangedValueState(stateValue.GetValueText());
 
     Nullable<ChangeOpCode> opCode;
-    if (state.IsNull() || (opCode = ChangeManager::DetermineOpCodeFromChangedValueState(state.Value())).IsNull())
-        {
+    if (state.IsNull() || (opCode = ChangeManager::DetermineOpCodeFromChangedValueState(state.Value())).IsNull()) {
         Utf8String msg;
         if (isIntegerVal)
             msg.Sprintf("Argument 1 of function " SQLFUNC_ChangedValueStateToOpCode " has an invalid ChangedValueState value (%d)", stateValue.GetValueInt());
@@ -587,10 +554,10 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
 
         ctx.SetResultError(msg.c_str());
         return;
-        }
+    }
 
     ctx.SetResultInt(Enum::ToInt(opCode.Value()));
-    }
+}
 
 //************************************************************************************
 // ChangedValueSqlFunction
@@ -599,33 +566,29 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    //Decode and verify parameters
+void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    // Decode and verify parameters
     DbValue const& instanceChangeIdValue = args[0];
-    if (instanceChangeIdValue.GetValueType() != DbValueType::IntegerVal)
-        {
+    if (instanceChangeIdValue.GetValueType() != DbValueType::IntegerVal) {
         ctx.SetResultError("Argument 1 of function " SQLFUNC_ChangedValue " is expected to be the InstanceChange ECInstanceId and must be of integer type and cannot be null");
         return;
-        }
+    }
 
     const ECInstanceId instanceChangeId = instanceChangeIdValue.GetValueId<ECInstanceId>();
 
     DbValue const& accessStringValue = args[1];
-    if (accessStringValue.GetValueType() != DbValueType::TextVal)
-        {
+    if (accessStringValue.GetValueType() != DbValueType::TextVal) {
         ctx.SetResultError("Argument 2 of function " SQLFUNC_ChangedValue " is expected to be the property access string and must be of text type and cannot be null");
         return;
-        }
+    }
 
     Utf8CP accessString = accessStringValue.GetValueText();
 
     DbValue const& changedValueStateValue = args[2];
-    if (changedValueStateValue.GetValueType() != DbValueType::IntegerVal && changedValueStateValue.GetValueType() != DbValueType::TextVal)
-        {
+    if (changedValueStateValue.GetValueType() != DbValueType::IntegerVal && changedValueStateValue.GetValueType() != DbValueType::TextVal) {
         ctx.SetResultError("Argument 3 of function " SQLFUNC_ChangedValue " is expected to be the ChangedValueState and must be of integer or text type and cannot be null");
         return;
-        }
+    }
 
     const bool stateIsIntegerVal = changedValueStateValue.GetValueType() == DbValueType::IntegerVal;
     Nullable<ChangedValueState> state;
@@ -634,8 +597,7 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
     else
         state = ChangeManager::ToChangedValueState(changedValueStateValue.GetValueText());
 
-    if (state.IsNull())
-        {
+    if (state.IsNull()) {
         Utf8String msg;
         if (stateIsIntegerVal)
             msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid ChangedValueState value (%d)", changedValueStateValue.GetValueInt());
@@ -644,7 +606,7 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
         ctx.SetResultError(msg.c_str());
         return;
-        }
+    }
 
     DbValue const& fallbackValue = args[3];
 
@@ -655,65 +617,58 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
         ecsql = "SELECT RawNewValue,TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
 
     CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
-    if (stmt == nullptr)
-        {
+    if (stmt == nullptr) {
         Utf8String msg;
         msg.Sprintf("SQL function " SQLFUNC_ChangedValue " failed: could not prepare ECSQL '%s'.", ecsql);
         ctx.SetResultError(msg.c_str());
         return;
-        }
+    }
 
     stmt->BindId(1, instanceChangeId);
     stmt->BindText(2, accessString, IECSqlBinder::MakeCopy::No);
 
-    if (stmt->Step() != BE_SQLITE_ROW)
-        {
+    if (stmt->Step() != BE_SQLITE_ROW) {
         ctx.SetResultValue(fallbackValue);
         return;
-        }
+    }
 
-    if (stmt->IsValueNull(0))
-        {
+    if (stmt->IsValueNull(0)) {
         ctx.SetResultNull();
         return;
-        }
+    }
 
     Utf8CP valType = stmt->GetValueText(1);
 
-    if (valType[0] == 'i' /*BeStringUtilities::StricmpAscii("integer", valType) == 0*/)
-        {
+    if (valType[0] == 'i' /*BeStringUtilities::StricmpAscii("integer", valType) == 0*/) {
         BeAssert(BeStringUtilities::StricmpAscii("integer", valType) == 0);
         ctx.SetResultInt64(stmt->GetValueInt64(0));
         return;
-        }
+    }
 
-    if (valType[0] == 'r' /*BeStringUtilities::StricmpAscii("real", valType) == 0*/)
-        {
+    if (valType[0] == 'r' /*BeStringUtilities::StricmpAscii("real", valType) == 0*/) {
         BeAssert(BeStringUtilities::StricmpAscii("real", valType) == 0);
         ctx.SetResultDouble(stmt->GetValueDouble(0));
         return;
-        }
+    }
 
-    if (valType[0] == 't' /*BeStringUtilities::StricmpAscii("text", valType) == 0*/)
-        {
+    if (valType[0] == 't' /*BeStringUtilities::StricmpAscii("text", valType) == 0*/) {
         BeAssert(BeStringUtilities::StricmpAscii("text", valType) == 0);
         Utf8CP strVal = stmt->GetValueText(0);
-        const int len = (int) strlen(strVal);
+        const int len = (int)strlen(strVal);
         ctx.SetResultText(strVal, len, Context::CopyData::Yes);
         return;
-        }
+    }
 
-    if (valType[0] == 'b' /*BeStringUtilities::StricmpAscii("blob", valType) == 0*/)
-        {
+    if (valType[0] == 'b' /*BeStringUtilities::StricmpAscii("blob", valType) == 0*/) {
         BeAssert(BeStringUtilities::StricmpAscii("blob", valType) == 0);
         int blobSize = -1;
         void const* blob = stmt->GetValueBlob(0, &blobSize);
         ctx.SetResultBlob(blob, blobSize, Context::CopyData::Yes);
         return;
-        }
+    }
 
     ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
-    }
+}
 
 //************************************************************************************
 // XmlCAToJson
@@ -721,61 +676,56 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<XmlCAToJson> XmlCAToJson::Create(SchemaManager const& schemaManager) { return std::unique_ptr<XmlCAToJson>(new XmlCAToJson(schemaManager));}
+std::unique_ptr<XmlCAToJson> XmlCAToJson::Create(SchemaManager const& schemaManager) {
+    return std::unique_ptr<XmlCAToJson>(new XmlCAToJson(schemaManager));
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    if(nArgs != 2)
-        {
+void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 2) {
         ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: invalid number of arguments. Expected 2 arguments.");
         return;
-        }
+    }
 
     DbValue const& idValue = args[0];
-    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal)
-        {
+    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal) {
         ctx.SetResultNull();
         return;
-        }
+    }
 
     ECClassId caClassId = idValue.GetValueId<ECClassId>();
     ECClassCP caClass = m_schemaManager->GetClass(caClassId);
-    if(caClass == nullptr)
-        {
+    if (caClass == nullptr) {
         ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: could not find custom attribute's class.");
         return;
-        }
+    }
 
     DbValue const& xmlValue = args[1];
-    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal)
-        {
+    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal) {
         ctx.SetResultNull();
         return;
-        }
+    }
 
     Utf8CP caXml = xmlValue.GetValueText();
 
     ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
     IECInstancePtr deserializedCa = nullptr;
-    if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
-        {
+    if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext)) {
         ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to read custom attribute xml.");
         return;
-        }
+    }
 
     Json::Value caJson;
-    if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(caJson, *deserializedCa, nullptr, false))
-        {
+    if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(caJson, *deserializedCa, nullptr, false)) {
         ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to serialize instance to json.");
         return;
-        }
+    }
 
     Utf8String strVal = caJson.ToString();
-    const int len = (int) strlen(strVal.c_str());
+    const int len = (int)strlen(strVal.c_str());
     ctx.SetResultText(strVal.c_str(), len, Context::CopyData::Yes);
-    }
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
