@@ -1,13 +1,11 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
-#include <Bentley/BeDirectoryIterator.h>
-#include <ECObjects/SchemaComparer.h>
-
-#include <set>
-
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <set>
+#include <ECObjects/SchemaComparer.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -17,24 +15,24 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-struct SchemaRemapTestFixture : public ECDbTestFixture {
-   protected:
-    BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
-    BentleyStatus ImportSchemaFromFile(BeFileName const& fileName);
-};
+struct SchemaRemapTestFixture : public ECDbTestFixture
+    {
+    protected:
+        BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
+        BentleyStatus ImportSchemaFromFile(BeFileName const& fileName);
+    };
 
-#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL) \
-    {                                                            \
-        ECSqlStatement stmt;                                     \
-        ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL)); \
-        if (PREPARESTATUS == ECSqlStatus::Success)               \
-            ASSERT_EQ(STEPSTATUS, stmt.Step());                  \
-    }
+#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
+                                                                    ECSqlStatement stmt;\
+                                                                    ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
+                                                                    if (PREPARESTATUS == ECSqlStatus::Success)\
+                                                                        ASSERT_EQ(STEPSTATUS, stmt.Step());\
+                                                                   }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
-    SchemaItem schema1(R"xml(
+   SchemaItem schema1(R"xml(
         <?xml version="1.0" encoding="utf-8" ?>
         <ECSchema
           schemaName="TestSchema"
@@ -119,7 +117,8 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
     )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
-                                                   SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade
+    ));
 
     SchemaItem schema3(R"xml(
         <?xml version="1.0" encoding="utf-8" ?>
@@ -163,14 +162,15 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
     )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema3,
-                                                   SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+                           SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, ChangeBaseClassDownInExistingHierarchy) {
+TEST_F(SchemaRemapTestFixture, ChangeBaseClassDownInExistingHierarchy)
+    {
     // start: C -> A   end: C -> B -> A
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.00.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -186,10 +186,10 @@ TEST_F(SchemaRemapTestFixture, ChangeBaseClassDownInExistingHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("modifyBaseClassDownInExistingHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.C (PropA,PropC) VALUES ('FIRSTA', 'FIRSTC')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.C (PropA,PropC) VALUES ('FIRSTA', 'FIRSTC')");
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.01.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
@@ -208,24 +208,25 @@ TEST_F(SchemaRemapTestFixture, ChangeBaseClassDownInExistingHierarchy) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     {
-        ECClassCP c = m_ecdb.Schemas().GetClass("NewBaseClass", "C");
-        ASSERT_NE(c, nullptr);
-        ASSERT_EQ(1, c->GetBaseClasses().size());
-        ASSERT_STREQ(c->GetBaseClasses().at(0)->GetFullName(), "NewBaseClass:B");
-        ASSERT_EQ(3, c->GetPropertyCount());
+    ECClassCP c = m_ecdb.Schemas().GetClass("NewBaseClass", "C");
+    ASSERT_NE(c, nullptr);
+    ASSERT_EQ(1, c->GetBaseClasses().size());
+    ASSERT_STREQ(c->GetBaseClasses().at(0)->GetFullName(), "NewBaseClass:B");
+    ASSERT_EQ(3, c->GetPropertyCount());
     }
 
     // Verify we can insert and select
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.C (PropA,PropB,PropC) VALUES ('SECONDA', 'SECONDB', 'SECONDC')");
 
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropB, PropC FROM NewBaseClass.C");
-    ASSERT_EQ(JsonValue(R"json([{"PropA":"FIRSTA", "PropC":"FIRSTC"},{"PropA":"SECONDA", "PropB":"SECONDB", "PropC":"SECONDC"}])json"), result) << "Verify inserted instances";
-}
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"FIRSTA", "PropC":"FIRSTC"},{"PropA":"SECONDA", "PropB":"SECONDB", "PropC":"SECONDC"}])json"),result) << "Verify inserted instances";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddTwoClassesInMiddleOfHierarchy) {
+TEST_F(SchemaRemapTestFixture, AddTwoClassesInMiddleOfHierarchy)
+    {
     // start: D -> A   end: D -> C -> B -> A
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.00.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -241,10 +242,10 @@ TEST_F(SchemaRemapTestFixture, AddTwoClassesInMiddleOfHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("addTwoClassesInMiddleOfHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.D (PropA,PropD) VALUES ('FIRSTA', 'FIRSTD')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.D (PropA,PropD) VALUES ('FIRSTA', 'FIRSTD')");
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.01.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
@@ -267,24 +268,25 @@ TEST_F(SchemaRemapTestFixture, AddTwoClassesInMiddleOfHierarchy) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     {
-        ECClassCP d = m_ecdb.Schemas().GetClass("NewBaseClass", "D");
-        ASSERT_NE(d, nullptr);
-        ASSERT_EQ(1, d->GetBaseClasses().size());
-        ASSERT_STREQ(d->GetBaseClasses().at(0)->GetFullName(), "NewBaseClass:C");
-        ASSERT_EQ(4, d->GetPropertyCount());
+    ECClassCP d = m_ecdb.Schemas().GetClass("NewBaseClass", "D");
+    ASSERT_NE(d, nullptr);
+    ASSERT_EQ(1, d->GetBaseClasses().size());
+    ASSERT_STREQ(d->GetBaseClasses().at(0)->GetFullName(), "NewBaseClass:C");
+    ASSERT_EQ(4, d->GetPropertyCount());
     }
 
     // Verify we can insert and select
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.D (PropA,PropB,PropC,PropD) VALUES ('SECONDA', 'SECONDB', 'SECONDC', 'SECONDD')");
 
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropB, PropC, PropD FROM NewBaseClass.D");
-    ASSERT_EQ(JsonValue(R"json([{"PropA":"FIRSTA", "PropD":"FIRSTD"},{"PropA":"SECONDA", "PropB":"SECONDB", "PropC":"SECONDC", "PropD":"SECONDD"}])json"), result) << "Verify inserted instances";
-}
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"FIRSTA", "PropD":"FIRSTD"},{"PropA":"SECONDA", "PropB":"SECONDB", "PropC":"SECONDC", "PropD":"SECONDD"}])json"),result) << "Verify inserted instances";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, RemoveClassFromMiddleOfHiearchy) {
+TEST_F(SchemaRemapTestFixture, RemoveClassFromMiddleOfHiearchy)
+    {
     // start: C -> B -> A end: C -> A
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.00.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -304,7 +306,7 @@ TEST_F(SchemaRemapTestFixture, RemoveClassFromMiddleOfHiearchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("removeClassFromMiddleOfHiearchy.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.01.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
@@ -322,12 +324,14 @@ TEST_F(SchemaRemapTestFixture, RemoveClassFromMiddleOfHiearchy) {
         )schema");
 
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Moving up the base class hierarchy should not be supported";
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveClassToDifferentHierarchy) {
+TEST_F(SchemaRemapTestFixture, MoveClassToDifferentHierarchy)
+    {
     // start: C -> A end: C -> B
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.00.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -346,7 +350,7 @@ TEST_F(SchemaRemapTestFixture, MoveClassToDifferentHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveClassToDifferentHierarchy.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NewBaseClass" alias="nbc" version="01.01.00" displayLabel="InsertNewBaseClassInMiddleOfExistingHierarchy" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
@@ -363,12 +367,13 @@ TEST_F(SchemaRemapTestFixture, MoveClassToDifferentHierarchy) {
         )schema");
 
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Changing the base class should not be supported";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable) {
+TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -441,13 +446,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchyUsingOverflowTable.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.BAFFLE_SILENCERS (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.BAFFLE_SILENCERS (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.BAFFLE_SILENCERS");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.BAFFLE_SILENCERS");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -524,15 +529,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable) {
     // Verify we can insert and select
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.BAFFLE_SILENCERS (MovingProperty) VALUES ('SECOND')");
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.BAFFLE_SILENCERS");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}, {"MovingProperty":"SECOND"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.BAFFLE_SILENCERS");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}, {"MovingProperty":"SECOND"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified) {
+TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -559,13 +565,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchySimple.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -595,15 +601,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified) {
     // Verify we can insert and select
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}, {"MovingProperty":"SECOND"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}, {"MovingProperty":"SECOND"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal) {
+TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -630,13 +637,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchyRemoveOriginal.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -664,15 +671,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal) {
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.MyBaseClass");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.MyBaseClass");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema) {
+TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
+    {
     // like previous test, but the base class comes later in the schema, so the change to "delete" the property is detected first
 
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -701,13 +709,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchyDeleteBeforeAdd.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -735,15 +743,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.MyBaseClass");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.MyBaseClass");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, RemoveOverwrittenProperty) {
+TEST_F(SchemaRemapTestFixture, RemoveOverwrittenProperty)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -771,13 +780,13 @@ TEST_F(SchemaRemapTestFixture, RemoveOverwrittenProperty) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("removeOverwrittenProperty.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -805,15 +814,16 @@ TEST_F(SchemaRemapTestFixture, RemoveOverwrittenProperty) {
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.MyBaseClass");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.MyBaseClass");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUpInHierarchy) {
+TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUpInHierarchy)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -841,16 +851,16 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUpInHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiplePropertyUpInHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (MovingProperty2) VALUES ('FIRST2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (MovingProperty2) VALUES ('FIRST2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
-        result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty2 FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty2":"FIRST2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty2 FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty2":"FIRST2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -879,15 +889,16 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUpInHierarchy) {
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, MovingProperty2 FROM TestSchema.MyBaseClass");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}, {"MovingProperty2":"FIRST2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, MovingProperty2 FROM TestSchema.MyBaseClass");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}, {"MovingProperty2":"FIRST2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddOverwrittenPropertyInOneStep) {
+TEST_F(SchemaRemapTestFixture, AddOverwrittenPropertyInOneStep)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -913,7 +924,7 @@ TEST_F(SchemaRemapTestFixture, AddOverwrittenPropertyInOneStep) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("addOverwittenProperty.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -939,12 +950,13 @@ TEST_F(SchemaRemapTestFixture, AddOverwrittenPropertyInOneStep) {
         </ECSchema>
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp) {
+TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -971,13 +983,13 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMoveProperty.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1009,15 +1021,16 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp) {
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginal) {
+TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginal)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1047,13 +1060,13 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMovePropertyRemoveOrig.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1087,15 +1100,16 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed) {
+TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1122,13 +1136,13 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMovePropertyRev.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1160,15 +1174,16 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed) {
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginalReversed) {
+TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOriginalReversed)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1195,13 +1210,13 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMovePropertyRemoveOrigRev.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1232,15 +1247,16 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToNonSharedColumn) {
+TEST_F(SchemaRemapTestFixture, MovePropertyToNonSharedColumn)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1266,13 +1282,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToNonSharedColumn) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToNonSharedColumn.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1299,15 +1315,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToNonSharedColumn) {
 
     // Verify the instance is still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp) {
+TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1339,13 +1356,13 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiColumnPropertyUpInHierarchySimple.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (1,2,3)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (1,2,3)");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1377,17 +1394,18 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (4,5,6)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (4,5,6)");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}},{"MovingProperty":{"blue":4,"green":5,"red":6}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}},{"MovingProperty":{"blue":4,"green":5,"red":6}}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp) {
+TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1431,22 +1449,22 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertiesUpInHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('B unrelated', 'B simple', 'B.x', 'B.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('B unrelated', 'B simple', 'B.x', 'B.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Color.blue, Color.green, Color.red, UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('C.blue','C.green','C.red', 'C unrelated', 'C simple', 'C.x', 'C.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Color.blue, Color.green, Color.red, UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('C.blue','C.green','C.red', 'C unrelated', 'C simple', 'C.x', 'C.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1487,23 +1505,24 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToMixin) {
+TEST_F(SchemaRemapTestFixture, MovePropertyToMixin)
+    {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -1535,13 +1554,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixin) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToMixin.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -1575,16 +1594,17 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixin) {
 
     // Verify old and new instances
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns) {
+TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1625,22 +1645,22 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertiesInNonSharedColumns.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('B unrelated', 'B simple', 'B.x', 'B.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('B unrelated', 'B simple', 'B.x', 'B.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Color.blue, Color.green, Color.red, UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('C.blue','C.green','C.red', 'C unrelated', 'C simple', 'C.x', 'C.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Color.blue, Color.green, Color.red, UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('C.blue','C.green','C.red', 'C unrelated', 'C simple', 'C.x', 'C.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1678,23 +1698,25 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
     }
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertiesInDefaultTables) {
+TEST_F(SchemaRemapTestFixture, MovePropertiesInDefaultTables)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECStructClass typeName="ColorType">
@@ -1729,22 +1751,22 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInDefaultTables) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertiesInDefaultTables.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('B unrelated', 'B simple', 'B.x', 'B.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('B unrelated', 'B simple', 'B.x', 'B.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Color.blue, Color.green, Color.red, UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('C.blue','C.green','C.red', 'C unrelated', 'C simple', 'C.x', 'C.y')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Color.blue, Color.green, Color.red, UnrelatedProp, SimpleProp, Coords.x, Coords.y) VALUES ('C.blue','C.green','C.red', 'C unrelated', 'C simple', 'C.x', 'C.y')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECStructClass typeName="ColorType">
@@ -1776,23 +1798,24 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInDefaultTables) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"A.blue","green":"A.green","red":"A.red"},"SimpleProp":"A simple","Coords":{"x":"A.x","y":"A.y"}}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"UnrelatedProp":"B unrelated","SimpleProp":"B simple","Coords":{"x":"B.x","y":"B.y"}}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
-        ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Color, UnrelatedProp, SimpleProp, Coords FROM ONLY TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Color":{"blue":"C.blue","green":"C.green","red":"C.red"},"UnrelatedProp":"C unrelated","SimpleProp":"C simple","Coords":{"x":"C.x","y":"C.y"}}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct) {
+TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1824,13 +1847,13 @@ TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("modifyAndMoveStruct.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (1,2,3)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (1,2,3)");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -1863,17 +1886,18 @@ TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (4,5,6)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (4,5,6)");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}},{"MovingProperty":{"blue":4,"green":5,"red":6}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"blue":1,"green":2,"red":3}},{"MovingProperty":{"blue":4,"green":5,"red":6}}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToMixinAndRemoveOriginal) {
+TEST_F(SchemaRemapTestFixture, MovePropertyToMixinAndRemoveOriginal)
+    {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -1905,13 +1929,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixinAndRemoveOriginal) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToMixinAndRemoveOriginal.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -1944,16 +1968,17 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixinAndRemoveOriginal) {
 
     // Verify old and new instances
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyOnRelationshipClass) {
+TEST_F(SchemaRemapTestFixture, MovePropertyOnRelationshipClass)
+    {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2009,19 +2034,19 @@ TEST_F(SchemaRemapTestFixture, MovePropertyOnRelationshipClass) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyOnRelationshipClass.ecdb", schemaItem));
     {
-        ECClassId categoryClassId = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("Category")->GetId();
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 1')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 2')");
+    ECClassId categoryClassId = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("Category")->GetId();
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 1')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 2')");
 
-        Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO TestSchema.CategoryRefersToCategories(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, MovingProperty) VALUES(1 , %llu , 2 , %llu, 'FIRST')", categoryClassId.GetValue(), categoryClassId.GetValue());
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO TestSchema.CategoryRefersToCategories(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, MovingProperty) VALUES(1 , %llu , 2 , %llu, 'FIRST')", categoryClassId.GetValue(), categoryClassId.GetValue());
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.CategoryRefersToCategories");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.CategoryRefersToCategories");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2078,28 +2103,29 @@ TEST_F(SchemaRemapTestFixture, MovePropertyOnRelationshipClass) {
 
     // Verify old and new instances
     {
-        ECClassId categoryClassId = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("Category")->GetId();
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 3')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 4')");
+    ECClassId categoryClassId = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("Category")->GetId();
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 3')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 4')");
 
-        Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO TestSchema.CategoryRefersToCategories(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, MovingProperty) VALUES(4 , %llu , 5 , %llu, 'SECOND')", categoryClassId.GetValue(), categoryClassId.GetValue());
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO TestSchema.CategoryRefersToCategories(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, MovingProperty) VALUES(4 , %llu , 5 , %llu, 'SECOND')", categoryClassId.GetValue(), categoryClassId.GetValue());
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.ElementRefersToElements where SourceECInstanceId=4");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"SECOND"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.ElementRefersToElements where SourceECInstanceId=4");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"SECOND"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.ElementRefersToElements");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
-        m_ecdb.SaveChanges();
-        m_ecdb.CloseDb();
+    result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.ElementRefersToElements");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
+    m_ecdb.SaveChanges();
+    m_ecdb.CloseDb();
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario) {
+TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario)
+    {
     // Test that attempts the reflect the exact conditions that we hit before implementing moving properties
     // a new base class with a property is introduced in schema SpatialComposition
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
@@ -2235,7 +2261,7 @@ TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario) {
         <BaseClass>spcomp_CompositeElement</BaseClass>
         <BaseClass>spcomp_ICompositeVolume</BaseClass>
     </ECEntityClass>)schema"
-                          R"schema(
+    R"schema(
     <ECEntityClass typeName="Building" description="Converted to EC3 from DataGroup : Building" displayLabel="Building">
         <BaseClass>buildingSpatial_Building</BaseClass>
         <ECProperty propertyName="Identity_PART" typeName="string" description="Open Buildings Designer part" displayLabel="Part"/>
@@ -2268,13 +2294,13 @@ TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("spatialCompositionNewBaseScenario.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (Identity_PART) VALUES ('TEST1')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (Identity_PART) VALUES ('TEST1')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Identity_PART FROM TestSchema.Building");
-        ASSERT_EQ(JsonValue(R"json([{"Identity_PART":"TEST1"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Identity_PART FROM TestSchema.Building");
+    ASSERT_EQ(JsonValue(R"json([{"Identity_PART":"TEST1"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2424,7 +2450,7 @@ TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario) {
         <BaseClass>spcomp_Facility</BaseClass>
         <BaseClass>spcomp_ICompositeVolume</BaseClass>
     </ECEntityClass>)schema"
-                                R"schema(
+    R"schema(
     <ECEntityClass typeName="Building" description="Converted to EC3 from DataGroup : Building" displayLabel="Building">
         <BaseClass>buildingSpatial_Building</BaseClass>
         <ECProperty propertyName="Identity_PART" typeName="string" description="Open Buildings Designer part" displayLabel="Part"/>
@@ -2458,16 +2484,17 @@ TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario) {
 
     // Verify old and new instances
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (Identity_PART) VALUES ('TEST2')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Identity_PART FROM TestSchema.Building");
-        ASSERT_EQ(JsonValue(R"json([{"Identity_PART":"TEST1"},{"Identity_PART":"TEST2"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (Identity_PART) VALUES ('TEST2')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Identity_PART FROM TestSchema.Building");
+    ASSERT_EQ(JsonValue(R"json([{"Identity_PART":"TEST1"},{"Identity_PART":"TEST2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchy) {
+TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchy)
+    {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2493,13 +2520,13 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertBaseClassHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,F1) VALUES ('A11','B11','F11')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,F1) VALUES ('A11','B11','F11')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,F1 FROM TestSchema.F");
-        ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,F1 FROM TestSchema.F");
+    ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2538,17 +2565,19 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchy) {
 
     // Verify old and new instances
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,C1,D1,E1,F1) VALUES ('A12','B12','C12','D12','E12','F12')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,C1,D1,E1,F1) VALUES ('A12','B12','C12','D12','E12','F12')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,C1,D1,E1,F1 FROM TestSchema.F");
-        ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11"},{"A1":"A12","B1":"B12","C1":"C12","D1":"D12","E1":"E12","F1":"F12"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,C1,D1,E1,F1 FROM TestSchema.F");
+    ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11"},{"A1":"A12","B1":"B12","C1":"C12","D1":"D12","E1":"E12","F1":"F12"}])json"), result);
     }
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchyAndMovePropertyUp) {
+TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchyAndMovePropertyUp)
+    {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2575,13 +2604,13 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchyAndMovePropertyUp) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertBaseClassHierarchyAndMovePropertyUp.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,F1,F2) VALUES ('A11','B11','F11','F21')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,F1,F2) VALUES ('A11','B11','F11','F21')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,F1,F2 FROM TestSchema.F");
-        ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11","F2":"F21"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,F1,F2 FROM TestSchema.F");
+    ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11","F2":"F21"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2621,17 +2650,18 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchyAndMovePropertyUp) {
 
     // Verify old and new instances
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,C1,D1,E1,F1,F2) VALUES ('A12','B12','C12','D12','E12','F12','F22')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,C1,D1,E1,F1,F2) VALUES ('A12','B12','C12','D12','E12','F12','F22')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,C1,D1,E1,F1,F2 FROM TestSchema.F");
-        ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11","F2":"F21"},{"A1":"A12","B1":"B12","C1":"C12","D1":"D12","E1":"E12","F1":"F12","F2":"F22"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A1,B1,C1,D1,E1,F1,F2 FROM TestSchema.F");
+    ASSERT_EQ(JsonValue(R"json([{"A1":"A11","B1":"B11","F1":"F11","F2":"F21"},{"A1":"A12","B1":"B12","C1":"C12","D1":"D12","E1":"E12","F1":"F12","F2":"F22"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyFromMixin) {
+TEST_F(SchemaRemapTestFixture, MovePropertyFromMixin)
+    {
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2656,13 +2686,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromMixin) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyFromMixin.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2689,20 +2719,21 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromMixin) {
 
     // Verify old and new instances
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"},{"MovingProperty":"SECOND"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InvalidRootPropertyId) {
-    // Copied from another test which produced assertions in PropertyMap::GetRootPropertyId() in debug builds. Behavior should be fixed now,
-    //  the other test has been altered and no longer reflects the original scenario
-    //  The problem is that when cleaning up overridden properties, we access PropertyMapping.RootPropertyId, which in this case raised an Assertion as
-    //  We insert both, a new base class AND an override at the same time. Has been fixed by adding a new TryGetRootPropertyId method.
+TEST_F(SchemaRemapTestFixture, InvalidRootPropertyId)
+    {
+    //Copied from another test which produced assertions in PropertyMap::GetRootPropertyId() in debug builds. Behavior should be fixed now,
+    // the other test has been altered and no longer reflects the original scenario
+    // The problem is that when cleaning up overridden properties, we access PropertyMapping.RootPropertyId, which in this case raised an Assertion as
+    // We insert both, a new base class AND an override at the same time. Has been fixed by adding a new TryGetRootPropertyId method.
     SchemaItem schemaItem(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2771,7 +2802,7 @@ TEST_F(SchemaRemapTestFixture, InvalidRootPropertyId) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("invalidRootPropertyId.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -2849,12 +2880,14 @@ TEST_F(SchemaRemapTestFixture, InvalidRootPropertyId) {
         </ECSchema>
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp) {
+TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2913,17 +2946,17 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiplePropertiesUp.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SubElement1 (Sub11,Sub12,Sub13,SubShared) VALUES ('Sub11A', 'Sub12A','Sub13A','SubSharedA')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SubElement4 (Sub41,Sub42,Sub43,Sub44,Sub45) VALUES ('Sub41B', 'Sub42B','Sub43B','Sub44B','Sub45B')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SubElement1 (Sub11,Sub12,Sub13,SubShared) VALUES ('Sub11A', 'Sub12A','Sub13A','SubSharedA')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SubElement4 (Sub41,Sub42,Sub43,Sub44,Sub45) VALUES ('Sub41B', 'Sub42B','Sub43B','Sub44B','Sub45B')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Sub11,Sub12,Sub13,SubShared FROM TestSchema.SubElement1");
-        ASSERT_EQ(JsonValue(R"json([{"Sub11":"Sub11A","Sub12":"Sub12A","Sub13":"Sub13A","SubShared":"SubSharedA"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Sub11,Sub12,Sub13,SubShared FROM TestSchema.SubElement1");
+    ASSERT_EQ(JsonValue(R"json([{"Sub11":"Sub11A","Sub12":"Sub12A","Sub13":"Sub13A","SubShared":"SubSharedA"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT Sub41,Sub42,Sub43,Sub44,Sub45 FROM TestSchema.SubElement4");
-        ASSERT_EQ(JsonValue(R"json([{"Sub41":"Sub41B","Sub42":"Sub42B","Sub43":"Sub43B","Sub44":"Sub44B","Sub45":"Sub45B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT Sub41,Sub42,Sub43,Sub44,Sub45 FROM TestSchema.SubElement4");
+    ASSERT_EQ(JsonValue(R"json([{"Sub41":"Sub41B","Sub42":"Sub42B","Sub43":"Sub43B","Sub44":"Sub44B","Sub45":"Sub45B"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -2985,18 +3018,19 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp) {
 
     // Verify instances are still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Sub11,Sub12,Sub13,SubShared FROM TestSchema.SubElement1");
-        ASSERT_EQ(JsonValue(R"json([{"Sub11":"Sub11A","Sub12":"Sub12A","Sub13":"Sub13A","SubShared":"SubSharedA"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Sub11,Sub12,Sub13,SubShared FROM TestSchema.SubElement1");
+    ASSERT_EQ(JsonValue(R"json([{"Sub11":"Sub11A","Sub12":"Sub12A","Sub13":"Sub13A","SubShared":"SubSharedA"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT Sub41,Sub42,Sub43,Sub44,Sub45 FROM TestSchema.SubElement4");
-        ASSERT_EQ(JsonValue(R"json([{"Sub41":"Sub41B","Sub42":"Sub42B","Sub43":"Sub43B","Sub44":"Sub44B","Sub45":"Sub45B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT Sub41,Sub42,Sub43,Sub44,Sub45 FROM TestSchema.SubElement4");
+    ASSERT_EQ(JsonValue(R"json([{"Sub41":"Sub41B","Sub42":"Sub42B","Sub43":"Sub43B","Sub44":"Sub44B","Sub45":"Sub45B"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToOverflow) {
+TEST_F(SchemaRemapTestFixture, MovePropertyToOverflow)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3028,13 +3062,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflow) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToOverflow.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3066,15 +3100,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflow) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow) {
+TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3108,13 +3143,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyFromOverflow.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2,A3) VALUES ('Base1','Base2','Base3','A1','A2','A3')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2,A3) VALUES ('Base1','Base2','Base3','A1','A2','A3')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2,A3 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2","A3":"A3"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2,A3 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2","A3":"A3"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3148,15 +3183,16 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2,A3 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2","A3":"A3"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2,A3 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2","A3":"A3"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow) {
+TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3191,18 +3227,18 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("swapColumnsWithOverflow.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Peanut (A,B,C) VALUES ('PA','PB','PC')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Peanut");
-        ASSERT_EQ(JsonValue(R"json([{"A":"PA","B":"PB","C":"PC"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Peanut (A,B,C) VALUES ('PA','PB','PC')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Peanut");
+    ASSERT_EQ(JsonValue(R"json([{"A":"PA","B":"PB","C":"PC"}])json"), result);
     }
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Potato (A,B,C) VALUES ('PoA','PoB','PoC')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Potato");
-        ASSERT_EQ(JsonValue(R"json([{"A":"PoA","B":"PoB","C":"PoC"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Potato (A,B,C) VALUES ('PoA','PoB','PoC')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Potato");
+    ASSERT_EQ(JsonValue(R"json([{"A":"PoA","B":"PoB","C":"PoC"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3233,7 +3269,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow) {
         )schema");
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
 
-    // The below part is the expected result, in case we start supporting this scenario:
+    //The below part is the expected result, in case we start supporting this scenario:
     /*{
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Peanut (A,B,C) VALUES ('PA','PB','PC')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Peanut");
@@ -3245,14 +3281,16 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow) {
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Potato");
     ASSERT_EQ(JsonValue(R"json([{"A":"PoA","B":"PoB","C":"PoC"}])json"), result);
     }*/
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable) {
-    // This is currently unsupported. The schema update will return an error and say that there is an overflow table with no data in it.
-    // This is a very rare scenario that should be supported with a future update.
+TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable)
+    {
+    //This is currently unsupported. The schema update will return an error and say that there is an overflow table with no data in it.
+    //This is a very rare scenario that should be supported with a future update.
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3284,13 +3322,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyFromOverflowDropOverflowTable.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3320,12 +3358,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable) {
         </ECSchema>
         )schema");
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Import should fail because it leaves an overflow table with no data in it.";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty) {
+TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3355,17 +3394,17 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("swapPropertyColumns.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Sub1,Sub2) VALUES ('ABase1','ASub1','ASub2')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"ABase1","Sub1":"ASub1","Sub2":"ASub2"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Sub1,Sub2) VALUES ('ABase1','ASub1','ASub2')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"ABase1","Sub1":"ASub1","Sub2":"ASub2"}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (Base1,Sub1,Sub2) VALUES ('BBase1','BSub1','BSub2')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"BBase1","Sub1":"BSub1","Sub2":"BSub2"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (Base1,Sub1,Sub2) VALUES ('BBase1','BSub1','BSub2')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"BBase1","Sub1":"BSub1","Sub2":"BSub2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3393,19 +3432,20 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"ABase1","Sub1":"ASub1","Sub2":"ASub2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"ABase1","Sub1":"ASub1","Sub2":"ASub2"}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"BBase1","Sub1":"BSub1","Sub2":"BSub2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"BBase1","Sub1":"BSub1","Sub2":"BSub2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle) {
+TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3445,22 +3485,22 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiplePropertiesInCircle.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class1 (A,B,C,D) VALUES ('1A','1B','1C','1D')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class1");
-        ASSERT_EQ(JsonValue(R"json([{"A":"1A","B":"1B","C":"1C","D":"1D"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class1 (A,B,C,D) VALUES ('1A','1B','1C','1D')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class1");
+    ASSERT_EQ(JsonValue(R"json([{"A":"1A","B":"1B","C":"1C","D":"1D"}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class2 (A,B,C,D) VALUES ('2A','2B','2C','2D')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class2");
-        ASSERT_EQ(JsonValue(R"json([{"A":"2A","B":"2B","C":"2C","D":"2D"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class2 (A,B,C,D) VALUES ('2A','2B','2C','2D')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class2");
+    ASSERT_EQ(JsonValue(R"json([{"A":"2A","B":"2B","C":"2C","D":"2D"}])json"), result);
     }
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class3 (A,B,C,D) VALUES ('3A','3B','3C','3D')");
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class3");
-        ASSERT_EQ(JsonValue(R"json([{"A":"3A","B":"3B","C":"3C","D":"3D"}])json"), result);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class3 (A,B,C,D) VALUES ('3A','3B','3C','3D')");
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class3");
+    ASSERT_EQ(JsonValue(R"json([{"A":"3A","B":"3B","C":"3C","D":"3D"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3492,23 +3532,24 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class1");
-        ASSERT_EQ(JsonValue(R"json([{"A":"1A","B":"1B","C":"1C","D":"1D"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class1");
+    ASSERT_EQ(JsonValue(R"json([{"A":"1A","B":"1B","C":"1C","D":"1D"}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class2");
-        ASSERT_EQ(JsonValue(R"json([{"A":"2A","B":"2B","C":"2C","D":"2D"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class2");
+    ASSERT_EQ(JsonValue(R"json([{"A":"2A","B":"2B","C":"2C","D":"2D"}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class3");
-        ASSERT_EQ(JsonValue(R"json([{"A":"3A","B":"3B","C":"3C","D":"3D"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class3");
+    ASSERT_EQ(JsonValue(R"json([{"A":"3A","B":"3B","C":"3C","D":"3D"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn) {
+TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3541,13 +3582,13 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToOverflowUsingDifferentIdColumn.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3580,15 +3621,17 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"Base1":"Base1","Base2":"Base2","Base3":"Base3","A1":"A1","A2":"A2"}])json"), result);
     }
-}
+    }
+
 
 //-------------------------------------------------------------------rt e--------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, CivilProblemMay21) {  // this is a replica to reproduce issue FID-01064. https://connect-projectforms.bentley.com/#/d55308d4-8f5b-47ff-805c-d319b98b8406/type/Field%20Data/form/5c146214-ebc0-455f-9fe1-43fe11b4387f?discipline=issue
+TEST_F(SchemaRemapTestFixture, CivilProblemMay21)
+    { //this is a replica to reproduce issue FID-01064. https://connect-projectforms.bentley.com/#/d55308d4-8f5b-47ff-805c-d319b98b8406/type/Field%20Data/form/5c146214-ebc0-455f-9fe1-43fe11b4387f?discipline=issue
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -3710,27 +3753,27 @@ TEST_F(SchemaRemapTestFixture, CivilProblemMay21) {  // this is a replica to rep
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("civilProblemMay21.ecdb", schemaItem));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Alignment (Name,GeometryClass) VALUES ('First Alignment', 1)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Alignment (Name,GeometryClass) VALUES ('First Alignment', 1)");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.Alignment");
-        ASSERT_EQ(JsonValue(R"json([{"Name":"First Alignment","GeometryClass":1}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.Alignment");
+    ASSERT_EQ(JsonValue(R"json([{"Name":"First Alignment","GeometryClass":1}])json"), result);
     }
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.AlignmentProxy (Name,GeometryClass) VALUES ('First AlignmentProxy', 2)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.AlignmentProxy (Name,GeometryClass) VALUES ('First AlignmentProxy', 2)");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.AlignmentProxy");
-        ASSERT_EQ(JsonValue(R"json([{"Name":"First AlignmentProxy","GeometryClass":2}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.AlignmentProxy");
+    ASSERT_EQ(JsonValue(R"json([{"Name":"First AlignmentProxy","GeometryClass":2}])json"), result);
     }
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Corridor (Name) VALUES ('First Corridor')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Corridor (Name) VALUES ('First Corridor')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Name FROM ONLY TestSchema.Corridor");
-        ASSERT_EQ(JsonValue(R"json([{"Name":"First Corridor"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Name FROM ONLY TestSchema.Corridor");
+    ASSERT_EQ(JsonValue(R"json([{"Name":"First Corridor"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -3854,27 +3897,28 @@ TEST_F(SchemaRemapTestFixture, CivilProblemMay21) {  // this is a replica to rep
         )schema");
 
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
-    // Verify our instances are still intact
+    //Verify our instances are still intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.Alignment");
-        ASSERT_EQ(JsonValue(R"json([{"Name":"First Alignment","GeometryClass":1}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.Alignment");
+    ASSERT_EQ(JsonValue(R"json([{"Name":"First Alignment","GeometryClass":1}])json"), result);
     }
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.AlignmentProxy");
-        ASSERT_EQ(JsonValue(R"json([{"Name":"First AlignmentProxy","GeometryClass":2}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.AlignmentProxy");
+    ASSERT_EQ(JsonValue(R"json([{"Name":"First AlignmentProxy","GeometryClass":2}])json"), result);
     }
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Name FROM ONLY TestSchema.Corridor");
-        ASSERT_EQ(JsonValue(R"json([{"Name":"First Corridor"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Name FROM ONLY TestSchema.Corridor");
+    ASSERT_EQ(JsonValue(R"json([{"Name":"First Corridor"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
+TEST_F(SchemaRemapTestFixture, IfcProblemJune21)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="IFCDynamic" alias="IFC" version="100.03.21" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -3897,17 +3941,14 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runon_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment2" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
-    </ECStructClass>)schema"
-                          R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5889_10" >
         <ECProperty propertyName="ifccalculated_runon_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment2" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
-    </ECStructClass>)schema"
-                          R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5890_10" >
-        <ECProperty propertyName="ifccalculated_runoff_depth_subcatchment" typeName="double" />)schema"
-                          R"schema(
+        <ECProperty propertyName="ifccalculated_runoff_depth_subcatchment" typeName="double" />)schema" R"schema(
         <ECProperty propertyName="ifccalculated_runoff_depth_subcatchment2" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_depth_subcatchment3" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_max_flow_catchment" typeName="double" />
@@ -3920,8 +3961,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runon_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment2" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
-    </ECStructClass>)schema"
-                          R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_10" >
         <ECStructProperty propertyName="ifc5888" typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5888_10" />
         <ECStructProperty propertyName="ifc5889" typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5889_10" />
@@ -3932,8 +3972,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_max" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_median" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_min" typeName="double" />
-        <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_std_dev" typeName="double" />)schema"
-                          R"schema(
+        <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_std_dev" typeName="double" />)schema" R"schema(
         <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_trimmed_mean" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_upper_fence" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_max_flow_subcatchment2_ensemble_upper_quartile" typeName="double" />
@@ -3958,8 +3997,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runon_subcatchment2_critical_storm_id" typeName="string" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3_critical_storm_id" typeName="string" />
-    </ECStructClass>)schema"
-                          R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_10" >
         <ECStructProperty propertyName="ifc25" typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_10" />
         <ECProperty propertyName="ifccalculated_evaporation_subcatchment3" typeName="double" />
@@ -4041,7 +4079,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IfcProblemJune21.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="IFCDynamic" alias="IFC" version="100.03.22" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4059,8 +4097,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-    </ECEntityClass>)schema"
-                                R"schema(
+    </ECEntityClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5888_10" >
         <ECProperty propertyName="ifccalculated_runon_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment2" typeName="double" />
@@ -4070,8 +4107,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runon_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment2" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
-    </ECStructClass>)schema"
-                                R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5890_10" >
         <ECProperty propertyName="ifccalculated_runoff_depth_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runoff_depth_subcatchment2" typeName="double" />
@@ -4086,8 +4122,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runon_subcatchment" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment2" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
-    </ECStructClass>)schema"
-                                R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_10" >
         <ECStructProperty propertyName="ifc5888" typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5888_10" />
         <ECStructProperty propertyName="ifc5889" typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_ifc5889_10" />
@@ -4123,8 +4158,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         <ECProperty propertyName="ifccalculated_runon_subcatchment2_critical_storm_id" typeName="string" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3" typeName="double" />
         <ECProperty propertyName="ifccalculated_runon_subcatchment3_critical_storm_id" typeName="string" />
-    </ECStructClass>)schema"
-                                R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifcdynamic_10" >
         <ECStructProperty propertyName="ifc25" typeName="ifcStruct_12d_Model_ifcdynamic_ifc25_10" />
         <ECProperty propertyName="ifccalculated_evaporation_subcatchment3" typeName="double" />
@@ -4179,8 +4213,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
     </ECStructClass>
     <ECStructClass typeName="ifcStruct_12d_Model_ifc12dField_ifcMeasurement_10" >
         <ECProperty propertyName="ifcpu_comment_line" typeName="string" />
-    </ECStructClass>)schema"
-                                R"schema(
+    </ECStructClass>)schema" R"schema(
     <ECStructClass typeName="ifcStruct_12d_Model_ifc12dField_ifcSatellite_Data_10" >
         <ECProperty propertyName="ifcgeoid_adjust" typeName="double" />
         <ECProperty propertyName="ifcgln_fix_type" typeName="int" />
@@ -4230,12 +4263,13 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21) {
         )schema");
 
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaRemapTestFixture::ImportSchemaFromFile(BeFileName const& fileName) {
+BentleyStatus SchemaRemapTestFixture::ImportSchemaFromFile(BeFileName const& fileName)
+    {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
 
     ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
@@ -4249,23 +4283,25 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemaFromFile(BeFileName const& fil
 
     ECN::ECSchemaPtr ecSchema = nullptr;
     const SchemaReadStatus stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, fileName.GetName(), *ctx);
-    // duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
+    //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
     if (SchemaReadStatus::Success != stat && SchemaReadStatus::DuplicateSchema != stat)
         return ERROR;
 
-    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)) {
+    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(),  SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
+        {
         m_ecdb.AbandonChanges();
         return ERROR;
-    }
+        }
 
     m_ecdb.SaveChanges();
     return SUCCESS;
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder) {
+BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder)
+    {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
     ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     ctx->AddSchemaPath(schemaFolder);
@@ -4281,22 +4317,24 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
     if (schemaPaths.empty())
         return ERROR;
 
-    for (BeFileName const& schemaXmlFile : schemaPaths) {
+    for (BeFileName const& schemaXmlFile : schemaPaths)
+        {
         ECN::ECSchemaPtr ecSchema = nullptr;
         const SchemaReadStatus stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, schemaXmlFile.GetName(), *ctx);
-        // duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
+        //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
         if (SchemaReadStatus::Success != stat && SchemaReadStatus::DuplicateSchema != stat)
             return ERROR;
-    }
+        }
 
-    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)) {
+    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(),  SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
+        {
         m_ecdb.AbandonChanges();
         return ERROR;
-    }
+        }
 
     m_ecdb.SaveChanges();
     return SUCCESS;
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -4336,7 +4374,8 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MixinToBaseClass) {
+TEST_F(SchemaRemapTestFixture, MixinToBaseClass)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4377,13 +4416,13 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClass) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MixinToBaseClass.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4426,15 +4465,16 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClass) {
 
     // Verify instances are intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, DerivedMixinToBaseClass) {
+TEST_F(SchemaRemapTestFixture, DerivedMixinToBaseClass)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4483,13 +4523,13 @@ TEST_F(SchemaRemapTestFixture, DerivedMixinToBaseClass) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DerivedMixinToBaseClassIssue.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4540,15 +4580,18 @@ TEST_F(SchemaRemapTestFixture, DerivedMixinToBaseClass) {
 
     // Verify instances are intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
     }
-}
+    }
+
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, MixinToBaseClassTwoLevels) {
+TEST_F(SchemaRemapTestFixture, MixinToBaseClassTwoLevels)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4592,13 +4635,13 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClassTwoLevels) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MixinToBaseClassTwoLevels.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -4644,17 +4687,19 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClassTwoLevels) {
 
     // Verify instances are intact
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty, PropA1, PropMixin1, PropMixin2 FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST","PropA1":"A1","PropMixin1":"Mix1","PropMixin2":"Mix2"}])json"), result);
     }
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, BuildingUSMappingProblem) {
-    // Simplified version of a mapping problem involving several changes in BuildingSpatial, SpatialComposition and BuildingTemplate_US schemas.
-    // There are many changes, basically, the base class structure of Building changed, a new base class was injected, along with new properties.
+TEST_F(SchemaRemapTestFixture, BuildingUSMappingProblem)
+    {
+    //Simplified version of a mapping problem involving several changes in BuildingSpatial, SpatialComposition and BuildingTemplate_US schemas.
+    //There are many changes, basically, the base class structure of Building changed, a new base class was injected, along with new properties.
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="BuildingTemplate_US" alias="BuildingTemplate_US" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
   <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
@@ -4857,7 +4902,7 @@ TEST_F(SchemaRemapTestFixture, BuildingUSMappingProblem) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BuildingUSMappingProblem.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="BuildingTemplate_US" alias="BuildingTemplate_US" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
   <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
@@ -5078,14 +5123,16 @@ TEST_F(SchemaRemapTestFixture, BuildingUSMappingProblem) {
 </ECSchema>
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy) {
-    // This puts two sibling classes below each other in the hierarchy.
-    // Building moves below CompositeElement
+TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy)
+    {
+    //This puts two sibling classes below each other in the hierarchy.
+    //Building moves below CompositeElement
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -5120,13 +5167,13 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (A) VALUES ('A')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (A) VALUES ('A')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
-        ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
+    ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -5161,16 +5208,17 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
-        ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
+    ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy) {
-    // Move Building and Facility classes from GeometricElement3d below CompositeElement
+TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy)
+    {
+    //Move Building and Facility classes from GeometricElement3d below CompositeElement
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -5213,16 +5261,16 @@ TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutMultipleSiblingsIntoHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (A) VALUES ('A')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SpecializedFacility (B,C) VALUES ('B','C')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (A) VALUES ('A')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SpecializedFacility (B,C) VALUES ('B','C')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
-        ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
-        result = GetHelper().ExecuteSelectECSql("SELECT B,C FROM TestSchema.SpecializedFacility");
-        ASSERT_EQ(JsonValue(R"json([{"B":"B","C":"C"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
+    ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT B,C FROM TestSchema.SpecializedFacility");
+    ASSERT_EQ(JsonValue(R"json([{"B":"B","C":"C"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -5265,18 +5313,19 @@ TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
-        ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
-        result = GetHelper().ExecuteSelectECSql("SELECT B,C FROM TestSchema.SpecializedFacility");
-        ASSERT_EQ(JsonValue(R"json([{"B":"B","C":"C"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
+    ASSERT_EQ(JsonValue(R"json([{"A":"A"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT B,C FROM TestSchema.SpecializedFacility");
+    ASSERT_EQ(JsonValue(R"json([{"B":"B","C":"C"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct) {
-    // Move classes A and B below "NewBase", A uses structs
+TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct)
+    {
+    //Move classes A and B below "NewBase", A uses structs
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5312,21 +5361,21 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithStruct.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.NewBase (PropBase) VALUES ('Base')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.NewBase (PropBase) VALUES ('Base')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropBase FROM TestSchema.NewBase");
-        ASSERT_EQ(JsonValue(R"json([{"PropBase":"Base"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropBase FROM TestSchema.NewBase");
+    ASSERT_EQ(JsonValue(R"json([{"PropBase":"Base"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5361,22 +5410,23 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropBase FROM ONLY TestSchema.NewBase");
-        ASSERT_EQ(JsonValue(R"json([{"PropBase":"Base"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropBase FROM ONLY TestSchema.NewBase");
+    ASSERT_EQ(JsonValue(R"json([{"PropBase":"Base"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct) {
-    // Insert a new base class "NewBase" into existing Hierarchy
+TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct)
+    {
+    //Insert a new base class "NewBase" into existing Hierarchy
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5408,17 +5458,17 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertBaseClassRemapSiblingsWithStruct.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5453,19 +5503,20 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings) {
-    // Insert new classes "NewBase" and "NewBase2" into existing hierarchy
+TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings)
+    {
+    //Insert new classes "NewBase" and "NewBase2" into existing hierarchy
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5497,17 +5548,17 @@ TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertTwoConnectedBaseClassesRemapSiblings.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5546,19 +5597,21 @@ TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT PropB FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"PropB":"B"}])json"), result);
     }
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InsertBaseClassTwice) {
-    // Turn hierarchy from A -> C -> E to A -> B -> C -> D -> E
+TEST_F(SchemaRemapTestFixture, InsertBaseClassTwice)
+    {
+    //Turn hierarchy from A -> C -> E to A -> B -> C -> D -> E
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5586,13 +5639,13 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassTwice) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertBaseClassTwice.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.E (PropA, PropC, PropE) VALUES ('A','C','E')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.E (PropA, PropC, PropE) VALUES ('A','C','E')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5627,17 +5680,19 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassTwice) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
     }
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy) {
-    // Turn hierarchy from A -> C -> E to A -> B -> C -> D -> E
-    // Difference to the previous test is that B and D already exist and just move into the hierarchy (this matters as they have existing mappings)
+TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy)
+    {
+    //Turn hierarchy from A -> C -> E to A -> B -> C -> D -> E
+    //Difference to the previous test is that B and D already exist and just move into the hierarchy (this matters as they have existing mappings)
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5673,13 +5728,13 @@ TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutTwoClassesIntoHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.E (PropA, PropC, PropE) VALUES ('A','C','E')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.E (PropA, PropC, PropE) VALUES ('A','C','E')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5714,16 +5769,17 @@ TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct) {
-    // move A and B below X, with A using a nested struct
+TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct)
+    {
+    //move A and B below X, with A using a nested struct
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5764,17 +5820,17 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithNestedStruct.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (f.c.a, f.c.b, f.d, g) VALUES ('f.c.a' ,'f.c.b', 'f.d', 'g')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (h.a, h.b, i) VALUES ('h.a' ,'h.b', 'i')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (f.c.a, f.c.b, f.d, g) VALUES ('f.c.a' ,'f.c.b', 'f.d', 'g')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (h.a, h.b, i) VALUES ('h.a' ,'h.b', 'i')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT f, g FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"f":{"c":{"a":"f.c.a","b":"f.c.b"},"d":"f.d"},"g":"g"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT f, g FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"f":{"c":{"a":"f.c.a","b":"f.c.b"},"d":"f.d"},"g":"g"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT h, i FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"h":{"a":"h.a","b":"h.b"},"i":"i"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT h, i FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"h":{"a":"h.a","b":"h.b"},"i":"i"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5814,19 +5870,20 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT f, g FROM ONLY TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"f":{"c":{"a":"f.c.a","b":"f.c.b"},"d":"f.d"},"g":"g"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT f, g FROM ONLY TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"f":{"c":{"a":"f.c.a","b":"f.c.b"},"d":"f.d"},"g":"g"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT h, i FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"h":{"a":"h.a","b":"h.b"},"i":"i"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT h, i FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"h":{"a":"h.a","b":"h.b"},"i":"i"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides) {
-    // Siblings X and A are changed so A derives from X. Class B overrides some properties from A
+TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides)
+    {
+    //Siblings X and A are changed so A derives from X. Class B overrides some properties from A
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5861,17 +5918,17 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithPropertyOverrides.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (a, b, c) VALUES ('a', 'b', 'c')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (a, b, c, d) VALUES ('a2', 'b2', 'c2', 'd2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (a, b, c) VALUES ('a', 'b', 'c')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (a, b, c, d) VALUES ('a2', 'b2', 'c2', 'd2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2"},{"a":"a","b":"b","c":"c"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2"},{"a":"a","b":"b","c":"c"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d FROM TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2","d":"d2"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2","d":"d2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -5914,20 +5971,21 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides) {
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c FROM TestSchema.A");
-        ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2"},{"a":"a","b":"b","c":"c"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2"},{"a":"a","b":"b","c":"c"}])json"), result);
 
-        result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d FROM ONLY TestSchema.B");
-        ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2","d":"d2"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d FROM ONLY TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"a":"a2","b":"b2","c":"c2","d":"d2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutBaseClassTurnPropertiesIntoOverrides) {  // this is about moving a class into the hierarchy which causes properties to turn into overrides
-    // property e will be remapped via deleted property mechanism, property g will be remapped through "new override" mechanism
-    // the others will be remapped because they occupy columns of the new base class
+TEST_F(SchemaRemapTestFixture, PutBaseClassTurnPropertiesIntoOverrides)
+    { //this is about moving a class into the hierarchy which causes properties to turn into overrides
+    //property e will be remapped via deleted property mechanism, property g will be remapped through "new override" mechanism
+    //the others will be remapped because they occupy columns of the new base class
 
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -5974,13 +6032,13 @@ TEST_F(SchemaRemapTestFixture, PutBaseClassTurnPropertiesIntoOverrides) {  // th
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutBaseClassTurnPropertiesIntoOverrides.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Leaf (a, b, c, d, e, f, g, h) VALUES ('A','B','C','D','E','F','G','H')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Leaf (a, b, c, d, e, f, g, h) VALUES ('A','B','C','D','E','F','G','H')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
-        ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
+    ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6024,15 +6082,16 @@ TEST_F(SchemaRemapTestFixture, PutBaseClassTurnPropertiesIntoOverrides) {  // th
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
-        ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
+    ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides) {  // Same as previous test, just that "Middle" does not exist in the first schema
+TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides)
+    { //Same as previous test, just that "Middle" does not exist in the first schema
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6071,13 +6130,13 @@ TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides) {  //
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutBaseClassTurnPropertiesIntoOverrides.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Leaf (a, b, c, d, e, f, g, h) VALUES ('A','B','C','D','E','F','G','H')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Leaf (a, b, c, d, e, f, g, h) VALUES ('A','B','C','D','E','F','G','H')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
-        ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
+    ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6121,16 +6180,17 @@ TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides) {  //
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
-        ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
+    ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy) {
-    // Siblings Duck and Fish both have a name and description but in different order. Making Fish derive from Duck requires its properties to move to the same columns.
+TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy)
+    {
+    //Siblings Duck and Fish both have a name and description but in different order. Making Fish derive from Duck requires its properties to move to the same columns.
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6170,16 +6230,16 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsWithSwappedPropertiesIntoHierarchy.ecdb", schemaItem));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Duck (name, description) VALUES ('Donald','Donald the Duck')");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Fish (name, description) VALUES ('Nemo','Nemo the Clownfish')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Duck (name, description) VALUES ('Donald','Donald the Duck')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Fish (name, description) VALUES ('Nemo','Nemo the Clownfish')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Duck");
-        ASSERT_EQ(JsonValue(R"json([{"name":"Donald","description":"Donald the Duck"}])json"), result);
-        result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Fish");
-        ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Duck");
+    ASSERT_EQ(JsonValue(R"json([{"name":"Donald","description":"Donald the Duck"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Fish");
+    ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6218,19 +6278,20 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Duck");
-        ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"},{"name":"Donald","description":"Donald the Duck"}])json"), result);
-        result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Fish");
-        ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Duck");
+    ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"},{"name":"Donald","description":"Donald the Duck"}])json"), result);
+    result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Fish");
+    ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema) {
-    // Purpose of this test is to check what happens if we make a change to only the base schema, which affects other schemas.
-    // Turn hierarchy from S1:A -> S1:C -> S2:D to S1:A -> S1:B -> S1:C -> S2:D
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema)
+    {
+    //Purpose of this test is to check what happens if we make a change to only the base schema, which affects other schemas.
+    //Turn hierarchy from S1:A -> S1:C -> S2:D to S1:A -> S1:B -> S1:C -> S2:D
     SchemaItem s1v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6272,13 +6333,13 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema) {
     ASSERT_EQ(SUCCESS, ImportSchema(s2));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem s1v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6307,18 +6368,19 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2) {
-    // Similar to V1 but with deeper hierarchy and a new sibling class alongside class D
-    // Turn hierarchy from S1:A -> S1:B -> S1:C -> S2:D -> S2:E to S1:A -> S1:B -> S1:B2 -> S1:C -> S2:D -> S2:E
-    // Contains an affitional F class which also derives from C to occupy a shared column
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2)
+    {
+    //Similar to V1 but with deeper hierarchy and a new sibling class alongside class D
+    //Turn hierarchy from S1:A -> S1:B -> S1:C -> S2:D -> S2:E to S1:A -> S1:B -> S1:B2 -> S1:C -> S2:D -> S2:E
+    //Contains an affitional F class which also derives from C to occupy a shared column
     SchemaItem s1v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6372,13 +6434,13 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2) {
     ASSERT_EQ(SUCCESS, ImportSchema(s2));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem s1v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6409,18 +6471,19 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3) {
-    // Similar to "InjectBaseClassInBaseSchema" but different in that class "B" does not exist before the schema update, meaning
-    // its properties are mapped during the update, not before it.
-    // Turn hierarchy from S1:A -> S1:C -> S2:D to S1:A -> S1:B -> S1:C -> S2:D
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3)
+    {
+    //Similar to "InjectBaseClassInBaseSchema" but different in that class "B" does not exist before the schema update, meaning
+    //its properties are mapped during the update, not before it.
+    //Turn hierarchy from S1:A -> S1:C -> S2:D to S1:A -> S1:B -> S1:C -> S2:D
     SchemaItem s1v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6458,13 +6521,13 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3) {
     ASSERT_EQ(SUCCESS, ImportSchema(s2));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Schema2.D (PropA, PropC, PropD1, PropD2) VALUES ('A','C','D1','D2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem s1v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema1" alias="s1" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6492,17 +6555,18 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
-        ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4) {
-    // Covers the same scenario as the tests InjectBaseClassInBaseSchema1-3, but is based on classes from real
-    // schemas, condensed into fewer schemas but still reflecting the actual class hierarchy encountered
+TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4)
+    {
+    //Covers the same scenario as the tests InjectBaseClassInBaseSchema1-3, but is based on classes from real
+    //schemas, condensed into fewer schemas but still reflecting the actual class hierarchy encountered
     SchemaItem bisCore(R"schema(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="BisCore" alias="bis" version="01.00.12" description="The BIS core schema contains classes that all other domain schemas extend." displayLabel="BIS Core" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6578,13 +6642,13 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4) {
     ASSERT_EQ(SUCCESS, ImportSchema(ifcDyn));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO IFCDynamic.IfcBuilding (ifcCompositionType) VALUES ('A')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO IFCDynamic.IfcBuilding (ifcCompositionType) VALUES ('A')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem spCompV2(R"schema(<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00.01" description="Classes for defining the Spatial Structure Hierarchy of a project or asset." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="BisCore" version="01.00.12" alias="bis"/>
@@ -6623,15 +6687,16 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(spCompV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified) {
+TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified)
+    {
     // like the above test, but everything is in a single schema
     SchemaItem bisCore(R"schema(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6694,13 +6759,13 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InjectBaseClass4_Simplified.ecdb", bisCore));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.IfcBuilding (ifcCompositionType) VALUES ('A')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.IfcBuilding (ifcCompositionType) VALUES ('A')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem spCompV2(R"schema(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
@@ -6775,20 +6840,21 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified) {
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(spCompV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, RevitStoryScenario) {
-    // Reproduces a bug found in a revit smoketest, simplified version
-    // This schema represents a join of RevitDynamic and its references to reflect an update of the Story class.
+TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
+    {
+    //Reproduces a bug found in a revit smoketest, simplified version
+    //This schema represents a join of RevitDynamic and its references to reflect an update of the Story class.
     //"Level" has incoming new properties due to a base class change to FacilityPart clashing with properties from the mixin class "RevitIdPropertyMixinClass"
 
-    // String has 2 placeholders: version, and baseclass of story
+    //String has 2 placeholders: version, and baseclass of story
     Utf8CP schemaBaseline = R"schema(<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="TestSchema" alias="ts" version="%s"
     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6899,33 +6965,34 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenario) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RevitStoryScenario.ecdb", schemaV1));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId) VALUES ('RevitId')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId) VALUES ('RevitId')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId FROM TestSchema.Level");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart");
     SchemaItem schemaV2(schemaV2Xml);
     ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (Description,RevitId) VALUES ('D','RevitId2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (Description,RevitId) VALUES ('D','RevitId2')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT Description,RevitId FROM TestSchema.Level");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId"},{"Description":"D","RevitId":"RevitId2"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Description,RevitId FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId"},{"Description":"D","RevitId":"RevitId2"}])json"), result);
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins) {
-    // Reproduces a bug found in a revit smoketest, simplified version
-    // Like the previous test, but put the failicy class alongside story as its sibling to provoke more clashes.
-    // Also added an IHasLabel mixin to the hierarchy to increase complexity.
+TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
+    {
+    //Reproduces a bug found in a revit smoketest, simplified version
+    //Like the previous test, but put the failicy class alongside story as its sibling to provoke more clashes.
+    //Also added an IHasLabel mixin to the hierarchy to increase complexity.
 
-    // 3 placeholders: version, story-baseclass, building-baseclass
+    //3 placeholders: version, story-baseclass, building-baseclass
     Utf8CP schemaBaseline = R"schema(<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="TestSchema" alias="ts" version="%s"
     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -7051,47 +7118,47 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RevitStoryScenario.ecdb", schemaV1));
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL) VALUES ('RevitId','Label','ELEM_CATEGORY_PARAM','IFC_GUID','PHASE_CREATED','LEVEL_IS_STRUCTURAL')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL) VALUES ('RevitId','Label','ELEM_CATEGORY_PARAM','IFC_GUID','PHASE_CREATED','LEVEL_IS_STRUCTURAL')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
     }
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyBuilding (RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO) VALUES ('RevitId','Label','ELEM_CATEGORY_PARAM','IFC_GUID','FOO')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyBuilding (RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO) VALUES ('RevitId','Label','ELEM_CATEGORY_PARAM','IFC_GUID','FOO')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
     }
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart", "Facility");
     SchemaItem schemaV2(schemaV2Xml);
     ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
     }
     {
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
-    }
-
-    {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM TestSchema.Level");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL) VALUES ('RevitId','Description','Label','ELEM_CATEGORY_PARAM','IFC_GUID','PHASE_CREATED','LEVEL_IS_STRUCTURAL')");
-
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
     }
 
     {
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM TestSchema.MyBuilding");
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyBuilding (RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO) VALUES ('RevitId','Description','Label','ELEM_CATEGORY_PARAM','IFC_GUID','FOO')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM TestSchema.Level");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL) VALUES ('RevitId','Description','Label','ELEM_CATEGORY_PARAM','IFC_GUID','PHASE_CREATED','LEVEL_IS_STRUCTURAL')");
 
-        auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
-        ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
     }
-}
+
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM TestSchema.MyBuilding");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyBuilding (RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO) VALUES ('RevitId','Description','Label','ELEM_CATEGORY_PARAM','IFC_GUID','FOO')");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Description,Label,ELEM_CATEGORY_PARAM,IFC_GUID,FOO FROM TestSchema.MyBuilding");
+    ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
+    }
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

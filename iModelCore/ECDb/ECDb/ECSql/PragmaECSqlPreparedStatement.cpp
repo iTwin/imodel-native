@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -10,25 +10,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //================================================================================
 struct PragmaHelp : PragmaManager::GlobalHandler {
     PragmaManager& m_mgr;
-    PragmaHelp(PragmaManager& mgr) : GlobalHandler("help", "return list of pragma supported"), m_mgr(mgr) {}
-    ~PragmaHelp() {}
+    PragmaHelp(PragmaManager& mgr):GlobalHandler("help","return list of pragma supported"),m_mgr(mgr){}
+    ~PragmaHelp(){}
 
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) override {
-        auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty("pragma", PRIMITIVETYPE_String);
-        result->AppendProperty("type", PRIMITIVETYPE_String);
-        result->AppendProperty("descr", PRIMITIVETYPE_String);
-        result->FreezeSchemaChanges();
-        for (auto& handlerType : m_mgr.m_handlers) {
-            for (auto& handler : handlerType.second) {
-                auto row = result->AppendRow();
-                row.appendValue() = handler.second->GetName();
-                row.appendValue() = handler.second->GetTypeString();
-                row.appendValue() = handler.second->GetDescription();
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&)  override {
+            auto result = std::make_unique<StaticPragmaResult>(ecdb);
+            result->AppendProperty("pragma", PRIMITIVETYPE_String);
+            result->AppendProperty("type", PRIMITIVETYPE_String);
+            result->AppendProperty("descr", PRIMITIVETYPE_String);
+            result->FreezeSchemaChanges();
+            for(auto& handlerType: m_mgr.m_handlers) {
+                for (auto& handler : handlerType.second) {
+                    auto row = result->AppendRow();
+                    row.appendValue() = handler.second->GetName();
+                    row.appendValue() = handler.second->GetTypeString();
+                    row.appendValue() = handler.second->GetDescription();
+                }
             }
-        }
-        rowSet = std::move(result);
-        return BE_SQLITE_OK;
+            rowSet = std::move(result);
+            return BE_SQLITE_OK;
     }
 
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) override {
@@ -37,7 +37,7 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
         rowSet->FreezeSchemaChanges();
         return BE_SQLITE_READONLY;
     }
-    static std::unique_ptr<PragmaManager::Handler> Create(PragmaManager& mgr) { return std::make_unique<PragmaHelp>(mgr); }
+    static std::unique_ptr<PragmaManager::Handler> Create (PragmaManager& mgr) { return std::make_unique<PragmaHelp>(mgr); }
 };
 
 //---------------------------------------------------------------------------------------
@@ -58,29 +58,24 @@ bool PragmaManager::Handler::isExperimentalFeatureAllowed(ECDbCR conn, PragmaMan
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Utf8CP PragmaManager::Handler::GetTypeString() const {
-    if (m_type == Type::Any)
-        return "any";
-    if (m_type == Type::Class)
-        return "class";
-    if (m_type == Type::Global)
-        return "global";
-    if (m_type == Type::Property)
-        return "property";
-    if (m_type == Type::Schema)
-        return "schema";
+    if (m_type == Type::Any) return "any";
+    if (m_type == Type::Class) return "class";
+    if (m_type == Type::Global) return "global";
+    if (m_type == Type::Property) return "property";
+    if (m_type == Type::Schema) return "schema";
     BeAssert(false);
     return nullptr;
-}
+ }
 
 //================================================================================
-// StaticPragmaResult
+//StaticPragmaResult
 //================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BeJsValue StaticPragmaResult::AppendRow() {
     BeMutexHolder lock(GetMutex());
-    if (GetColumnCount() == 0) {
+    if (GetColumnCount() ==0) {
         throw std::runtime_error("no columns added");
     }
     return m_doc.appendArray();
@@ -125,7 +120,7 @@ BeJsValue* StaticPragmaResult::_CurrentRow() {
 }
 
 //================================================================================
-// PragmaManager
+//PragmaManager
 //================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -137,21 +132,23 @@ DbResult PragmaManager::DefaultGlobal(RowSet&, Utf8StringCR name, PragmaVal cons
         IssueType::ECSQL,
         ECDbIssueId::ECDb_0559,
         "Unrecognized pragma %s.",
-        name.c_str());
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::DefaultSchema(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, ECN::ECSchemaCR) const {
+DbResult PragmaManager::DefaultSchema(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, ECN::ECSchemaCR) const{
     GetECDb().GetImpl().Issues().ReportV(
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
         ECDbIssueId::ECDb_0560,
         "Unrecognized pragma '%s' for schema object.",
-        name.c_str());
+        name.c_str()
+    );
 
     return BE_SQLITE_ERROR;
 }
@@ -159,28 +156,31 @@ DbResult PragmaManager::DefaultSchema(RowSet&, Utf8StringCR name, PragmaVal cons
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::DefaultClass(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, ECN::ECClassCR) const {
+DbResult PragmaManager::DefaultClass(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, ECN::ECClassCR) const{
     GetECDb().GetImpl().Issues().ReportV(
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
         ECDbIssueId::ECDb_0561,
         "Unrecognized pragma '%s' for class object.",
-        name.c_str());
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
+
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::DefaultProperty(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, ECN::ECPropertyCR) const {
+DbResult PragmaManager::DefaultProperty(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, ECN::ECPropertyCR) const{
     GetECDb().GetImpl().Issues().ReportV(
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
         ECDbIssueId::ECDb_0562,
         "Unrecognized pragma '%s' for property object.",
-        name.c_str());
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -201,15 +201,16 @@ PragmaManager::Handler* PragmaManager::GetHandler(Handler::Type type, Utf8String
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::DefaultAny(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, std::vector<Utf8String> const& path) const {
+DbResult PragmaManager::DefaultAny(RowSet&, Utf8StringCR name, PragmaVal const&, Operation, std::vector<Utf8String> const& path) const{
     GetECDb().GetImpl().Issues().ReportV(
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
         ECDbIssueId::ECDb_0563,
         "Unrecognized object path '%s' specified for pragma '%s'",
-        BeStringUtilities::Join(path, ".").c_str(),
-        name.c_str());
+        BeStringUtilities::Join(path,".").c_str(),
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -222,7 +223,7 @@ BentleyStatus PragmaManager::Register(std::unique_ptr<Handler> handler) {
         return ERROR;
     }
     auto type = handler->GetType();
-    auto& name = handler->GetName();
+    auto &name = handler->GetName();
     BeMutexHolder holder(m_ecdb.GetImpl().GetMutex());
     if (GetHandler(type, name) != nullptr) {
         GetECDb().GetImpl().Issues().ReportV(
@@ -232,7 +233,8 @@ BentleyStatus PragmaManager::Register(std::unique_ptr<Handler> handler) {
             ECDbIssueId::ECDb_0564,
             "ECDb pragma handler with same type (%s) and name (%s) already exists.",
             handler->GetTypeString(),
-            name.c_str());
+            name.c_str()
+        );
         return ERROR;
     }
     m_handlers[type][name.c_str()] = std::move(handler);
@@ -256,7 +258,7 @@ DbResult PragmaManager::PrepareGlobal(RowSet& rowSet, Utf8StringCR name, PragmaV
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::PrepareSchema(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECSchemaCR schema, PragmaManager::OptionsMap const& options) const {
+DbResult PragmaManager::PrepareSchema(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECSchemaCR schema, PragmaManager::OptionsMap const& options) const{
     auto handler = GetHandlerAs<SchemaHandler>(Handler::Type::Schema, name);
     if (handler != nullptr) {
         if (op == Operation::Read) {
@@ -284,7 +286,7 @@ DbResult PragmaManager::PrepareClass(RowSet& rowSet, Utf8StringCR name, PragmaVa
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::Prepare(RowSet& rowset, PragmaStatementExp const& exp) const {
+DbResult PragmaManager::Prepare(RowSet& rowset,PragmaStatementExp const& exp) const {
     OptionsMap optionsMap;
     if (auto opts = exp.GetOptions()) {
         optionsMap = opts->GetOptionMap();
@@ -322,7 +324,7 @@ DbResult PragmaManager::PrepareAny(RowSet& rowSet, Utf8StringCR name, PragmaVal 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal const& val, Operation op, std::vector<Utf8String> const& path, PragmaManager::OptionsMap const& options) const {
+DbResult  PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal const& val, Operation op, std::vector<Utf8String> const& path, PragmaManager::OptionsMap const& options) const {
     ECN::ECSchemaCP schemaP = nullptr;
     ECN::ECClassCP classP = nullptr;
     ECN::ECPropertyCP propertyP = nullptr;
@@ -331,34 +333,34 @@ DbResult PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal con
         return PrepareGlobal(rowset, name, val, op, options);
     }
     if (path.size() >= 4) {
-        return PrepareAny(rowset, name, val, op, path, options);
+        return PrepareAny(rowset,name, val, op, path, options);
     }
     if (path.size() >= 1) {
         schemaP = m_ecdb.Schemas().GetSchema(path[0], false, SchemaLookupMode::AutoDetect);
         if (schemaP == nullptr) {
-            return PrepareAny(rowset, name, val, op, path, options);
+            return PrepareAny(rowset,name, val, op, path, options);
         }
     }
     if (path.size() >= 2) {
         classP = m_ecdb.Schemas().GetClass(path[0], path[1], SchemaLookupMode::AutoDetect);
         if (classP == nullptr) {
-            return PrepareAny(rowset, name, val, op, path, options);
+            return PrepareAny(rowset,name, val, op, path, options);
         }
         if (path.size() >= 3) {
             propertyP = classP->GetPropertyP(path[2]);
             if (propertyP == nullptr) {
-                return PrepareAny(rowset, name, val, op, path, options);
+                return PrepareAny(rowset,name, val, op, path, options);
             }
         }
     }
     if (propertyP && classP && schemaP) {
-        return PrepareProperty(rowset, name, val, op, *propertyP, options);
+        return PrepareProperty(rowset,name, val, op, *propertyP, options);
     } else if (!propertyP && classP && schemaP) {
-        return PrepareClass(rowset, name, val, op, *classP, options);
+        return PrepareClass(rowset,name, val, op, *classP, options);
     } else if (!propertyP && !classP && schemaP) {
-        return PrepareSchema(rowset, name, val, op, *schemaP, options);
+        return PrepareSchema(rowset,name, val, op, *schemaP, options);
     }
-    return PrepareAny(rowset, name, val, op, path, options);
+    return PrepareAny(rowset,name, val, op, path, options);
 }
 
 //=======================================================================================
@@ -394,7 +396,7 @@ DbResult PragmaResult::Reset() {
         return BE_SQLITE_SCHEMA;
     }
 
-    const auto rc = _Reset();
+    const auto rc  = _Reset();
     if (rc == BE_SQLITE_OK) {
         m_init = false;
     }
@@ -412,7 +414,7 @@ int PragmaResult::GetColumnCount() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void PragmaResult::FreezeSchemaChanges() {
+void PragmaResult::FreezeSchemaChanges()  {
     BeMutexHolder lock(m_mutex);
     m_allowSchemaChange = false;
 }
@@ -430,7 +432,7 @@ bool PragmaResult::IsSchemaChangesAllowed() const {
 //---------------------------------------------------------------------------------------
 IECSqlValue const& PragmaResult::GetValue(int columnIndex) const {
     BeMutexHolder lock(m_mutex);
-    if (columnIndex < 0 || columnIndex > GetColumnCount() - 1) {
+    if (columnIndex< 0 || columnIndex > GetColumnCount() - 1) {
         return NoopECSqlValue::GetSingleton();
     }
     return *m_columns[columnIndex];
@@ -448,7 +450,7 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
     ECN::PrimitiveECPropertyP property = nullptr;
     if (type == ECN::PRIMITIVETYPE_Boolean ||
         type == ECN::PRIMITIVETYPE_Double ||
-        type == ECN::PRIMITIVETYPE_Integer ||
+        type == ECN::PRIMITIVETYPE_Integer||
         type == ECN::PRIMITIVETYPE_Long ||
         type == ECN::PRIMITIVETYPE_String) {
         if (m_class->CreatePrimitiveProperty(property, name, type) != ECObjectsStatus::Success)
@@ -462,7 +464,7 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
     path.AddEntry(*property);
     ECSqlColumnInfo::RootClass rootClass(*m_class, "");
     ECSqlColumnInfo col(ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(property->GetType()), dateTimeInfo, nullptr, property, property, false, true, std::move(path), rootClass);
-    m_columns.push_back(std::make_unique<Field>(col, (int)m_columns.size(), *this));
+    m_columns.push_back(std::make_unique<Field> (col, (int)m_columns.size(), *this));
     property->SetDisplayLabel(name);
     return property;
 }
@@ -470,13 +472,13 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PragmaResult::PragmaResult(ECDbCR ecdb) : m_ecdb(ecdb), m_init(false), m_allowSchemaChange(true) {
+PragmaResult::PragmaResult(ECDbCR ecdb): m_ecdb(ecdb), m_init(false),m_allowSchemaChange(true){
     ECN::ECSchema::CreateSchema(m_schema, "pragma", "pragma", 1, 0, 0);
     m_schema->CreateEntityClass(m_class, "result_set");
 }
 
 //=======================================================================================
-// PragmaResult::Field
+//PragmaResult::Field
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -533,39 +535,19 @@ Utf8CP PragmaResult::Field::_GetText() const {
 }
 
 // unsupported value type
-void const* PragmaResult::Field::_GetBlob(int* blobSize) const {
-    return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
-}
-uint64_t PragmaResult::Field::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const {
-    return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);
-}
-double PragmaResult::Field::_GetDateTimeJulianDays(DateTime::Info& metadata) const {
-    return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);
-}
-DPoint2d PragmaResult::Field::_GetPoint2d() const {
-    return NoopECSqlValue::GetSingleton().GetPoint2d();
-}
-DPoint3d PragmaResult::Field::_GetPoint3d() const {
-    return NoopECSqlValue::GetSingleton().GetPoint3d();
-}
-IGeometryPtr PragmaResult::Field::_GetGeometry() const {
-    return NoopECSqlValue::GetSingleton().GetGeometry();
-}
-IECSqlValue const& PragmaResult::Field::_GetStructMemberValue(Utf8CP memberName) const {
-    return NoopECSqlValue::GetSingleton();
-}
-IECSqlValueIterable const& PragmaResult::Field::_GetStructIterable() const {
-    return NoopECSqlValue::GetSingleton().GetStructIterable();
-}
-int PragmaResult::Field::_GetArrayLength() const {
-    return NoopECSqlValue::GetSingleton().GetArrayLength();
-}
-IECSqlValueIterable const& PragmaResult::Field::_GetArrayIterable() const {
-    return NoopECSqlValue::GetSingleton().GetArrayIterable();
-}
+void const* PragmaResult::Field::_GetBlob(int* blobSize) const { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
+uint64_t PragmaResult::Field::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const{ return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
+double PragmaResult::Field::_GetDateTimeJulianDays(DateTime::Info& metadata) const { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }
+DPoint2d PragmaResult::Field::_GetPoint2d() const { return NoopECSqlValue::GetSingleton().GetPoint2d(); }
+DPoint3d PragmaResult::Field::_GetPoint3d() const { return NoopECSqlValue::GetSingleton().GetPoint3d(); }
+IGeometryPtr PragmaResult::Field::_GetGeometry() const { return NoopECSqlValue::GetSingleton().GetGeometry(); }
+IECSqlValue const& PragmaResult::Field::_GetStructMemberValue(Utf8CP memberName) const { return NoopECSqlValue::GetSingleton(); }
+IECSqlValueIterable const& PragmaResult::Field::_GetStructIterable() const{ return NoopECSqlValue::GetSingleton().GetStructIterable(); }
+int PragmaResult::Field::_GetArrayLength() const { return NoopECSqlValue::GetSingleton().GetArrayLength(); }
+IECSqlValueIterable const& PragmaResult::Field::_GetArrayIterable() const{ return NoopECSqlValue::GetSingleton().GetArrayIterable(); }
 
 //=======================================================================================
-// PragmaECSqlPreparedStatement
+//PragmaECSqlPreparedStatement
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -598,7 +580,7 @@ int PragmaECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) const
 // @bsimethod
 //---------------------------------------------------------------------------------------
 int PragmaECSqlPreparedStatement::_TryGetParameterIndex(Utf8CP parameterName) const {
-    return m_parameterMap.GetIndexForName(parameterName);  // do not log an error on a missing parameter
+    return m_parameterMap.GetIndexForName(parameterName); // do not log an error on a missing parameter
 }
 
 //---------------------------------------------------------------------------------------
@@ -623,8 +605,8 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
-    if (!m_isFirstStep)
-        m_isFirstStep = true;  // Will reset the flag when actually everything will be reset successfully if flag is false
+    if(!m_isFirstStep)
+        m_isFirstStep = true; // Will reset the flag when actually everything will be reset successfully if flag is false
     return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
@@ -654,15 +636,16 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if (m_isFirstStep) {
+    if(m_isFirstStep)
+        {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
-    }
-
+        }
+    
     DbResult res = m_resultSet->Step();
     // if step actually succeeded and returned BE_SQLITE_DONE or BE_SQLITE_ROW on the sqlite side then we set this flag to false if flag is true, if the returned value is something else like BE_SQLITE_SCHEMA or anything else we don't set the flag to false
-    if ((res == BE_SQLITE_DONE || res == BE_SQLITE_ROW) && m_isFirstStep)
-        m_isFirstStep = false;
+    if((res == BE_SQLITE_DONE || res == BE_SQLITE_ROW) && m_isFirstStep)
+        m_isFirstStep = false; 
     return res;
 }
 
@@ -680,7 +663,7 @@ int PragmaECSqlPreparedStatement::GetColumnCount() const {
     if (m_resultSet == nullptr) {
         return 0;
     }
-    return m_resultSet->GetColumnCount();
+        return m_resultSet->GetColumnCount();
 }
 
 //---------------------------------------------------------------------------------------
@@ -694,7 +677,7 @@ IECSqlValue const& PragmaECSqlPreparedStatement::GetValue(int columnIndex) const
 }
 
 //=======================================================================================
-// PragmaVal
+//PragmaVal
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -719,7 +702,7 @@ int64_t PragmaVal::GetInteger() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 double PragmaVal::GetDouble() const {
-    if (IsDouble()) {
+    if(IsDouble()) {
         return m_double;
     }
     if (IsInteger()) {
@@ -738,10 +721,10 @@ double PragmaVal::GetDouble() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool PragmaVal::GetBool() const {
-    if (IsBool()) {
+    if(IsBool()) {
         return m_bool;
     }
-    if (IsDouble()) {
+    if(IsDouble()) {
         return GetDouble() != 0;
     }
     if (IsInteger()) {
@@ -764,10 +747,10 @@ bool PragmaVal::GetBool() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::string PragmaVal::GetString() const {
-    if (IsString() || IsName()) {
+    if(IsString() || IsName()) {
         return m_str;
     }
-    if (IsDouble()) {
+    if(IsDouble()) {
         return std::to_string(GetDouble());
     }
     if (IsInteger()) {
@@ -786,7 +769,7 @@ std::string PragmaVal::GetString() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::string PragmaVal::GetName() const {
-    if (IsName()) {
+    if(IsName()) {
         return m_str;
     }
     return "";
@@ -801,3 +784,4 @@ PragmaVal const& PragmaVal::Null() {
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+

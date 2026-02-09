@@ -1,9 +1,9 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 // #define DUMP_CHANGE_SUMMARY 1
 
@@ -14,19 +14,19 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct TestChangeSet : BeSQLite::ChangeSet {
-    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override {
-        BeAssert(false && "Unexpected conflict");
-        return ConflictResolution::Skip;
-    }
+struct TestChangeSet : BeSQLite::ChangeSet
+    {
+    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
 
-    JsonValue ToJson(Db const& db) const {
+    JsonValue ToJson(Db const& db) const
+        {
         JsonValue json(Json::ValueType::arrayValue);
 
         bmap<Utf8String, Json::Value> changedValuesPerTableMap;
         std::vector<Utf8String> tablesAsOrderedInChangeset;
 
-        for (Changes::Change change : const_cast<TestChangeSet*>(this)->GetChanges()) {
+        for (Changes::Change change : const_cast<TestChangeSet*>(this)->GetChanges())
+            {
             Utf8CP tableName = nullptr;
             DbOpcode opCode;
             int nCols = -1;
@@ -40,7 +40,8 @@ struct TestChangeSet : BeSQLite::ChangeSet {
 
             Utf8String tblName(tableName);
             auto valueItor = changedValuesPerTableMap.find(tblName);
-            if (valueItor == changedValuesPerTableMap.end()) {
+            if (valueItor == changedValuesPerTableMap.end())
+                {
                 valueItor = changedValuesPerTableMap.insert(make_bpair(tblName, Json::Value(Json::ValueType::objectValue))).first;
                 valueItor->second["table"] = Json::Value(tblName);
                 tablesAsOrderedInChangeset.push_back(tableName);
@@ -51,16 +52,18 @@ struct TestChangeSet : BeSQLite::ChangeSet {
                     return JsonValue();
 
                 Json::Value pkColumns(Json::ValueType::arrayValue);
-                for (size_t i = 0; i < pkColCount; i++) {
-                    if (pkCols[i] == 1) {
+                for (size_t i = 0; i < pkColCount; i++)
+                    {
+                    if (pkCols[i] == 1)
+                        {
                         Utf8StringCR col = cols.at(i);
                         pkColumns.append(Json::Value(col.c_str()));
+                        }
                     }
-                }
 
                 valueItor->second["pk"] = pkColumns;
                 valueItor->second["rows"] = Json::Value(Json::ValueType::arrayValue);
-            }
+                }
 
             Json::Value rowChange = Json::Value(Json::ValueType::objectValue);
             if (opCode == DbOpcode::Delete)
@@ -72,15 +75,17 @@ struct TestChangeSet : BeSQLite::ChangeSet {
 
             rowChange["indirect"] = Json::Value(indirect != 0);
             rowChange["values"] = Json::Value(Json::ValueType::arrayValue);
-            for (int i = 0; i < nCols; i++) {
-                Utf8StringCR col = cols.at((size_t)i);
+            for (int i = 0; i < nCols; i++)
+                {
+                Utf8StringCR col = cols.at((size_t) i);
                 Json::Value changedColValues(Json::ValueType::objectValue);
                 Json::Value colValueChange(Json::ValueType::objectValue);
                 if (DbOpcode::Insert == opCode)
                     colValueChange["after"] = TestUtilities::DbValueToJson(change.GetValue(i, Changes::Change::Stage::New));
                 else if (DbOpcode::Delete == opCode)
                     colValueChange["before"] = TestUtilities::DbValueToJson(change.GetValue(i, Changes::Change::Stage::Old));
-                else {
+                else
+                    {
                     DbValue oldValue = change.GetOldValue(i);
                     DbValue newValue = change.GetNewValue(i);
                     if (oldValue.IsValid())
@@ -88,95 +93,106 @@ struct TestChangeSet : BeSQLite::ChangeSet {
 
                     if (newValue.IsValid())
                         colValueChange["after"] = TestUtilities::DbValueToJson(newValue);
-                }
+                    }
 
-                if (!colValueChange.empty()) {
+                if (!colValueChange.empty())
+                    {
                     changedColValues[col.c_str()] = colValueChange;
                     rowChange["values"].append(changedColValues);
+                    }
                 }
-            }
 
             valueItor->second["rows"].append(rowChange);
-        }
+            }
 
-        for (Utf8StringCR tableName : tablesAsOrderedInChangeset) {
+        for (Utf8StringCR tableName : tablesAsOrderedInChangeset)
+            {
             auto it = changedValuesPerTableMap.find(tableName);
             if (it == changedValuesPerTableMap.end())
                 return JsonValue();
 
             json.m_value.append(it->second);
-        }
+            }
 
         return json;
-    }
-};
+        }
+    };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct TestChangeTracker : BeSQLite::ChangeTracker {
+struct TestChangeTracker : BeSQLite::ChangeTracker
+    {
     TestChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
 
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Commit; }
-};
+    };
+
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ChangeSummaryTestFixture : public ECDbTestFixture {
-   protected:
-    DbResult AttachCache() const { return m_ecdb.AttachChangeCache(ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName())); }
+struct ChangeSummaryTestFixture : public ECDbTestFixture
+    {
+    protected:
+        DbResult AttachCache() const { return m_ecdb.AttachChangeCache(ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName())); }
 
-    int GetInstanceChangeCount(ECInstanceId changeSummaryId) const {
-        ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT count(*) FROM change.InstanceChange WHERE Summary.Id=?"))
-            return -1;
+        int GetInstanceChangeCount(ECInstanceId changeSummaryId) const
+            {
+            ECSqlStatement stmt;
+            if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT count(*) FROM change.InstanceChange WHERE Summary.Id=?"))
+                return -1;
 
-        stmt.BindId(1, changeSummaryId);
+            stmt.BindId(1, changeSummaryId);
 
-        if (stmt.Step() != BE_SQLITE_ROW)
-            return -1;
+            if (stmt.Step() != BE_SQLITE_ROW)
+                return -1;
 
-        return stmt.GetValueInt(0);
-    }
+            return stmt.GetValueInt(0);
+            }
 
-    int GetPropertyValueChangeCount(ECInstanceId instanceChangeId = ECInstanceId()) const {
-        Utf8CP ecsql = instanceChangeId.IsValid() ? "SELECT count(*) FROM change.PropertyValueChange WHERE InstanceChange.Id=?" : "SELECT count(*) FROM change.PropertyValueChange";
-        ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
-            return -1;
+        int GetPropertyValueChangeCount(ECInstanceId instanceChangeId = ECInstanceId()) const
+            {
+            Utf8CP ecsql = instanceChangeId.IsValid() ? "SELECT count(*) FROM change.PropertyValueChange WHERE InstanceChange.Id=?" :
+                "SELECT count(*) FROM change.PropertyValueChange";
+            ECSqlStatement stmt;
+            if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
+                return -1;
 
-        stmt.BindId(1, instanceChangeId);
+            stmt.BindId(1, instanceChangeId);
 
-        if (stmt.Step() != BE_SQLITE_ROW)
-            return -1;
+            if (stmt.Step() != BE_SQLITE_ROW)
+                return -1;
 
-        return stmt.GetValueInt(0);
-    }
+            return stmt.GetValueInt(0);
+            }
 
-    bool ContainsChange(ECInstanceId changeSummaryId, ECInstanceId changedInstanceId, Utf8CP changedInstanceSchemaName, Utf8CP changedInstanceClassName, ChangeOpCode opCode) const {
-        ECClassId classIdOfChangedInstance = m_ecdb.Schemas().GetClassId(changedInstanceSchemaName, changedInstanceClassName);
-        if (!classIdOfChangedInstance.IsValid())
-            return false;
+        bool ContainsChange(ECInstanceId changeSummaryId, ECInstanceId changedInstanceId, Utf8CP changedInstanceSchemaName, Utf8CP changedInstanceClassName, ChangeOpCode opCode) const
+            {
+            ECClassId classIdOfChangedInstance = m_ecdb.Schemas().GetClassId(changedInstanceSchemaName, changedInstanceClassName);
+            if (!classIdOfChangedInstance.IsValid())
+                return false;
 
-        ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT 1 FROM change.InstanceChange WHERE Summary.Id=? AND ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND OpCode=?"))
-            return false;
+            ECSqlStatement stmt;
+            if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT 1 FROM change.InstanceChange WHERE Summary.Id=? AND ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND OpCode=?"))
+                return false;
 
-        stmt.BindId(1, changeSummaryId);
-        stmt.BindId(2, changedInstanceId);
-        stmt.BindId(3, classIdOfChangedInstance);
-        stmt.BindInt(4, (int)opCode);
+            stmt.BindId(1, changeSummaryId);
+            stmt.BindId(2, changedInstanceId);
+            stmt.BindId(3, classIdOfChangedInstance);
+            stmt.BindInt(4, (int) opCode);
 
-        return stmt.Step() == BE_SQLITE_ROW;
-    }
+            return stmt.Step() == BE_SQLITE_ROW;
+            }
 
-    void DumpChangeSummary(ECInstanceKey const& changeSummaryKey, Utf8CP label) const {
+    void DumpChangeSummary(ECInstanceKey const& changeSummaryKey, Utf8CP label) const
+        {
 #ifdef DUMP_CHANGE_SUMMARY
         printf("%s\r\n", label);
         printf("-----------------\r\n");
 
-        auto valueToString = [](IECSqlValue const& val, Utf8CP sqliteType) {
+        auto valueToString = [] (IECSqlValue const& val, Utf8CP sqliteType)
+            {
             if (val.IsNull())
                 return Utf8String("null");
 
@@ -188,14 +204,15 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture {
                 str.Sprintf("%.6f", val.GetDouble());
             else if (BeStringUtilities::StricmpAscii("text", sqliteType) == 0)
                 str.Sprintf("%s", val.GetText());
-            else if (BeStringUtilities::StricmpAscii("blob", sqliteType) == 0) {
+            else if (BeStringUtilities::StricmpAscii("blob", sqliteType) == 0)
+                {
                 int blobSize = -1;
                 val.GetBlob(&blobSize);
                 str.Sprintf("blob(%d bytes)", blobSize);
-            }
+                }
 
             return str;
-        };
+            };
 
         ECSqlStatement instanceChangeStmt;
         ASSERT_EQ(ECSqlStatus::Success, instanceChangeStmt.Prepare(m_ecdb, "SELECT ECInstanceId, ChangedInstance.Id, ChangedInstance.ClassId, OpCode, IsIndirect FROM change.InstanceChange WHERE Summary.Id=?"));
@@ -218,14 +235,16 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture {
             printf("%s|%s|%s|%s|%s\r\n",
                    instanceChangeStmt.GetValueId<ECInstanceId>(1).ToString().c_str(),
                    ecClass->GetFullName(), ecClass->GetId().ToString().c_str(),
-                   ChangedOpCodeToString((ChangeOpCode)instanceChangeStmt.GetValueInt(3)),
+                   ChangedOpCodeToString((ChangeOpCode) instanceChangeStmt.GetValueInt(3)),
                    instanceChangeStmt.GetValueBoolean(4) ? "yes" : "no");
+
 
             propValueChangeStmt.BindId(1, changeId);
 
             printf("\tAccessString|OldValue|NewValue\r\n");
 
-            while (BE_SQLITE_ROW == propValueChangeStmt.Step()) {
+            while (BE_SQLITE_ROW == propValueChangeStmt.Step())
+                {
                 Utf8CP accessString = propValueChangeStmt.GetValueText(0);
 
                 IECSqlValue const& oldVal = propValueChangeStmt.GetValue(1);
@@ -237,66 +256,71 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture {
                 Utf8String newValStr = valueToString(newVal, newValueType);
 
                 printf("\t%s|%s|%s\r\n", accessString, oldValStr.c_str(), newValStr.c_str());
-            }
+                }
 
             propValueChangeStmt.Reset();
             propValueChangeStmt.ClearBindings();
             }
 #endif
-    }
-
-    static Utf8CP ChangedOpCodeToString(ChangeOpCode opCode) {
-        switch (opCode) {
-            case ChangeOpCode::Insert:
-                return "Insert";
-            case ChangeOpCode::Update:
-                return "Update";
-            case ChangeOpCode::Delete:
-                return "Delete";
-
-            default:
-                BeAssert(false);
-                return "invalid ChangedOpCode";
         }
-    }
-};
+
+    static Utf8CP ChangedOpCodeToString(ChangeOpCode opCode)
+        {
+        switch (opCode)
+            {
+                case ChangeOpCode::Insert:
+                    return "Insert";
+                case ChangeOpCode::Update:
+                    return "Update";
+                case ChangeOpCode::Delete:
+                    return "Delete";
+
+                default:
+                    BeAssert(false);
+                    return "invalid ChangedOpCode";
+            }
+        }
+    };
 
 //=======================================================================================
-//! Test fixture for the deprecated ChangeSummary API
+//!Test fixture for the deprecated ChangeSummary API
 // @bsiclass
 //=======================================================================================
-struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture {
-   protected:
-    void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label) {
+struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture
+    {
+    protected:
+        void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label)
+            {
 #ifdef DUMP_CHANGE_SUMMARY
-        printf("\t%s:\n", label);
-        changeSummary.Dump();
+            printf("\t%s:\n", label);
+            changeSummary.Dump();
 #endif
-    }
+            }
 
-    bool ChangeSummaryContainsInstance(ECDbCR ecdb, ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode) {
-        Utf8String tableName = changeSummary.GetInstancesTableName();
-        ECClassId classId = ecdb.Schemas().GetClassId(schemaName, className);
+        bool ChangeSummaryContainsInstance(ECDbCR ecdb, ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode)
+            {
+            Utf8String tableName = changeSummary.GetInstancesTableName();
+            ECClassId classId = ecdb.Schemas().GetClassId(schemaName, className);
 
-        Utf8PrintfString sql("SELECT NULL FROM %s WHERE ClassId=? AND InstanceId=? AND DbOpcode=?", tableName.c_str());
-        CachedStatementPtr statement = ecdb.GetCachedStatement(sql.c_str());
-        BeAssert(statement.IsValid());
+            Utf8PrintfString sql("SELECT NULL FROM %s WHERE ClassId=? AND InstanceId=? AND DbOpcode=?", tableName.c_str());
+            CachedStatementPtr statement = ecdb.GetCachedStatement(sql.c_str());
+            BeAssert(statement.IsValid());
 
-        statement->BindId(1, classId);
-        statement->BindId(2, instanceId);
-        statement->BindInt(3, (int)dbOpcode);
+            statement->BindId(1, classId);
+            statement->BindId(2, instanceId);
+            statement->BindInt(3, (int) dbOpcode);
 
-        DbResult result = statement->Step();
-        return (result == BE_SQLITE_ROW);
-    }
-};
+            DbResult result = statement->Step();
+            return (result == BE_SQLITE_ROW);
+            }
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToLinkTableRelationship) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
-                                                                  R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
             <ECEntityClass typeName="Element">
@@ -345,7 +369,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToLinkT
     ReopenECDb();
 
     auto classElementRefersToElements = m_ecdb.Schemas().FindClass("ts.ElementRefersToElements");
-    // Make sure change is that system table can be tracked.
+    //Make sure change is that system table can be tracked.
     TestChangeSet changeset1;
     if ("insert invalid rel with invalid fk") {
         TestChangeTracker tracker(m_ecdb);
@@ -369,7 +393,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToLinkT
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAnyKnowClass) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
-                                                                  R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
             <ECEntityClass typeName="Element">
@@ -417,7 +441,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAn
         </ECSchema>)xml")));
     ReopenECDb();
 
-    // Make sure change is that system table can be tracked.
+    //Make sure change is that system table can be tracked.
     TestChangeSet changeset1;
     if ("insert invalid rel with invalid fk") {
         TestChangeTracker tracker(m_ecdb);
@@ -441,7 +465,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAn
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToAEntityClass) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
-                                                                  R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
             <ECEntityClass typeName="Element">
@@ -490,7 +514,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToAEnti
     ReopenECDb();
 
     auto classElement = m_ecdb.Schemas().FindClass("ts.Element");
-    // Make sure change is that system table can be tracked.
+    //Make sure change is that system table can be tracked.
     TestChangeSet changeset1;
     if ("insert invalid rel with invalid fk") {
         TestChangeTracker tracker(m_ecdb);
@@ -511,51 +535,55 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToAEnti
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency) {
+TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
-    // verify that the expected change summary cache file alias
+    //verify that the expected change summary cache file alias
     {
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "pragma database_list"));
-        int attachedTableSpaceCount = 0;
-        while (BE_SQLITE_ROW == stmt.Step()) {
-            Utf8CP tableSpaceName = stmt.GetValueText(1);
-            if (BeStringUtilities::StricmpAscii("main", tableSpaceName) == 0 || BeStringUtilities::StricmpAscii("temp", tableSpaceName) == 0)
-                continue;
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "pragma database_list"));
+    int attachedTableSpaceCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP tableSpaceName = stmt.GetValueText(1);
+        if (BeStringUtilities::StricmpAscii("main", tableSpaceName) == 0 || BeStringUtilities::StricmpAscii("temp", tableSpaceName) == 0)
+            continue;
 
-            attachedTableSpaceCount++;
-            ASSERT_STREQ("ecchange", tableSpaceName);
-        }
-        ASSERT_EQ(1, attachedTableSpaceCount) << "Only ecchange table space is expected to be attached";
+        attachedTableSpaceCount++;
+        ASSERT_STREQ("ecchange", tableSpaceName);
+       }
+    ASSERT_EQ(1, attachedTableSpaceCount) << "Only ecchange table space is expected to be attached";
     }
 
     ECEnumeration const* opCodeECEnum = m_ecdb.Schemas().GetEnumeration("ECDbChange", "OpCode");
     ASSERT_TRUE(opCodeECEnum != nullptr);
 
-    ASSERT_EQ(3, (int)opCodeECEnum->GetEnumeratorCount());
+    ASSERT_EQ(3, (int) opCodeECEnum->GetEnumeratorCount());
     ASSERT_TRUE(opCodeECEnum->GetIsStrict());
     ASSERT_EQ(PRIMITIVETYPE_Integer, opCodeECEnum->GetType());
 
-    for (ECEnumerator const* opCodeECEnumVal : opCodeECEnum->GetEnumerators()) {
+    for (ECEnumerator const* opCodeECEnumVal : opCodeECEnum->GetEnumerators())
+        {
         if (opCodeECEnumVal->GetDisplayLabel().EqualsIAscii("insert"))
-            ASSERT_EQ((int)ChangeOpCode::Insert, opCodeECEnumVal->GetInteger()) << opCodeECEnumVal->GetDisplayLabel();
+            ASSERT_EQ((int) ChangeOpCode::Insert, opCodeECEnumVal->GetInteger()) << opCodeECEnumVal->GetDisplayLabel();
         else if (opCodeECEnumVal->GetDisplayLabel().EqualsIAscii("update"))
-            ASSERT_EQ((int)ChangeOpCode::Update, opCodeECEnumVal->GetInteger()) << opCodeECEnumVal->GetDisplayLabel();
+            ASSERT_EQ((int) ChangeOpCode::Update, opCodeECEnumVal->GetInteger()) << opCodeECEnumVal->GetDisplayLabel();
         else if (opCodeECEnumVal->GetDisplayLabel().EqualsIAscii("delete"))
-            ASSERT_EQ((int)ChangeOpCode::Delete, opCodeECEnumVal->GetInteger()) << opCodeECEnumVal->GetDisplayLabel();
+            ASSERT_EQ((int) ChangeOpCode::Delete, opCodeECEnumVal->GetInteger()) << opCodeECEnumVal->GetDisplayLabel();
         else
             FAIL() << opCodeECEnumVal->GetDisplayLabel() << " : " << opCodeECEnumVal->GetInteger();
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, sqlite_stat1) {
+TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("change_statistic1.ecdb", SchemaItem(
-                                                                              R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -568,32 +596,32 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1) {
         </ECSchema>)xml")));
 
     ReopenECDb();
-    // Enusre only on system table exist by default
+    //Enusre only on system table exist by default
     ASSERT_TRUE(m_ecdb.TableExists("sqlite_stat1"));
     ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat2"));
     ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat3"));
     ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat4"));
-    // and that table is empty by default
+    //and that table is empty by default
     {
-        auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
-        ASSERT_EQ(0, stmt->GetValueInt(0));
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
     }
-    // Make sure change is that system table can be tracked.
+    //Make sure change is that system table can be tracked.
     TestChangeSet changeset1;
     {
-        TestChangeTracker tracker(m_ecdb);
-        tracker.EnableTracking(true);
-        m_ecdb.ExecuteSql("analyze");
-        tracker.EnableTracking(false);
-        // Make we captured some changes
-        ASSERT_TRUE(tracker.HasChanges());
-        ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    m_ecdb.ExecuteSql("analyze");
+    tracker.EnableTracking(false);
+    //Make we captured some changes
+    ASSERT_TRUE(tracker.HasChanges());
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
     }
     m_ecdb.SaveChanges();
     m_ecdb.CloseDb();
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("change_statistic2.ecdb", SchemaItem(
-                                                                              R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -606,30 +634,31 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1) {
         </ECSchema>)xml")));
 
     {
-        auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
-        ASSERT_EQ(0, stmt->GetValueInt(0));
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
     }
-    // printf("\n%s\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+    //printf("\n%s\n", changeset1.ToJson(m_ecdb).ToString().c_str());
 
-    // apply the change set to a new db
+    //apply the change set to a new db
     ASSERT_EQ(BE_SQLITE_OK, changeset1.ApplyChanges(m_ecdb));
     m_ecdb.SaveChanges();
     {
-        auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
-        ASSERT_EQ(48, stmt->GetValueInt(0));
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(48, stmt->GetValueInt(0));
     }
 
-    // printf("%s", changeset1.ToJson(m_ecdb).ToString().c_str());
-}
+    //printf("%s", changeset1.ToJson(m_ecdb).ToString().c_str());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations) {
+TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesFunctionOptimizations.ecdb", SchemaItem(
-                                                                                         R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo">
                 <ECProperty propertyName="I" typeName="int" />
@@ -672,7 +701,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations) {
     tracker.EndTracking();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
-    // unoptimized case
+    //unoptimized case
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,?)"));
     Utf8String nativeSql(stmt.GetNativeSql());
@@ -689,13 +718,13 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations) {
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
 
-    // optimized case
+    //optimized case
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,'AfterInsert')"));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(?,%d)", (int)ChangedValueState::AfterInsert).c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(?,%d)", (int) ChangedValueState::AfterInsert).c_str()));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
@@ -705,19 +734,19 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations) {
     ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(?,%d)", (int)ChangedValueState::BeforeDelete).c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(?,%d)", (int) ChangedValueState::BeforeDelete).c_str()));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
 
-    // not yet optimized cases
+    //not yet optimized cases
     Utf8String summary2IdStr = summary2Key.GetInstanceId().ToString();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,%d)", summary2IdStr.c_str(), (int)ChangedValueState::BeforeUpdate).c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,%d)", summary2IdStr.c_str(), (int) ChangedValueState::BeforeUpdate).c_str()));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
@@ -727,18 +756,19 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations) {
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,%d)", summary2IdStr.c_str(), (int)ChangedValueState::AfterUpdate).c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,%d)", summary2IdStr.c_str(), (int) ChangedValueState::AfterUpdate).c_str()));
     nativeSql.assign(stmt.GetNativeSql());
     ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
     stmt.Finalize();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput) {
+TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesFunctionInput.ecdb", SchemaItem(
-                                                                                 R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -790,35 +820,37 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput) {
     ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.Changes(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo2.Changes(?,?)"));
 
-    std::vector<ChangedValueState> changedValueStates{ChangedValueState::AfterInsert, ChangedValueState::BeforeUpdate, ChangedValueState::AfterUpdate, ChangedValueState::BeforeDelete};
-    std::vector<Utf8CP> changedValueStateStrings{"AfterInsert", "BeforeUpdate", "AfterUpdate", "BeforeDelete"};
+    std::vector<ChangedValueState> changedValueStates {ChangedValueState::AfterInsert, ChangedValueState::BeforeUpdate, ChangedValueState::AfterUpdate, ChangedValueState::BeforeDelete};
+    std::vector<Utf8CP> changedValueStateStrings {"AfterInsert", "BeforeUpdate", "AfterUpdate", "BeforeDelete"};
 
-    for (ChangedValueState state : changedValueStates) {
-        // summary id unbound
-        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int)state));
+    for (ChangedValueState state : changedValueStates)
+        {
+        //summary id unbound
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int) state));
         ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
         foo1ChangesStmt.Reset();
         foo1ChangesStmt.ClearBindings();
-        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindInt(2, (int)state));
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindInt(2, (int) state));
         ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
         foo2ChangesStmt.Reset();
         foo2ChangesStmt.ClearBindings();
 
-        // summary id which does not exist
-        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, ECInstanceId((uint64_t)1111111111)));
-        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int)state));
+        //summary id which does not exist
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int) state));
         ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
         foo1ChangesStmt.Reset();
         foo1ChangesStmt.ClearBindings();
-        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindId(1, ECInstanceId((uint64_t)1111111111)));
-        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindInt(2, (int)state));
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindInt(2, (int) state));
         ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
         foo2ChangesStmt.Reset();
         foo2ChangesStmt.ClearBindings();
-    }
+        }
 
-    for (Utf8CP state : changedValueStateStrings) {
-        // summary id unbound
+    for (Utf8CP state : changedValueStateStrings)
+        {
+        //summary id unbound
         ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
         foo1ChangesStmt.Reset();
@@ -828,35 +860,35 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput) {
         foo2ChangesStmt.Reset();
         foo2ChangesStmt.ClearBindings();
 
-        // summary id which does not exist
-        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, ECInstanceId((uint64_t)1111111111)));
+        //summary id which does not exist
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
         ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
         foo1ChangesStmt.Reset();
         foo1ChangesStmt.ClearBindings();
-        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindId(1, ECInstanceId((uint64_t)1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
         ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
         foo2ChangesStmt.Reset();
         foo2ChangesStmt.ClearBindings();
-    }
+        }
 
-    // Invalid states
-    // first try with a valid state to ensure that the statement does return something with correct input
+    //Invalid states
+    //first try with a valid state to ensure that the statement does return something with correct input
     ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int)ChangedValueState::AfterInsert));
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int) ChangedValueState::AfterInsert));
     ASSERT_EQ(BE_SQLITE_ROW, foo1ChangesStmt.Step());
     foo1ChangesStmt.Reset();
     foo1ChangesStmt.ClearBindings();
 
-    // first try with a valid state to ensure that the statement does return something with correct input
+    //first try with a valid state to ensure that the statement does return something with correct input
     ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, "AfterInsert", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_ROW, foo1ChangesStmt.Step());
     foo1ChangesStmt.Reset();
     foo1ChangesStmt.ClearBindings();
 
-    // now try invalid states
+    //now try invalid states
     ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, 5555555));
     ASSERT_EQ(BE_SQLITE_ERROR, foo1ChangesStmt.Step());
@@ -868,14 +900,15 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput) {
     ASSERT_EQ(BE_SQLITE_ERROR, foo1ChangesStmt.Step());
     foo1ChangesStmt.Reset();
     foo1ChangesStmt.ClearBindings();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect) {
+TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesFunctionOnlyForSelect.ecdb", SchemaItem(
-                                                                                         R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo">
                 <ECProperty propertyName="S" typeName="string" />
@@ -922,14 +955,15 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect) {
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, Utf8PrintfString("DELETE FROM ts.Foo.Changes(%s,'AfterInsert')", summaryId.c_str()).c_str()));
     stmt.Finalize();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache) {
+TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValidCache_InvalidCache.ecdb", SchemaItem(
-                                                                                    R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -941,7 +975,8 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache) {
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    auto assertCache = [](ECDbCR ecdb, bool expectedIsValidCache, Utf8CP assertMessage) {
+    auto assertCache = [] (ECDbCR ecdb, bool expectedIsValidCache, Utf8CP assertMessage)
+        {
         EXPECT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
         EXPECT_EQ(expectedIsValidCache, ecdb.IsChangeCacheAttached()) << assertMessage;
         EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange")) << assertMessage;
@@ -972,7 +1007,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache) {
             EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')")) << assertMessage;
 
         stmt.Finalize();
-    };
+        };
 
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
     BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
@@ -995,59 +1030,60 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache) {
 
     CloseECDb();
 
-    // attach cache with plain SQL command
+    //attach cache with plain SQL command
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
 
     // Ensure Savepoint is destroyed before the ECDb - its destructor requires the ECDb to be open.
-    {
-        Savepoint sp(m_ecdb, "");
         {
+        Savepoint sp(m_ecdb, "");
+            {
             ECDb cache;
             ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cache, cachePath));
-        }
+            }
 
         sp.Cancel();
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS ecchange", cachePath.GetNameUtf8().c_str()).c_str()));
         sp.Begin();
         assertCache(m_ecdb, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
         sp.Cancel();
-    }
+        }
 
     CloseECDb();
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
 
-    // create non-Change non-ECDb file
+    //create non-Change non-ECDb file
     {
-        ASSERT_FALSE(cachePath.DoesPathExist());
-        Db db;
-        ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(cachePath));
-        db.SaveChanges();
+    ASSERT_FALSE(cachePath.DoesPathExist());
+    Db db;
+    ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(cachePath));
+    db.SaveChanges();
     }
 
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     {
-        ScopedDisableFailOnAssertion failOnAssertion;
-        ASSERT_EQ(BE_SQLITE_ERROR, AttachCache()) << "Non-ECDb file with same path exists";
+    ScopedDisableFailOnAssertion failOnAssertion;
+    ASSERT_EQ(BE_SQLITE_ERROR, AttachCache()) << "Non-ECDb file with same path exists";
     }
     assertCache(m_ecdb, false, "Attach failed because non-ECDb file with same path exists");
     CloseECDb();
-    // create non-Change ECDb file
+    //create non-Change ECDb file
     {
-        ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
+    ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
 
-        ECDb db;
-        ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(cachePath));
+    ECDb db;
+    ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(cachePath));
     }
 
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ASSERT_EQ(BE_SQLITE_ERROR, AttachCache()) << "Non-Change ECDb file with same path exists";
     assertCache(m_ecdb, false, "Attach failed because Non-Change ECDb file with same path exists");
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache) {
+TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CloseClearCacheDestroyWithAttachedCache.ecdb"));
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
     BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
@@ -1061,33 +1097,34 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache) {
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
 
     {
-        ECDb ecdb;
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
-        ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
-        ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
-        ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     }
     ASSERT_EQ(BeFileNameStatus::Success, ecdbPath.BeDeleteFile());
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
 
     {
-        ECDb ecdb;
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
-        ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
-        ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
-        ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
-        ecdb.ClearECDbCache();
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
+    ecdb.ClearECDbCache();
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput) {
+TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AttachChangeCacheMethodInput.ecdb", SchemaItem(
-                                                                                         R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -1109,31 +1146,32 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput) {
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
 
     {
-        ECDb cacheFile;
-        ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.CreateChangeCache(cacheFile, cachePath)) << "Cache already exists";
+    ECDb cacheFile;
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.CreateChangeCache(cacheFile, cachePath)) << "Cache already exists";
     }
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
 
     {
-        ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
-        ECDb cacheFile;
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFile, cachePath));
+    ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
+    ECDb cacheFile;
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFile, cachePath));
     }
 
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
     ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, IsChangeCacheAttached) {
+TEST_F(ChangeSummaryTestFixture, IsChangeCacheAttached)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsChangeCacheAttached.ecdb", SchemaItem(
-                                                                                  R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -1142,17 +1180,18 @@ TEST_F(ChangeSummaryTestFixture, IsChangeCacheAttached) {
         </ECSchema>)xml")));
 
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb) {
+TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
+    {
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateNewDb(":memory:"));
     TestHelper helper(m_ecdb);
 
     ASSERT_EQ(SUCCESS, helper.ImportSchema(SchemaItem(
-                           R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
@@ -1165,12 +1204,13 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb) {
         </ECSchema>)xml")));
 
     ASSERT_EQ(BE_SQLITE_ERROR, AttachCache()) << "cannot create a change cache for an in-memory primary file";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath) {
+TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ChangeSummaryNonDefaultCachePath.ecdb"));
 
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
@@ -1204,12 +1244,13 @@ TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath) {
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cacheFilePath));
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps) {
+TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ChangeSummaryExtendedProps.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
@@ -1223,23 +1264,26 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps) {
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     tracker.EndTracking();
 
-    std::vector<ChangeSetArg> args{ChangeSetArg(changeset),
-                                   ChangeSetArg(changeset, R"({"ChangeSetId":"1-0-0-1"})"),
-                                   ChangeSetArg(changeset, R"({"ChangeSetId":"1-0-0-2", "ParentChangeSetId":"2-0-0-1", "PushDate" : "2017-12-15T12:24Z"})"),
-                                   ChangeSetArg(changeset, R"({"ChangeSetId":"1-0-0-3", "ParentChangeSetId":"2-0-0-2", "PushDate" : "2017-12-15T12:24Z", "CreatedBy":{"Id":"5-5-5-5", "EMail":"Audrey Winter"}})")};
+    std::vector<ChangeSetArg> args {ChangeSetArg(changeset),
+        ChangeSetArg(changeset, R"({"ChangeSetId":"1-0-0-1"})"),
+        ChangeSetArg(changeset, R"({"ChangeSetId":"1-0-0-2", "ParentChangeSetId":"2-0-0-1", "PushDate" : "2017-12-15T12:24Z"})"),
+        ChangeSetArg(changeset, R"({"ChangeSetId":"1-0-0-3", "ParentChangeSetId":"2-0-0-2", "PushDate" : "2017-12-15T12:24Z", "CreatedBy":{"Id":"5-5-5-5", "EMail":"Audrey Winter"}})")
+        };
 
     std::vector<ECInstanceId> changeSummaryIds;
 
-    for (ChangeSetArg const& arg : args) {
+    for (ChangeSetArg const& arg : args)
+        {
         ECInstanceKey changeSummaryKey;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, arg)) << arg.GetExtendedPropertiesJson();
         changeSummaryIds.push_back(changeSummaryKey.GetInstanceId());
-    }
+        }
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ExtendedProperties FROM change.ChangeSummary WHERE ECInstanceId=?"));
 
-    for (size_t i = 0; i < args.size(); i++) {
+    for (size_t i = 0; i < args.size(); i++)
+        {
         ChangeSetArg const& arg = args[i];
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, changeSummaryIds[i])) << arg.GetExtendedPropertiesJson();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << arg.GetExtendedPropertiesJson();
@@ -1250,20 +1294,21 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps) {
 
         stmt.Reset();
         stmt.ClearBindings();
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData) {
+TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ChangeSummaryWithCustomMetaData.ecdb"));
 
     BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
     ECDb cacheFile;
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFile, cacheFilePath));
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
-    // add a custom schema to the change file
+    //add a custom schema to the change file
     ASSERT_EQ(SUCCESS, TestHelper(cacheFile).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
          <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbChange" version="01.00.01" alias="change"/>
@@ -1294,7 +1339,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData) {
     cacheFile.CloseDb();
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
 
-    // do some changes and create a changeset
+    //do some changes and create a changeset
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
@@ -1305,13 +1350,13 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData) {
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     tracker.EndTracking();
 
-    // extract the change summary (with a separately opened cache file so that we can add more information to the extracted change summary)
+    //extract the change summary (with a separately opened cache file so that we can add more information to the extracted change summary)
     ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ECInstanceKey changeSummaryKey;
     ASSERT_EQ(SUCCESS, ECDb::ExtractChangeSummary(changeSummaryKey, cacheFile, m_ecdb, ChangeSetArg(changeset)));
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
 
-    // now add additional meta data to the change summary
+    //now add additional meta data to the change summary
     ECSqlStatement insertChangeSetStmt;
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId()));
@@ -1341,12 +1386,13 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData) {
     ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT count(*) cnt FROM change.InstanceChange WHERE OpCode=change.OpCode.[Insert]"));
     ASSERT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT count(*) cnt FROM change.InstanceChange WHERE OpCode=change.OpCode.[Update]"));
     ASSERT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT count(*) cnt FROM change.InstanceChange WHERE OpCode=change.OpCode.[Delete]"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflow) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
+    {
     std::map<Utf8String, std::unique_ptr<SchemaItem>> testSchemas;
     testSchemas["default mapping"] = std::make_unique<SchemaItem>(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -1468,7 +1514,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow) {
             </ECEntityClass>
         </ECSchema>)xml");
 
-    for (auto const& kvPair : testSchemas) {
+    for (auto const& kvPair : testSchemas)
+        {
         Utf8StringCR scenario = kvPair.first;
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflow.ecdb", *kvPair.second)) << scenario;
         ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << scenario;
@@ -1478,83 +1525,80 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow) {
 
         ECInstanceKey maryKey, samKey;
 
-        // Changeset 1
+        //Changeset 1
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(maryKey, "INSERT INTO ts.Person(Name,Age) VALUES('Mery', 20)")) << scenario;
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset1;
         ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         tracker.Restart();
         ECInstanceKey changeSummary1Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1))) << scenario;
 
-        // Changeset 2
+        //Changeset 2
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Person SET Name='Mary'")) << scenario;
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(samKey, "INSERT INTO ts.Person(Name,Age) VALUES('Sam',30)")) << scenario;
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset2;
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2))) << scenario;
         tracker.Restart();
 
-        // Changeset 3
+        //Changeset 3
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Person WHERE Name='Mary'")) << scenario;
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset3;
         ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker)) << scenario;
         tracker.EndTracking();
-        // printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary3Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3))) << scenario;
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "className":"ECDbChange.ChangeSummary"}])json", changeSummary1Key.GetInstanceId().ToHexStr().c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,ECClassId FROM change.ChangeSummary WHERE ECInstanceId=%s", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,ECClassId FROM change.ChangeSummary WHERE ECInstanceId=%s", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str())) << scenario;
+
 
         Utf8String maryIdStr = maryKey.GetInstanceId().ToHexStr();
         Utf8String samIdStr = samKey.GetInstanceId().ToHexStr();
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Sam", "Age":30}])json", samIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Age FROM ts.Person"))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Age FROM ts.Person")) << scenario;
 
-        // Changeset 1
+        //Changeset 1
         Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mery", "Age":20}])json", maryIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeDelete')", summary1IdStr.c_str()).c_str())) << scenario;
 
-        // Changeset 2
+
+        //Changeset 2
         Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Sam", "Age":30}])json", samIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mery"}])json", maryIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mary"}])json", maryIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // Changeset 3
+        //Changeset 3
         Utf8String summary3IdStr = changeSummary3Key.GetInstanceId().ToString();
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary3IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mary", "Age":20}])json", maryIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeDelete')", summary3IdStr.c_str()).c_str())) << scenario;
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
+    {
     std::map<Utf8String, std::unique_ptr<SchemaItem>> testSchemas;
     testSchemas["default mapping"] = std::make_unique<SchemaItem>(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -1676,7 +1720,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
             </ECEntityClass>
         </ECSchema>)xml");
 
-    for (auto const& kvPair : testSchemas) {
+    for (auto const& kvPair : testSchemas)
+        {
         Utf8StringCR scenario = kvPair.first;
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithPointProp.ecdb", *kvPair.second)) << scenario;
         ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << scenario;
@@ -1689,7 +1734,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
         ECSqlStatement insertStmt;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Location) VALUES(?,?)")) << scenario;
 
-        // Changeset 1
+        //Changeset 1
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "City Hall", IECSqlBinder::MakeCopy::No)) << scenario;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(100.0, 100.0))) << scenario;
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(hallKey)) << scenario;
@@ -1708,11 +1753,11 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset1;
         ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary1Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1))) << scenario;
 
-        // Changeset 2
+        //Changeset 2
         tracker.Restart();
 
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Location) VALUES(?,?)")) << scenario;
@@ -1726,7 +1771,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset2;
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2))) << scenario;
         tracker.EndTracking();
@@ -1736,41 +1781,39 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
         Utf8String castleIdStr = castleKey.GetInstanceId().ToHexStr();
         Utf8String lakeIdStr = lakeKey.GetInstanceId().ToHexStr();
 
-        // Current state
+        //Current state
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location": {"x": 150.0, "y":100.0}},
                                                  {"id":"%s", "Name":"Castle", "Location": {"x": 300.0, "y":300.0}},
                                                  {"id":"%s", "Name":"Lake", "Location": {"x": 400.0, "y":400.0}}])json",
                                              hallIdStr.c_str(), castleIdStr.c_str(), lakeIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Location FROM ts.POI"))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Location FROM ts.POI")) << scenario;
 
-        // Changeset 1
+        //Changeset 1
         Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location": {"x":100.0, "y":100.0}},
                                                  {"id":"%s", "Name":"Station", "Location": {"x":200.0, "y":200.0}},
                                                  {"id":"%s", "Name":"Castle", "Location": {"x":300.0, "y":300.0}}])json",
                                              hallIdStr.c_str(), stationIdStr.c_str(), castleIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeUpdate')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterUpdate')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeDelete')", summary1IdStr.c_str()).c_str())) << scenario;
 
-        // Changeset 2
 
-        // insert
+        //Changeset 2
+
+        //insert
 
         Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Lake", "Location":{"x": 400.0, "y":400.0}}])json", lakeIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // update where only one component has changed
+        //update where only one component has changed
 
-        // before update:
+        //before update:
 
-        // test with plain ECSQL to avoid JSON adapter processing.
+        //test with plain ECSQL to avoid JSON adapter processing.
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " Scenario: " << scenario;
@@ -1781,17 +1824,16 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql() << " Scenario: " << scenario;
         stmt.Finalize();
 
-        // now with JSON adapter
+        //now with JSON adapter
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location":{"x": 100.0, "y":100.0}}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location.X":100.0, "Location.Y":100.0}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // after update:
 
-        // test with plain ECSQL to avoid JSON adapter processing.
+        //after update:
+
+        //test with plain ECSQL to avoid JSON adapter processing.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
         EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql() << " Scenario: " << scenario;
@@ -1802,23 +1844,21 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp) {
         stmt.Finalize();
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location":{"x": 150.0, "y":100.0}}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location.X":150.0, "Location.Y":100.0}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // delete
+        //delete
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Station", "Location":{"x": 200.0, "y":200.0}}])json", stationIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str())) << scenario;
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
+    {
     std::map<Utf8String, std::unique_ptr<SchemaItem>> testSchemas;
     testSchemas["default mapping"] = std::make_unique<SchemaItem>(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -1964,7 +2004,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
             </ECEntityClass>
         </ECSchema>)xml");
 
-    for (auto const& kvPair : testSchemas) {
+    for (auto const& kvPair : testSchemas)
+        {
         Utf8StringCR scenario = kvPair.first;
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithStructProp.ecdb", *kvPair.second)) << scenario;
         ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << scenario;
@@ -1977,8 +2018,8 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         ECSqlStatement insertStmt;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Address.City,Address.Zip) VALUES(?,?,?)")) << scenario;
 
-        // Changeset 1
-        // Entry with intentionally wrong values which gets fixed in subsequent changesets
+        //Changeset 1
+        //Entry with intentionally wrong values which gets fixed in subsequent changesets
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Cty Hll", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, "Lndn", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, 10001));
@@ -1994,11 +2035,11 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset1;
         ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary1Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1))) << scenario;
 
-        // Changeset 2
+        //Changeset 2
         tracker.Restart();
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Address.City,Address.Zip) VALUES(?,?,?)")) << scenario;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Castle", IECSqlBinder::MakeCopy::No));
@@ -2008,23 +2049,23 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         insertStmt.Finalize();
 
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.POI WHERE Name='Station'")) << scenario;
-        // fix Name and Location.Zip of Hall entry
+        //fix Name and Location.Zip of Hall entry
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.POI SET Name='City Hall', Address.Zip=10000 WHERE Name='Cty Hll'")) << scenario;
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset2;
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2))) << scenario;
 
-        // Changeset 3
+        //Changeset 3
         tracker.Restart();
-        // fix location name of Hall
+        //fix location name of Hall
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.POI SET Address.City='London' WHERE Address.City='Lndn'")) << scenario;
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset3;
         ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker)) << scenario;
-        // printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary3Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3))) << scenario;
         tracker.EndTracking();
@@ -2033,39 +2074,37 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         Utf8String stationIdStr = stationKey.GetInstanceId().ToHexStr();
         Utf8String castleIdStr = castleKey.GetInstanceId().ToHexStr();
 
-        // Current state
+        //Current state
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address": {"City": "London", "Zip":10000}},
                                                  {"id":"%s", "Name":"Castle", "Address": {"City": "Heidelberg", "Zip":30000}}])json",
                                              hallIdStr.c_str(), castleIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Address FROM ts.POI"))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Address FROM ts.POI")) << scenario;
 
-        // Changeset 1
+        //Changeset 1
         Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Cty Hll", "Address": {"City": "Lndn", "Zip":10001}},
                                                  {"id":"%s", "Name":"Station", "Address": {"City": "Paris", "Zip":20000}}])json",
                                              hallIdStr.c_str(), stationIdStr.c_str(), castleIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary1IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeDelete')", summary1IdStr.c_str()).c_str())) << scenario;
 
-        // Changeset 2
 
-        // insert
+        //Changeset 2
+
+        //insert
 
         Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Castle", "Address":{"City": "Heidelberg", "Zip":30000}}])json", castleIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // update where only one component has changed
+        //update where only one component has changed
 
-        // before update:
+        //before update:
 
-        // test with plain ECSQL to avoid JSON adapter processing.
+        //test with plain ECSQL to avoid JSON adapter processing.
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " Scenario: " << scenario;
@@ -2076,17 +2115,16 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql() << " Scenario: " << scenario;
         stmt.Finalize();
 
-        // now with JSON adapter
+        //now with JSON adapter
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Cty Hll", "Address":{"City": "London", "Zip":10001}}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Cty Hll", "Address.City":"London", "Address.Zip":10001}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // after update:
 
-        // test with plain ECSQL to avoid JSON adapter processing.
+        //after update:
+
+        //test with plain ECSQL to avoid JSON adapter processing.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " Scenario: " << scenario;
         EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql() << " Scenario: " << scenario;
@@ -2097,24 +2135,21 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         stmt.Finalize();
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address":{"City": "London", "Zip":10000}}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"London", "Address.Zip":10000}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // delete
+        //delete
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Station", "Address":{"City": "Paris", "Zip":20000}}])json", stationIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str())) << scenario;
 
-        // Changeset 3
+        //Changeset 3
 
         Utf8String summary3IdStr = changeSummary3Key.GetInstanceId().ToString();
 
-        // before update:
+        //before update:
 
-        // test with plain ECSQL to avoid JSON adapter processing.
+        //test with plain ECSQL to avoid JSON adapter processing.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " Scenario: " << scenario;
         EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql() << " Scenario: " << scenario;
@@ -2124,17 +2159,16 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql() << " Scenario: " << scenario;
         stmt.Finalize();
 
-        // now with JSON adapter
+        //now with JSON adapter
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address":{"City": "Lndn", "Zip":10000}}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"Lndn", "Address.Zip":10000}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
 
-        // after update:
 
-        // test with plain ECSQL to avoid JSON adapter processing.
+        //after update:
+
+        //test with plain ECSQL to avoid JSON adapter processing.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " Scenario: " << scenario;
         EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql() << " Scenario: " << scenario;
@@ -2145,20 +2179,19 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp) {
         stmt.Finalize();
 
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address":{"City": "London", "Zip":10000}}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"London", "Address.Zip":10000}])json", hallIdStr.c_str())),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()))
-            << scenario;
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str())) << scenario;
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
-                                                                                                                              R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2184,7 +2217,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
 
     ECInstanceKey parentKey, child1Key, child2Key;
 
-    // changeset 1
+    //changeset 1
     tracker.EnableTracking(true);
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
     Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
@@ -2195,25 +2228,26 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
 
     TestChangeSet changeset1;
     ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
-    // printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary1Key;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
 
-    // changeset 2
+
+    //changeset 2
     tracker.Restart();
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("UPDATE ts.Child SET Parent.Id=NULL WHERE ECInstanceId=%s", child1IdStr.c_str()).c_str()));
     TestChangeSet changeset2;
     ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
-    // printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary2Key;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
-    // changeset 3
+    //changeset 3
     tracker.Restart();
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
     TestChangeSet changeset3;
     ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
-    // printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary3Key;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
     tracker.EndTracking();
@@ -2222,21 +2256,21 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue(R"json([{"indirectcount":0}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT count(*) indirectcount FROM change.InstanceChange WHERE Summary.Id=%s AND IsIndirect=True", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Expect no indirect changes because of logical Foreign key";
 
-    // Verify current state
-    // Parent: 0
-    // Child: Child1, Child2
-    // Rel: {Parent,Child2} (because Parent-Child1 was deleted explicitly and parent delete does not delete other rels)
+    //Verify current state
+    //Parent: 0
+    //Child: Child1, Child2
+    //Rel: {Parent,Child2} (because Parent-Child1 was deleted explicitly and parent delete does not delete other rels)
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Parent")) << "expected to be deleted in changeset 3";
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}, {"id":"%s"}])json", child1IdStr.c_str(), child2IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Child ORDER BY Name"))
         << "No cascade delete";
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child2IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel")) << "Parent is deleted, relationships remain because of logical FK";
 
-    // Verify change set 1
-    // Parent: 1 added
-    // Child: Child1 added, Child2 added
-    // Rel: {Parent,Child1} added {Parent,Child2} added
+    //Verify change set 1
+    //Parent: 1 added
+    //Child: Child1 added, Child2 added
+    //Rel: {Parent,Child1} added {Parent,Child2} added
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    // WIP: RelECClassId is not handled correctly if it is virtual.
+    //WIP: RelECClassId is not handled correctly if it is virtual.
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s","relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s","relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json",
@@ -2252,16 +2286,16 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // Verify change set 2
-    // Parent: 1
-    // Child: Child1 modified Parent.Id=NULL, Child2 unmodified
-    // Rel: {Parent, Child2}   [{Parent,Child1} deleted (because of setting Parent.Id=NULL)]
-    // after insert
+    //Verify change set 2
+    //Parent: 1
+    //Child: Child1 modified Parent.Id=NULL, Child2 unmodified
+    //Rel: {Parent, Child2}   [{Parent,Child1} deleted (because of setting Parent.Id=NULL)]
+    //after insert
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // before update
+    //before update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
@@ -2270,7 +2304,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    // after update
+    //after update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
@@ -2280,16 +2314,16 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    // before delete
+    //before delete
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // Verify change set 3
-    // Parent: 0
-    // Child: Child1, Child2
-    // Rel: {Parent, Child2}
+    //Verify change set 3
+    //Parent: 0
+    //Child: Child1, Child2
+    //Rel: {Parent, Child2}
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
@@ -2303,14 +2337,15 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete') ORDER BY TargetECInstanceId", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted.ecdb", SchemaItem(
-                                                                                                                   R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2332,7 +2367,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
 
     TestChangeTracker tracker(m_ecdb);
 
-    // changeset 1
+    //changeset 1
     tracker.EnableTracking(true);
     ECInstanceKey parentKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
@@ -2341,20 +2376,21 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
 
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
     BeTest::SetFailOnAssert(false);
     ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "Expected to fail because RelClassId wasn't inserted along with Nav id";
     BeTest::SetFailOnAssert(true);
     tracker.EndTracking();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId.ecdb", SchemaItem(
-                                                                                                                           R"xml(<?xml version="1.0" encoding="utf-8"?>
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId)
+    {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId.ecdb", SchemaItem(
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2372,139 +2408,141 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
                 </Target>
         </ECRelationshipClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+        ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
-    TestChangeTracker tracker(m_ecdb);
+        TestChangeTracker tracker(m_ecdb);
 
-    ECInstanceKey parentKey, child1Key, child2Key;
+        ECInstanceKey parentKey, child1Key, child2Key;
 
-    // changeset 1
-    tracker.EnableTracking(true);
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
-    Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child1Key, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 1',%s)", parentIdStr.c_str()).c_str()));
-    Utf8String child1IdStr = child1Key.GetInstanceId().ToHexStr();
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child2Key, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 2',%s)", parentIdStr.c_str()).c_str()));
-    Utf8String child2IdStr = child2Key.GetInstanceId().ToHexStr();
+        //changeset 1
+        tracker.EnableTracking(true);
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+        Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child1Key, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 1',%s)", parentIdStr.c_str()).c_str()));
+        Utf8String child1IdStr = child1Key.GetInstanceId().ToHexStr();
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child2Key, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 2',%s)", parentIdStr.c_str()).c_str()));
+        Utf8String child2IdStr = child2Key.GetInstanceId().ToHexStr();
 
-    TestChangeSet changeset1;
-    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
-    // printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
-    ECInstanceKey changeSummary1Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
+        TestChangeSet changeset1;
+        ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+        //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+        ECInstanceKey changeSummary1Key;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
 
-    // changeset 2
-    tracker.Restart();
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("UPDATE ts.Child SET Parent.Id=NULL WHERE ECInstanceId=%s", child1IdStr.c_str()).c_str()));
-    TestChangeSet changeset2;
-    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
-    // printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
-    ECInstanceKey changeSummary2Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
-    // changeset 3
-    tracker.Restart();
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
-    TestChangeSet changeset3;
-    ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
-    // printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
-    ECInstanceKey changeSummary3Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
-    tracker.EndTracking();
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+        //changeset 2
+        tracker.Restart();
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("UPDATE ts.Child SET Parent.Id=NULL WHERE ECInstanceId=%s", child1IdStr.c_str()).c_str()));
+        TestChangeSet changeset2;
+        ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+        //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+        ECInstanceKey changeSummary2Key;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
-    EXPECT_EQ(JsonValue(R"json([{"indirectcount":0}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT count(*) indirectcount FROM change.InstanceChange WHERE Summary.Id=%s AND IsIndirect=True", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()))
-        << "Expect no indirect changes because of logical Foreign key";
+        //changeset 3
+        tracker.Restart();
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
+        TestChangeSet changeset3;
+        ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
+        //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+        ECInstanceKey changeSummary3Key;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
+        tracker.EndTracking();
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
-    // Verify current state
-    // Parent: 0
-    // Child: Child1, Child2
-    // Rel: {Parent,Child2} (because Parent-Child1 was deleted explicitly and parent delete does not delete other rels)
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Parent")) << "expected to be deleted in changeset 3";
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}, {"id":"%s"}])json", child1IdStr.c_str(), child2IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Child ORDER BY Name"))
-        << "No cascade delete";
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child2IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel")) << "Parent is deleted, relationships remain because of logical FK";
+        EXPECT_EQ(JsonValue(R"json([{"indirectcount":0}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT count(*) indirectcount FROM change.InstanceChange WHERE Summary.Id=%s AND IsIndirect=True", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()))
+            << "Expect no indirect changes because of logical Foreign key";
 
-    // Verify change set 1
-    // Parent: 1 added
-    // Child: Child1 added, Child2 added
-    // Rel: {Parent,Child1} added {Parent,Child2} added
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    // WIP: RelECClassId is not handled correctly if it is virtual.
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s","relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
-              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json",
-                                         parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
-              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert') ORDER BY TargetECInstanceId", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        //Verify current state
+        //Parent: 0
+        //Child: Child1, Child2
+        //Rel: {Parent,Child2} (because Parent-Child1 was deleted explicitly and parent delete does not delete other rels)
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Parent")) << "expected to be deleted in changeset 3";
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}, {"id":"%s"}])json", child1IdStr.c_str(), child2IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Child ORDER BY Name"))
+            << "No cascade delete";
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child2IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel")) << "Parent is deleted, relationships remain because of logical FK";
 
-    // Verify change set 2
-    // Parent: 1
-    // Child: Child1 modified Parent.Id=NULL, Child2 unmodified
-    // Rel: {Parent, Child2}   [{Parent,Child1} deleted (because of setting Parent.Id=NULL)]
-    // after insert
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        //Verify change set 1
+        //Parent: 1 added
+        //Child: Child1 added, Child2 added
+        //Rel: {Parent,Child1} added {Parent,Child2} added
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        //WIP: RelECClassId is not handled correctly if it is virtual.
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s","relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json",
+                                             parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert') ORDER BY TargetECInstanceId", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // before update
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        //Verify change set 2
+        //Parent: 1
+        //Child: Child1 modified Parent.Id=NULL, Child2 unmodified
+        //Rel: {Parent, Child2}   [{Parent,Child1} deleted (because of setting Parent.Id=NULL)]
+        //after insert
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
-              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
-        << "Expected: Parent before being nulled out; Name is unchanged -> current value";
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
-        << "Nav prop was updated to null which means the rel was deleted and not updated";
+        //before update
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // after update
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+            << "Expected: Parent before being nulled out; Name is unchanged -> current value";
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+            << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
-              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
-        << "Expected: Parent being nulled out; Name is unchanged -> current value";
+        //after update
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
-        << "Nav prop was updated to null which means the rel was deleted and not updated";
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+            << "Expected: Parent being nulled out; Name is unchanged -> current value";
 
-    // before delete
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
-              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+            << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    // Verify change set 3
-    // Parent: 0
-    // Child: Child1, Child2
-    // Rel: {Parent, Child2}
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        //before delete
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete') ORDER BY TargetECInstanceId", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-}
+        //Verify change set 3
+        //Parent: 0
+        //Child: Child1, Child2
+        //Rel: {Parent, Child2}
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete') ORDER BY TargetECInstanceId", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+        }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId) {
+TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("VirtualRelECClassId.ecdb", SchemaItem(
-                                                                                R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2528,7 +2566,7 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId) {
 
     ECInstanceKey parentKey, childKey;
 
-    // changeset 1
+    //changeset 1
     tracker.EnableTracking(true);
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
     Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
@@ -2537,12 +2575,12 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId) {
 
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     tracker.EndTracking();
-    // now delete the child so that its unmodified values show up as NULL in the Changes function
+    //now delete the child so that its unmodified values show up as NULL in the Changes function
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Child"));
 
     ECSqlStatement stmt;
@@ -2550,14 +2588,15 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId) {
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(parentKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
     ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Rel"), stmt.GetValueId<ECClassId>(1));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropCascadeDelete.ecdb", SchemaItem(
-                                                                                                   R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Parent" modifier="Sealed">
@@ -2588,7 +2627,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
 
     ECInstanceKey parentKey, child1Key, child2Key;
 
-    // changeset 1
+    //changeset 1
     tracker.EnableTracking(true);
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
     Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
@@ -2599,44 +2638,45 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
 
     TestChangeSet changeset1;
     ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
-    // printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary1Key;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
 
-    // changeset 2
+
+    //changeset 2
     tracker.Restart();
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("UPDATE ts.Child SET Parent.Id=NULL WHERE ECInstanceId=%s", child1IdStr.c_str()).c_str()));
     TestChangeSet changeset2;
     ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
-    // printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary2Key;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
-    // changeset 3
+    //changeset 3
     tracker.Restart();
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
     TestChangeSet changeset3;
     ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
-    // printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary3Key;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
     tracker.EndTracking();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
-    // Verify current state
-    // Parent: 0
-    // Child: Child1
-    // Rel: 0
+    //Verify current state
+    //Parent: 0
+    //Child: Child1
+    //Rel: 0
 
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Parent")) << "expected to be deleted in changeset 3";
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", child1IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Child"))
         << "1 left, other cascade deleted in changeset 3";
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Rel")) << "Rels are expected to be deleted when parent is deleted";
 
-    // Verify change set 1
-    // Parent: Parent1
-    // Child: Child1, Child2
-    // Rel: {Parent1,Child1} {Parent1,Child2}
+    //Verify change set 1
+    //Parent: Parent1
+    //Child: Child1, Child2
+    //Rel: {Parent1,Child1} {Parent1,Child2}
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
@@ -2654,17 +2694,17 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // Verify change set 2
-    // Parent: Parent1
-    // Child: Child1 (modified), Child2
-    // Rel: {Parent1,Child2}
+    //Verify change set 2
+    //Parent: Parent1
+    //Child: Child1 (modified), Child2
+    //Rel: {Parent1,Child2}
 
-    // after insert
+    //after insert
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // before update
+    //before update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
@@ -2673,7 +2713,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    // after update
+    //after update
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
@@ -2683,16 +2723,16 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Nav prop was updated to null which means the rel was deleted and not updated";
 
-    // before delete
+    //before delete
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    // Verify change set 3
-    // Parent: 0
-    // Child: Child1 (modified)
-    // Rel: 0
+    //Verify change set 3
+    //Parent: 0
+    //Child: Child1 (modified)
+    //Rel: 0
 
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
@@ -2708,14 +2748,17 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete) {
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", child2IdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child2IdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete') ORDER BY TargetECInstanceId", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
-}
+
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonRelationshipRelECClassId) {
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonRelationshipRelECClassId)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
-                                                                                                                              R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
                 <ECProperty propertyName="Name" typeName="string" />
@@ -2744,7 +2787,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonR
 
     ECInstanceKey parentKey, childKey;
 
-    // changeset 1
+    //changeset 1
     tracker.EnableTracking(true);
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
     Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
@@ -2756,13 +2799,15 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonR
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
     tracker.EndTracking();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow) {
-    auto resetFile = [this](ECInstanceKey& aKey, ECInstanceKey& bKey, ECInstanceKey& relKey, TestChangeTracker& tracker) {
+TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
+    {
+    auto resetFile = [this] (ECInstanceKey& aKey, ECInstanceKey& bKey, ECInstanceKey& relKey, TestChangeTracker& tracker)
+        {
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
         tracker.EndTracking();
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
@@ -2774,13 +2819,13 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow) {
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(relKey, Utf8PrintfString("INSERT INTO ts.Rel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)", aKey.GetInstanceId().ToString().c_str(), bKey.GetInstanceId().ToString().c_str()).c_str()));
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
         tracker.EnableTracking(true);
-    };
+        };
 
     // Case 1: Link table has FKs into end tables
-    {
-        // Classes must have a class id column -> TPH and not sealed
-        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DeletedLinkTableRow.ecdb", SchemaItem(
-                                                                                    R"xml(<?xml version="1.0" encoding="utf-8"?>
+            {
+            // Classes must have a class id column -> TPH and not sealed
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DeletedLinkTableRow.ecdb", SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="A">
@@ -2808,68 +2853,65 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow) {
                         </Target>
                     </ECRelationshipClass>
                 </ECSchema>)xml")));
-        ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+            ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
-        ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "A", "ECClassId")));
-        ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "ECClassId")));
+            ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "A", "ECClassId")));
+            ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "ECClassId")));
 
-        TestChangeTracker tracker(m_ecdb);
+            TestChangeTracker tracker(m_ecdb);
 
-        ECInstanceKey aKey, bKey, relKey;
+            ECInstanceKey aKey, bKey, relKey;
 
-        // Scenario: Just delete the rel
-        resetFile(aKey, bKey, relKey, tracker);
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+            //Scenario: Just delete the rel
+            resetFile(aKey, bKey, relKey, tracker);
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
 
-        TestChangeSet changeset;
-        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
-        ECInstanceKey changeSummaryKey;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+            TestChangeSet changeset;
+            ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+            //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+            ECInstanceKey changeSummaryKey;
+            ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
-        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json([{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json", relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting just the rel";
+            ASSERT_EQ(JsonValue(Utf8PrintfString(R"json([{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                      GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting just the rel";
 
-        // Scenario: Delete the rel and a
-        resetFile(aKey, bKey, relKey, tracker);
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+            //Scenario: Delete the rel and a
+            resetFile(aKey, bKey, relKey, tracker);
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
-        changeset.Clear();
-        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
-        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+            changeset.Clear();
+            ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+            //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+            ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+            ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
                     [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false},
                      {"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
-                                             aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete,
-                                             relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting A and the rel";
+                      aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete,
+                      relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                      GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting A and the rel";
 
-        // Scenario: Delete just a (which should cascadingly delete the rel)
-        resetFile(aKey, bKey, relKey, tracker);
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+            //Scenario: Delete just a (which should cascadingly delete the rel)
+            resetFile(aKey, bKey, relKey, tracker);
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
-        changeset.Clear();
-        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
-        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+            changeset.Clear();
+            ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+            //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+            ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+            ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
                     [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false},
                      {"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":true}])json",
-                                             aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete,
-                                             relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting A (which cascading deletes rel)";
-    }
+                                                 aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete,
+                                                 relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                      GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting A (which cascading deletes rel)";
+            }
 
-    // Case 2: Link table has no FKs into end tables
+   // Case 2: Link table has no FKs into end tables
 
-    {
+        {
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DeletedLinkTableRow_NoFks.ecdb", SchemaItem(
-                                                                                          R"xml(<?xml version="1.0" encoding="utf-8"?>
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
         <ECEntityClass typeName="A">
@@ -2912,74 +2954,69 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow) {
 
         ECInstanceKey aKey, bKey, relKey;
 
-        // Scenario: Just delete the rel
+        //Scenario: Just delete the rel
         resetFile(aKey, bKey, relKey, tracker);
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
 
         TestChangeSet changeset;
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummaryKey;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
-        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json([{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json", relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting the rel";
+        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json([{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json", relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting the rel";
 
-        // Scenario: delete the rel and a
+        //Scenario: delete the rel and a
         resetFile(aKey, bKey, relKey, tracker);
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
         changeset.Clear();
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
         ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
             [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false},
                 {"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
-                                             aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete,
-                                             relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting the rel and A";
+                                                aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete,
+                                                relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                    GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting the rel and A";
 
-        // Scenario: delete a in one changeset and rel in second changeset
+        //Scenario: delete a in one changeset and rel in second changeset
         resetFile(aKey, bKey, relKey, tracker);
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
 
         changeset.Clear();
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
         ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
             [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
-                                             aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)
-                                .c_str()),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting A in first changeset";
+                                                aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete).c_str()),
+                    GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting A in first changeset";
 
         tracker.Restart();
 
-        // now delete rel in separate changeset
+        //now delete rel in separate changeset
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
         changeset.Clear();
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-        // printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset)));
         ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
             [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
-                                             relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int)ChangeOpCode::Delete)
-                                .c_str()),
-                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
-            << "After deleting Rel in second changeset";
+                                                relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete).c_str()),
+                    GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str())) << "After deleting Rel in second changeset";
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SchemaChange) {
+TEST_F(ChangeSummaryTestFixture, SchemaChange)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
@@ -3000,18 +3037,19 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange) {
     tracker.Restart();
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?> "
-                                               "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
-                                               "</ECSchema>")));
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "</ECSchema>")));
 
     changeSet.Clear();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeSet), ECDb::ChangeSummaryExtractOptions(false)));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Crud) {
+TEST_F(ChangeSummaryTestFixture, Crud)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(R"(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                 <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
@@ -3047,80 +3085,84 @@ TEST_F(ChangeSummaryTestFixture, Crud) {
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     ECInstanceKey i1, i2, i3, i4, i5, i6;
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Night',100,10.33,30.34)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i1));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Night',100,10.33,30.34)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i1));
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Dawn',200,30.42, -3.44)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i2));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Dawn',200,30.42, -3.44)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i2));
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Lion',300,-66.23, 12.33)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i3));
-    }  //---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Ten',123,-32.23, 45.22, %s)", i1.GetInstanceId().ToString().c_str()).c_str()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Lion',300,-66.23, 12.33)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i3));
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Zen',223,-12.23, 45.22, %s)", i2.GetInstanceId().ToString().c_str()).c_str()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Ten',123,-32.23, 45.22, %s)", i1.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y)VALUES('Tree',1213,-2332.23, 245.22)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Zen',223,-12.23, 45.22, %s)", i2.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
+    }//---------------------------------------------------->>>
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y)VALUES('Tree',1213,-2332.23, 245.22)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
+    }//---------------------------------------------------->>>
+
 
     m_ecdb.SaveChanges();
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Cat',400,-10.12,-23.56)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i5));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Cat',400,-10.12,-23.56)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i5));
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Blue',2233,-212.23, -215.44, %s)", i3.GetInstanceId().ToString().c_str()).c_str()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i6));
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Blue',2233,-212.23, -215.44, %s)", i3.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i6));
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Foo WHERE S='Dawn'"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Foo WHERE S='Dawn'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET S='Zoo', P2D.X=1000 WHERE S='Night'"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }  //---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("UPDATE ts.Goo SET S='Plant',I=10000,P2D.X=0, P2D.Y=0, Foo.Id=%s WHERE S='Tree'", i5.GetInstanceId().ToString().c_str()).c_str()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }  //---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET S='Zoo', P2D.X=1000 WHERE S='Night'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
 
-    {  //---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET P2D.Y=2000, I=666 WHERE S='Lion'"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }  //---------------------------------------------------->>>
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("UPDATE ts.Goo SET S='Plant',I=10000,P2D.X=0, P2D.Y=0, Foo.Id=%s WHERE S='Tree'", i5.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET P2D.Y=2000, I=666 WHERE S='Lion'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
 
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
@@ -3130,49 +3172,50 @@ TEST_F(ChangeSummaryTestFixture, Crud) {
     m_ecdb.SaveChanges();
 
     {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.Changes(?, ?)"));
-        stmt.BindId(1, changeSummaryKey.GetInstanceId());
-        stmt.BindInt(2, (int)ChangedValueState::BeforeUpdate);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.Changes(?, ?)"));
+    stmt.BindId(1, changeSummaryKey.GetInstanceId());
+    stmt.BindInt(2, (int) ChangedValueState::BeforeUpdate);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns) {
+TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECStructClass typeName='ST1' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='I1' typeName='int'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECStructClass typeName='ST2' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "        <ECStructProperty propertyName='ST2P' typeName='ST1'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECEntityClass typeName='Element' modifier='None'>"
-                                                                               "        <ECProperty propertyName='S' typeName='string'/>"
-                                                                               "        <ECProperty propertyName='I' typeName='int'/>"
-                                                                               "        <ECProperty propertyName='L' typeName='long'/>"
-                                                                               "        <ECProperty propertyName='D' typeName='double'/>"
-                                                                               "        <ECProperty propertyName='DT' typeName='dateTime'/>"
-                                                                               "        <ECProperty propertyName='B' typeName='boolean'/>"
-                                                                               "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "        <ECProperty propertyName='BIN' typeName='binary'/>"
-                                                                               "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
-                                                                               "        <ECStructProperty propertyName='StructProp' typeName='ST1'/>"
-                                                                               "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECStructArrayProperty propertyName='arrayOfST2' typeName='ST2' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECStructClass typeName='ST1' modifier='None'>"
+        "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='I1' typeName='int'/>"
+        "    </ECStructClass>"
+        "    <ECStructClass typeName='ST2' modifier='None'>"
+        "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECStructProperty propertyName='ST2P' typeName='ST1'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='int'/>"
+        "        <ECProperty propertyName='L' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='double'/>"
+        "        <ECProperty propertyName='DT' typeName='dateTime'/>"
+        "        <ECProperty propertyName='B' typeName='boolean'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
+        "        <ECStructProperty propertyName='StructProp' typeName='ST1'/>"
+        "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECStructArrayProperty propertyName='arrayOfST2' typeName='ST2' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
@@ -3188,14 +3231,14 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns) {
     DPoint2d P2D = DPoint2d::From(22.33, -21.34);
     DPoint3d P3D = DPoint3d::From(12.13, -42.34, -93.12);
     IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
-    std::vector<Utf8Char> Blob = {'H', 'e', 'l', 'l', 'o'};
-    double Array[] = {123.3434, 345.223, -532.123};
-    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1), DPoint2d::From(-85.34, 35.36), DPoint2d::From(-31.34, 12.35)};
+    std::vector<Utf8Char> Blob = {'H', 'e', 'l','l', 'o'};
+    double Array[] = {123.3434, 345.223,-532.123};
+    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
     DPoint3d ArrayOfP3d[] = {DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11)};
-    double ArrayOfST1_D1[] = {123.3434, 345.223, -532.123};
+    double ArrayOfST1_D1[] = {123.3434, 345.223,-532.123};
     int ArrayOfST1_I1[] = {012, 456, 789};
     double ArrayOfST2_D2[] = {12.3, -45.72, -31.11};
-    DPoint3d ArrayOfST2_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3), DPoint3d::From(-12.53, 21.76, -32.22), DPoint3d::From(-41.14, -22.45, -31.16)};
+    DPoint3d ArrayOfST2_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
 
     ECSqlStatement stmt;
 
@@ -3211,38 +3254,42 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns) {
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &Blob, static_cast<int>(Blob.size()), IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(idx++, *geom));
 
-    // Binding Struct property
+    //Binding Struct property
     IECSqlBinder& StructBinder = stmt.GetBinder(idx++);
     ASSERT_EQ(ECSqlStatus::Success, StructBinder["D1"].BindDouble(Double));
     ASSERT_EQ(ECSqlStatus::Success, StructBinder["I1"].BindInt(123));
 
-    // Binding Array property
+    //Binding Array property
     IECSqlBinder& ArrayBinder = stmt.GetBinder(idx++).AddArrayElement();
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.BindDouble(Array[i]));
-    }
+        }
 
-    // Binding Array of Point2d
+    //Binding Array of Point2d
     IECSqlBinder& arrayOfP2d = stmt.GetBinder(idx++);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP2d.AddArrayElement().BindPoint2d(ArrayOfP2d[i]));
-    }
+        }
 
-    // Binding Array of Point3d
+    //Binding Array of Point3d
     IECSqlBinder& arrayOfP3d = stmt.GetBinder(idx++);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(ArrayOfP3d[i]));
-    }
+        }
 
-    // Binding Array of Struct
+    //Binding Array of Struct
     IECSqlBinder& arrayOfST2 = stmt.GetBinder(idx++);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         IECSqlBinder& elementBinder = arrayOfST2.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["D2"].BindDouble(ArrayOfST2_D2[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["P3D"].BindPoint3d(ArrayOfST2_P3D[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["D1"].BindDouble(ArrayOfST1_D1[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["I1"].BindInt(ArrayOfST1_I1[i]));
-    }
+        }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -3257,21 +3304,22 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns) {
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
     m_ecdb.SaveChanges();
     {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Element.Changes(?,?)"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Element.Changes(?,?)"));
 
-        stmt.BindId(1, changeSummaryKey.GetInstanceId());
-        stmt.BindInt(2, (int)ChangedValueState::AfterInsert);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    stmt.BindId(1, changeSummaryKey.GetInstanceId());
+    stmt.BindInt(2, (int) ChangedValueState::AfterInsert);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties) {
+TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Element" modifier="Abstract">
@@ -3326,36 +3374,37 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties) {
 
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(7, GetPropertyValueChangeCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty) {
+TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECStructClass typeName='StructProp' modifier='None'>"
-                                                                               "        <ECProperty propertyName='S' typeName='string' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='I' typeName='int'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECStructProperty propertyName='SP' typeName='StructProp'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='StructProp' modifier='None'>"
+        "        <ECProperty propertyName='S' typeName='string' readOnly='false'/>"
+        "        <ECProperty propertyName='I' typeName='int'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECStructProperty propertyName='SP' typeName='StructProp'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
@@ -3388,45 +3437,47 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty) {
 
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(3, GetPropertyValueChangeCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty) {
+TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
-    double Array[] = {123.3434, 345.223, -532.123};
+    double Array[] = {123.3434, 345.223,-532.123};
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, ArrayProp) VALUES ('C1', ?)"));
 
     IECSqlBinder& Binder = stmt.GetBinder(1).AddArrayElement();
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, Binder.BindDouble(Array[i]));
-    }
+        }
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     m_ecdb.SaveChanges();
@@ -3445,52 +3496,53 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty) {
     */
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(2, GetPropertyValueChangeCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes) {
+TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "        <ECProperty propertyName='BIN' typeName='binary'/>"
-                                                                               "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
-    std::vector<Utf8Char> bin = {'H', 'e', 'l', 'l', 'o'};
+    std::vector<Utf8Char> bin = {'H', 'e', 'l','l', 'o'};
     IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, P2D, P3D, Bin, Geom) VALUES ('C1', ?, ?, ?, ?)"));
 
-    // Binding Point 2d & 3d
+    //Binding Point 2d & 3d
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(-21, 22.1)));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(-12.53, 21.76, -32.22)));
-    // Binding Binary blob
+    //Binding Binary blob
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(3, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
-    // Binding Geometry
+    //Binding Geometry
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(4, *geom));
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -3517,33 +3569,34 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes) {
     */
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(8, GetPropertyValueChangeCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints) {
+TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
@@ -3551,22 +3604,24 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints) {
 
     ECSqlStatement stmt;
 
-    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1), DPoint2d::From(-85.34, 35.36), DPoint2d::From(-31.34, 12.35)};
+    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
     DPoint3d ArrayOfP3d[] = {DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11)};
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, arrayOfP2d, arrayOfP3d) VALUES ('C1', ?, ?)"));
 
-    // Binding Array of Point2d
+    //Binding Array of Point2d
     IECSqlBinder& arrayOfP2d = stmt.GetBinder(1);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP2d.AddArrayElement().BindPoint2d(ArrayOfP2d[i]));
-    }
+        }
 
-    // Binding Array of Point3d
+    //Binding Array of Point3d
     IECSqlBinder& arrayOfP3d = stmt.GetBinder(2);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(ArrayOfP3d[i]));
-    }
+        }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -3582,41 +3637,42 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints) {
 
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(3, GetPropertyValueChangeCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs) {
+TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECStructClass typeName='ST2' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECStructClass typeName='ST1' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-                                                                               "        <ECStructProperty propertyName='ST2P' typeName='ST2'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='ST2' modifier='None'>"
+        "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECStructClass>"
+        "    <ECStructClass typeName='ST1' modifier='None'>"
+        "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECStructProperty propertyName='ST2P' typeName='ST2'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
@@ -3624,23 +3680,24 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs) {
 
     ECSqlStatement stmt;
 
-    // Binding array of Struct
-    double ArrayOfST1_D1[] = {123.3434, 345.223, -532.123};
-    DPoint2d ArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1), DPoint2d::From(-85.34, 35.36), DPoint2d::From(-31.34, 12.35)};
+    //Binding array of Struct
+    double ArrayOfST1_D1[] = {123.3434, 345.223,-532.123};
+    DPoint2d ArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
     double ArrayOfST1_D2[] = {12.3, -45.72, -31.11};
-    DPoint3d ArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3), DPoint3d::From(-12.53, 21.76, -32.22), DPoint3d::From(-41.14, -22.45, -31.16)};
+    DPoint3d ArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, arrayOfST1) VALUES ('C1', ?)"));
 
-    // Binding Array of Struct
+    //Binding Array of Struct
     IECSqlBinder& arrayOfST1 = stmt.GetBinder(1);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         IECSqlBinder& elementBinder = arrayOfST1.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["D1"].BindDouble(ArrayOfST1_D1[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["P2D"].BindPoint2d(ArrayOfST1_P2D[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["D2"].BindDouble(ArrayOfST1_D2[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["P3D"].BindPoint3d(ArrayOfST1_P3D[i]));
-    }
+        }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -3657,12 +3714,14 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs) {
 
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(2, GetPropertyValueChangeCount());
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction) {
+TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
     TestChangeTracker tracker(m_ecdb);
@@ -3745,8 +3804,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction) {
     tracker.Restart();
 
     /*
-     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
-     */
+    * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
+    */
     statement.Finalize();
     statement.Prepare(m_ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
     statement.BindId(1, employeeHardwareKey.GetInstanceId());
@@ -3786,62 +3845,63 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction) {
     EXPECT_EQ(2, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Delete));
     EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, OverflowTables) {
+TEST_F(ChangeSummaryTestFixture, OverflowTables)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
-                                                                           "<?xml version='1.0' encoding='utf-8'?> "
-                                                                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                           "    <ECEntityClass typeName='GrandParent' modifier='Abstract'>"
-                                                                           "        <ECCustomAttributes>"
-                                                                           "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                           "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                           "            </ClassMap>"
-                                                                           "        </ECCustomAttributes>"
-                                                                           "        <ECProperty propertyName='A' typeName='string' />"
-                                                                           "        <ECProperty propertyName='B' typeName='string' />"
-                                                                           "        <ECProperty propertyName='C' typeName='string' />"
-                                                                           "        <ECProperty propertyName='D' typeName='string' />"
-                                                                           "        <ECProperty propertyName='E' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "    <ECEntityClass typeName='Parent' modifier='None'>"
-                                                                           "        <BaseClass>GrandParent</BaseClass>"
-                                                                           "        <ECCustomAttributes>"
-                                                                           "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
-                                                                           "        </ECCustomAttributes>"
-                                                                           "        <ECProperty propertyName='F' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='G' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='H' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='I' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='J' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "    <ECEntityClass typeName='Child' modifier='None'>"
-                                                                           "        <BaseClass>Parent</BaseClass>"
-                                                                           "        <ECCustomAttributes>"
-                                                                           "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                           "              <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
-                                                                           "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                           "            </ShareColumns>"
-                                                                           "        </ECCustomAttributes>"
-                                                                           "        <ECProperty propertyName='K' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='L' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='M' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='N' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='O' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "    <ECEntityClass typeName='GrandChild' modifier='None'>"
-                                                                           "        <BaseClass>Child</BaseClass>"
-                                                                           "        <ECProperty propertyName='P' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='Q' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='R' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='S' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='T' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='GrandParent' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='string' />"
+        "        <ECProperty propertyName='B' typeName='string' />"
+        "        <ECProperty propertyName='C' typeName='string' />"
+        "        <ECProperty propertyName='D' typeName='string' />"
+        "        <ECProperty propertyName='E' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <BaseClass>GrandParent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "        <ECProperty propertyName='G' typeName='string'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='string'/>"
+        "        <ECProperty propertyName='J' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Child' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='K' typeName='string'/>"
+        "        <ECProperty propertyName='L' typeName='string'/>"
+        "        <ECProperty propertyName='M' typeName='string'/>"
+        "        <ECProperty propertyName='N' typeName='string'/>"
+        "        <ECProperty propertyName='O' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='GrandChild' modifier='None'>"
+        "        <BaseClass>Child</BaseClass>"
+        "        <ECProperty propertyName='P' typeName='string'/>"
+        "        <ECProperty propertyName='Q' typeName='string'/>"
+        "        <ECProperty propertyName='R' typeName='string'/>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='T' typeName='string'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
@@ -3890,12 +3950,13 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables) {
     DumpChangeSummary(changeSummaryKey, "OverflowTables");
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(20, GetPropertyValueChangeCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile) {
+TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
+    {
     BeFileName primaryFilePath = ECDbTestFixture::BuildECDbPath("pri.db");
     BeFileName attachedFilePath = ECDbTestFixture::BuildECDbPath("sec.db");
 
@@ -3946,7 +4007,7 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile) {
     rev1.FromChangeTrack(tracker, ChangeSet::SetType::Full);
     tracker.EnableTracking(false);
 
-    // Verify
+    //Verify
     //----------------------------------------------------------------------------------
     Json::Value expectedChangeset0Json, expectedChangeset1Json;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedChangeset0Json, R"json(
@@ -3992,11 +4053,12 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile) {
 
     primaryDb.AbandonChanges();
 
-    // But transaction does cover multiple files and canceling will loose change across multiple files
+    //But transaction does cover multiple files and canceling will loose change across multiple files
     ASSERT_EQ(BE_SQLITE_DONE, primaryDb.GetCachedStatement("select 1 from FooP")->Step());
     ASSERT_EQ(BE_SQLITE_DONE, primaryDb.GetCachedStatement("select 1 from Goo")->Step());
     ASSERT_EQ(BE_SQLITE_DONE, primaryDb.GetCachedStatement("select 1 from FooS")->Step());
-}
+    }
+
 
 //*************************************
 // Deprecated API tests
@@ -4005,7 +4067,8 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, SchemaChange) {
+TEST_F(ChangeSummaryTestFixtureV1, SchemaChange)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
 
     // Test1: Change to be_Prop table - should cause empty change summary without errors
@@ -4024,23 +4087,25 @@ TEST_F(ChangeSummaryTestFixtureV1, SchemaChange) {
     tracker.Restart();
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
-                           "<?xml version='1.0' encoding='utf-8'?> "
-                           "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
-                           "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "</ECSchema>")));
 
     changeSet.Clear();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
 
     changeSummary.Free();
     ASSERT_EQ(SUCCESS, changeSummary.FromChangeSet(changeSet));
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, Overflow_PrimitiveProperties) {
+TEST_F(ChangeSummaryTestFixtureV1, Overflow_PrimitiveProperties)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               R"xml(<?xml version="1.0" encoding="utf-8"?>
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Element" modifier="Abstract">
@@ -4098,36 +4163,37 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_PrimitiveProperties) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(7, valIter.QueryCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, Overflow_StructProperty) {
+TEST_F(ChangeSummaryTestFixtureV1, Overflow_StructProperty)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECStructClass typeName='StructProp' modifier='None'>"
-                                                                               "        <ECProperty propertyName='S' typeName='string' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='I' typeName='int'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECStructProperty propertyName='SP' typeName='StructProp'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='StructProp' modifier='None'>"
+        "        <ECProperty propertyName='S' typeName='string' readOnly='false'/>"
+        "        <ECProperty propertyName='I' typeName='int'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECStructProperty propertyName='SP' typeName='StructProp'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -4164,44 +4230,46 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_StructProperty) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(3, valIter.QueryCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayProperty) {
+TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayProperty)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
-    double Array[] = {123.3434, 345.223, -532.123};
+    double Array[] = { 123.3434, 345.223,-532.123 };
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, ArrayProp) VALUES ('C1', ?)"));
 
     IECSqlBinder& Binder = stmt.GetBinder(1).AddArrayElement();
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, Binder.BindDouble(Array[i]));
-    }
+        }
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     m_ecdb.SaveChanges();
@@ -4226,51 +4294,52 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayProperty) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(2, valIter.QueryCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, Overflow_ComplexPropertyTypes) {
+TEST_F(ChangeSummaryTestFixtureV1, Overflow_ComplexPropertyTypes)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "        <ECProperty propertyName='BIN' typeName='binary'/>"
-                                                                               "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
-    std::vector<Utf8Char> bin = {'H', 'e', 'l', 'l', 'o'};
+    std::vector<Utf8Char> bin = { 'H', 'e', 'l','l', 'o' };
     IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, P2D, P3D, Bin, Geom) VALUES ('C1', ?, ?, ?, ?)"));
 
-    // Binding Point 2d & 3d
+    //Binding Point 2d & 3d
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(-21, 22.1)));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(-12.53, 21.76, -32.22)));
-    // Binding Binary blob
+    //Binding Binary blob
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(3, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
-    // Binding Geometry
+    //Binding Geometry
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(4, *geom));
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -4302,55 +4371,58 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ComplexPropertyTypes) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(8, valIter.QueryCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfPoints) {
+TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfPoints)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
 
-    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1), DPoint2d::From(-85.34, 35.36), DPoint2d::From(-31.34, 12.35)};
-    DPoint3d ArrayOfP3d[] = {DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11)};
+    DPoint2d ArrayOfP2d[] = { DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35) };
+    DPoint3d ArrayOfP3d[] = { DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11) };
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, arrayOfP2d, arrayOfP3d) VALUES ('C1', ?, ?)"));
 
-    // Binding Array of Point2d
+    //Binding Array of Point2d
     IECSqlBinder& arrayOfP2d = stmt.GetBinder(1);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP2d.AddArrayElement().BindPoint2d(ArrayOfP2d[i]));
-    }
+        }
 
-    // Binding Array of Point3d
+    //Binding Array of Point3d
     IECSqlBinder& arrayOfP3d = stmt.GetBinder(2);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(ArrayOfP3d[i]));
-    }
+        }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -4371,64 +4443,66 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfPoints) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(3, valIter.QueryCount());
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfStructs) {
+TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfStructs)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                               "        <ECCustomAttributes>"
-                                                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                               "            </ClassMap>"
-                                                                               "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                               "            </ShareColumns>"
-                                                                               "        </ECCustomAttributes>"
-                                                                               "        <ECProperty propertyName='Code' typeName='string' />"
-                                                                               "    </ECEntityClass>"
-                                                                               "    <ECStructClass typeName='ST2' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECStructClass typeName='ST1' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-                                                                               "        <ECStructProperty propertyName='ST2P' typeName='ST2'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECEntityClass typeName='TestElement' modifier='None'>"
-                                                                               "        <BaseClass>Element</BaseClass>"
-                                                                               "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='ST2' modifier='None'>"
+        "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECStructClass>"
+        "    <ECStructClass typeName='ST1' modifier='None'>"
+        "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECStructProperty propertyName='ST2P' typeName='ST2'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
 
-    // Binding array of Struct
-    double ArrayOfST1_D1[] = {123.3434, 345.223, -532.123};
-    DPoint2d ArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1), DPoint2d::From(-85.34, 35.36), DPoint2d::From(-31.34, 12.35)};
-    double ArrayOfST1_D2[] = {12.3, -45.72, -31.11};
-    DPoint3d ArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3), DPoint3d::From(-12.53, 21.76, -32.22), DPoint3d::From(-41.14, -22.45, -31.16)};
+    //Binding array of Struct
+    double ArrayOfST1_D1[] = { 123.3434, 345.223,-532.123 };
+    DPoint2d ArrayOfST1_P2D[] = { DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35) };
+    double ArrayOfST1_D2[] = { 12.3, -45.72, -31.11 };
+    DPoint3d ArrayOfST1_P3D[] = { DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16) };
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, arrayOfST1) VALUES ('C1', ?)"));
 
-    // Binding Array of Struct
+    //Binding Array of Struct
     IECSqlBinder& arrayOfST1 = stmt.GetBinder(1);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         IECSqlBinder& elementBinder = arrayOfST1.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["D1"].BindDouble(ArrayOfST1_D1[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["P2D"].BindPoint2d(ArrayOfST1_P2D[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["D2"].BindDouble(ArrayOfST1_D2[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["P3D"].BindPoint3d(ArrayOfST1_P3D[i]));
-    }
+        }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -4450,12 +4524,14 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfStructs) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(2, valIter.QueryCount());
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction) {
+TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -4573,8 +4649,8 @@ TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction) {
     tracker.Restart();
 
     /*
-     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
-     */
+    * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
+    */
     statement.Finalize();
     statement.Prepare(m_ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
     statement.BindId(1, employeeHardwareKey.GetInstanceId());
@@ -4621,62 +4697,63 @@ TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction) {
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
     EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, OverflowTables) {
+TEST_F(ChangeSummaryTestFixtureV1, OverflowTables)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
-                                                                           "<?xml version='1.0' encoding='utf-8'?> "
-                                                                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                           "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                           "    <ECEntityClass typeName='GrandParent' modifier='Abstract'>"
-                                                                           "        <ECCustomAttributes>"
-                                                                           "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                           "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                           "            </ClassMap>"
-                                                                           "        </ECCustomAttributes>"
-                                                                           "        <ECProperty propertyName='A' typeName='string' />"
-                                                                           "        <ECProperty propertyName='B' typeName='string' />"
-                                                                           "        <ECProperty propertyName='C' typeName='string' />"
-                                                                           "        <ECProperty propertyName='D' typeName='string' />"
-                                                                           "        <ECProperty propertyName='E' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "    <ECEntityClass typeName='Parent' modifier='None'>"
-                                                                           "        <BaseClass>GrandParent</BaseClass>"
-                                                                           "        <ECCustomAttributes>"
-                                                                           "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
-                                                                           "        </ECCustomAttributes>"
-                                                                           "        <ECProperty propertyName='F' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='G' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='H' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='I' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='J' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "    <ECEntityClass typeName='Child' modifier='None'>"
-                                                                           "        <BaseClass>Parent</BaseClass>"
-                                                                           "        <ECCustomAttributes>"
-                                                                           "            <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                           "              <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
-                                                                           "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                           "            </ShareColumns>"
-                                                                           "        </ECCustomAttributes>"
-                                                                           "        <ECProperty propertyName='K' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='L' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='M' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='N' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='O' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "    <ECEntityClass typeName='GrandChild' modifier='None'>"
-                                                                           "        <BaseClass>Child</BaseClass>"
-                                                                           "        <ECProperty propertyName='P' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='Q' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='R' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='S' typeName='string'/>"
-                                                                           "        <ECProperty propertyName='T' typeName='string'/>"
-                                                                           "    </ECEntityClass>"
-                                                                           "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='GrandParent' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='string' />"
+        "        <ECProperty propertyName='B' typeName='string' />"
+        "        <ECProperty propertyName='C' typeName='string' />"
+        "        <ECProperty propertyName='D' typeName='string' />"
+        "        <ECProperty propertyName='E' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <BaseClass>GrandParent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "        <ECProperty propertyName='G' typeName='string'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='string'/>"
+        "        <ECProperty propertyName='J' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Child' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='K' typeName='string'/>"
+        "        <ECProperty propertyName='L' typeName='string'/>"
+        "        <ECProperty propertyName='M' typeName='string'/>"
+        "        <ECProperty propertyName='N' typeName='string'/>"
+        "        <ECProperty propertyName='O' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='GrandChild' modifier='None'>"
+        "        <BaseClass>Child</BaseClass>"
+        "        <ECProperty propertyName='P' typeName='string'/>"
+        "        <ECProperty propertyName='Q' typeName='string'/>"
+        "        <ECProperty propertyName='R' typeName='string'/>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='T' typeName='string'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -4731,43 +4808,45 @@ TEST_F(ChangeSummaryTestFixtureV1, OverflowTables) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(20, valIter.QueryCount());
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns) {
+TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-                                                                               "<?xml version='1.0' encoding='utf-8'?> "
-                                                                               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-                                                                               "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                               "    <ECStructClass typeName='ST1' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='I1' typeName='int'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECStructClass typeName='ST2' modifier='None'>"
-                                                                               "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "        <ECStructProperty propertyName='ST2P' typeName='ST1'/>"
-                                                                               "    </ECStructClass>"
-                                                                               "    <ECEntityClass typeName='Element' modifier='None'>"
-                                                                               "        <ECProperty propertyName='S' typeName='string'/>"
-                                                                               "        <ECProperty propertyName='I' typeName='int'/>"
-                                                                               "        <ECProperty propertyName='L' typeName='long'/>"
-                                                                               "        <ECProperty propertyName='D' typeName='double'/>"
-                                                                               "        <ECProperty propertyName='DT' typeName='dateTime'/>"
-                                                                               "        <ECProperty propertyName='B' typeName='boolean'/>"
-                                                                               "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-                                                                               "        <ECProperty propertyName='P3D' typeName='point3d'/>"
-                                                                               "        <ECProperty propertyName='BIN' typeName='binary'/>"
-                                                                               "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
-                                                                               "        <ECStructProperty propertyName='StructProp' typeName='ST1'/>"
-                                                                               "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "        <ECStructArrayProperty propertyName='arrayOfST2' typeName='ST2' minOccurs='0' maxOccurs='unbounded'/>"
-                                                                               "    </ECEntityClass>"
-                                                                               "</ECSchema>")));
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECStructClass typeName='ST1' modifier='None'>"
+        "        <ECProperty propertyName='D1' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='I1' typeName='int'/>"
+        "    </ECStructClass>"
+        "    <ECStructClass typeName='ST2' modifier='None'>"
+        "        <ECProperty propertyName='D2' typeName='double' readOnly='false'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECStructProperty propertyName='ST2P' typeName='ST1'/>"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECProperty propertyName='S' typeName='string'/>"
+        "        <ECProperty propertyName='I' typeName='int'/>"
+        "        <ECProperty propertyName='L' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='double'/>"
+        "        <ECProperty propertyName='DT' typeName='dateTime'/>"
+        "        <ECProperty propertyName='B' typeName='boolean'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
+        "        <ECStructProperty propertyName='StructProp' typeName='ST1'/>"
+        "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
+        "        <ECStructArrayProperty propertyName='arrayOfST2' typeName='ST2' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -4782,14 +4861,14 @@ TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns) {
     DPoint2d P2D = DPoint2d::From(22.33, -21.34);
     DPoint3d P3D = DPoint3d::From(12.13, -42.34, -93.12);
     IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
-    std::vector<Utf8Char> Blob = {'H', 'e', 'l', 'l', 'o'};
-    double Array[] = {123.3434, 345.223, -532.123};
-    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1), DPoint2d::From(-85.34, 35.36), DPoint2d::From(-31.34, 12.35)};
+    std::vector<Utf8Char> Blob = {'H', 'e', 'l','l', 'o'};
+    double Array[] = {123.3434, 345.223,-532.123};
+    DPoint2d ArrayOfP2d[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
     DPoint3d ArrayOfP3d[] = {DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11)};
-    double ArrayOfST1_D1[] = {123.3434, 345.223, -532.123};
+    double ArrayOfST1_D1[] = {123.3434, 345.223,-532.123};
     int ArrayOfST1_I1[] = {012, 456, 789};
     double ArrayOfST2_D2[] = {12.3, -45.72, -31.11};
-    DPoint3d ArrayOfST2_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3), DPoint3d::From(-12.53, 21.76, -32.22), DPoint3d::From(-41.14, -22.45, -31.16)};
+    DPoint3d ArrayOfST2_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
 
     ECSqlStatement stmt;
 
@@ -4805,38 +4884,42 @@ TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns) {
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &Blob, static_cast<int>(Blob.size()), IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(idx++, *geom));
 
-    // Binding Struct property
+    //Binding Struct property
     IECSqlBinder& StructBinder = stmt.GetBinder(idx++);
     ASSERT_EQ(ECSqlStatus::Success, StructBinder["D1"].BindDouble(Double));
     ASSERT_EQ(ECSqlStatus::Success, StructBinder["I1"].BindInt(123));
 
-    // Binding Array property
+    //Binding Array property
     IECSqlBinder& ArrayBinder = stmt.GetBinder(idx++).AddArrayElement();
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, ArrayBinder.BindDouble(Array[i]));
-    }
+        }
 
-    // Binding Array of Point2d
+    //Binding Array of Point2d
     IECSqlBinder& arrayOfP2d = stmt.GetBinder(idx++);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP2d.AddArrayElement().BindPoint2d(ArrayOfP2d[i]));
-    }
+        }
 
-    // Binding Array of Point3d
+    //Binding Array of Point3d
     IECSqlBinder& arrayOfP3d = stmt.GetBinder(idx++);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(ArrayOfP3d[i]));
-    }
+        }
 
-    // Binding Array of Struct
+    //Binding Array of Struct
     IECSqlBinder& arrayOfST2 = stmt.GetBinder(idx++);
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++)
+        {
         IECSqlBinder& elementBinder = arrayOfST2.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["D2"].BindDouble(ArrayOfST2_D2[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["P3D"].BindPoint3d(ArrayOfST2_P3D[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["D1"].BindDouble(ArrayOfST1_D1[i]));
         ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["I1"].BindInt(ArrayOfST1_I1[i]));
-    }
+        }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -4855,6 +4938,8 @@ TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns) {
 
     ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
     EXPECT_EQ(19, valIter.QueryCount());
-}
+    }
+
+
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "BulkCrudTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -11,11 +11,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(BulkBisDomainCrudTestFixture, Test) {
+TEST_F(BulkBisDomainCrudTestFixture, Test)
+    {
     BeFileName bisSchemaFolder;
     BeFileName domainSchemaFolder = GetDomainSchemaFolder(bisSchemaFolder);
     if (!domainSchemaFolder.DoesPathExist())
-        return;
+        return; 
 
     ASSERT_EQ(SUCCESS, SetupDomainBimFile("bulkcrud_domainschemas.ecdb", domainSchemaFolder, bisSchemaFolder));
 
@@ -27,6 +28,6 @@ TEST_F(BulkBisDomainCrudTestFixture, Test) {
 
     AssertInsert(testDataset);
     */
-}
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

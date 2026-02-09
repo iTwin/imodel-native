@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -14,7 +14,7 @@ struct PurgeNullTestFixture : public ECDbTestFixture {};
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PurgeNullTestFixture, PurgeNulls) {
-    Utf8String testInst = R"json({
+  Utf8String testInst = R"json({
       "id": "0x1234",
       "p2d": {
           "x": 341.34,
@@ -25,7 +25,7 @@ TEST_F(PurgeNullTestFixture, PurgeNulls) {
       "l": "",
   })json";
 
-    Utf8String expectedInst = R"json({
+  Utf8String expectedInst = R"json({
       "id": "0x1234",
       "p2d": {
           "x": 341.34,
@@ -34,12 +34,12 @@ TEST_F(PurgeNullTestFixture, PurgeNulls) {
       "bi": "encoding=base64;cd2DfQvyUAEK4Q==",
   })json";
 
-    BeJsDocument testDoc;
-    testDoc.Parse(testInst);
-    BeJsDocument expectedDoc;
-    expectedDoc.Parse(expectedInst);
-    testDoc.PurgeNulls();
-    ASSERT_STREQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), testDoc.Stringify(StringifyFormat::Indented).c_str());
+  BeJsDocument testDoc;
+  testDoc.Parse(testInst);
+  BeJsDocument expectedDoc;
+  expectedDoc.Parse(expectedInst);
+  testDoc.PurgeNulls();
+  ASSERT_STREQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), testDoc.Stringify(StringifyFormat::Indented).c_str());
 }
 
 END_ECDBUNITTESTS_NAMESPACE

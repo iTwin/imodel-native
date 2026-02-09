@@ -19,132 +19,137 @@
  *
  *************************************************************/
 
+
 #ifndef _CONNECTIVITY_SQLPARSE_HXX
 #define _CONNECTIVITY_SQLPARSE_HXX
 
-#include <map>
-
+#include "SqlNode.h"
 #include "IParseContext.h"
 #include "SqlBison.h"
-#include "SqlNode.h"
 #include "SqlTypes.h"
-namespace connectivity {
-class OSQLScanner;
-class SQLError;
 
-//==========================================================================
-//= OParseContext
-//==========================================================================
-class OOO_DLLPUBLIC_DBTOOLS OParseContext : public IParseContext {
-   public:
-    OParseContext();
+#include <map>
+namespace connectivity
+    {
+    class OSQLScanner;
+    class SQLError;
 
-    virtual ~OParseContext();
-    // retrieves language specific error messages
-    virtual Utf8String getErrorMessage(ErrorCode _eCodes) const;
+    //==========================================================================
+    //= OParseContext
+    //==========================================================================
+    class OOO_DLLPUBLIC_DBTOOLS OParseContext : public IParseContext
+        {
+        public:
+            OParseContext();
 
-    // retrieves language specific keyword strings (only ASCII allowed)
-    virtual Utf8String getIntlKeywordAscii(InternationalKeyCode _eKey) const;
+            virtual ~OParseContext();
+            // retrieves language specific error messages
+            virtual Utf8String getErrorMessage(ErrorCode _eCodes) const;
 
-    // finds out, if we have an international keyword (only ASCII allowed)
-    virtual InternationalKeyCode getIntlKeyCode(const Utf8String& rToken) const;
+            // retrieves language specific keyword strings (only ASCII allowed)
+            virtual Utf8String getIntlKeywordAscii(InternationalKeyCode _eKey) const;
 
-    // determines the default international setting
-    static const ::com::sun::star::lang::Locale& getDefaultLocale();
+            // finds out, if we have an international keyword (only ASCII allowed)
+            virtual InternationalKeyCode getIntlKeyCode(const Utf8String& rToken) const;
 
-    /** set's the default locale which should be used when analyzing strings
-        <p>If no locale is set, and any method which needs a locale is called, a default
-        (en-US) is used.</p>
-        <p>If, while parsing, the locale can be obtained from other sources (such as the number format
-        set for a table column), the preferred locale is ignored.</p>
-        */
-    static void setDefaultLocale(const ::com::sun::star::lang::Locale& _rLocale);
+            // determines the default international setting
+            static const ::com::sun::star::lang::Locale& getDefaultLocale();
 
-    /** get's a locale instance which should be used when parsing in the context specified by this instance
-        <p>if this is not overridden by derived classes, it returns the static default locale.</p>
-        */
-    virtual ::com::sun::star::lang::Locale getPreferredLocale() const;
-};
+            /** set's the default locale which should be used when analyzing strings
+                <p>If no locale is set, and any method which needs a locale is called, a default
+                (en-US) is used.</p>
+                <p>If, while parsing, the locale can be obtained from other sources (such as the number format
+                set for a table column), the preferred locale is ignored.</p>
+                */
+            static void setDefaultLocale(const ::com::sun::star::lang::Locale& _rLocale);
 
-//==========================================================================
-//= OSQLParser
-//==========================================================================
-/** Parser for SQL92
- */
-class OSQLParser {
-    friend class OSQLParseNode;
-    friend struct SQLParseNodeParameter;
+            /** get's a locale instance which should be used when parsing in the context specified by this instance
+                <p>if this is not overridden by derived classes, it returns the static default locale.</p>
+                */
+            virtual ::com::sun::star::lang::Locale getPreferredLocale() const;
+        };
 
-   private:
-    typedef ::std::map<sal_uInt32, OSQLParseNode::Rule> RuleIDMap;
-    //    static parts for parsers
-    static sal_uInt32 s_nRuleIDs[OSQLParseNode::rule_count + 1];
-    static RuleIDMap s_aReverseRuleIDLookup;
-    static OParseContext s_aDefaultContext;
-    std::unique_ptr<OSQLScanner> m_scanner;
+    //==========================================================================
+    //= OSQLParser
+    //==========================================================================
+    /** Parser for SQL92
+    */
+    class OSQLParser
+        {
+        friend class OSQLParseNode;
+        friend struct SQLParseNodeParameter;
 
-    // informations on the current parse action
-    const IParseContext* m_pContext;
-    OSQLParseNode* m_pParseTree;                                     // result from parsing
-    Utf8String m_sFieldName;                                         // current field name for a predicate
-    Utf8String m_sErrorMessage;                                      // current error msg
-    RefCountedPtr< ::com::sun::star::beans::XPropertySet> m_xField;  // current field
-   public:
-    // if NULL, a default context will be used
-    // the context must live as long as the parser
-    explicit OSQLParser(const IParseContext* _pContext = nullptr);
-    ~OSQLParser();
+        private:
+            typedef ::std::map< sal_uInt32, OSQLParseNode::Rule >   RuleIDMap;
+            //    static parts for parsers
+            static sal_uInt32 s_nRuleIDs[OSQLParseNode::rule_count + 1];
+            static RuleIDMap s_aReverseRuleIDLookup;
+            static OParseContext s_aDefaultContext;
+            std::unique_ptr<OSQLScanner> m_scanner;
 
-    // Parsing an SQLStatement
-    OSQLParseNode* parseTree(Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational = sal_False);
+            // informations on the current parse action
+            const IParseContext* m_pContext;
+            OSQLParseNode* m_pParseTree;    // result from parsing
+            Utf8String m_sFieldName;    // current field name for a predicate
+            Utf8String m_sErrorMessage;// current error msg
+            RefCountedPtr< ::com::sun::star::beans::XPropertySet > m_xField;        // current field
+        public:
+            // if NULL, a default context will be used
+            // the context must live as long as the parser
+            explicit  OSQLParser(const IParseContext* _pContext = nullptr);
+            ~OSQLParser();
 
-    OSQLScanner* GetScanner() { return m_scanner.get(); }
-    // Access to the context
-    const IParseContext& getContext() const { return *m_pContext; }
+            // Parsing an SQLStatement
+            OSQLParseNode* parseTree(Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational = sal_False);
 
-    /// access to the SQLError instance owned by this parser
-    // const SQLError& getErrorHelper() const;
+            OSQLScanner* GetScanner() { return m_scanner.get(); }
+            // Access to the context
+            const IParseContext& getContext() const { return *m_pContext; }
 
-    // TokenIDToStr: Token-Name zu einer Token-Nr.
-    static Utf8String TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext = NULL);
+            /// access to the SQLError instance owned by this parser
+            //const SQLError& getErrorHelper() const;
 
-    // StrToTokenID: Token-Nr. zu einem Token-Namen.
-    // static sal_uInt32 StrToTokenID(const Utf8String & rName);
+            // TokenIDToStr: Token-Name zu einer Token-Nr.
+            static Utf8String TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pContext = NULL);
 
-    // RuleIDToStr gibt den zu einer RuleID gehoerenden Utf8String zurueck
-    // (Leerstring, falls nicht gefunden)
-    static Utf8CP RuleIDToStr(sal_uInt32 nRuleID);
+            // StrToTokenID: Token-Nr. zu einem Token-Namen.
+            // static sal_uInt32 StrToTokenID(const Utf8String & rName);
 
-    // StrToRuleID berechnet zu einem Utf8String die RuleID (d.h. ::com::sun::star::sdbcx::Index in yytname)
-    // (0, falls nicht gefunden). Die Suche nach der ID aufgrund eines Strings ist
-    // extrem ineffizient (sequentielle Suche nach Utf8String)!
-    static sal_uInt32 StrToRuleID(const Utf8String& rValue);
+            // RuleIDToStr gibt den zu einer RuleID gehoerenden Utf8String zurueck
+            // (Leerstring, falls nicht gefunden)
+            static Utf8CP RuleIDToStr(sal_uInt32 nRuleID);
 
-    static OSQLParseNode::Rule RuleIDToRule(sal_uInt32 _nRule);
+            // StrToRuleID berechnet zu einem Utf8String die RuleID (d.h. ::com::sun::star::sdbcx::Index in yytname)
+            // (0, falls nicht gefunden). Die Suche nach der ID aufgrund eines Strings ist
+            // extrem ineffizient (sequentielle Suche nach Utf8String)!
+            static sal_uInt32 StrToRuleID(const Utf8String & rValue);
 
-    // RuleId mit enum, wesentlich effizienter
-    static sal_uInt32 RuleID(OSQLParseNode::Rule eRule);
+            static OSQLParseNode::Rule RuleIDToRule(sal_uInt32 _nRule);
 
-    void error(const sal_Char* pFormat);
-    int SQLlex(YYSTYPE* val);
-    // #ifdef YYBISON
-    void setParseTree(OSQLParseNode* pNewParseTree);
+            // RuleId mit enum, wesentlich effizienter
+            static sal_uInt32 RuleID(OSQLParseNode::Rule eRule);
 
-    // Is the parse in a special mode?
-    // Predicate chack is used to check a condition for a field
-    sal_Bool inPredicateCheck() const { return m_xField.IsValid(); }
-    const Utf8String& getFieldName() const { return m_sFieldName; }
+            void error(const sal_Char* pFormat);
+            int SQLlex(YYSTYPE* val);
+            //#ifdef YYBISON
+            void setParseTree(OSQLParseNode * pNewParseTree);
 
-    void reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank);
+            // Is the parse in a special mode?
+            // Predicate chack is used to check a condition for a field
+            sal_Bool inPredicateCheck() const { return m_xField.IsValid(); }
+            const Utf8String& getFieldName() const { return m_sFieldName; }
 
-    // pCompre will be deleted if it is not used
-    sal_Int16 buildPredicateRule(OSQLParseNode*& pAppend, OSQLParseNode* pLiteral, OSQLParseNode*& pCompare, OSQLParseNode* pLiteral2 = NULL);
+            void reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank);
 
-    sal_Int16 buildLikeRule(OSQLParseNode*& pAppend, OSQLParseNode*& pLiteral, const OSQLParseNode* pEscape);
+            // pCompre will be deleted if it is not used
+            sal_Int16 buildPredicateRule(OSQLParseNode*& pAppend, OSQLParseNode* pLiteral, OSQLParseNode*& pCompare, OSQLParseNode* pLiteral2 = NULL);
 
-    // #else
-    // #endif
-};
-}  // namespace connectivity
+            sal_Int16 buildLikeRule(OSQLParseNode*& pAppend, OSQLParseNode*& pLiteral, const OSQLParseNode* pEscape);
 
-#endif  //_CONNECTIVITY_SQLPARSE_HXX
+            //#else
+            //#endif
+        };
+    }
+
+
+#endif //_CONNECTIVITY_SQLPARSE_HXX

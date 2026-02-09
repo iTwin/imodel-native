@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -9,28 +9,30 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECSqlPrepareTestFixture : public ECDbTestFixture {
-   protected:
-    ECSqlPrepareTestFixture() : ECDbTestFixture() {}
+struct ECSqlPrepareTestFixture : public ECDbTestFixture
+    {
+    protected:
+        ECSqlPrepareTestFixture() : ECDbTestFixture() {}
 
-    ECSqlStatus Prepare(Utf8CP ecsql) const { return GetHelper().PrepareECSql(ecsql); }
+        ECSqlStatus Prepare(Utf8CP ecsql) const { return GetHelper().PrepareECSql(ecsql); }
+    public:
+        virtual ~ECSqlPrepareTestFixture() {}
 
-   public:
-    virtual ~ECSqlPrepareTestFixture() {}
-
-    void SetUp() override {
-        EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-        // Due to properties in ECSqlTest schema such as "DtUnspec", "local", "unspecified", "garbagekind" and "garbagecomponent", et cetera, as well as negative tests, we expect some error messages to be reported when setting date time values.
-        // Since we have set the ECInstance to be populated 10 times in the ecdb file being created, these errors will hence be reported x10 times as well.
-        EXPECT_EQ(SUCCESS, PopulateECDb(10));
-    }
-};
+        void SetUp() override
+            {
+            EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+            // Due to properties in ECSqlTest schema such as "DtUnspec", "local", "unspecified", "garbagekind" and "garbagecomponent", et cetera, as well as negative tests, we expect some error messages to be reported when setting date time values.
+            // Since we have set the ECInstance to be populated 10 times in the ecdb file being created, these errors will hence be reported x10 times as well.
+            EXPECT_EQ(SUCCESS, PopulateECDb(10));
+            }
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPrepareTestFixture, ReservedTokens) {
-    // Class names with reserved tokens
+TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
+    {
+    //Class names with reserved tokens
     std::vector<SchemaItem> schemas;
     schemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -78,20 +80,23 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens) {
                     <ECEntityClass typeName="delete" />
                   </ECSchema>)xml"));
 
-    for (SchemaItem const& schemaItem : schemas) {
+
+    for (SchemaItem const& schemaItem : schemas)
+        {
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schemaItem));
         ECN::ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(schema != nullptr);
 
-        for (ECN::ECClassCP cl : schema->GetClasses()) {
+        for (ECN::ECClassCP cl : schema->GetClasses())
+            {
             Utf8String ecsql;
             ecsql.Sprintf("SELECT * FROM ts.%s", cl->GetName().c_str());
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+            }
         }
-    }
 
-    // Property names with reserved tokens
+    //Property names with reserved tokens
     schemas.clear();
     schemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -143,141 +148,172 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens) {
                     </ECEntityClass>
                   </ECSchema>)xml"));
 
-    for (SchemaItem const& schema : schemas) {
+    for (SchemaItem const& schema : schemas)
+        {
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schema));
         ECN::ECClassCP cl = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(cl != nullptr);
 
-        for (ECN::ECPropertyCP prop : cl->GetProperties(true)) {
+        for (ECN::ECPropertyCP prop : cl->GetProperties(true))
+            {
             Utf8String ecsql;
             ecsql.Sprintf("SELECT %s FROM ts.%s", prop->GetName().c_str(), cl->GetName().c_str());
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+            }
         }
     }
-}
 
-TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeCharacters) {
+TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeCharacters)
+    {
     const auto expectedSql = "SELECT [ECClassDef].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'";
     // Test that various invisible Unicode characters are properly handled by the parser and treated as whitespaces
-    for (const auto& [testCaseNumber, testDescription, inputSqlString, expectedNativeSql] : std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
-             // Simple select statements with invisible Unicode characters
-             {1,
-              "U+00A0 No-Break Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {2,
-              "U+2002 En Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {3,
-              "U+2003 Em Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {4,
-              "U+2004 Three-per-Em Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {5,
-              "U+2005 Four-per-Em Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {6,
-              "U+2006 Six-per-Em Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {7,
-              "U+2007 Figure Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {8,
-              "U+2008 Punctuation Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {9,
-              "U+2009 Thin Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {10,
-              "U+200A Hair Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {11,
-              "U+200B Zero Width Space",
-              "SELECT​ECInstanceId​FROM meta.ECClassDef​WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {12,
-              "U+200C Zero Width Non-Joiner",
-              "SELECT‌ECInstanceId‌FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {13,
-              "U+200D Zero Width Joiner",
-              "SELECT‍ECInstanceId‍FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {14,
-              "U+200E Left-to-Right Mark",
-              "SELECT‎ECInstanceId‎FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {15,
-              "U+200F Right-to-Left Mark",
-              "SELECT‏ECInstanceId‏FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {16,
-              "U+202F Narrow No-Break Space",
-              "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {17,
-              "U+2060 Word Joiner",
-              "SELECT⁠ECInstanceId⁠FROM meta.ECClassDef WHERE⁠Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {18,
-              "U+FEFF Zero Width No-Break Space",
-              "﻿SELECT ECInstanceId﻿FROM meta.ECClassDef ﻿WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {19,
-              "Multiple distinct invisible unicode characters",
-              "SELECT​ECInstanceId‌FROM meta.ECClassDef‍WHERE Name⁠LIKE 'DynamicSchema'",
-              expectedSql},
-             {20,
-              "Invisible unicode chars inside string literals",
-              "SELECT '  ‍﻿DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              "SELECT '  ‍﻿DynamicSchema​​' [Literal] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"},
-             {21,
-              "Invisible unicode chars at the start and end",
-              "​SELECT 'DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema' ",
-              "SELECT 'DynamicSchema​​' [Literal] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"},
+    for (const auto& [testCaseNumber, testDescription, inputSqlString, expectedNativeSql] : std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>> {
+        // Simple select statements with invisible Unicode characters
+        {1, 
+            "U+00A0 No-Break Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {2, 
+            "U+2002 En Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {3, 
+            "U+2003 Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {4, 
+            "U+2004 Three-per-Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {5, 
+            "U+2005 Four-per-Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {6, 
+            "U+2006 Six-per-Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {7, 
+            "U+2007 Figure Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {8, 
+            "U+2008 Punctuation Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {9, 
+            "U+2009 Thin Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {10, 
+            "U+200A Hair Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {11, 
+            "U+200B Zero Width Space", 
+            "SELECT​ECInstanceId​FROM meta.ECClassDef​WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {12, 
+            "U+200C Zero Width Non-Joiner", 
+            "SELECT‌ECInstanceId‌FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {13, 
+            "U+200D Zero Width Joiner", 
+            "SELECT‍ECInstanceId‍FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {14, 
+            "U+200E Left-to-Right Mark", 
+            "SELECT‎ECInstanceId‎FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {15, 
+            "U+200F Right-to-Left Mark", 
+            "SELECT‏ECInstanceId‏FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {16, 
+            "U+202F Narrow No-Break Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {17, 
+            "U+2060 Word Joiner", 
+            "SELECT⁠ECInstanceId⁠FROM meta.ECClassDef WHERE⁠Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {18, 
+            "U+FEFF Zero Width No-Break Space", 
+            "﻿SELECT ECInstanceId﻿FROM meta.ECClassDef ﻿WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {19, 
+            "Multiple distinct invisible unicode characters", 
+            "SELECT​ECInstanceId‌FROM meta.ECClassDef‍WHERE Name⁠LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {20, 
+            "Invisible unicode chars inside string literals", 
+            "SELECT '  ‍﻿DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            "SELECT '  ‍﻿DynamicSchema​​' [Literal] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        },
+        {21, 
+            "Invisible unicode chars at the start and end", 
+            "​SELECT 'DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema' ", 
+            "SELECT 'DynamicSchema​​' [Literal] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        },
 
-             // Simple select statement with invisible unicode characters and comments
-             {22,
-              "Line comment with invisible chars before",
-              "SELECT​ECInstanceId FROM meta.ECClassDef -- this​is​a​comment\nWHERE Name​LIKE 'DynamicSchema'",
-              expectedSql},
-             {23,
-              "Block comment with invisible chars before",
-              "SELECT​ECInstanceId /* comment ​here */ FROM​meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              expectedSql},
-             {24,
-              "Comment inside string literal",
-              "SELECT '-- not​a​comment' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              "SELECT '-- not​a​comment' FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"},
-             {25,
-              "Invisible chars in string after comment",
-              "-- comment\nSELECT 'text​with​invisible' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'",
-              "SELECT 'text​with​invisible' FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"}}) {
+        // Simple select statement with invisible unicode characters and comments
+        {22, 
+            "Line comment with invisible chars before", 
+            "SELECT​ECInstanceId FROM meta.ECClassDef -- this​is​a​comment\nWHERE Name​LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {23, 
+            "Block comment with invisible chars before", 
+            "SELECT​ECInstanceId /* comment ​here */ FROM​meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {24, 
+            "Comment inside string literal", 
+            "SELECT '-- not​a​comment' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            "SELECT '-- not​a​comment' FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        },
+        {25, 
+            "Invisible chars in string after comment", 
+            "-- comment\nSELECT 'text​with​invisible' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            "SELECT 'text​with​invisible' FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        }
+    })
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, inputSqlString.c_str())) << "Failed to prepare Test case " << testCaseNumber << ": " << testDescription;
         if (stmt.IsPrepared())
             EXPECT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql()) << "Failed to match SQL for Test case " << testCaseNumber << ": " << testDescription;
-        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Failed to step Test case " << testCaseNumber << ": " << testDescription;
+            EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Failed to step Test case " << testCaseNumber << ": " << testDescription;
+        }
     }
-}
 
-TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeInDifferentStatementTypes) {
+TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeInDifferentStatementTypes)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InvisibleUnicodeStatements.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     // INSERT statements with invisible chars
     ECSqlStatement insertStmt;
-    EXPECT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT​INTO ecsql.P (I, L, D, S, B, DtUtc) VALUES​(100, 1000, 3.14, 'test', True, TIMESTAMP '2020-01-01T12:00:00Z')"))
+    EXPECT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT​INTO ecsql.P (I, L, D, S, B, DtUtc) VALUES​(100, 1000, 3.14, 'test', True, TIMESTAMP '2020-01-01T12:00:00Z')")) 
         << "INSERT with invisible chars";
     EXPECT_EQ(BE_SQLITE_DONE, insertStmt.Step());
     insertStmt.Finalize();
@@ -313,32 +349,36 @@ TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeInDifferentStatementTypes) {
     EXPECT_EQ(BE_SQLITE_ROW, selectStmt.Step());
     EXPECT_EQ(0, selectStmt.GetValueInt(0));
     selectStmt.Finalize();
-}
+    }
 
 struct ECSqlSelectPrepareTests : ECSqlPrepareTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, CorrelatedSubqueries) {
+TEST_F(ECSqlSelectPrepareTests, CorrelatedSubqueries)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE EXISTS(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE NOT EXISTS(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
     // Not supported
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE UNIQUE(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE NOT UNIQUE(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, TestsForCTESubquery) {
+TEST_F(ECSqlSelectPrepareTests, TestsForCTESubquery)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT x FROM(WITH RECURSIVE cnt (x,y) AS ( SELECT 100, 200 UNION ALL SELECT x+1, 200 FROM cnt WHERE x<210) SELECT * from cnt)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = (WITH a(x) AS(SELECT 10) SELECT * FROM a)"));
-}
+    }
+    
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Alias) {
+TEST_F(ECSqlSelectPrepareTests, Alias)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.I FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, PStructProp A11 FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S.ECInstanceId FROM ecsql.PSA S")) << "tests when class alias is same as a property name.This should work unless the property is a struct property";
@@ -395,114 +435,131 @@ TEST_F(ECSqlSelectPrepareTests, Alias) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT p.ECInstanceId,p.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND meta.ClassHasAllBaseClasses.SourceECInstanceId=p.ECClassId AND meta.ClassHasAllBaseClasses.TargetECInstanceId = 500"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECSqlTest.P.ECInstanceId,ECSqlTest.P.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND ECDbMeta.ClassHasAllBaseClasses.SourceECInstanceId=ECSqlTest.P.ECClassId AND ECDbMeta.ClassHasAllBaseClasses.TargetECInstanceId = 500"));
 
-    // use column aliases which need to be escaped
+    //use column aliases which need to be escaped
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 AS [/Length/], 2 AS [/Width/] FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (SELECT 1 AS [/Length/], 2 AS [/Width/] FROM ecsql.PSA)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, AndOrPrecedence) {
+TEST_F(ECSqlSelectPrepareTests, AndOrPrecedence)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE S1 IS NOT NULL OR S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE S1 IS NULL AND (S2 IS NOT NULL OR 1=1)"));
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // This test ensure if a property was not renamed by using alias then the ECProperty backing
 // it up is not generated but is the orignal property. This happen when property is returned
 // from a nested query.
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, PureNestedProperty) {
-    if (true) {
+TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
+    {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM  (SELECT ECInstanceId as id, ECClassId as cid, P.id as rid, P.RelECClassId as rcid FROM ecsql.PSA)"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
-            ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty())  << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
+            }
         }
-    }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM  (SELECT ECInstanceId, ECClassId, P.id, P.RelECClassId FROM ecsql.PSA)"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
+            }
         }
-    }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.PSA"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM ecsql.PSA)"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM  (SELECT I, L, S FROM ecsql.PSA)"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I, L, S FROM  (SELECT I, L, S FROM ecsql.PSA)"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.I, test.L, test.S FROM  (SELECT I, L, S FROM ecsql.PSA) test"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.* FROM  (SELECT I, L, S FROM ecsql.PSA) test"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.I as i1, test.L as l1, test.S as s1 FROM  (SELECT I, L, S FROM ecsql.PSA) test"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
-            ;
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";;
+            }
         }
-    }
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.* FROM  (SELECT I as I1, L as L1, S as S1 FROM ecsql.PSA) test"));
-        for (int i = 0; i < stmt.GetColumnCount(); i++) {
-            ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
+            }
         }
+
     }
-}
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Arrays) {
+TEST_F(ECSqlSelectPrepareTests, Arrays)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Dt_Array, B FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE Dt_Array = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE Dt_Array <> ?")) << "unbound parameters mean NULL and comparing NULL with NULL is always false";
@@ -521,12 +578,13 @@ TEST_F(ECSqlSelectPrepareTests, Arrays) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Dt_Array[-1], B FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT UnknowProperty[1], B FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT UnknowProperty[-1], B FROM ecsql.PSA"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, BetweenOperator) {
+TEST_F(ECSqlSelectPrepareTests, BetweenOperator)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I BETWEEN 1 AND 3"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I BETWEEN 122 AND 124"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I NOT BETWEEN 1 AND 3"));
@@ -535,12 +593,13 @@ TEST_F(ECSqlSelectPrepareTests, BetweenOperator) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I NOT BETWEEN ? AND 3"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I NOT BETWEEN 1 AND ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I NOT BETWEEN ? AND ?"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Cast) {
+TEST_F(ECSqlSelectPrepareTests, Cast)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (S AS BINARY) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (Bi AS BINARY) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (S AS BINARY) FROM ecsql.PSA"));
@@ -687,12 +746,13 @@ TEST_F(ECSqlSelectPrepareTests, Cast) {
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (? AS INT) FROM ecsql.PSA")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (I AS ?) FROM ecsql.PSA")) << "not yet supported";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Casing) {
+TEST_F(ECSqlSelectPrepareTests, Casing)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM EcSqltEst.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM ECSQLTEST.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM ecsqltest.P"));
@@ -703,12 +763,13 @@ TEST_F(ECSqlSelectPrepareTests, Casing) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT s FROM ecsql.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ecinsTanceiD FROM ECSqlTest.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ecCLassid FROM ECSqlTest.P"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, CommonGeometry) {
+TEST_F(ECSqlSelectPrepareTests, CommonGeometry)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Geometry, S FROM ecsql.PASpatial"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Geometry_Array, S FROM ecsql.PASpatial"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM ecsql.PASpatial ORDER BY Geometry")) << "Common Geometry properties cannot be ordered by ECSQL";
@@ -731,12 +792,15 @@ TEST_F(ECSqlSelectPrepareTests, CommonGeometry) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ONLY ecsql.SSpatial WHERE SpatialStructProp.Geometry IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ONLY ecsql.SSpatial WHERE SpatialStructProp.Geometry_Array IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ONLY ecsql.SSpatial WHERE SpatialStructProp.Geometry_Array IS NOT NULL"));
-}
+    }
+
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, DateTime) {
+TEST_F(ECSqlSelectPrepareTests, DateTime)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.PSA WHERE Dt = TIMESTAMP '2012-01-18 13:02:55.123'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.PSA WHERE Dt = TIMESTAMP '2013-02-18T06:00:00.000'")) << "ECSQL supports the date and time component delimiter from both SQL-99 (space) and ISO 8601 ('T').";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.PSA WHERE Dt = DATE '2012-01-18'"));
@@ -760,7 +824,7 @@ TEST_F(ECSqlSelectPrepareTests, DateTime) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DtUnspec = TIMESTAMP '2013-02-18 06:00:00Z'")) << "DtUnspec has DateTimeKind Unspecified while RHS has DateTimeKind UTC.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUnspec > :dateonly"));
 
-    // DateOnly has midnight as time fraction, DateTime columns as generated by test are not at midnight therefore they are not equal
+    //DateOnly has midnight as time fraction, DateTime columns as generated by test are not at midnight therefore they are not equal
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DateOnly = TIMESTAMP '2013-02-18 00:00:00Z'")) << "Date-onlys (DateTime::Component::Date) can have any date time kind on other side of operation";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DateOnly = TIMESTAMP '2013-02-18 00:00:00'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DateOnly = Dt"));
@@ -800,7 +864,7 @@ TEST_F(ECSqlSelectPrepareTests, DateTime) {
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE I = ? OR Dt = ? OR S = ?"));
 
-    // CURRENT_XXX functions
+    //CURRENT_XXX functions
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = CURRENT_DATE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, CURRENT_DATE FROM ecsql.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = CURRENT_TIMESTAMP"));
@@ -811,12 +875,14 @@ TEST_F(ECSqlSelectPrepareTests, DateTime) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUnspec = CURRENT_TIME")) << "CURRENT_TIME can only be assigned to property with DateTime::Component::TimeOfDay";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUtc = CURRENT_TIME")) << "CURRENT_TIME can only be assigned to property with DateTime::Component::TimeOfDay";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, CURRENT_TIME FROM ecsql.P"));
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, ECInstanceId) {
+TEST_F(ECSqlSelectPrepareTests, ECInstanceId)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA WHERE ECInstanceId >= 0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA a WHERE a.ECInstanceId >= 0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA WHERE ECInstanceId >= 0 AND I < 123"));
@@ -831,34 +897,35 @@ TEST_F(ECSqlSelectPrepareTests, ECInstanceId) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = ?"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L FROM ecsql.PSA ECInstanceId")) << "Might become invalid because ECInstanceId might become a reserved word.";
-    // same test with escaping
+    //same test with escaping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L, B FROM ecsql.PSA [ECInstanceId]"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L AS ECInstanceId FROM ecsql.PSA")) << "Might become invalid because ECInstanceId might become a reserved word.";
-    // same test with escaping
+    //same test with escaping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L AS [ECInstanceId] FROM ecsql.PSA"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L FROM ecsql.PSA SourceECInstanceId")) << "Might become invalid because SourceECInstanceId might become a reserved word.";
-    // same test with escaping
+    //same test with escaping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L, B FROM ecsql.PSA [SourceECInstanceId]"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L AS SourceECInstanceId FROM ecsql.PSA")) << "Might become invalid because SourceECInstanceId might become a reserved word.";
-    // same test with escaping
+    //same test with escaping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L AS [SourceECInstanceId] FROM ecsql.PSA"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L FROM ecsql.PSA TargetECInstanceId")) << "Might become invalid because TargetECInstanceId might become a reserved word.";
-    // same test with escaping
+    //same test with escaping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L, B FROM ecsql.PSA [TargetECInstanceId]"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L AS TargetECInstanceId FROM ecsql.PSA")) << "Might become invalid because TargetECInstanceId might become a reserved word.";
-    // same test with escaping
+    //same test with escaping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L AS [TargetECInstanceId] FROM ecsql.PSA"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, From) {
+TEST_F(ECSqlSelectPrepareTests, From)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql.PSAHasPSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql:PSAHasPSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ecsql.PSAHasPSA"));
@@ -870,13 +937,13 @@ TEST_F(ECSqlSelectPrepareTests, From) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ONLY ecsql.PSAHasP"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ecsql.PSAHasP"));
 
-    // select from structs
+    //select from structs
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT i, s FROM ecsql.PStruct")) << "Structs are invalid in FROM clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT i, s FROM ONLY ecsql.PStruct")) << "Structs are invalid in FROM clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ecsql.PStruct")) << "Structs are invalid in FROM clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ONLY ecsql.PStruct")) << "Structs are invalid in FROM clause.";
 
-    // select from CAs
+    //select from CAs
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM bsca.DateTimeInfo")) << "Custom Attributes are invalid in FROM clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ONLY bsca.DateTimeInfo")) << "Custom Attributes are invalid in FROM clause.";
 
@@ -901,17 +968,19 @@ TEST_F(ECSqlSelectPrepareTests, From) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM ecsql.BlaBla"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM blabla.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, blabla FROM ecsql.PSA"));
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, SubQuery) {
+TEST_F(ECSqlSelectPrepareTests, SubQuery)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (SELECT COUNT(*) FROM ecsql.PSA)"));
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Functions) {
+TEST_F(ECSqlSelectPrepareTests, Functions)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.count(*) FROM ecsql.PSA p")) << "Class alias not allowed with count function.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(NULL) FROM ecsql.PSA"));
@@ -953,7 +1022,7 @@ TEST_F(ECSqlSelectPrepareTests, Functions) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (I + L) MATCH random()")) << "even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar. Fails at step time only";
 
-    // invalid expressions
+    //invalid expressions
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT GetClassId() FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.GetClassId() FROM ecsql.PSA p"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.GetClassId FROM ecsql.PSA p"));
@@ -965,12 +1034,13 @@ TEST_F(ECSqlSelectPrepareTests, Functions) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE LOWER(P3D) IS NULL")) << "Non-scalar args not supported to SQL function";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT count(P2D) FROM ecsql.P")) << "Non-scalar args not supported to SQL function";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT count(P3D) FROM ecsql.P")) << "Non-scalar args not supported to SQL function";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, GroupBy) {
+TEST_F(ECSqlSelectPrepareTests, GroupBy)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I;")) << "with trailing semicolon";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B;")) << "with trailing semicolon";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Bi"));
@@ -1003,12 +1073,13 @@ TEST_F(ECSqlSelectPrepareTests, GroupBy) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT MyPSA, count(*) FROM ecsql.P GROUP BY MyPSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT MyPSA.Id, count(*) FROM ecsql.P GROUP BY MyPSA.Id"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT MyPSA.RelECClassId, count(*) FROM ecsql.P GROUP BY MyPSA.RelECClassId"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, InOperator) {
+TEST_F(ECSqlSelectPrepareTests, InOperator)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I IN (1, 2, 3)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I NOT IN (1, 2, 3)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I IN (L, I)"));
@@ -1025,13 +1096,14 @@ TEST_F(ECSqlSelectPrepareTests, InOperator) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE MyPSA IN (123)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE MyPSA.Id IN (-11)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE MyPSA.RelECClassId IN (-11)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Join) {
-    // JOIN USING
+TEST_F(ECSqlSelectPrepareTests, Join)
+    {
+    //JOIN USING
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA BACKWARD"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM ecsql:PSA parent JOIN ecsql:PSA child USING ecsql:PSAHasPSA BACKWARD"));
@@ -1055,26 +1127,26 @@ TEST_F(ECSqlSelectPrepareTests, Join) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM ONLY ecsql.PSA JOIN ONLY ecsql.PSA USING ecsql.PSAHasPSA BACKWARD")) << "ambiguous properties in select clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM ONLY ecsql.PSA JOIN ONLY ecsql.P USING ecsql.PSAHasP")) << "ambiguous properties in select clause";
 
-    // JOIN ON
+    //JOIN ON
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 "
-                                            "INNER JOIN ONLY ecsql.PSAHasPSA rel ON end1.ECInstanceId = rel.SourceECInstanceId "
-                                            "INNER JOIN ONLY ecsql.PSA end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
-                                            "WHERE end2.I = 123"));
+        "INNER JOIN ONLY ecsql.PSAHasPSA rel ON end1.ECInstanceId = rel.SourceECInstanceId "
+        "INNER JOIN ONLY ecsql.PSA end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
+        "WHERE end2.I = 123"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT end1.I, end1.L FROM ONLY ecsql.PSA end1 "
-                                            "INNER JOIN ONLY ecsql.PSAHasP rel ON end1.ECInstanceId = rel.SourceECInstanceId "
-                                            "INNER JOIN ONLY ecsql.P end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
-                                            "WHERE end2.I = 123"));
+        "INNER JOIN ONLY ecsql.PSAHasP rel ON end1.ECInstanceId = rel.SourceECInstanceId "
+        "INNER JOIN ONLY ecsql.P end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
+        "WHERE end2.I = 123"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 "
-                                            "JOIN ONLY ecsql.PSAHasPSA rel ON end1.ECInstanceId = rel.SourceECInstanceId "
-                                            "JOIN ONLY ecsql.PSA end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
-                                            "WHERE end2.I = 123"));
+        "JOIN ONLY ecsql.PSAHasPSA rel ON end1.ECInstanceId = rel.SourceECInstanceId "
+        "JOIN ONLY ecsql.PSA end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
+        "WHERE end2.I = 123"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT end1.I, end1.L FROM ONLY ecsql.PSA end1 "
-                                            "JOIN ONLY ecsql.PSAHasP rel ON end1.ECInstanceId = rel.SourceECInstanceId "
-                                            "JOIN ONLY ecsql.P end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
-                                            "WHERE end2.I = 123"));
+        "JOIN ONLY ecsql.PSAHasP rel ON end1.ECInstanceId = rel.SourceECInstanceId "
+        "JOIN ONLY ecsql.P end2 ON end2.ECInstanceId = rel.TargetECInstanceId "
+        "WHERE end2.I = 123"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select PSA.ECInstanceId, P.ECInstanceId FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP FORWARD"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select PSA.ECInstanceId, P.ECInstanceId FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP BACKWARD"));
@@ -1101,23 +1173,24 @@ TEST_F(ECSqlSelectPrepareTests, Join) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select PHasSA_11P.*, P.*, SA.* FROM ONLY ecsql.P JOIN ecsql.SA USING ecsql.PHasSA_11P ORDER BY PHasSA_11P.ECInstanceId DESC"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA BACKWARD ORDER BY PHasP_1NPSA.ECInstanceId DESC"));
 
-    // RIGHT JOIN
+    //RIGHT JOIN
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA RIGHT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA RIGHT OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
-    // LEFT JOIN not a good example
+    //LEFT JOIN not a good example
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA LEFT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA LEFT OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
-    // FULL JOIN
+    //FULL JOIN
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA FULL JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA FULL OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, LikeOperator) {
+TEST_F(ECSqlSelectPrepareTests, LikeOperator)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam%'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S LIKE 'Sam'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE I LIKE 'Sam%'"));
@@ -1149,12 +1222,13 @@ TEST_F(ECSqlSelectPrepareTests, LikeOperator) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE PStructProp LIKE NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S_Array LIKE ?"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.PSA WHERE S_Array LIKE NULL"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, LimitOffset) {
+TEST_F(ECSqlSelectPrepareTests, LimitOffset)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, I FROM ecsql.PSA LIMIT 5"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, I FROM ecsql.PSA LIMIT 1+1+1+2"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, I FROM ecsql.PSA LIMIT 5 OFFSET 3"));
@@ -1167,12 +1241,13 @@ TEST_F(ECSqlSelectPrepareTests, LimitOffset) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, I FROM ecsql.PSA LIMIT :pagesize OFFSET :pagesize * (:pageno - 1)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT S, I FROM ecsql.PSA LIMIT"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT S, I FROM ecsql.PSA LIMIT 10 OFFSET"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Misc) {
+TEST_F(ECSqlSelectPrepareTests, Misc)
+    {
     // Statements where non-optional clauses are missing
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("FROM ONLY ecsql.PSA"));
@@ -1188,9 +1263,9 @@ TEST_F(ECSqlSelectPrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ecsql.SA"));
 
     // Special tokens
-    // These were reserved words in the original grammar introduced by some ODBC data time functions.
-    // The ODBC stuff was removed from the ECSQL grammar, and the following tests serve as safeguards
-    // against regressions when updating the grammar.
+    //These were reserved words in the original grammar introduced by some ODBC data time functions.
+    //The ODBC stuff was removed from the ECSQL grammar, and the following tests serve as safeguards
+    //against regressions when updating the grammar.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT D FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L, S FROM ecsql.PSA d"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT L, B FROM ecsql.PSA t"));
@@ -1212,12 +1287,13 @@ TEST_F(ECSqlSelectPrepareTests, Misc) {
 
     // Row constructor list
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (VALUES(1,2), (2,3))"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, NullLiteral) {
+TEST_F(ECSqlSelectPrepareTests, NullLiteral)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL FROM ecsql.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL, I FROM ecsql.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL, NULL FROM ecsql.P"));
@@ -1225,12 +1301,13 @@ TEST_F(ECSqlSelectPrepareTests, NullLiteral) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL as P3D FROM ecsql.P")) << "Alias in select clause is always interpreted literally even if it happens to be a property name.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL as StructProp FROM ecsql.PSA")) << "Alias in select clause is always interpreted literally even if it happens to be a property name.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL as PStruct_Array FROM ecsql.SA")) << "Alias in select clause is always interpreted literally even if it happens to be a property name.";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Options) {
+TEST_F(ECSqlSelectPrepareTests, Options)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P ECSQLOPTIONS")) << "OPTIONS clause without options";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P ECSQLOPTIONS 123")) << "An option must be a name";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P ECSQLOPTIONS myopt=")) << "option value is missing";
@@ -1249,12 +1326,13 @@ TEST_F(ECSqlSelectPrepareTests, Options) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ECInstanceId=? ECSQLOPTIONS myopt=1 myotheropt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ECInstanceId=? ORDER BY I ECSQLOPTIONS myopt=1 myotheropt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ECInstanceId=? GROUP BY I HAVING I=1 ECSQLOPTIONS myopt=1 myotheropt"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, OrderBy) {
+TEST_F(ECSqlSelectPrepareTests, OrderBy)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L ASC"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L DESC"));
@@ -1286,21 +1364,24 @@ TEST_F(ECSqlSelectPrepareTests, OrderBy) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.P ORDER BY MyPSA.RelECClassId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY NULLIF(I,123)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY COALESCE(I,L)"));
-    // adding macro to test nulls first and last changes
+    //adding macro to test nulls first and last changes
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L NULLS LAST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS LAST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS LAST"));
-}
+
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 
-TEST_F(ECSqlSelectPrepareTests, NullsOrdering) {
-    // adding macro in NULLS ordering test to test various ORDER BY clauses with SELECT statements
+TEST_F(ECSqlSelectPrepareTests, NullsOrdering)
+{
+    //adding macro in NULLS ordering test to test various ORDER BY clauses with SELECT statements
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L NULLS LAST"));
@@ -1308,13 +1389,17 @@ TEST_F(ECSqlSelectPrepareTests, NullsOrdering) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS LAST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS LAST"));
+
+
+
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Parameters) {
-    // This includes only advanced parameter tests that are not covered implicitly by the other test datasets
+TEST_F(ECSqlSelectPrepareTests, Parameters)
+    {
+    //This includes only advanced parameter tests that are not covered implicitly by the other test datasets
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE I = :i AND S = :s AND L = :i * 1000000 + 456789"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE I = ? AND S = :s AND L = :l"));
@@ -1325,12 +1410,13 @@ TEST_F(ECSqlSelectPrepareTests, Parameters) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE :p1 = -:p1")) << "use parameters on both sides of an expression (should result in default parameter type)";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ?, S FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ? AS NewProp, S FROM ecsql.PSA"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Points) {
+TEST_F(ECSqlSelectPrepareTests, Points)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P2D FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P3D FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P3D, P2D FROM ecsql.PSA a"));
@@ -1378,12 +1464,13 @@ TEST_F(ECSqlSelectPrepareTests, Points) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P2D.X, P2D.Y FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P3D.X, P3D.Y, P3D.Z FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT P2D.Z FROM ecsql.PSA"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Polymorphic) {
+TEST_F(ECSqlSelectPrepareTests, Polymorphic)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, L FROM ONLY ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql.THBase"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM ONLY ecsql.TH1"));
@@ -1402,12 +1489,13 @@ TEST_F(ECSqlSelectPrepareTests, Polymorphic) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select ECInstanceId from ecsql.EmptyAbstractNoSubclasses"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select ECInstanceId, I, S from only ecsql.AbstractNoSubclasses"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select ECInstanceId from only ecsql.EmptyAbstractNoSubclasses"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Primitives) {
+TEST_F(ECSqlSelectPrepareTests, Primitives)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, L FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, L FROM ecsql.PSA a"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT a.I, a.L FROM ecsql.PSA a"));
@@ -1445,12 +1533,13 @@ TEST_F(ECSqlSelectPrepareTests, Primitives) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S, B FROM ecsql.PSA WHERE S = \"Sample string\"")) << "String literals must be surrounded by single quotes. Double quotes are equivalent to square brackets in SQL.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S, B FROM ecsql.PSA WHERE S_Array = 123")) << "DataType mismatch.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S, B FROM ecsql.PSA WHERE S_Array = '123'")) << "Type mismatch in array.";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Relationships) {
+TEST_F(ECSqlSelectPrepareTests, Relationships)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSAHasP WHERE ECInstanceId = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSAHasP WHERE ECInstanceId <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSAHasP WHERE SourceECInstanceId = 123"));
@@ -1484,9 +1573,9 @@ TEST_F(ECSqlSelectPrepareTests, Relationships) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT SourceECClassId FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ecsql.PSAHasP_N1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT TargetECClassId FROM ecsql.PSA"));
-    // link table mapping
+    //link table mapping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasPSA"));
-    // end table mapping
+    //end table mapping
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP WHERE SourceECClassId = TargetECClassId AND ECClassId = 180"));
@@ -1494,13 +1583,14 @@ TEST_F(ECSqlSelectPrepareTests, Relationships) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP ORDER BY ECClassId, SourceECClassId, TargetECClassId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP rel ORDER BY rel.ECClassId, rel.SourceECClassId, rel.TargetECClassId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT rel.ECClassId, rel.SourceECClassId, rel.TargetECClassId FROM ecsql.PSAHasP rel"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, SelectClause) {
-    // tests with identically named select clause items. If one of them is an alias, preparation fails. Otherwise a unique name is generated
+TEST_F(ECSqlSelectPrepareTests, SelectClause)
+    {
+    //tests with identically named select clause items. If one of them is an alias, preparation fails. Otherwise a unique name is generated
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL, NULL bla FROM ecsql.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select NULL, NULL FROM ecsql.P"));
@@ -1520,12 +1610,13 @@ TEST_F(ECSqlSelectPrepareTests, SelectClause) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select COALESCE(I,123,L) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select COALESCE(I) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select CASE WHEN I > 123 THEN 'Hello' ELSE 'World' END,S FROM ecsql.PSA")) << "CASE not yet supported";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Structs) {
+TEST_F(ECSqlSelectPrepareTests, Structs)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.i, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT PStructProp.j, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA")) << "Struct member property J does not exist";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.I, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA"));
@@ -1567,12 +1658,13 @@ TEST_F(ECSqlSelectPrepareTests, Structs) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Subquery) {
+TEST_F(ECSqlSelectPrepareTests, Subquery)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM (SELECT * FROM ecsql.P)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.P WHERE ECInstanceId < (SELECT avg(ECInstanceId) FROM ecsql.P)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECInstanceId FROM (SELECT COUNT(*) FROM ecsql.P)"));
@@ -1589,12 +1681,13 @@ TEST_F(ECSqlSelectPrepareTests, Subquery) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA WHERE B = (SELECT DateOnly FROM ecsql.P)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA WHERE B IN (SELECT DateOnly FROM ecsql.P)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM (SELECT I FROM ecsql.P WHERE COUNT(S)>1)")) << "WHERE clause can't be used with aggregate functions.";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, Union) {
+TEST_F(ECSqlSelectPrepareTests, Union)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.P UNION SELECT ECInstanceId FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.P UNION ALL SELECT ECInstanceId FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.P UNION ALL SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.PSA"));
@@ -1615,13 +1708,14 @@ TEST_F(ECSqlSelectPrepareTests, Union) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ecsql.P UNION ALL SELECT * FROM ecsql.PA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ecsql.P UNION ALL SELECT * FROM ecsql.A")) << "'A' is not a valid class name.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (VALUES(1, 2) UNION VALUES(2, 3))"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, WhereBasics) {
-    // case insensitive tests
+TEST_F(ECSqlSelectPrepareTests, WhereBasics)
+    {
+    //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL OR b = NULL"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE i>=:myParam"));
@@ -1642,15 +1736,15 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 4^1 = 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 5^4 = 4")) << "not yet supported";
 
-    // unary predicates
+    //unary predicates
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE True"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NOT True"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NOT B"));
-    // SQLite function which ECDb knows to return a bool
+    //SQLite function which ECDb knows to return a bool
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NOT Glob('*amp*',S)"));
-    // Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
+    //Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NOT I"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L"));
@@ -1672,25 +1766,25 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
-    // with parentheses around
+    //with parentheses around
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE Hex(Bi)"));
-    // unary operator
+    //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I == 10"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Garbage = 'bla'"));
-    // NULL tests
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NULL"));  // NULL IS NULL is always true
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = NULL"));   // NULL = NULL returns NULL
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> NULL"));  // NULL <> NULL returns NULL
+    //NULL tests
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NULL")); // NULL IS NULL is always true
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = NULL")); // NULL = NULL returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL"));   // = NULL always returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L IS NOT NULL"));
@@ -1706,7 +1800,7 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ? <> NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> ?"));
-    // points
+    //points
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P2D = 11"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P2D = D"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D IS NULL"));
@@ -1717,7 +1811,7 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D = ?"));
-    // nav props
+    //nav props
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE MyPSA = 11"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE MyPSA = L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE MyPSA = MyPSA"));
@@ -1736,14 +1830,15 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P2D = POINT2D (-1.3, 45.134)")) << "Point literal not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 // This test ensures that the nested subqueries are prepared without throwing an error
 // and we get the desired output after executing bound query
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
+TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
+    {
     SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="NestedSubqueries" alias="ns" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECEntityClass typeName="A">
@@ -1753,28 +1848,32 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         )schema");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NestedSubqueries.ecdb", schemaItem));
-    if (true) {
+    if (true)
+        {
         ECInstanceKey key;
-        for (int iNum = 1; iNum <= 5; iNum++) {
+        for (int iNum = 1; iNum <= 5; iNum++)
+            {
             Utf8String ecsql;
             ecsql.Sprintf("INSERT INTO NestedSubqueries.A (PropA) VALUES ('%dA')", iNum);
             ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, ecsql.c_str()));
+            }
         }
-    }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT ?) AS PropA FROM [NestedSubqueries].[A]);";
 
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
         stmt.BindInt(1, 3);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT :LimitParam) AS PropA FROM [NestedSubqueries].[A]);";
 
@@ -1782,12 +1881,13 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         ASSERT_EQ(1, stmt.GetParameterIndex("LimitParam"));
         stmt.BindInt(stmt.GetParameterIndex("LimitParam"), 3);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT ? OFFSET ?) AS PropA FROM [NestedSubqueries].[A]);";
 
@@ -1795,18 +1895,19 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         stmt.BindInt(1, 1);
         stmt.BindInt(2, 0);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Reset();
         stmt.BindInt(1, 1);
         stmt.BindInt(2, 2);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"3A"}, {"PropA":"3A"}, {"PropA":"3A"}, {"PropA":"3A"}, {"PropA":"3A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT :LimitParam OFFSET :OffsetParam) AS PropA FROM [NestedSubqueries].[A]);";
 
@@ -1817,18 +1918,19 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         stmt.BindInt(stmt.GetParameterIndex("LimitParam"), 1);
         stmt.BindInt(stmt.GetParameterIndex("OffsetParam"), 0);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Reset();
         stmt.BindInt(stmt.GetParameterIndex("LimitParam"), 1);
         stmt.BindInt(stmt.GetParameterIndex("OffsetParam"), 2);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"3A"}, {"PropA":"3A"}, {"PropA":"3A"}, {"PropA":"3A"}, {"PropA":"3A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT ? OFFSET ?) AS PropA FROM [NestedSubqueries].[A]) LIMIT ?;";
 
@@ -1837,11 +1939,12 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         stmt.BindInt(2, 3);
         stmt.BindInt(3, 2);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"4A"}, {"PropA":"4A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT :LimitParam1 OFFSET :OffsetParam) AS PropA FROM [NestedSubqueries].[A]) LIMIT :LimitParam2;";
 
@@ -1853,23 +1956,25 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         stmt.BindInt(stmt.GetParameterIndex("OffsetParam"), 3);
         stmt.BindInt(stmt.GetParameterIndex("LimitParam2"), 2);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"4A"}, {"PropA":"4A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] WHERE [PropA] = ?) AS PropA FROM [NestedSubqueries].[A]);";
 
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
         stmt.BindText(1, "5A", IECSqlBinder::MakeCopy::No);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"5A"}, {"PropA":"5A"}, {"PropA":"5A"}, {"PropA":"5A"}, {"PropA":"5A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Finalize();
-    }
+        }
 
-    if (true) {
+    if (true)
+        {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] WHERE [PropA] = :WhereParam) AS PropA FROM [NestedSubqueries].[A]);";
 
@@ -1877,21 +1982,22 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries) {
         ASSERT_EQ(1, stmt.GetParameterIndex("WhereParam"));
         stmt.BindText(stmt.GetParameterIndex("WhereParam"), "5A", IECSqlBinder::MakeCopy::No);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"5A"}, {"PropA":"5A"}, {"PropA":"5A"}, {"PropA":"5A"}, {"PropA":"5A"}])json"),
-                  GetHelper().ExecutePreparedECSql(stmt));
+            GetHelper().ExecutePreparedECSql(stmt));
 
         stmt.Finalize();
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlSelectPrepareTests, TableRefWithoutSchemaNames) {
+TEST_F(ECSqlSelectPrepareTests, TableRefWithoutSchemaNames)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp.PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp.PStructProp = ?"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp IS NULL"));
-
+    
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM PSA a"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT a.I, a.L FROM PSA a"));
@@ -1916,15 +2022,15 @@ TEST_F(ECSqlSelectPrepareTests, TableRefWithoutSchemaNames) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end1.L FROM ONLY PSA end1 JOIN ONLY PSA end2 USING ecsql.PSAHasPSA BACKWARD WHERE end2.I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end2.L FROM ONLY PSA end1 JOIN ONLY P end2 USING ecsql.PSAHasP WHERE end2.I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end2.L FROM ONLY PSA end1 JOIN ONLY P end2 USING ecsql.PSAHasP FORWARD"));
-    // RIGHT JOIN
+    //RIGHT JOIN
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA RIGHT JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA RIGHT OUTER JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
-    // LEFT JOIN not a good example
+    //LEFT JOIN not a good example
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA LEFT JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA LEFT OUTER JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
-    // FULL JOIN
+    //FULL JOIN
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA FULL JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA FULL OUTER JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
@@ -1939,7 +2045,9 @@ TEST_F(ECSqlSelectPrepareTests, TableRefWithoutSchemaNames) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE ? = ?"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE :p1 > -:p1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE :p1 = -:p1"));
-}
+    }
+
+
 
 //********************* Insert **********************
 struct ECSqlInsertPrepareTests : ECSqlPrepareTestFixture {};
@@ -1947,15 +2055,17 @@ struct ECSqlInsertPrepareTests : ECSqlPrepareTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Arrays) {
+TEST_F(ECSqlInsertPrepareTests, Arrays)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (Dt_Array, B) VALUES (NULL, true)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (PStruct_Array, B) VALUES (NULL, true)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Casing) {
+TEST_F(ECSqlInsertPrepareTests, Casing)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO EcSqltEst.P(ECInstanceId) VALUES(NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ECSQLTEST.P(ECInstanceId) VALUES(NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsqltest.P(ECInstanceId) VALUES(NULL)"));
@@ -1964,25 +2074,27 @@ TEST_F(ECSqlInsertPrepareTests, Casing) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsQl.p(ECInstanceId) VALUES(NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsQl.p(EcinstanceId) VALUES(NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsQl.p(ecinstanceId) VALUES(NULL)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, CommonGeometry) {
+TEST_F(ECSqlInsertPrepareTests, CommonGeometry)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PASpatial (I, Geometry) VALUES (123, NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PASpatial (I, Geometry_Array) VALUES (123, NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PASpatial VALUES (False, 3.14, 123, 'hello', NULL, NULL, NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PASpatial (I, Geometry) VALUES (123, ?)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PASpatial (I, Geometry) VALUES (123, ?)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PASpatial (I, Geometry_Array) VALUES (123, ?)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, DateTime) {
-    // Inserting into date time prop without DateTimeInfo CA
+TEST_F(ECSqlInsertPrepareTests, DateTime)
+    {
+    //Inserting into date time prop without DateTimeInfo CA
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (TIMESTAMP '2012-01-18 13:02:55')"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (TIMESTAMP '2012-01-18 13:02:55.123')"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (TIMESTAMP '2012-01-18 13:02:55.123456')"));
@@ -1991,23 +2103,23 @@ TEST_F(ECSqlInsertPrepareTests, DateTime) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (DATE '2012-01-18')"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (NULL)"));
 
-    // Inserting into UTC date time prop
+    //Inserting into UTC date time prop
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (TIMESTAMP '2013-02-18 06:00:00Z')"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (TIMESTAMP '2013-02-18 06:00:00')")) << "DtUtc is UTC time stamp while value is not.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (DATE '2012-01-18')"));
 
-    // Inserting into date time prop with DateTimeInfo CA where kind is set to Unspecified
+    //Inserting into date time prop with DateTimeInfo CA where kind is set to Unspecified
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DtUnspec) VALUES (TIMESTAMP '2013-02-18 06:00:00')"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUnspec) VALUES (TIMESTAMP '2013-02-18 06:00:00Z')")) << "DtUnspec has DateTimeKind Unspecified while value has DateTimeKind UTC.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DtUnspec) VALUES (DATE '2012-01-18')"));
 
-    // Inserting into date time props with DateTimeInfo CA where component is set to Date-only
+    //Inserting into date time props with DateTimeInfo CA where component is set to Date-only
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DateOnly) VALUES (DATE '2013-02-18')"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DateOnly) VALUES (TIMESTAMP '2013-02-18 06:00:00Z')")) << "DateOnly can take time stamps, too";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DateOnly) VALUES (TIMESTAMP '2013-02-18 06:00:00')")) << "DateOnly can take time stamps, too";
 
-    // CURRENT_XXX functions
+    //CURRENT_XXX functions
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_DATE)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (CURRENT_DATE)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_TIMESTAMP)"));
@@ -2017,25 +2129,28 @@ TEST_F(ECSqlInsertPrepareTests, DateTime) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUnspec) VALUES (CURRENT_TIME)")) << "Time can only be assigned to props with DateTime::Component::TimeOfDay";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (CURRENT_TIME)")) << "Time can only be assigned to props with DateTime::Component::TimeOfDay";
 
-    // implicit conversions (supported what SQLite supports)
+    //implicit conversions (supported what SQLite supports)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (I, L) VALUES (123, DATE '2013-04-30')"));
 
     //*** Parameters ****
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (I, Dt, DtUtc, DtUnspec, DateOnly) VALUES (123, ?, ?, ?, ?)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Into) {
+TEST_F(ECSqlInsertPrepareTests, Into)
+    {
+
+
     // Inserting into classes which map to tables with ECClassId columns
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.THBase (S) VALUES ('hello')"));
-    // inserting into classes with base classes
+    //inserting into classes with base classes
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.TH5 (S, S1, S3, S5) VALUES ('hello', 'hello1', 'hello3', 'hello5')"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.TH3 VALUES ('hello', NULL, NULL, NULL, 'hello1', 'hello2', 'hello3')"));
 
     // Abstract classes
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.Abstract (I, S) VALUES (123, 'hello')")) << "Abstract classes cannot be used in INSERT statements.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.Abstract (I, S) VALUES (123, 'hello')")) <<"Abstract classes cannot be used in INSERT statements.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.AbstractNoSubclasses (I, S) VALUES (123, 'hello')")) << "Abstract classes cannot be used in INSERT statements.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSAHasMyMixin(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)")) << "Abstract ECRels cannot be inserted.";
     // mixins
@@ -2060,7 +2175,7 @@ TEST_F(ECSqlInsertPrepareTests, Into) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.Empty (ECInstanceId) VALUES (NULL)"));
 
     // Unsupported classes
-    // AnyClass is unsupported, but doesn't have properties, so it cannot be used in an INSERT statement because of that in the first place
+    //AnyClass is unsupported, but doesn't have properties, so it cannot be used in an INSERT statement because of that in the first place
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO bsm.InstanceCount (ECSchemaName, ECClassName, Count) VALUES ('Foo', 'Goo', 103)")) << "InstanceCount class is not supported in ECSQL";
 
     // Missing schema alias / not existing ECClasses / not existing ECProperties
@@ -2073,12 +2188,14 @@ TEST_F(ECSqlInsertPrepareTests, Into) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.Sub1 (I) VALUES (0xabcdef + 0x34d - 343)"));
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.Sub1 (I) VALUES (0xabcdefgih)"));
-}
+
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Misc) {
+TEST_F(ECSqlInsertPrepareTests, Misc)
+    {
     // Syntactically incorrect statements
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT"));
@@ -2092,7 +2209,7 @@ TEST_F(ECSqlInsertPrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (L) VALUES (ECClassId * 4)"));
 
     // Insert ECInstanceId
-    // NULL for ECInstanceId means ECDb auto-generates the ECInstanceId.
+    //NULL for ECInstanceId means ECDb auto-generates the ECInstanceId.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)")) << "NULL for ECInstanceId means ECDb auto-generates the ECInstanceId.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.TH2 (ECInstanceId) VALUES (NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (ECInstanceId, I) VALUES (NULL, NULL)"));
@@ -2105,10 +2222,11 @@ TEST_F(ECSqlInsertPrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (ECInstanceId, I) VALUES (123, 123)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.TH2 (ECInstanceId, S1) VALUES (41241231231, 's1')"));
 
-    // for link table mappings specifying the ECInstanceId is same as for regular classes
+    //for link table mappings specifying the ECInstanceId is same as for regular classes
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSAHasPSA (ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES (NULL, 123, 345)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSAHasPSA(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(129, 123, 312)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSAHasPSA(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(?, 123, 312)"));
+
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSAHasP (ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES (NULL, 123, ?)")) << "cannot insert into fk relationship - nav prop must be used instead";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSAHasP (ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES (?, 123, ?)")) << "cannot insert into fk relationship - nav prop must be used instead";
@@ -2120,8 +2238,8 @@ TEST_F(ECSqlInsertPrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSAHasP(ECClassId, SourceECInstanceId, TargetECInstanceId) VALUES (?,?,?)")) << "ECClassId cannot be inserted";
 
     // Class aliases
-    // In SQLite they are not allowed, but ECSQL allows them. So test that ECDb properly ommits them
-    // during preparation
+    //In SQLite they are not allowed, but ECSQL allows them. So test that ECDb properly ommits them
+    //during preparation
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA t (t.Dt, t.L, t.S) VALUES (DATE '2013-04-30', 100000000000, 'hello, world')")) << "In SQLite class aliases are not allowed, but ECSQL allows them. So test that ECDb properly omits them during preparation";
 
     // Insert literal values
@@ -2129,6 +2247,7 @@ TEST_F(ECSqlInsertPrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (L, S, I) VALUES (100000000000, 'hello, \" world', -1)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (L, I) VALUES (CAST (100000 AS INT64), 12 + 99)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (L, S, DtUtc) VALUES (?, ?, ?)"));
+
 
     // Insert without column clause
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P VALUES (True, NULL, 3.1415, TIMESTAMP '2013-10-14T12:00:00', TIMESTAMP '2013-10-14T12:00:00Z', TIMESTAMP '2013-10-14T12:00:00', DATE '2013-10-14', 123, 1234567890, 'bla bla', NULL, NULL, NULL)"));
@@ -2166,12 +2285,13 @@ TEST_F(ECSqlInsertPrepareTests, Misc) {
 
     // Insert where string literal consists of Escaping single quotes
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql._UnderBar (_A_B_C, _ABC, _ABC_, A_B_C_, ABC_) VALUES ('5''55''', 2, '''_ABC_', 4, 'ABC_''')"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Options) {
+TEST_F(ECSqlInsertPrepareTests, Options)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(I) VALUES(123) ECSQLOPTIONS myopt")) << "ECSQLOPTIONS not supported for INSERT";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(I) VALUES(123) ECSQLOPTIONS myopt myotheropt")) << "ECSQLOPTIONS not supported for INSERT";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(I) VALUES(123) ECSQLOPTIONS myopt=1 myotheropt")) << "ECSQLOPTIONS not supported for INSERT";
@@ -2186,12 +2306,14 @@ TEST_F(ECSqlInsertPrepareTests, Options) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(I) VALUES(123) ECSQLOPTIONS myopt myOpt")) << "duplicate options not allowed (even if they differ by case)";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(I) VALUES(123) ECSQLOPTIONS myopt=1 myopt")) << "duplicate options not allowed";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P(I) VALUES(123) ECSQLOPTIONS myOpt=1 myopt")) << "duplicate options not allowed";
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Relationships) {
+TEST_F(ECSqlInsertPrepareTests, Relationships)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSAHasP(SourceECInstanceId, TargetECInstanceId) VALUES (123, 321)")) << "Inserting into fk relationship is not supported - must insert via nav prop";
 
     // ECDb doesn't validate source/target class ids.
@@ -2207,12 +2329,13 @@ TEST_F(ECSqlInsertPrepareTests, Relationships) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (123, 442)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, B, D, I, S) VALUES (123, 332, 124, 335, True, 3.14, 123, 'hello')"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (123, 332, 125, 334)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Structs) {
+TEST_F(ECSqlInsertPrepareTests, Structs)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (PStructProp, B) VALUES (NULL, true)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (PStructProp, B) VALUES (?, true)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (PStructProp.i, B) VALUES (123, true)"));
@@ -2220,12 +2343,13 @@ TEST_F(ECSqlInsertPrepareTests, Structs) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.SA (SAStructProp.PStructProp) VALUES (NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.SA (SAStructProp.PStructProp) VALUES (?)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.SA (SAStructProp.PStructProp.i, SAStructProp.PStructProp.dt) VALUES (123, DATE '2010-10-10')"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlInsertPrepareTests, Testing_classes_without_schemas) {
+TEST_F(ECSqlInsertPrepareTests, Testing_classes_without_schemas)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO P (ECInstanceId, I) VALUES (NULL, NULL)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO TH2 (ECInstanceId, S2) VALUES (NULL, 'hello')"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO P (ECInstanceId) VALUES (123)"));
@@ -2237,7 +2361,8 @@ TEST_F(ECSqlInsertPrepareTests, Testing_classes_without_schemas) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO PSA (PStructProp.i, B) VALUES (123, true)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO PSA (PStructProp.i, PStructProp.dt, B) VALUES (123, DATE '2010-10-10', true)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO SA (SAStructProp.PStructProp) VALUES (NULL)"));
-}
+    }
+
 
 //********************* Update **********************
 struct ECSqlUpdatePrepareTests : ECSqlPrepareTestFixture {};
@@ -2245,26 +2370,29 @@ struct ECSqlUpdatePrepareTests : ECSqlPrepareTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, AndOrPrecedence) {
+TEST_F(ECSqlUpdatePrepareTests, AndOrPrecedence)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TH3 SET S1=NULL WHERE S1 IS NOT NULL OR S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TH3 SET S1=NULL WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TH3 SET S1=NULL WHERE S1 IS NULL AND S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TH3 SET S1=NULL WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TH3 SET S1=NULL WHERE S1 IS NULL AND (S2 IS NOT NULL OR 1=1)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Arrays) {
+TEST_F(ECSqlUpdatePrepareTests, Arrays)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt_Array = NULL, B = true"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET PStruct_Array = NULL, B = true"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Casing) {
+TEST_F(ECSqlUpdatePrepareTests, Casing)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ECSqlTest.P SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE EcSqltEst.P SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ECSQLTEST.P SET I=?"));
@@ -2272,12 +2400,13 @@ TEST_F(ECSqlUpdatePrepareTests, Casing) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.p SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsQl.P SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET i=?"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, CommonGeometry) {
+TEST_F(ECSqlUpdatePrepareTests, CommonGeometry)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PASpatial SET I = 123, Geometry = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PASpatial SET I = 123, Geometry_Array = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PASpatial SET I = 123 WHERE Geometry IS NOT NULL"));
@@ -2294,12 +2423,13 @@ TEST_F(ECSqlUpdatePrepareTests, CommonGeometry) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.SSpatial SET SpatialStructProp.Geometry=NULL WHERE SpatialStructProp.Geometry IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.SSpatial SET SpatialStructProp.Geometry=NULL WHERE SpatialStructProp.Geometry_Array IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.SSpatial SET SpatialStructProp.Geometry=NULL WHERE SpatialStructProp.Geometry_Array IS NOT NULL"));
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, DateTime) {
-    // updating date time prop without DateTimeInfo CA
+TEST_F(ECSqlUpdatePrepareTests, DateTime)
+    {
+    //updating date time prop without DateTimeInfo CA
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET Dt = TIMESTAMP '2012-01-18 13:02:55'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET Dt = TIMESTAMP '2012-01-18 13:02:55.123'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET Dt = TIMESTAMP '2012-01-18 13:02:55.123456'"));
@@ -2309,29 +2439,29 @@ TEST_F(ECSqlUpdatePrepareTests, DateTime) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET Dt = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE Dt = TIMESTAMP '2012-01-18 13:02:55Z'"));
 
-    // Updating UTC date time prop
+    //Updating UTC date time prop
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DtUtc = TIMESTAMP '2013-02-18 06:00:00Z'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUtc = TIMESTAMP '2012-01-18 13:02:55Z'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET DtUtc = TIMESTAMP '2013-02-18 06:00:00'")) << "DtUtc is UTC time stamp while value is not.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUtc = TIMESTAMP '2012-01-18 13:02:55'")) << "DtUtc is UTC time stamp while value is not.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DtUtc = DATE '2012-01-18'"));
 
-    // Updating date time prop with DateTimeInfo CA where kind is set to Unspecified
+    //Updating date time prop with DateTimeInfo CA where kind is set to Unspecified
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DtUnspec = TIMESTAMP '2013-02-18 06:00:00'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUnspec = TIMESTAMP '2012-01-18 13:02:55'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET DtUnspec = TIMESTAMP '2013-02-18 06:00:00Z'")) << "DtUnspec has DateTimeKind Unspecified while value has DateTimeKind UTC.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUnspec = TIMESTAMP '2012-01-18 13:02:55Z'")) << "DtUnspec has DateTimeKind Unspecified while value has DateTimeKind UTC.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DtUnspec = DATE '2012-01-18'"));
 
-    // Updating date time props with DateTimeInfo CA where component is set to Date-onlys
+    //Updating date time props with DateTimeInfo CA where component is set to Date-onlys
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DateOnly = DATE '2013-02-18'"));
 
-    // DateOnly can take time stamps, too
+    //DateOnly can take time stamps, too
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DateOnly = TIMESTAMP '2013-02-18 06:00:00Z'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DateOnly = TIMESTAMP '2012-01-18 13:02:55'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DateOnly = TIMESTAMP '2013-02-18 06:00:00'"));
 
-    // CURRENT_XXX functions
+    //CURRENT_XXX functions
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET Dt = CURRENT_DATE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET DtUtc = CURRENT_DATE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUtc = CURRENT_DATE"));
@@ -2349,12 +2479,13 @@ TEST_F(ECSqlUpdatePrepareTests, DateTime) {
 
     //*** Parameters ****
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I=123, Dt=?, DtUtc=?, DtUnspec=?, DateOnly=?"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Functions) {
+TEST_F(ECSqlUpdatePrepareTests, Functions)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE LOWER(UPPER(S)) = LOWER (S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE LOWER(I)=I")) << "lower/upper only make sense with strings, but no failure if used for other data types (like in SQLite)";
@@ -2368,12 +2499,13 @@ TEST_F(ECSqlUpdatePrepareTests, Functions) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (I + L) MATCH random()")) << "even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar. Fails at step time only";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE ECInstanceId MATCH '123'"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Misc) {
+TEST_F(ECSqlUpdatePrepareTests, Misc)
+    {
     // Syntactically incorrect statements
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE"));
@@ -2430,7 +2562,7 @@ TEST_F(ECSqlUpdatePrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=?")) << "readonly prop cannot be updated";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET PStructProp.CreationDate=? WHERE ECInstanceId=?")) << "readonly prop cannot be updated";
 
-    // cal props are always updatable
+    //cal props are always updatable
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.ClassWithLastModProp SET FullName='bla' WHERE ECInstanceId=?")) << "calc properties are always updatable";
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
@@ -2439,12 +2571,13 @@ TEST_F(ECSqlUpdatePrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS rEaDonlYPropertiEsAreupdaTable")) << "options are expected to be case insensitive";
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.ClassWithLastModProp SET I=123 WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable")) << "option has no affect if no readonly prop is in the SET clause";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Options) {
+TEST_F(ECSqlUpdatePrepareTests, Options)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=? ECSQLOPTIONS")) << "OPTIONS clause without options";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=? ECSQLOPTIONS 123")) << "An option must be a name";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=? ECSQLOPTIONS myopt=")) << "option value is missing";
@@ -2461,12 +2594,13 @@ TEST_F(ECSqlUpdatePrepareTests, Options) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=? WHERE ECInstanceId=? ECSQLOPTIONS myopt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=? WHERE ECInstanceId=? ECSQLOPTIONS myopt myotheropt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=? WHERE ECInstanceId=? ECSQLOPTIONS myopt=1 myotheropt"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Polymorphic) {
+TEST_F(ECSqlUpdatePrepareTests, Polymorphic)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSA SET I = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSA SET I = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I = 123"));
@@ -2485,12 +2619,13 @@ TEST_F(ECSqlUpdatePrepareTests, Polymorphic) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TCBase SET S = 'hello'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Relationships) {
+TEST_F(ECSqlUpdatePrepareTests, Relationships)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasP SET SourceECInstanceId=? WHERE ECInstanceId = 123")) << "Cannot update FK relationship - must update via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasP SET SourceECInstanceId=? WHERE ECInstanceId <> 123")) << "Cannot update FK relationship - must update via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasP SET SourceECInstanceId=? WHERE SourceECInstanceId = 123")) << "Cannot update FK relationship - must update via nav prop";
@@ -2523,12 +2658,13 @@ TEST_F(ECSqlUpdatePrepareTests, Relationships) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSAHasPWithPrimProps SET B=? WHERE TargetECClassId = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSAHasPWithPrimProps SET B=? WHERE ECInstanceId = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSAHasPWithPrimProps SET B=? WHERE ECInstanceId > 123"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Structs) {
+TEST_F(ECSqlUpdatePrepareTests, Structs)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET PStructProp = NULL, B = true"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET PStructProp = ?, B = true"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET PStructProp.i = 123, B = true"));
@@ -2552,13 +2688,14 @@ TEST_F(ECSqlUpdatePrepareTests, Structs) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, TargetClass) {
-    // Updating classes with base classes
+TEST_F(ECSqlUpdatePrepareTests, TargetClass)
+    {
+    //Updating classes with base classes
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TH5 SET S='hello', S1='hello1', S3='hello3', S5='hello5'"));
 
     // Abstract classes
@@ -2586,6 +2723,7 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass) {
     // Unmapped classes
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PUnmapped SET I=123, D=3.14")) << "Unmapped classes cannot be used in UPDATE statements.";
 
+
     // Subclasses of abstract class
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.Sub1 SET I=123, S='hello', Sub1I=100123"));
 
@@ -2593,7 +2731,7 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Empty SET ECInstanceId = ?")) << "Empty classes cannot be used in UPDATE statements.";
 
     // Unsupported classes
-    // AnyClass is unsupported, but doesn't have properties, so it cannot be used in an UPDATE statement because of that in the first place
+    //AnyClass is unsupported, but doesn't have properties, so it cannot be used in an UPDATE statement because of that in the first place
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY bsm.InstanceCount SET ECSchemaName='Foo', ECClassName='Goo', Count=103"));
 
     // Missing schema alias / not existing ECClasses / not existing ECProperties
@@ -2601,12 +2739,13 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.BlaBla SET I=123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY blabla.PSA SET I=123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET Garbage='bla', I=123")) << "One of the properties does not exist in the target class.";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, AbstractClass) {
+TEST_F(ECSqlUpdatePrepareTests, AbstractClass)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlupdate_abstractclass.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -2679,13 +2818,14 @@ TEST_F(ECSqlUpdatePrepareTests, AbstractClass) {
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ts.BaseTPHAbstract SET Code=1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseTPHAbstract SET Code=1"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, WhereBasics) {
-    // case insensitive tests
+TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
+    {
+    //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE i>=:myParam"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS 123"));
@@ -2703,15 +2843,15 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 4^1 = 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 5^4 = 4")) << "not yet supported";
 
-    // unary predicates
+    //unary predicates
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE True"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NOT True"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NOT B"));
-    // SQLite function which ECDb knows to return a bool
+    //SQLite function which ECDb knows to return a bool
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NOT Glob('*amp*',S)"));
-    // Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
+    //Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NOT I"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE L"));
@@ -2733,25 +2873,25 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
-    // with parentheses around
+    //with parentheses around
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE Hex(Bi)"));
-    // unary operator
+    //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I == 10"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Garbage = 'bla'"));
-    // NULL tests
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NULL"));  // NULL IS NULL is always true
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = NULL"));   // NULL = NULL returns NULL
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> NULL"));  // NULL <> NULL returns NULL
+    //NULL tests
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NULL")); // NULL IS NULL is always true
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = NULL")); // NULL = NULL returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL"));   // = NULL always returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B <> NULL"));  // <> NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE L IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE L IS NOT NULL"));
@@ -2767,7 +2907,7 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ? <> NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> ?"));
-    // points
+    //points
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D = 11"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D = D"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D IS NULL"));
@@ -2778,7 +2918,7 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D = ?"));
-    // nav props
+    //nav props
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE MyPSA = 11"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE MyPSA = L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE MyPSA = MyPSA"));
@@ -2795,19 +2935,20 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D = POINT2D (-1.3, 45.134)")) << "Point literal not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL) {
+TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL)
+    {
     // Abstract classes
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.Abstract SET I=123, S='hello'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
     // mixins
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.MyMixin SET MixinCode='new'")) << "Mixins are invalid in UPDATE statements.";
-    // case insensitive tests
+    //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE i>=:myParam"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE I IS 123"));
@@ -2816,22 +2957,22 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE 8 % 3 = 2"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE 8 % 2 = 0"));
-    // with parentheses around
+    //with parentheses around
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE ?"));
-    // Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
+    //Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE P2D.X >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE P2D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE P2D.Z >= -11.111"));
-    // NULL tests
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS NULL"));  // NULL IS NULL is always true
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL = NULL"));   // NULL = NULL returns NULL
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL <> NULL"));  // NULL <> NULL returns NULL
+    //NULL tests
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS NULL")); // NULL IS NULL is always true
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL = NULL")); // NULL = NULL returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS 123"));
-    // Structs
+    //Structs
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSA SET I=? WHERE PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSA SET I=? WHERE PStructProp IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSA SET I=? WHERE PStructProp = ?"));
@@ -2845,7 +2986,7 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
-    // Relationships
+    //Relationships
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.PSAHasP SET SourceECInstanceId=? WHERE ECInstanceId <> 123")) << "Cannot update FK relationship - must update via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.PSAHasP SET SourceECInstanceId=? WHERE SourceECInstanceId = 123")) << "Cannot update FK relationship - must update via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.PSAHasP SET SourceECInstanceId=? WHERE TargetECInstanceId = 123")) << "Cannot update FK relationship - must update via nav prop";
@@ -2863,7 +3004,7 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSAHasPWithPrimProps SET B=? WHERE TargetECClassId <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSAHasPWithPrimProps SET B=? WHERE TargetECClassId = 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.PSAHasPSA SET TargetECClassId=? WHERE ECInstanceId =123")) << "Cannot update Source/TargetECClassId";
-    // Options
+    //Options
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=? ECSQLOPTIONS myopt=")) << "option value is missing";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=? ECSQLOPTIONS myopt myopt")) << "duplicate options not allowed";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=? ECSQLOPTIONS myopt myOpt")) << "duplicate options not allowed (even if they differ by case)";
@@ -2875,7 +3016,7 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=? ECSQLOPTIONS myopt=1 myotheropt=true"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=? ECSQLOPTIONS myopt myotheropt=true"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=? ECSQLOPTIONS myopt myotheropt=true onemoreopt"));
-    // Functions
+    //Functions
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE LOWER(UPPER(S)) = LOWER (S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE LOWER(I)=I")) << "lower/upper only make sense with strings, but no failure if used for other data types (like in SQLite)";
@@ -2886,30 +3027,31 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE I MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (I + L) MATCH random()")) << "even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar. Fails at step time only";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE ECInstanceId MATCH '123'"));
-    // Casing
+    //Casing
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ECSQLTEST.P SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ECSqlTest.p SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.p SET I=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsQl.P SET I=?"));
-    // AndOrPrecedence
+    //AndOrPrecedence
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.TH3 SET S1=NULL WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.TH3 SET S1=NULL WHERE S1 IS NULL AND S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.TH3 SET S1=NULL WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1"));
-    // Syntactically Incorrect
+    //Syntactically Incorrect
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE +ONLY ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE +ALL ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlUpdatePrepareTests, Testing_classes_without_schemas_names) {
+TEST_F(ECSqlUpdatePrepareTests, Testing_classes_without_schemas_names)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 5 + (4&1) = 5"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 5 + 4 & 1 = 1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 5 + 4 | 1 = 9"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 4|1&1 = 5"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE (4|1)&1 = 1"));
-
+    
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL PSA SET I=? WHERE PStructProp.i = 123 AND B = true"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL PSA SET I=? WHERE PStructProp.i = 123 AND PStructProp.dt <> DATE '2010-10-10' AND B = true"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp IS NULL"));
@@ -2921,7 +3063,8 @@ TEST_F(ECSqlUpdatePrepareTests, Testing_classes_without_schemas_names) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY PSA SET PStructProp.CreationDate=? WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS rEaDonlYPropertiEsAreupdaTable"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ClassWithLastModProp SET I=123 WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
-}
+    }
+
 
 //********************* Delete **********************
 struct ECSqlDeletePrepareTests : ECSqlPrepareTestFixture {};
@@ -2929,18 +3072,20 @@ struct ECSqlDeletePrepareTests : ECSqlPrepareTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, AndOrPrecedence) {
+TEST_F(ECSqlDeletePrepareTests, AndOrPrecedence)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TH3 WHERE S1 IS NOT NULL OR S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TH3 WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.TH3 WHERE S1 IS NULL AND (S2 IS NOT NULL OR 1=1)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Casing) {
+TEST_F(ECSqlDeletePrepareTests, Casing)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY EcSqltEst.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ECSQLTEST.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsqltest.P"));
@@ -2951,12 +3096,13 @@ TEST_F(ECSqlDeletePrepareTests, Casing) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecSql.P"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.p"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.P WHERE i<0"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, CommonGeometry) {
+TEST_F(ECSqlDeletePrepareTests, CommonGeometry)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PASpatial WHERE Geometry=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PASpatial WHERE Geometry<>?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PASpatial WHERE Geometry IS NULL"));
@@ -2968,13 +3114,14 @@ TEST_F(ECSqlDeletePrepareTests, CommonGeometry) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SSpatial WHERE SpatialStructProp.Geometry IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SSpatial WHERE SpatialStructProp.Geometry_Array IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SSpatial WHERE SpatialStructProp.Geometry_Array IS NOT NULL"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, From) {
-    // Delete classes with base classes
+TEST_F(ECSqlDeletePrepareTests, From)
+    {
+    //Delete classes with base classes
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TH5"));
 
     // Delete abstract classes
@@ -3015,12 +3162,13 @@ TEST_F(ECSqlDeletePrepareTests, From) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY blabla.P SET I=123"));
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P SET Garbage='bla', I=123")) << "One of the properties does not exist in the target class.";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Functions) {
+TEST_F(ECSqlDeletePrepareTests, Functions)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ECClassId <> 145"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ECClassId = 145"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE LOWER(S) = UPPER(S)"));
@@ -3036,11 +3184,12 @@ TEST_F(ECSqlDeletePrepareTests, Functions) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (I + L) MATCH random()")) << "even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar. Fails at step time only";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE ECInstanceId MATCH '123'"));
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Misc) {
+TEST_F(ECSqlDeletePrepareTests, Misc)
+    {
     // Syntactically incorrect statements
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE"));
@@ -3051,18 +3200,20 @@ TEST_F(ECSqlDeletePrepareTests, Misc) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P t WHERE t.D > 0.0")) << "In SQLite they are not allowed, but ECSQL allows them. So test that ECDb properly ommits them during preparation";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P t WHERE t.S = ?"));
 
+
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.P WHERE L = 0xabcdef"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P WHERE L = 0xabcdefgh"));
 
     // Delete clause in which the class name and the properties name contain, start with or end with under bar
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql._UnderBar WHERE ABC_ = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.[_UnderBar] WHERE [ABC_] = ?"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Options) {
+TEST_F(ECSqlDeletePrepareTests, Options)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P ECSQLOPTIONS")) << "OPTIONS clause without options";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P ECSQLOPTIONS 123")) << "An option must be a name";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P ECSQLOPTIONS myopt=")) << "option value is missing";
@@ -3079,11 +3230,12 @@ TEST_F(ECSqlDeletePrepareTests, Options) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ECInstanceId=? ECSQLOPTIONS myopt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ECInstanceId=? ECSQLOPTIONS myopt myotheropt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ECInstanceId=? ECSQLOPTIONS myopt=1 myotheropt"));
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Polymorphic) {
+TEST_F(ECSqlDeletePrepareTests, Polymorphic)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.Abstract"));
@@ -3099,12 +3251,13 @@ TEST_F(ECSqlDeletePrepareTests, Polymorphic) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.TCBase"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TCBase"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?")) << "Polymorphic delete not supported as subclass is mapped to existing table which means it is readonly";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Relationships) {
+TEST_F(ECSqlDeletePrepareTests, Relationships)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.PSAHasP WHERE ECInstanceId = 123")) << "Cannot delete FK relationship - must delete via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.PSAHasP WHERE ECInstanceId <> 123")) << "Cannot delete FK relationship - must delete via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.PSAHasP WHERE SourceECInstanceId = 123")) << "Cannot delete FK relationship - must delete via nav prop";
@@ -3134,12 +3287,13 @@ TEST_F(ECSqlDeletePrepareTests, Relationships) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasPWithPrimProps WHERE TargetECClassId = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasPWithPrimProps WHERE ECInstanceId = 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasPWithPrimProps WHERE ECInstanceId > 123"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Structs) {
+TEST_F(ECSqlDeletePrepareTests, Structs)
+    {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSA WHERE PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSA WHERE PStructProp IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSA WHERE PStructProp = ?"));
@@ -3155,13 +3309,14 @@ TEST_F(ECSqlDeletePrepareTests, Structs) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, WhereBasics) {
-    // case insensitive tests
+TEST_F(ECSqlDeletePrepareTests, WhereBasics)
+    {
+    //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE i>=:myParam"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS 123"));
@@ -3179,15 +3334,15 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 4^1 = 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 5^4 = 4")) << "not yet supported";
 
-    // unary predicates
+    //unary predicates
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE True"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NOT True"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NOT B"));
-    // SQLite function which ECDb knows to return a bool
+    //SQLite function which ECDb knows to return a bool
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NOT Glob('*amp*',S)"));
-    // Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
+    //Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NOT I"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE L"));
@@ -3209,25 +3364,25 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
-    // with parentheses around. grammer issue
+    //with parentheses around. grammer issue
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE Hex(Bi)"));
-    // unary operator
+    //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I == 10"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Garbage = 'bla'"));
-    // NULL tests
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NULL"));  // NULL IS NULL is always true
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = NULL"));   // NULL = NULL returns NULL
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> NULL"));  // NULL <> NULL returns NULL
+    //NULL tests
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NULL")); // NULL IS NULL is always true
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = NULL")); // NULL = NULL returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE NULL IS 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL"));   // = NULL always returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE L IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE L IS NOT NULL"));
@@ -3243,7 +3398,7 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ? <> NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> ?"));
-    // points
+    //points
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P2D = 11"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P2D = D"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D IS NULL"));
@@ -3254,7 +3409,7 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D = ?"));
-    // nav props
+    //nav props
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE MyPSA = 11"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE MyPSA = L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE MyPSA = MyPSA"));
@@ -3273,29 +3428,30 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P2D = POINT2D (-1.3, 45.134)")) << "Point literal not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
-    // SQLite function which ECDb knows to return a bool
+TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL)
+    {
+    //SQLite function which ECDb knows to return a bool
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NOT Glob('*amp*',S)"));
-    // case insensitive tests
+    //case insensitive tests
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
-    // navProps
+    //navProps
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE MyPSA = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE MyPSA.Id IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE MyPSA.Id = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE MyPSA.RelECClassId IS NULL"));
-    // unary operator
+    //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE I == 10"));
-    // Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
+    //Int/Long types are supported as unary predicate. They evalute to True if they are not 0.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE (I IS NOT NULL) AND L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE (I IS NOT NULL) AND NOT L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE 3.14"));
@@ -3308,13 +3464,13 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE P2D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE P2D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE P3D.X >= -11.111"));
-    // NULL tests
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL <> NULL"));  // NULL <> NULL returns NULL
+    //NULL tests
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS 123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL <> 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B = NULL"));   // = NULL always returns NULL
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE L IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE L IS NOT NULL"));
@@ -3324,7 +3480,7 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE B = UNKNOWN")) << "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
-    // Structs
+    //Structs
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PSA WHERE PStructProp IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PSA WHERE PStructProp = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PSA WHERE PStructProp<>?"));
@@ -3336,7 +3492,7 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.SA WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.SA WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
-    // Relationships
+    //Relationships
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.PSAHasP WHERE ECInstanceId <> 123")) << "Cannot delete FK relationship - must delete via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.PSAHasP WHERE SourceECInstanceId = 123")) << "Cannot delete FK relationship - must delete via nav prop";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.PSAHasP WHERE TargetECInstanceId = 123")) << "Cannot delete FK relationship - must delete via nav prop";
@@ -3351,7 +3507,7 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PSAHasPWithPrimProps WHERE SourceECClassId <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PSAHasPWithPrimProps WHERE SourceECClassId =123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PSAHasPWithPrimProps WHERE TargetECClassId <> 123"));
-    // Options
+    //Options
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P ECSQLOPTIONS myopt myopt")) << "duplicate options not allowed";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P ECSQLOPTIONS myopt myOpt")) << "duplicate options not allowed (even if they differ by case)";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P ECSQLOPTIONS myopt=1 myopt")) << "duplicate options not allowed";
@@ -3360,7 +3516,7 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P ECSQLOPTIONS myopt myotheropt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P ECSQLOPTIONS myopt=1 myotheropt"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE ECInstanceId=? ECSQLOPTIONS myopt=1 myotheropt"));
-    // Functions
+    //Functions
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE ECInstanceId MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE ECInstanceId NOT MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE I MATCH random()")) << "fails at step time only";
@@ -3369,25 +3525,26 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL) {
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE LOWER(UPPER(S)) = LOWER (S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE LOWER(I)=I")) << "lower/upper only make sense with strings, but no failure if used for other data types (like in SQLite)";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE UPPER(D)>0"));
-    // Common Geometry
+    //Common Geometry
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PASpatial WHERE Geometry IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PASpatial WHERE Geometry_Array IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.PASpatial WHERE Geometry_Array IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.SSpatial WHERE SpatialStructProp.Geometry IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.SSpatial WHERE SpatialStructProp.Geometry IS NOT NULL"));
-    // AndOrPrecedence
+    //AndOrPrecedence
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.TH3 WHERE (S1 IS NOT NULL OR S2 IS NOT NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1"));
-    // Syntactically Incorrect
+    //Syntactically Incorrect
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM +ALL ecsql.PASpatial WHERE Geometry_Array IS NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM +ONLY ecsql.P WHERE LOWER(UPPER(S)) = LOWER (S)"));
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlDeletePrepareTests, Testing_classes_names_without_schemas) {
+TEST_F(ECSqlDeletePrepareTests, Testing_classes_names_without_schemas)
+    {
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE NOT Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE L < 3.14"));
@@ -3399,6 +3556,6 @@ TEST_F(ECSqlDeletePrepareTests, Testing_classes_names_without_schemas) {
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY P WHERE i<0"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY p WHERE i<0"));
-}
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

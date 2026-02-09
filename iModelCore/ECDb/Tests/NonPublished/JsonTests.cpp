@@ -1,10 +1,10 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
-#define CLASS_ID(S, C) (int)m_ecdb.Schemas().GetClassId(#S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
+#define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -34,18 +34,18 @@ TEST_F(JsonTests, json_tree) {
         "moons": ["Phobos", "Deimos"]
     })";
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("test.ecdb", test_schema));
-    if (true) {
+    if(true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.json_docs(doc) values (?)"));
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ECInstanceKey inserted_row_key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(inserted_row_key));
     }
-    if ("join") {
+  if("join") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from ts.json_docs, json1.json_tree(doc) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL, SqlPrintfString("SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,%d ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_tree([json_docs].[doc]) s WHERE s.key='gravity'", CLASS_ID(ts, json_docs)).GetUtf8CP());
+        ASSERT_STREQ(nativeSQL,  SqlPrintfString("SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,%d ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_tree([json_docs].[doc]) s WHERE s.key='gravity'",CLASS_ID(ts,json_docs)).GetUtf8CP());
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -125,19 +125,19 @@ TEST_F(JsonTests, json_tree) {
             ------- ---------- ---- ---------- -- ------ --------- ----
             gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "gravity");
-        ASSERT_STREQ(stmt.GetValueText(1), "3.721 m/s²");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "3.721 m/s²");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.gravity");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        ASSERT_STREQ(stmt.GetValueText(3),"3.721 m/s²");
+        ASSERT_EQ   (stmt.GetValueInt(4), 0);
+        ASSERT_STREQ(stmt.GetValueText(5),"$.gravity");
+        ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
-    if ("sub query") {
+    if("sub query") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_tree(?)) WHERE key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL, "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM (SELECT key [K0],value [K1],type [K2],atom [K3],parent [K4],fullkey [K5],path [K6] FROM json_tree(:_ecdb_sqlparam_ix1_col1)) WHERE [K0]='gravity'");
+        ASSERT_STREQ(nativeSQL,  "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM (SELECT key [K0],value [K1],type [K2],atom [K3],parent [K4],fullkey [K5],path [K6] FROM json_tree(:_ecdb_sqlparam_ix1_col1)) WHERE [K0]='gravity'");
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -217,15 +217,15 @@ TEST_F(JsonTests, json_tree) {
             ------- ---------- ---- ---------- -- ------ --------- ----
             gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "gravity");
-        ASSERT_STREQ(stmt.GetValueText(1), "3.721 m/s²");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "3.721 m/s²");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.gravity");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+       ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+       ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+       ASSERT_STREQ(stmt.GetValueText(2),"text");
+       ASSERT_STREQ(stmt.GetValueText(3),"3.721 m/s²");
+       ASSERT_EQ(stmt.GetValueInt(4), 0);
+       ASSERT_STREQ(stmt.GetValueText(5),"$.gravity");
+       ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
-    if ("wild card select + alias") {
+    if("wild card select + alias") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from json1.json_tree(?) s where s.key='planet'"));
         auto nativeSQL = stmt.GetNativeSql();
@@ -309,19 +309,20 @@ TEST_F(JsonTests, json_tree) {
             ------ ----- ---- ---- -- ------ -------- ----
             planet mars  text mars 2  0      $.planet $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "planet");
-        ASSERT_STREQ(stmt.GetValueText(1), "mars");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "mars");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.planet");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+        ASSERT_STREQ(stmt.GetValueText(0),"planet");
+        ASSERT_STREQ(stmt.GetValueText(1),"mars");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        ASSERT_STREQ(stmt.GetValueText(3),"mars");
+        ASSERT_EQ   (stmt.GetValueInt(4), 0);
+        ASSERT_STREQ(stmt.GetValueText(5),"$.planet");
+        ASSERT_STREQ(stmt.GetValueText(6),"$");
+
     }
-    if ("wild card select") {
+    if("wild card select") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_tree(?) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL, "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_tree(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='gravity'");
+        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_tree(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='gravity'");
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -401,13 +402,13 @@ TEST_F(JsonTests, json_tree) {
             ------- ---------- ---- ---------- -- ------ --------- ----
             gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "gravity");
-        ASSERT_STREQ(stmt.GetValueText(1), "3.721 m/s²");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "3.721 m/s²");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.gravity");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        ASSERT_STREQ(stmt.GetValueText(3),"3.721 m/s²");
+        ASSERT_EQ   (stmt.GetValueInt(4), 0);
+        ASSERT_STREQ(stmt.GetValueText(5),"$.gravity");
+        ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
 }
 TEST_F(JsonTests, json_each) {
@@ -431,18 +432,18 @@ TEST_F(JsonTests, json_each) {
         "moons": ["Phobos", "Deimos"]
     })";
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("test.ecdb", test_schema));
-    if (true) {
+    if(true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.json_docs(doc) values (?)"));
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ECInstanceKey inserted_row_key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(inserted_row_key));
     }
-    if ("join") {
+  if("join") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from ts.json_docs, json1.json_each(doc) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL, SqlPrintfString("SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,%d ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_each([json_docs].[doc]) s WHERE s.key='gravity'", CLASS_ID(ts, json_docs)).GetUtf8CP());
+        ASSERT_STREQ(nativeSQL,  SqlPrintfString("SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,%d ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_each([json_docs].[doc]) s WHERE s.key='gravity'",CLASS_ID(ts,json_docs)).GetUtf8CP());
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -522,19 +523,19 @@ TEST_F(JsonTests, json_each) {
             ------- ---------- ---- ---------- -- ------ --------- ----
             gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "gravity");
-        ASSERT_STREQ(stmt.GetValueText(1), "3.721 m/s²");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "3.721 m/s²");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.gravity");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        ASSERT_STREQ(stmt.GetValueText(3),"3.721 m/s²");
+        ASSERT_EQ   (stmt.GetValueInt(4), 0);
+        ASSERT_STREQ(stmt.GetValueText(5),"$.gravity");
+        ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
-    if ("sub query") {
+    if("sub query") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_each(?)) WHERE key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL, "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM (SELECT key [K0],value [K1],type [K2],atom [K3],parent [K4],fullkey [K5],path [K6] FROM json_each(:_ecdb_sqlparam_ix1_col1)) WHERE [K0]='gravity'");
+        ASSERT_STREQ(nativeSQL,  "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM (SELECT key [K0],value [K1],type [K2],atom [K3],parent [K4],fullkey [K5],path [K6] FROM json_each(:_ecdb_sqlparam_ix1_col1)) WHERE [K0]='gravity'");
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -614,15 +615,15 @@ TEST_F(JsonTests, json_each) {
             ------- ---------- ---- ---------- -- ------ --------- ----
             gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "gravity");
-        ASSERT_STREQ(stmt.GetValueText(1), "3.721 m/s²");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "3.721 m/s²");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.gravity");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+       ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+       ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+       ASSERT_STREQ(stmt.GetValueText(2),"text");
+       ASSERT_STREQ(stmt.GetValueText(3),"3.721 m/s²");
+       ASSERT_EQ(stmt.GetValueInt(4), 0);
+       ASSERT_STREQ(stmt.GetValueText(5),"$.gravity");
+       ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
-    if ("wild card select + alias") {
+    if("wild card select + alias") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from json1.json_each(?) s where s.key='planet'"));
         auto nativeSQL = stmt.GetNativeSql();
@@ -706,19 +707,20 @@ TEST_F(JsonTests, json_each) {
             ------ ----- ---- ---- -- ------ -------- ----
             planet mars  text mars 2  0      $.planet $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "planet");
-        ASSERT_STREQ(stmt.GetValueText(1), "mars");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "mars");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.planet");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+        ASSERT_STREQ(stmt.GetValueText(0),"planet");
+        ASSERT_STREQ(stmt.GetValueText(1),"mars");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        ASSERT_STREQ(stmt.GetValueText(3),"mars");
+        ASSERT_EQ   (stmt.GetValueInt(4), 0);
+        ASSERT_STREQ(stmt.GetValueText(5),"$.planet");
+        ASSERT_STREQ(stmt.GetValueText(6),"$");
+
     }
-    if ("wild card select") {
+    if("wild card select") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_each(?) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL, "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_each(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='gravity'");
+        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_each(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='gravity'");
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -798,13 +800,13 @@ TEST_F(JsonTests, json_each) {
             ------- ---------- ---- ---------- -- ------ --------- ----
             gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
-        ASSERT_STREQ(stmt.GetValueText(0), "gravity");
-        ASSERT_STREQ(stmt.GetValueText(1), "3.721 m/s²");
-        ASSERT_STREQ(stmt.GetValueText(2), "text");
-        ASSERT_STREQ(stmt.GetValueText(3), "3.721 m/s²");
-        ASSERT_EQ(stmt.GetValueInt(4), 0);
-        ASSERT_STREQ(stmt.GetValueText(5), "$.gravity");
-        ASSERT_STREQ(stmt.GetValueText(6), "$");
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        ASSERT_STREQ(stmt.GetValueText(3),"3.721 m/s²");
+        ASSERT_EQ   (stmt.GetValueInt(4), 0);
+        ASSERT_STREQ(stmt.GetValueText(5),"$.gravity");
+        ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
 }
 END_ECDBUNITTESTS_NAMESPACE

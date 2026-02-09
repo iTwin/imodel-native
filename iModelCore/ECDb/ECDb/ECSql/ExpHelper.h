@@ -1,25 +1,26 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "Exp.h"
-#include "JoinExp.h"
 #include "SelectStatementExp.h"
+#include "JoinExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ExpHelper final {
-   private:
-    ExpHelper();
-    ~ExpHelper();
+struct ExpHelper final
+    {
+private:
+    ExpHelper ();
+    ~ExpHelper ();
 
-   public:
-    static BentleyStatus ToPrimitiveType(ECN::PrimitiveType&, Utf8StringCR colType);
+public:
+    static BentleyStatus ToPrimitiveType (ECN::PrimitiveType&, Utf8StringCR colType);
     static Utf8CP ToString(ECN::PrimitiveType);
     static Utf8CP ToSql(SqlCompareListType);
     static Utf8CP ToECSql(JoinDirection);
@@ -33,6 +34,7 @@ struct ExpHelper final {
     static Utf8CP ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction);
     static Utf8CP ToSql(WindowFrameClauseExp::WindowFrameUnit);
     static Utf8CP ToSql(WindowFrameClauseExp::WindowFrameExclusionType);
-};
+    };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

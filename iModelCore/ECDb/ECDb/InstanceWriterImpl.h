@@ -4,14 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+#include "ClassMap.h"
+#include "ECDbLogger.h"
+#include "PropertyMap.h"
 #include <ECDb/ECDb.h>
 #include <ECDb/ECSqlStatement.h>
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/InstanceWriter.h>
-
-#include "ClassMap.h"
-#include "ECDbLogger.h"
-#include "PropertyMap.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
@@ -31,11 +30,11 @@ struct InstanceWriter::Impl final {
         // @bsistruct
         //---------------------------------------------------------------------------------------
         struct CacheKey final {
-           private:
+        private:
             ECClassId m_classId;
             WriterOp m_op;
 
-           public:
+        public:
             CacheKey(ECClassId classId, WriterOp op) : m_classId(classId), m_op(op) {}
             CacheKey(CacheKey const&) = default;
             CacheKey(CacheKey&&) = default;
@@ -70,11 +69,11 @@ struct InstanceWriter::Impl final {
         // @bsistruct
         //---------------------------------------------------------------------------------------
         struct CachedBinder final {
-           private:
+        private:
             PropertyMap const* m_prop = nullptr;
             IECSqlBinder* m_binder = nullptr;
 
-           public:
+        public:
             CachedBinder(PropertyMap const& prop, IECSqlBinder& binder) : m_prop(&prop), m_binder(&binder) {}
             CachedBinder(CachedBinder const&) = default;
             CachedBinder(CachedBinder&&) = default;
@@ -92,7 +91,7 @@ struct InstanceWriter::Impl final {
             friend struct MruStatementCache;
             using BinderList = std::vector<CachedBinder>;
 
-           private:
+        private:
             ClassMap const* m_classMap;
             ECSqlStatement m_stmt;
             BinderList m_propertyBinders = {};
@@ -102,7 +101,7 @@ struct InstanceWriter::Impl final {
             std::unordered_map<Utf8String, CachedBinder*> m_propertyIndexMap;
             void BuildPropertyIndexMap(bool addUseJsNameMap);
 
-           public:
+        public:
             CachedWriteStatement(ClassMap const& cls) : m_classMap(&cls) {}
             Utf8String GetCurrentTimeStampProperty() const;
             ECClassCR GetClass() const { return m_classMap->GetClass(); }
@@ -114,7 +113,7 @@ struct InstanceWriter::Impl final {
             int GetInstanceIdParameterIndex() const { return m_instanceIdIndex; }
         };
 
-       private:
+    private:
         std::map<CacheKey, std::unique_ptr<CachedWriteStatement>> m_cache;
         std::vector<CacheKey> m_mru;
         ECDbCR m_ecdb;
@@ -129,7 +128,7 @@ struct InstanceWriter::Impl final {
         SnappyToBlob m_snappyToBlob;
         SnappyFromBlob m_snappyFromBlob;
 
-       public:
+    public:
         MruStatementCache(ECDbCR ecdb, uint32_t maxCache) : m_ecdb(ecdb), m_maxCache(maxCache) {
             m_mru.reserve(maxCache);
         }
@@ -143,13 +142,13 @@ struct InstanceWriter::Impl final {
     // @bsistruct
     //---------------------------------------------------------------------------------------
     struct BindContext final {
-       private:
+    private:
         InstanceWriter::Impl& m_writer;
         const Options& m_options;
         Utf8String m_error;
         BeJsConst m_instance;
 
-       public:
+    public:
         BindContext(InstanceWriter::Impl& writer, BeJsConst instance, Options const& opt) : m_options(opt), m_writer(writer), m_instance(instance) {}
         ~BindContext() {
             if (HasError()) {
@@ -171,7 +170,7 @@ struct InstanceWriter::Impl final {
         BeJsConst GetInstance() const { return m_instance; }
     };
 
-   private:
+private:
     MruStatementCache m_cache;
     Utf8String m_error;
 
@@ -189,7 +188,7 @@ struct InstanceWriter::Impl final {
     static bool TryGetECClassId(BindContext& ctx, BeJsConst val, ECClassId& id);
     static bool TryGetECInstanceId(BindContext& ctx, BeJsConst val, ECInstanceId& id);
 
-   public:
+public:
     Impl(ECDbCR ecdb, uint32_t cacheSize) : m_cache(ecdb, cacheSize) {}
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;

@@ -1,18 +1,20 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceJsonInserter : ECDbTestFixture {};
+struct PerformanceJsonInserter : ECDbTestFixture
+    {};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI) {
+TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
@@ -29,15 +31,16 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI) {
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
     const int repetitionCount = 1000;
 
-    //-----------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
     //-----------------------------------------------------------------------------------
     StopWatch timer(true);
-    for (int i = 0; i < repetitionCount; i++) {
+    for (int i = 0; i < repetitionCount; i++)
+        {
         ECInstanceKey key;
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, jsonInput));
         ASSERT_TRUE(key.IsValid());
-    }
+        }
     timer.Stop();
     m_ecdb.SaveChanges();
 
@@ -48,12 +51,13 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI) {
 
     LOG.infov("Inserting JsonCpp JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, "Inserting JsonCpp JSON objects into ECDb");
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI) {
+TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
@@ -79,11 +83,12 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI) {
     // Insert using RapidJson
     //-----------------------------------------------------------------------------------
     StopWatch timer(true);
-    for (int i = 0; i < repetitionCount; i++) {
+    for (int i = 0; i < repetitionCount; i++)
+        {
         ECInstanceKey ecInstanceKey;
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(ecInstanceKey, rapidJsonInput));
         ASSERT_TRUE(ecInstanceKey.IsValid());
-    }
+        }
     timer.Stop();
     m_ecdb.SaveChanges();
 
@@ -94,6 +99,6 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI) {
 
     LOG.infov("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), repetitionCount, "Inserting RapidJson JSON objects into ECDb");
-}
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

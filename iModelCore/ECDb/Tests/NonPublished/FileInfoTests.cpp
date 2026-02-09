@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -32,7 +32,8 @@ struct FileInfoTestFixture : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, EmptyECDbHasFileInfoSchema) {
+TEST_F(FileInfoTestFixture, EmptyECDbHasFileInfoSchema)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
     m_ecdb.Schemas().CreateClassViewsInDb();
 
@@ -66,17 +67,19 @@ TEST_F(FileInfoTestFixture, EmptyECDbHasFileInfoSchema) {
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT * FROM ecdbf.ExternalFileInfo"));
 
     int rowCount = 0;
-    while (selStmt.Step() == BE_SQLITE_ROW) {
+    while (selStmt.Step() == BE_SQLITE_ROW)
+        {
         rowCount++;
-    }
+        }
 
     ASSERT_EQ(1, rowCount);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation) {
+TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     ECSqlStatement selStmt0;
@@ -84,14 +87,16 @@ TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation) {
 
     ECSqlStatement selStmt;
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT * FROM ecdbf.FileInfo"));
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
+TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("subclassingexternalfileinfo.ecdb",
-                                                SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                 SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbFileInfo" version="02.01" alias="ecdbf"/>
                 <ECEntityClass typeName="MyExternalFileInfo" modifier="Sealed">
@@ -138,7 +143,8 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,Name FROM ecdbf.FileInfo"));
-    while (BE_SQLITE_ROW == stmt.Step()) {
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
         ECInstanceId actualId = stmt.GetValueId<ECInstanceId>(0);
         Utf8CP actualFileName = stmt.GetValueText(1);
         if (actualId == extFileKey.GetInstanceId())
@@ -151,12 +157,12 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
             ASSERT_STREQ("file4", actualFileName) << actualId.ToString().c_str();
         else
             FAIL() << "FileInfo with ECInstanceId " << actualId.ToString().c_str() << " should not exist";
-    }
+        }
 
     stmt.Finalize();
 
-    // update
-    // non-polymorphic
+    //update
+    //non-polymorphic
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ONLY ecdbf.ExternalFileInfo SET Description='I am a file info'"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -165,7 +171,7 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
     ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    // polymorphic
+    //polymorphic
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ecdbf.ExternalFileInfo SET Description='I am a file info'"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -174,8 +180,8 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
     ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    // delete
-    // non-polymorphic
+    //delete
+    //non-polymorphic
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ecdbf.ExternalFileInfo"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -184,7 +190,7 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
     ASSERT_EQ(3, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    // polymorphic
+    //polymorphic
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ecdbf.ExternalFileInfo"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -192,15 +198,16 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo) {
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
+TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
-    // test file
+    //test file
     Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
@@ -210,7 +217,8 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
     testFilePath.AppendToPath(L"Schemas");
     testFilePath.AppendToPath(testFileNameW.c_str());
 
-    // Insert Foo instance
+
+    //Insert Foo instance
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo (Name) VALUES (?)"));
     stmt.BindText(1, "Foo1", IECSqlBinder::MakeCopy::Yes);
@@ -221,7 +229,7 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
     ECClassCP embeddedFileInfoClass = m_ecdb.Schemas().GetClass(ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
     ASSERT_TRUE(embeddedFileInfoClass != nullptr);
 
-    // INSERT scenario
+    //INSERT scenario
     DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
     DbResult stat = BE_SQLITE_OK;
     DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
@@ -232,7 +240,7 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    // insert ownership
+    //insert ownership
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecdbf.FileInfoOwnership (OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES (?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooKey.GetClassId()));
@@ -242,7 +250,7 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    // RETRIEVE scenario
+    //RETRIEVE scenario
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ecdbf.FileInfo fi JOIN ecdbf.FileInfoOwnership o ON fi.ECInstanceId=o.FileInfoId AND fi.ECClassId=o.FileInfoECClassId WHERE o.OwnerId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -260,17 +268,19 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
     BeFileName exportFilePath;
     BeTest::GetHost().GetOutputRoot(exportFilePath);
     exportFilePath.AppendToPath(testFileNameW.c_str());
-    if (BeFileName::DoesPathExist(exportFilePath)) {
+    if (BeFileName::DoesPathExist(exportFilePath))
+        {
         // Delete any previously exported file
         BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(exportFilePath);
         ASSERT_EQ(BeFileNameStatus::Success, fileDeleteStatus);
-    }
+        }
+
 
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
 
     stmt.Finalize();
     m_ecdb.SaveChanges();
-    // DELETE scenario -> FileInfo is not implicitly deleted when the owner is deleted
+    //DELETE scenario -> FileInfo is not implicitly deleted when the owner is deleted
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -290,9 +300,11 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport) {
 
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId=?")) << "Deletion not allowed for ECClasses that map to existing tables";
     stmt.Finalize();
-}
+    }
 
-BeFileName SearchTestFile(Utf8CP testFileName) {
+
+BeFileName SearchTestFile(Utf8CP testFileName)
+    {
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
@@ -301,15 +313,17 @@ BeFileName SearchTestFile(Utf8CP testFileName) {
     testFilePath.AppendToPath(L"Schemas");
     testFilePath.AppendToPath(testFileNameW.c_str());
     return testFilePath;
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints) {
+TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
-    // Constraint: None of the properties can be null
+    //Constraint: None of the properties can be null
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
@@ -349,7 +363,7 @@ TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints) {
     stmt.Reset();
     stmt.ClearBindings();
 
-    // Ensure no duplicates
+    //Ensure no duplicates
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
@@ -358,7 +372,7 @@ TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints) {
     stmt.Reset();
     stmt.ClearBindings();
 
-    // One owner cannot have more than one file info
+    //One owner cannot have more than one file info
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(10))));
@@ -367,7 +381,7 @@ TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints) {
     stmt.Reset();
     stmt.ClearBindings();
 
-    // One file cannot have more than one file infos
+    //One file cannot have more than one file infos
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(20))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
@@ -375,22 +389,26 @@ TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints) {
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "One file cannot have more than one file infos";
     stmt.Reset();
     stmt.ClearBindings();
-}
+
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey>>& expectedOwnerships, std::vector<ECInstanceKey>& expectedFileInfos) {
-    struct CompareECInstanceKeyPair {
-        bool operator()(std::pair<ECInstanceKey, ECInstanceKey> const& lhs, std::pair<ECInstanceKey, ECInstanceKey> const& rhs) const {
+void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey>>& expectedOwnerships, std::vector<ECInstanceKey>& expectedFileInfos)
+    {
+    struct CompareECInstanceKeyPair
+        {
+        bool operator()(std::pair<ECInstanceKey, ECInstanceKey> const& lhs, std::pair<ECInstanceKey, ECInstanceKey> const& rhs) const
+            {
             ECInstanceKey lhsFirstKey = lhs.first;
             ECInstanceKey lhsSecondKey = lhs.second;
             ECInstanceKey rhsFirstKey = rhs.first;
             ECInstanceKey rhsSecondKey = rhs.second;
 
             return (lhsFirstKey < rhsFirstKey) || (lhsFirstKey == rhsFirstKey && lhsSecondKey < rhsSecondKey);
-        }
-    };
+            }
+        };
 
     CompareECInstanceKeyPair compare;
     std::sort(expectedOwnerships.begin(), expectedOwnerships.end(), compare);
@@ -399,7 +417,8 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT OwnerECClassId, OwnerId, FileInfoECClassId, FileInfoId FROM ecdbf.FileInfoOwnership ORDER BY OwnerECClassId, OwnerId, FileInfoECClassId, FileInfoId"));
 
     size_t i = 0;
-    while (BE_SQLITE_ROW == stmt.Step()) {
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
         const ECClassId expectedOwnerClassId = expectedOwnerships[i].first.GetClassId();
         const ECInstanceId expectedOwnerId = expectedOwnerships[i].first.GetInstanceId();
         const ECClassId expectedFileInfoClassId = expectedOwnerships[i].second.GetClassId();
@@ -415,7 +434,7 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
         ASSERT_EQ(expectedFileInfoId.GetValue(), actualFileInfoId.GetValue());
 
         i++;
-    }
+        }
 
     stmt.Finalize();
 
@@ -423,7 +442,8 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM ecdbf.FileInfo ORDER BY ECClassId, ECInstanceId"));
 
     i = 0;
-    while (BE_SQLITE_ROW == stmt.Step()) {
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
         const ECClassId expectedFileInfoClassId = expectedFileInfos[i].GetClassId();
         const ECInstanceId expectedFileInfoId = expectedFileInfos[i].GetInstanceId();
 
@@ -433,13 +453,14 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
         ASSERT_EQ(expectedFileInfoId.GetValue(), actualFileInfoId.GetValue());
 
         i++;
+        }
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, Purge) {
+TEST_F(FileInfoTestFixture, Purge)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     ECInstanceKey fooKey;
@@ -450,92 +471,92 @@ TEST_F(FileInfoTestFixture, Purge) {
     ECInstanceKey fooChildEmbeddedFileInfoKey;
     ECInstanceKey orphanEmbeddedFileInfoKey;
     {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo (Name) VALUES ('Foo')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey)) << m_ecdb.GetLastError().c_str();
-        stmt.Finalize();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo (Name) VALUES ('Foo')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey)) << m_ecdb.GetLastError().c_str();
+    stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.FooChild (Name, Label) VALUES ('FooChild', 'My Foo child')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooChildKey)) << m_ecdb.GetLastError().c_str();
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.FooChild (Name, Label) VALUES ('FooChild', 'My Foo child')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooChildKey)) << m_ecdb.GetLastError().c_str();
+    stmt.Finalize();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Goo (Name) VALUES ('Goo')"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(gooKey)) << m_ecdb.GetLastError().c_str();
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Goo (Name) VALUES ('Goo')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(gooKey)) << m_ecdb.GetLastError().c_str();
+    stmt.Finalize();
 
-        // ExternalFileInfos
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecdbf.ExternalFileInfo(Name, RootFolder, RelativePath) VALUES(?,1,'mydocuments/private/')"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "ExternalFile1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooExternalFileInfoKey)) << m_ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    //ExternalFileInfos
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecdbf.ExternalFileInfo(Name, RootFolder, RelativePath) VALUES(?,1,'mydocuments/private/')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "ExternalFile1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooExternalFileInfoKey)) << m_ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "ExternalFile2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(gooExternalFileInfoKey)) << m_ecdb.GetLastError().c_str();
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "ExternalFile2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(gooExternalFileInfoKey)) << m_ecdb.GetLastError().c_str();
+    stmt.Finalize();
 
-        // EmbeddedFileInfos
-        ECClassId embeddedFileInfoClassId = m_ecdb.Schemas().GetClassId("ECDbFileInfo", "EmbeddedFileInfo");
-        ASSERT_TRUE(embeddedFileInfoClassId.IsValid());
+    //EmbeddedFileInfos
+    ECClassId embeddedFileInfoClassId = m_ecdb.Schemas().GetClassId("ECDbFileInfo", "EmbeddedFileInfo");
+    ASSERT_TRUE(embeddedFileInfoClassId.IsValid());
 
-        Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
+    Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
 
-        BeFileName testFilePath;
-        BeTest::GetHost().GetDocumentsRoot(testFilePath);
-        testFilePath.AppendToPath(L"ECDb");
-        testFilePath.AppendToPath(L"Schemas");
-        testFilePath.AppendToPath(WString(testFileName, BentleyCharEncoding::Utf8).c_str());
+    BeFileName testFilePath;
+    BeTest::GetHost().GetDocumentsRoot(testFilePath);
+    testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"Schemas");
+    testFilePath.AppendToPath(WString(testFileName, BentleyCharEncoding::Utf8).c_str());
 
-        DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
-        DbResult stat = BE_SQLITE_OK;
-        DateTime lastModified = DateTime::GetCurrentTimeUtc();
-        BeBriefcaseBasedId id = embeddedFileTable.Import(&stat, true, testFileName, testFilePath.GetNameUtf8().c_str(), &lastModified);
-        ASSERT_EQ(BE_SQLITE_OK, stat);
-        ASSERT_TRUE(id.IsValid());
-        fooChildEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
+    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    DateTime lastModified = DateTime::GetCurrentTimeUtc();
+    BeBriefcaseBasedId id = embeddedFileTable.Import(&stat, true, testFileName, testFilePath.GetNameUtf8().c_str(), &lastModified);
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(id.IsValid());
+    fooChildEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
 
-        testFileName = "Copy of ECSqlTest.01.00.00.ecschema.xml";
-        lastModified = DateTime::GetCurrentTimeUtc();
-        id = embeddedFileTable.Import(&stat, true, testFileName, testFilePath.GetNameUtf8().c_str(), &lastModified);
-        ASSERT_EQ(BE_SQLITE_OK, stat);
-        ASSERT_TRUE(id.IsValid());
-        orphanEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
+    testFileName = "Copy of ECSqlTest.01.00.00.ecschema.xml";
+    lastModified = DateTime::GetCurrentTimeUtc();
+    id = embeddedFileTable.Import(&stat,true, testFileName, testFilePath.GetNameUtf8().c_str(),  &lastModified);
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(id.IsValid());
+    orphanEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
 
-        ASSERT_EQ(SUCCESS, m_ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships)) << "Purge if nothing is to purge should succeed";
+    ASSERT_EQ(SUCCESS, m_ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships)) << "Purge if nothing is to purge should succeed";
 
-        // Ownership
-        // Foo - ExternalFile1
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooKey.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fooExternalFileInfoKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, fooExternalFileInfoKey.GetClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    //Ownership
+    //Foo - ExternalFile1
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fooExternalFileInfoKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, fooExternalFileInfoKey.GetClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        // FooChild - EmbeddedFile1
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooChildKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooChildKey.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fooChildEmbeddedFileInfoKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, fooChildEmbeddedFileInfoKey.GetClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    //FooChild - EmbeddedFile1
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooChildKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooChildKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fooChildEmbeddedFileInfoKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, fooChildEmbeddedFileInfoKey.GetClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        // Goo - ExternalFile2
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, gooKey.GetClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, gooExternalFileInfoKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, gooExternalFileInfoKey.GetClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    //Goo - ExternalFile2
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, gooKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, gooExternalFileInfoKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, gooExternalFileInfoKey.GetClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        m_ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     }
 
-    // Check file infos before doing anything
+    //Check file infos before doing anything
     std::vector<std::pair<ECInstanceKey, ECInstanceKey>> expectedOwnerships;
     expectedOwnerships.push_back(std::make_pair(fooKey, fooExternalFileInfoKey));
     expectedOwnerships.push_back(std::make_pair(fooChildKey, fooChildEmbeddedFileInfoKey));
@@ -549,14 +570,14 @@ TEST_F(FileInfoTestFixture, Purge) {
 
     AssertPurge(m_ecdb, expectedOwnerships, expectedFileInfos);
 
-    // Scenario 1: Delete owners and purge
+    //Scenario 1: Delete owners and purge
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> START");
     ASSERT_EQ(SUCCESS, m_ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> END");
 
     AssertPurge(m_ecdb, expectedOwnerships, expectedFileInfos);
 
-    // Now delete Owner Foo
+    //Now delete Owner Foo
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetInstanceId()));
@@ -570,7 +591,7 @@ TEST_F(FileInfoTestFixture, Purge) {
 
     AssertPurge(m_ecdb, expectedOwnerships, expectedFileInfos);
 
-    // Now delete Owner FooChild
+    //Now delete Owner FooChild
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.FooChild WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooChildKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
@@ -582,7 +603,7 @@ TEST_F(FileInfoTestFixture, Purge) {
 
     AssertPurge(m_ecdb, expectedOwnerships, expectedFileInfos);
 
-    // Now delete Owner Goo
+    //Now delete Owner Goo
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Goo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
@@ -594,11 +615,11 @@ TEST_F(FileInfoTestFixture, Purge) {
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
 
-    // Scenario 2: Delete fileinfos and purge
-    // delete EmbeddedFiles
-    // Embedded files cannot be deleted via ECSQL because they map to an existing table.
-    // EmbeddedFile API cannot be used either as it does not allow deleting by id.
-    // Therefore use SQLite directly which is not a problem for this test.
+    //Scenario 2: Delete fileinfos and purge
+    //delete EmbeddedFiles
+    //Embedded files cannot be deleted via ECSQL because they map to an existing table.
+    //EmbeddedFile API cannot be used either as it does not allow deleting by id.
+    //Therefore use SQLite directly which is not a problem for this test.
     Statement sqliteStmt;
     ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.Prepare(m_ecdb, "DELETE FROM " BEDB_TABLE_EmbeddedFile " WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.BindId(1, fooChildEmbeddedFileInfoKey.GetInstanceId()));
@@ -645,6 +666,7 @@ TEST_F(FileInfoTestFixture, Purge) {
 
     AssertPurge(m_ecdb, expectedOwnerships, expectedFileInfos);
     m_ecdb.AbandonChanges();
-}
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE

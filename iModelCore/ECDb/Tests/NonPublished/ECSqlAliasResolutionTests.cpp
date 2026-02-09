@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -9,26 +9,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct ECSqlAliasResolutionTestFixture : ECDbTestFixture {};
 
 #define THIS_TEST_NAME ::testing::Test::GetTestNameA()
-#define ASSERT_ECSQL_SUCCESS(QUERY)                                   \
-    {                                                                 \
-        ECSqlStatement stmt;                                          \
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, QUERY)); \
-    }
-#define EXPECT_ECSQL_SUCCESS(QUERY)                                   \
-    {                                                                 \
-        ECSqlStatement stmt;                                          \
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, QUERY)); \
-    }
-#define ASSERT_ECSQL_INVALID(QUERY)                                        \
-    {                                                                      \
-        ECSqlStatement stmt;                                               \
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, QUERY)); \
-    }
-#define ASSERT_ECSQL_ERROR(QUERY)                                   \
-    {                                                               \
-        ECSqlStatement stmt;                                        \
-        ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(m_ecdb, QUERY)); \
-    }
+#define ASSERT_ECSQL_SUCCESS(QUERY) { ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, QUERY)); }
+#define EXPECT_ECSQL_SUCCESS(QUERY) { ECSqlStatement stmt; EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, QUERY)); }
+#define ASSERT_ECSQL_INVALID(QUERY) { ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, QUERY)); }
+#define ASSERT_ECSQL_ERROR(QUERY) { ECSqlStatement stmt; ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(m_ecdb, QUERY)); }
 #define ASSERT_ECDB_SETUP ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb(SqlPrintfString("%s.ecdb", THIS_TEST_NAME).GetUtf8CP()));
 #define ASSERT_OPEN_TEST_BIM ASSERT_EQ(DbResult::BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
 #define ASSERT_ECSQL(QUERY) ASSERT_ECSQL_SUCCESS(QUERY)
@@ -125,5 +109,6 @@ TEST_F(ECSqlAliasResolutionTestFixture, SubqueryAliasWithCte) {
     ASSERT_ECSQL("WITH E AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId)) FROM E")
     ASSERT_ECSQL("WITH E AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM (SELECT ECInstanceId FROM Meta.ECClassDef WHERE ECInstanceId = E.ECClassId)) FROM E")
 }
+
 
 END_ECDBUNITTESTS_NAMESPACE

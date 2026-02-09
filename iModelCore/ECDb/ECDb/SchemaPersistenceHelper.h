@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
 
@@ -16,40 +16,44 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-enum class PropertyKind {
+enum class PropertyKind
+    {
     Primitive = 0,
     Struct = 1,
     PrimitiveArray = 2,
     StructArray = 3,
     Navigation = 4
-};
+    };
+
 
 //---------------------------------------------------------------------------------------
-//!@remarks Only call these methods if you need to get the information from the DB.
+//!@remarks Only call these methods if you need to get the information from the DB. 
 //! If you want to leverage caches (which can speed up performance), then use SchemaManager::GetReader()
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-struct SchemaPersistenceHelper final {
-   public:
-    //! This enum generalizes ECObjects' ones and is used to persist CA instances along with the container type
-    //! in the table ec_CustomAttribute. In that table we don't need to store the exact container type, so
-    //! the extra enum is for type-safety and to be robust against changes in the ECObjects enum (enforced through
-    //! separate static asserts)
-    enum class GeneralizedCustomAttributeContainerType : std::underlying_type<ECN::CustomAttributeContainerType>::type {
+struct SchemaPersistenceHelper final
+    {
+public:
+    //!This enum generalizes ECObjects' ones and is used to persist CA instances along with the container type
+    //!in the table ec_CustomAttribute. In that table we don't need to store the exact container type, so
+    //!the extra enum is for type-safety and to be robust against changes in the ECObjects enum (enforced through
+    //!separate static asserts)
+    enum class GeneralizedCustomAttributeContainerType : std::underlying_type<ECN::CustomAttributeContainerType>::type
+        {
         Schema = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::Schema),
         Class = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::AnyClass),
         Property = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::AnyProperty),
         SourceRelationshipConstraint = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::SourceRelationshipConstraint),
         TargetRelationshipConstraint = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::TargetRelationshipConstraint)
-    };
+        };
 
-   private:
+private:
     SchemaPersistenceHelper() = delete;
     ~SchemaPersistenceHelper() = delete;
 
-   public:
+public:
     static ECN::ECSchemaId GetSchemaId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, SchemaLookupMode);
-
+    
     //!@p schemaNameCsvList List of comma separated schema names to be appended to the WHERE clause used to retrieve the ids
     static std::vector<ECN::ECSchemaId> GetSchemaIds(ECDbCR, DbTableSpace const&, Utf8StringVirtualSet const& schemaNames);
     static Utf8String GetSchemaName(ECDbCR, DbTableSpace const&, ECN::ECSchemaId);
@@ -76,37 +80,41 @@ struct SchemaPersistenceHelper final {
     static Utf8String SerializeNumericSpec(Formatting::NumericFormatSpecCR);
     static Utf8String SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR);
 
-    //! Safe method to cast an integer value to the ECClassType enum.
-    //! It makes sure the integer is a valid value for the enum.
-    static Nullable<ECN::ECClassType> ToClassType(int val) {
+    //!Safe method to cast an integer value to the ECClassType enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::ECClassType> ToClassType(int val)
+        {
         if (val == Enum::ToInt(ECN::ECClassType::CustomAttribute) || val == Enum::ToInt(ECN::ECClassType::Entity) ||
             val == Enum::ToInt(ECN::ECClassType::Relationship) || val == Enum::ToInt(ECN::ECClassType::Struct))
             return Enum::FromInt<ECN::ECClassType>(val);
 
         return Nullable<ECN::ECClassType>();
-    };
+        };
 
-    //! Safe method to cast an integer value to the ECClassModifier enum.
-    //! It makes sure the integer is a valid value for the enum.
-    static Nullable<ECN::ECClassModifier> ToClassModifier(int val) {
+    //!Safe method to cast an integer value to the ECClassModifier enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::ECClassModifier> ToClassModifier(int val)
+        {
         if (val == Enum::ToInt(ECN::ECClassModifier::Abstract) || val == Enum::ToInt(ECN::ECClassModifier::None) || val == Enum::ToInt(ECN::ECClassModifier::Sealed))
             return Enum::FromInt<ECN::ECClassModifier>(val);
 
         return Nullable<ECN::ECClassModifier>();
-    };
+        };
 
-    //! Safe method to cast an integer value to the PropertyKind enum.
-    //! It makes sure the integer is a valid value for the enum.
-    static Nullable<PropertyKind> ToPropertyKind(int val) {
+    //!Safe method to cast an integer value to the PropertyKind enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<PropertyKind> ToPropertyKind(int val)
+        {
         if (val >= 0 && val <= 4)
             return Enum::FromInt<PropertyKind>(val);
 
         return Nullable<PropertyKind>();
-    };
+        };
 
-    //! Safe method to cast an integer value to the PrimitiveType enum.
-    //! It makes sure the integer is a valid value for the enum.
-    static Nullable<ECN::PrimitiveType> ToPrimitiveType(int val) {
+    //!Safe method to cast an integer value to the PrimitiveType enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::PrimitiveType> ToPrimitiveType(int val)
+        {
         if (val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Binary) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Boolean) ||
             val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_DateTime) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Double) ||
             val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_IGeometry) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Integer) ||
@@ -115,25 +123,28 @@ struct SchemaPersistenceHelper final {
             return Enum::FromInt<ECN::PrimitiveType>(val);
 
         return Nullable<ECN::PrimitiveType>();
-    };
+        };
 
-    //! Safe method to cast an integer value to the StrengthType enum.
-    //! It makes sure the integer is a valid value for the enum.
-    static Nullable<ECN::StrengthType> ToStrengthType(int val) {
+    //!Safe method to cast an integer value to the StrengthType enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::StrengthType> ToStrengthType(int val)
+        {
         if (val == Enum::ToInt(ECN::StrengthType::Embedding) || val == Enum::ToInt(ECN::StrengthType::Holding) || val == Enum::ToInt(ECN::StrengthType::Referencing))
             return Enum::FromInt<ECN::StrengthType>(val);
 
         return Nullable<ECN::StrengthType>();
-    };
+        };
 
-    //! Safe method to cast an integer value to the ECRelatedInstanceDirection enum.
-    //! It makes sure the integer is a valid value for the enum.
-    static Nullable<ECN::ECRelatedInstanceDirection> ToECRelatedInstanceDirection(int val) {
+    //!Safe method to cast an integer value to the ECRelatedInstanceDirection enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::ECRelatedInstanceDirection> ToECRelatedInstanceDirection(int val)
+        {
         if (val == Enum::ToInt(ECN::ECRelatedInstanceDirection::Backward) || val == Enum::ToInt(ECN::ECRelatedInstanceDirection::Forward))
             return Enum::FromInt<ECN::ECRelatedInstanceDirection>(val);
 
         return Nullable<ECN::ECRelatedInstanceDirection>();
+        };
+ 
     };
-};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

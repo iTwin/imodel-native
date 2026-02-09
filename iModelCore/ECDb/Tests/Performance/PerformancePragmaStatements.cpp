@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -9,9 +9,11 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-class PeformancePragmaStatements : public ECDbTestFixture {};
+class PeformancePragmaStatements : public ECDbTestFixture
+    {};
 
-TEST_F(PeformancePragmaStatements, PurgeOrphanRelationships) {
+TEST_F(PeformancePragmaStatements, PurgeOrphanRelationships)
+    {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
     const auto schemaXml = R"xml(
@@ -83,27 +85,30 @@ TEST_F(PeformancePragmaStatements, PurgeOrphanRelationships) {
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()).IsOk());
 
-    auto insertEntry = [&](Utf8CP className, Utf8CP propName) {
+    auto insertEntry = [&](Utf8CP className, Utf8CP propName)
+        {
         ECSqlStatement stmt;
         ECInstanceKey outKey;
         if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(%sProp) VALUES('%s')", className, className, propName).c_str()))
             stmt.Step(outKey);
         return outKey;
-    };
+        };
 
-    auto insertRelationship = [&](Utf8CP className, const ECInstanceKey& sourceKey, const ECInstanceKey& targetKey) {
+    auto insertRelationship = [&](Utf8CP className, const ECInstanceKey& sourceKey, const ECInstanceKey& targetKey)
+        {
         ECSqlStatement stmt;
         ECInstanceKey outKey;
         if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", className, sourceKey.GetInstanceId().ToString().c_str(), targetKey.GetInstanceId().ToString().c_str()).c_str()))
             stmt.Step(outKey);
         return outKey;
-    };
+        };
 
     bvector<Utf8String> classAInstancesToDelete;
     bvector<Utf8String> classBInstancesToDelete;
 
     auto propertyIndex = 1U;
-    for (auto index = 1U; index <= 10000U; ++index) {
+    for (auto index = 1U; index <= 10000U; ++index)
+        {
         const auto commonClassA = insertEntry("ClassA", Utf8String("A" + std::to_string(++propertyIndex)).c_str());
         ASSERT_TRUE(commonClassA.IsValid());
         const auto commonClassB = insertEntry("ClassB", Utf8String("B" + std::to_string(++propertyIndex)).c_str());
@@ -144,7 +149,7 @@ TEST_F(PeformancePragmaStatements, PurgeOrphanRelationships) {
         insertRelationship("RelB_A", commonClassB, insertEntry("ClassA", Utf8String("A" + std::to_string(++propertyIndex)).c_str()));
         insertRelationship("RelB_A", insertEntry("ClassB", Utf8String("B" + std::to_string(++propertyIndex)).c_str()), commonClassA);
         insertRelationship("RelB_A", insertEntry("ClassB", Utf8String("B" + std::to_string(++propertyIndex)).c_str()), insertEntry("ClassA", Utf8String("A" + std::to_string(++propertyIndex)).c_str()));
-    }
+        }
 
     // Check that no orphan relationships exist
     ECSqlStatement stmt;
@@ -182,6 +187,6 @@ TEST_F(PeformancePragmaStatements, PurgeOrphanRelationships) {
     stmt.Finalize();
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), rowCount, Utf8String("Purging " + std::to_string(rowCount) + " orphan relationships.").c_str());
-}
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

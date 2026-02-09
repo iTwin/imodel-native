@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "NestedStructArrayTestSchemaHelper.h"
 
@@ -17,7 +17,8 @@ struct ECInstanceFinderTests : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceFinderTests, FindRelatedInstances_MultipleSeedInstancesOfSameClass_AllRelatedInstances) {
+TEST_F(ECInstanceFinderTests, FindRelatedInstances_MultipleSeedInstancesOfSameClass_AllRelatedInstances)
+    {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("FindRelatedInstances.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
@@ -39,13 +40,15 @@ TEST_F(ECInstanceFinderTests, FindRelatedInstances_MultipleSeedInstancesOfSameCl
     ASSERT_EQ(seedInstances.size(), std::distance(instanceRange.first, instanceRange.second));
 
     ECInstanceKeyMultiMap relatedInstances;
-    ASSERT_EQ(SUCCESS, ECInstanceFinder(m_ecdb).FindRelatedInstances(
-                           &relatedInstances,
-                           nullptr,
-                           seedInstances,
-                           ECInstanceFinder::RelatedDirection::RelatedDirection_All));
+    ASSERT_EQ(SUCCESS, ECInstanceFinder(m_ecdb).FindRelatedInstances
+    (
+        &relatedInstances,
+        nullptr,
+        seedInstances,
+        ECInstanceFinder::RelatedDirection::RelatedDirection_All
+    ));
 
     EXPECT_EQ(6, relatedInstances.size());
-}
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

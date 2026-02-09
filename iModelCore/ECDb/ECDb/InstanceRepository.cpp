@@ -28,6 +28,7 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
     return rc;
 }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -96,9 +97,9 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
             adaptor.GetOptions().SetConvertClassIdsToClassNames(fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseJsNames(fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
-            if (!wantGeometry) {
+            if(!wantGeometry){
                 adaptor.SetSkipPropertyHandler([&](ECN::ECPropertyCR prop) {
-                    if (ExtendedTypeHelper::FromProperty(prop) == ExtendedTypeHelper::ExtendedType::GeometryStream)
+                    if(ExtendedTypeHelper::FromProperty(prop) == ExtendedTypeHelper::ExtendedType::GeometryStream)
                         return true;
                     return false;
                 });
@@ -106,8 +107,8 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
             if (ERROR == adaptor.RenderRowAsObject(outInstance, row)) {
                 rc = BE_SQLITE_ERROR;
             }
-        },
-                                         options)) {
+
+        }, options)) {
         rc = BE_SQLITE_DONE;
     }
     return rc;
@@ -123,5 +124,6 @@ DbResult InstanceRepository::Read(BeJsConst in, BeJsValue outInstance, BeJsConst
     }
     return Read(instKey, outInstance, userOptions, fmt);
 }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

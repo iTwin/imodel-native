@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -11,7 +11,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::Initialize() {
+ECSqlStatus DynamicSelectClauseECClass::Initialize()
+    {
     if (m_schema != nullptr)
         return ECSqlStatus::Success;
 
@@ -21,17 +22,19 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize() {
     if (ECObjectsStatus::Success != m_schema->CreateEntityClass(m_class, "DynamicECSqlSelectClause"))
         return ECSqlStatus::Error;
 
-    // is never instantiated
+    //is never instantiated
     m_class->SetClassModifier(ECClassModifier::Abstract);
     return ECSqlStatus::Success;
-}
+    }
 
 ECSqlStatus DynamicSelectClauseECClass::CheckForDuplicateName(Utf8StringCR propName, Utf8StringCR columnAlias, bool& isDuplicate, ECSqlPrepareContext& ctx) {
     auto it = m_selectClauseNames.find(propName);
     isDuplicate = false;
-    if (it != m_selectClauseNames.end()) {
+    if (it != m_selectClauseNames.end())
+    {
         DerivedPropertyExp const* otherSelectClauseItem = it->second;
-        if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty()) {
+        if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
+        {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0463, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
             return ECSqlStatus::InvalidECSql;
         }
@@ -48,21 +51,22 @@ void DynamicSelectClauseECClass::RegisterSelectClauseItem(Utf8StringCR propName,
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic) {
+ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic)
+    {
     const ECSqlStatus initStat = Initialize();
     if (!initStat.IsSuccess())
         return initStat;
 
     generatedProperty = nullptr;
 
-    // A property for the select clause item is generated
+    //A property for the select clause item is generated
     //- if the exp is no prop name exp or
     //- if the exp is a prop name exp and has a column alias or is a ref to an item in an inner select
 
-    // if select clause items have the same names, the following rules apply:
+    //if select clause items have the same names, the following rules apply:
     //-if for both items no prop has to be generated -> ok, duplicate names are fine
     //-if both items have to be generated and both don't have aliases -> prop name of second exp will get a _1 (and _2 etc) suffix
-    //  (prop names must be unique)
+    // (prop names must be unique)
     //-if one of the items has an alias -> error as ECSQL author has to make sure that aliases are unambiguous
     Utf8String propName = selectClauseItemExp.GetName();
     Utf8StringCR columnAlias = selectClauseItemExp.GetColumnAlias();
@@ -71,73 +75,83 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
     if (!dupStat.IsSuccess())
         return dupStat;
 
-    // exp that are no prop name exps (e.g. constants or A+B, prop refs (ref to property in a nested select) or alias items always need generated prop
+    //exp that are no prop name exps (e.g. constants or A+B, prop refs (ref to property in a nested select) or alias items always need generated prop
     const bool needsToGenerate =
         selectClauseItemPropNameExp == nullptr ||
         !columnAlias.empty() ||
         (selectClauseItemPropNameExp->IsPropertyRef() && !selectClauseItemPropNameExp->GetPropertyRef()->IsPure()) ||
         (selectClauseItemExp.GetParent() != nullptr && selectClauseItemExp.GetParent()->GetType() == Exp::Type::NavValueCreationFunc);
-    if (needsToGenerate) {
-        if (isDuplicateName) {
-            // generate a unique prop name
+    if (needsToGenerate)
+        {
+        if (isDuplicateName)
+            {
+            //generate a unique prop name
             int suffixNr = 1;
             Utf8String uniquePropName;
-            do {
+            do
+                {
                 uniquePropName.Sprintf("%s_%d", propName.c_str(), suffixNr);
                 suffixNr++;
 
-                if (suffixNr > 1000)  // arbitrary threshold to avoid end-less loop
-                {
+                if (suffixNr > 1000) //arbitrary threshold to avoid end-less loop
+                    {
                     ctx.Issues().ReportV(
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
                         IssueType::ECSQL,
                         ECDbIssueId::ECDb_0464,
                         "Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
-                        selectClauseItemExp.ToECSql().c_str());
+                        selectClauseItemExp.ToECSql().c_str()
+                    );
                     return ECSqlStatus::InvalidECSql;
-                }
+                    }
 
-            } while (m_selectClauseNames.find(uniquePropName) != m_selectClauseNames.end());
+                } while (m_selectClauseNames.find(uniquePropName) != m_selectClauseNames.end());
 
-            propName = uniquePropName;
-            // now the name is not duplicate anymore
-            isDuplicateName = false;
-        }
+                propName = uniquePropName;
+                //now the name is not duplicate anymore
+                isDuplicateName = false;
+            }
 
         BeAssert(m_selectClauseNames.find(propName) == m_selectClauseNames.end() && "at this point select clause item name should be unique");
         ECSqlStatus stat = AddProperty(generatedProperty, ctx, propName, selectClauseItemExp, selectClauseItemPropNameExp, isDynamic);
         if (!stat.IsSuccess())
             return stat;
-    }
+        }
 
     // Propagate system property by setting the generated property id to leaf property id which would be check when column info is created.
-    if (generatedProperty && selectClauseItemPropNameExp && selectClauseItemPropNameExp->IsPropertyRef()) {
+    if (generatedProperty && selectClauseItemPropNameExp && selectClauseItemPropNameExp->IsPropertyRef())
+        {
         auto aliasProp = const_cast<ECPropertyP>(generatedProperty)->GetAsPrimitivePropertyP();
-        if (aliasProp && aliasProp->GetExtendedTypeName().empty()) {
+        if (aliasProp && aliasProp->GetExtendedTypeName().empty())
+            {
             DerivedPropertyExp const& first = selectClauseItemPropNameExp->GetPropertyRef()->GetEndPointDerivedProperty();
-            if (first.GetExpression()->GetType() == Exp::Type::PropertyName) {
+            if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
+                {
                 const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
                 const PropertyPath& internalPropPath = firstExp.GetResolvedPropertyPath();
                 const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
-                const bool isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
-                if (isSystem) {
+                const bool isSystem = leafProp != nullptr
+                    && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
+                if (isSystem)
+                    {
                     aliasProp->SetExtendedTypeName("Id");
                     aliasProp->SetId(leafProp->GetId());
+                    }
                 }
             }
         }
-    }
     if (!isDuplicateName)
         RegisterSelectClauseItem(propName, selectClauseItemExp);
 
     return ECSqlStatus::Success;
-}
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic) {
+ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic)
+    {
     ECSqlTypeInfo const& typeInfo = selectClauseItemExp.GetExpression()->GetTypeInfo();
     const ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
 
@@ -145,49 +159,59 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
     ECNameValidation::EncodeToValidName(encodedPropName, propName);
 
     ECPropertyP generatedPropertyP = nullptr;
-    if (isDynamic) {
-        PrimitiveECPropertyP primProp = nullptr;
-        if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, PRIMITIVETYPE_String))
-            return ECSqlStatus::Error;
+    if (isDynamic)
+        {
+            PrimitiveECPropertyP primProp = nullptr;
+            if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, PRIMITIVETYPE_String))
+                return ECSqlStatus::Error;
 
-        primProp->SetExtendedTypeName("json");
-        generatedPropertyP = primProp;
-    } else {
-        switch (typeKind) {
-            case ECSqlTypeInfo::Kind::Null: {
+            primProp->SetExtendedTypeName("json");
+            generatedPropertyP = primProp;
+        }
+    else
+        {
+        switch (typeKind)
+            {
+                case ECSqlTypeInfo::Kind::Null:
+                {
                 PrimitiveECPropertyP primProp = nullptr;
                 if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, PRIMITIVETYPE_Integer))
                     return ECSqlStatus::Error;
 
-                // indicate that this is really of type NULL (which does not exist in ECObjects)
+                //indicate that this is really of type NULL (which does not exist in ECObjects)
                 primProp->SetExtendedTypeName("NULL");
                 generatedPropertyP = primProp;
                 break;
-            }
+                }
 
-            case ECSqlTypeInfo::Kind::Primitive: {
+                case ECSqlTypeInfo::Kind::Primitive:
+                {
                 PrimitiveECPropertyP primProp = nullptr;
-                if (typeInfo.IsEnum()) {
+                if (typeInfo.IsEnum())
+                    {
                     BeAssert(typeInfo.GetEnumerationType() != nullptr);
                     if (SUCCESS != AddSchemaReference(typeInfo.GetEnumerationType()->GetSchema()))
                         return ECSqlStatus::Error;
 
                     if (ECObjectsStatus::Success != GetClass().CreateEnumerationProperty(primProp, encodedPropName, *typeInfo.GetEnumerationType()))
                         return ECSqlStatus::Error;
-                } else {
+                    }
+                else
+                    {
                     if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, typeInfo.GetPrimitiveType()))
                         return ECSqlStatus::Error;
-                }
+                    }
 
-                // Extended types are preserved as well
+                //Extended types are preserved as well
                 if (typeInfo.HasExtendedType())
                     primProp->SetExtendedTypeName(typeInfo.GetExtendedTypeName().c_str());
 
                 generatedPropertyP = primProp;
                 break;
-            }
+                }
 
-            case ECSqlTypeInfo::Kind::Struct: {
+                case ECSqlTypeInfo::Kind::Struct:
+                {
                 ECStructClassCR structType = typeInfo.GetStructType();
                 if (SUCCESS != AddSchemaReference(structType.GetSchema()))
                     return ECSqlStatus::Error;
@@ -202,22 +226,26 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 
                 generatedPropertyP = structProp;
                 break;
-            }
+                }
 
-            case ECSqlTypeInfo::Kind::PrimitiveArray: {
+                case ECSqlTypeInfo::Kind::PrimitiveArray:
+                {
                 PrimitiveArrayECPropertyP arrayProp = nullptr;
-                if (typeInfo.GetEnumerationType() != nullptr) {
+                if (typeInfo.GetEnumerationType() != nullptr)
+                    {
                     if (SUCCESS != AddSchemaReference(typeInfo.GetEnumerationType()->GetSchema()))
                         return ECSqlStatus::Error;
 
                     if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, *typeInfo.GetEnumerationType()))
                         return ECSqlStatus::Error;
-                } else {
+                    }
+                else
+                    {
                     if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
                         return ECSqlStatus::Error;
-                }
+                    }
 
-                // Extended types are preserved as well
+                //Extended types are preserved as well
                 if (typeInfo.HasExtendedType())
                     arrayProp->SetExtendedTypeName(typeInfo.GetExtendedTypeName().c_str());
 
@@ -229,8 +257,9 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 
                 generatedPropertyP = arrayProp;
                 break;
-            }
-            case ECSqlTypeInfo::Kind::StructArray: {
+                }
+                case ECSqlTypeInfo::Kind::StructArray:
+                {
                 ECStructClassCR structType = typeInfo.GetStructType();
                 if (SUCCESS != AddSchemaReference(structType.GetSchema()))
                     return ECSqlStatus::Error;
@@ -251,12 +280,14 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 
                 generatedPropertyP = structArrayProp;
                 break;
-            }
-            case ECSqlTypeInfo::Kind::Navigation: {
-                if (typeInfo.GetPropertyMap() == nullptr) {
+                }
+                case ECSqlTypeInfo::Kind::Navigation:
+                {
+                if (typeInfo.GetPropertyMap() == nullptr)
+                    {
                     BeAssert(false);
                     return ECSqlStatus::Error;
-                }
+                    }
 
                 BeAssert(typeInfo.GetPropertyMap()->GetProperty().GetIsNavigation());
                 BeAssert(typeInfo.GetPropertyMap()->GetProperty().GetAsNavigationProperty() != nullptr);
@@ -275,12 +306,12 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 
                 generatedPropertyP = newNavProp;
                 break;
+                }
+                default:
+                    BeAssert("Adding dynamic select clause property failed because of unexpected and unhandled property type.");
+                    return ECSqlStatus::Error;
             }
-            default:
-                BeAssert("Adding dynamic select clause property failed because of unexpected and unhandled property type.");
-                return ECSqlStatus::Error;
         }
-    }
     generatedPropertyP->SetDisplayLabel(propName);
     generatedPropertyP->SetIsReadOnly(true);
 
@@ -289,27 +320,30 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 
     generatedProperty = generatedPropertyP;
     return ECSqlStatus::Success;
-}
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareContext& ctx, ECN::ECProperty& dtProp, ECSqlTypeInfo const& typeInfo) const {
+BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareContext& ctx, ECN::ECProperty& dtProp, ECSqlTypeInfo const& typeInfo) const
+    {
     // currently we only add the DateTimeInfo CA for date time properties as they control how clients should deal with returned date times.
     if ((!typeInfo.IsPrimitive() && typeInfo.GetKind() != ECSqlTypeInfo::Kind::PrimitiveArray) || typeInfo.GetPrimitiveType() != PRIMITIVETYPE_DateTime || !typeInfo.GetDateTimeInfo().IsValid())
         return SUCCESS;
 
     ECClassCP dtInfoCl = ctx.GetECDb().Schemas().GetClass("CoreCustomAttributes", "DateTimeInfo");
-    if (dtInfoCl == nullptr) {
+    if (dtInfoCl == nullptr)
+        {
         ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0465, "Could not locate DateTimeInfo ECClass from CoreCustomAttributes ECSchema.");
         return ERROR;
-    }
+        }
 
     IECInstancePtr dtInfoCA = dtInfoCl->GetDefaultStandaloneEnabler()->CreateInstance();
 
     DateTime::Info const& info = typeInfo.GetDateTimeInfo();
     ECValue compV;
-    switch (info.GetComponent()) {
+    switch (info.GetComponent())
+        {
         case DateTime::Component::Date:
             compV.SetUtf8CP("Date");
             break;
@@ -322,17 +356,20 @@ BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareCon
         default:
             BeAssert(false && "Unhandled DateTime::Component value found. This code needs to be adjusted.");
             break;
-    }
+        }
 
-    if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeComponent", compV)) {
+    if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeComponent", compV))
+        {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0466,
-                             "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+            "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
         return ERROR;
-    }
+        }
 
-    if (info.GetComponent() == DateTime::Component::DateAndTime) {
+    if (info.GetComponent() == DateTime::Component::DateAndTime)
+        {
         ECValue kindV;
-        switch (info.GetKind()) {
+        switch (info.GetKind())
+            {
             case DateTime::Kind::Unspecified:
                 kindV.SetUtf8CP("Unspecified");
                 break;
@@ -345,38 +382,42 @@ BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareCon
             default:
                 BeAssert(false && "Unhandled DateTime::Component value found. This code needs to be adjusted.");
                 break;
-        }
+            }
 
-        if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeKind", kindV)) {
+        if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeKind", kindV))
+            {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0467,
-                                 "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+                "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
             return ERROR;
+            }
         }
-    }
 
     if (SUCCESS != AddSchemaReference(dtInfoCl->GetSchema()))
         return ERROR;
 
-    if (ECObjectsStatus::Success != dtProp.SetCustomAttribute(*dtInfoCA)) {
+    if (ECObjectsStatus::Success != dtProp.SetCustomAttribute(*dtInfoCA))
+        {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0468,
-                             "Could not assign DateTimeInfo custom attribute to generated property of ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+            "Could not assign DateTimeInfo custom attribute to generated property of ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
         return ERROR;
-    }
+        }
 
     return SUCCESS;
-}
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DynamicSelectClauseECClass::AddSchemaReference(ECSchemaCR schemaToReference) const {
+BentleyStatus DynamicSelectClauseECClass::AddSchemaReference(ECSchemaCR schemaToReference) const
+    {
     if (ECSchema::IsSchemaReferenced(GetSchema(), schemaToReference))
         return SUCCESS;
 
-    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR>(schemaToReference)))
+    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (schemaToReference)))
         return ERROR;
 
     return SUCCESS;
-}
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

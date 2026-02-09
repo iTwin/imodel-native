@@ -1,16 +1,18 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceECDbMapCATests : public PerformanceCRUDTestsHelper {};
+struct PerformanceECDbMapCATests : public PerformanceCRUDTestsHelper
+    {};
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSubClasses) {
+TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSubClasses)
+    {
     m_instancesPerClass = 100;
     m_propertiesPerClass = 3;
     size_t hierarchyLevel = 3;
@@ -33,7 +35,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
     CreatePrimitiveProperties(*baseClass);
 
-    // Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
+    //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
     CreateClassHierarchy(*testSchema, hierarchyLevel, *baseClass);
 
     ECClassCP ca = ecdbmapSchema->GetClassCP("ClassMap");
@@ -79,16 +81,18 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
 
     LOG.infov("ECSQL CRUD against a %d layered ECClass Hierarchy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
 
-    LOGTODB(TEST_DETAILS, m_insertTime, (int)m_instancesPerClass, "Insert time");
-    LOGTODB(TEST_DETAILS, m_selectTime, (int)m_instancesPerClass, "Select time");
-    LOGTODB(TEST_DETAILS, m_updateTime, (int)m_instancesPerClass, "Update time");
-    LOGTODB(TEST_DETAILS, m_deleteTime, (int)m_instancesPerClass, "Delete time");
-}
+
+    LOGTODB(TEST_DETAILS, m_insertTime, (int) m_instancesPerClass, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, (int) m_instancesPerClass, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, (int) m_instancesPerClass, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, "Delete time");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses) {
+TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
+    {
     m_instancesPerClass = 100;
     m_propertiesPerClass = 3;
     size_t hierarchyLevel = 3;
@@ -110,7 +114,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses) {
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
     CreatePrimitiveProperties(*baseClass);
 
-    // Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
+    //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
     CreateClassHierarchy(*testSchema, hierarchyLevel, *baseClass);
 
     ECClassCP ca = ecdbmapSchema->GetClassCP("ClassMap");
@@ -150,16 +154,17 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses) {
 
     LOG.infov("ECSQL CRUD against a %d layered ECClass Hierarchy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
 
-    LOGTODB(TEST_DETAILS, m_insertTime, (int)m_instancesPerClass, "Insert time");
-    LOGTODB(TEST_DETAILS, m_selectTime, (int)m_instancesPerClass, "Select time");
-    LOGTODB(TEST_DETAILS, m_updateTime, (int)m_instancesPerClass, "Update time");
-    LOGTODB(TEST_DETAILS, m_deleteTime, (int)m_instancesPerClass, "Delete time");
-}
+    LOGTODB(TEST_DETAILS, m_insertTime, (int) m_instancesPerClass, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, (int) m_instancesPerClass, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, (int) m_instancesPerClass, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, "Delete time");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses) {
+TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
+    {
     m_instancesPerClass = 100;
     m_propertiesPerClass = 3;
     size_t hierarchyLevel = 3;
@@ -176,7 +181,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses) {
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
     CreatePrimitiveProperties(*baseClass);
 
-    // Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
+    //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
     CreateClassHierarchy(*testSchema, hierarchyLevel, *baseClass);
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
@@ -209,10 +214,10 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses) {
 
     LOG.infov("ECSQL CRUD against a %d layered ECClass Hierarchy with %d properties each.", hierarchyLevel, m_propertiesPerClass);
 
-    LOGTODB(TEST_DETAILS, m_insertTime, (int)m_instancesPerClass, "Insert time");
-    LOGTODB(TEST_DETAILS, m_selectTime, (int)m_instancesPerClass, "Select time");
-    LOGTODB(TEST_DETAILS, m_updateTime, (int)m_instancesPerClass, "Update time");
-    LOGTODB(TEST_DETAILS, m_deleteTime, (int)m_instancesPerClass, "Delete time");
-}
+    LOGTODB(TEST_DETAILS, m_insertTime, (int) m_instancesPerClass, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, (int) m_instancesPerClass, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, (int) m_instancesPerClass, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, (int) m_instancesPerClass, "Delete time");
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

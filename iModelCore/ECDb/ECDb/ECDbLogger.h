@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECDb/ECDbTypes.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Bentley/Logging.h>
-#include <ECDb/ECDbTypes.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -15,17 +15,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // in performance since the logger was looked up with a naked wchar_t pointer.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECDbLogger final {
-   private:
+struct ECDbLogger final
+    {
+private:
     static NativeLogging::CategoryLogger* s_logger;
 
-    ECDbLogger();
-    ~ECDbLogger();
+    ECDbLogger ();
+    ~ECDbLogger ();
 
-   public:
+public:
     static NativeLogging::CategoryLogger& Get();
 
     static void LogSqliteError(BeSQLite::Db const&, BeSQLite::DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr);
-};
+    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

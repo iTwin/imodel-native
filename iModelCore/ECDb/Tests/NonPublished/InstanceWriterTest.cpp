@@ -2,10 +2,9 @@
  * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
+#include "ECDbPublishedTests.h"
 #include <ctime>
 #include <random>
-
-#include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -497,7 +496,7 @@ TEST_F(InstanceWriterFixture, complex) {
     BeJsDocument i3JsVal;
     i3JsVal.Parse(i3Json.value());
 
-    i1JsVal.removeMember("LastMod");  // this is timestamp property updated on trigger
+    i1JsVal.removeMember("LastMod"); // this is timestamp property updated on trigger
 
     if ("copy instance to writeDb") {
         ECInstanceKey j1, j2, j3;
@@ -510,7 +509,7 @@ TEST_F(InstanceWriterFixture, complex) {
         ASSERT_TRUE(j1Json.has_value());
         BeJsDocument j1JsVal;
         j1JsVal.Parse(j1Json.value());
-        j1JsVal.removeMember("LastMod");  // this is timestamp property updated on trigger
+        j1JsVal.removeMember("LastMod"); // this is timestamp property updated on trigger
 
         auto j2Json = ReadInstance(m_ecdb, j2, false);
         ASSERT_TRUE(i2Json.has_value());
@@ -522,13 +521,16 @@ TEST_F(InstanceWriterFixture, complex) {
         BeJsDocument j3JsVal;
         j3JsVal.Parse(j3Json.value());
 
+
         ASSERT_STREQ(i1JsVal.Stringify(StringifyFormat::Indented).c_str(), j1JsVal.Stringify(StringifyFormat::Indented).c_str());
         ASSERT_STREQ(i2JsVal.Stringify(StringifyFormat::Indented).c_str(), j2JsVal.Stringify(StringifyFormat::Indented).c_str());
         ASSERT_STREQ(i3JsVal.Stringify(StringifyFormat::Indented).c_str(), j3JsVal.Stringify(StringifyFormat::Indented).c_str());
     }
 
     if ("update instance to writeDb") {
+
     }
+
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -602,6 +604,7 @@ TEST_F(InstanceWriterFixture, basic) {
     expected.Parse(expectedJson.value());
     ECInstanceKey key;
     if ("copy instance to writeDb") {
+
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, expected, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), key));
         writeDb.SaveChanges();
         BeJsDocument actual;
@@ -763,8 +766,8 @@ TEST_F(InstanceWriterFixture, basic) {
 }
 
 namespace InstanceWriterErrorHandlingTests {
-// Static data for tests
-const auto schemaXml = R"xml(
+    // Static data for tests
+    const auto schemaXml = R"xml(
         <ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
@@ -806,7 +809,7 @@ const auto schemaXml = R"xml(
             </ECEntityClass>
         </ECSchema>)xml";
 
-const auto baseJson = R"json({
+    const auto baseJson = R"json({
         "id": "0x1235",
         "className": "TestSchema.P",
         "s": "What is this?",
@@ -825,7 +828,7 @@ const auto baseJson = R"json({
         "parent": { "id": "0x1230", "relClassName": "TestSchema.POwnsChildPs" }
     })json";
 
-const auto baseJsonWithoutJsNames = R"json({
+    const auto baseJsonWithoutJsNames = R"json({
         "ECInstanceId": "0x1235",
         "ECClassId": "0x58",
         "s": "What is this?",
@@ -844,110 +847,110 @@ const auto baseJsonWithoutJsNames = R"json({
         "parent": { "Id": "0x1230", "RelECClassId": "0x5A" }
     })json";
 
-const auto commonTestCases = std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
-    // Positive Test
-    {1, "", "", ""},
+    const auto commonTestCases = std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
+        // Positive Test
+        { 1, "", "", "" },
 
-    // Test data properties
-    // Test string property "s"
-    {2, "\"s\": \"What is this?\"", "\"s\": 123", "Failed to bind property. Expected string for property S, got 123"},
+        // Test data properties
+        // Test string property "s"
+        { 2, "\"s\": \"What is this?\"", "\"s\": 123", "Failed to bind property. Expected string for property S, got 123" },
+        
+        // Test int property "i"
+        { 3, "\"i\": -223", "\"i\": \"not an int\"", "Failed to bind property. Expected integer for property I, got \"not an int\"" },
+        
+        // Test double property "d"
+        { 4, "\"d\": -3.141592653589793", "\"d\": \"not a double\"", "Failed to bind property. Expected integer for property D, got \"not a double\"" },
+        
+        // Test binary property "bi"
+        { 5, "\"bi\": \"encoding=base64;cd2DfQvyUAEK4Q==\"", "\"bi\": 12345", "Failed to bind property. Expected binary/base64 for property Bi, got 12345" },
+        { 6, "\"bi\": \"encoding=base64;cd2DfQvyUAEK4Q==\"", "\"bi\": \"not a binary\"", "Failed to bind property. Failed to parse guid from string: not a binary" },
+        
+        // Test long property "l"
+        { 7, "\"l\": 100000", "\"l\": \"not a long\"", "Failed to bind property. Expected long for property L, got \"not a long\"" },
+        
+        // Test dateTime property "dT"
+        { 8, "\"dT\": \"2027-02-27T19:35:15.672Z\"", "\"dT\": 20270227", "Failed to bind property. Expected string/datetime for property DT, got 20270227" },
+        { 9, "\"dT\": \"2027-02-27T19:35:15.672Z\"", "\"dT\": \"27/02/2027\"", "Failed to bind property. Failed to parse datetime from string: 27/02/2027" },
+        
+        // Test boolean property "b"
+        { 10, "\"b\": false", "\"b\": 123", "Failed to bind property. Expected boolean for property B, got 123" },
+        
+        // Test geometry property "geom"
+        { 11, "\"geom\": {\"lineString\": [[1,1,1], [0,0,0], [3,3,3], [2,2,2]]}", "\"geom\": 123", "Failed to bind property. Expected string/json for property Geom, got 123" },
+        { 12, "\"geom\": {\"lineString\": [[1,1,1], [0,0,0], [3,3,3], [2,2,2]]}", "\"geom\": \"not a geometry\"", "Failed to bind property. Failed to parse geometry from json string: \"not a geometry\"" },
+        { 13, "\"geom\": {\"lineString\": [[1,1,1], [0,0,0], [3,3,3], [2,2,2]]}", "\"geom\": {\"lineString\": [[\"1\",\"1\",\"1\"], [0,0,0], [3,3,3]]}", "Failed to bind property. Failed to parse geometry from json object: {\"lineString\":[[\"1\",\"1\",\"1\"],[0,0,0],[3,3,3]]}" },
+        
+        // Test array property "array_Str"
+        { 14, "\"array_Str\": [\"a\", \"b\", \"c\"]", "\"array_Str\": 123", "Failed to bind property. Expected array for primitive array property, got 123" },
+        { 15, "\"array_Str\": [\"a\", \"b\", \"c\"]", "\"array_Str\": \"not an array\"", "Failed to bind property. Expected array for primitive array property, got \"not an array\"" },
+        { 16, "\"array_Str\": [\"a\", \"b\", \"c\"]", "\"array_Str\": [\"a\", \"b\", 123]", "Failed to bind property. Expected string for property Array_Str, got 123" },
+        
+        // Test struct property "struct"
+        { 17, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": 123", "Failed to bind property. Expected instance to be of type object for struct property, got 123" },
+        { 18, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": \"not a struct\"", "Failed to bind property. Expected instance to be of type object for struct property, got \"not a struct\"" },
+        { 19, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": {\"StructClassProp\": 123}", "Failed to bind property. Expected string for property StructClassProp, got 123" },
+        { 20, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": {\"StructClassProp\": \"struct property\", \"extra\": \"extra property\"}", "" },
+        
+        // Test struct array property "struct_Array"
+        { 21, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": 123", "Failed to bind property. Expected array for struct array property, got 123" },
+        { 22, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": \"not an array\"", "Failed to bind property. Expected array for struct array property, got \"not an array\"" },
+        { 23, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": [{\"StructClassProp\": 123}]", "Failed to bind property. Expected string for property StructClassProp, got 123" },
+        { 24, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\", \"extra\": \"extra property\"}]", "" },
+    };
 
-    // Test int property "i"
-    {3, "\"i\": -223", "\"i\": \"not an int\"", "Failed to bind property. Expected integer for property I, got \"not an int\""},
+    const auto jsNamesTestCases = std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
+        // Test point2d property "p2d"
+        { 25, "\"p2d\": {\"x\": 341.34, \"y\": -4.322}", "\"p2d\": \"not a point2d\"", "Failed to bind property. Expected instance to be of type object for Point2d property, got \"not a point2d\"" },
+        { 26, "\"p2d\": {\"x\": 341.34, \"y\": -4.322}", "\"p2d\": {\"x\": 341.34, \"y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"x\":341.34,\"y\":\"-4.322\"}" },
+        { 27, "\"p2d\": {\"x\": 341.34, \"y\": -4.322}", "\"p2d\": {\"x\": \"341.34\", \"y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"x\":\"341.34\",\"y\":\"-4.322\"}" },
+        
+        // Test point3d property "p3d"
+        { 28, "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": -20.0001}", "\"p3d\": \"not a point3d\"", "Failed to bind property. Expected instance to be of type object for Point3d property, got \"not a point3d\"" },
+        { 29, "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": -20.0001}", "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"x\":11.2344,\"y\":-15.3322,\"z\":\"-20.0001\"}" },
+        { 30, "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": -20.0001}", "\"p3d\": {\"x\": \"11.2344\", \"y\": \"-15.3322\", \"z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"x\":\"11.2344\",\"y\":\"-15.3322\",\"z\":\"-20.0001\"}" },
 
-    // Test double property "d"
-    {4, "\"d\": -3.141592653589793", "\"d\": \"not a double\"", "Failed to bind property. Expected integer for property D, got \"not a double\""},
+        // Test navigation property "parent"
+        { 31, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": 123", "" },
+        { 32, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": \"not a navigation\"", "Failed to bind property. Value supplied is not a valid decimal or hexadecimal value for the ECInstanceId/id field \"not a navigation\"" },
+        { 33, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": [\"0x1250\"], \"relClassName\": \"TestSchema.POwnsChildPs\" }", "Failed to bind property. Expected id for navigation property, got [\"0x1250\"]" },
+        { 34, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"90\" }", "Failed to bind property. Failed to find class with name: 90" },
+        { 35, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": \"0x1230\", \"relClassName\": [\"TestSchema.POwnsChildPs\"] }", "Failed to bind property. Expected relClassId/relClassName for navigation property, got [\"TestSchema.POwnsChildPs\"]" },
+        { 36, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"NonExistentClass\" }", "Failed to bind property. Failed to find class with name: NonExistentClass" },
 
-    // Test binary property "bi"
-    {5, "\"bi\": \"encoding=base64;cd2DfQvyUAEK4Q==\"", "\"bi\": 12345", "Failed to bind property. Expected binary/base64 for property Bi, got 12345"},
-    {6, "\"bi\": \"encoding=base64;cd2DfQvyUAEK4Q==\"", "\"bi\": \"not a binary\"", "Failed to bind property. Failed to parse guid from string: not a binary"},
+        // Test system properties
+        { 37, "\"className\": \"TestSchema.P\"", "\"className\": \"123\"", "Failed to get ECClassId/className/classFullName. Failed to find class with name: 123" },
+        { 38, "\"className\": \"TestSchema.P\"", "\"className\": 123", "Failed to get ECClassId/className/classFullName. Expected string for class name, got 123" },
+        { 39, "\"className\": \"TestSchema.P\"", "\"className\": \"not a class\"", "Failed to get ECClassId/className/classFullName. Failed to find class with name: not a class" },
+        { 40, "\"id\": \"0x1235\"", "\"id\": 123", "Failed to get ECInstanceId/id. Expected string for id, got 123" },
+        { 41, "\"id\": \"0x1235\"", "\"id\": \"not an id\"", "Failed to get ECInstanceId/id. Value supplied is not a valid decimal value \"not an id\"" },
+    };
 
-    // Test long property "l"
-    {7, "\"l\": 100000", "\"l\": \"not a long\"", "Failed to bind property. Expected long for property L, got \"not a long\""},
+    const auto withoutJsNamesTestCases = std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
+        // Test point2d property "p2d"
+        { 25, "\"p2d\": {\"X\": 341.34, \"Y\": -4.322}", "\"p2d\": \"not a point2d\"", "Failed to bind property. Expected instance to be of type object for Point2d property, got \"not a point2d\"" },
+        { 26, "\"p2d\": {\"X\": 341.34, \"Y\": -4.322}", "\"p2d\": {\"X\": 341.34, \"Y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"X\":341.34,\"Y\":\"-4.322\"}" },
+        { 27, "\"p2d\": {\"X\": 341.34, \"Y\": -4.322}", "\"p2d\": {\"X\": \"341.34\", \"Y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"X\":\"341.34\",\"Y\":\"-4.322\"}" },
+        
+        // Test point3d property "p3d"
+        { 28, "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": -20.0001}", "\"p3d\": \"not a point3d\"", "Failed to bind property. Expected instance to be of type object for Point3d property, got \"not a point3d\"" },
+        { 29, "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": -20.0001}", "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"X\":11.2344,\"Y\":-15.3322,\"Z\":\"-20.0001\"}" },
+        { 30, "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": -20.0001}", "\"p3d\": {\"X\": \"11.2344\", \"Y\": \"-15.3322\", \"Z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"X\":\"11.2344\",\"Y\":\"-15.3322\",\"Z\":\"-20.0001\"}" },
 
-    // Test dateTime property "dT"
-    {8, "\"dT\": \"2027-02-27T19:35:15.672Z\"", "\"dT\": 20270227", "Failed to bind property. Expected string/datetime for property DT, got 20270227"},
-    {9, "\"dT\": \"2027-02-27T19:35:15.672Z\"", "\"dT\": \"27/02/2027\"", "Failed to bind property. Failed to parse datetime from string: 27/02/2027"},
+        // Test navigation property "parent"
+        { 31, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": 123", "" },
+        { 32, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": \"not a navigation\"", "Failed to bind property. Value supplied is not a valid decimal or hexadecimal value for the ECInstanceId/id field \"not a navigation\"" },
+        { 33, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": [\"0x1250\"], \"RelECClassId\": \"0x5A\" }", "Failed to bind property. Expected id for navigation property, got [\"0x1250\"]" },
+        { 34, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"99999\" }", "" },
+        { 35, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": [\"0x5A\"] }", "Failed to bind property. Expected relClassId/relClassName for navigation property, got [\"0x5A\"]" },
+        { 36, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"NonExistentClass\" }", "Failed to bind property. Value supplied is not a valid decimal or hexadecimal value for the RelECClassId field \"NonExistentClass\"" },
 
-    // Test boolean property "b"
-    {10, "\"b\": false", "\"b\": 123", "Failed to bind property. Expected boolean for property B, got 123"},
-
-    // Test geometry property "geom"
-    {11, "\"geom\": {\"lineString\": [[1,1,1], [0,0,0], [3,3,3], [2,2,2]]}", "\"geom\": 123", "Failed to bind property. Expected string/json for property Geom, got 123"},
-    {12, "\"geom\": {\"lineString\": [[1,1,1], [0,0,0], [3,3,3], [2,2,2]]}", "\"geom\": \"not a geometry\"", "Failed to bind property. Failed to parse geometry from json string: \"not a geometry\""},
-    {13, "\"geom\": {\"lineString\": [[1,1,1], [0,0,0], [3,3,3], [2,2,2]]}", "\"geom\": {\"lineString\": [[\"1\",\"1\",\"1\"], [0,0,0], [3,3,3]]}", "Failed to bind property. Failed to parse geometry from json object: {\"lineString\":[[\"1\",\"1\",\"1\"],[0,0,0],[3,3,3]]}"},
-
-    // Test array property "array_Str"
-    {14, "\"array_Str\": [\"a\", \"b\", \"c\"]", "\"array_Str\": 123", "Failed to bind property. Expected array for primitive array property, got 123"},
-    {15, "\"array_Str\": [\"a\", \"b\", \"c\"]", "\"array_Str\": \"not an array\"", "Failed to bind property. Expected array for primitive array property, got \"not an array\""},
-    {16, "\"array_Str\": [\"a\", \"b\", \"c\"]", "\"array_Str\": [\"a\", \"b\", 123]", "Failed to bind property. Expected string for property Array_Str, got 123"},
-
-    // Test struct property "struct"
-    {17, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": 123", "Failed to bind property. Expected instance to be of type object for struct property, got 123"},
-    {18, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": \"not a struct\"", "Failed to bind property. Expected instance to be of type object for struct property, got \"not a struct\""},
-    {19, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": {\"StructClassProp\": 123}", "Failed to bind property. Expected string for property StructClassProp, got 123"},
-    {20, "\"struct\": {\"StructClassProp\": \"struct property\"}", "\"struct\": {\"StructClassProp\": \"struct property\", \"extra\": \"extra property\"}", ""},
-
-    // Test struct array property "struct_Array"
-    {21, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": 123", "Failed to bind property. Expected array for struct array property, got 123"},
-    {22, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": \"not an array\"", "Failed to bind property. Expected array for struct array property, got \"not an array\""},
-    {23, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": [{\"StructClassProp\": 123}]", "Failed to bind property. Expected string for property StructClassProp, got 123"},
-    {24, "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\"}]", "\"struct_Array\": [{\"StructClassProp\": \"struct property 1\"}, {\"StructClassProp\": \"struct property 2\", \"extra\": \"extra property\"}]", ""},
-};
-
-const auto jsNamesTestCases = std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
-    // Test point2d property "p2d"
-    {25, "\"p2d\": {\"x\": 341.34, \"y\": -4.322}", "\"p2d\": \"not a point2d\"", "Failed to bind property. Expected instance to be of type object for Point2d property, got \"not a point2d\""},
-    {26, "\"p2d\": {\"x\": 341.34, \"y\": -4.322}", "\"p2d\": {\"x\": 341.34, \"y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"x\":341.34,\"y\":\"-4.322\"}"},
-    {27, "\"p2d\": {\"x\": 341.34, \"y\": -4.322}", "\"p2d\": {\"x\": \"341.34\", \"y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"x\":\"341.34\",\"y\":\"-4.322\"}"},
-
-    // Test point3d property "p3d"
-    {28, "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": -20.0001}", "\"p3d\": \"not a point3d\"", "Failed to bind property. Expected instance to be of type object for Point3d property, got \"not a point3d\""},
-    {29, "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": -20.0001}", "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"x\":11.2344,\"y\":-15.3322,\"z\":\"-20.0001\"}"},
-    {30, "\"p3d\": {\"x\": 11.2344, \"y\": -15.3322, \"z\": -20.0001}", "\"p3d\": {\"x\": \"11.2344\", \"y\": \"-15.3322\", \"z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"x\":\"11.2344\",\"y\":\"-15.3322\",\"z\":\"-20.0001\"}"},
-
-    // Test navigation property "parent"
-    {31, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": 123", ""},
-    {32, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": \"not a navigation\"", "Failed to bind property. Value supplied is not a valid decimal or hexadecimal value for the ECInstanceId/id field \"not a navigation\""},
-    {33, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": [\"0x1250\"], \"relClassName\": \"TestSchema.POwnsChildPs\" }", "Failed to bind property. Expected id for navigation property, got [\"0x1250\"]"},
-    {34, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"90\" }", "Failed to bind property. Failed to find class with name: 90"},
-    {35, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": \"0x1230\", \"relClassName\": [\"TestSchema.POwnsChildPs\"] }", "Failed to bind property. Expected relClassId/relClassName for navigation property, got [\"TestSchema.POwnsChildPs\"]"},
-    {36, "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"TestSchema.POwnsChildPs\" }", "\"parent\": { \"id\": \"0x1230\", \"relClassName\": \"NonExistentClass\" }", "Failed to bind property. Failed to find class with name: NonExistentClass"},
-
-    // Test system properties
-    {37, "\"className\": \"TestSchema.P\"", "\"className\": \"123\"", "Failed to get ECClassId/className/classFullName. Failed to find class with name: 123"},
-    {38, "\"className\": \"TestSchema.P\"", "\"className\": 123", "Failed to get ECClassId/className/classFullName. Expected string for class name, got 123"},
-    {39, "\"className\": \"TestSchema.P\"", "\"className\": \"not a class\"", "Failed to get ECClassId/className/classFullName. Failed to find class with name: not a class"},
-    {40, "\"id\": \"0x1235\"", "\"id\": 123", "Failed to get ECInstanceId/id. Expected string for id, got 123"},
-    {41, "\"id\": \"0x1235\"", "\"id\": \"not an id\"", "Failed to get ECInstanceId/id. Value supplied is not a valid decimal value \"not an id\""},
-};
-
-const auto withoutJsNamesTestCases = std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>>{
-    // Test point2d property "p2d"
-    {25, "\"p2d\": {\"X\": 341.34, \"Y\": -4.322}", "\"p2d\": \"not a point2d\"", "Failed to bind property. Expected instance to be of type object for Point2d property, got \"not a point2d\""},
-    {26, "\"p2d\": {\"X\": 341.34, \"Y\": -4.322}", "\"p2d\": {\"X\": 341.34, \"Y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"X\":341.34,\"Y\":\"-4.322\"}"},
-    {27, "\"p2d\": {\"X\": 341.34, \"Y\": -4.322}", "\"p2d\": {\"X\": \"341.34\", \"Y\": \"-4.322\"}", "Failed to bind property. Expected instance to be of type object with x and y numeric members for Point2d property, got {\"X\":\"341.34\",\"Y\":\"-4.322\"}"},
-
-    // Test point3d property "p3d"
-    {28, "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": -20.0001}", "\"p3d\": \"not a point3d\"", "Failed to bind property. Expected instance to be of type object for Point3d property, got \"not a point3d\""},
-    {29, "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": -20.0001}", "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"X\":11.2344,\"Y\":-15.3322,\"Z\":\"-20.0001\"}"},
-    {30, "\"p3d\": {\"X\": 11.2344, \"Y\": -15.3322, \"Z\": -20.0001}", "\"p3d\": {\"X\": \"11.2344\", \"Y\": \"-15.3322\", \"Z\": \"-20.0001\"}", "Failed to bind property. Expected instance to be of type object with x, y and z numeric members for Point3d property, got {\"X\":\"11.2344\",\"Y\":\"-15.3322\",\"Z\":\"-20.0001\"}"},
-
-    // Test navigation property "parent"
-    {31, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": 123", ""},
-    {32, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": \"not a navigation\"", "Failed to bind property. Value supplied is not a valid decimal or hexadecimal value for the ECInstanceId/id field \"not a navigation\""},
-    {33, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": [\"0x1250\"], \"RelECClassId\": \"0x5A\" }", "Failed to bind property. Expected id for navigation property, got [\"0x1250\"]"},
-    {34, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"99999\" }", ""},
-    {35, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": [\"0x5A\"] }", "Failed to bind property. Expected relClassId/relClassName for navigation property, got [\"0x5A\"]"},
-    {36, "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"0x5A\" }", "\"parent\": { \"Id\": \"0x1230\", \"RelECClassId\": \"NonExistentClass\" }", "Failed to bind property. Value supplied is not a valid decimal or hexadecimal value for the RelECClassId field \"NonExistentClass\""},
-
-    // Test system properties
-    {37, "\"ECClassId\": \"0x58\"", "\"ECClassId\": \"not a class\"", "Failed to get ECClassId/className/classFullName. Value supplied is not a valid decimal or hexadecimal value for the ECClassId field \"not a class\""},
-    {38, "\"ECInstanceId\": \"0x1235\"", "\"ECInstanceId\": 9999", ""},
-    {39, "\"ECInstanceId\": 1235", "\"ECInstanceId\": 9999", ""},
-    {40, "\"ECInstanceId\": \"0x1235\"", "\"ECInstanceId\": \"not an id\"", "Failed to get ECInstanceId/id. Value supplied is not a valid decimal or hexadecimal value \"not an ECInstanceId\""},
-};
-}  // namespace InstanceWriterErrorHandlingTests
+        // Test system properties
+        { 37, "\"ECClassId\": \"0x58\"", "\"ECClassId\": \"not a class\"", "Failed to get ECClassId/className/classFullName. Value supplied is not a valid decimal or hexadecimal value for the ECClassId field \"not a class\"" },
+        { 38, "\"ECInstanceId\": \"0x1235\"", "\"ECInstanceId\": 9999", "" },
+        { 39, "\"ECInstanceId\": 1235", "\"ECInstanceId\": 9999", "" },
+        { 40, "\"ECInstanceId\": \"0x1235\"", "\"ECInstanceId\": \"not an id\"", "Failed to get ECInstanceId/id. Value supplied is not a valid decimal or hexadecimal value \"not an ECInstanceId\"" },
+    };
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -975,12 +978,12 @@ TEST_F(InstanceWriterFixture, InsertInstanceErrorHandling) {
         testJson.ReplaceAll("id", "ECInstanceId");
         testJson.ReplaceAll("\"className\": \"TestSchema.P\"", Utf8PrintfString("\"ECClassId\": \"%s\"", classP->GetId().ToHexStr().c_str()).c_str());
 
-        m_ecdb.GetInstanceWriter().Reset();  // Clear the last error message
+        m_ecdb.GetInstanceWriter().Reset(); // Clear the last error message
 
         ASSERT_EQ(Utf8String::IsNullOrEmpty(expectedErrorMessage.c_str()) ? BE_SQLITE_DONE : BE_SQLITE_ERROR, insertInstance(testJson, false)) << "Test case " << testCaseNumber << " failed.";
         EXPECT_STREQ(expectedErrorMessage.c_str(), m_ecdb.GetInstanceWriter().GetLastError().c_str()) << "Test case " << testCaseNumber << " did not report the expected error.";
 
-        m_ecdb.AbandonChanges();  // Make sure successful inserts don't affect the next test
+        m_ecdb.AbandonChanges();    // Make sure successful inserts don't affect the next test
     }
 }
 
@@ -1000,12 +1003,12 @@ TEST_F(InstanceWriterFixture, InsertInstanceErrorHandlingUseJsNames) {
         Utf8String testJson = InstanceWriterErrorHandlingTests::baseJson;
         testJson.ReplaceAll(propertyToReplace.c_str(), propertyToReplaceWith.c_str());
 
-        m_ecdb.GetInstanceWriter().Reset();  // Clear the last error message
+        m_ecdb.GetInstanceWriter().Reset(); // Clear the last error message
 
         ASSERT_EQ(Utf8String::IsNullOrEmpty(expectedErrorMessage.c_str()) ? BE_SQLITE_DONE : BE_SQLITE_ERROR, insertInstance(testJson)) << "Test case " << testCaseNumber << " failed.";
         EXPECT_STREQ(expectedErrorMessage.c_str(), m_ecdb.GetInstanceWriter().GetLastError().c_str()) << "Test case " << testCaseNumber << " did not report the expected error.";
 
-        m_ecdb.AbandonChanges();  // Make sure successful inserts don't affect the next test
+        m_ecdb.AbandonChanges();    // Make sure successful inserts don't affect the next test
     }
 }
 
@@ -1041,12 +1044,12 @@ TEST_F(InstanceWriterFixture, UpdateInstanceErrorHandling) {
         testDoc.Parse(testJson);
         ASSERT_FALSE(testDoc.hasParseError()) << "Test case " << testCaseNumber << " failed to parse json.";
 
-        m_ecdb.GetInstanceWriter().Reset();  // Clear the last error message
+        m_ecdb.GetInstanceWriter().Reset(); // Clear the last error message
 
         ASSERT_EQ(Utf8String::IsNullOrEmpty(expectedErrorMessage.c_str()) ? BE_SQLITE_DONE : BE_SQLITE_ERROR, UpdateInstance(m_ecdb, testDoc, InstanceWriter::UpdateOptions())) << "Test case " << testCaseNumber << " failed.";
         EXPECT_STREQ(expectedErrorMessage.c_str(), m_ecdb.GetInstanceWriter().GetLastError().c_str()) << "Test case " << testCaseNumber << " did not report the expected error.";
 
-        m_ecdb.AbandonChanges();  // Make sure successful updates don't affect the next test
+        m_ecdb.AbandonChanges();    // Make sure successful updates don't affect the next test
     }
 }
 
@@ -1074,12 +1077,12 @@ TEST_F(InstanceWriterFixture, UpdateInstanceErrorHandlingUseJsNames) {
         auto opt = InstanceWriter::UpdateOptions();
         opt.UseJsNames(true);
 
-        m_ecdb.GetInstanceWriter().Reset();  // Clear the last error message
+        m_ecdb.GetInstanceWriter().Reset(); // Clear the last error message
 
         ASSERT_EQ(Utf8String::IsNullOrEmpty(expectedErrorMessage.c_str()) ? BE_SQLITE_DONE : BE_SQLITE_ERROR, UpdateInstance(m_ecdb, testDoc, opt)) << "Test case " << testCaseNumber << " failed.";
         EXPECT_STREQ(expectedErrorMessage.c_str(), m_ecdb.GetInstanceWriter().GetLastError().c_str()) << "Test case " << testCaseNumber << " did not report the expected error.";
 
-        m_ecdb.AbandonChanges();  // Make sure successful updates don't affect the next test
+        m_ecdb.AbandonChanges();    // Make sure successful updates don't affect the next test
     }
 }
 
@@ -1093,36 +1096,36 @@ TEST_F(InstanceWriterFixture, DeleteInstanceErrorHandling) {
 
     // Run the test case suite for updating instances
     for (const auto& [testCaseNumber, jsonInstance, useJsNames, shouldSucceed] : std::vector<std::tuple<unsigned int, Utf8String, bool, bool>>{
-             {1, R"json({ "id": "0x1235", "className": "TestSchema.P"})json", true, true},
-             {2, R"json({ "id": 1235, "className": "TestSchema.P"})json", true, false},
-             {3, R"json({ "id": "not a string", "className": "TestSchema.P"})json", true, false},
-             {4, R"json({ "id": ["0x1235"], "className": "TestSchema.P"})json", true, false},
+        { 1, R"json({ "id": "0x1235", "className": "TestSchema.P"})json", true, true },
+        { 2, R"json({ "id": 1235, "className": "TestSchema.P"})json", true, false },
+        { 3, R"json({ "id": "not a string", "className": "TestSchema.P"})json", true, false },
+        { 4, R"json({ "id": ["0x1235"], "className": "TestSchema.P"})json", true, false },
 
-             {5, R"json({ "id": "0x1235", "className": "NonExistentClass"})json", true, false},
-             {6, R"json({ "id": "0x1235", "className": "0x58"})json", true, false},
-             {7, R"json({ "id": "0x1235", "className": ["NonExistentClass"]})json", true, false},
+        { 5, R"json({ "id": "0x1235", "className": "NonExistentClass"})json", true, false },
+        { 6, R"json({ "id": "0x1235", "className": "0x58"})json", true, false },
+        { 7, R"json({ "id": "0x1235", "className": ["NonExistentClass"]})json", true, false },
 
-             {8, R"json({ "ECInstanceId": "0x1235", "ECClassId": "0x58"})json", false, true},
-             {9, R"json({ "ECInstanceId": 1235, "ECClassId": "0x58"})json", false, true},
-             {10, R"json({ "ECInstanceId": "not a string", "ECClassId": "0x58"})json", false, false},
-             {11, R"json({ "ECInstanceId": ["0x1235"], "ECClassId": "0x58"})json", false, false},
+        { 8, R"json({ "ECInstanceId": "0x1235", "ECClassId": "0x58"})json", false, true },
+        { 9, R"json({ "ECInstanceId": 1235, "ECClassId": "0x58"})json", false, true },
+        { 10, R"json({ "ECInstanceId": "not a string", "ECClassId": "0x58"})json", false, false },
+        { 11, R"json({ "ECInstanceId": ["0x1235"], "ECClassId": "0x58"})json", false, false },
 
-             {12, R"json({ "ECInstanceId": "0x1235", "ECClassId": "NonExistentClass"})json", false, false},
-             {13, R"json({ "ECInstanceId": "0x1235", "ECClassId": ["NonExistentClass"]})json", false, false},
-         }) {
+        { 12, R"json({ "ECInstanceId": "0x1235", "ECClassId": "NonExistentClass"})json", false, false },
+        { 13, R"json({ "ECInstanceId": "0x1235", "ECClassId": ["NonExistentClass"]})json", false, false },
+    }) {
         BeJsDocument testDoc;
         testDoc.Parse(jsonInstance);
         ASSERT_FALSE(testDoc.hasParseError()) << "Test case " << testCaseNumber << " failed to parse json.";
         auto opt = InstanceWriter::DeleteOptions();
         opt.UseJsNames(useJsNames);
 
-        m_ecdb.GetInstanceWriter().Reset();  // Clear the last error message
+        m_ecdb.GetInstanceWriter().Reset(); // Clear the last error message
 
         ASSERT_EQ(shouldSucceed ? BE_SQLITE_DONE : BE_SQLITE_ERROR, DeleteInstance(m_ecdb, testDoc, opt)) << "Test case " << testCaseNumber << " failed.";
         if (!shouldSucceed)
             EXPECT_STREQ("Failed to get ECInstanceId/id and ECClassId/className/classFullName.", m_ecdb.GetInstanceWriter().GetLastError().c_str()) << "Test case " << testCaseNumber << " did not report the expected error.";
 
-        m_ecdb.AbandonChanges();  // Make sure successful updates don't affect the next test
+        m_ecdb.AbandonChanges();    // Make sure successful updates don't affect the next test
     }
 }
 END_ECDBUNITTESTS_NAMESPACE

@@ -1,12 +1,11 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
-#include <functional>
-
-#include "ClassMap.h"
 #include "ECDbInternalTypes.h"
+#include "ClassMap.h"
+#include <functional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================

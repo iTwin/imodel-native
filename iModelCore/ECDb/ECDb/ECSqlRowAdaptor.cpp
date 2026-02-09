@@ -1,11 +1,10 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
-#include <GeomSerialization/GeomLibsJsonSerialization.h>
-#include <GeomSerialization/GeomLibsSerialization.h>
-
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <GeomSerialization/GeomLibsSerialization.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -55,15 +54,15 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
                     const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
                     if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
                         memberName = ECN::ECJsonSystemNames::Id();
-                    else if (extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-                        memberName = m_options.UseClassFullNameInsteadofClassName() ? ECN::ECJsonSystemNames::ClassFullName() : ECN::ECJsonSystemNames::ClassName();
-                    else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+                        memberName = m_options.UseClassFullNameInsteadofClassName() ?  ECN::ECJsonSystemNames::ClassFullName() : ECN::ECJsonSystemNames::ClassName();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
                         memberName = ECN::ECJsonSystemNames::SourceId();
-                    else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
                         memberName = ECN::ECJsonSystemNames::SourceClassName();
-                    else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
                         memberName = ECN::ECJsonSystemNames::TargetId();
-                    else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
                     else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
@@ -166,9 +165,9 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValu
         return RenderPoint2d(out, in);
     }
     if (propType == ECN::PRIMITIVETYPE_Point3d) {
-        return RenderPoint3d(out, in);
+         return RenderPoint3d(out, in);
     }
-    if (propType == ECN::PRIMITIVETYPE_IGeometry) {
+    if (propType == ECN::PRIMITIVETYPE_IGeometry){
         return RenderGeometryProperty(out, in);
     }
     BeAssert(false && "property type unsupported");
@@ -179,11 +178,12 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValu
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool IsClassIdProperty(Utf8StringCR propertyName) {
-    static const auto classIdProperties = std::set<Utf8String, CompareIUtf8Ascii>{
+    static const auto classIdProperties = std::set<Utf8String,CompareIUtf8Ascii> {
         ECDBSYS_PROP_ECClassId,
         ECDBSYS_PROP_SourceECClassId,
         ECDBSYS_PROP_TargetECClassId,
-        ECDBSYS_PROP_NavPropRelECClassId};
+        ECDBSYS_PROP_NavPropRelECClassId
+    };
     return classIdProperties.find(propertyName) != classIdProperties.end();
 }
 
@@ -200,7 +200,7 @@ BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, 
             if (!id.IsValid()) {
                 return SUCCESS;
             }
-            if (m_options.DoNotConvertClassIdsToClassNamesWhenAliased() && !IsClassIdProperty(prop->GetName())) {
+            if(m_options.DoNotConvertClassIdsToClassNamesWhenAliased() && !IsClassIdProperty(prop->GetName())) {
                 out = id.ToHexStr();
                 return SUCCESS;
             }
@@ -276,12 +276,15 @@ BentleyStatus ECSqlRowAdaptor::RenderGeometryProperty(BeJsValue out, IECSqlValue
     return SUCCESS;
 }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue const& in) const {
     const auto extendedType =
-        in.GetColumnInfo().GetProperty() == nullptr ? ExtendedTypeHelper::ExtendedType::Unknown : ExtendedTypeHelper::FromProperty(*in.GetColumnInfo().GetProperty());
+        in.GetColumnInfo().GetProperty() == nullptr ?
+            ExtendedTypeHelper::ExtendedType::Unknown :
+            ExtendedTypeHelper::FromProperty(*in.GetColumnInfo().GetProperty());
 
     int size = 0;
     const void* data = in.GetBlob(&size);
@@ -295,7 +298,7 @@ BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue c
     if (extendedType == ExtendedTypeHelper::ExtendedType::GeometryStream && !m_options.AbbreviateBlobs()) {
         return m_ecdb.GetImpl().WithSnappyReader<BentleyStatus>([&](SnappyFromMemory& reader) {
             ByteStream bs;
-            if (SUCCESS == GeomBlobHeader::Decompress(in, reader, bs)) {
+            if (SUCCESS == GeomBlobHeader::Decompress(in, reader, bs)){
                 out.SetBinary(bs.GetDataP(), bs.GetSize());
                 return SUCCESS;
             }
@@ -367,7 +370,7 @@ BentleyStatus ECSqlRowAdaptor::RenderStructProperty(BeJsValue out, IECSqlValue c
 //---------------------------------------------------------------------------------------
 BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
-    auto elementType = in.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+    auto elementType  = in.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
         if (arrayElementValue.IsNull())
             continue;
@@ -383,7 +386,7 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSq
 BentleyStatus ECSqlRowAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
-        if (arrayElementValue.IsNull()) {
+        if (arrayElementValue.IsNull()){
             out.appendValue().SetEmptyObject();
             continue;
         }
@@ -427,7 +430,7 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
             }
             ECN::ECJsonUtilities::LowerFirstChar(jsName);
         } else if (isSystem) {
-            if (col.GetPropertyPath().Size() > 1) {
+            if (col.GetPropertyPath().Size() > 1)  {
                 T_Utf8StringVector accessStringV;
                 for (auto const* it : col.GetPropertyPath())
                     accessStringV.push_back(it->GetProperty()->GetName().c_str());
@@ -435,7 +438,7 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
                 for (int j = 1; j < accessStringV.size() - 1; ++j)
                     tmp += accessStringV[j] + ".";
 
-                auto& leafEntry = accessStringV.back();
+                auto &leafEntry = accessStringV.back();
                 if (leafEntry == ECDBSYS_PROP_NavPropId)
                     tmp += ECN::ECJsonSystemNames::Navigation::Id();
                 else if (leafEntry == ECDBSYS_PROP_NavPropRelECClassId)
@@ -455,19 +458,19 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
                 jsName.assign(prop->GetName());
                 if (extendedTypeId == ExtendedTypeHelper::ExtendedType::Id && jsName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
                     jsName = ECN::ECJsonSystemNames::Id();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::ClassId && jsName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-                    jsName = m_options.UseClassFullNameInsteadofClassName() ? ECN::ECJsonSystemNames::ClassFullName() : ECN::ECJsonSystemNames::ClassName();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::ClassId && jsName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+                    jsName = m_options.UseClassFullNameInsteadofClassName() ? ECN::ECJsonSystemNames::ClassFullName(): ECN::ECJsonSystemNames::ClassName();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
                     jsName = ECN::ECJsonSystemNames::SourceId();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
                     jsName = ECN::ECJsonSystemNames::SourceClassName();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
                     jsName = ECN::ECJsonSystemNames::TargetId();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
                     jsName = ECN::ECJsonSystemNames::TargetClassName();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::NavId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropId))
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::NavId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropId))
                     jsName = ECN::ECJsonSystemNames::Navigation::Id();
-                else if (extendedTypeId == ExtendedTypeHelper::ExtendedType::NavRelClassId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropRelECClassId))
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::NavRelClassId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropRelECClassId))
                     jsName = ECN::ECJsonSystemNames::Navigation::RelClassName();
                 else
                     ECN::ECJsonUtilities::LowerFirstChar(jsName);

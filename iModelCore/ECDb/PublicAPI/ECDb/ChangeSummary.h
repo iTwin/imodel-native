@@ -1,13 +1,12 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
+#include <cstddef>
+#include <ECDb/ECInstanceId.h>
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
-#include <ECDb/ECInstanceId.h>
-
-#include <cstddef>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -22,11 +21,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!     WHERE IsChangedInstance(:changeSummary, elg.ECClassId, elg.ECInstanceId)
 //! @bsiclass
 //=======================================================================================
-struct IsChangedInstanceSqlFunction final : ScalarFunction {
-   private:
+struct IsChangedInstanceSqlFunction final : ScalarFunction
+{
+private:
     void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
 
-   public:
+public:
     IsChangedInstanceSqlFunction() : ScalarFunction("IsChangedInstance", 3, DbValueType::IntegerVal) {}
     ~IsChangedInstanceSqlFunction() {}
 };
@@ -51,25 +51,27 @@ struct ChangeExtractor;
 //! @ingroup ECDbGroup
 //! @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
+struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
+{
     //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
-    enum class QueryDbOpcode {
-        None = 0,
-        Insert = 1,
-        Delete = 1 << 1,
-        Update = 1 << 2,
-        All = Insert | Delete | Update,
-        InsertUpdate = Insert | Update,
-        InsertDelete = Insert | Delete,
-        UpdateDelete = Update | Delete
+    enum class QueryDbOpcode
+    {
+        None            = 0,
+        Insert          = 1,
+        Delete          = 1 << 1,
+        Update          = 1 << 2,
+        All             = Insert | Delete | Update,
+        InsertUpdate    = Insert | Update,
+        InsertDelete    = Insert | Delete,
+        UpdateDelete    = Update | Delete
     };
 
     //! Options to control extraction of the change summary
-    struct Options final {
-       private:
+    struct Options final
+    {
+    private:
         bool m_includeRelationshipInstances;
-
-       public:
+    public:
         Options() : m_includeRelationshipInstances(true) {}
         void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
         bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
@@ -80,8 +82,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
     struct ValueIterator;
 
     //! Represents a changed instance
-    struct Instance {
-       private:
+    struct Instance
+    {
+    private:
         ChangeSummary const* m_changeSummary = nullptr;
         ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
@@ -92,12 +95,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
 
         void SetupValuesTableSelectStatement(Utf8CP accessString) const;
 
-       public:
+    public:
         Instance() {}
 
-        Instance(ChangeSummary const& changeSummary, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName) : m_changeSummary(&changeSummary), m_classId(classId), m_instanceId(instanceId), m_dbOpcode(dbOpcode), m_indirect(indirect), m_tableName(tableName) {}
+        Instance(ChangeSummary const& changeSummary, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName) :
+            m_changeSummary(&changeSummary), m_classId(classId), m_instanceId(instanceId), m_dbOpcode(dbOpcode), m_indirect(indirect), m_tableName(tableName)
+            {}
 
-        Instance(Instance const& other) { *this = other; }
+        Instance(Instance const& other) {*this = other;}
 
         ECDB_EXPORT Instance& operator=(Instance const& other);
 
@@ -135,10 +140,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
     typedef Instance const& InstanceCR;
 
     //! An iterator over changed instances in a ChangeSummary
-    struct InstanceIterator final : BeSQLite::DbTableIterator {
-       public:
-        struct Options {
-           private:
+    struct InstanceIterator final : BeSQLite::DbTableIterator
+    {
+    public:
+        struct Options
+        {
+        private:
             friend struct InstanceIterator;
 
             ECN::ECClassId m_classId;
@@ -147,10 +154,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
 
             Utf8String ToSelectStatement(Utf8CP columnsToSelect, ChangeSummary const& summary) const;
             void Bind(BeSQLite::Statement& stmt) const;
-
-           public:
-            explicit Options(ECN::ECClassId classId = ECN::ECClassId(), bool polymorphic = true, QueryDbOpcode queryDbOpcodes = QueryDbOpcode::All)
-                : m_classId(classId), m_polymorphic(polymorphic), m_opcodes(queryDbOpcodes) {}
+        public:
+            explicit Options(ECN::ECClassId classId=ECN::ECClassId(), bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
+                : m_classId(classId), m_polymorphic(polymorphic), m_opcodes(queryDbOpcodes) { }
 
             ECN::ECClassId GetClassId() const { return m_classId; }
             bool IsPolymorphic() const { return m_polymorphic; }
@@ -158,39 +164,38 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
 
             bool IsEmpty() const { return !m_classId.IsValid(); }
         };
-
-       private:
+    private:
         ChangeSummary const& m_changeSummary;
         Options m_options;
 
         Utf8String MakeSelectStatement(Utf8CP columns) const;
-
-       public:
-        explicit InstanceIterator(ChangeSummary const& changeSummary, Options const& options = Options())
-            : DbTableIterator((BeSQLite::DbCR)changeSummary.GetDb()), m_changeSummary(changeSummary), m_options(options) {}
+    public:
+        explicit InstanceIterator(ChangeSummary const& changeSummary, Options const& options=Options())
+            : DbTableIterator((BeSQLite::DbCR) changeSummary.GetDb()), m_changeSummary(changeSummary), m_options(options) { }
 
         //! An entry in the table.
-        struct Entry : DbTableIterator::Entry {
-            using iterator_category = std::input_iterator_tag;
-            using value_type = Entry const;
-            using difference_type = std::ptrdiff_t;
-            using pointer = Entry const*;
-            using reference = Entry const&;
+        struct Entry : DbTableIterator::Entry
+        {
+            using iterator_category=std::input_iterator_tag;
+            using value_type=Entry const;
+            using difference_type=std::ptrdiff_t;
+            using pointer=Entry const*;
+            using reference=Entry const&;
 
-           private:
+        private:
             friend struct InstanceIterator;
             ChangeSummary const& m_changeSummary;
             Entry(ChangeSummary const& changeSummary, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_changeSummary(changeSummary) {}
 
-           public:
+        public:
             //! Get the class id of the current change
-            ECN::ECClassId GetClassId() const { return (ECN::ECClassId)m_sql->GetValueUInt64(0); }
+            ECN::ECClassId GetClassId() const {return (ECN::ECClassId) m_sql->GetValueUInt64(0);}
 
             //! Get the instance id of the current change
             ECInstanceId GetInstanceId() const { return m_sql->GetValueId<ECInstanceId>(1); }
 
             //! Get the DbOpcode of the current change
-            DbOpcode GetDbOpcode() const { return (DbOpcode)m_sql->GetValueInt(2); }
+            DbOpcode GetDbOpcode() const { return (DbOpcode) m_sql->GetValueInt(2); }
 
             //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means.
             int GetIndirect() const { return m_sql->GetValueInt(3); }
@@ -200,7 +205,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
 
             Entry const& operator*() const { return *this; }
 
-            ChangeSummary const& GetChangeSummary() const { return m_changeSummary; }  //!< @private
+            ChangeSummary const& GetChangeSummary() const { return m_changeSummary; } //!< @private
         };
 
         typedef Entry const_iterator;
@@ -208,32 +213,35 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
         ECDB_EXPORT const_iterator begin() const;
         ECDB_EXPORT const_iterator end() const;
         ECDB_EXPORT int QueryCount() const;
-    };  // InstanceIterator
+    }; // InstanceIterator
 
     //! An iterator over values in a changed instance
-    struct ValueIterator final : BeSQLite::DbTableIterator {
-       private:
+    struct ValueIterator final : BeSQLite::DbTableIterator
+    {
+    private:
         ChangeSummary const& m_changeSummary;
         ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
 
-       public:
+    public:
         ValueIterator(ChangeSummary const& changeSummary, ECN::ECClassId classId, ECInstanceId instanceId)
-            : DbTableIterator(changeSummary.GetDb()), m_changeSummary(changeSummary), m_classId(classId), m_instanceId(instanceId) {}
+            : DbTableIterator(changeSummary.GetDb()), m_changeSummary (changeSummary), m_classId(classId), m_instanceId(instanceId)
+            {}
 
         //! An entry in the table of values in a changed instance.
-        struct Entry final : DbTableIterator::Entry {
-            using iterator_category = std::input_iterator_tag;
-            using value_type = Entry const;
-            using difference_type = std::ptrdiff_t;
-            using pointer = Entry const*;
-            using reference = Entry const&;
+        struct Entry final : DbTableIterator::Entry
+        {
+            using iterator_category=std::input_iterator_tag;
+            using value_type=Entry const;
+            using difference_type=std::ptrdiff_t;
+            using pointer=Entry const*;
+            using reference=Entry const&;
 
-           private:
+        private:
             friend struct ValueIterator;
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
 
-           public:
+        public:
             //! Gets the access string
             Utf8CP GetAccessString() const { return m_sql->GetValueText(0); }
 
@@ -251,9 +259,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
         ECDB_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry(m_stmt.get(), false); }
         ECDB_EXPORT int QueryCount() const;
-    };  // ValueIterator
+    }; // ValueIterator
 
-   private:
+private:
     ECDbCR m_ecdb;
     bool m_isValid = false;
     InstancesTable* m_instancesTable;
@@ -263,7 +271,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
     static int s_count;
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
 
-    // not copyable
+    //not copyable
     ChangeSummary(ChangeSummary const&) = delete;
     ChangeSummary& operator=(ChangeSummary const&) = delete;
 
@@ -273,7 +281,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
     Utf8String FormatInstanceIdStr(ECInstanceId) const;
     Utf8String FormatClassIdStr(ECN::ECClassId) const;
 
-   public:
+public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet
     ECDB_EXPORT explicit ChangeSummary(ECDbCR);
 
@@ -301,7 +309,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
 
     //! Make an iterator over the changed instances
     //! Use @ref FromChangeSet to populate the ChangeSummary
-    InstanceIterator MakeInstanceIterator(InstanceIterator::Options const& options = InstanceIterator::Options()) const { return InstanceIterator(*this, options); }
+    InstanceIterator MakeInstanceIterator(InstanceIterator::Options const& options=InstanceIterator::Options()) const { return InstanceIterator(*this, options); }
 
     //! Check if the change summary contains a specific instance
     ECDB_EXPORT bool ContainsInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
@@ -323,8 +331,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary {
     //! Query for all changed instances of the specified class (and it's sub classes).
     ECDB_EXPORT void QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic = true, QueryDbOpcode queryDbOpcodes = QueryDbOpcode::All) const;
 
-    Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const;                                                                     //! @private
-    ECDB_EXPORT static BentleyStatus GetMappedPrimaryTable(Utf8CP& tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb);  //!< @private
+    Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const; //! @private
+    ECDB_EXPORT static BentleyStatus GetMappedPrimaryTable(Utf8CP& tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb); //!< @private
 };
 
 typedef ChangeSummary const& ChangeSummaryCR;

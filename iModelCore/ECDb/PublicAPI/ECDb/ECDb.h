@@ -1,14 +1,13 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECDb/ECInstanceId.h>
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
-#include <ECDb/ECInstanceId.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <json/json.h>
-
 #include <unordered_map>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -30,12 +29,13 @@ enum class PropertyHandlerResult {
 //! @see @ref ECDbChange
 // @bsienum
 //+===============+===============+===============+===============+===============+======
-enum class ChangeOpCode {
-    // Its values must always match the ECEnumeration
+enum class ChangeOpCode
+    {
+    //Its values must always match the ECEnumeration
     Insert = 1,
     Update = 2,
     Delete = 4
-};
+    };
 
 //=======================================================================================
 //! The enum represents the values for the ChangedValueState argument of the ECSQL function
@@ -45,43 +45,46 @@ enum class ChangeOpCode {
 //! @see @ref ECDbChange
 // @bsienum
 //+===============+===============+===============+===============+===============+======
-enum class ChangedValueState {
-    AfterInsert = 1,   //!< query for the property values of an inserted row
-    BeforeUpdate = 2,  //!< query for the changed property values of an updated row before the update
-    AfterUpdate = 3,   //!< query for the changed property values of an updated row after the update
-    BeforeDelete = 4   //!< query for the property values of a deleted row before the delete
-};
+enum class ChangedValueState
+    {
+    AfterInsert = 1, //!< query for the property values of an inserted row
+    BeforeUpdate = 2, //!< query for the changed property values of an updated row before the update
+    AfterUpdate = 3, //!< query for the changed property values of an updated row after the update
+    BeforeDelete = 4 //!< query for the property values of a deleted row before the delete
+    };
 
 //=======================================================================================
 //! The enum class that controls whether ECSQL optimization is on or off.
 // @bsienum
 //+===============+===============+===============+===============+===============+======
-enum class OptimizationOptions {
+enum class OptimizationOptions
+    {
     OptimizeJoinForClassIds,
     OptimizeJoinForNestedSelectQuery
-};
+    };
 
 //=======================================================================================
 //! @ingroup ECDbGroup
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangeSetArg final {
-   private:
-    BeSQLite::ChangeStream& m_changeSet;
-    Utf8String m_extendedPropertiesJson;
+struct ChangeSetArg final
+    {
+    private:
+        BeSQLite::ChangeStream& m_changeSet;
+        Utf8String m_extendedPropertiesJson;
 
-   public:
-    //! Constructs a ChangeSetArg
-    //!@param[in] changeSet SQLite Changeset
-    explicit ChangeSetArg(BeSQLite::ChangeStream& changeSet) : m_changeSet(changeSet) {}
-    //! Constructs a ChangeSetArg
-    //!@param[in] changeSet SQLite Changeset
-    //!@param[in] extendedPropertiesJson JSON additional properties about the ChangeSet which are inserted
-    //! into the ChangeSummary::ExtendedProperties property.
-    ChangeSetArg(BeSQLite::ChangeStream& changeSet, Utf8StringCR extendedPropertiesJson) : m_changeSet(changeSet), m_extendedPropertiesJson(extendedPropertiesJson) {}
-    BeSQLite::ChangeStream& GetChangeSet() const { return m_changeSet; }
-    Utf8String const& GetExtendedPropertiesJson() const { return m_extendedPropertiesJson; }
-};
+    public:
+        //!Constructs a ChangeSetArg
+        //!@param[in] changeSet SQLite Changeset
+        explicit ChangeSetArg(BeSQLite::ChangeStream& changeSet) : m_changeSet(changeSet) {}
+        //!Constructs a ChangeSetArg
+        //!@param[in] changeSet SQLite Changeset
+        //!@param[in] extendedPropertiesJson JSON additional properties about the ChangeSet which are inserted
+        //!into the ChangeSummary::ExtendedProperties property.
+        ChangeSetArg(BeSQLite::ChangeStream& changeSet, Utf8StringCR extendedPropertiesJson) : m_changeSet(changeSet), m_extendedPropertiesJson(extendedPropertiesJson) {}
+        BeSQLite::ChangeStream& GetChangeSet() const { return m_changeSet; }
+        Utf8String const& GetExtendedPropertiesJson() const { return m_extendedPropertiesJson; }
+    };
 //=======================================================================================
 //! @ingroup ECDbGroup
 //! Allow configure some options around ecsql
@@ -89,61 +92,59 @@ struct ChangeSetArg final {
 //+===============+===============+===============+===============+===============+======
 struct ECSqlConfig {
     struct DisableSqlFunctions {
-       private:
-        bvector<Utf8String> m_disabledFuncList;
-
-       public:
-        DisableSqlFunctions() {}
-        DisableSqlFunctions(const DisableSqlFunctions&) = delete;
-        DisableSqlFunctions& operator=(const DisableSqlFunctions&) = delete;
-        void Add(Utf8StringCR functionName) {
-            if (!Exists(functionName)) {
-                m_disabledFuncList.push_back(functionName);
-            }
-        }
-        void Remove(Utf8StringCR functionName) {
-            for (auto it = m_disabledFuncList.begin(); it != m_disabledFuncList.end(); ++it) {
-                if ((*it).EqualsIAscii(functionName)) {
-                    m_disabledFuncList.erase(it);
-                    return;
+        private:
+            bvector<Utf8String> m_disabledFuncList;
+        public:
+            DisableSqlFunctions(){}
+            DisableSqlFunctions(const DisableSqlFunctions&)=delete;
+            DisableSqlFunctions& operator=(const DisableSqlFunctions&)=delete;
+            void Add(Utf8StringCR functionName) {
+                if (!Exists(functionName)) {
+                    m_disabledFuncList.push_back(functionName);
                 }
             }
-        }
-        bool Exists(Utf8String functionName) const {
-            for (auto it = m_disabledFuncList.begin(); it != m_disabledFuncList.end(); ++it) {
-                if ((*it).EqualsIAscii(functionName)) {
-                    return true;
+            void Remove(Utf8StringCR functionName) {
+                for(auto it = m_disabledFuncList.begin(); it != m_disabledFuncList.end(); ++it) {
+                    if ((*it).EqualsIAscii(functionName)) {
+                        m_disabledFuncList.erase(it);
+                        return;
+                    }
                 }
             }
-            return false;
-        }
-        void Clear() { m_disabledFuncList.clear(); }
+            bool Exists(Utf8String functionName) const{
+                for(auto it = m_disabledFuncList.begin(); it != m_disabledFuncList.end(); ++it) {
+                    if ((*it).EqualsIAscii(functionName)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            void Clear() {m_disabledFuncList.clear();}
     };
+    private:
+        DisableSqlFunctions m_disabledFunctions;
+        bool m_experimentalFeaturesEnabled;
+        bool m_validateWriteValues;
+        bool m_purgeUnusedColumns;
+        mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
-   private:
-    DisableSqlFunctions m_disabledFunctions;
-    bool m_experimentalFeaturesEnabled;
-    bool m_validateWriteValues;
-    bool m_purgeUnusedColumns;
-    mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
+    public:
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false), m_purgeUnusedColumns(false) {
+            m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
+            m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
+        }
+        ECSqlConfig(const ECSqlConfig&)=delete;
+        ECSqlConfig& operator=(const ECSqlConfig&)=delete;
+        DisableSqlFunctions& GetDisableFunctions() {return m_disabledFunctions;}
+        bool GetOptimizationOption(OptimizationOptions option) const {return m_optimisationOptionsMap[option];}
+        void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
+        bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
+        void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
 
-   public:
-    ECSqlConfig() : m_experimentalFeaturesEnabled(false), m_validateWriteValues(false), m_purgeUnusedColumns(false) {
-        m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
-        m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
-    }
-    ECSqlConfig(const ECSqlConfig&) = delete;
-    ECSqlConfig& operator=(const ECSqlConfig&) = delete;
-    DisableSqlFunctions& GetDisableFunctions() { return m_disabledFunctions; }
-    bool GetOptimizationOption(OptimizationOptions option) const { return m_optimisationOptionsMap[option]; }
-    void SetOptimizationOption(OptimizationOptions option, bool flag) { m_optimisationOptionsMap[option] = flag; }
-    bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
-    void SetExperimentalFeaturesEnabled(bool v) { m_experimentalFeaturesEnabled = v; }
-
-    bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
-    void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
-    bool GetPurgeUnusedColumns() const { return m_purgeUnusedColumns; }
-    void SetPurgeUnusedColumns(bool v) { m_purgeUnusedColumns = v; }
+        bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
+        void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
+        bool GetPurgeUnusedColumns() const { return m_purgeUnusedColumns; }
+        void SetPurgeUnusedColumns(bool v) { m_purgeUnusedColumns = v; }
 };
 
 //=======================================================================================
@@ -165,36 +166,39 @@ struct AsciiCaseInsensitiveCompare {
 //! @ingroup ECDbGroup
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db {
-   public:
+struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
+{
+public:
     //=======================================================================================
     //! Compile-time Settings that subclasses can set.
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct Settings final {
-       private:
-        bool m_requiresECCrudWriteToken = false;
-        bool m_requiresECSchemaImportToken = false;
+    struct Settings final
+        {
+        private:
+            bool m_requiresECCrudWriteToken = false;
+            bool m_requiresECSchemaImportToken = false;
 
-       public:
-#if !defined(DOCUMENTATION_GENERATOR)
-        // not inlined as ctors are only needed internally
-        Settings();
-        Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken);
+        public:
+#if !defined (DOCUMENTATION_GENERATOR)
+            //not inlined as ctors are only needed internally
+            Settings();
+            Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken);
 #endif
-        bool RequiresECCrudWriteToken() const { return m_requiresECCrudWriteToken; }
-        bool RequiresECSchemaImportToken() const { return m_requiresECSchemaImportToken; }
-    };
+            bool RequiresECCrudWriteToken() const { return m_requiresECCrudWriteToken; }
+            bool RequiresECSchemaImportToken() const { return m_requiresECSchemaImportToken; }
+        };
 
-    struct SettingsManager final {
-       private:
+    struct SettingsManager final
+        {
+    private:
         Settings m_settings;
         ECCrudWriteToken const* m_crudWriteToken = nullptr;
         SchemaImportToken const* m_schemaImportToken = nullptr;
 
-       public:
-#if !defined(DOCUMENTATION_GENERATOR)
-        // not inlined as ctors are only needed internally
+    public:
+#if !defined (DOCUMENTATION_GENERATOR)
+        //not inlined as ctors are only needed internally
         SettingsManager();
         void ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 #endif
@@ -205,48 +209,51 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db {
         ECCrudWriteToken const* GetCrudWriteToken() const { return m_crudWriteToken; }
         //! Consumers can only import ECSchemas with the token
         SchemaImportToken const* GetSchemaImportToken() const { return m_schemaImportToken; }
-    };
+        };
 
     //=======================================================================================
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct ChangeSummaryExtractOptions final {
-       private:
-        bool m_includeRelationshipInstances = true;
+    struct ChangeSummaryExtractOptions final
+        {
+        private:
+            bool m_includeRelationshipInstances = true;
 
-       public:
-        explicit ChangeSummaryExtractOptions(bool includeRelationshipInstances = true) : m_includeRelationshipInstances(includeRelationshipInstances) {}
-        bool IncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
-    };
+        public:
+            explicit ChangeSummaryExtractOptions(bool includeRelationshipInstances = true) : m_includeRelationshipInstances(includeRelationshipInstances) {}
+            bool IncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
+        };
 
     //=======================================================================================
     //! Modes for the ECDb::Purge method.
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    enum class PurgeMode {
-        FileInfoOwnerships = 1,  //!< Purges FileInfoOwnership instances (see also @ref ECDbFileInfo)
+    enum class PurgeMode
+        {
+        FileInfoOwnerships = 1, //!< Purges FileInfoOwnership instances (see also @ref ECDbFileInfo)
         All = FileInfoOwnerships
-    };
+        };
 
     //=======================================================================================
     //! An interface for a listener that gets notified when ECDb caches are being cleared.
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct IECDbCacheClearListener {
+    struct IECDbCacheClearListener
+        {
         virtual ~IECDbCacheClearListener() {}
         virtual void _OnBeforeClearECDbCache() = 0;
         virtual void _OnAfterClearECDbCache() {};
-    };
+        };
 
     struct Impl;
 
-   private:
+private:
     Impl* m_pimpl;
 
-#if !defined(DOCUMENTATION_GENERATOR)
-   protected:
+#if !defined (DOCUMENTATION_GENERATOR)
+protected:
     //! To be called during construction of the ECDb subclass.
-    // This is only a separate method because DgnDb is not a direct subclass of ECDb, but of RefCounted<ECDb>. So DgnDb's ctor cannot call ECDb's ctor.
+    //This is only a separate method because DgnDb is not a direct subclass of ECDb, but of RefCounted<ECDb>. So DgnDb's ctor cannot call ECDb's ctor.
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
@@ -271,7 +278,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db {
     ECDB_EXPORT bool SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const;
 #endif
 
-   public:
+public:
     //! This method @b must be called once per process before any other ECDb method is called.
     //! @remarks This method is a convenience wrapper around the individual initialization routines
     //!          needed for ECDb. This includes calls to BeSQLiteLib::Initialize and to
@@ -287,7 +294,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db {
     //!            standard schemas cannot be located by ECDb.
     //! @param[in] logSqliteErrors If Yes, then SQLite error messages are logged. Note that some SQLite errors are intentional. Turn this option on only for limited debuging purposes.
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
-    ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
+    ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
 
     //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
     //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
@@ -480,9 +487,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db {
     //!     - ECProperty is not mapped to a column at all
     //!     - Write token validation failed
     //! @see BeSQLite::BlobIO
-    BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const {
+    BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const
+        {
         return OpenBlobIO(blobIO, nullptr, ecClass, propertyAccessString, ecInstanceId, writable, writeToken);
-    }
+        }
 
     //! Opens a Blob for incremental I/O for the specified ECProperty.
     //! @remarks The caller is responsible for closing/releasing the @p blobIO handle again.
@@ -538,7 +546,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db {
     BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
     BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged) { return _AfterDataChangeSetApplied(schemaChanged); }
 
-#if !defined(DOCUMENTATION_GENERATOR)
+#if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;
 #endif
 };
@@ -547,16 +555,16 @@ typedef ECDb& ECDbR;
 typedef ECDb const& ECDbCR;
 
 struct LastErrorListener final : NonCopyableClass {
-   private:
-    ECDbCR m_ecdb;
-    Utf8String m_lastError;
-    cancel_callback_type m_cancel;
+    private:
+        ECDbCR m_ecdb;
+        Utf8String m_lastError;
+        cancel_callback_type m_cancel;
 
-   public:
-    ECDB_EXPORT LastErrorListener(ECDbCR ecdb);
-    Utf8StringCR GetLastError() const { return m_lastError; }
-    bool HasError() const { return !m_lastError.empty(); }
-    ECDB_EXPORT ~LastErrorListener();
+    public:
+        ECDB_EXPORT LastErrorListener(ECDbCR ecdb);
+        Utf8StringCR GetLastError() const { return m_lastError; }
+        bool HasError() const { return !m_lastError.empty(); }
+        ECDB_EXPORT ~LastErrorListener();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

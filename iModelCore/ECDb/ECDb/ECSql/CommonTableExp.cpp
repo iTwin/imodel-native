@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -15,7 +15,7 @@ void CommonTablePropertyNameExp::_ToJson(BeJsValue val, JsonFormat const&) const
     val.SetEmptyObject();
     val["id"] = "PropertyNameExp";
     Utf8String path;
-    path.append(!m_blockName->GetAlias().empty() ? m_blockName->GetAlias() : m_blockName->GetName()).append(".").append(m_name);
+    path.append(!m_blockName->GetAlias().empty()? m_blockName->GetAlias() : m_blockName->GetName()).append(".").append(m_name);
     val["path"] = path;
 }
 
@@ -24,7 +24,7 @@ void CommonTablePropertyNameExp::_ToJson(BeJsValue val, JsonFormat const&) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String CommonTablePropertyNameExp::_ToString() const {
     Utf8String path;
-    path.append(!m_blockName->GetAlias().empty() ? m_blockName->GetAlias() : m_blockName->GetName()).append(".").append(m_name);
+    path.append(!m_blockName->GetAlias().empty()? m_blockName->GetAlias() : m_blockName->GetName()).append(".").append(m_name);
     return path;
 }
 
@@ -33,21 +33,21 @@ Utf8String CommonTablePropertyNameExp::_ToString() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> colList, std::unique_ptr<SelectStatementExp> stmt)
-    : RangeClassRefExp(Exp::Type::CommonTableBlock, PolymorphicInfo::Only()), m_name(name), m_columnList(colList), m_deferredExpand(true) {
+    :RangeClassRefExp(Exp::Type::CommonTableBlock, PolymorphicInfo::Only()), m_name(name), m_columnList(colList),m_deferredExpand(true) {
     AddChild(std::move(stmt));
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::unique_ptr<SelectStatementExp> stmt)
-    : RangeClassRefExp(Exp::Type::CommonTableBlock, PolymorphicInfo::Only()), m_name(name), m_deferredExpand(true) {
+    :RangeClassRefExp(Exp::Type::CommonTableBlock, PolymorphicInfo::Only()), m_name(name), m_deferredExpand(true) {
     AddChild(std::move(stmt));
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool CommonTableBlockExp::ExpandDerivedProperties() const {
-    if (m_columnList.size() == 0)
+    if(m_columnList.size() == 0)
         return true;  // If there are no columns we actually donot need expanding these derived properties...because in _FindProperty we just cascade the finding to the inside select statement
     // when we encounter wild card we will leave it deferred.
     if (!m_deferredExpand) {
@@ -87,7 +87,7 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
             auto it = uniqueCols.insert(col.c_str());
             if (false == it.second) {
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0452,
-                                     "Invalid ECSql : Common table '%s' has duplicate column with same name '%s'. %s", GetName().c_str(), col.c_str(), ToECSql().c_str());
+                    "Invalid ECSql : Common table '%s' has duplicate column with same name '%s'. %s", GetName().c_str(), col.c_str(), ToECSql().c_str());
                 return FinalizeParseStatus::Error;
             }
         }
@@ -97,7 +97,7 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
         const auto values = GetQuery()->GetSelection()->GetChildrenCount();
         if (columns != values && m_columnList.size() != 0) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0453,
-                                 "Invalid ECSql : Common table '%s' has %d values for columns %d. %s", GetName().c_str(), columns, values, ToECSql().c_str());
+                "Invalid ECSql : Common table '%s' has %d values for columns %d. %s", GetName().c_str(), columns, values, ToECSql().c_str());
             return FinalizeParseStatus::Error;
         }
 
@@ -111,7 +111,7 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo CommonTableBlockExp::FindType(Utf8StringCR col) const {
+ECSqlTypeInfo CommonTableBlockExp::FindType (Utf8StringCR col) const {
     ECSqlTypeInfo resolvedTypeInfo;
 
     auto it = std::find(m_columnList.begin(), m_columnList.end(), col);
@@ -132,7 +132,7 @@ ECSqlTypeInfo CommonTableBlockExp::FindType(Utf8StringCR col) const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CommonTableBlockExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+void CommonTableBlockExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: CommonTableBlockExp
     val.SetEmptyObject();
     val["id"] = "CommonTableBlockExp";
@@ -140,7 +140,7 @@ void CommonTableBlockExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
     if (!GetColumns().empty()) {
         auto args = val["args"];
         args.toArray();
-        for (auto& col : GetColumns())
+        for(auto& col : GetColumns())
             args.appendValue() = col;
     }
     GetQuery()->ToJson(val["asQuery"], fmt);
@@ -156,7 +156,7 @@ void CommonTableBlockExp::_ToECSql(ECSqlRenderContext& ctx) const {
 
     for (size_t i = 1; i < this->GetColumns().size(); ++i) {
         ctx.AppendToECSql(", ").AppendToECSql(GetColumns().at(i));
-        if (i == GetColumns().size() - 1)
+        if(i == GetColumns().size()-1)
             ctx.AppendToECSql(")");
     }
     ctx.AppendToECSql(" AS (");
@@ -185,13 +185,14 @@ Utf8StringCR CommonTableBlockExp::_GetId() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
+    
     auto ctb = [&]() -> CommonTableBlockNameExp const* {
         if (ctx.CurrentArg()->GetType() != ECSqlParseContext::ParseArg::Type::RangeClass)
             return nullptr;
         auto rangeClasses = dynamic_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
         if (rangeClasses == nullptr)
             return nullptr;
-        for (auto& rangeClass : rangeClasses->GetRangeClassInfos()) {
+        for(auto& rangeClass : rangeClasses->GetRangeClassInfos()) {
             if (rangeClass.GetExp().GetType() != Exp::Type::CommonTableBlockName)
                 continue;
             auto cur = rangeClass.GetExp().GetAsCP<CommonTableBlockNameExp>();
@@ -206,19 +207,25 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>
     if (ctb == nullptr) {
         return;
     }
-
-    if (m_columnList.size() == 0) {
-        for (Exp const* expr : GetQuery()->GetSelection()->GetChildren()) {
-            DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-            std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *ctb, selectClauseItemExp);
-            expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
+    
+    
+    if(m_columnList.size() == 0){
+        for (Exp const* expr : GetQuery()->GetSelection()->GetChildren())
+        {
+        DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *ctb, selectClauseItemExp);
+        expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
-    } else {
+    }
+    else
+    {
         auto selection = GetQuery()->GetSelection();
         auto nCols = std::max(m_columnList.size(), selection->GetChildrenCount());
         for (auto i = 0; i < nCols; ++i) {
             auto target = selection->GetChildren().Get<DerivedPropertyExp>(i);
-            auto property = std::make_unique<CommonTablePropertyNameExp>(m_columnList[i].c_str(), *target, [&](Utf8String col) { return FindType(col); }, ctb);
+            auto property = std::make_unique<CommonTablePropertyNameExp>(m_columnList[i].c_str(), *target, [&](Utf8String col) {
+                return FindType(col);
+            }, ctb);
             expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(property), nullptr));
         }
     }
@@ -227,14 +234,15 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const {
+PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     // First Expansion
     if (!ExpandDerivedProperties()) {
         return PropertyMatchResult::NotFound();
     }
     // Then Property Finding
-    if (m_columnList.size() == 0) {
-        if (Utf8String::IsNullOrEmpty(options.GetAlias().c_str())) {
+    if(m_columnList.size() == 0){
+        if(Utf8String::IsNullOrEmpty(options.GetAlias().c_str()))
+        {
             /*This is added because for cte blocks without columns we treat the block select statement as a subquery
             now if the cte block name has alias then that alias is respected otherwise the cte block name
             itself can also be used while referencing properties in outside select statement.
@@ -245,7 +253,7 @@ PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, P
         }
         return GetQuery()->FindProperty(ctx, propertyPath, options);
     }
-
+    
     auto path = propertyPath;
     if (path.Size() > 1) {
         if (path.First().GetName().EqualsIAscii(GetName()) || path.First().GetName().EqualsIAscii(options.GetAlias())) {
@@ -271,13 +279,14 @@ PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, P
     return PropertyMatchResult::NotFound();
 }
 
+
 //******************************** CommonTableExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 CommonTableExp::CommonTableExp(std::unique_ptr<SelectStatementExp> stmt, std::vector<std::unique_ptr<CommonTableBlockExp>> cteList, bool recursive)
-    : Exp(Exp::Type::CommonTable), m_recursive(recursive) {
-    for (auto& cte : cteList) {
+    :Exp(Exp::Type::CommonTable), m_recursive(recursive) {
+    for( auto& cte : cteList ) {
         AddChild(std::move(cte));
     }
     AddChild(std::move(stmt));
@@ -287,7 +296,7 @@ CommonTableExp::CommonTableExp(std::unique_ptr<SelectStatementExp> stmt, std::ve
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus CommonTableExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren) {
@@ -301,14 +310,14 @@ Exp::FinalizeParseStatus CommonTableExp::_FinalizeParsing(ECSqlParseContext& ctx
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CommonTableExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+void CommonTableExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: CommonTableExp
     val.SetEmptyObject();
     val["id"] = "CommonTableExp";
     val["recursive"] = Recursive();
     auto blocks = val["blocks"];
     blocks.toArray();
-    for (auto& cteList : GetCteList())
+    for(auto& cteList : GetCteList())
         cteList->ToJson(blocks.appendValue(), fmt);
 
     GetQuery()->ToJson(val["select"], fmt);
@@ -344,7 +353,7 @@ Utf8String CommonTableExp::_ToString() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 std::vector<CommonTableBlockExp const*> CommonTableExp::GetCteList() const {
-    std::vector<CommonTableBlockExp const*> list;
+    std::vector<CommonTableBlockExp const *> list;
     for (auto child : GetChildren()) {
         if (child->GetType() != Exp::Type::CommonTableBlock)
             continue;
@@ -357,16 +366,16 @@ std::vector<CommonTableBlockExp const*> CommonTableExp::GetCteList() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-const CommonTableBlockExp* CommonTableBlockNameExp::ResolveBlock(ECSqlParseContext const& ctx, bool logError) const {
+const CommonTableBlockExp*  CommonTableBlockNameExp::ResolveBlock(ECSqlParseContext const& ctx, bool logError) const {
     if (m_blockExp) {
         return m_blockExp;
     }
 
-    if (auto exp = FindParent(Exp::Type::CommonTable)) {
+    if (auto exp  = FindParent(Exp::Type::CommonTable)) {
         auto& cte = exp->GetAs<CommonTableExp>();
         auto blocks = cte.GetCteList();
         for (auto block : blocks) {
-            if (block->GetName().EqualsIAscii(this->GetName())) {
+            if (block->GetName().EqualsIAscii(this->GetName()) ) {
                 // set reference to match CTE block name
                 m_blockExp = block;
             }
@@ -374,13 +383,13 @@ const CommonTableBlockExp* CommonTableBlockNameExp::ResolveBlock(ECSqlParseConte
         if (m_blockExp == nullptr) {
             if (logError) {
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0454,
-                                     "Invalid expression : Unable to find a common table expression block with '%s' name.", ToECSql().c_str());
+                    "Invalid expression : Unable to find a common table expression block with '%s' name.", ToECSql().c_str());
             }
         }
     } else {
         if (logError) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0455,
-                                 "Invalid ECSQL class expression '%s': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", ToECSql().c_str());
+                "Invalid ECSQL class expression '%s': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", ToECSql().c_str());
         }
     }
     return m_blockExp;
@@ -428,7 +437,7 @@ void CommonTableBlockNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMatchResult CommonTableBlockNameExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const {
+PropertyMatchResult CommonTableBlockNameExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     auto blockExp = ResolveBlock(ctx, false);
     BeAssert(blockExp != nullptr && "Programmer Error, this should be set");
     if (blockExp) {
@@ -444,12 +453,12 @@ PropertyMatchResult CommonTableBlockNameExp::_FindProperty(ECSqlParseContext& ct
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CommonTableBlockNameExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+void CommonTableBlockNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: CommonTableBlockNameExp
     val.SetEmptyObject();
     val["id"] = "CommonTableBlockNameExp";
     val["name"] = m_name;
-    if (!GetAlias().empty())
+    if(!GetAlias().empty())
         val["alias"] = GetAlias();
 }
 
@@ -465,7 +474,7 @@ void CommonTableBlockNameExp::_ToECSql(ECSqlRenderContext& ctx) const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String CommonTableBlockNameExp::_ToString() const {
+Utf8String CommonTableBlockNameExp::_ToString () const {
     return m_name;
 }
 //*********************************************CommonTablePropertyNameExp*******************
@@ -473,7 +482,7 @@ Utf8String CommonTableBlockNameExp::_ToString() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus CommonTablePropertyNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren) {
@@ -481,7 +490,7 @@ Exp::FinalizeParseStatus CommonTablePropertyNameExp::_FinalizeParsing(ECSqlParse
             SetTypeInfo(targetTypeInfo);
         else {
             auto typeInfo = m_typeInfoCallBack(m_name);
-            if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset) {
+            if(typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset) {
                 ctx.SetDeferFinalize(true);
                 return FinalizeParseStatus::NotCompleted;
             }

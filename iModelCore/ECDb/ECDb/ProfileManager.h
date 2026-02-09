@@ -1,21 +1,22 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "ProfileUpgrader.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-// for ECDb related entries in the be_Prop table
+//for ECDb related entries in the be_Prop table
 #define ECDB_PROPSPEC_NAMESPACE "ec_Db"
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ProfileManager final {
-   private:
+struct ProfileManager final
+    {
+private:
     ECDbR m_ecdb;
     mutable ProfileVersion m_profileVersion = ProfileVersion(0, 0, 0, 0);
 
@@ -34,8 +35,8 @@ struct ProfileManager final {
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
 
-   public:
-    explicit ProfileManager(ECDbR ecdb) : m_ecdb(ecdb) {}
+public:
+    explicit ProfileManager(ECDbR ecdb): m_ecdb(ecdb) {}
 
     ProfileState CheckProfileVersion() const;
     BentleyStatus RefreshProfileVersion() const;
@@ -64,7 +65,8 @@ struct ProfileManager final {
         return m_profileVersion;
     }
 
-    static bset<Utf8CP, CompareIUtf8Ascii> GetECDbSchemaNames() {
+    static bset<Utf8CP, CompareIUtf8Ascii> GetECDbSchemaNames()
+        {
         bset<Utf8CP, CompareIUtf8Ascii> names;
         names.insert("ECDbChange");
         names.insert("ECDbFileInfo");
@@ -73,7 +75,8 @@ struct ProfileManager final {
         names.insert("ECDbSchemaPolicies");
         names.insert("ECDbSystem");
         return names;
-    }
-};
+        }
+
+    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

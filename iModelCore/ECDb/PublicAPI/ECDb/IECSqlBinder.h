@@ -1,100 +1,108 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
-#include <BeSQLite/BeSQLite.h>
-#include <Bentley/BeId.h>
 #include <ECDb/ECSqlStatus.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <BeSQLite/BeSQLite.h>
+#include <Bentley/BeId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct BinderInfo final {
-   public:
-    enum class BinderType {
-        Array,
-        Id,
-        VirtualSet,
-        NavigationProperty,
-        Point,
-        Primitive,
-        Struct,
-        JsonValue,
-        Noop,
-        ProxyECInstanceId,
-        Proxy,
+struct BinderInfo final
+    {
+    public:
+        enum class BinderType
+        {
+            Array,
+            Id,
+            VirtualSet,
+            NavigationProperty,
+            Point,
+            Primitive,
+            Struct,
+            JsonValue,
+            Noop,
+            ProxyECInstanceId,
+            Proxy, 
+        };
+        
+    private:
+        BinderType m_binderType ;
+        bool m_binderIsForIdSet = false;
+        std::vector<ECN::ECClassId> m_relECClassIdsForNavigationProperties; // used for navigation properties to validate the relationship class Ids
+
+        bool IsForNavigationProperty() const { return m_binderType == BinderType::NavigationProperty || m_binderType == BinderType::Proxy; }
+    public:
+        explicit BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSet(false){}
+        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSet(binderIsForInVirtualSetOrIdSetVirtualTable){}
+        BinderType GetType() const { return m_binderType; }
+        bool IsForIdSet() const { return m_binderIsForIdSet; }
+
+        // Caches the relationship class IDs for navigation property validation.
+        // Only performs the operation if this binder is for a navigation property.
+        // Appends the provided class IDs to the internal list.
+        void CacheRelClassIdsForPropertyMap(std::vector<ECN::ECClassId> const& classIds)
+            {
+            if (!IsForNavigationProperty())
+                return;
+
+            m_relECClassIdsForNavigationProperties.insert(m_relECClassIdsForNavigationProperties.end(), classIds.begin(), classIds.end());
+            }
+
+        // Checks if the provided relationship class ID is valid for this navigation property.
+        // Returns true if this binder is not for a navigation property, or if no class IDs are cached.
+        // Otherwise, returns true if the class ID is found in the cached list.
+        bool IsClassIdValidForNavigationProperty(ECN::ECClassId const& relationshipECClassId) const
+            {
+            if (!IsForNavigationProperty())
+                return true;
+
+            if (m_relECClassIdsForNavigationProperties.empty())
+                return true;
+
+            return std::find(m_relECClassIdsForNavigationProperties.begin(), m_relECClassIdsForNavigationProperties.end(), relationshipECClassId) != m_relECClassIdsForNavigationProperties.end();
+            }
+
+        // Retrieves the cached relationship class IDs for navigation properties.
+        // Only copies the IDs if this binder is for a navigation property.
+        void GetRelClassIdsForNavigationProperties(std::vector<ECN::ECClassId>& classIds) const
+            {
+            if (IsForNavigationProperty())
+                classIds = m_relECClassIdsForNavigationProperties;
+            }
     };
 
-   private:
-    BinderType m_binderType;
-    bool m_binderIsForIdSet = false;
-    std::vector<ECN::ECClassId> m_relECClassIdsForNavigationProperties;  // used for navigation properties to validate the relationship class Ids
 
-    bool IsForNavigationProperty() const { return m_binderType == BinderType::NavigationProperty || m_binderType == BinderType::Proxy; }
-
-   public:
-    explicit BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSet(false) {}
-    BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSet(binderIsForInVirtualSetOrIdSetVirtualTable) {}
-    BinderType GetType() const { return m_binderType; }
-    bool IsForIdSet() const { return m_binderIsForIdSet; }
-
-    // Caches the relationship class IDs for navigation property validation.
-    // Only performs the operation if this binder is for a navigation property.
-    // Appends the provided class IDs to the internal list.
-    void CacheRelClassIdsForPropertyMap(std::vector<ECN::ECClassId> const& classIds) {
-        if (!IsForNavigationProperty())
-            return;
-
-        m_relECClassIdsForNavigationProperties.insert(m_relECClassIdsForNavigationProperties.end(), classIds.begin(), classIds.end());
-    }
-
-    // Checks if the provided relationship class ID is valid for this navigation property.
-    // Returns true if this binder is not for a navigation property, or if no class IDs are cached.
-    // Otherwise, returns true if the class ID is found in the cached list.
-    bool IsClassIdValidForNavigationProperty(ECN::ECClassId const& relationshipECClassId) const {
-        if (!IsForNavigationProperty())
-            return true;
-
-        if (m_relECClassIdsForNavigationProperties.empty())
-            return true;
-
-        return std::find(m_relECClassIdsForNavigationProperties.begin(), m_relECClassIdsForNavigationProperties.end(), relationshipECClassId) != m_relECClassIdsForNavigationProperties.end();
-    }
-
-    // Retrieves the cached relationship class IDs for navigation properties.
-    // Only copies the IDs if this binder is for a navigation property.
-    void GetRelClassIdsForNavigationProperties(std::vector<ECN::ECClassId>& classIds) const {
-        if (IsForNavigationProperty())
-            classIds = m_relECClassIdsForNavigationProperties;
-    }
-};
 
 //=======================================================================================
 //! IECSqlBinder is used to bind a value to a binding parameter in an ECSqlStatement.
 //! @ingroup ECDbGroup
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
-   public:
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder
+    {
+public:
     //=======================================================================================
     // Used to specify whether the binder should create an owned copy of the value to be bound
     // or not.
     // @bsiclass
     //+===============+===============+===============+===============+===============+======
-    enum class MakeCopy {
-        //! No copy of the value to be bound is made. Caller has to ensure that the value will
-        //! remain valid until the ECSqlStatement's bindings are cleared.
+    enum class MakeCopy
+        {
+        //! No copy of the value to be bound is made. Caller has to ensure that the value will 
+        //! remain valid until the ECSqlStatement's bindings are cleared. 
         No,
         //! A copy of the value to be bound is made. The binder owns the copy and frees it accordingly.
         Yes
-    };
+        };
 
-   private:
-    // not copyable
+private:
+    //not copyable
     IECSqlBinder(IECSqlBinder const&) = delete;
     IECSqlBinder& operator=(IECSqlBinder const&) = delete;
 
@@ -118,13 +126,14 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
 
     virtual BinderInfo const& _GetBinderInfo() = 0;
 
-   protected:
-#if !defined(DOCUMENTATION_GENERATOR)
-    // not inlined to prevent being called outside ECDb
+
+protected:
+#if !defined (DOCUMENTATION_GENERATOR)
+    //not inlined to prevent being called outside ECDb
     IECSqlBinder();
 #endif
 
-   public:
+public:
     virtual ~IECSqlBinder() {}
 
     //! Binds an ECSQL @c %NULL to the parameter
@@ -139,16 +148,16 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
     //! Binds a BLOB value to the parameter
     //! @param[in] value Value to bind
     //! @param[in] blobSize Size of the BLOB in bytes
-    //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not.
+    //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not. 
     //!            Only pass IECSqlBinder::MakeCopy::No if @p value remains valid until
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy);
 
     //! Binds a zeroblob of the specified size to a parameter.
-    //! @remarks A zeroblob is a BLOB consisting of @p blobSize bytes of 0x00.
-    //! SQLite manages these zeroblobs very efficiently. Zeroblobs can be used to reserve space for a BLOB that
-    //! is later written using incremental BLOB I/O.
+    //! @remarks A zeroblob is a BLOB consisting of @p blobSize bytes of 0x00. 
+    //! SQLite manages these zeroblobs very efficiently. Zeroblobs can be used to reserve space for a BLOB that 
+    //! is later written using incremental BLOB I/O. 
     //! @param[in] blobSize The number of bytes for the zeroblob.
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindZeroBlob(int blobSize);
@@ -158,7 +167,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindDateTime(DateTimeCR value);
 
-#if !defined(DOCUMENTATION_GENERATOR)
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Binds a %DateTime value expressed as Julian Day to the parameter
     //! @param[in] julianDayTicks DateTime value as Julian Day
     //! @param[in] metadata DateTime metadata. Pass an empty DateTime::Info object if no metadata exist for the ticks
@@ -214,7 +223,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
     //! @param[in] value Value to bind
     //! @param[in] makeCopy indicates whether ECSqlStatement should make a private copy of @p value or not.
     //!             Only pass IECSqlBinder::MakeCopy::No if @p value will remain valid until the statement's bindings are cleared.
-    //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization.
+    //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization. 
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
 
@@ -223,7 +232,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
     //! this method to bind them to a parameter.
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64((int64_t)value.GetValue()) : BindNull(); }
+    ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64((int64_t) value.GetValue()) : BindNull(); }
 
     //! Binds a BeGuid to the parameter. If the GUID is invalid, NULL is bound to the parameter.
     //! @param[in] guid BeGuid to bind
@@ -239,7 +248,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
     //!            if the relationshipECClassId is optional. ECDb does not validate the input.
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId());
-
+    
     //! Binds a VirtualSet to the SQL function @b InVirtualSet.
     //! The parameter must be the first parameter in the InVirtualSet function.
     //! @param[in] shared pointer to virtualSet to bind
@@ -250,10 +259,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
     //! Gets a binder for the specified struct member property
     //! @param[in] structMemberPropertyName Property name of the struct member to bind the value to
     //! @return The binder for the specified struct member property
-    ECDB_EXPORT IECSqlBinder& operator[](Utf8CP structMemberPropertyName);
+    ECDB_EXPORT IECSqlBinder& operator[] (Utf8CP structMemberPropertyName);
 
-#if !defined(DOCUMENTATION_GENERATOR)
-    IECSqlBinder& operator[](ECN::ECPropertyId structMemberPropertyId);
+#if !defined (DOCUMENTATION_GENERATOR)
+    IECSqlBinder& operator[] (ECN::ECPropertyId structMemberPropertyId);
 #endif
 
     //! Adds a new array element to the array to be bound to the parameter.
@@ -262,6 +271,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder {
 
     //! @return Gets the BinderInfo for the specific binder
     ECDB_EXPORT BinderInfo const& GetBinderInfo();
-};
+    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

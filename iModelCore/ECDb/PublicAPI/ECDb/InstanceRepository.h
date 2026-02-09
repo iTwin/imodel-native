@@ -15,12 +15,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @bsiclass
 //=======================================================================================
 struct InstanceRepository final {
-   private:
+private:
     ECDbCR m_ecdb;
     mutable BeMutex m_mutex;
     mutable Utf8String m_lastError;
-
-   public:
+public:
     InstanceRepository(ECDbCR ecdb) : m_ecdb(ecdb) {}
     ~InstanceRepository() = default;
     InstanceRepository(InstanceRepository const&) = delete;
@@ -35,6 +34,8 @@ struct InstanceRepository final {
     ECDB_EXPORT DbResult Read(ECInstanceKeyCR key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
 
     Utf8StringCR GetLastError() const { return m_lastError; }
+
 };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

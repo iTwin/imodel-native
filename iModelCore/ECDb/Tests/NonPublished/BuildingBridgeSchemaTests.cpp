@@ -1,12 +1,10 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
-#include <ECObjects/SchemaComparer.h>
-
-#include <set>
-
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <set>
+#include <ECObjects/SchemaComparer.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -16,40 +14,42 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-struct BuildingBridgeSchemaTestFixture : public ECDbTestFixture {
+struct BuildingBridgeSchemaTestFixture : public ECDbTestFixture
+    {
     std::vector<Utf8String> m_updatedDbs;
+    protected:
 
-   protected:
-    //---------------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+------
-    void CloseReOpenECDb() {
-        Utf8CP dbFileName = m_ecdb.GetDbFileName();
-        BeFileName dbPath(dbFileName);
-        m_ecdb.CloseDb();
-        ASSERT_FALSE(m_ecdb.IsDbOpen());
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-        ASSERT_TRUE(m_ecdb.IsDbOpen());
-    }
+        //---------------------------------------------------------------------------------------
+        // @bsimethod
+        //+---------------+---------------+---------------+---------------+---------------+------
+        void CloseReOpenECDb()
+            {
+            Utf8CP dbFileName = m_ecdb.GetDbFileName();
+            BeFileName dbPath(dbFileName);
+            m_ecdb.CloseDb();
+            ASSERT_FALSE(m_ecdb.IsDbOpen());
+            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+            ASSERT_TRUE(m_ecdb.IsDbOpen());
+            }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+------
-    DbResult OpenBesqliteDb(Utf8CP dbPath) { return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)); }
-};
+        //---------------------------------------------------------------------------------------
+        // @bsimethod
+        //+---------------+---------------+---------------+---------------+---------------+------
+        DbResult OpenBesqliteDb(Utf8CP dbPath) { return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)); }
+    };
 
-#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL) \
-    {                                                            \
-        ECSqlStatement stmt;                                     \
-        ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL)); \
-        if (PREPARESTATUS == ECSqlStatus::Success)               \
-            ASSERT_EQ(STEPSTATUS, stmt.Step());                  \
-    }
+#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
+                                                                    ECSqlStatement stmt;\
+                                                                    ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
+                                                                    if (PREPARESTATUS == ECSqlStatus::Success)\
+                                                                        ASSERT_EQ(STEPSTATUS, stmt.Step());\
+                                                                   }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAspect) {
+TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAspect)
+    {
     SchemaItem schemaItem(R"schema(<ECSchema schemaName="HS2" alias="HS2" version="01.00.10" displayLabel="HS2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
     <ECCustomAttributes>
@@ -226,8 +226,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
         <ECProperty propertyName="EPD2" typeName="string" priority="0"/>
         <ECProperty propertyName="GWPA13" typeName="string" priority="0"/>
         <ECProperty propertyName="GWPA4" typeName="string" priority="0"/>
-        <ECProperty propertyName="GWPA51" typeName="string" priority="0"/>)schema"
-                          R"schema(
+        <ECProperty propertyName="GWPA51" typeName="string" priority="0"/>)schema" R"schema(
         <ECProperty propertyName="GWPA53" typeName="string" priority="0"/>
         <ECProperty propertyName="GWPB2" typeName="string" priority="0"/>
         <ECProperty propertyName="GWPB4" typeName="string" priority="0"/>
@@ -333,8 +332,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
         <ECProperty propertyName="_2002" typeName="string" priority="0"/>
         <ECProperty propertyName="_2003" typeName="string" priority="0"/>
         <ECProperty propertyName="_2004" typeName="string" priority="0"/>
-        <ECProperty propertyName="HlthSftyRtng" typeName="string" priority="0"/>)schema"
-                          R"schema(
+        <ECProperty propertyName="HlthSftyRtng" typeName="string" priority="0"/>)schema" R"schema(
         <ECProperty propertyName="CStrtDt" typeName="string" priority="0"/>
         <ECProperty propertyName="A52" typeName="string" priority="0"/>
         <ECProperty propertyName="ADPEB1" typeName="string" priority="0"/>
@@ -509,7 +507,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateH2DynamicSchema_CV_BR_OBElementAspect.ecdb", schemaItem));
 
-    // import edited schema with some changes.
+    //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<ECSchema schemaName="HS2" alias="HS2" version="01.00.11" displayLabel="HS2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
     <ECCustomAttributes>
@@ -616,8 +614,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
         <ECProperty propertyName="CnsrvtnAr" typeName="string" priority="0"/>
         <ECProperty propertyName="CntrctTyp" typeName="string" priority="0"/>
         <ECProperty propertyName="CompltnDt" typeName="string" priority="0"/>
-        <ECProperty propertyName="Crtclty" typeName="string" priority="0"/>)schema"
-                                R"schema(
+        <ECProperty propertyName="Crtclty" typeName="string" priority="0"/>)schema" R"schema(
         <ECProperty propertyName="DsgnLf" typeName="string" priority="0"/>
         <ECProperty propertyName="DspslRqrmnts" typeName="string" priority="0"/>
         <ECProperty propertyName="DtMntnd" typeName="string" priority="0"/>
@@ -690,8 +687,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
         <ECProperty propertyName="NHWDA51" typeName="string" priority="0"/>
         <ECProperty propertyName="NHWDA53" typeName="string" priority="0"/>
         <ECProperty propertyName="NHWDB2" typeName="string" priority="0"/>
-        <ECProperty propertyName="NHWDD1" typeName="string" priority="0"/>)schema"
-                                R"schema(
+        <ECProperty propertyName="NHWDD1" typeName="string" priority="0"/>)schema" R"schema(
         <ECProperty propertyName="NHWDD2" typeName="string" priority="0"/>
         <ECProperty propertyName="NtExcvtdVlm" typeName="string" priority="0"/>
         <ECProperty propertyName="NxtInspctnDt" typeName="string" priority="0"/>
@@ -868,8 +864,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
         <ECProperty propertyName="HWDC2" typeName="string" priority="0"/>
         <ECProperty propertyName="HWDC3" typeName="string" priority="0"/>
         <ECProperty propertyName="HWDC4" typeName="string" priority="0"/>
-        <ECProperty propertyName="HWDD1" typeName="string" priority="0"/>)schema"
-                                R"schema(
+        <ECProperty propertyName="HWDD1" typeName="string" priority="0"/>)schema" R"schema(
         <ECProperty propertyName="HWDD2" typeName="string" priority="0"/>
         <ECProperty propertyName="LnghtSpn" typeName="string" priority="0"/>
         <ECProperty propertyName="Lngthm" typeName="string" priority="0"/>
@@ -977,6 +972,6 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
 </ECSchema>
         )schema");
     ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
-}
+    }
 
 END_ECDBUNITTESTS_NAMESPACE
