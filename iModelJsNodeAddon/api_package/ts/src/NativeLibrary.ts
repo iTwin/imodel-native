@@ -965,6 +965,11 @@ export declare namespace IModelJsNative {
     public isNull(): boolean;
   }
 
+  class ECSqlRowReader {
+    constructor();
+    public step(request: DbRequest): DbResponse;
+  }
+
   class ECSqlValueIterator {
     constructor();
     public getCurrent(): ECSqlValue;

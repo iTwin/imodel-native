@@ -489,12 +489,12 @@ struct ECSqlRowReader::Impl {
         QueryLimit m_limit;
         bool PrepareStmt(std:: string const& ecsql,  bool suppressLogError, std::string& ecsql_error);
         bool BindParams(ECSqlParams const& params,  QueryLimit const& limit, std::string& error);
-        QueryResponse::Ptr Execute(ECSqlRequest::Ptr request, RunnableRequestStatsHelper& runnableRequestHelper);
-        QueryResponse::Ptr TryExecute(ECSqlRequest::Ptr request, RunnableRequestStatsHelper& runnableRequestHelper);
+        QueryResponse::Ptr Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
+        QueryResponse::Ptr TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
     public:
         Impl(ECDbCR db) : m_adaptor(), m_ecdb(db) {};
 
-        QueryResponse::Ptr Step(ECSqlRequest::Ptr request);
+        QueryResponse::Ptr Step(ECSqlRequest const& request);
 
 };
 

@@ -631,7 +631,7 @@ struct ECSqlRowReader final {
         ECSqlRowReader(ECDb const&);
         ~ECSqlRowReader();
 
-        QueryResponse::Ptr Step(ECSqlRequest::Ptr request);
+        QueryResponse::Ptr Step(ECSqlRequest const& request);
 
 };
 

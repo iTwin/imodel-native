@@ -2297,24 +2297,24 @@ ECSqlRowReader::~ECSqlRowReader(){ delete m_impl;}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Step(ECSqlRequest::Ptr request) {
+QueryResponse::Ptr ECSqlRowReader::Step(ECSqlRequest const& request) {
     return m_impl->Step(std::move(request));
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Impl::Step(ECSqlRequest::Ptr request) {
-    RunnableRequestStatsHelper helper(request->GetQuota());
+QueryResponse::Ptr ECSqlRowReader::Impl::Step(ECSqlRequest const& request) {
+    RunnableRequestStatsHelper helper(request.GetQuota());
     helper.OnDequeued(); // In sync mode there is no queue involved but we want to have the stats populated correctly so we call OnDequeued here to set the start time for the request processing
-    auto response = TryExecute(std::move(request), helper);
+    auto response = TryExecute(request, helper);
     return response;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest::Ptr request, RunnableRequestStatsHelper& runnableRequestHelper) {
+QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper) {
     // Validating ecsql
     CreateResponseHelper responseHelper;
     const auto prepareTimeStart = std::chrono::steady_clock::now();
@@ -2327,25 +2327,25 @@ QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest::Ptr request, R
         return responseHelper.CreateErrorResponse(status, errMsg, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
     };
 
-    auto ecsql = QueryHelper::FormatQuery(request->GetQuery().c_str());
+    auto ecsql = QueryHelper::FormatQuery(request.GetQuery().c_str());
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql.c_str());
     if(!m_adaptor.GetStatement().IsPrepared() || m_adaptor.GetStatement().GetHashCode() != hashCode || strcmp(m_adaptor.GetStatement().GetECSql(), ecsql.c_str()) != 0) {
         std::string error;
-        if (!PrepareStmt(ecsql, request->GetSuppressLogErrors(), error)) { // Prepare statement if not prepared or the prepared statement is different from the current request's ecsql
+        if (!PrepareStmt(ecsql, request.GetSuppressLogErrors(), error)) { // Prepare statement if not prepared or the prepared statement is different from the current request's ecsql
             recordPrepareTime();
             return setError(SqlPrintfString("failed to prepare ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_PreparedFailed);
         }
-        if (!BindParams(request->GetArgs(), request->GetLimit(), error)) { // Bind parameters
+        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) { // Bind parameters
             recordPrepareTime();
             return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
         }
         recordPrepareTime();
     }
-    if(!(m_args == request->GetArgs() && m_limit == request->GetLimit())) {
+    if(!(m_args == request.GetArgs() && m_limit == request.GetLimit())) {
         std::string error;
         m_adaptor.GetStatement().Reset();
         m_adaptor.GetStatement().ClearBindings();
-        if (!BindParams(request->GetArgs(), request->GetLimit(), error)) { // Bind parameters
+        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) { // Bind parameters
             recordPrepareTime();
             return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
         }
@@ -2388,19 +2388,19 @@ bool ECSqlRowReader::Impl::PrepareStmt(std:: string const& ecsql,  bool suppress
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest::Ptr request, RunnableRequestStatsHelper& runnableRequestHelper) {
+QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper) {
     CreateResponseHelper responseHelper;
     enum class status { partial, done };
-    const auto abbreviateBlobs = request->GetAbbreviateBlobs();
-    const auto includeMetaData= request->GetIncludeMetaData();
-    const auto classIdToClassNames = request->GetConvertClassIdsToClassNames();
-    const auto doNotConvertClassIdsToClassNamesWhenAliased = request->GetDoNotConvertClassIdsToClassNamesWhenAliased();
+    const auto abbreviateBlobs = request.GetAbbreviateBlobs();
+    const auto includeMetaData= request.GetIncludeMetaData();
+    const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
+    const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
     auto& stmt = m_adaptor.GetStatement();
     auto& adaptor = m_adaptor.GetJsonAdaptor();
     auto& options = adaptor.GetOptions();
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
-    options.SetUseJsNames(request->GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
     options.SetDoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
     ECSqlRowProperty::List props;
     if (includeMetaData) {
