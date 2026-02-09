@@ -26,6 +26,9 @@ struct QueryLimit final {
         int64_t m_offset;
     public:
         QueryLimit(int64_t count = -1, int64_t offset = -1) : m_count(count), m_offset(offset) {}
+        bool operator == (QueryLimit const& other) const noexcept {
+            return m_count == other.m_count && m_offset == other.m_offset;
+        };
         int64_t GetCount() const noexcept { return m_count; }
         int64_t GetOffset() const noexcept { return m_offset; }
         ECDB_EXPORT void ToJs(BeJsValue&) const;
@@ -178,6 +181,7 @@ class ECSqlParams final {
             ECDB_EXPORT ECSqlParam& operator = (ECSqlParam && rhs);
             ECSqlParam(const ECSqlParam & rhs):m_val(rhs.m_val), m_type(rhs.m_type),m_name(rhs.m_name){}
             ECDB_EXPORT ECSqlParam& operator = (const ECSqlParam & rhs);
+            bool operator == (ECSqlParam const& rhs) const noexcept { return m_type == rhs.m_type && m_val == rhs.m_val && m_name == rhs.m_name; }
             ECSqlParam():m_type(Type::Null){}
             ECSqlParam(std::string const& name, Type type, Json::Value const& val): m_type(type),m_val(val), m_name(name){}
             ECSqlParam(std::string const& name): m_type(Type::Null),m_val(Json::ValueType::nullValue), m_name(name){}
@@ -220,6 +224,7 @@ class ECSqlParams final {
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
         ECDB_EXPORT ECSqlParams& operator = (ECSqlParams && rhs);
         ECDB_EXPORT ECSqlParams& operator = (const ECSqlParams & rhs);
+        bool operator == (ECSqlParams const& rhs) const noexcept { return m_params.size() == rhs.m_params.size() && m_params == rhs.m_params; }
         explicit ECSqlParams(Json::Value const& v) { FromJs(v); }
         virtual ~ECSqlParams(){}
         bool IsEmpty() const { return m_params.size() == 0; }
@@ -610,42 +615,23 @@ struct ECSqlReader {
 };
 
 //=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct QueryAdaptor final {
-    private:
-        ECSqlStatement m_stmt;
-        std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
-        std::string m_cachedString;
-        rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
-        rapidjson::CrtAllocator m_stackAllocator;
-        rapidjson::Document m_cachedJsonDoc;
-        Db const* m_conn;
-    public:
-        QueryAdaptor() : m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator) { m_cachedJsonDoc.SetArray(); }
-        ECSqlStatement& GetStatement() { return m_stmt; }
-        ECSqlRowAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
-        std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
-        Db const* GetWorkerConn() const { return m_conn; }
-        void SetWorkerConn(Db const& conn) { m_conn = &conn; }
-};
-
-//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct ECSqlRowReader final {
     using OnCompletion=std::function<void(QueryResponse::Ptr)>;
-    private:
-        QueryAdaptor m_adaptor;
-        std::string m_ecsql;
-        ECSqlParams m_args;
-        uint32_t m_rowsRead;
-        QueryResponse::Ptr ExecuteRequest(ECSqlRequest::Ptr request);
     public:
-        ECSqlRowReader(ECDb const& db) : m_adaptor(), m_rowsRead(0) {m_adaptor.SetWorkerConn(db) ;};
+        struct Impl; // prevent circular dependency on ECDb
+    private:
+        Impl* m_impl;
+        ECSqlRowReader(const ECSqlRowReader&) = delete;
+        ECSqlRowReader& operator = (const ECSqlRowReader&) = delete;
+        ECSqlRowReader(ECSqlRowReader&&) = delete;
+        ECSqlRowReader& operator = (ECSqlRowReader&&) = delete;
+    public:
+        ECSqlRowReader(ECDb const&);
+        ~ECSqlRowReader();
 
-        void Step(QueryRequest::Ptr request, OnCompletion onCompletion);
+        QueryResponse::Ptr Step(ECSqlRequest::Ptr request);
 
 };
 
