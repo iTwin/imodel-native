@@ -2264,6 +2264,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
                 }
             }
+
+        // After a successful schema import during semantic rebase, clear all caches
+        // so subsequent operations see the updated schema state.
+        db.ClearECDbCache();
+        db.Elements().ClearCache();
+        db.Models().ClearCache();
         }
 
     void ImportSchemas(NapiInfoCR info)

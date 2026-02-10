@@ -322,7 +322,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (nonVirtualColumnCount != (int) physicalColumns.size())
+            if (m_schemaImportContext.IsSynchronizeSchemas())
+                {
+                if (nonVirtualColumnCount > (int) physicalColumns.size())
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
+                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    return ERROR;
+                    }
+                }
+            else if (nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -356,7 +365,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (nonVirtualColumnCount != (int) physicalColumns.size())
+            if (m_schemaImportContext.IsSynchronizeSchemas())
+                {
+                if (nonVirtualColumnCount > (int) physicalColumns.size())
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
+                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    return ERROR;
+                    }
+                }
+            else if (nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
@@ -382,7 +400,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (nonVirtualColumnCount != (int) physicalColumns.size())
+            if (m_schemaImportContext.IsSynchronizeSchemas())
+                {
+                if (nonVirtualColumnCount > (int) physicalColumns.size())
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
+                        "DbTable '%s' has %d non-virtual columns, but the physical table has only %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
+                    return ERROR;
+                    }
+                }
+            else if (nonVirtualColumnCount != (int) physicalColumns.size())
                 {
                 Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
                     "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());

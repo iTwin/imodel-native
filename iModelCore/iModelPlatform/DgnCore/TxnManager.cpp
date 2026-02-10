@@ -2154,7 +2154,6 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 const auto result = m_dgndb.AfterSchemaChangeSetApplied();
                 if (result != BE_SQLITE_OK) {
                     LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
-                    BeAssert(false);
                     m_dgndb.AbandonChanges();
                     scope.Stop();
                     return result;
