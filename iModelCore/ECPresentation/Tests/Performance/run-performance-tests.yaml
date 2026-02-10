@@ -73,7 +73,7 @@ stages:
         timeoutInMinutes: 180
 
         pool:
-          name: iModelTech Performance Tests
+          name: iModelTech Performance Tests 3
           demands:
           - Agent.OS -equals Windows_NT
           - ECPresentationPerformanceTestRunner

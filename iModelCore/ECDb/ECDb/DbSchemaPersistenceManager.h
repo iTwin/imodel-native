@@ -55,7 +55,7 @@ private:
 
     static BentleyStatus CreateTable(ECDbCR, DbTable const&);
     static BentleyStatus UpdateTable(ECDbCR, DbTable const&);
-    static BentleyStatus AlterTable(ECDbCR, DbTable const&, std::vector<DbColumn const*> const& columnsToAdd);
+    static BentleyStatus AlterTable(ECDbCR, DbTable const&, std::vector<DbColumn const*> const& columnsToAdd, std::vector<Utf8String> const& columnsToDelete = {});
 
     static BentleyStatus CreateTriggers(ECDbCR, DbTable const&, bool failIfExists);
     static bool TriggerExists(ECDbCR, DbTrigger const&);
