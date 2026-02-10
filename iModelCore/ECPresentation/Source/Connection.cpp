@@ -360,9 +360,9 @@ void PrimaryConnection::OnBeforeSchemaChanges()
         return;
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] started schema changes on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
-    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, 0 == m_isSuspended, Utf8PrintfString("Expected `m_isSuspended == 0`, but got %d", m_isSuspended));
-    ++m_isSuspended;
-    m_manager.NotifyConnectionSuspended(m_id);
+    bool wasSuspended = (m_isSuspended++ > 0);
+    if (!wasSuspended)
+        m_manager.NotifyConnectionSuspended(m_id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,9 +374,9 @@ void PrimaryConnection::OnAfterSchemaChanges()
         return;
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] finished schema changes on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
-    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, 1 == m_isSuspended, Utf8PrintfString("Expected `m_isSuspended == 1`, but got %d", m_isSuspended));
-    --m_isSuspended;
-    m_manager.NotifyConnectionResumed(m_id);
+    bool isSuspended = (--m_isSuspended > 0);
+    if (!isSuspended)
+        m_manager.NotifyConnectionResumed(m_id);
     }
 
 /*---------------------------------------------------------------------------------**//**
