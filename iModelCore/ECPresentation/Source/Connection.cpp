@@ -50,7 +50,7 @@ struct ProxyConnection;
 //! ConnectionManager.
 // @bsiclass
 //=======================================================================================
-struct PrimaryConnection : RefCounted<IConnection>
+struct PrimaryConnection : RefCounted<IConnection>, ECDb::IECDbCacheClearListener
 {
 private:
     ConnectionManager& m_manager;
@@ -73,6 +73,7 @@ private:
 
         m_ecdb.Schemas().OnBeforeSchemaChanges().AddListener(m_eventsScope, [this](ECDbCR, SchemaChangeType){OnBeforeSchemaChanges();});
         m_ecdb.Schemas().OnAfterSchemaChanges().AddListener(m_eventsScope, [this](ECDbCR, SchemaChangeType){OnAfterSchemaChanges();});
+        m_ecdb.AddECDbCacheClearListener(*this);
 
         m_isOpen = m_ecdb.IsDbOpen();
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] created on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
@@ -102,6 +103,8 @@ public:
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p PrimaryConnection[%s] destroyed on thread %" PRIu64, this, m_id.c_str(), (uint64_t)BeThreadUtilities::GetCurrentThreadId()));
         Close();
         }
+    void _OnBeforeClearECDbCache() override {OnBeforeSchemaChanges();}
+    void _OnAfterClearECDbCache() override {OnAfterSchemaChanges();}
     ConnectionManager const& GetManager() const {return m_manager;}
     void NotifyProxyConnectionOpened(ProxyConnection& proxy);
     void NotifyProxyConnectionClosed(ProxyConnection& proxy);
@@ -110,6 +113,7 @@ public:
         if (!m_isOpen)
             return;
 
+        m_ecdb.RemoveECDbCacheClearListener(*this);
         m_ecdb.DropAppData(*m_connectionClosedNotifierKey);
         }
 };
