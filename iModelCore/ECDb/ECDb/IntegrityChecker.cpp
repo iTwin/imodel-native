@@ -1215,8 +1215,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckDataColumns([&errorFound](std::string, std::string) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1227,8 +1227,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckEcProfile([&errorFound](std::string, std::string, std::string) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1239,8 +1239,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckNavClassIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1251,8 +1251,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckNavIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1263,8 +1263,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckLinkTableFkClassIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1275,11 +1275,11 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
 		bool errorFound = false;
 		rc = CheckLinkTableFkIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
 		});
 		if (rc != BE_SQLITE_OK) {
-			return rc;
+            return rc;
 		}
 		callback(GetCheckName(Checks::CheckLinkTableFkIds), !errorFound, stopWatch.GetCurrent());
 	}
@@ -1287,8 +1287,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckClassIds([&errorFound](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1299,8 +1299,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckDataSchema([&errorFound](std::string, std::string) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1311,8 +1311,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckSchemaLoad([&errorFound](Utf8CP) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1323,8 +1323,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         bool errorFound = false;
         rc = CheckMissingChildRows([&errorFound](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
-			errorFound = true;
-			return false;
+            errorFound = true;
+            return false;
         });
 		if (rc != BE_SQLITE_OK)	{
             return rc;
