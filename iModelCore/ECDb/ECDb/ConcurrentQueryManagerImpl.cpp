@@ -2304,11 +2304,25 @@ QueryResponse::Ptr ECSqlRowReader::Step(ECSqlRequest const& request) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void ECSqlRowReader::Dispose() {
+    m_impl->Dispose();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 QueryResponse::Ptr ECSqlRowReader::Impl::Step(ECSqlRequest const& request) {
     RunnableRequestStatsHelper helper(request.GetQuota());
     helper.OnDequeued(); // In sync mode there is no queue involved but we want to have the stats populated correctly so we call OnDequeued here to set the start time for the request processing
     auto response = TryExecute(request, helper);
     return response;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlRowReader::Impl::Dispose() {
+    m_adaptor.GetStatement().Finalize();
 }
 
 //---------------------------------------------------------------------------------------

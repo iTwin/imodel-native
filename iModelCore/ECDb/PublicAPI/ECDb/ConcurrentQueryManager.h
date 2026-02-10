@@ -632,6 +632,7 @@ struct ECSqlRowReader final {
         ~ECSqlRowReader();
 
         QueryResponse::Ptr Step(ECSqlRequest const& request);
+        void Dispose();
 
 };
 
