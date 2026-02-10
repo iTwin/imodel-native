@@ -1854,6 +1854,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return JsInterop::ExportGraphicsAsync(db, exportProps);
         }
 
+    Napi::Value ExportPartGraphicsAsync(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
+
+        Napi::Value onPartGraphicsVal = exportProps.Get("onPartGraphics");
+        if (!onPartGraphicsVal.IsFunction())
+            THROW_JS_TYPE_EXCEPTION("onPartsGraphics must be a function");
+
+        Napi::Value displayPropsVal = exportProps.Get("displayProps");
+        if (!displayPropsVal.IsObject())
+            THROW_JS_TYPE_EXCEPTION("displayProps must be an object");
+
+        Napi::Value elementIdVal = exportProps.Get("elementId");
+        if (!elementIdVal.IsString())
+            THROW_JS_TYPE_EXCEPTION("elementId must be a string");
+
+        return JsInterop::ExportPartGraphicsAsync(db, exportProps);
+        }
+
     Napi::Value ProcessGeometryStream(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -3065,6 +3085,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
             InstanceMethod("exportPartGraphics", &NativeDgnDb::ExportPartGraphics),
             InstanceMethod("exportGraphicsAsync", &NativeDgnDb::ExportGraphicsAsync),
+            InstanceMethod("exportPartGraphicsAsync", &NativeDgnDb::ExportPartGraphicsAsync),
             InstanceMethod("exportSchema", &NativeDgnDb::ExportSchema),
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractChangedInstanceIdsFromChangeSets", &NativeDgnDb::ExtractChangedInstanceIdsFromChangeSets),
