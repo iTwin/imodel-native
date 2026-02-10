@@ -4687,7 +4687,7 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
     private:
         DEFINE_CONSTRUCTOR;
         ECDb const* m_ecdb = nullptr;
-        std::unique_ptr<ECSqlRowReader> m_queryReader;
+        std::unique_ptr<ECSqlRowReader> m_queryReader= nullptr;
     public:
         NativeECSqlRowReader(NapiInfoCR info) : BeObjectWrap<NativeECSqlRowReader>(info)
             {
@@ -4698,6 +4698,15 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
             }
 
         ~NativeECSqlRowReader() {SetInDestructor();}
+
+        static bool InstanceOf(Napi::Value val)
+            {
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+            }
 
         //  Create projections
         static void Init(Napi::Env& env, Napi::Object exports)
@@ -4712,7 +4721,7 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
             SET_CONSTRUCTOR(t);
             }
 
-        Napi::Object Step(NapiInfoCR info) 
+        Napi::Value Step(NapiInfoCR info) 
             {
             REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
 
