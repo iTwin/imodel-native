@@ -2241,8 +2241,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         if (db.Txns().GetMode() == ChangeTracker::Mode::Indirect) // equivalent to isIndirectChange
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas while in an indirect change scope", DgnDbStatus::BadRequest);
-        
-        ECSchemaReadContextPtr customContext = nullptr;
 
         JsInterop::SchemaImportOptions options;
         const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
