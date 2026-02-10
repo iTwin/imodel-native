@@ -65,6 +65,7 @@
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
 #include "InstanceReaderImpl.h"
+#include "ECChangesetReaderImpl.h"
 #include "IntegrityChecker.h"
 #include "BuiltInVTabs.h"
 #include "ClassViews.h"
