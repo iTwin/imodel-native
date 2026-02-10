@@ -630,6 +630,14 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet"));
         }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT abc.id, bcd.id FROM ECVLib.IdSet('[1,2,3,4,5]') abc, ECVLib.IdSet('[1,2,3,4,5]') bcd"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ECVLib.IdSet('[1,2,3,4,5]') abc, ECVLib.IdSet('[1,2,3,4,5]') bcd"));
+        }
     ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
     ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
 }

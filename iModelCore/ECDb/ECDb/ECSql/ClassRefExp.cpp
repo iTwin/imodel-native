@@ -41,6 +41,15 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
             return Exp::FinalizeParseStatus::Error;
         }
         m_virtualEntityClass = tableViewClassP->GetEntityClassCP();
+        for(auto& prop : m_virtualEntityClass->GetProperties()) {
+            PropertyPath path;
+            path.Push(prop->GetName());
+            path.SetPropertyDef(0, *prop);
+
+            auto propetyNameExp = std::make_unique<PropertyNameExp>(path,  *this, *prop);
+            auto derivedPropExp = std::make_unique<DerivedPropertyExp>(std::move(propetyNameExp), nullptr);
+            AddChild(std::move(derivedPropExp));
+        }
         return Exp::FinalizeParseStatus::Completed;
     }
     return Exp::FinalizeParseStatus::NotCompleted;
@@ -58,20 +67,18 @@ Utf8StringCR TableValuedFunctionExp::_GetId() const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TableValuedFunctionExp::_ExpandSelectAsterisk(
-    std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const {
+    std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
     if(m_virtualEntityClass == nullptr)
         return;
     BeAssert(m_virtualEntityClass != nullptr);
-    auto alias = GetAlias();
-    for(auto& prop : m_virtualEntityClass->GetProperties()) {
-        PropertyPath path;
-        path.Push(prop->GetName());
-        path.SetPropertyDef(0, *prop);
-
-        auto exp = std::make_unique<PropertyNameExp>(path,  *this, *prop);
-        expandedSelectClauseItemList.push_back(
-            std::make_unique<DerivedPropertyExp>(std::move(exp), nullptr));
-    }
+    for (Exp const* expr : GetChildren())
+        {
+        if(expr->GetType() != Exp::Type::DerivedProperty)
+            continue;
+        DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
+        }
 }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
@@ -80,26 +87,37 @@ PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx
     if(m_virtualEntityClass == nullptr)
         return PropertyMatchResult::NotFound();
     BeAssert(m_virtualEntityClass != nullptr);
+
+    auto findChildWithName = [&](Utf8StringCR name) -> DerivedPropertyExp const* {
+        for (Exp const* expr : GetChildren())
+            {
+            if(expr->GetType() != Exp::Type::DerivedProperty)
+                continue;
+            DerivedPropertyExp const& derivedPropExp = expr->GetAs<DerivedPropertyExp>();
+            if(derivedPropExp.GetName().EqualsIAscii(name))
+                return &derivedPropExp;
+            }
+        return nullptr;
+    };
+
     if (propertyPath.Size() == 1) {
-       auto property = m_virtualEntityClass->GetPropertyP(propertyPath.First().GetName());
-        if (property == nullptr) {
+       auto derivedPropExp = findChildWithName(propertyPath.First().GetName());
+        if (derivedPropExp == nullptr) {
             return PropertyMatchResult::NotFound();
         }
         auto resolvedPath = propertyPath;
-        resolvedPath.SetPropertyDef(0, *property);
-        return PropertyMatchResult(options, propertyPath, resolvedPath, *property, 1);
+        return PropertyMatchResult(options, propertyPath, resolvedPath, *derivedPropExp, 0);
     }
     if (propertyPath.Size() == 2) {
-        auto property = m_virtualEntityClass->GetPropertyP(propertyPath.Last().GetName());
-        if (property == nullptr) {
+        auto derivedPropExp = findChildWithName(propertyPath.Last().GetName());
+        if (derivedPropExp == nullptr) {
             return PropertyMatchResult::NotFound();
         }
         if (!GetAlias().EqualsIAscii(propertyPath.First().GetName())) {
             PropertyMatchResult::NotFound();
         }
         auto resolvedPath = propertyPath.Skip(1);
-        resolvedPath.SetPropertyDef(0, *property);
-        return PropertyMatchResult(options, propertyPath, resolvedPath, *property, 1);
+        return PropertyMatchResult(options, propertyPath, resolvedPath, *derivedPropExp, 0);
     }
     return PropertyMatchResult::NotFound();
 }

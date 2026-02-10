@@ -195,6 +195,10 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
         }
         ASSERT_EQ(i, 9);
     }
+    if ("unsorted") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT a.token, b.token FROM test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') a, test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') b"));
+    }
 }
 
 END_ECDBUNITTESTS_NAMESPACE
