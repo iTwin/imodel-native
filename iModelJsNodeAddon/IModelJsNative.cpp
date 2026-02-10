@@ -2254,6 +2254,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
+        // Clear the schema cache BEFORE importing so that SchemaWriter::CompareSchemas reads
+        // fresh schemas from the DB. Without this, the schema reader cache may still hold schemas
+        // from before the incoming changeset was applied, causing the SchemaComparer to think
+        // properties already present in ec_Property are "new" and attempt to re-INSERT them
+        // (triggering UNIQUE constraint violations on ec_Property.ClassId/Ordinal).
+        db.ClearECDbCache();
+
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
         if (DbResult::BE_SQLITE_OK != result) // we will not save changes here as pull/merge/rebase will update existing txns for this
@@ -2265,8 +2272,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
                 }
             }
 
-        // After a successful schema import during semantic rebase, clear all caches
-        // so subsequent operations see the updated schema state.
+        // Clear caches again after import so subsequent operations see the updated schema state.
         db.ClearECDbCache();
         db.Elements().ClearCache();
         db.Models().ClearCache();
