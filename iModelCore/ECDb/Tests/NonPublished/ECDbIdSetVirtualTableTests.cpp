@@ -632,11 +632,43 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT abc.id, bcd.id FROM ECVLib.IdSet('[1,2,3,4,5]') abc, ECVLib.IdSet('[1,2,3,4,5]') bcd"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.id FROM ECVLib.IdSet('[1,2,3,4,5]') a, ECVLib.IdSet('[1,2,3,4,5]') b where a.id = b.id"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ECVLib.IdSet('[1,2,3,4,5]') abc, ECVLib.IdSet('[1,2,3,4,5]') bcd"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.id, b.id FROM ECVLib.IdSet('[1,2,3,4,5]') a, ECVLib.IdSet('[1,2,3,4,5]') b where a.id = b.id"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            int64_t expectedValue = 1 + i++;
+            ASSERT_EQ(expectedValue, stmt.GetValueInt64(0));
+            ASSERT_EQ(expectedValue, stmt.GetValueInt64(1));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.id x, b.id y FROM ECVLib.IdSet('[1,2,3,4,5]') a, ECVLib.IdSet('[1,2,3,4,5]') b where a.id = b.id"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            int64_t expectedValue = 1 + i++;
+            ASSERT_EQ(expectedValue, stmt.GetValueInt64(0));
+            ASSERT_EQ(expectedValue, stmt.GetValueInt64(1));
+            }
+        ASSERT_EQ(i, 5);
+        ASSERT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         }
     ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
     ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
