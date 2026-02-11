@@ -169,7 +169,7 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
       </ECSchema>)xml";
 
     // Major schema upgrade:
-    // Delete the overriden property "Name" from class "C".
+    // Delete the overridden property "Name" from class "C".
     // A property map for class "D" is created for the inherited property "Name".
     // Also delete the leaf class "D".
     const auto schemaV2_0_0 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
