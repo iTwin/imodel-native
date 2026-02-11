@@ -5147,7 +5147,8 @@ public:
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
             InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
             InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
-            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata),
+            InstanceMethod("bindParams", &NativeECSqlStatement::BindParams)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -5309,6 +5310,25 @@ public:
         adaptor.GetMetaData(props, m_stmt);
         props.ToJs(metaJson);
         return out;
+    }
+
+    Napi::Value BindParams(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
+        BeJsValue args(argsObj);
+
+        Json::Value jsonArgs;
+        BeJsValue jsArgs(jsonArgs);
+        jsArgs.From(args);
+        ECSqlParams params(jsonArgs);
+        if(params.IsEmpty())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
+        std::string errMsg;
+        if(!params.TryBindTo(m_stmt, errMsg))
+            return CreateErrorObject0(false, errMsg.c_str(), info.Env());
+         return CreateErrorObject0(true, nullptr, info.Env());  
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
