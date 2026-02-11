@@ -140,6 +140,11 @@ public:
     BentleyStatus CleanModifiedMappings();
     BentleyStatus EnsureInvolvedSchemasAreLoaded(bvector<ECN::ECSchemaCP> const& schemasToMap);
     BentleyStatus RestoreAndProcessCleanedPropertyMaps(SchemaImportContext& ctx);
+    void MarkClassAsDeleted(ECN::ECClassId classId)
+        { 
+        if (m_cleanedMappingInfo.find(classId) != m_cleanedMappingInfo.end()) 
+            m_cleanedMappingInfo.erase(classId);
+        }
 
 //move data
 private:

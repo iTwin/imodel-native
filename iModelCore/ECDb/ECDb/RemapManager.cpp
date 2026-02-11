@@ -645,8 +645,10 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
         auto ecClass = m_schemaManager.GetClass(classId);
         if(ecClass == nullptr)
             {
-            LOG.infov("Skipping property map restoration for class %s.", pair.second[0].m_className.c_str(), classId.GetValue());
-            continue;
+            BeAssert(false && "Failed to find class");
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0251,
+                "Failed to find class %s for ensuring persisted property maps.", pair.second[0].m_className.c_str());
+            return ERROR;
             }
 
         auto classMap = m_schemaManager.GetClassMap(*ecClass);
