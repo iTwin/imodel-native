@@ -645,7 +645,7 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
         auto ecClass = m_schemaManager.GetClass(classId);
         if(ecClass == nullptr)
             {
-            LOG.infov("Skipping property map restoration for deleted class %s.", pair.second[0].m_className.c_str(), classId.GetValue());
+            LOG.infov("Skipping property map restoration for class %s.", pair.second[0].m_className.c_str(), classId.GetValue());
             continue;
             }
 
