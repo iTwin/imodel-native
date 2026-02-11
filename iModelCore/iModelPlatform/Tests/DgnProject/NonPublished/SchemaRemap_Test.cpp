@@ -109,7 +109,7 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
     context->AddSchemaLocater(m_db->GetSchemaLocater());
 
     // Setup the base schema with necessary classes.
-    // The property Alias is defined in the base entity class "Named_Item" and gets overriden in the child "Device".
+    // The property Name is defined in the base entity class "A" and gets overriden in the child "B".
     const auto schemaV1_0_0 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
       <ECSchema schemaName="TestSchema%d" alias="ts%d" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="1.0.12" alias="bis"/>
@@ -119,24 +119,24 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
           <DynamicSchema xmlns="CoreCustomAttributes.1.0.3"/>
         </ECCustomAttributes>
 
-        <ECEntityClass typeName="Named_Item">
+        <ECEntityClass typeName="A">
           <BaseClass>bis:PhysicalElement</BaseClass>
-          <ECProperty propertyName="Alias" typeName="string" priority="0" />
+          <ECProperty propertyName="Name" typeName="string" priority="0" />
         </ECEntityClass>
 
-        <ECEntityClass typeName="Device">
-          <BaseClass>Named_Item</BaseClass>
-          <ECProperty propertyName="Alias" typeName="string" priority="1003" />
+        <ECEntityClass typeName="B">
+          <BaseClass>A</BaseClass>
+          <ECProperty propertyName="Name" typeName="string" priority="1003" />
         </ECEntityClass>
 
-        <ECEntityClass typeName="Equipment">
-          <BaseClass>Device</BaseClass>
-          <ECProperty propertyName="SerialNumber" typeName="string" />
+        <ECEntityClass typeName="C">
+          <BaseClass>B</BaseClass>
+          <ECProperty propertyName="TestPropertyC" typeName="string" />
         </ECEntityClass>
       </ECSchema>)xml";
 
     // Minor schema update:
-    // Override the property "Alias" in the child class "Equipment" and also add a derived class "SILO" which will inherit the property and add a property map row.
+    // Override the property "Name" in the child class "C" and also add a derived class "D" which will inherit the property and add a property map row for itself.
     const auto schemaV1_0_1 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
       <ECSchema schemaName="TestSchema%d" alias="ts%d" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="1.0.12" alias="bis"/>
@@ -146,31 +146,32 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
           <DynamicSchema xmlns="CoreCustomAttributes.1.0.3"/>
         </ECCustomAttributes>
 
-        <ECEntityClass typeName="Named_Item">
+        <ECEntityClass typeName="A">
           <BaseClass>bis:PhysicalElement</BaseClass>
-          <ECProperty propertyName="Alias" typeName="string" priority="0" />
+          <ECProperty propertyName="Name" typeName="string" priority="0" />
         </ECEntityClass>
 
-        <ECEntityClass typeName="Device">
-          <BaseClass>Named_Item</BaseClass>
-          <ECProperty propertyName="Alias" typeName="string" priority="1003" />
+        <ECEntityClass typeName="B">
+          <BaseClass>A</BaseClass>
+          <ECProperty propertyName="Name" typeName="string" priority="1003" />
         </ECEntityClass>
 
-        <ECEntityClass typeName="Equipment">
-          <BaseClass>Device</BaseClass>
-          <ECProperty propertyName="SerialNumber" typeName="string" />
-          <ECProperty propertyName="Alias" typeName="string" priority="0" />
+        <ECEntityClass typeName="C">
+          <BaseClass>B</BaseClass>
+          <ECProperty propertyName="TestPropertyC" typeName="string" />
+          <ECProperty propertyName="Name" typeName="string" priority="0" />
         </ECEntityClass>
           
-        <ECEntityClass typeName="SILO">
-          <BaseClass>Equipment</BaseClass>
-          <ECProperty propertyName="Height" typeName="double" />
+        <ECEntityClass typeName="D">
+          <BaseClass>C</BaseClass>
+          <ECProperty propertyName="TestPropertyD" typeName="double" />
         </ECEntityClass>
       </ECSchema>)xml";
 
-    // Major schema upgrade that deletes the overriden property "Alias" from class "Equipment" and also deletes the leaf class "Silo".
-    // Since the property map for alias contains a property path to "Silo", it is persisted.
-    // However, since the class "Silo" itself gets deleted, we end up with an error "Failed to find class SILO for ensuring persisted property maps." when remapping the persisted property maps.
+    // Major schema upgrade:
+    // Delete the overriden property "Name" from class "C".
+    // A property map for class "D" is created for the inherited property "Name".
+    // Also delete the leaf class "D".
     const auto schemaV2_0_0 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
       <ECSchema schemaName="TestSchema%d" alias="ts%d" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="1.0.12" alias="bis"/>
@@ -180,33 +181,123 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
           <DynamicSchema xmlns="CoreCustomAttributes.1.0.3"/>
         </ECCustomAttributes>
 
-        <ECEntityClass typeName="Named_Item">
+        <ECEntityClass typeName="A">
           <BaseClass>bis:PhysicalElement</BaseClass>
-          <ECProperty propertyName="Alias" typeName="string" priority="0" />
+          <ECProperty propertyName="Name" typeName="string" priority="0" />
         </ECEntityClass>
 
-        <ECEntityClass typeName="Device">
-          <BaseClass>Named_Item</BaseClass>
-          <ECProperty propertyName="Alias" typeName="string" priority="1003" />
+        <ECEntityClass typeName="B">
+          <BaseClass>A</BaseClass>
+          <ECProperty propertyName="Name" typeName="string" priority="1003" />
         </ECEntityClass>
 
-        <ECEntityClass typeName="Equipment">
-          <BaseClass>Device</BaseClass>
-          <ECProperty propertyName="SerialNumber" typeName="string" />
+        <ECEntityClass typeName="C">
+          <BaseClass>B</BaseClass>
+          <ECProperty propertyName="TestPropertyC" typeName="string" />
         </ECEntityClass>
       </ECSchema>)xml";
 
-    for (const auto& schemaToImport : { schemaV1_0_0, schemaV1_0_1, schemaV2_0_0 })
+    auto verifyClassExists = [&](Utf8StringCR schemaName, Utf8StringCR className) -> bool
       {
-      ECSchemaPtr schema;
-      ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaToImport, 1, 1).c_str(), *context));
-      ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({ schema.get() }, true));
-      m_db->SaveChanges();
+      Statement stmt;
+      stmt.Prepare(*m_db, "SELECT 1 FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name = ? AND c.Name = ?");
+      stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+      stmt.BindText(2, className, Statement::MakeCopy::No);
+      return stmt.Step() == BE_SQLITE_ROW;
+      };
 
-      // Test the legacy V8 import logic
-      ECSchemaPtr legacyImportSchema;
-      ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(legacyImportSchema, Utf8PrintfString(schemaToImport, 2, 2).c_str(), *context));
-      ASSERT_EQ(SchemaStatus::Success, m_db->ImportV8LegacySchemas({ legacyImportSchema.get() }));
-      m_db->SaveChanges();
+    auto getPropertyMapCount = [&](Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR propertyName) -> int
+      {
+      Statement stmt;
+      stmt.Prepare(*m_db, R"sql(
+        SELECT COUNT(*) FROM ec_PropertyMap pm
+          JOIN ec_Class c ON pm.ClassId = c.Id
+          JOIN ec_Schema s ON c.SchemaId = s.Id
+          JOIN ec_PropertyPath pp ON pm.PropertyPathId = pp.Id
+          JOIN ec_Property p ON pp.RootPropertyId = p.Id
+        WHERE s.Name = ? AND c.Name = ? AND p.Name = ?
+      )sql");
+      stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+      stmt.BindText(2, className, Statement::MakeCopy::No);
+      stmt.BindText(3, propertyName, Statement::MakeCopy::No);
+
+      return (stmt.Step() == BE_SQLITE_ROW) ? stmt.GetValueInt(0) : 0;
+      };
+
+    auto getOrphanPropertyPathCount = [&]() -> int
+      {
+      Statement stmt;
+      stmt.Prepare(*m_db, R"sql(
+        SELECT COUNT(*) FROM ec_PropertyPath pp WHERE NOT EXISTS (SELECT 1 FROM ec_PropertyMap pm WHERE pm.PropertyPathId = pp.Id)
+      )sql");
+
+      return (stmt.Step() == BE_SQLITE_ROW) ? stmt.GetValueInt(0) : 0;
+      };
+
+    for (const auto& [legacyImport, schemaNumber] : { 
+      std::make_pair(false, 1), // Test the regular import logic
+      std::make_pair(true, 2) // Test the legacy V8 import logic with all the same verifications.
+    })
+      {
+      const auto schemaName = Utf8PrintfString("TestSchema%d", schemaNumber);
+      // Import v1.0.0 - baseline schema
+        {
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaV1_0_0, schemaNumber, schemaNumber).c_str(), *context));
+        ASSERT_EQ(SchemaStatus::Success, legacyImport ? m_db->ImportV8LegacySchemas({ schema.get() }) : m_db->ImportSchemas({ schema.get() }, true));
+        m_db->SaveChanges();
+
+        ASSERT_TRUE(verifyClassExists(schemaName, "A"));
+        ASSERT_TRUE(verifyClassExists(schemaName, "B"));
+        ASSERT_TRUE(verifyClassExists(schemaName, "C"));
+        ASSERT_FALSE(verifyClassExists(schemaName, "D"));
+
+        // Verify property mappings exist
+        ASSERT_EQ(getPropertyMapCount(schemaName, "A", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "B", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "C", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "C", "TestPropertyC"), 1);
+        }
+
+        // Import v1.0.1 - add D class and override Name in C
+        {
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaV1_0_1, schemaNumber, schemaNumber).c_str(), *context));
+        ASSERT_EQ(SchemaStatus::Success, legacyImport ? m_db->ImportV8LegacySchemas({ schema.get() }) : m_db->ImportSchemas({ schema.get() }, true));
+        m_db->SaveChanges();
+
+        ASSERT_TRUE(verifyClassExists(schemaName, "D"));
+
+        // Verify Name property mappings exist for B, C (override), and D (inherited from C)
+        ASSERT_EQ(getPropertyMapCount(schemaName, "A", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "B", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "C", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "C", "TestPropertyC"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "D", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "D", "TestPropertyD"), 1);
+        }
+
+        // Import v2.0.0 - delete D class and remove Name override from C
+        {
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaV2_0_0, schemaNumber, schemaNumber).c_str(), *context));
+        ASSERT_EQ(SchemaStatus::Success, legacyImport ? m_db->ImportV8LegacySchemas({ schema.get() }) : m_db->ImportSchemas({ schema.get() }, true));
+        m_db->SaveChanges();
+
+        // Verify D class no longer exists
+        ASSERT_FALSE(verifyClassExists(schemaName, "D"));
+
+        // Verify property maps for D are cleaned up (CASCADE DELETE on ClassId)
+        ASSERT_EQ(getPropertyMapCount(schemaName, "D", "Name"), 0);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "D", "TestPropertyD"), 0);
+
+        // Verify C still has property mappings for B's Name (no longer overridden)
+        ASSERT_EQ(getPropertyMapCount(schemaName, "B", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "C", "Name"), 1);
+        ASSERT_EQ(getPropertyMapCount(schemaName, "C", "TestPropertyC"), 1);
+
+        // Verify no orphan property paths remain
+        ASSERT_EQ(getOrphanPropertyPathCount(), 0) << "Orphan property paths should be cleaned up during schema remapping";
+        }
       }
     }
