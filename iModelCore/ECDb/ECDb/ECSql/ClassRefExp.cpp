@@ -58,7 +58,7 @@ Utf8StringCR TableValuedFunctionExp::_GetId() const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TableValuedFunctionExp::_ExpandSelectAsterisk(
-    std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
+    std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const {
     if(m_virtualEntityClass == nullptr)
         return;
     BeAssert(m_virtualEntityClass != nullptr);
