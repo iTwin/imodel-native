@@ -109,7 +109,7 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
     context->AddSchemaLocater(m_db->GetSchemaLocater());
 
     // Setup the base schema with necessary classes.
-    // The property Name is defined in the base entity class "A" and gets overriden in the child "B".
+    // The property Name is defined in the base entity class "A" and gets overridden in the child "B".
     const auto schemaV1_0_0 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
       <ECSchema schemaName="TestSchema%d" alias="ts%d" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="1.0.12" alias="bis"/>
