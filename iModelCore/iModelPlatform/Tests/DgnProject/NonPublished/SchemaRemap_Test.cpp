@@ -172,7 +172,7 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
     // Delete the overridden property "Name" from class "C".
     // A property map for class "D" is created for the inherited property "Name".
     // Also delete the leaf class "D".
-    const auto schemaV2_0_0 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    const auto schemaV2_0_1 = R"xml(<?xml version="1.0" encoding="utf-8" ?>
       <ECSchema schemaName="TestSchema%d" alias="ts%d" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="1.0.12" alias="bis"/>
         <ECSchemaReference name="CoreCustomAttributes" version="1.0.3" alias="CoreCA"/>
@@ -277,10 +277,10 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
         ASSERT_EQ(getPropertyMapCount(schemaName, "D", "TestPropertyD"), 1);
         }
 
-        // Import v2.0.0 - delete D class and remove Name override from C
+        // Import v2.0.1 - delete D class and remove Name override from C
         {
         ECSchemaPtr schema;
-        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaV2_0_0, schemaNumber, schemaNumber).c_str(), *context));
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaV2_0_1, schemaNumber, schemaNumber).c_str(), *context));
         ASSERT_EQ(SchemaStatus::Success, legacyImport ? m_db->ImportV8LegacySchemas({ schema.get() }) : m_db->ImportSchemas({ schema.get() }, true));
         m_db->SaveChanges();
 

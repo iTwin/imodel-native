@@ -3652,8 +3652,8 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
             }
         }
 
-    // Mark the class as deleted to skip property map restoration during remapping
-    ctx.ImportCtx().RemapManager().MarkClassAsDeleted(deletedClass.GetId());
+    // Discard saved cleaned mapping info for this class to skip property map restoration during remapping
+    ctx.ImportCtx().RemapManager().DiscardCleanedMappingInfoForClass(deletedClass.GetId());
 
     if (auto relationshipClass = deletedClass.GetRelationshipClassCP())
         {
