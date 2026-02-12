@@ -2380,12 +2380,14 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
     CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), unionQuery->GetQuery()->GetQueryString().c_str());
     if (!stmt.IsValid())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", unionQuery->GetQuery()->GetQueryString().c_str()));
+    ThrowIfCancelled(params.m_cancellationToken);
 
     unionQuery->GetQuery()->BindValues(*stmt);
 
     // create the paths list
     while (BE_SQLITE_ROW == QueryExecutorHelper::Step(*stmt))
         {
+        ThrowIfCancelled(params.m_cancellationToken);
         int index = stmt->GetValueInt(0);
 
         if (stmt->IsValueNull(1))
@@ -2440,7 +2442,7 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePaths(ECClassCR selectClass,
-    RelatedInstanceSpecificationList const& relatedInstanceSpecs, ECClassUseCounter& relationshipsUseCount) const
+    RelatedInstanceSpecificationList const& relatedInstanceSpecs, ECClassUseCounter& relationshipsUseCount, ICancelationTokenCP cancellationToken) const
     {
     bvector<RelatedInstanceSpecification const*> targetInstancesSpecs;
     bvector<RelationshipPathsRequestParams::PathSpecification> pathLookupSpecs;
@@ -2454,7 +2456,7 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
         }
 
     bvector<RelatedClassPath> noRelatedInstances;
-    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(selectClass, ""), pathLookupSpecs, nullptr, noRelatedInstances, relationshipsUseCount, false);
+    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(selectClass, ""), pathLookupSpecs, nullptr, noRelatedInstances, relationshipsUseCount, false, cancellationToken);
     auto indexedPaths = GetRelationshipPaths(params);
 
     bmap<Utf8String, bvector<RelatedClassPath>> paths;
@@ -2483,6 +2485,8 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
         if (!pathIter->second.empty())
             paths.Insert(spec.GetAlias(), ContainerHelpers::TransformContainer<bvector<RelatedClassPath>>(pathIter->second, [](auto const& pathResult){return pathResult.m_path;}));
         }
+
+    ThrowIfCancelled(params.m_cancellationToken);
 
     // this loop handles related instances that are targeted using `RelatedInstanceTargetInstancesSpecification`
     for (auto spec : targetInstancesSpecs)
