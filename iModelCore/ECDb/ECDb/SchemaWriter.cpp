@@ -3652,6 +3652,9 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
             }
         }
 
+    // Discard saved cleaned mapping info for this class to skip property map restoration during remapping
+    ctx.ImportCtx().RemapManager().DiscardCleanedMappingInfoForClass(deletedClass.GetId());
+
     if (auto relationshipClass = deletedClass.GetRelationshipClassCP())
         {
         if (DeleteCustomAttributes(ctx, relationshipClass->GetId(), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint) != SUCCESS)
