@@ -892,7 +892,7 @@ void    RelatedPropertyPathCache::CachePaths(DgnDbR db, Utf8StringCR schemaName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedInstanceFinder::RelatedInstanceFinder(DgnDbR db, DgnChangeSummary& changeSummary, ECPresentationManagerR manager, Utf8StringCR rulesetId, RelationshipCachingOptions const& options)
+Dgn::RelatedInstanceFinder::RelatedInstanceFinder(DgnDbR db, DgnChangeSummary& changeSummary, ECPresentationManagerR manager, Utf8StringCR rulesetId, RelationshipCachingOptions const& options)
     : m_db(db), m_changeSummary(changeSummary), m_relatedPropertyExplorer(db, changeSummary)
     {
     SetCachingOptions(options);
@@ -909,7 +909,7 @@ RelatedInstanceFinder::RelatedInstanceFinder(DgnDbR db, DgnChangeSummary& change
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceFinder::AddRelatedPropertyPaths(RelatedPropertyPathCache const& cache)
+void Dgn::RelatedInstanceFinder::AddRelatedPropertyPaths(RelatedPropertyPathCache const& cache)
     {
     // Add to map so that clones are not traversed multiple times
     for (auto path : cache.Get())
@@ -939,7 +939,7 @@ StatusInt parseClassFullName(DgnDbR db, Utf8StringR schemaName, Utf8StringR clas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceFinder::GetAllRelatedInstances(bset<ECInstanceKey>& output, ECInstanceKey const& instance)
+void Dgn::RelatedInstanceFinder::GetAllRelatedInstances(bset<ECInstanceKey>& output, ECInstanceKey const& instance)
     {
     for (auto& pair : m_relatedPropertyPaths)
         {
@@ -951,7 +951,7 @@ void RelatedInstanceFinder::GetAllRelatedInstances(bset<ECInstanceKey>& output, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceFinder::GetAllRelatedInstancesForClassIds(bmap<ECInstanceKey, ECInstanceKeySet>& output, bmap<ECClassId,bset<ECInstanceKey>>& classToInstanceKeys)
+void Dgn::RelatedInstanceFinder::GetAllRelatedInstancesForClassIds(bmap<ECInstanceKey, ECInstanceKeySet>& output, bmap<ECClassId,bset<ECInstanceKey>>& classToInstanceKeys)
     {
     VCLOG.infov("Getting all related instances for relevant class Ids");
     for (auto& pair : m_relatedPropertyPaths)
@@ -1527,7 +1527,7 @@ void ChangedElementFinder::FindElementClassIds(bset<ECClassId>& classIds, DgnDbR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedInstanceFinder ChangedElementFinder::CreateRelatedInstanceFinder(DgnDbR db, DgnChangeSummary& changeSummary, RelatedPropertyPathCache& beforeStateCache)
+Dgn::RelatedInstanceFinder ChangedElementFinder::CreateRelatedInstanceFinder(DgnDbR db, DgnChangeSummary& changeSummary, RelatedPropertyPathCache& beforeStateCache)
     {
     // Related instance finder based on property paths and ECPresentation
     RelationshipCachingOptions cachingOpts(!m_options.wantChunkTraversal && m_options.wantRelationshipCaching, m_options.relationshipCacheSize);
