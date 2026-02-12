@@ -463,6 +463,7 @@ export declare namespace IModelJsNative {
     saveChanges(): void;
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    analyze(): void;
     enableWalMode(yesNo?: boolean): void;
     /** perform a checkpoint if this db is in WAL mode. Otherwise this function does nothing.
      * @param mode the checkpoint mode. Default is `Truncate`.
@@ -640,6 +641,8 @@ export declare namespace IModelJsNative {
     public executeTest(testName: string, params: string): string;
     public exportGraphics(exportProps: any/* ExportGraphicsProps */): DbResult;
     public exportPartGraphics(exportProps: any/* ExportPartGraphicsProps */): DbResult;
+    public exportGraphicsAsync(exportProps: any/* ExportGraphicsProps */): Promise<void>;
+    public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsProps */): Promise<void>;
     public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
@@ -776,6 +779,7 @@ export declare namespace IModelJsNative {
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems: Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
@@ -1037,6 +1041,7 @@ export declare namespace IModelJsNative {
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
+    public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;

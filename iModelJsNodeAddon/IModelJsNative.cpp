@@ -346,6 +346,12 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error vacuuming", db.GetDbFileName(), status);
     }
 
+    void Analyze(NapiInfoCR info) {
+        Db& db = GetOpenedDb(info);
+        if (const auto status = db.Analyze(); status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
+    }
+
     void EnableWalMode(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
@@ -815,6 +821,7 @@ public:
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
+            InstanceMethod("analyze", &SQLiteDb::Analyze),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
@@ -1829,6 +1836,42 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         DgnDbStatus status = JsInterop::ExportPartGraphics(db, exportProps);
         return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value ExportGraphicsAsync(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
+
+        Napi::Value onGraphicsVal = exportProps.Get("onGraphics");
+        if (!onGraphicsVal.IsFunction())
+            THROW_JS_TYPE_EXCEPTION("onGraphics must be a function");
+
+        Napi::Value elementIdArrayVal = exportProps.Get("elementIdArray");
+        if (!elementIdArrayVal.IsArray())
+            THROW_JS_TYPE_EXCEPTION("elementIdArray must be an array");
+
+        return JsInterop::ExportGraphicsAsync(db, exportProps);
+        }
+
+    Napi::Value ExportPartGraphicsAsync(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
+
+        Napi::Value onPartGraphicsVal = exportProps.Get("onPartGraphics");
+        if (!onPartGraphicsVal.IsFunction())
+            THROW_JS_TYPE_EXCEPTION("onPartsGraphics must be a function");
+
+        Napi::Value displayPropsVal = exportProps.Get("displayProps");
+        if (!displayPropsVal.IsObject())
+            THROW_JS_TYPE_EXCEPTION("displayProps must be an object");
+
+        Napi::Value elementIdVal = exportProps.Get("elementId");
+        if (!elementIdVal.IsString())
+            THROW_JS_TYPE_EXCEPTION("elementId must be a string");
+
+        return JsInterop::ExportPartGraphicsAsync(db, exportProps);
         }
 
     Napi::Value ProcessGeometryStream(NapiInfoCR info)
@@ -3041,6 +3084,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
             InstanceMethod("exportPartGraphics", &NativeDgnDb::ExportPartGraphics),
+            InstanceMethod("exportGraphicsAsync", &NativeDgnDb::ExportGraphicsAsync),
+            InstanceMethod("exportPartGraphicsAsync", &NativeDgnDb::ExportPartGraphicsAsync),
             InstanceMethod("exportSchema", &NativeDgnDb::ExportSchema),
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractChangedInstanceIdsFromChangeSets", &NativeDgnDb::ExtractChangedInstanceIdsFromChangeSets),
@@ -3174,6 +3219,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("writeAffectedElementDependencyGraphToFile", &NativeDgnDb::WriteAffectedElementDependencyGraphToFile),
             InstanceMethod("writeFullElementDependencyGraphToFile", &NativeDgnDb::WriteFullElementDependencyGraphToFile),
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
+            InstanceMethod("analyze", &NativeDgnDb::Analyze),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("enableChangesetStatsTracking", &NativeDgnDb::EnableChangesetStatsTracking),
@@ -6246,7 +6292,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return
             f->onError([this, requestId = Utf8String(requestId), &db, getParams, abortEvent](CancellationException const& e)
                 {
-                if (!e.IsRestartRequested() || !m_mainThreadExecutor)
+                if (!e.IsRestartRequested() || !m_mainThreadExecutor || !db.IsOpen())
                     throw e;
 
                 return folly::via(m_mainThreadExecutor.get(), [this, requestId, &db, getParams, abortEvent]()

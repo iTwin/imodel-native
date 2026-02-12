@@ -1222,7 +1222,7 @@ bool MaxCubicError (double x1, double f1, double x2, double f2, double &xm, doub
                 fm = xm * (xm - 1) * (a * xm + b);
                 x3c = true;
                 }
-            if (solution[i] < 0 && solution[i] > 1)
+            if (solution[i] < 0 || solution[i] > 1)
                 {
                 x4 = solution[i];
                 }
