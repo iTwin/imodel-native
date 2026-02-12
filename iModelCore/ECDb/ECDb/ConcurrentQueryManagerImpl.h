@@ -495,7 +495,6 @@ struct ECSqlRowReader::Impl {
         Impl(ECDbCR db) : m_adaptor(), m_ecdb(db) {};
 
         QueryResponse::Ptr Step(ECSqlRequest const& request);
-        void Dispose();
 
 };
 
