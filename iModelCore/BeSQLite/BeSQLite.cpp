@@ -1353,22 +1353,22 @@ BentleyStatus ProfileVersion::FromJson(Utf8CP val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::TryPrepare(DbFileCR dbFile, Utf8CP sql)
+DbResult Statement::TryPrepare(DbFileCR dbFile, Utf8CP sql, DbPrepareOptions opts)
     {
-    DbResult stat = DoPrepare(dbFile, sql);
+    DbResult stat = DoPrepare(dbFile, sql, opts);
     LOG_STATEMENT_DIAGNOSTICS(sql, stat, dbFile, false);
     return stat;
     }
 
-DbResult Statement::TryPrepare(DbCR db, Utf8CP sql) { return TryPrepare(*db.m_dbFile, sql);}
-DbResult Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
+DbResult Statement::TryPrepare(DbCR db, Utf8CP sql, DbPrepareOptions opts) { return TryPrepare(*db.m_dbFile, sql, opts);}
+DbResult Statement::Prepare(DbCR db, Utf8CP sql, DbPrepareOptions opts) {return Prepare(*db.m_dbFile, sql, false, opts);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostics)
+DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostics, DbPrepareOptions opts)
     {
-    DbResult stat = DoPrepare(dbFile, sql);
+    DbResult stat = DoPrepare(dbFile, sql, opts);
     if (stat != BE_SQLITE_OK)
         {
         Utf8String lastError = dbFile.GetLastError(nullptr); // keep on separate line for debugging
@@ -1382,10 +1382,10 @@ DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostic
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql)
+DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql, DbPrepareOptions opts)
     {
     SqlDbP dbHdl = dbFile.GetSqlDb();
-    return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v2(dbHdl, sql, -1, &m_stmt, 0);
+    return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v3(dbHdl, sql, -1, (int)opts, &m_stmt, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4892,7 +4892,7 @@ DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile c
         return BE_SQLITE_OK;
 
     AddStatement(stmt, sqlString);
-    return logError ? stmt->Prepare(dbFile, sqlString) : stmt->TryPrepare(dbFile, sqlString);
+    return logError ? stmt->Prepare(dbFile, sqlString) : stmt->TryPrepare(dbFile, sqlString, DbPrepareOptions::Persistent);
     }
 
 /*---------------------------------------------------------------------------------**//**

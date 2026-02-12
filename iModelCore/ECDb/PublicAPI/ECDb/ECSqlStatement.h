@@ -60,14 +60,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] ecdb ECDb context
         //! @param[in] ecsql ECSQL
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql) { return Prepare(ecdb, ecsql, nullptr, true); }
+        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, DbPrepareOptions opts = DbPrepareOptions::None) { return Prepare(ecdb, ecsql, nullptr, true, opts); }
 
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
         //! @param[in] ecsql ECSQL
         //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, bool logErrors) { return Prepare(ecdb, ecsql, nullptr, logErrors); }
+        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, bool logErrors, DbPrepareOptions opts = DbPrepareOptions::None) { return Prepare(ecdb, ecsql, nullptr, logErrors, opts); }
 
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
@@ -76,7 +76,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! the ECDb file was set-up with the option "ECSQL write token validation".
         //! If the option is not set, nullptr can be passed for @p token.
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) { return Prepare(ecdb, ecsql, token, true); }
+        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, DbPrepareOptions opts = DbPrepareOptions::None) { return Prepare(ecdb, ecsql, token, true, opts); }
 
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
@@ -86,7 +86,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! If the option is not set, nullptr can be passed for @p token.
         //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors);
+        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors, DbPrepareOptions opts = DbPrepareOptions::None);
 
         //! Prepares the statement with the specified @b SELECT ECSQL for multi-threading scenarios.
         //! @remarks This special type of prepare uses two different ECDb connections to the @b same ECDb file. One connection
@@ -105,7 +105,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] selectECSql SELECT ECSQL
         //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus Prepare(SchemaManager const& schemaManager, Db const& dataSourceECDb, Utf8CP selectECSql, bool logErrors = true);
+        ECDB_EXPORT ECSqlStatus Prepare(SchemaManager const& schemaManager, Db const& dataSourceECDb, Utf8CP selectECSql, bool logErrors = true, DbPrepareOptions opts = DbPrepareOptions::None);
 
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise

@@ -60,12 +60,12 @@ void ECSqlStatement::Finalize() { m_pimpl->Finalize(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors) { return m_pimpl->Prepare(ecdb, nullptr, ecsql, token, logErrors); }
+ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors, DbPrepareOptions opts) { return m_pimpl->Prepare(ecdb, nullptr, ecsql, token, logErrors, opts); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(SchemaManagerCR schemaManager, DbCR dataSourceECDb, Utf8CP selectECSql, bool logErrors) { return m_pimpl->Prepare(schemaManager.Main().GetECDb(), &dataSourceECDb, selectECSql, nullptr, logErrors); }
+ECSqlStatus ECSqlStatement::Prepare(SchemaManagerCR schemaManager, DbCR dataSourceECDb, Utf8CP selectECSql, bool logErrors, DbPrepareOptions opts) { return m_pimpl->Prepare(schemaManager.Main().GetECDb(), &dataSourceECDb, selectECSql, nullptr, logErrors, opts); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

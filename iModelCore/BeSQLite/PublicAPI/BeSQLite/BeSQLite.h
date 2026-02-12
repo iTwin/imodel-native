@@ -441,6 +441,9 @@ enum class DbTrace
 };
 ENUM_IS_FLAGS(DbTrace)
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 enum class DbDeserializeOptions {
     None = 0,
     FreeOnClose = 1,
@@ -452,6 +455,12 @@ ENUM_IS_FLAGS(DbDeserializeOptions)
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+enum class DbPrepareOptions {
+    None = 0,
+    Persistent = 0x01, // Flag is a hint to the query planner that the prepared statement will be retained for a long time and probably reused many times.
+};
+ENUM_IS_FLAGS(DbPrepareOptions)
+
 enum class StatementState
 {
     // The first four values are in accordance with sqlite3.c
@@ -757,7 +766,7 @@ struct Statement : NonCopyableClass
 private:
     SqlStatementP m_stmt;
 
-    DbResult DoPrepare(DbFileCR, Utf8CP sql);
+    DbResult DoPrepare(DbFileCR, Utf8CP sql, DbPrepareOptions opts);
 
 public:
     enum class MakeCopy : bool {No=0, Yes=1};
@@ -765,12 +774,12 @@ public:
 
     //! construct a new blank Statement.
     Statement() {m_stmt=nullptr;}
-    Statement(DbCR db, Utf8CP sql) {m_stmt=nullptr; Prepare(db, sql);}
+    Statement(DbCR db, Utf8CP sql, DbPrepareOptions opts = DbPrepareOptions::None) {m_stmt=nullptr; Prepare(db, sql, opts);}
     ~Statement() {Finalize();}
 
     SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
-    DbResult Prepare(DbFileCR, Utf8CP sql, bool suppressDiagnostics = false); //! @private internal use only
-    DbResult TryPrepare(DbFileCR, Utf8CP sql);
+    DbResult Prepare(DbFileCR, Utf8CP sql, bool suppressDiagnostics = false, DbPrepareOptions opts = DbPrepareOptions::None); //! @private internal use only
+    DbResult TryPrepare(DbFileCR, Utf8CP sql, DbPrepareOptions opts = DbPrepareOptions::None);
 
     //! Determine whether this Statement has already been prepared.
     bool IsPrepared() const {return nullptr != m_stmt;}
@@ -782,13 +791,13 @@ public:
     //! @param[in] db The database to use
     //! @param[in] sql The SQL string to prepare.
     //! @see sqlite3_prepare
-    BE_SQLITE_EXPORT DbResult Prepare(DbCR db, Utf8CP sql);
+    BE_SQLITE_EXPORT DbResult Prepare(DbCR db, Utf8CP sql, DbPrepareOptions opts = DbPrepareOptions::None);
 
     //! Prepare this Statement. Identical to Prepare, except that it does not automatically log errors
     //! @param[in] db The database to use
     //! @param[in] sql The SQL string to prepare.
     //! @see sqlite3_prepare
-    BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql);
+    BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql, DbPrepareOptions opts = DbPrepareOptions::None);
 
     //! Indicates whether the prepared statement makes no @b direct changes to the content of the db or not.
     //! @remarks
