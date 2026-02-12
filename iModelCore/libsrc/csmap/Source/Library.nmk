@@ -169,6 +169,8 @@ CSMAP_SRC_CC =  CS_alber.c \
 				CS_osgm91.c \
 				CS_ost02.c \
 				CS_ost97.c \
+				CS_ost15.c \
+				CS_ostn15.c \
 				CS_ostn02.c \
 				CS_ostn97.c \
 				CS_ostro.c \
@@ -177,6 +179,7 @@ CSMAP_SRC_CC =  CS_alber.c \
 				CS_parm6.c \
 				CS_parm7.c \
 				CS_plycn.c \
+				CS_plynm.c \
 				CS_pstro.c \
 				CS_rlsUpdt.c \
 				CS_robin.c \
@@ -209,6 +212,7 @@ CSMAP_SRC_CC =  CS_alber.c \
 				CSgeodeticSupport.c \
 				CSgpcomp.c \
 				CSgxcomp.c \
+				CSosgbTrmer \
 				CSwktFlavors.c
 
 CSMAP_SRC_CPP = CS_csvFileSupport.cpp \
@@ -331,6 +335,8 @@ $(INT_DIR)\CS_ortho.obj          : $(SRC_DIR)\CS_ortho.c
 $(INT_DIR)\CS_osgm91.obj         : $(SRC_DIR)\CS_osgm91.c
 $(INT_DIR)\CS_ost02.obj          : $(SRC_DIR)\CS_ost02.c
 $(INT_DIR)\CS_ost97.obj          : $(SRC_DIR)\CS_ost97.c
+$(INT_DIR)\CS_ost15.obj          : $(SRC_DIR)\CS_ost15.c
+$(INT_DIR)\CS_ostn15.obj         : $(SRC_DIR)\CS_ostn15.c
 $(INT_DIR)\CS_ostn02.obj         : $(SRC_DIR)\CS_ostn02.c
 $(INT_DIR)\CS_ostn97.obj         : $(SRC_DIR)\CS_ostn97.c
 $(INT_DIR)\CS_ostro.obj          : $(SRC_DIR)\CS_ostro.c
@@ -339,6 +345,7 @@ $(INT_DIR)\CS_parm4.obj          : $(SRC_DIR)\CS_parm4.c
 $(INT_DIR)\CS_parm6.obj          : $(SRC_DIR)\CS_parm6.c
 $(INT_DIR)\CS_parm7.obj          : $(SRC_DIR)\CS_parm7.c
 $(INT_DIR)\CS_plycn.obj          : $(SRC_DIR)\CS_plycn.c
+$(INT_DIR)\CS_plynm.obj          : $(SRC_DIR)\CS_plynm.c
 $(INT_DIR)\CS_pstro.obj          : $(SRC_DIR)\CS_pstro.c
 $(INT_DIR)\CS_rlsUpdt.obj        : $(SRC_DIR)\CS_rlsUpdt.c
 $(INT_DIR)\CS_robin.obj          : $(SRC_DIR)\CS_robin.c
@@ -371,6 +378,7 @@ $(INT_DIR)\CSelcomp.obj          : $(SRC_DIR)\CSelcomp.c
 $(INT_DIR)\CSgeodeticSupport.obj : $(SRC_DIR)\CSgeodeticSupport.c
 $(INT_DIR)\CSgpcomp.obj          : $(SRC_DIR)\CSgpcomp.c
 $(INT_DIR)\CSgxcomp.obj          : $(SRC_DIR)\CSgxcomp.c
+$(INT_DIR)\CSosgbTrmer.obj       : $(SRC_DIR)\CSosgbTrmer.c
 $(INT_DIR)\CSwktFlavors.obj      : $(SRC_DIR)\CSwktFlavors.c
 #
 # 'C++' object module dependencies.
@@ -493,6 +501,8 @@ $(OUT_DIR)/$(TRG_NAME) : $(INT_DIR)/CS_stdhdrC.obj \
 						 $(INT_DIR)\CS_osgm91.obj \
 						 $(INT_DIR)\CS_ost02.obj \
 						 $(INT_DIR)\CS_ost97.obj \
+						 $(INT_DIR)\CS_ost15.obj \
+						 $(INT_DIR)\CS_ostn15.obj \
 						 $(INT_DIR)\CS_ostn02.obj \
 						 $(INT_DIR)\CS_ostn97.obj \
 						 $(INT_DIR)\CS_ostro.obj \
@@ -501,6 +511,7 @@ $(OUT_DIR)/$(TRG_NAME) : $(INT_DIR)/CS_stdhdrC.obj \
 						 $(INT_DIR)\CS_parm6.obj \
 						 $(INT_DIR)\CS_parm7.obj \
 						 $(INT_DIR)\CS_plycn.obj \
+						 $(INT_DIR)\CS_plynm.obj \
 						 $(INT_DIR)\CS_pstro.obj \
 						 $(INT_DIR)\CS_rlsUpdt.obj \
 						 $(INT_DIR)\CS_robin.obj \
@@ -533,6 +544,7 @@ $(OUT_DIR)/$(TRG_NAME) : $(INT_DIR)/CS_stdhdrC.obj \
 						 $(INT_DIR)\CSgeodeticSupport.obj \
 						 $(INT_DIR)\CSgpcomp.obj \
 						 $(INT_DIR)\CSgxcomp.obj \
+						 $(INT_DIR)\CSosgbTrmer.obj \
 						 $(INT_DIR)\CSwktFlavors.obj \
 						 $(INT_DIR)\CS_csvFileSupport.obj \
 						 $(INT_DIR)\CS_epsgStuff.obj \
@@ -590,6 +602,7 @@ clean :
 	del /F $(INT_DIR)\*.obj
 	del /F $(INT_DIR)\*.pch
 	del /F $(OUT_DIR)\$(TRG_NAME)
+	del /F $(OUT_DIR)\*.lib
 
 rebuild: clean $(OUT_DIR)\$(TRG_NAME)
 

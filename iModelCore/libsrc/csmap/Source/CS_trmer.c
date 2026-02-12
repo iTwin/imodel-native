@@ -798,6 +798,10 @@ int EXP_LVL9 CStrmerF (Const struct cs_Trmer_ *trmer,double xy [2],Const double 
 	extern double cs_WETest;			/* .001 seconds of arc
 										   short of -90 degrees,
 										   in radians. */
+#ifdef GEOCOORD_ENHANCEMENT
+	extern double cs_EEUSRTest;			/* 60 degrees in radians. The angle East of central meridian we can trust output coordinate. */
+	extern double cs_WEUSRTest;			/* 60 degrees in radians. The angle West of central meridian we can trust output coordinate. */
+#endif
 	extern double cs_Huge;				/* An approximation of
 										   infinity, 1.0E+37,
 										   but not so large as
@@ -941,6 +945,12 @@ int EXP_LVL9 CStrmerF (Const struct cs_Trmer_ *trmer,double xy [2],Const double 
 		}
 	}
 
+#ifdef GEOCOORD_ENHANCEMENT
+	else if (del_lng > cs_EEUSRTest || del_lng < cs_WEUSRTest)
+	{
+		rtn_val = cs_CNVRT_USFL; /* Indicate we are out of user-domain but continue anyway */
+    }
+#endif
 	/* OK, we can do our thing pretty safely now. */
 
 	if (trmer->ecent == 0.0)

@@ -143,7 +143,11 @@ struct cs_Ostn02_ *CSnewOstn02 (const char *filePath)
 	__This->coverage.density = 0.009009009;
 	__This->elementCount = 701;
 	__This->recordCount = 1251;
+#ifdef GEOCOORD_ENHANCEMENT
+	__This->elementSize = 3 * sizeof (float);
+#else
 	__This->elementSize = 2 * sizeof (float);
+#endif
 	__This->recordSize = __This->elementCount * __This->elementSize;
 
 	__This->strm = NULL;
@@ -258,7 +262,11 @@ void CSreleaseOstn02 (struct cs_Ostn02_ *__This)
 	return;
 }
 /* Note, the following function is also called by the CSinverseOstn02 function. */
+#ifdef GEOCOORD_ENHANCEMENT
+int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [3],const double etrs89 [3])
+#else
 int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double etrs89 [2])
+#endif
 {
 	extern double cs_Mhuge;
 	extern char csErrnam [];
@@ -278,8 +286,13 @@ int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double et
 
 	double tt, uu;
 
+#ifdef GEOCOORD_ENHANCEMENT
+	float southWest [3], southEast [3];
+	float northWest [3], northEast [3];
+#else
 	float southWest [2], southEast [2];
 	float northWest [2], northEast [2];
+#endif
 
 	/* Given the ETRS89 OSGB coordinates, return the translation values necessary to
 	   produce official OSGB36 coordinates.  Returns zero on normal completion, +1 if
@@ -295,7 +308,11 @@ int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double et
 		eleNbr < 0 || eleNbr >= (__This->elementCount - 1)
 	   )
 	{
+#ifdef GEOCOORD_ENHANCEMENT
+		result [0] = result [1] = result [2] = cs_Zero;
+#else
 		result [0] = result [1] = cs_Zero;
+#endif
 		return 1;
 	}
 
@@ -408,14 +425,28 @@ int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double et
 	fltPtr = (float *)(chrPtr);									 /*lint !e826*/
 	southWest [XX] = *fltPtr;
 	southWest [YY] = *(fltPtr + 1);
+#ifdef GEOCOORD_ENHANCEMENT
+	southWest [ZZ] = *(fltPtr + 2);
+	southEast [XX] = *(fltPtr + 3);
+	southEast [YY] = *(fltPtr + 4);
+	southEast [ZZ] = *(fltPtr + 5);
+#else
 	southEast [XX] = *(fltPtr + 2);
 	southEast [YY] = *(fltPtr + 3);
+#endif
 	chrPtr += __This->recordSize;
 	fltPtr = (float *)(chrPtr);									 /*lint !e826*/
 	northWest [XX] = *fltPtr;
 	northWest [YY] = *(fltPtr + 1);
+#ifdef GEOCOORD_ENHANCEMENT
+	northWest [ZZ] = *(fltPtr + 2);
+	northEast [XX] = *(fltPtr + 3);
+	northEast [YY] = *(fltPtr + 4);
+	northEast [ZZ] = *(fltPtr + 5);
+#else
 	northEast [XX] = *(fltPtr + 2);
 	northEast [YY] = *(fltPtr + 3);
+#endif
 
 	/* Byte swapping is not necessary, since we built the binary file on the
 	   host machine, and the function which builds it does not swap bytes.
@@ -443,6 +474,12 @@ int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double et
 				 tt * (southEast [1] - southWest [1]) +
 				 uu * (northWest [1] - southWest [1]) +
 				 tt * uu * (southWest [1] - southEast [1] - northWest [1] + northEast [1]);
+#ifdef GEOCOORD_ENHANCEMENT
+	result [2] = southWest [2] +
+				 tt * (southEast [2] - southWest [2]) +
+				 uu * (northWest [2] - southWest [2]) +
+				 tt * uu * (southWest [2] - southEast [2] - northWest [2] + northEast [2]);
+#endif
 
 	/* We're done. */
 	return 0;
@@ -456,26 +493,44 @@ error:
 
 	return -1;
 }
+#ifdef GEOCOORD_ENHANCEMENT
+int CSforwardOstn02 (struct cs_Ostn02_ *__This,double osgb36 [3],const double etrs89 [3])
+#else
 int CSforwardOstn02 (struct cs_Ostn02_ *__This,double osgb36 [2],const double etrs89 [2])
+#endif
 {
 	int st;
 
+#ifdef GEOCOORD_ENHANCEMENT
+	double delta [3];
+#else
 	double delta [2];
+#endif
 
 	st = CSprivateOstn02 (__This,delta,etrs89);
 	if (st == 0)
 	{
 		osgb36 [0] = etrs89 [0] + delta [0];
 		osgb36 [1] = etrs89 [1] + delta [1];
+#ifdef GEOCOORD_ENHANCEMENT
+		osgb36 [2] = etrs89 [2] + delta [2];
+#endif
 	}
 	else
 	{
 		osgb36 [0] = etrs89 [0];
 		osgb36 [1] = etrs89 [1];
+#ifdef GEOCOORD_ENHANCEMENT
+		osgb36 [2] = etrs89 [2];
+#endif
 	}
 	return st;
 }
+#ifdef GEOCOORD_ENHANCEMENT
+int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [3],const double osgb36 [3])
+#else
 int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [2],const double osgb36 [2])
+#endif
 {
 	extern char csErrnam [];
 	extern double cs_Zero;
@@ -485,13 +540,23 @@ int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [2],const double os
 
 	double delta, deltaX, deltaY;
 
+#ifdef GEOCOORD_ENHANCEMENT
+	double deltaZ;
+	double fwdDelta [3];
+	double myOsgb36 [3];
+	double myEtrs89 [3];
+#else
 	double fwdDelta [2];
 	double myOsgb36 [2];
 	double myEtrs89 [2];
+#endif
 
 	/* The default answer. */
 	etrs89 [0] = osgb36 [0];
 	etrs89 [1] = osgb36 [1];
+#ifdef GEOCOORD_ENHANCEMENT
+	etrs89 [2] = osgb36 [2];
+#endif
 
 	/* Compute our first guess. */
 	st = CSprivateOstn02 (__This,fwdDelta,osgb36);
@@ -500,10 +565,16 @@ int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [2],const double os
 	/* Compute our first guess. */
 	myEtrs89 [0] = osgb36 [0] - fwdDelta [0];
 	myEtrs89 [1] = osgb36 [1] - fwdDelta [1];
+#ifdef GEOCOORD_ENHANCEMENT
+	myEtrs89 [2] = osgb36 [2] - fwdDelta [2];
+#endif
 
 	/* Loop until the change is less than 0.0001 */
 	itrCount = 10;
 	deltaX = deltaY = cs_Zero;
+#ifdef GEOCOORD_ENHANCEMENT
+	deltaZ = cs_Zero;
+#endif
 	do
 	{
 		/* Try to handle the unpredictable. */
@@ -519,19 +590,33 @@ int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [2],const double os
 		/* Calculate a new guess. */
 		myEtrs89 [0] -= deltaX;
 		myEtrs89 [1] -= deltaY;
+#ifdef GEOCOORD_ENHANCEMENT
+		myEtrs89 [2] -= deltaZ;
+#endif
 		st = CSprivateOstn02 (__This,fwdDelta,myEtrs89);
 		if (st != 0) break;
 		myOsgb36 [0] = myEtrs89 [0] + fwdDelta [0];
 		myOsgb36 [1] = myEtrs89 [1] + fwdDelta [1];
+#ifdef GEOCOORD_ENHANCEMENT
+		myOsgb36 [2] = myEtrs89 [2] + fwdDelta [2];
+#endif
 		deltaX = myOsgb36 [0] - osgb36 [0];
 		deltaY = myOsgb36 [1] - osgb36 [1];
+#ifdef GEOCOORD_ENHANCEMENT
+		deltaZ = myOsgb36 [2] - osgb36 [2];
 		delta = (fabs (deltaX) > fabs (deltaY)) ? deltaX : deltaY;
+#else
+		delta = (fabs (deltaX) > fabs (deltaY));
+#endif
 	} while (fabs (delta) > 0.0001);
 
 	if (st == 0)
 	{
 		etrs89 [0] = myEtrs89 [0];
 		etrs89 [1] = myEtrs89 [1];
+#ifdef GEOCOORD_ENHANCEMENT
+		etrs89 [2] = myEtrs89 [2];
+#endif
 	}
 	return st;
 }
@@ -775,6 +860,9 @@ int CSmkBinaryOstn02 (struct cs_Ostn02_ *__This)
 			/* Write a record out to the binary file. */
 			CS_fwrite (&deltaX,sizeof (float),1,bStrm);
 			CS_fwrite (&deltaY,sizeof (float),1,bStrm);
+#ifdef GEOCOORD_ENHANCEMENT
+			CS_fwrite (&deltaZ,sizeof (float),1,bStrm);
+#endif
 		}
 		if (recCount != __This->recordCount)
 		{
@@ -812,15 +900,30 @@ double CStestOstn02 (struct cs_Ostn02_ *__This)
 
 	double rtnValue;
 	double deltaX, deltaY;
+
+#ifdef GEOCOORD_ENHANCEMENT
+	double deltaZ;
+	double knownEtrs89 [3];
+	double calcEtrs89 [3];
+	double calcOsgb36 [3];
+	double knownOsgb36 [3];
+#else
 	double knownEtrs89 [2];
 	double calcEtrs89 [2];
 	double calcOsgb36 [2];
 	double knownOsgb36 [2];
+#endif
 
 	knownEtrs89 [0] = 651307.003;
 	knownEtrs89 [1] = 313255.686;
+#ifdef GEOCOORD_ENHANCEMENT
+	knownEtrs89 [2] = 0.0;
+#endif
 	knownOsgb36 [0] = 651409.903;
 	knownOsgb36 [1] = 313177.270;
+#ifdef GEOCOORD_ENHANCEMENT
+	knownOsgb36 [2] = 44.229;
+#endif
 
 	rtnValue = cs_Huge;			/* Until we know differently. */
 
@@ -829,12 +932,20 @@ double CStestOstn02 (struct cs_Ostn02_ *__This)
 	{
 		deltaX = knownOsgb36 [0] - calcOsgb36 [0];
 		deltaY = knownOsgb36 [1] - calcOsgb36 [1];
+#ifdef GEOCOORD_ENHANCEMENT
+		deltaZ = knownOsgb36 [2] - calcOsgb36 [2];
+#endif
 		st =-CSinverseOstn02 (__This,calcEtrs89,calcOsgb36);
 		if (st == 0)
 		{
 			deltaX += knownEtrs89 [0] - calcEtrs89 [0];
 			deltaY += knownEtrs89 [1] - calcEtrs89 [1];
+#ifdef GEOCOORD_ENHANCEMENT
+			deltaZ += knownEtrs89 [2] - calcEtrs89 [2];
+			rtnValue = sqrt (deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+#else
 			rtnValue = sqrt (deltaX * deltaX + deltaY * deltaY);
+#endif
 		}
 	}
 	return rtnValue;
