@@ -567,8 +567,6 @@ public:
     static ChangesetStatus DumpChangeSet(DgnDbR dgndb, BeJsConst changeSetToken);
     static DgnDbStatus ExtractChangedInstanceIdsFromChangeSets(BeJsValue, DgnDbR, const bvector<BeFileName>&);
 
-    static void HandleQueryResponseToJson(Napi::Env env, Napi::Object jsResp, QueryResponse::Ptr value);
-
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
     static BentleyStatus GetIModelCoordsFromGeoCoords(BeJsValue, DgnDbR, BeJsConst);
 

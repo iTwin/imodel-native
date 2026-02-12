@@ -116,7 +116,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlRowAdaptor& QueryAdaptor::GetJsonAdaptor() {
+ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
     if (!m_adaptor) {
          m_adaptor = std::unique_ptr<ECSqlRowAdaptor>(new ECSqlRowAdaptor(*m_stmt.GetECDb()));
     }
@@ -505,7 +505,7 @@ QueryQuota QueryQuota::FromJs(BeJsConst const& v) noexcept{
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateQueueFullResponse() {
+QueryResponse::Ptr RunnableRequestBase::CreateQueueFullResponse() {
     return std::make_shared<QueryResponse>(
         QueryResponse::Kind::NoResult,
         QueryResponse::Stats(),
@@ -524,14 +524,14 @@ void RunnableRequestBase::Interrupt(CachedConnection& conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateErrorResponse(QueryResponse::Status status,std::string error, std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, const BentleyM0200::BeSQLite::EC::QueryQuota &quota, std::chrono::milliseconds prepareTime) const {
+QueryResponse::Ptr RunnableRequestBase::CreateErrorResponse(QueryResponse::Status status,std::string error) const {
     BeAssert((int)status >= (int)QueryResponse::Status::Error);
     if ((int)status < (int)QueryResponse::Status::Error) {
         return nullptr;
     }
     return std::make_shared<QueryResponse>(
         ECSqlResponse::Kind::NoResult,
-        QueryResponse::Stats(cpuTime, totalTime, 0, quota, prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
         status,
         error
         );
@@ -539,10 +539,10 @@ QueryResponse::Ptr CreateResponseHelper::CreateErrorResponse(QueryResponse::Stat
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateTimeoutResponse(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, const BentleyM0200::BeSQLite::EC::QueryQuota &quota, std::chrono::milliseconds prepareTime) const {
+QueryResponse::Ptr RunnableRequestBase::CreateTimeoutResponse() const {
     return std::make_shared<QueryResponse>(
         ECSqlResponse::Kind::NoResult,
-        QueryResponse::Stats(cpuTime, totalTime, 0, quota, prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
         QueryResponse::Status::Timeout,
         ""
         );
@@ -550,10 +550,10 @@ QueryResponse::Ptr CreateResponseHelper::CreateTimeoutResponse(std::chrono::micr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateCancelResponse(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, const BentleyM0200::BeSQLite::EC::QueryQuota &quota, std::chrono::milliseconds prepareTime) const {
+QueryResponse::Ptr RunnableRequestBase::CreateCancelResponse() const {
     return std::make_shared<QueryResponse>(
         ECSqlResponse::Kind::NoResult,
-        QueryResponse::Stats(cpuTime, totalTime, 0, quota, prepareTime),
+        QueryResponse::Stats( GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
         QueryResponse::Status::Cancel,
         ""
         );
@@ -561,10 +561,10 @@ QueryResponse::Ptr CreateResponseHelper::CreateCancelResponse(std::chrono::micro
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateBlobIOResponse(std::vector<uint8_t>& buffer, bool done, uint32_t blobSize, std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, const BentleyM0200::BeSQLite::EC::QueryQuota &quota, std::chrono::milliseconds prepareTime) const {
+QueryResponse::Ptr RunnableRequestBase::CreateBlobIOResponse(std::vector<uint8_t>& buffer, bool done, uint32_t blobSize) const {
     const auto memUsed = (uint32_t)buffer.size();
     return std::make_shared<BlobIOResponse>(
-        QueryResponse::Stats(cpuTime, totalTime, memUsed, quota, prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), memUsed, m_quota, m_prepareTime),
         done? QueryResponse::Status::Done:QueryResponse::Status::Partial,
         "",
         buffer,
@@ -574,10 +574,10 @@ QueryResponse::Ptr CreateResponseHelper::CreateBlobIOResponse(std::vector<uint8_
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateECSqlResponse(std::string& resultJson, ECSqlRowProperty::List& meta, uint32_t rowCount, bool done, std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, const BentleyM0200::BeSQLite::EC::QueryQuota &quota, std::chrono::milliseconds prepareTime) const {
+QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJson, ECSqlRowProperty::List& meta, uint32_t rowCount, bool done) const {
     const auto memUsed = (uint32_t)(resultJson.size());
     return std::make_shared<ECSqlResponse>(
-        QueryResponse::Stats(cpuTime, totalTime, memUsed, quota, prepareTime),
+        QueryResponse::Stats(GetCpuTime(), GetTotalTime(), memUsed,m_quota, m_prepareTime),
         done? QueryResponse::Status::Done:QueryResponse::Status::Partial,
         "",
         resultJson,
@@ -588,10 +588,10 @@ QueryResponse::Ptr CreateResponseHelper::CreateECSqlResponse(std::string& result
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr CreateResponseHelper::CreateShutDownResponse(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, const BentleyM0200::BeSQLite::EC::QueryQuota &quota, std::chrono::milliseconds prepareTime) const {
+QueryResponse::Ptr RunnableRequestBase::CreateShutDownResponse() const {
     return std::make_shared<QueryResponse>(
         QueryResponse::Kind::NoResult,
-        QueryResponse::Stats(cpuTime, totalTime, 0, quota, prepareTime),
+        QueryResponse::Stats( GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
         QueryResponse::Status::ShuttingDown,
         ""
         );
@@ -2289,178 +2289,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
     }
 #endif
     return Config::GetDefault();
-}
-
-ECSqlRowReader::ECSqlRowReader(ECDbCR ecdb){ m_impl = new Impl(ecdb);}
-ECSqlRowReader::~ECSqlRowReader(){ delete m_impl;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Step(ECSqlRequest const& request) {
-    return m_impl->Step(std::move(request));
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Impl::Step(ECSqlRequest const& request) {
-    RunnableRequestStatsHelper helper(request.GetQuota());
-    helper.OnDequeued(); // In sync mode there is no queue involved but we want to have the stats populated correctly so we call OnDequeued here to set the start time for the request processing
-    auto response = TryExecute(request, helper);
-    return response;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper) {
-    // Validating ecsql
-    CreateResponseHelper responseHelper;
-    const auto prepareTimeStart = std::chrono::steady_clock::now();
-    auto recordPrepareTime = [&]() {
-        runnableRequestHelper.SetPrepareTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prepareTimeStart));
-    };
-
-    const auto setError = [&responseHelper, &runnableRequestHelper](std::string errMsg, QueryResponse::Status status) -> QueryResponse::Ptr {
-        log_error("%s. (%s)", errMsg.c_str(), QueryResponse::StatusToString(status));
-        return responseHelper.CreateErrorResponse(status, errMsg, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
-    };
-
-    auto ecsql = QueryHelper::FormatQuery(request.GetQuery().c_str());
-    auto const hashCode = ECSqlStatement::GetHashCode(ecsql.c_str());
-    if(!m_adaptor.GetStatement().IsPrepared() || m_adaptor.GetStatement().GetHashCode() != hashCode || strcmp(m_adaptor.GetStatement().GetECSql(), ecsql.c_str()) != 0) {
-        std::string error;
-        if (!PrepareStmt(ecsql, request.GetSuppressLogErrors(), error)) { // Prepare statement if not prepared or the prepared statement is different from the current request's ecsql
-            recordPrepareTime();
-            return setError(SqlPrintfString("failed to prepare ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_PreparedFailed);
-        }
-        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) { // Bind parameters
-            recordPrepareTime();
-            return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
-        }
-        recordPrepareTime();
-    }
-    if(!(m_args == request.GetArgs() && m_limit == request.GetLimit())) {
-        std::string error;
-        m_adaptor.GetStatement().Reset();
-        m_adaptor.GetStatement().ClearBindings();
-        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) { // Bind parameters
-            recordPrepareTime();
-            return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
-        }
-        recordPrepareTime();
-    }
-    return Execute(std::move(request), runnableRequestHelper);
-
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ECSqlRowReader::Impl::BindParams(ECSqlParams const& params,  QueryLimit const& limit, std::string& error) {
-    
-    if(!params.TryBindTo(m_adaptor.GetStatement(), error)) {
-        log_error("failed to bind parameters. error: %s", error.c_str());
-        return false;
-    }
-    QueryHelper::BindLimits(m_adaptor.GetStatement(), limit);
-    m_args = params;
-    m_limit = limit;
-    return true;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ECSqlRowReader::Impl::PrepareStmt(std:: string const& ecsql,  bool suppressLogError, std::string& ecsql_error) {
-    ErrorListenerScope err_scope(const_cast<ECDb&>(m_ecdb));
-    
-    ECSqlStatus status = m_adaptor.GetStatement().Prepare(m_ecdb, ecsql.c_str(), !suppressLogError);
-
-    if (status != ECSqlStatus::Success) {
-        ecsql_error = err_scope.GetLastError();
-        return false;
-    }
-    return true;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper) {
-    CreateResponseHelper responseHelper;
-    enum class status { partial, done };
-    const auto abbreviateBlobs = request.GetAbbreviateBlobs();
-    const auto includeMetaData= request.GetIncludeMetaData();
-    const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
-    const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
-    auto& stmt = m_adaptor.GetStatement();
-    auto& adaptor = m_adaptor.GetJsonAdaptor();
-    auto& options = adaptor.GetOptions();
-    options.SetAbbreviateBlobs(abbreviateBlobs);
-    options.SetConvertClassIdsToClassNames(classIdToClassNames);
-    options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
-    options.SetDoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
-    ECSqlRowProperty::List props;
-    if (includeMetaData) {
-        adaptor.GetMetaData(props ,stmt);
-    }
-    uint32_t row_count = 0;
-    std::string& result = m_adaptor.ClearAndGetCachedString();
-    result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
-    result.append("[");
-    auto setResult = [&](status st) {
-        result.append("]");
-
-        if (m_ecdb.IsDbOpen())
-            m_ecdb.SetProgressHandler(nullptr);
-        return responseHelper.CreateECSqlResponse(result, props, row_count, st == status::done, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
-    };
-    auto setError = [&] (QueryResponse::Status status, std::string err) {
-        log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
-        return responseHelper.CreateErrorResponse(status, err, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
-    };
-
-    if(m_ecdb.IsDbOpen()) {
-        m_ecdb.SetProgressHandler([&](){
-            if (runnableRequestHelper.IsTimeExceeded()) {
-                log_trace("%s time exceeded for sync query", GetTimestamp().c_str());
-                return DbProgressAction::Interrupt;
-            }
-            return DbProgressAction::Continue;
-        }, 1);
-    }
-    // go over each row and serialize result
-    auto rc = stmt.Step();
-    if (rc == BE_SQLITE_ROW) {
-        auto& rowsDoc = m_adaptor.ClearAndGetCachedJsonDocument();
-        BeJsValue rows(rowsDoc);
-        if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
-            return setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
-        } else {
-            row_count = row_count + 1;
-            result.append(rows.Stringify());
-        }
-        if (runnableRequestHelper.IsTimeOrMemoryExceeded(result)) {
-            log_trace("%s time or memory exceeded for sync request",GetTimestamp().c_str());
-            return setResult(status::partial);
-        }
-        return setResult(status::done);
-    }
-    else if(rc == BE_SQLITE_DONE) {
-        return setResult(status::done);
-    }
-    else if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY) {
-        return setResult(status::partial);
-    } else {
-        DbResult lastError;
-        std::string sqlStepError = m_ecdb.GetLastError(&lastError);
-        if (lastError != BE_SQLITE_OK) {
-            return setError(QueryResponse::Status::Error_ECSql_StepFailed, SqlPrintfString("concurrent query step() failed: %s", sqlStepError.c_str()).GetUtf8CP());
-        }
-        return setError(QueryResponse::Status::Error_ECSql_StepFailed, "concurrent query step() failed");
-    }
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -26,9 +26,6 @@ struct QueryLimit final {
         int64_t m_offset;
     public:
         QueryLimit(int64_t count = -1, int64_t offset = -1) : m_count(count), m_offset(offset) {}
-        bool operator == (QueryLimit const& other) const noexcept {
-            return m_count == other.m_count && m_offset == other.m_offset;
-        };
         int64_t GetCount() const noexcept { return m_count; }
         int64_t GetOffset() const noexcept { return m_offset; }
         ECDB_EXPORT void ToJs(BeJsValue&) const;
@@ -181,7 +178,6 @@ class ECSqlParams final {
             ECDB_EXPORT ECSqlParam& operator = (ECSqlParam && rhs);
             ECSqlParam(const ECSqlParam & rhs):m_val(rhs.m_val), m_type(rhs.m_type),m_name(rhs.m_name){}
             ECDB_EXPORT ECSqlParam& operator = (const ECSqlParam & rhs);
-            bool operator == (ECSqlParam const& rhs) const noexcept { return m_type == rhs.m_type && m_val == rhs.m_val && m_name == rhs.m_name; }
             ECSqlParam():m_type(Type::Null){}
             ECSqlParam(std::string const& name, Type type, Json::Value const& val): m_type(type),m_val(val), m_name(name){}
             ECSqlParam(std::string const& name): m_type(Type::Null),m_val(Json::ValueType::nullValue), m_name(name){}
@@ -224,7 +220,6 @@ class ECSqlParams final {
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
         ECDB_EXPORT ECSqlParams& operator = (ECSqlParams && rhs);
         ECDB_EXPORT ECSqlParams& operator = (const ECSqlParams & rhs);
-        bool operator == (ECSqlParams const& rhs) const noexcept { return m_params.size() == rhs.m_params.size() && m_params == rhs.m_params; }
         explicit ECSqlParams(Json::Value const& v) { FromJs(v); }
         virtual ~ECSqlParams(){}
         bool IsEmpty() const { return m_params.size() == 0; }
@@ -612,27 +607,6 @@ struct ECSqlReader {
         ECSqlRowProperty::List const& GetColumns() const { return m_columns; }
         Row GetRow() const { return Row(m_rows[m_it],m_columns);}
         ECDB_EXPORT bool Next();
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct ECSqlRowReader final {
-    using OnCompletion=std::function<void(QueryResponse::Ptr)>;
-    public:
-        struct Impl; // prevent circular dependency on ECDb
-    private:
-        Impl* m_impl;
-        ECSqlRowReader(const ECSqlRowReader&) = delete;
-        ECSqlRowReader& operator = (const ECSqlRowReader&) = delete;
-        ECSqlRowReader(ECSqlRowReader&&) = delete;
-        ECSqlRowReader& operator = (ECSqlRowReader&&) = delete;
-    public:
-        ECSqlRowReader(ECDb const&);
-        ~ECSqlRowReader();
-
-        QueryResponse::Ptr Step(ECSqlRequest const& request);
-
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
