@@ -3552,7 +3552,7 @@ struct Properties
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::Compress::No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
-
+    static PropSpec NoCaseCollation()    {return PropSpec("NoCaseCollation");}
     //! Build version of BeSqlite (e.g. 06.10.00.00) used to create this database; useful for diagnostics.
     static PropSpec BeSQLiteBuild()     {return PropSpec("BeSQLiteBuild");}
 };
