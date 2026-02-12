@@ -716,7 +716,7 @@ private:
         ECClassUseCounter counter;
         bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, bvector<bool>(pathToRelatedInstanceSpec.GetSteps().size(), false)) };
         bvector<RelatedClassPath> noRelatedInstances;
-        ECSchemaHelper::RelationshipPathsRequestParams params(m_selectClass, pathSpecs, nullptr, noRelatedInstances, counter, false);
+        ECSchemaHelper::RelationshipPathsRequestParams params(m_selectClass, pathSpecs, nullptr, noRelatedInstances, counter, false, nullptr);
         auto result = m_schemaHelper.GetRelationshipPaths(params);
         auto pathsIter = result.GetPaths().find(0);
         if (result.GetPaths().end() == pathsIter)
