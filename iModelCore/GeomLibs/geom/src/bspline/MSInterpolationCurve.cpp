@@ -34,7 +34,7 @@ MSBsplineStatus MSInterpolationCurve::AllocateFitPoints (int count, DPoint3dCP d
     if (NULL == (fitPoints = static_cast<DPoint3d *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (fitPoints, data, allocSize);
+         BeStringUtilities::Memcpy (fitPoints, allocSize, data, allocSize);
     return SUCCESS;
     }
 
@@ -47,7 +47,7 @@ MSBsplineStatus MSInterpolationCurve::AllocateKnots (int count, double const * d
     if (NULL == (knots = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (knots, data, allocSize);
+        BeStringUtilities::Memcpy (knots, allocSize, data, allocSize);
     return SUCCESS;
     }
 
@@ -129,13 +129,13 @@ DVec3dCP tangent1
         {
         size_t numBytes = (size_t)(numFitPoints * sizeof(DPoint3d));
         fitPoints = (DPoint3d*)BSIBaseGeom::Malloc (numBytes);
-        memcpy (fitPoints, pFitPoints, numBytes);
+        BeStringUtilities::Memcpy (fitPoints, numBytes, pFitPoints, numBytes);
         }
     if (numKnots > 0)
         {
         size_t numBytes = (size_t)(numKnots * sizeof(double));
         knots = (double*)BSIBaseGeom::Malloc (numBytes);
-        memcpy (knots, pKnots, numBytes);
+        BeStringUtilities::Memcpy (knots, numBytes, pKnots, numBytes);
         }
     return SUCCESS;
     }

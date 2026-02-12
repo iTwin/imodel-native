@@ -99,6 +99,16 @@ void            BeFile::Swap(BeFile& f2)
     std::swap(m_lastError, f2.m_lastError);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int BeFile::Fscanf(FILE* stream, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    return fscanf_s(stream, format, args);
+}
+
 #if defined (__unix__)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -298,7 +308,7 @@ BeFileStatus BeFile::Read(void* buffer, uint32_t* bytesRead, uint32_t numBytes)
 
     return SetLastError();
 
-#elif defined (BENTLEYCONFIG_OS_UNIX) 
+#elif defined (BENTLEYCONFIG_OS_UNIX)
 
     uint32_t bytesRead_;
     if (NULL == bytesRead)
@@ -347,13 +357,13 @@ BeFileStatus BeFile::Write(uint32_t* bytesWritten, void const* buf, uint32_t num
 BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
-  
-    size_t bytesWritten = 0;  
-    ULONG chunkSizeMax = ULONG_MAX; 
+
+    size_t bytesWritten = 0;
+    ULONG chunkSizeMax = ULONG_MAX;
 
     while(bytesWritten < numBytes) {
 
-      ULONG chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : static_cast<ULONG>(numBytes - bytesWritten);      
+      ULONG chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : static_cast<ULONG>(numBytes - bytesWritten);
       ULONG chunkBytesWritten = 0;
 
       if (!WriteFile(m_handle, static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite, &chunkBytesWritten, NULL)) {
@@ -381,7 +391,7 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
 
     while(bytesWritten < numBytes) {
 
-      size_t chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : numBytes - bytesWritten;      
+      size_t chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : numBytes - bytesWritten;
       size_t chunkBytesWritten = write(AS_FDES(m_handle), static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite);
 
       if(chunkBytesWritten == -1 || chunkBytesWritten != chunkBytesToWrite) {

@@ -61,7 +61,7 @@ int             numPoints               /* => number of points */
         if (NULL == (*poles = (DPoint3d*)BSIBaseGeom::Malloc (allocSize)))
             return ERROR;
         else
-            memcpy (*poles, pointP, allocSize);
+            BeStringUtilities::Memcpy (*poles, allocSize, pointP, allocSize);
         }
 
     if (knots)
@@ -275,7 +275,7 @@ DPoint3d        *centerP
         if (NULL == (*poles = (DPoint3d*)BSIBaseGeom::Malloc (allocSize)))
             return ERROR;
         else
-            memcpy (*poles, tPoles, allocSize);
+            BeStringUtilities::Memcpy (*poles, allocSize, tPoles, allocSize);
 
         tMatrix.Multiply (*poles, *poles, numPoles);
         }
@@ -297,7 +297,7 @@ DPoint3d        *centerP
         if (NULL == (*weights = (double*)BSIBaseGeom::Malloc (allocSize)))
             return ERROR;
         else
-            memcpy (*weights, tWeights, allocSize);
+            BeStringUtilities::Memcpy (*weights, allocSize, tWeights, allocSize);
         }
 
     return (SUCCESS);

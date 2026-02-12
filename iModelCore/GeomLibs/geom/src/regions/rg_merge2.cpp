@@ -571,7 +571,7 @@ bvector<double>   *pParamArray
             pSortData[i].theta = Angle::Atan2 (vector.y, vector.x);
             }
         }
-    qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
+    BeStringUtilities::Qsort (pSortData, numSort, sizeof (VertexSortData), BSIBaseGeom::QSortAdaptor, (void*)vsd_compare);
     }
 
 static bool    anglesWithinTolerance
@@ -762,7 +762,7 @@ EmbeddedDPoint3dArray *pXYZArray
     static double s_angleTol = 1.0e-5;
     double radius;
 
-    qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
+    BeStringUtilities::Qsort (pSortData, numSort, sizeof (VertexSortData), BSIBaseGeom::QSortAdaptor, (void*)vsd_compare);
     numDup = countAngleDups (pSortData, numSort, s_angleTol);
 
     if (numDup > 0)

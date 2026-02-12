@@ -1627,7 +1627,7 @@ PointList       *listP
         goto wrapup;
         }
 
-    memcpy (copyList.points, listP->points, allocSize);
+    BeStringUtilities::Memcpy (copyList.points, allocSize, listP->points, allocSize);
 
     for (i = 0; i < listP->numPoints; i++)
         listP->points[i] = copyList.points[num-i];
@@ -1674,7 +1674,8 @@ int             appendCode
 
     if (outList->points = (DPoint3d*)msbspline_realloc (outList->points, allocSize))
         {
-        memcpy (outList->points + outList->numPoints,
+        BeStringUtilities::Memcpy (outList->points + outList->numPoints,
+                numAddedPoint * sizeof(DPoint3d),
                 inList->points + 1,
                 numAddedPoint * sizeof(DPoint3d));
 

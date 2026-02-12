@@ -817,7 +817,7 @@ double          reltol
 
     /* copy full ints */
     if (bInts2)
-        memmove (pIntOut2, pIntIn, numIn * sizeof (*pIntOut2));
+        BeStringUtilities::Memmove(pIntOut2, numIn * sizeof(*pIntOut2), pIntIn, numIn * sizeof(*pIntOut2));
 
     /* Eliminate trailing points which duplicate first point */
     while (1 < numIn && pXYZIn->IsEqual (pXYZIn[ numIn - 1], tol))
@@ -1927,7 +1927,7 @@ double*     onTolerance
 
     if (ok && numCrossing > 0)
         {
-    qsort (pCrossing, numCrossing, sizeof (DPoint4d), qsort_compareDPoint4dw);
+        BeStringUtilities::Qsort(pCrossing, numCrossing, sizeof(DPoint4d), BSIBaseGeom::QSortAdaptor, (void*)qsort_compareDPoint4dw);
         ok = numCrossing <= maxClipPoints;
         if (numCrossing > maxClipPoints)
             numCrossing = maxClipPoints;
@@ -2935,7 +2935,7 @@ bool SortCrossings ()
         {
         mCrossing[i].sortKey = mCrossing[i].xyz.GetComponent (iMax);
         }
-    qsort (mCrossing, mNumCrossing, sizeof (ClipCrossing), cb_compareCrossings);
+    BeStringUtilities::Qsort(mCrossing, mNumCrossing, sizeof(ClipCrossing), BSIBaseGeom::QSortAdaptor, (void*)cb_compareCrossings);
     // Let id be a pre-sort position.
     // Make mCrossingIndex[id] = sorted position of that mCrossing.
     for (int i = 0; i < mNumCrossing; i++)

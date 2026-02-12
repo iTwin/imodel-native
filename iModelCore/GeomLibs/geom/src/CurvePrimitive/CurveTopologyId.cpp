@@ -102,7 +102,7 @@ BentleyStatus CurveTopologyId::Init (Type type, uint32_t const* ids, size_t idCo
     m_type = type;
 
     m_ids.resize (idCount);
-    memcpy (&m_ids.front(), ids, idCount * sizeof (uint32_t));
+    BeStringUtilities::Memcpy (&m_ids.front(), idCount * sizeof(uint32_t), ids, idCount * sizeof (uint32_t));
 
     return SUCCESS;
     }
@@ -156,7 +156,7 @@ void CurveTopologyId::Pack (bvector<Byte>& packed) const
         for (size_t i=0; i<count; i++)
             {
             uint16_t    value =  (uint16_t) m_ids[i];
-            memcpy (&packed.at(2 + (i << 1)), &value, sizeof (value));
+            BeStringUtilities::Memcpy (&packed.at(2 + (i << 1)), sizeof(value), &value, sizeof (value));
             }
         }
     else
@@ -164,7 +164,7 @@ void CurveTopologyId::Pack (bvector<Byte>& packed) const
         packed.resize (2 + 4 * count);
         packed.at(0) = (Byte) m_type;
         packed.at(1) = (Byte) IdSize_UInt32;
-        memcpy ((void*) &packed.at(2), &m_ids.front(), count * sizeof (uint32_t));
+        BeStringUtilities::Memcpy ((void*) &packed.at(2), count * sizeof(uint32_t), &m_ids.front(), count * sizeof (uint32_t));
         }
     }
 

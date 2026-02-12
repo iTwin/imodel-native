@@ -508,6 +508,12 @@ public:
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
     BENTLEYDLL_EXPORT static BentleyStatus Wmemcpy(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
 
+    //! Performs a quick sort.
+    BENTLEYDLL_EXPORT static void Qsort(void* base, size_t num, size_t width, int(__cdecl* compare)(void*, const void*, const void*), void* context);
+
+    //!Reads formatted data from a string.
+    BENTLEYDLL_EXPORT static int Sscanf(const char *buffer, const char *format, ...);
+
     //! Tokenizes a string based on the provided delimiters, and adds a WString for each token into the provided collection. This essentially wraps wcstok for more convenient access.
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
     //! @param[in]      delimiters  One or more delimiters; cannot be NULL or empty
@@ -597,6 +603,10 @@ public:
     //! Attempts to detect if a string contains any invalid UTF-8 sequences.
     //! This does NOT ensure the string accurately represents what the user intends, however it can be used to discard obviously corrupt data.
     BENTLEYDLL_EXPORT static bool IsInvalidUtf8Sequence(Utf8CP);
+
+    //! Generates a pseudorandom number.
+    //! param[in] randomValue A pointer to an integer to hold the generated value.
+    BENTLEYDLL_EXPORT static BentleyStatus Rand(unsigned int* randomValue);
 };
 
 //=======================================================================================

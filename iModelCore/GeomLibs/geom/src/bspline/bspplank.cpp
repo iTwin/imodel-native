@@ -115,9 +115,9 @@ int      numXYZ
 
     /* Copy to outputs */
     if (pUVOut)
-        memcpy (pUVOut, pUV, numXYZ * sizeof (DPoint2d));
+        BeStringUtilities::Memcpy (pUVOut, numXYZ * sizeof(DPoint2d), pUV, numXYZ * sizeof (DPoint2d));
     if (pXYZOut)
-        memcpy (pXYZOut, pXYZ, numXYZ * sizeof (DPoint3d));
+        BeStringUtilities::Memcpy (pXYZOut, numXYZ * sizeof(DPoint3d), pXYZ, numXYZ * sizeof (DPoint3d));
 
     return SUCCESS;
     }
