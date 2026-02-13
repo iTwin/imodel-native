@@ -6345,7 +6345,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return
             f->onError([this, requestId = Utf8String(requestId), &db, getParams, abortEvent](CancellationException const& e)
                 {
-                if (!e.IsRestartRequested() || !m_mainThreadExecutor)
+                if (!e.IsRestartRequested() || !m_mainThreadExecutor || !db.IsOpen())
                     throw e;
 
                 return folly::via(m_mainThreadExecutor.get(), [this, requestId, &db, getParams, abortEvent]()
