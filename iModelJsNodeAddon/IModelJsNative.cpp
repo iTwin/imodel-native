@@ -5219,9 +5219,13 @@ public:
         if (!m_stmt.IsPrepared())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, optObj, Napi::Object::New(Env()));
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
         BeJsNapiObject out(info.Env());
         BeJsValue metaJson = out["meta"];
-        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         ECSqlRowProperty::List props;
         adaptor.GetMetaData(props, m_stmt);
         props.ToJs(metaJson);
