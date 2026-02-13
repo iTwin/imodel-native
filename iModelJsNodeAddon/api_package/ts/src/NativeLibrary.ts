@@ -905,7 +905,8 @@ export declare namespace IModelJsNative {
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
     public toRow(arg: ECSqlRowAdaptorOptions): any;
-    public getMetadata(): any;
+    public getMetadata(arg?: ECSqlRowAdaptorOptions): any;
+    public bindParams(args: any): StatusCodeWithMessage<boolean>;
   }
 
   class ECSqlBinder {
