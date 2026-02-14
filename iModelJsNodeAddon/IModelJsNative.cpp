@@ -2924,7 +2924,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
 
-        db.ClearECDbCache(); // Clear the ECDb cache to ensure consistency after reversing local changes during a merge that includes schema changes.
         return array;
     }
 
