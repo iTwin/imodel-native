@@ -486,6 +486,7 @@ private:
     void PullMergeSetTxnActive(TxnManager::TxnId txnId);
     void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
     bool PullMergeEraseTxn(TxnManager::TxnId txnId);
+    BeSQLite::DbResult SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation);
         
 public:
     void StartNewSession();
