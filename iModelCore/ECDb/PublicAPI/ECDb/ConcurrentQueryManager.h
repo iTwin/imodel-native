@@ -620,9 +620,9 @@ struct ECSqlReader {
 //=======================================================================================
 struct ECSqlRowReader final {
     public:
-        struct Impl; // prevent circular dependency on ECDb
+        struct Impl;
     private:
-        Impl* m_impl;
+        Impl* m_impl = nullptr;
         ECSqlRowReader(const ECSqlRowReader&) = delete;
         ECSqlRowReader& operator = (const ECSqlRowReader&) = delete;
         ECSqlRowReader(ECSqlRowReader&&) = delete;

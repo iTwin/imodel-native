@@ -2355,7 +2355,6 @@ bool ECSqlRowReader::Impl::PrepareStmt(std:: string const& ecsql,  bool suppress
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper) {
-    // Validating ecsql
     CreateResponseHelper responseHelper;
     const auto prepareTimeStart = std::chrono::steady_clock::now();
     auto recordPrepareTime = [&]() {
@@ -2370,47 +2369,43 @@ QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest const& request,
     auto ecsql = QueryHelper::FormatQuery(request.GetQuery().c_str());
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql.c_str());
 
-    if(!request.UsePrimaryConnection()){
-        setError("row by row reader must use primary connection", QueryResponse::Status::Error);
-    }
-
-    if(m_stmt.IsPrepared() && (m_stmt.GetHashCode() != hashCode || strcmp(m_stmt.GetECSql(), ecsql.c_str()) != 0)) {
-       setError(SqlPrintfString("prepared statement is different from the current request's ecsql. prepared: %s, current: %s. This is not allowed", m_stmt.GetECSql(), ecsql.c_str()).GetUtf8CP(), QueryResponse::Status::Error);
-    }
+    if (m_stmt.IsPrepared() && (m_stmt.GetHashCode() != hashCode || strcmp(m_stmt.GetECSql(), ecsql.c_str()) != 0))
+        return setError(SqlPrintfString("prepared statement is different from the current request's ecsql. prepared: %s, current: %s. This is not allowed", m_stmt.GetECSql(), ecsql.c_str()).GetUtf8CP(), QueryResponse::Status::Error);
 
     bool isStatementJustPreparedOrReBinded = false;
 
-    if(!m_stmt.IsPrepared()) {
+    if (!m_stmt.IsPrepared()) {
         std::string error;
-        if (!PrepareStmt(ecsql, request.GetSuppressLogErrors(), error)) { // Prepare statement if not prepared
+        if (!PrepareStmt(ecsql, request.GetSuppressLogErrors(), error)) {
             recordPrepareTime();
             return setError(SqlPrintfString("failed to prepare ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_PreparedFailed);
         }
-        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) { // Bind parameters
+        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) {
             recordPrepareTime();
             return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
         }
         recordPrepareTime();
         isStatementJustPreparedOrReBinded = true;
-    }
-    if(!(m_args == request.GetArgs())) {
-        std::string error;
+    } else if (!(m_args == request.GetArgs())) {
+        // Args changed since last execution — rebind with the new parameters
         m_stmt.Reset();
         m_stmt.ClearBindings();
-        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) { // Bind parameters
+        std::string error;
+        if (!BindParams(request.GetArgs(), request.GetLimit(), error)) {
             recordPrepareTime();
             return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
         }
         recordPrepareTime();
         isStatementJustPreparedOrReBinded = true;
     }
-    
-    if (request.GetLimit().GetOffset() == -1) return setError("Offset must be provided in the limit.", QueryResponse::Status::Error);
 
-    if (request.GetLimit().GetOffset() < m_rowCount) return setError("Offset less than already fetched rows. Something went wrong", QueryResponse::Status::Error);
+    if (request.GetLimit().GetOffset() == -1)
+        return setError("Offset must be provided in the limit.", QueryResponse::Status::Error);
 
-    return Execute(std::move(request), runnableRequestHelper, isStatementJustPreparedOrReBinded);
+    if (request.GetLimit().GetOffset() < m_rowCount)
+        return setError("Offset less than already fetched rows. Something went wrong in ECSqlRowReader", QueryResponse::Status::Error);
 
+    return Execute(request, runnableRequestHelper, isStatementJustPreparedOrReBinded);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2419,93 +2414,90 @@ QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest const& request,
 QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper, bool isStatementJustPreparedOrReBinded) {
     CreateResponseHelper responseHelper;
     enum class status { partial, done };
-    const auto abbreviateBlobs = request.GetAbbreviateBlobs();
-    const auto includeMetaData= request.GetIncludeMetaData() || isStatementJustPreparedOrReBinded; // Include metadata if the statement is just prepared or re-binded, as the schema might be different from previous execution
-    const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
-    const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
+
+    const auto includeMetaData = request.GetIncludeMetaData() || isStatementJustPreparedOrReBinded; // Include metadata if the statement is just prepared or re-binded, as the schema might be different from previous execution
     ECSqlRowAdaptor adaptor(m_ecdb);
     auto& options = adaptor.GetOptions();
-    options.SetAbbreviateBlobs(abbreviateBlobs);
-    options.SetConvertClassIdsToClassNames(classIdToClassNames);
+    options.SetAbbreviateBlobs(request.GetAbbreviateBlobs());
+    options.SetConvertClassIdsToClassNames(request.GetConvertClassIdsToClassNames());
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
-    options.SetDoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
+    options.SetDoNotConvertClassIdsToClassNamesWhenAliased(request.GetDoNotConvertClassIdsToClassNamesWhenAliased());
+
     ECSqlRowProperty::List props;
-    if (includeMetaData) {
-        adaptor.GetMetaData(props ,m_stmt);
-    }
+    if (includeMetaData)
+        adaptor.GetMetaData(props, m_stmt);
+
     uint32_t row_count = 0;
     std::string result;
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
     result.append("[");
-    auto setResult = [&](status st) {
-        result.append("]");
 
-        m_ecdb.SetProgressHandler(nullptr);
+    auto clearProgressHandler = [&]() { if(m_ecdb.IsDbOpen()) m_ecdb.SetProgressHandler(nullptr); };
+
+    auto setResult = [&](status st) -> QueryResponse::Ptr {
+        result.append("]");
+        clearProgressHandler();
         return responseHelper.CreateECSqlResponse(result, props, row_count, st == status::done, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
     };
-    auto setError = [&] (QueryResponse::Status status, std::string err) {
-        log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
-        return responseHelper.CreateErrorResponse(status, err, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
+
+    auto setError = [&](QueryResponse::Status errStatus, std::string err) -> QueryResponse::Ptr {
+        log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(errStatus));
+        clearProgressHandler();
+        return responseHelper.CreateErrorResponse(errStatus, err, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
     };
 
-    m_ecdb.SetProgressHandler([&](){
-        if (runnableRequestHelper.IsTimeExceeded()) {
-            log_trace("%s time exceeded for sync query", GetTimestamp().c_str());
-            return DbProgressAction::Interrupt;
-        }
-        return DbProgressAction::Continue;
-    }, 1);
+    // Handles all non-ROW step results: done, interrupted/busy, and unexpected errors.
+    auto handleNonRowStep = [&](DbResult rc) -> QueryResponse::Ptr {
+        if (rc == BE_SQLITE_DONE)
+            return setResult(status::done);
+        if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY)
+            return setResult(status::partial);
 
-    while(row_count != request.GetLimit().GetOffset()) {
+        DbResult lastError;
+        std::string sqlStepError = m_ecdb.GetLastError(&lastError);
+        if (lastError != BE_SQLITE_OK)
+            return setError(QueryResponse::Status::Error_ECSql_StepFailed, SqlPrintfString("ECSqlRowReader step() failed: %s", sqlStepError.c_str()).GetUtf8CP());
+        return setError(QueryResponse::Status::Error_ECSql_StepFailed, "ECSqlRowReader step() failed");
+    };
+
+    if(m_ecdb.IsDbOpen()) {
+        m_ecdb.SetProgressHandler([&]() {
+            if (runnableRequestHelper.IsTimeExceeded()) {
+                log_trace("%s time exceeded for sync query", GetTimestamp().c_str());
+                return DbProgressAction::Interrupt;
+            }
+            return DbProgressAction::Continue;
+        }, 1);
+    }
+
+    // Skip rows until we reach the requested offset
+    while (row_count != request.GetLimit().GetOffset()) {
         auto rc = m_stmt.Step();
         if (rc == BE_SQLITE_ROW) {
             row_count++;
+            continue;
         }
-        else if(rc == BE_SQLITE_DONE) {
-            return setResult(status::done);
-        }
-        else if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY) {
-            return setResult(status::partial);
-        } else {
-            DbResult lastError;
-            std::string sqlStepError = m_ecdb.GetLastError(&lastError);
-            if (lastError != BE_SQLITE_OK) {
-                return setError(QueryResponse::Status::Error_ECSql_StepFailed, SqlPrintfString("concurrent query step() failed: %s", sqlStepError.c_str()).GetUtf8CP());
-            }
-            return setError(QueryResponse::Status::Error_ECSql_StepFailed, "concurrent query step() failed");
-        }
+        return handleNonRowStep(rc);
     }
 
+    // Fetch the next row
     auto rc = m_stmt.Step();
+    if (rc != BE_SQLITE_ROW)
+        return handleNonRowStep(rc);
 
-    if (rc == BE_SQLITE_ROW) {
-        Json::Value val;
-        BeJsValue row(val);
-        if (adaptor.RenderRowAsArray(row, ECSqlStatementRow(m_stmt)) != SUCCESS) {
-            return setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
-        } else {
-            row_count++;
-            result.append(row.Stringify());
-        }
-        if (runnableRequestHelper.IsTimeOrMemoryExceeded(result)) {
-            log_trace("%s time or memory exceeded for sync request",GetTimestamp().c_str());
-            return setResult(status::partial);
-        }
-        return setResult(status::done);
+    Json::Value val;
+    BeJsValue row(val);
+    if (adaptor.RenderRowAsArray(row, ECSqlStatementRow(m_stmt)) != SUCCESS)
+        return setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
+
+    row_count++;
+    result.append(row.Stringify());
+
+    if (runnableRequestHelper.IsTimeOrMemoryExceeded(result)) {
+        log_trace("%s time or memory exceeded for request", GetTimestamp().c_str());
+        return setError(QueryResponse::Status::Error, "time or memory quota exceeded for request in ECSqlRowReader");
     }
-    else if(rc == BE_SQLITE_DONE) {
-        return setResult(status::done);
-    }
-    else if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY) {
-        return setResult(status::partial);
-    } else {
-        DbResult lastError;
-        std::string sqlStepError = m_ecdb.GetLastError(&lastError);
-        if (lastError != BE_SQLITE_OK) {
-            return setError(QueryResponse::Status::Error_ECSql_StepFailed, SqlPrintfString("concurrent query step() failed: %s", sqlStepError.c_str()).GetUtf8CP());
-        }
-        return setError(QueryResponse::Status::Error_ECSql_StepFailed, "concurrent query step() failed");
-    }
+    return setResult(status::done);
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
