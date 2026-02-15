@@ -4697,17 +4697,17 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
             const auto dbObj = info[0].As<Napi::Object>();
 
             if (NativeDgnDb::InstanceOf(dbObj)) {
-                if (const auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb && addonDgndb->IsOpen())
+                if (const auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb)
                     m_ecdb = &addonDgndb->GetDgnDb();
             } else if (NativeECDb::InstanceOf(dbObj)) {
                 if (const auto addonECDb = NativeECDb::Unwrap(dbObj); addonECDb)
                     m_ecdb = &addonECDb->GetECDb();
             } else {
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.", IModelJsNativeErrorKey::BadArg);
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "NativeECSqlRowReader constructor requires first argument to be a NativeDgnDb or NativeECDb object.", IModelJsNativeErrorKey::BadArg);
             }
 
             if (!m_ecdb || !m_ecdb->IsDbOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "The database provided to ECSqlRowReader constructor is not open.", IModelJsNativeErrorKey::BadArg);
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "The database provided to NativeECSqlRowReader constructor is not open.", IModelJsNativeErrorKey::BadArg);
 
             m_queryReader = std::make_unique<ECSqlRowReader>(*(m_ecdb));
             }
@@ -4728,8 +4728,7 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
             {
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "ECSqlRowReader", {
-            InstanceMethod("step", &NativeECSqlRowReader::Step),
-            InstanceMethod("dispose", &NativeECSqlRowReader::Dispose)
+            InstanceMethod("step", &NativeECSqlRowReader::Step)
             });
 
             exports.Set("ECSqlRowReader", t);
@@ -4741,6 +4740,12 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
         Napi::Value Step(NapiInfoCR info) 
             {
             REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
+
+            if(m_ecdb == nullptr || m_queryReader == nullptr)
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlRowReader is not initialized.", IModelJsNativeErrorKey::NotInitialized);
+
+            if(!m_ecdb->IsDbOpen())
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "The database provided to ECSqlRowReader is not open.", IModelJsNativeErrorKey::BadArg);
 
             BeJsValue beJsReq(requestObj);
             auto request = QueryRequest::Deserialize(beJsReq);
@@ -4754,11 +4759,6 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
             Napi::Object jsResp = Napi::Object::New(info.Env());
             JsInterop::HandleQueryResponseToJson(info.Env(), jsResp, resp);
             return jsResp;
-            }
-        
-        void Dispose(NapiInfoCR info)
-            {
-                m_queryReader->Dispose();
             }
     };
 

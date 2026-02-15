@@ -481,21 +481,23 @@ struct ConcurrentQueryAppData : Db::AppData {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ECSqlRowReader::Impl {
+struct ECSqlRowReader::Impl: ECDb::IECDbCacheClearListener {
     private:
-        QueryAdaptor m_adaptor;
-        ECDbCR m_ecdb;
+        ECSqlStatement m_stmt;
+        ECDbR m_ecdb;
         ECSqlParams m_args;
-        QueryLimit m_limit;
+        uint64_t m_rowCount;
+        ECSqlRowAdaptor m_adaptor;
         bool PrepareStmt(std:: string const& ecsql,  bool suppressLogError, std::string& ecsql_error);
         bool BindParams(ECSqlParams const& params,  QueryLimit const& limit, std::string& error);
         QueryResponse::Ptr Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
         QueryResponse::Ptr TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
+        void Reset();
+        void _OnBeforeClearECDbCache() override { Reset(); }
     public:
-        Impl(ECDbCR db) : m_adaptor(), m_ecdb(db) {};
+        Impl(ECDbR db) : m_stmt(), m_ecdb(db), m_args(), m_rowCount(0), m_adaptor(m_ecdb) { m_ecdb.AddECDbCacheClearListener(*this); };
 
         QueryResponse::Ptr Step(ECSqlRequest const& request);
-        void Dispose();
 
 };
 

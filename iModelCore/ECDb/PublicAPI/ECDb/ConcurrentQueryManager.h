@@ -257,6 +257,7 @@ class ECSqlParams final {
         ECDB_EXPORT void FromJs(Json::Value const& val);
         ECDB_EXPORT std::vector<std::string> GetKeys() const;
         ECDB_EXPORT bool TryBindTo(ECSqlStatement& stmt, std::string& err) const;
+        void Clear() { m_params.clear(); }
 };
 
 //=======================================================================================
@@ -618,7 +619,6 @@ struct ECSqlReader {
 // @bsiclass
 //=======================================================================================
 struct ECSqlRowReader final {
-    using OnCompletion=std::function<void(QueryResponse::Ptr)>;
     public:
         struct Impl; // prevent circular dependency on ECDb
     private:
@@ -628,11 +628,10 @@ struct ECSqlRowReader final {
         ECSqlRowReader(ECSqlRowReader&&) = delete;
         ECSqlRowReader& operator = (ECSqlRowReader&&) = delete;
     public:
-        ECSqlRowReader(ECDb const&);
+        ECSqlRowReader(ECDbR);
         ~ECSqlRowReader();
 
         QueryResponse::Ptr Step(ECSqlRequest const& request);
-        void Dispose();
 
 };
 
