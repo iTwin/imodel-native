@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    cmake-optimized PartFile for ECDb.
+    Loaded automatically when USE_CMAKE=1.
+-->
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <!-- Combined: PublicAPI prewire + ECDbLibrary compile.
+         CMakeLists.txt delivers PublicAPI/ECDb + ECSchemas. -->
+    <Part Name="ECDbLibrary" CMakeFile="ECDb/CMakeLists.txt">
+        <SubPart PartName="BeSQLite"        PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="GeomlibsSerialization" PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="BeJsonCpp"       PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson"     PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="google_re2"      PartFile="iModelCore/libsrc/google_re2/google_re2" />
+        <SubPart PartName="napi-lib"        PartFile="node-addon-api/node-addon-api" />
+        <SubPart PartName="StandardSchemas" PartFile="schemas/BisSchemas/BisSchemas"/>
+        <Bindings>
+            <PublicAPI Domain="ECDb" />
+            <Libs>Delivery/$(libprefix)iTwinSQLiteEC$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iTwinSQLiteEC$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
+                ECSchemas/ECDb/*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- PublicAPI alias for compat -->
+    <Part Name="PublicAPI">
+        <SubPart PartName="ECDbLibrary" />
+        <Bindings>
+            <PublicAPI Domain="ECDb" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ECDb">
+        <SubPart PartName="ECDbLibrary" />
+    </Part>
+
+    <!-- ******* Unit Tests (kept as bmake) ******* -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="ECDb"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-ECDbTestData" SourceName="Delivery/UnitTests/ECDbTestData" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECDb/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="BackDoorForUnitTests" />
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECDb/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished" />
+    </Part>
+
+    <Product Name="ECDb-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTest -dTEST_COLLECTION_PRODUCT=ECDb-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECDb-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECDbTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest -dGTEST_NAME=ECDbTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECDb-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECDbTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

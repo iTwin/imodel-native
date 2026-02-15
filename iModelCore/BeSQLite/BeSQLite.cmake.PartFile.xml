@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    cmake-optimized PartFile for BeSQLite.
+    Loaded automatically when USE_CMAKE=1.
+-->
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <!-- Combined: PublicAPI prewire + BeSQLite compile.
+         CMakeLists.txt delivers PublicAPI/BeSQLite + sqlite-license.txt. -->
+    <Part Name="BeSQLite" CMakeFile="CMakeLists.txt">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
+        <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore/libsrc/proxyres/proxyres"/>
+        <SubPart PartName="BeCurl" PartFile="iModelCore/libsrc/curl/BeCurl"/>
+        <SubPart PartName="Library" PartFile="iModelCore/libsrc/openssl/BeOpenSSL"/>
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
+        <Bindings>
+            <PublicAPI Domain="BeSQLite" />
+            <Libs>Delivery/$(libprefix)iTwinSQLite$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iTwinSQLite$(shlibext)</Assemblies>
+            <VendorNotices>
+                Delivery/sqlite-license.txt
+            </VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- PublicAPI alias for compat -->
+    <Part Name="PublicAPI">
+        <SubPart PartName="BeSQLite" />
+        <Bindings>
+            <PublicAPI Domain="BeSQLite" />
+        </Bindings>
+    </Part>
+
+    <!-- ******* Unit Tests (kept as bmake) ******* -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="BeSQLite"/>
+        <SubPart PartName="StandardSchemasBim" PartFile="schemas/ECStandards/ECStandards" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSQLite" SubPartDirectory="UnitTests/BeSQLite">Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-BeSQLiteTestData" SourceName="Delivery/UnitTests/BeSQLiteTestData" />
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSQLite/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="BeSQLite-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeSQLiteTest -dTEST_COLLECTION_PRODUCT=BeSQLite-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="BeSQLite-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeSQLiteTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BeSQLiteTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="BeSQLite-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BeSQLite-Gtest -dGTEST_NAME=BeSQLiteTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="BeSQLite-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeSQLiteTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
