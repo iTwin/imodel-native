@@ -487,15 +487,14 @@ struct ECSqlRowReader::Impl: ECDb::IECDbCacheClearListener {
         ECDbR m_ecdb;
         ECSqlParams m_args;
         uint64_t m_rowCount;
-        ECSqlRowAdaptor m_adaptor;
         bool PrepareStmt(std:: string const& ecsql,  bool suppressLogError, std::string& ecsql_error);
         bool BindParams(ECSqlParams const& params,  QueryLimit const& limit, std::string& error);
-        QueryResponse::Ptr Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
+        QueryResponse::Ptr Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper, bool isStatementJustPreparedOrReBinded);
         QueryResponse::Ptr TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
         void Reset();
         void _OnBeforeClearECDbCache() override { Reset(); }
     public:
-        Impl(ECDbR db) : m_stmt(), m_ecdb(db), m_args(), m_rowCount(0), m_adaptor(m_ecdb) { m_ecdb.AddECDbCacheClearListener(*this); };
+        Impl(ECDbR db) : m_stmt(), m_ecdb(db), m_args(), m_rowCount(0) { m_ecdb.AddECDbCacheClearListener(*this); };
 
         QueryResponse::Ptr Step(ECSqlRequest const& request);
 

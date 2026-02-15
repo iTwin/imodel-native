@@ -4688,6 +4688,7 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
         DEFINE_CONSTRUCTOR;
         ECDb* m_ecdb = nullptr;
         std::unique_ptr<ECSqlRowReader> m_queryReader= nullptr;
+        Napi::ObjectReference m_dbRef; // prevent GC of the JS db object while this reader is alive
     public:
         NativeECSqlRowReader(NapiInfoCR info) : BeObjectWrap<NativeECSqlRowReader>(info)
             {
@@ -4709,10 +4710,13 @@ struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
             if (!m_ecdb || !m_ecdb->IsDbOpen())
                 THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "The database provided to NativeECSqlRowReader constructor is not open.", IModelJsNativeErrorKey::BadArg);
 
+            // Hold a persistent reference to the JS db object so it won't be garbage collected
+            m_dbRef = Napi::Persistent(dbObj);
+
             m_queryReader = std::make_unique<ECSqlRowReader>(*(m_ecdb));
             }
 
-        ~NativeECSqlRowReader() {SetInDestructor();}
+        ~NativeECSqlRowReader() { SetInDestructor(); m_dbRef.Reset(); } //Reset here
 
         static bool InstanceOf(Napi::Value val)
             {
