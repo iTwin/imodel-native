@@ -24,6 +24,14 @@
         </Bindings>
     </Part>
 
+    <!-- napi-dll-win: Windows-only, links the real Node DLL -->
+    <Part Name="napi-dll-win" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="napi-lib" />
+        <Bindings>
+            <Assemblies>Delivery/Node/iTwinNapi.dll</Assemblies>
+        </Bindings>
+    </Part>
+
     <!-- napi-stub: no build target, just binds the stub assembly -->
     <Part Name="napi-stub">
         <SubPart PartName="napi-lib"/>

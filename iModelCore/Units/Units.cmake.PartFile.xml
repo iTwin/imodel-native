@@ -93,4 +93,8 @@
         </Bindings>
     </Part>
 
+    <!-- Stubs for mobile test runners (platform-excluded on Linux) -->
+    <Part Name="RunAndroidJUnitTest" OnlyPlatforms="Android*"/>
+    <Part Name="RuniOSXCTest" OnlyPlatforms="iOS*"/>
+
 </BuildContext>

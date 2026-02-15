@@ -84,4 +84,37 @@
         </Bindings>
     </Part>
 
+    <!-- ******* ITwinDaemon (kept as bmake) ******* -->
+    <Part Name="ITwinDaemon" BentleyBuildMakeFile="ITwinDaemon.mke">
+        <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore/libsrc/curl/BeCurl"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore/libsrc/proxyres/proxyres"/>
+        <SubPart LibType="Static" PartName="Library" PartFile="iModelCore/libsrc/openssl/BeOpenSSL"/>
+        <Bindings>
+            <Files ProductDirectoryName="StaticAssemblies">Delivery/iTwinDaemon$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ITwinDaemonExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Dynamic">
+        <SubPart PartName="ITwinDaemon" LibType="Static"/>
+    </Part>
+
+    <Part Name="ITwinDaemonExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+        <SubPart PartName="ITwinDaemon" LibType="Static"/>
+    </Part>
+
+    <Part Name="ITwinDaemonExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic">
+        <SubPart PartName="ITwinDaemon" LibType="Static"/>
+    </Part>
+
+    <Part Name="ITwinDaemon-exe">
+        <SubPart PartName="ITwinDaemonExe-Windows" LibType="Static"/>
+        <SubPart PartName="ITwinDaemonExe-Linux" LibType="Static"/>
+        <SubPart PartName="ITwinDaemonExe-MacOS" LibType="Static"/>
+    </Part>
+
+    <!-- Stubs for mobile test runners (platform-excluded on Linux) -->
+    <Part Name="RunAndroidJUnitTest" OnlyPlatforms="Android*"/>
+    <Part Name="RuniOSXCTest" OnlyPlatforms="iOS*"/>
+
 </BuildContext>
