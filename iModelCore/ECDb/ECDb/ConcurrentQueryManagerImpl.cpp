@@ -2428,7 +2428,6 @@ QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, Ru
     if (includeMetaData)
         adaptor.GetMetaData(props, m_stmt);
 
-    uint32_t row_count = 0;
     std::string result;
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
     result.append("[");
@@ -2437,8 +2436,9 @@ QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, Ru
 
     auto setResult = [&](status st) -> QueryResponse::Ptr {
         result.append("]");
+        bool containsAnyRow = result.size() > 2; // if result is more than "[]", it means it contains at least one row
         clearProgressHandler();
-        return responseHelper.CreateECSqlResponse(result, props, row_count, st == status::done, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
+        return responseHelper.CreateECSqlResponse(result, props, containsAnyRow ? 1 : 0, st == status::done, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
     };
 
     auto setError = [&](QueryResponse::Status errStatus, std::string err) -> QueryResponse::Ptr {
@@ -2472,10 +2472,10 @@ QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, Ru
     }
 
     // Skip rows until we reach the requested offset
-    while (row_count != request.GetLimit().GetOffset()) {
+    while (m_rowCount != request.GetLimit().GetOffset()) {
         auto rc = m_stmt.Step();
         if (rc == BE_SQLITE_ROW) {
-            row_count++;
+            m_rowCount++;
             continue;
         }
         return handleNonRowStep(rc);
@@ -2491,7 +2491,7 @@ QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, Ru
     if (adaptor.RenderRowAsArray(row, ECSqlStatementRow(m_stmt)) != SUCCESS)
         return setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
 
-    row_count++;
+    m_rowCount++;
     result.append(row.Stringify());
 
     if (runnableRequestHelper.IsTimeOrMemoryExceeded(result)) {
