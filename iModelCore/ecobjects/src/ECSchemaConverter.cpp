@@ -1851,21 +1851,24 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
         return ECObjectsStatus::Success;
         }
 
-    // Property should be shown if either of the legacy properties is set to false
-    bool if2d = getBoolValue(instance, IF2D, true);
-    bool if3d = getBoolValue(instance, IF3D, true);
-    bool showProp = !if2d && !if3d;
-
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
-    IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
-
-    ECValue value(showProp);
-    hiddenProperty->SetValue(SHOW, value);
+    // Only hide the property if If3D is explicitly True. In all other cases (absent, null, or
+    // false), the property is considered shown and no HiddenProperty CA is emitted.
+    // We discussed this behavior with the Connector people out of several options, and this seemed like the most acceptable.
+    bool if3d = getBoolValue(instance, IF3D, false);
 
     container.RemoveCustomAttribute(instance.GetClass());
 
-    schema.AddReferencedSchema(*customAttributeSchema);
-    container.SetCustomAttribute(*hiddenProperty);
+    if (if3d)
+        {
+        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
+        IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
+
+        ECValue value(false);
+        hiddenProperty->SetValue(SHOW, value);
+
+        schema.AddReferencedSchema(*customAttributeSchema);
+        container.SetCustomAttribute(*hiddenProperty);
+        }
 
     return ECObjectsStatus::Success;
     }
