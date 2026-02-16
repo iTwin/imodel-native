@@ -24,7 +24,6 @@ static Utf8CP const US_UNIT_SYSTEM                  = "US_UnitSystem";
 static Utf8CP const PROPERTY_PRIORITY               = "PropertyPriority";
 static Utf8CP const CATEGORY                        = "Category";
 static Utf8CP const HIDE_PROPERTY                   = "HideProperty";
-static Utf8CP const IF2D                            = "If2D";
 static Utf8CP const IF3D                            = "If3D";
 static Utf8CP const DISPLAY_OPTIONS                 = "DisplayOptions";
 static Utf8CP const HIDDEN                          = "Hidden";
