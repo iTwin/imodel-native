@@ -59,7 +59,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct QueryAdaptor {
+struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
     private:
         ECSqlStatement m_stmt;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
@@ -67,26 +67,14 @@ struct QueryAdaptor {
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
         rapidjson::Document m_cachedJsonDoc;
-        
+        Db const* m_conn;
+        bool m_usePrimaryConn;
     public:
-        QueryAdaptor() : m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator) { m_cachedJsonDoc.SetArray(); }
-        virtual ~QueryAdaptor(){ m_stmt.Finalize(); }
+        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
         ECSqlRowAdaptor& GetJsonAdaptor();
         rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
-};
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor>, QueryAdaptor {
-    private:
-        bool m_usePrimaryConn;
-        Db const* m_conn;
-    public:
-        CachedQueryAdaptor() : QueryAdaptor(), m_usePrimaryConn(false) {}
-        virtual ~CachedQueryAdaptor(){}
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
