@@ -2495,9 +2495,11 @@ QueryResponse::Ptr ECSqlRowReader::Impl::Execute(ECSqlRequest const& request, Ru
 
     if (runnableRequestHelper.IsTimeOrMemoryExceeded(result)) {
         log_trace("%s time or memory exceeded for request", GetTimestamp().c_str());
-        return setError(QueryResponse::Status::Error, "time or memory quota exceeded for request in ECSqlRowReader");
+        result.clear(); // can't include the result because limits or quota is already exceeded
+        result.append("[");
+        return setResult(status::partial);
     }
-    return setResult(status::done);
+    return setResult(status::partial);
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

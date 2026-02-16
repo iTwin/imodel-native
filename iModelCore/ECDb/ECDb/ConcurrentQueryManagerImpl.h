@@ -486,7 +486,7 @@ struct ECSqlRowReader::Impl: ECDb::IECDbCacheClearListener {
         ECSqlStatement m_stmt;
         ECDbR m_ecdb;
         ECSqlParams m_args;
-        uint64_t m_rowCount;
+        int64_t m_rowCount;
         bool PrepareStmt(std:: string const& ecsql,  bool suppressLogError, std::string& ecsql_error);
         bool BindParams(ECSqlParams const& params,  QueryLimit const& limit, std::string& error);
         QueryResponse::Ptr Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper, bool isStatementJustPreparedOrReBinded);

@@ -17,7 +17,7 @@ import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbQueryRequest, DbQueryResponse, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
   ElementGeometryBuilderParamsForPart,
   ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
@@ -967,7 +967,7 @@ export declare namespace IModelJsNative {
 
   class ECSqlRowReader {
     constructor(db: AnyECDb);
-    public step(request: DbRequest): DbResponse;
+    public step(request: DbQueryRequest): DbQueryResponse;
   }
 
   class ECSqlValueIterator {
