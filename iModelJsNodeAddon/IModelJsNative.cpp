@@ -7424,6 +7424,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeECSqlBinder::Init(env, exports);
     NativeECSqlValue::Init(env, exports);
     NativeECSqlColumnInfo::Init(env, exports);
+    NativeECSqlRowReader::Init(env, exports);
     NativeECSqlValueIterator::Init(env, exports);
     NativeSqliteStatement::Init(env, exports);
     NativeECPresentationManager::Init(env, exports);
