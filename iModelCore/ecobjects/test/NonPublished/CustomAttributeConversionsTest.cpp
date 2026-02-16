@@ -3387,9 +3387,16 @@ void verifyHidden(ECPropertyCP ecProperty)
 void verifyShown(ECPropertyCP ecProperty)
     {
     IECInstancePtr hiddenPropertyCA = ecProperty->GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
-    EXPECT_FALSE(hiddenPropertyCA.IsValid()) << "Expected 'HiddenProperty' Custom Attribute to NOT be present on " <<
-        ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
-        " because the property should be shown (no HiddenProperty CA emitted when If3D is not explicitly true)";
+    EXPECT_TRUE(hiddenPropertyCA.IsValid()) << "Expected to find the 'HiddenProperty' Custom Attribute on " <<
+        ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    ECValue value;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenPropertyCA->GetValue(value, "Show"))
+        << "Failed to get the 'Show' value for " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    EXPECT_TRUE(!value.IsNull() && value.GetBoolean()) <<
+        "Expected 'HiddenProperty.Show' CA value on " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
+        " to be set to true to be considered shown";
     }
 
 void verifySchemaReferencesOnlyCoreCAs(ECSchemaCP convertedSchema)

@@ -1851,23 +1851,25 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
         }
 
     // Only hide the property if If3D is explicitly True. In all other cases (absent, null, or
-    // false), the property is considered shown and no HiddenProperty CA is emitted.
-    // We discussed this behavior with the Connector people out of several options, and this seemed like the most acceptable.
+    // false), the property is considered shown.
+    // BIS doesn't distinguish 2D/3D at the schema level (properties can belong to Aspects or
+    // TypeDefinitions connected via instance relationships), so we cannot determine 2D vs 3D
+    // statically during import. We use If3D as the sole indicator since 3D is the dominant use
+    // case, and showing a property that could be hidden is less harmful than hiding one that
+    // should be shown. If2D is completely ignored.
     bool if3d = getBoolValue(instance, IF3D, false);
+    bool showProp = !if3d;
+
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
+    IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECValue value(showProp);
+    hiddenProperty->SetValue(SHOW, value);
 
     container.RemoveCustomAttribute(instance.GetClass());
 
-    if (if3d)
-        {
-        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
-        IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
-
-        ECValue value(false);
-        hiddenProperty->SetValue(SHOW, value);
-
-        schema.AddReferencedSchema(*customAttributeSchema);
-        container.SetCustomAttribute(*hiddenProperty);
-        }
+    schema.AddReferencedSchema(*customAttributeSchema);
+    container.SetCustomAttribute(*hiddenProperty);
 
     return ECObjectsStatus::Success;
     }
