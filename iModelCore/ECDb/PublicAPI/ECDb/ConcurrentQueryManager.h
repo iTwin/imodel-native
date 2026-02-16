@@ -628,10 +628,10 @@ struct ECSqlRowReader final {
         ECSqlRowReader(ECSqlRowReader&&) = delete;
         ECSqlRowReader& operator = (ECSqlRowReader&&) = delete;
     public:
-        ECSqlRowReader(ECDbR);
-        ~ECSqlRowReader();
+        ECDB_EXPORT ECSqlRowReader(ECDbR);
+        ECDB_EXPORT ~ECSqlRowReader();
 
-        QueryResponse::Ptr Step(ECSqlRequest const& request);
+        ECDB_EXPORT QueryResponse::Ptr Step(ECSqlRequest const& request);
 
 };
 

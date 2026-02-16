@@ -1646,10 +1646,6 @@ void ConcurrentQueryMgr::WithInstance(ECDbCR ecdb, std::function<void(Concurrent
 // static
 //---------------------------------------------------------------------------------------
 void ConcurrentQueryMgr::Shutdown(ECDbCR ecdb) {
-    if (!ecdb.IsDbOpen()) {
-        throw std::runtime_error("ecdb is closed or not open");
-    }
-
     BeMutexHolder lock (ecdb.GetImpl().GetMutex());
     const auto& appKey = ConcurrentQueryAppData::GetKey();
     if (ecdb.FindAppDataOfType<ConcurrentQueryAppData>(appKey).IsValid()) {
@@ -2371,7 +2367,7 @@ QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest const& request,
         return responseHelper.CreateErrorResponse(status, errMsg, runnableRequestHelper.GetCpuTime(), runnableRequestHelper.GetTotalTime(), runnableRequestHelper.GetQuota(), runnableRequestHelper.GetPrepareTime());
     };
 
-    auto ecsql = QueryHelper::FormatQuery(request.GetQuery().c_str());
+    const auto& ecsql = request.GetQuery();
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql.c_str());
 
     if (m_stmt.IsPrepared() && (m_stmt.GetHashCode() != hashCode || strcmp(m_stmt.GetECSql(), ecsql.c_str()) != 0))

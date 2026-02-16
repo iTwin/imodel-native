@@ -395,10 +395,10 @@ struct QueryHelper final {
         static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
+        static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
+        static std::string FormatQuery(const char* query);
     public:
         static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);
-        static std::string FormatQuery(const char* query);
-        static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
 };
 
 //=======================================================================================
