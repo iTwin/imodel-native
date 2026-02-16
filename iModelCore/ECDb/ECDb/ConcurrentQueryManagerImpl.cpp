@@ -2292,7 +2292,12 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
 }
 
 ECSqlRowReader::ECSqlRowReader(ECDbR ecdb){ m_impl = new Impl(ecdb);}
-ECSqlRowReader::~ECSqlRowReader(){ delete m_impl;}
+ECSqlRowReader::~ECSqlRowReader() { 
+    if(m_impl != nullptr) {
+        delete m_impl;
+        m_impl = nullptr;
+    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

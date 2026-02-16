@@ -495,7 +495,7 @@ struct ECSqlRowReader::Impl: ECDb::IECDbCacheClearListener {
         void _OnBeforeClearECDbCache() override { Reset(); }
     public:
         Impl(ECDbR db) : m_stmt(), m_ecdb(db), m_args(), m_rowCount(0) { m_ecdb.AddECDbCacheClearListener(*this); };
-
+        ~Impl() { Reset(); m_ecdb.RemoveECDbCacheClearListener(*this); }
         QueryResponse::Ptr Step(ECSqlRequest const& request);
 
 };

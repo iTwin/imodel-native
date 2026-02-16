@@ -225,7 +225,7 @@ private:
     static DbResult InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
     static bool IsInitialized() { return s_isInitialized; }
 public:
-    ~Impl() { m_sqliteStatementCache.Empty(); }
+    ~Impl() { ClearECDbCache(); }
     EC::ECSqlConfig& GetECSqlConfig() const { return m_ecSqlConfig; }
     bvector<DbFunction*> GetSqlFunctions() const;
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
