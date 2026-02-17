@@ -874,6 +874,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
+    public clearECDbCache(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {
