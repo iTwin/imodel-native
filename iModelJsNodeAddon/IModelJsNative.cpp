@@ -5064,8 +5064,7 @@ public:
             InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
             InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
             InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata),
-            InstanceMethod("bindParams", &NativeECSqlStatement::BindParams),
-            InstanceMethod("checkIfParamsAreSame", &NativeECSqlStatement::CheckIfParamsAreSame),
+            InstanceMethod("bindParams", &NativeECSqlStatement::BindParams)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -5250,27 +5249,6 @@ public:
         if(!params.TryBindTo(m_stmt, errMsg))
             return CreateErrorObject0(false, errMsg.c_str(), info.Env());
          return CreateErrorObject0(true, nullptr, info.Env());  
-    }
-
-    Napi::Value CheckIfParamsAreSame(NapiInfoCR info) {
-        if (!m_stmt.IsPrepared())
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
-
-        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj1);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj2);
-        BeJsValue args1(argsObj1);
-        BeJsValue args2(argsObj2);
-
-        Json::Value jsonArgs1;
-        BeJsValue jsArgs1(jsonArgs1);
-        jsArgs1.From(args1);
-        ECSqlParams params1(jsonArgs1);
-
-        Json::Value jsonArgs2;
-        BeJsValue jsArgs2(jsonArgs2);
-        jsArgs2.From(args2);
-        ECSqlParams params2(jsonArgs2);
-        return Napi::Boolean::New(info.Env(), params1 == params2);
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {

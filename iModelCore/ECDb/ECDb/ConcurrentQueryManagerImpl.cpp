@@ -2075,14 +2075,6 @@ ECSqlParams::ECSqlParam& ECSqlParams::ECSqlParam::operator = (const ECSqlParam &
     }
     return *this;
 }
-
-bool ECSqlParams::ECSqlParam::operator == (const ECSqlParam& rhs) const {
-    if (m_type != rhs.m_type)
-        return false;
-    if (m_name != rhs.m_name)
-        return false;
-    return m_val == rhs.m_val;
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2100,13 +2092,6 @@ ECSqlParams& ECSqlParams::operator = (const ECSqlParams & rhs) {
         m_params = rhs.m_params;
     }
     return *this;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ECSqlParams::operator == (const ECSqlParams & rhs) const {
-     return m_params == rhs.m_params;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
