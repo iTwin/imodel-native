@@ -618,20 +618,24 @@ struct ECSqlReader {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ECSqlRowReader final {
+struct ECSqlRowReader final : ECDb::IECDbCacheClearListener {
     public:
         struct Impl;
     private:
         Impl* m_impl = nullptr;
+        ECDbR m_ecdb;
         ECSqlRowReader(const ECSqlRowReader&) = delete;
         ECSqlRowReader& operator = (const ECSqlRowReader&) = delete;
         ECSqlRowReader(ECSqlRowReader&&) = delete;
         ECSqlRowReader& operator = (ECSqlRowReader&&) = delete;
+        void Reset();
     public:
         ECDB_EXPORT ECSqlRowReader(ECDbR);
         ECDB_EXPORT ~ECSqlRowReader();
 
         ECDB_EXPORT QueryResponse::Ptr Step(ECSqlRequest const& request);
+
+        void _OnBeforeClearECDbCache() override { Reset(); }
 
 };
 

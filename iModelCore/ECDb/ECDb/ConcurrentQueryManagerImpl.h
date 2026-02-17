@@ -469,7 +469,7 @@ struct ConcurrentQueryAppData : Db::AppData {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ECSqlRowReader::Impl: ECDb::IECDbCacheClearListener {
+struct ECSqlRowReader::Impl final {
     private:
         ECSqlStatement m_stmt;
         ECDbR m_ecdb;
@@ -479,13 +479,11 @@ struct ECSqlRowReader::Impl: ECDb::IECDbCacheClearListener {
         bool BindParams(ECSqlParams const& params,  QueryLimit const& limit, std::string& error);
         QueryResponse::Ptr Execute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper, bool isStatementJustPreparedOrReBinded);
         QueryResponse::Ptr TryExecute(ECSqlRequest const& request, RunnableRequestStatsHelper& runnableRequestHelper);
-        void Reset();
-        void _OnBeforeClearECDbCache() override { Reset(); }
     public:
-        Impl(ECDbR db) : m_stmt(), m_ecdb(db), m_args(), m_rowCount(0) { m_ecdb.AddECDbCacheClearListener(*this); };
-        ~Impl() { Reset(); m_ecdb.RemoveECDbCacheClearListener(*this); }
+        Impl(ECDbR db) : m_stmt(), m_ecdb(db), m_args(), m_rowCount(0) { };
+        ~Impl() { Reset(); }
         QueryResponse::Ptr Step(ECSqlRequest const& request);
-
+        void Reset();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

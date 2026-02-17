@@ -2287,12 +2287,13 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
     return Config::GetDefault();
 }
 
-ECSqlRowReader::ECSqlRowReader(ECDbR ecdb){ m_impl = new Impl(ecdb);}
+ECSqlRowReader::ECSqlRowReader(ECDbR ecdb): m_ecdb(ecdb) { 
+    m_impl = new Impl(m_ecdb);
+    m_ecdb.AddECDbCacheClearListener(*this);
+}
 ECSqlRowReader::~ECSqlRowReader() { 
-    if(m_impl != nullptr) {
-        delete m_impl;
-        m_impl = nullptr;
-    }
+    m_ecdb.RemoveECDbCacheClearListener(*this);
+    delete m_impl;
 }
 
 //---------------------------------------------------------------------------------------
@@ -2300,6 +2301,13 @@ ECSqlRowReader::~ECSqlRowReader() {
 //---------------------------------------------------------------------------------------
 QueryResponse::Ptr ECSqlRowReader::Step(ECSqlRequest const& request) {
     return m_impl->Step(std::move(request));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlRowReader::Reset() {
+    m_impl->Reset();
 }
 
 //---------------------------------------------------------------------------------------
