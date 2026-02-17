@@ -5,7 +5,11 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.2.1` |
+| ECSQL   | `2.0.2.2` |
+
+## ## `02/17/2026`: Added `supports_instance_query` function
+* ECSql version change `2.0.2.1` -> `2.0.2.2`.
+* Added `supports_instance_query` sql function.
 
 ## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
 * ECSql version change `2.0.2.0` -> `2.0.2.1`.
