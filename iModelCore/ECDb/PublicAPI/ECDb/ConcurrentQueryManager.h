@@ -178,6 +178,7 @@ class ECSqlParams final {
             ECDB_EXPORT ECSqlParam& operator = (ECSqlParam && rhs);
             ECSqlParam(const ECSqlParam & rhs):m_val(rhs.m_val), m_type(rhs.m_type),m_name(rhs.m_name){}
             ECDB_EXPORT ECSqlParam& operator = (const ECSqlParam & rhs);
+            ECDB_EXPORT bool operator == (const ECSqlParam& rhs) const;
             ECSqlParam():m_type(Type::Null){}
             ECSqlParam(std::string const& name, Type type, Json::Value const& val): m_type(type),m_val(val), m_name(name){}
             ECSqlParam(std::string const& name): m_type(Type::Null),m_val(Json::ValueType::nullValue), m_name(name){}
@@ -220,6 +221,7 @@ class ECSqlParams final {
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
         ECDB_EXPORT ECSqlParams& operator = (ECSqlParams && rhs);
         ECDB_EXPORT ECSqlParams& operator = (const ECSqlParams & rhs);
+        ECDB_EXPORT bool operator == (const ECSqlParams& rhs) const;
         explicit ECSqlParams(Json::Value const& v) { FromJs(v); }
         virtual ~ECSqlParams(){}
         bool IsEmpty() const { return m_params.size() == 0; }

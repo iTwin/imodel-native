@@ -906,7 +906,8 @@ export declare namespace IModelJsNative {
     public getNativeSql(): string;
     public toRow(arg: ECSqlRowAdaptorOptions): any;
     public getMetadata(arg?: ECSqlRowAdaptorOptions): any;
-    public bindParams(args: any): StatusCodeWithMessage<boolean>;
+    public bindParams(args: object): StatusCodeWithMessage<boolean>;
+    public checkIfParamsAreSame(params1: object, params2: object): boolean;
   }
 
   class ECSqlBinder {
