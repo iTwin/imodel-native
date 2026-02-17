@@ -516,6 +516,7 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }

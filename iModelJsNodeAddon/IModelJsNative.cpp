@@ -2245,6 +2245,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::SchemaImportOptions options;
         const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        options.m_skipSaveChanges = true; // pull/merge/rebase will update existing txns for this
         if (!maybeEcSchemaContextVal.IsUndefined())
             {
             if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
@@ -2261,7 +2262,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-        if (DbResult::BE_SQLITE_OK != result) // we will not save changes here as pull/merge/rebase will update existing txns for this
+        if (DbResult::BE_SQLITE_OK != result)
             {
                 if (lastError.HasError()) {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
@@ -2298,7 +2299,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-        if (DbResult::BE_SQLITE_OK != result || DbResult::BE_SQLITE_OK != db.SaveChanges())
+        if (DbResult::BE_SQLITE_OK != result)
             {
                 if (lastError.HasError()) {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
@@ -2321,7 +2322,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
-        if (DbResult::BE_SQLITE_OK != result || DbResult::BE_SQLITE_OK != db.SaveChanges())
+        if (DbResult::BE_SQLITE_OK != result)
             {
                 if (lastError.HasError()) {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);

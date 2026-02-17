@@ -980,6 +980,9 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
         return DgnDb::SchemaStatusToDbResult(status, true);
         }
 
+    if (!opts.m_skipSaveChanges)
+        return dgndb.SaveChanges();
+
     return BE_SQLITE_OK;
     }
 

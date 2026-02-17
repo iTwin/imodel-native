@@ -396,6 +396,7 @@ struct JsInterop {
         {
         Utf8String m_schemaSyncDbUri;
         bool m_schemaLockHeld = true;
+        bool m_skipSaveChanges = false;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
 
