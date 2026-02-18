@@ -28,7 +28,7 @@ always:
 #----------------------------------------------------------
 # Include Dir
 #----------------------------------------------------------
-dirToSearch = $(turboJpegSrcDir)
+dirToSearch = $(turboJpegSrcDir)src/
 %include cincapnd.mki
     
 #----------------------------------------------------------
@@ -36,13 +36,45 @@ dirToSearch = $(turboJpegSrcDir)
 #----------------------------------------------------------  
 %if $(TARGET_PROCESSOR_ARCHITECTURE)=="x86" || $(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTx86"
 
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
     libJpegturbo_SIMD="x86"
 
 %elif $(TARGET_PROCESSOR_ARCHITECTURE)=="x64" || $(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTx64"
 
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
     libJpegturbo_SIMD="x64"
 
-%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64")
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64" ||  $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64" ||  $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64Simulator"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/apple_arm64/ -I$(turboJpegSrcDir)simd/arm/
+
+    libJpegturbo_SIMD="Arm64"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/android/ -I$(turboJpegSrcDir)simd/arm/
+
+    libJpegturbo_SIMD="Arm64"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidX64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/android/
+
+    libJpegturbo_SIMD="None"
+    cDefs + -DNO_SIMD=1
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/linux/
+
+    libJpegturbo_SIMD="None"
+    cDefs + -DNO_SIMD=1
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
 
     # Disable for Android for now since we required Android-ndk-r9-windows-x86_64 to get this fix :
     #   Fixed GCC 4.7 64-bit Windows assembler crash. (Error: out of memory allocating 4294967280 bytes).
@@ -54,13 +86,17 @@ dirToSearch = $(turboJpegSrcDir)
 
 %else 
 
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
     libJpegturbo_SIMD="None"
         
     # Need nasm.exe for these platform.
     #$(TARGET_PROCESSOR_ARCHITECTURE)=="AndroidX86"
     #$(TARGET_PROCESSOR_ARCHITECTURE)=="LinuxX86"
     #$(TARGET_PROCESSOR_ARCHITECTURE)=="iOSX86"
-    
+
+    cDefs + -DNO_SIMD=1
+
 %endif
     
 #----------------------------------------------------------------------
@@ -70,123 +106,135 @@ dirToSearch = $(turboJpegSrcDir)
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)jcapimin$(oext)                 : $(turboJpegSrcDir)jcapimin.c          ${MultiCompileDepends}
+$(o)jcapimin$(oext)                 : $(turboJpegSrcDir)src/jcapimin.c          ${MultiCompileDepends}
 
-$(o)jcapistd$(oext)                 : $(turboJpegSrcDir)jcapistd.c          ${MultiCompileDepends}
+$(o)jcapistd$(oext)                 : $(turboJpegSrcDir)src/wrapper/jcapistd-8.c          ${MultiCompileDepends}
 
-$(o)jccoefct$(oext)                 : $(turboJpegSrcDir)jccoefct.c          ${MultiCompileDepends}
+$(o)jccoefct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jccoefct-8.c          ${MultiCompileDepends}
 
-$(o)jccolor$(oext)                  : $(turboJpegSrcDir)jccolor.c           ${MultiCompileDepends}
+$(o)jccolor$(oext)                  : $(turboJpegSrcDir)src/wrapper/jccolor-8.c           ${MultiCompileDepends}
 
-$(o)jcdctmgr$(oext)                 : $(turboJpegSrcDir)jcdctmgr.c          ${MultiCompileDepends}
+$(o)jcdctmgr$(oext)                 : $(turboJpegSrcDir)src/wrapper/jcdctmgr-8.c          ${MultiCompileDepends}
 
-$(o)jchuff$(oext)                   : $(turboJpegSrcDir)jchuff.c            ${MultiCompileDepends}
+$(o)jchuff$(oext)                   : $(turboJpegSrcDir)src/jchuff.c            ${MultiCompileDepends}
 
-$(o)jcicc$(oext)                    : $(turboJpegSrcDir)jcicc.c             ${MultiCompileDepends}
+$(o)jcicc$(oext)                    : $(turboJpegSrcDir)src/jcicc.c             ${MultiCompileDepends}
 
-$(o)jcinit$(oext)                   : $(turboJpegSrcDir)jcinit.c            ${MultiCompileDepends}
+$(o)jcinit$(oext)                   : $(turboJpegSrcDir)src/jcinit.c            ${MultiCompileDepends}
 
-$(o)jcmainct$(oext)                 : $(turboJpegSrcDir)jcmainct.c          ${MultiCompileDepends}
+$(o)jcmainct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jcmainct-8.c          ${MultiCompileDepends}
 
-$(o)jcmarker$(oext)                 : $(turboJpegSrcDir)jcmarker.c          ${MultiCompileDepends}
+$(o)jcmarker$(oext)                 : $(turboJpegSrcDir)src/jcmarker.c          ${MultiCompileDepends}
 
-$(o)jcmaster$(oext)                 : $(turboJpegSrcDir)jcmaster.c          ${MultiCompileDepends}
+$(o)jcmaster$(oext)                 : $(turboJpegSrcDir)src/jcmaster.c          ${MultiCompileDepends}
 
-$(o)jcomapi$(oext)                  : $(turboJpegSrcDir)jcomapi.c           ${MultiCompileDepends}
+$(o)jcomapi$(oext)                  : $(turboJpegSrcDir)src/jcomapi.c           ${MultiCompileDepends}
 
-$(o)jcparam$(oext)                  : $(turboJpegSrcDir)jcparam.c           ${MultiCompileDepends}
+$(o)jcparam$(oext)                  : $(turboJpegSrcDir)src/jcparam.c           ${MultiCompileDepends}
 
-$(o)jcphuff$(oext)                  : $(turboJpegSrcDir)jcphuff.c           ${MultiCompileDepends}
+$(o)jcphuff$(oext)                  : $(turboJpegSrcDir)src/jcphuff.c           ${MultiCompileDepends}
 
-$(o)jcprepct$(oext)                 : $(turboJpegSrcDir)jcprepct.c          ${MultiCompileDepends}
+$(o)jcprepct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jcprepct-8.c          ${MultiCompileDepends}
 
-$(o)jcsample$(oext)                 : $(turboJpegSrcDir)jcsample.c          ${MultiCompileDepends}
+$(o)jcsample$(oext)                 : $(turboJpegSrcDir)src/wrapper/jcsample-8.c          ${MultiCompileDepends}
 
-$(o)jctrans$(oext)                  : $(turboJpegSrcDir)jctrans.c           ${MultiCompileDepends}
+$(o)jctrans$(oext)                  : $(turboJpegSrcDir)src/jctrans.c           ${MultiCompileDepends}
 
-$(o)jdapimin$(oext)                 : $(turboJpegSrcDir)jdapimin.c          ${MultiCompileDepends}
+$(o)jdapimin$(oext)                 : $(turboJpegSrcDir)src/jdapimin.c          ${MultiCompileDepends}
 
-$(o)jdapistd$(oext)                 : $(turboJpegSrcDir)jdapistd.c          ${MultiCompileDepends}
+$(o)jdapistd$(oext)                 : $(turboJpegSrcDir)src/wrapper/jdapistd-8.c          ${MultiCompileDepends}
 
-$(o)jdatadst$(oext)                 : $(turboJpegSrcDir)jdatadst.c          ${MultiCompileDepends}
+$(o)jdatadst$(oext)                 : $(turboJpegSrcDir)src/jdatadst.c          ${MultiCompileDepends}
 
-$(o)jdatasrc$(oext)                 : $(turboJpegSrcDir)jdatasrc.c          ${MultiCompileDepends}
+$(o)jdatasrc$(oext)                 : $(turboJpegSrcDir)src/jdatasrc.c          ${MultiCompileDepends}
 
-$(o)jdcoefct$(oext)                 : $(turboJpegSrcDir)jdcoefct.c          ${MultiCompileDepends}
+$(o)jdcoefct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jdcoefct-8.c          ${MultiCompileDepends}
 
-$(o)jdcolor$(oext)                  : $(turboJpegSrcDir)jdcolor.c           ${MultiCompileDepends}
+$(o)jdcolor$(oext)                  : $(turboJpegSrcDir)src/wrapper/jdcolor-8.c           ${MultiCompileDepends}
 
-$(o)jddctmgr$(oext)                 : $(turboJpegSrcDir)jddctmgr.c          ${MultiCompileDepends}
+$(o)jddctmgr$(oext)                 : $(turboJpegSrcDir)src/wrapper/jddctmgr-8.c          ${MultiCompileDepends}
 
-$(o)jdhuff$(oext)                   : $(turboJpegSrcDir)jdhuff.c            ${MultiCompileDepends}
+$(o)jdhuff$(oext)                   : $(turboJpegSrcDir)src/jdhuff.c            ${MultiCompileDepends}
 
-$(o)jdicc$(oext)                    : $(turboJpegSrcDir)jdicc.c             ${MultiCompileDepends}
+$(o)jdicc$(oext)                    : $(turboJpegSrcDir)src/jdicc.c             ${MultiCompileDepends}
 
-$(o)jdinput$(oext)                  : $(turboJpegSrcDir)jdinput.c           ${MultiCompileDepends}
+$(o)jdinput$(oext)                  : $(turboJpegSrcDir)src/jdinput.c           ${MultiCompileDepends}
 
-$(o)jdmainct$(oext)                 : $(turboJpegSrcDir)jdmainct.c          ${MultiCompileDepends}
+$(o)jdmainct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jdmainct-8.c          ${MultiCompileDepends}
 
-$(o)jdmarker$(oext)                 : $(turboJpegSrcDir)jdmarker.c          ${MultiCompileDepends}
+$(o)jdmarker$(oext)                 : $(turboJpegSrcDir)src/jdmarker.c          ${MultiCompileDepends}
 
-$(o)jdmaster$(oext)                 : $(turboJpegSrcDir)jdmaster.c          ${MultiCompileDepends}
+$(o)jdmaster$(oext)                 : $(turboJpegSrcDir)src/jdmaster.c          ${MultiCompileDepends}
 
-$(o)jdmerge$(oext)                  : $(turboJpegSrcDir)jdmerge.c           ${MultiCompileDepends}
+$(o)jdmerge$(oext)                  : $(turboJpegSrcDir)src/wrapper/jdmerge-8.c           ${MultiCompileDepends}
 
-$(o)jdphuff$(oext)                  : $(turboJpegSrcDir)jdphuff.c           ${MultiCompileDepends}
+$(o)jdphuff$(oext)                  : $(turboJpegSrcDir)src/jdphuff.c           ${MultiCompileDepends}
 
-$(o)jdpostct$(oext)                 : $(turboJpegSrcDir)jdpostct.c          ${MultiCompileDepends}
+$(o)jdpostct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jdpostct-8.c          ${MultiCompileDepends}
 
-$(o)jdsample$(oext)                 : $(turboJpegSrcDir)jdsample.c          ${MultiCompileDepends}
+$(o)jdsample$(oext)                 : $(turboJpegSrcDir)src/wrapper/jdsample-8.c          ${MultiCompileDepends}
 
-$(o)jdtrans$(oext)                  : $(turboJpegSrcDir)jdtrans.c           ${MultiCompileDepends}
+$(o)jdtrans$(oext)                  : $(turboJpegSrcDir)src/jdtrans.c           ${MultiCompileDepends}
 
-$(o)jerror$(oext)                   : $(turboJpegSrcDir)jerror.c            ${MultiCompileDepends}
+$(o)jerror$(oext)                   : $(turboJpegSrcDir)src/jerror.c            ${MultiCompileDepends}
 
-$(o)jfdctflt$(oext)                 : $(turboJpegSrcDir)jfdctflt.c          ${MultiCompileDepends}
+$(o)jfdctflt$(oext)                 : $(turboJpegSrcDir)src/jfdctflt.c          ${MultiCompileDepends}
 
-$(o)jfdctfst$(oext)                 : $(turboJpegSrcDir)jfdctfst.c          ${MultiCompileDepends}
+$(o)jfdctfst$(oext)                 : $(turboJpegSrcDir)src/wrapper/jfdctfst-8.c          ${MultiCompileDepends}
 
-$(o)jfdctint$(oext)                 : $(turboJpegSrcDir)jfdctint.c          ${MultiCompileDepends}
+$(o)jfdctint$(oext)                 : $(turboJpegSrcDir)src/wrapper/jfdctint-8.c          ${MultiCompileDepends}
 
-$(o)jidctflt$(oext)                 : $(turboJpegSrcDir)jidctflt.c          ${MultiCompileDepends}
+$(o)jidctflt$(oext)                 : $(turboJpegSrcDir)src/wrapper/jidctflt-8.c          ${MultiCompileDepends}
 
-$(o)jidctfst$(oext)                 : $(turboJpegSrcDir)jidctfst.c          ${MultiCompileDepends}
+$(o)jidctfst$(oext)                 : $(turboJpegSrcDir)src/wrapper/jidctfst-8.c          ${MultiCompileDepends}
 
-$(o)jidctint$(oext)                 : $(turboJpegSrcDir)jidctint.c          ${MultiCompileDepends}
+$(o)jidctint$(oext)                 : $(turboJpegSrcDir)src/wrapper/jidctint-8.c          ${MultiCompileDepends}
 
-$(o)jidctred$(oext)                 : $(turboJpegSrcDir)jidctred.c          ${MultiCompileDepends}
+$(o)jidctred$(oext)                 : $(turboJpegSrcDir)src/wrapper/jidctred-8.c          ${MultiCompileDepends}
 
-$(o)jquant1$(oext)                  : $(turboJpegSrcDir)jquant1.c           ${MultiCompileDepends}
+$(o)jquant1$(oext)                  : $(turboJpegSrcDir)src/wrapper/jquant1-8.c           ${MultiCompileDepends}
 
-$(o)jquant2$(oext)                  : $(turboJpegSrcDir)jquant2.c           ${MultiCompileDepends}
+$(o)jquant2$(oext)                  : $(turboJpegSrcDir)src/wrapper/jquant2-8.c           ${MultiCompileDepends}
 
-$(o)jutils$(oext)                   : $(turboJpegSrcDir)jutils.c            ${MultiCompileDepends}
+$(o)jutils$(oext)                   : $(turboJpegSrcDir)src/wrapper/jutils-8.c            ${MultiCompileDepends}
 
-$(o)jmemmgr$(oext)                  : $(turboJpegSrcDir)jmemmgr.c           ${MultiCompileDepends}
+$(o)jmemmgr$(oext)                  : $(turboJpegSrcDir)src/jmemmgr.c           ${MultiCompileDepends}
 
-$(o)jmemnobs$(oext)                 : $(turboJpegSrcDir)jmemnobs.c          ${MultiCompileDepends}
+$(o)jmemnobs$(oext)                 : $(turboJpegSrcDir)src/jmemnobs.c          ${MultiCompileDepends}
 
-$(o)jaricom$(oext)                  : $(turboJpegSrcDir)jaricom.c           ${MultiCompileDepends}
+$(o)jaricom$(oext)                  : $(turboJpegSrcDir)src/jaricom.c           ${MultiCompileDepends}
 
-$(o)jcarith$(oext)                  : $(turboJpegSrcDir)jcarith.c           ${MultiCompileDepends}
+$(o)jcarith$(oext)                  : $(turboJpegSrcDir)src/jcarith.c           ${MultiCompileDepends}
 
-$(o)jdarith$(oext)                  : $(turboJpegSrcDir)jdarith.c           ${MultiCompileDepends}
+$(o)jdarith$(oext)                  : $(turboJpegSrcDir)src/jdarith.c           ${MultiCompileDepends}
 
-$(o)turbojpeg$(oext)                : $(turboJpegSrcDir)turbojpeg.c         ${MultiCompileDepends}
+$(o)turbojpeg$(oext)                : $(turboJpegSrcDir)src/turbojpeg.c         ${MultiCompileDepends}
 
-$(o)transupp$(oext)                 : $(turboJpegSrcDir)transupp.c          ${MultiCompileDepends}
+$(o)transupp$(oext)                 : $(turboJpegSrcDir)src/transupp.c          ${MultiCompileDepends}
 
-$(o)jdatadst$(oext)                 : $(turboJpegSrcDir)jdatadst-tj.c       ${MultiCompileDepends}
+$(o)jdatadst$(oext)                 : $(turboJpegSrcDir)src/jdatadst-tj.c       ${MultiCompileDepends}
 
-$(o)jdatasrc$(oext)                 : $(turboJpegSrcDir)jdatasrc-tj.c       ${MultiCompileDepends}
+$(o)jdatasrc$(oext)                 : $(turboJpegSrcDir)src/jdatasrc-tj.c       ${MultiCompileDepends}
 
-$(o)rdbmp$(oext)                    : $(turboJpegSrcDir)rdbmp.c             ${MultiCompileDepends}
+$(o)rdbmp$(oext)                    : $(turboJpegSrcDir)src/rdbmp.c             ${MultiCompileDepends}
 
-$(o)rdppm$(oext)                    : $(turboJpegSrcDir)rdppm.c             ${MultiCompileDepends}
+$(o)rdppm$(oext)                    : $(turboJpegSrcDir)src/rdppm.c             ${MultiCompileDepends}
 
-$(o)wrbmp$(oext)                    : $(turboJpegSrcDir)wrbmp.c             ${MultiCompileDepends}
+$(o)wrbmp$(oext)                    : $(turboJpegSrcDir)src/wrbmp.c             ${MultiCompileDepends}
 
-$(o)wrppm$(oext)                    : $(turboJpegSrcDir)wrppm.c             ${MultiCompileDepends}
+$(o)wrppm$(oext)                    : $(turboJpegSrcDir)src/wrppm.c             ${MultiCompileDepends}
+
+$(o)jclhuff$(oext)                  : $(turboJpegSrcDir)src/jclhuff.c           ${MultiCompileDepends}
+
+$(o)jdlhuff$(oext)                  : $(turboJpegSrcDir)src/jdlhuff.c           ${MultiCompileDepends}
+
+$(o)jclossls$(oext)                 : $(turboJpegSrcDir)src/wrapper/jclossls-8.c          ${MultiCompileDepends}
+
+$(o)jdlossls$(oext)                 : $(turboJpegSrcDir)src/wrapper/jdlossls-8.c          ${MultiCompileDepends}
+
+$(o)jcdiffct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jcdiffct-8.c          ${MultiCompileDepends}
+
+$(o)jddiffct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jddiffct-8.c          ${MultiCompileDepends}
 
 
 %if $(libJpegturbo_SIMD) == "x86"
@@ -199,15 +247,155 @@ $(o)wrppm$(oext)                    : $(turboJpegSrcDir)wrppm.c             ${Mu
 
 %elif $(libJpegturbo_SIMD)=="Arm"
 
-    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/jsimd.c ${MultiCompileDepends}
+    cDefs + -DNEON_INTRINSICS
 
-    $(o)jsimd_neon$(oext) : $(turboJpegSrcDir)simd/jsimd_neon.S ${MultiCompileDepends}
+    $(o)jchuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/aarch32/jchuff-neon.c ${MultiCompileDepends}
 
-%elif $(libJpegturbo_SIMD)=="None"
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/aarch32/jsimd.c ${MultiCompileDepends}
 
-    $(o)jsimd_none$(oext) : $(turboJpegSrcDir)jsimd_none.c ${MultiCompileDepends}
+%elif $(libJpegturbo_SIMD)=="Arm64"
+
+    cDefs + -DNEON_INTRINSICS
+
+    $(o)jchuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/aarch64/jchuff-neon.c ${MultiCompileDepends}
+
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/aarch64/jsimd.c ${MultiCompileDepends}
+
+%else
+
+    $(o)jpeg_nbits$(oext)                 : $(turboJpegSrcDir)src/jpeg_nbits.c          ${MultiCompileDepends}
 
 %endif
+
+%if $(libJpegturbo_SIMD)=="Arm" || $(libJpegturbo_SIMD)=="Arm64"
+
+    $(o)jccolor-neon$(oext) : $(turboJpegSrcDir)simd/arm/jccolor-neon.c ${MultiCompileDepends}
+
+    $(o)jcsample-neon$(oext) : $(turboJpegSrcDir)simd/arm/jcsample-neon.c ${MultiCompileDepends}
+
+    $(o)jidctfst-neon$(oext) : $(turboJpegSrcDir)simd/arm/jidctfst-neon.c ${MultiCompileDepends}
+
+    $(o)jcgray-neon$(oext) : $(turboJpegSrcDir)simd/arm/jcgray-neon.c ${MultiCompileDepends}
+
+    $(o)jdsample-neon$(oext) : $(turboJpegSrcDir)simd/arm/jdsample-neon.c ${MultiCompileDepends}
+
+    $(o)jidctint-neon$(oext) : $(turboJpegSrcDir)simd/arm/jidctint-neon.c ${MultiCompileDepends}
+
+    $(o)jdcolor-neon$(oext) : $(turboJpegSrcDir)simd/arm/jdcolor-neon.c ${MultiCompileDepends}
+
+    $(o)jfdctfst-neon$(oext) : $(turboJpegSrcDir)simd/arm/jfdctfst-neon.c ${MultiCompileDepends}
+
+    $(o)jidctred-neon$(oext) : $(turboJpegSrcDir)simd/arm/jidctred-neon.c ${MultiCompileDepends}
+
+    $(o)jcphuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/jcphuff-neon.c ${MultiCompileDepends}
+
+    $(o)jdmerge-neon$(oext) : $(turboJpegSrcDir)simd/arm/jdmerge-neon.c ${MultiCompileDepends}
+
+    $(o)jfdctint-neon$(oext) : $(turboJpegSrcDir)simd/arm/jfdctint-neon.c ${MultiCompileDepends}
+
+    $(o)jquanti-neon$(oext) : $(turboJpegSrcDir)simd/arm/jquanti-neon.c ${MultiCompileDepends}
+
+%endif
+
+# 12-bit wrapper files
+$(o)jcapistd12$(oext)               : $(turboJpegSrcDir)src/wrapper/jcapistd-12.c     ${MultiCompileDepends}
+
+$(o)jccoefct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jccoefct-12.c     ${MultiCompileDepends}
+
+$(o)jccolor12$(oext)                : $(turboJpegSrcDir)src/wrapper/jccolor-12.c      ${MultiCompileDepends}
+
+$(o)jcdctmgr12$(oext)               : $(turboJpegSrcDir)src/wrapper/jcdctmgr-12.c     ${MultiCompileDepends}
+
+$(o)jcdiffct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jcdiffct-12.c     ${MultiCompileDepends}
+
+$(o)jclossls12$(oext)               : $(turboJpegSrcDir)src/wrapper/jclossls-12.c     ${MultiCompileDepends}
+
+$(o)jcmainct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jcmainct-12.c     ${MultiCompileDepends}
+
+$(o)jcprepct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jcprepct-12.c     ${MultiCompileDepends}
+
+$(o)jcsample12$(oext)               : $(turboJpegSrcDir)src/wrapper/jcsample-12.c     ${MultiCompileDepends}
+
+$(o)jdapistd12$(oext)               : $(turboJpegSrcDir)src/wrapper/jdapistd-12.c     ${MultiCompileDepends}
+
+$(o)jdcoefct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jdcoefct-12.c     ${MultiCompileDepends}
+
+$(o)jdcolor12$(oext)                : $(turboJpegSrcDir)src/wrapper/jdcolor-12.c      ${MultiCompileDepends}
+
+$(o)jddctmgr12$(oext)               : $(turboJpegSrcDir)src/wrapper/jddctmgr-12.c     ${MultiCompileDepends}
+
+$(o)jddiffct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jddiffct-12.c     ${MultiCompileDepends}
+
+$(o)jdlossls12$(oext)               : $(turboJpegSrcDir)src/wrapper/jdlossls-12.c     ${MultiCompileDepends}
+
+$(o)jdmainct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jdmainct-12.c     ${MultiCompileDepends}
+
+$(o)jdmerge12$(oext)                : $(turboJpegSrcDir)src/wrapper/jdmerge-12.c      ${MultiCompileDepends}
+
+$(o)jdpostct12$(oext)               : $(turboJpegSrcDir)src/wrapper/jdpostct-12.c     ${MultiCompileDepends}
+
+$(o)jdsample12$(oext)               : $(turboJpegSrcDir)src/wrapper/jdsample-12.c     ${MultiCompileDepends}
+
+$(o)jfdctfst12$(oext)               : $(turboJpegSrcDir)src/wrapper/jfdctfst-12.c     ${MultiCompileDepends}
+
+$(o)jfdctint12$(oext)               : $(turboJpegSrcDir)src/wrapper/jfdctint-12.c     ${MultiCompileDepends}
+
+$(o)jidctflt12$(oext)               : $(turboJpegSrcDir)src/wrapper/jidctflt-12.c     ${MultiCompileDepends}
+
+$(o)jidctfst12$(oext)               : $(turboJpegSrcDir)src/wrapper/jidctfst-12.c     ${MultiCompileDepends}
+
+$(o)jidctint12$(oext)               : $(turboJpegSrcDir)src/wrapper/jidctint-12.c     ${MultiCompileDepends}
+
+$(o)jidctred12$(oext)               : $(turboJpegSrcDir)src/wrapper/jidctred-12.c     ${MultiCompileDepends}
+
+$(o)jquant112$(oext)                : $(turboJpegSrcDir)src/wrapper/jquant1-12.c      ${MultiCompileDepends}
+
+$(o)jquant212$(oext)                : $(turboJpegSrcDir)src/wrapper/jquant2-12.c      ${MultiCompileDepends}
+
+$(o)jutils12$(oext)                 : $(turboJpegSrcDir)src/wrapper/jutils-12.c       ${MultiCompileDepends}
+
+$(o)rdcolmap12$(oext)               : $(turboJpegSrcDir)src/wrapper/rdcolmap-12.c     ${MultiCompileDepends}
+
+$(o)rdppm12$(oext)                  : $(turboJpegSrcDir)src/wrapper/rdppm-12.c        ${MultiCompileDepends}
+
+$(o)wrgif12$(oext)                  : $(turboJpegSrcDir)src/wrapper/wrgif-12.c        ${MultiCompileDepends}
+
+$(o)wrppm12$(oext)                  : $(turboJpegSrcDir)src/wrapper/wrppm-12.c        ${MultiCompileDepends}
+
+# 16-bit wrapper files
+$(o)jcapistd16$(oext)               : $(turboJpegSrcDir)src/wrapper/jcapistd-16.c     ${MultiCompileDepends}
+
+$(o)jccolor16$(oext)                : $(turboJpegSrcDir)src/wrapper/jccolor-16.c      ${MultiCompileDepends}
+
+$(o)jcdiffct16$(oext)               : $(turboJpegSrcDir)src/wrapper/jcdiffct-16.c     ${MultiCompileDepends}
+
+$(o)jclossls16$(oext)               : $(turboJpegSrcDir)src/wrapper/jclossls-16.c     ${MultiCompileDepends}
+
+$(o)jcmainct16$(oext)               : $(turboJpegSrcDir)src/wrapper/jcmainct-16.c     ${MultiCompileDepends}
+
+$(o)jcprepct16$(oext)               : $(turboJpegSrcDir)src/wrapper/jcprepct-16.c     ${MultiCompileDepends}
+
+$(o)jcsample16$(oext)               : $(turboJpegSrcDir)src/wrapper/jcsample-16.c     ${MultiCompileDepends}
+
+$(o)jdapistd16$(oext)               : $(turboJpegSrcDir)src/wrapper/jdapistd-16.c     ${MultiCompileDepends}
+
+$(o)jdcolor16$(oext)                : $(turboJpegSrcDir)src/wrapper/jdcolor-16.c      ${MultiCompileDepends}
+
+$(o)jddiffct16$(oext)               : $(turboJpegSrcDir)src/wrapper/jddiffct-16.c     ${MultiCompileDepends}
+
+$(o)jdlossls16$(oext)               : $(turboJpegSrcDir)src/wrapper/jdlossls-16.c     ${MultiCompileDepends}
+
+$(o)jdmainct16$(oext)               : $(turboJpegSrcDir)src/wrapper/jdmainct-16.c     ${MultiCompileDepends}
+
+$(o)jdpostct16$(oext)               : $(turboJpegSrcDir)src/wrapper/jdpostct-16.c     ${MultiCompileDepends}
+
+$(o)jdsample16$(oext)               : $(turboJpegSrcDir)src/wrapper/jdsample-16.c     ${MultiCompileDepends}
+
+$(o)jutils16$(oext)                 : $(turboJpegSrcDir)src/wrapper/jutils-16.c       ${MultiCompileDepends}
+
+$(o)rdppm16$(oext)                  : $(turboJpegSrcDir)src/wrapper/rdppm-16.c        ${MultiCompileDepends}
+
+$(o)wrppm16$(oext)                  : $(turboJpegSrcDir)src/wrapper/wrppm-16.c        ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -492,12 +680,12 @@ LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
 
 CreateBuildContext:
     ~mkdir $(BuildContext)VendorAPI/libjpeg-turbo
-    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/turbojpeg.h=$(turboJpegSrcDir)turbojpeg.h"
-    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jpeglib.h=$(turboJpegSrcDir)jpeglib.h"
-    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jconfig.h=$(turboJpegSrcDir)jconfig.h"
-    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jmorecfg.h=$(turboJpegSrcDir)jmorecfg.h"
-    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jerror.h=$(turboJpegSrcDir)jerror.h"
-    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/win/jconfig.h.in=$(turboJpegSrcDir)win/jconfig.h.in"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/turbojpeg.h=$(turboJpegSrcDir)src/turbojpeg.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jpeglib.h=$(turboJpegSrcDir)src/jpeglib.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jconfig.h=$(turboJpegSrcDir)src/jconfig.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jmorecfg.h=$(turboJpegSrcDir)src/jmorecfg.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/jerror.h=$(turboJpegSrcDir)src/jerror.h"
+    ~linkfile "$(BuildContext)VendorAPI/libjpeg-turbo/win/jconfig.h.in=$(turboJpegSrcDir)src/jconfig.h.in"
 
 $(BuildContext)Delivery/jpeg-turbo-license.txt : $(turboJpegSrcDir)LICENSE.md
     $(LinkFirstDepToFirstTarget)

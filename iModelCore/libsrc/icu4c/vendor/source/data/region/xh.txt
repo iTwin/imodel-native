@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 xh{
     Countries{
         001{"ihlabathi"}
@@ -85,6 +85,7 @@ xh{
         CN{"ETshayina"}
         CO{"EColombia"}
         CP{"EClipperton Island"}
+        CQ{"ESark"}
         CR{"ECosta Rica"}
         CU{"ECuba"}
         CV{"ECape Verde"}
@@ -297,6 +298,9 @@ xh{
         ZM{"EZambia"}
         ZW{"EZimbabwe"}
         ZZ{"Ingingqi Engaziwayo"}
+    }
+    Countries%chagos{
+        IO{"EChagos Archipelago"}
     }
     Countries%short{
         GB{"E-UK"}

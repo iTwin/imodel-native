@@ -30,7 +30,6 @@ always:
     dllDir = ${OutputRootDir}/imodeljsnodeaddon_pkgs/imodeljs-win32-x64/
 
     always:
-        ~linkfile $(dllDir)iTwinDaemon_exe.pdb=${OutputRootDir}/static/build/BeSQLite/ITwinDaemon/iTwinDaemon_exe.pdb
         ~mkdir $(veracodeDir)
         $(BuildToolCache)bsitools/zip.exe ${OutputRootDir}/Veracode/Veracode.zip $(dllDir)/*
 

@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 fur{
     Keys{
         calendar{"calendari"}
@@ -264,15 +264,11 @@ fur{
             gregorian{"calendari gregorian"}
             hebrew{"calendari ebreu"}
             indian{"calendari nazionâl indian"}
-            islamic{"calendari islamic"}
-            islamic-civil{"calendari islamic civîl"}
             japanese{"calendari gjaponês"}
             roc{"calendari de Republiche di Cine"}
         }
         collation{
-            big5han{"ordin cinês tradizionâl - Big5"}
             ducet{"ordenament predeterminât Unicode"}
-            gb2312han{"ordin cinês semplificât - GB2312"}
             phonebook{"ordin elenc telefonic"}
             pinyin{"ordin pinyin"}
             search{"ricercje par fins gjenerâi"}
@@ -304,9 +300,5 @@ fur{
         language{"Lenghe: {0}"}
         script{"Scriture: {0}"}
         territory{"Regjon: {0}"}
-    }
-    localeDisplayPattern{
-        pattern{"{0} ({1})"}
-        separator{"{0}, {1}"}
     }
 }

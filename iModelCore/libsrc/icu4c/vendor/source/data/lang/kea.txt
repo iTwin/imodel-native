@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 kea{
     Keys{
         calendar{"Kalendáriu"}
@@ -148,7 +148,6 @@ kea{
         lo{"lausianu"}
         lt{"lituanu"}
         lu{"luba-katanga"}
-        luo{"luo"}
         luy{"luyia"}
         lv{"letãu"}
         mg{"malgaxi"}
@@ -342,10 +341,5 @@ kea{
         language{"Lingua: {0}"}
         script{"Skrita: {0}"}
         territory{"Rejion: {0}"}
-    }
-    localeDisplayPattern{
-        keyTypePattern{"{0}: {1}"}
-        pattern{"{0} ({1})"}
-        separator{"{0}, {1}"}
     }
 }

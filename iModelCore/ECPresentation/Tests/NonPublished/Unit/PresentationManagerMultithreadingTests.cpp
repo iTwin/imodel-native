@@ -300,8 +300,16 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     EXPECT_EQ(SUCCESS, ImportSchema(m_db, schemaXml));
 
     // verify we do get the result after the import
-    NodesCountResponse countResult = count.get();
-    EXPECT_NE(1, *countResult);
+    bool didGetCancelled = false;
+    try {
+        count.get();
+        }
+    catch (CancellationException const& e)
+        {
+        didGetCancelled = true;
+        EXPECT_TRUE(e.IsRestartRequested());
+        }
+    EXPECT_TRUE(didGetCancelled);
     }
 
 /*---------------------------------------------------------------------------------**//**

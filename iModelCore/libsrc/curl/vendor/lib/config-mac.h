@@ -129,4 +129,7 @@
 /* Define if you have recvfrom. CARES */
 #define HAVE_RECVFROM 1
 
+/* Define to the type of arg 3 for recvfrom. */
+#define RECVFROM_TYPE_ARG3 size_t
+
 #endif /* HEADER_CURL_CONFIG_MAC_H */

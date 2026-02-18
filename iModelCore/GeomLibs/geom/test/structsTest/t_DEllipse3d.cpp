@@ -3461,3 +3461,30 @@ TEST(DEllipse3d,IFCArcs)
 
     Check::ClearGeometry("DEllipse3d.IFCArcs");
     }
+
+TEST(DEllipse3d, PlaneIntersection)
+    {
+    // in master units
+    DPoint3d endPoint = DPoint3d::From(100, -13.606797749978981);
+    DEllipse3d arc = DEllipse3d::FromPointsOnArc(DPoint3d::From(0, 10), DPoint3d::From(50, 4.3381494270547023), endPoint);
+    auto curve = ICurvePrimitive::CreateArc(arc);
+    Check::SaveTransformed(*curve);
+
+    DPlane3d plane = DPlane3d::FromOriginAndNormal(100, 0, 0, 1, 0, 0);
+    Check::SaveTransformed(plane, 5);
+
+    // intersection angle is last-digit outside of arc sweep, so this tests the explicit endpoint check
+    bvector<CurveLocationDetailPair> intersections;
+    curve->AppendCurvePlaneIntersections(plane, intersections, 1e-5);
+    for (auto& pair : intersections)
+        {
+        if (Check::True(pair.SameCurveAndFraction(), "intersection is a single point"))
+            Check::SaveTransformedMarker(pair.detailA.point, 0.1);
+        }
+    if (Check::Size(1, intersections.size(), "expect one intersection"))
+        {
+        // observed computed intersection: (99.999999999999972, -13.606797749979004)
+        Check::Near(intersections[0].detailA.point, endPoint, "expect intersection at endpoint");
+        }
+    Check::ClearGeometry("DEllipse3d.PlaneIntersection");
+    }

@@ -1466,6 +1466,25 @@ private:
     PropertyList m_propertyList;
     CachedValue<StandaloneECEnablerPtr> m_defaultStandaloneEnabler;
 
+    //! Finds an available new name for the property by prepending schema name and appending underscores
+    //! @param[in] property The property for which to find an available name
+    //! @param[out] existingProperty If an existing local property is hit which is compatible, it will be returned so it can be used instead.
+    Utf8String FindAvailablePropertyName(ECPropertyCP property, ECPropertyP& existingProperty) const;
+    //! Adds the property to the internal map and vector and raises respective events
+    ECObjectsStatus AddPropertyInternal(ECPropertyP& pProperty, bool resolveConflicts);
+    //! Finds an appropriate name for the pProperty and adds it 
+    ECObjectsStatus AddPropertyResolveConflicts(ECPropertyP& property);
+    //! Checks if property can be added, resolves conflicts and eventually calls AddPropertyInternal
+    //! @param[in] pProperty The property to add
+    //! @param[in] resolveConflicts If true, conflicting properties will be renamed to avoid clashes.
+    //! Renaming follows the following rules:
+    //! - We rename the property by prepending the schema alias and appending an underscore and then check if this still clashes
+    //!   with an existing property.
+    //! - We keep adding underscores until we either find an available name, or hit an existing local property
+    //!   which is compatible, in which case we will delete pProperty and return the existing property instead, and return SUCCESS.
+    //! - For renamed properties, we add the `RenamedPropertiesMapping` custom attribute.
+    //! If the flag is false, handling is more simple, it will just return NamedItemAlreadyExists if a local property already exists,
+    //! and fail if an incompatible base property exists
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     ECObjectsStatus FindPropertyConflicts(ECPropertyCP prop, ECPropertyP &baseProp, Utf8StringR newName, Utf8StringR errorMessage, bool resolveConflicts);
@@ -1508,7 +1527,7 @@ protected:
     ECClass (ECClassType classType, ECSchemaCR schema);
     virtual ~ECClass();
 
-    ECObjectsStatus AddProperty(ECPropertyP pProperty, Utf8StringCR name, bool resolveConflicts = false);
+    ECObjectsStatus AddProperty(ECPropertyP& pProperty, Utf8StringCR name, bool resolveConflicts = false);
     virtual ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
@@ -1547,6 +1566,9 @@ protected:
     virtual bool _Validate() const = 0;
 
     void InvalidateDefaultStandaloneEnabler() const;
+
+    template<typename TProperty>
+    ECObjectsStatus CreatePropertyInternal(TProperty*& ecProperty, Utf8StringCR name, bool resolveConflicts);
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this class is defined in
     ECSchemaR GetSchemaR() {return const_cast<ECSchemaR>(m_schema);}
@@ -1655,22 +1677,22 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a struct property object using the specified class as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the default type of STRING
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the specified primitive type as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the specified ECEnumeration as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a struct array property object using the specified class as the struct array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a primitive property object with the given enumeration type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts = false);
 
     ECOBJECTS_EXPORT size_t GetPropertyCount(bool includeBaseProperties = true) const; //!< Returns the number of ECProperties in this class
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const; //!< Returns an iterable of all the ECProperties defined on this class, including inherited properties.
@@ -1811,7 +1833,7 @@ public:
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true, bool resolveConflicts = false);
 
     //! Returns true if the provided mixin class can be applied to this class.
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.
@@ -2211,7 +2233,7 @@ public:
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true, bool resolveConflicts = false);
 
     //! Returns true if successfully verifies the relationship, otherwise false.
     ECOBJECTS_EXPORT bool Verify() const;
@@ -2278,13 +2300,15 @@ enum class SchemaMatchType
 //=======================================================================================
 struct SchemaKey
 {
-    uint32_t      m_versionRead;
-    uint32_t      m_versionWrite;
-    uint32_t      m_versionMinor;
-    Utf8String    m_schemaName;
-    Utf8String    m_checksum;
+private:
+    uint32_t            m_versionRead;
+    uint32_t            m_versionWrite;
+    uint32_t            m_versionMinor;
+    Utf8String          m_schemaName;
     CachedUtf8String    m_schemaFullName;
+    Utf8String          m_checksum; // This field seems a bit odd. It's only used in ECSchema::ComputeChecksum, which always recalculates it,
 
+public:
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  read    The read portion of the version
@@ -2327,6 +2351,24 @@ struct SchemaKey
 
     //! Least significant version number that increments with read/write compatible additions.
     uint32_t GetVersionMinor() const {return m_versionMinor;}
+
+    Utf8StringCR GetChecksum() const {return m_checksum;}
+
+    //! Sets the read schema version. Identifies the generation of the schema that guarantees that newer schemas can be
+    //! read by older software.
+    void SetVersionRead(uint32_t versionRead) { m_versionRead = versionRead; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    //! Sets the major for write version. This is less significant than the read version. It identifies the generation of the schema
+    //! that guarantees that newer schemas can be written by older software.
+    void SetVersionWrite(uint32_t versionWrite) { m_versionWrite = versionWrite; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    //! Sets the least significant version number that increments with read/write compatible additions.
+    void SetVersionMinor(uint32_t versionMinor) { m_versionMinor = versionMinor; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    //! Sets the schema name.
+    void SetName(Utf8StringCR name) { m_schemaName = name; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    void SetChecksum(Utf8StringCR checksum) { m_checksum = checksum; }
 
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
@@ -3336,7 +3378,7 @@ public:
     //! @param[in]  value   The name of the ECSchema
     //! @returns Success if the name passes validation and is set, ECObjectsStatus::InvalidName otherwise
     ECOBJECTS_EXPORT ECObjectsStatus SetName(Utf8StringCR value);
-    Utf8StringCR GetName() const {return m_key.m_schemaName;} //!< Returns the name of this ECSchema
+    Utf8StringCR GetName() const {return m_key.GetName();} //!< Returns the name of this ECSchema
 
     ECOBJECTS_EXPORT ECObjectsStatus SetAlias(Utf8StringCR value); //!< Sets the alias for this ECSchema
     Utf8StringCR GetAlias() const {return m_alias;} //!< Gets the alias for this ECSchema
@@ -3347,15 +3389,15 @@ public:
 
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR value); //!< Sets the display label for this ECSchema
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const; //!< Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_hasExplicitDisplayLabel ? m_displayLabel : m_key.m_schemaName;} //!< Gets the invariant display label for this ECSchema.
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_hasExplicitDisplayLabel ? m_displayLabel : m_key.GetName();} //!< Gets the invariant display label for this ECSchema.
     bool GetIsDisplayLabelDefined() const {return m_hasExplicitDisplayLabel;} //!< Returns true if the display label has been set explicitly for this schema or not
 
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionRead(uint32_t value); //!< Sets the read version of this schema, check SchemaKey for detailed description.
-    uint32_t GetVersionRead() const {return m_key.m_versionRead;} //!< Gets the read version of this schema, check SchemaKey for detailed description.
+    uint32_t GetVersionRead() const {return m_key.GetVersionRead();} //!< Gets the read version of this schema, check SchemaKey for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionWrite(uint32_t value); //!< Sets the write compatibility version of this schema, check SchemaKey for detailed description.
-    uint32_t GetVersionWrite() const {return m_key.m_versionWrite;} //!< Gets the write compatibility version of this schema, check SchemaKey for detailed description.
+    uint32_t GetVersionWrite() const {return m_key.GetVersionWrite();} //!< Gets the write compatibility version of this schema, check SchemaKey for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionMinor(uint32_t value); //!< Sets the minor version of this schema, check SchemaKey for detailed description.
-    uint32_t GetVersionMinor() const {return m_key.m_versionMinor;} //!< Gets the minor version of this schema, check SchemaKey for detailed description.
+    uint32_t GetVersionMinor() const {return m_key.GetVersionMinor();} //!< Gets the minor version of this schema, check SchemaKey for detailed description.
 
     BeMutex& GetMutex() const { return m_mutex; }
     //! Returns true if the original xml version is greater or equal to the input ECVersion

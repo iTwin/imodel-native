@@ -807,3 +807,367 @@ TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_DoesNotJoinCl
         return query;
         });
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_DoesntApplyDescriptorInstanceFilterOnRelatedPropertyJoins_WithBackwardNavigationPropertyAndBackwardJoin, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECNavigationProperty propertyName="MyA" relationshipName="A_B" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="A_C" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ac" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_DoesntApplyDescriptorInstanceFilterOnRelatedPropertyJoins_WithBackwardNavigationPropertyAndBackwardJoin)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECClassCP classC = GetECClass("C");
+    ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(GetDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(GetDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(GetDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relAC, *a, *c);
+
+    ContentInstancesOfSpecificClassesSpecification spec(1, false, "", { CreateMultiSchemaClass({classB}, false) }, {}, false);
+    spec.AddRelatedProperty(
+        *new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+            {
+            new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Backward),
+            new RelationshipStepSpecification(relAC->GetFullName(), RequiredRelationDirection_Forward),
+            }),
+        { new PropertySpecification("PropC") }, RelationshipMeaning::RelatedInstance));
+
+    Utf8String filterExpression = "this.ECInstanceId > 0 AND 1 >= this.ECInstanceId OR this.ECInstanceId = 123 AND this.ECInstanceId <> 456";
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
+    ValidateQueries(querySet, [&]()
+        {
+        RelatedClass navigationPropertyPathBA(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_NAV_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, RULES_ENGINE_NAV_CLASS_ALIAS(*classA, 0), true));
+        RelatedClassPath relatedPropertyPathBAC
+            {
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, RULES_ENGINE_RELATED_CLASS_ALIAS(*classA, 0), true)),
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true))
+            };
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->AddSelectClass(SelectClassInfo(*classB, "this", false).SetRelatedPropertyPaths({ relatedPropertyPathBAC }).SetNavigationPropertyClasses({ navigationPropertyPathBA }), "");
+        descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *CreatePropertiesField(DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classA, 0), *classB, *classB->GetPropertyP("MyA"))));
+        AddField(*descriptor, *CreateRelatedField(CreateCategory(*classC), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{classB, classA}), classC), *classC, relatedPropertyPathBAC,
+            {
+            CreatePropertiesField(CreateCategory(*classC), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC"))),
+            }));
+
+        Utf8String filterECSql = "[this].[ECInstanceId] > 0 AND 1 >= [this].[ECInstanceId] OR [this].[ECInstanceId] = 123 AND [this].[ECInstanceId] <> 456";
+
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query), "this");
+        query->From(*classB, false, "this");
+        query->Join(navigationPropertyPathBA);
+        query->Join(relatedPropertyPathBAC);
+        query->Where(filterECSql);
+        return query;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_AppliesDescriptorInstanceFilterOnRelatedPropertyJoins_WithBackwardNavigationPropertyAndForwardJoin, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECNavigationProperty propertyName="MyA" relationshipName="A_B" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="bc" polymorphic="true">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesDescriptorInstanceFilterOnRelatedPropertyJoins_WithBackwardNavigationPropertyAndForwardJoin)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECClassCP classC = GetECClass("C");
+    ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetECClass("B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(GetDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(GetDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(GetDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relBC, *b, *c);
+
+    ContentInstancesOfSpecificClassesSpecification spec(1, false, "", { CreateMultiSchemaClass({classA}, false) }, {}, false);
+    spec.AddRelatedProperty(
+        *new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+            {
+            new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+            new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+            }),
+            { new PropertySpecification("PropC") }, RelationshipMeaning::RelatedInstance));
+
+    Utf8String filterExpression = "this.ECInstanceId > 0 AND 1 >= this.ECInstanceId OR this.ECInstanceId = 123 AND this.ECInstanceId <> 456";
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
+    ValidateQueries(querySet, [&]()
+        {
+        RelatedClassPath relatedPropertyPathABC
+            {
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true)),
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), true, SelectClass<ECClass>(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true))
+            };
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false).SetRelatedPropertyPaths({ relatedPropertyPathABC }), "");
+        descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *CreateRelatedField(CreateCategory(*classC), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{classA, classB}), classC), *classC, relatedPropertyPathABC,
+            {
+            CreatePropertiesField(CreateCategory(*classC), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC"))),
+            }));
+
+        Utf8String filterECSql = "[this].[ECInstanceId] > 0 AND 1 >= [this].[ECInstanceId] OR [this].[ECInstanceId] = 123 AND [this].[ECInstanceId] <> 456";
+        Utf8String joinFilterECSql(filterECSql);
+        joinFilterECSql.ReplaceAll("[this].[ECInstanceId]", Utf8PrintfString("[%s].[MyA].[Id]", RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str()).c_str());
+
+        RelatedClassPath filteredRelatedPropertyPathABC(relatedPropertyPathABC);
+        filteredRelatedPropertyPathABC[0].SetTargetInstanceFilter(joinFilterECSql);
+
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
+        query->From(*classA, false, "this");
+        query->Join(filteredRelatedPropertyPathABC);
+        query->Where(filterECSql);
+        return query;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_AppliesDescriptorInstanceFilterOnRelatedPropertyJoins_WithForwardNavigationPropertyAndBackwardJoin, R"*(
+    <ECEntityClass typeName="A">
+        <ECNavigationProperty propertyName="MyB" relationshipName="A_B" direction="Forward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="A_C" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ac" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesDescriptorInstanceFilterOnRelatedPropertyJoins_WithForwardNavigationPropertyAndBackwardJoin)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECClassCP classC = GetECClass("C");
+    ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(GetDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(GetDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(GetDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relAC, *a, *c);
+
+    ContentInstancesOfSpecificClassesSpecification spec(1, false, "", { CreateMultiSchemaClass({classB}, false) }, {}, false);
+    spec.AddRelatedProperty(
+        *new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+            {
+            new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Backward),
+            new RelationshipStepSpecification(relAC->GetFullName(), RequiredRelationDirection_Forward),
+            }),
+            { new PropertySpecification("PropC") }, RelationshipMeaning::RelatedInstance));
+
+    Utf8String filterExpression = "this.ECInstanceId > 0 AND 1 >= this.ECInstanceId OR this.ECInstanceId = 123 AND this.ECInstanceId <> 456";
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
+    ValidateQueries(querySet, [&]()
+        {
+        RelatedClassPath relatedPropertyPathBAC
+            {
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, RULES_ENGINE_RELATED_CLASS_ALIAS(*classA, 0), true)),
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), true, SelectClass<ECClass>(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true))
+            };
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->AddSelectClass(SelectClassInfo(*classB, "this", false).SetRelatedPropertyPaths({ relatedPropertyPathBAC }), "");
+        descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *CreateRelatedField(CreateCategory(*classC), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{classB, classA}), classC), *classC, relatedPropertyPathBAC,
+            {
+            CreatePropertiesField(CreateCategory(*classC), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC"))),
+            }));
+
+        Utf8String filterECSql = "[this].[ECInstanceId] > 0 AND 1 >= [this].[ECInstanceId] OR [this].[ECInstanceId] = 123 AND [this].[ECInstanceId] <> 456";
+        Utf8String joinFilterECSql(filterECSql);
+        joinFilterECSql.ReplaceAll("[this].[ECInstanceId]", Utf8PrintfString("[%s].[MyB].[Id]", RULES_ENGINE_RELATED_CLASS_ALIAS(*classA, 0).c_str()).c_str());
+
+        RelatedClassPath filteredRelatedPropertyPathBAC(relatedPropertyPathBAC);
+        filteredRelatedPropertyPathBAC[0].SetTargetInstanceFilter(joinFilterECSql);
+
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query), "this");
+        query->From(*classB, false, "this");
+        query->Join(filteredRelatedPropertyPathBAC);
+        query->Where(filterECSql);
+        return query;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_DoesntApplyDescriptorInstanceFilterOnRelatedPropertyJoins_WithForwardNavigationPropertyAndForwardJoin, R"*(
+    <ECEntityClass typeName="A">
+        <ECNavigationProperty propertyName="MyB" relationshipName="A_B" direction="Forward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="bc" polymorphic="true">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_DoesntApplyDescriptorInstanceFilterOnRelatedPropertyJoins_WithForwardNavigationPropertyAndForwardJoin)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECClassCP classC = GetECClass("C");
+    ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetECClass("B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(GetDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(GetDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(GetDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(GetDb(), *relBC, *b, *c);
+
+    ContentInstancesOfSpecificClassesSpecification spec(1, false, "", { CreateMultiSchemaClass({classA}, false) }, {}, false);
+    spec.AddRelatedProperty(
+        *new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+            {
+            new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+            new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+            }),
+            { new PropertySpecification("PropC") }, RelationshipMeaning::RelatedInstance));
+
+    Utf8String filterExpression = "this.ECInstanceId > 0 AND 1 >= this.ECInstanceId OR this.ECInstanceId = 123 AND this.ECInstanceId <> 456";
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
+    ValidateQueries(querySet, [&]()
+        {
+        RelatedClass navigationPropertyPathAB(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_NAV_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, RULES_ENGINE_NAV_CLASS_ALIAS(*classB, 0), true));
+        RelatedClassPath relatedPropertyPathABC
+            {
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true)),
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), true, SelectClass<ECClass>(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true))
+            };
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false).SetRelatedPropertyPaths({ relatedPropertyPathABC }).SetNavigationPropertyClasses({ navigationPropertyPathAB }), "");
+        descriptor->SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(filterExpression));
+
+        AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
+        AddField(*descriptor, *CreatePropertiesField(DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classB, 0), *classA, *classA->GetPropertyP("MyB"))));
+        AddField(*descriptor, *CreateRelatedField(CreateCategory(*classC), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{classA, classB}), classC), *classC, relatedPropertyPathABC,
+            {
+            CreatePropertiesField(CreateCategory(*classC), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC"))),
+            }));
+
+        Utf8String filterECSql = "[this].[ECInstanceId] > 0 AND 1 >= [this].[ECInstanceId] OR [this].[ECInstanceId] = 123 AND [this].[ECInstanceId] <> 456";
+        
+        ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
+        query->From(*classA, false, "this");
+        query->Join(navigationPropertyPathAB);
+        query->Join(relatedPropertyPathABC);
+        query->Where(filterECSql);
+        return query;
+        });
+    }

@@ -135,6 +135,39 @@ TEST_F(FontTests, EmbedTTFont) {
     ASSERT_TRUE(dneId == dneId2);
 }
 
+TEST_F(FontTests, LazyCache) {
+  SetupSeedProject();
+
+  auto& dbFonts = m_db->Fonts();
+  EXPECT_EQ(&dbFonts.m_fontDb.m_db, m_db.get());
+
+  auto& fbFont = FontManager::GetFallbackFont(FontType::TrueType);
+  auto invalidId = dbFonts.FindId(FontType::TrueType, "Karla");
+  EXPECT_FALSE(invalidId.IsValid());
+  EXPECT_EQ(&dbFonts.FindFont(invalidId), &fbFont);
+
+  BeFileName ttfFontPath;
+  ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::FindTestData(ttfFontPath, L"Fonts\\Karla-Regular.ttf", __FILE__));
+  TrueTypeFile ttFile(ttfFontPath.GetNameUtf8().c_str(), true);
+  ASSERT_TRUE(ttFile.Embed(dbFonts.m_fontDb));
+  EXPECT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges("Font embedded"));
+
+  // Embedding a font only writes to the be_Props table - it doesn't allocate a FontId in the dgn_Font table.
+  // The core-backend API does both by default.
+  EXPECT_FALSE(dbFonts.FindId(FontType::TrueType, "Karla").IsValid());
+  // GetId (unlike FindId) will allocate a new FontId in the dgn_Font table if one doesn't already exist.
+  // If it allocates a FontId, it also invalidates the font cache.
+  auto fontId = dbFonts.GetId(FontType::TrueType, "Karla");
+  EXPECT_TRUE(fontId.IsValid());
+  EXPECT_EQ(fontId.GetValue(), dbFonts.FindId(FontType::TrueType, "Karla").GetValue());
+
+  // The font cache was invalidated when we allocated a Font Id. It should now find our newly-embedded font.
+  EXPECT_NE(&fbFont, &dbFonts.FindFont(fontId));
+
+  // The fallback font should remain the same after invalidating the cache.
+  EXPECT_EQ(&fbFont, &FontManager::GetFallbackFont(FontType::TrueType));
+}
+
 /**
  * test embedding SHX fonts
  */

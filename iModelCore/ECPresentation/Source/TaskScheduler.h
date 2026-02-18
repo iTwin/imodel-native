@@ -165,8 +165,7 @@ protected:
     virtual folly::Future<folly::Unit> _GetCompletion() const = 0;
     virtual void _Complete() = 0;
     virtual ICancelationTokenCP _GetCancelationToken() const = 0;
-    virtual void _Cancel() = 0;
-    virtual void _Restart() = 0;
+    virtual void _Cancel(bool requestRestart) = 0;
     virtual int _GetPriority() const = 0;
     virtual void _OnBeforeExecute() {}
     virtual void _OnAfterExecute() {}
@@ -181,8 +180,7 @@ public:
     folly::Future<folly::Unit> GetCompletion() const {return _GetCompletion();}
     void Complete() {_Complete();}
     ICancelationTokenCP GetCancelationToken() const {return _GetCancelationToken();}
-    void Cancel() {_Cancel();}
-    void Restart() {_Restart();}
+    void Cancel(bool requestRestart) {_Cancel(requestRestart);}
     int GetPriority() const {return _GetPriority();}
     void OnBeforeExecute() {_OnBeforeExecute();}
     void OnAfterExecute() {_OnAfterExecute();}
@@ -226,6 +224,7 @@ private:
     folly::SharedPromise<folly::Unit> m_completionPromise;
     folly::Executor* m_futureExecutor;
     std::shared_ptr<bool> m_promiseResolved;
+    std::shared_ptr<bool> m_restartRequested;
     IConnectionCPtr m_connection;
 protected:
     BeMutex& m_mutex;
@@ -267,24 +266,10 @@ protected:
     virtual folly::Future<folly::Unit> _GetCompletion() const override {return const_cast<folly::SharedPromise<folly::Unit>&>(m_completionPromise).getFuture();}
     virtual void _Complete() override {m_completionPromise.setValue();}
     virtual ICancelationTokenCP _GetCancelationToken() const override {return m_cancelationToken.get();}
-    virtual void _Cancel() override
+    virtual void _Cancel(bool requestRestart) override
         {
+        (*m_restartRequested) |= requestRestart;
         m_promise.getFuture().cancel();
-        }
-    virtual void _Restart() override
-        {
-        BeMutexHolder lock(m_mutex);
-        if (m_cancelationToken.IsValid())
-            {
-            m_cancelationToken->SetCanceled(true);
-            InterruptConnection();
-            }
-
-        m_completionPromise.getFuture().ensure([this]()
-            {
-            m_cancelationToken = m_cancelationToken.IsValid() ? SimpleCancelationToken::Create() : nullptr;
-            m_completionPromise = folly::SharedPromise<folly::Unit>();
-            });
         }
     virtual std::function<void()> _Execute() override
         {
@@ -338,7 +323,8 @@ public:
         {
         m_diagnosticsScope = Diagnostics::GetCurrentScope().lock();
         m_promiseResolved = std::make_shared<bool>(false);
-        m_promise.setInterruptHandler([&, promiseResolved = m_promiseResolved](folly::exception_wrapper const& e)
+        m_restartRequested = std::make_shared<bool>(false);
+        m_promise.setInterruptHandler([&, promiseResolved = m_promiseResolved, restartRequested = m_restartRequested](folly::exception_wrapper const& e)
             {
             BeMutexHolder lock(mutex);
             if (*promiseResolved)
@@ -359,7 +345,7 @@ public:
                 {
                 // this is only needed to handle the case of API consumer calling `folly::Future::cancel`, in
                 // which case the interrupt handler is called with `folly::FutureCancellation`.
-                Resolve(folly::Try<TResult>(CancellationException()));
+                Resolve(folly::Try<TResult>(CancellationException(*restartRequested)));
                 return;
                 }
             Resolve(folly::Try<TResult>(e));
@@ -442,7 +428,7 @@ protected:
     virtual void _Add(IECPresentationTask&) = 0;
     virtual IECPresentationTaskPtr _Pop(IECPresentationTask::Predicate const&) = 0;
     virtual bvector<IECPresentationTaskPtr> _Get(IECPresentationTask::Predicate const&) const = 0;
-    virtual TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&) = 0;
+    virtual TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&, bool requestRestart) = 0;
 public:
     virtual ~IECPresentationTasksQueue() {}
     BeMutex& GetMutex() const {return _GetMutex();}
@@ -450,7 +436,7 @@ public:
     void Add(IECPresentationTask& task) {_Add(task);}
     IECPresentationTaskPtr Pop(IECPresentationTask::Predicate const& filter = nullptr) {return _Pop(filter);}
     bvector<IECPresentationTaskPtr> Get(IECPresentationTask::Predicate const& filter = nullptr) const {return _Get(filter);}
-    TasksCancelationResult Cancel(IECPresentationTask::Predicate const& pred = [](IECPresentationTaskCR){return true;}) {return _Cancel(pred);}
+    TasksCancelationResult Cancel(IECPresentationTask::Predicate const& pred = nullptr, bool requestRestart = false) {return _Cancel(pred, requestRestart);}
 };
 
 /*=================================================================================**//**
@@ -467,7 +453,7 @@ protected:
     ECPRESENTATION_EXPORT virtual void _Add(IECPresentationTask& task) override;
     ECPRESENTATION_EXPORT virtual IECPresentationTaskPtr _Pop(IECPresentationTask::Predicate const&) override;
     ECPRESENTATION_EXPORT virtual bvector<IECPresentationTaskPtr> _Get(IECPresentationTask::Predicate const&) const override;
-    ECPRESENTATION_EXPORT virtual TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&) override;
+    ECPRESENTATION_EXPORT virtual TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&, bool requestRestart) override;
 };
 
 //=======================================================================================
@@ -499,8 +485,7 @@ struct IECPresentationTasksScheduler
 protected:
     virtual BeMutex& _GetMutex() const = 0;
     virtual void _Schedule(IECPresentationTaskR) = 0;
-    virtual TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&) = 0;
-    virtual TasksCancelationResult _Restart(IECPresentationTask::Predicate const&) = 0;
+    virtual TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&, bool requestRestart) = 0;
     virtual void _Block(IECPresentationTasksBlocker const*) = 0;
     virtual void _Unblock(IECPresentationTasksBlocker const*) = 0;
     virtual folly::Future<folly::Unit> _GetAllTasksCompletion(IECPresentationTask::Predicate const&) const = 0;
@@ -508,8 +493,7 @@ public:
     virtual ~IECPresentationTasksScheduler() {}
     BeMutex& GetMutex() const { return _GetMutex(); }
     void Schedule(IECPresentationTaskR task) {_Schedule(task);}
-    TasksCancelationResult Cancel(IECPresentationTask::Predicate const& pred = nullptr) {return _Cancel(pred);}
-    TasksCancelationResult Restart(IECPresentationTask::Predicate const& pred = nullptr) {return _Restart(pred);}
+    TasksCancelationResult Cancel(IECPresentationTask::Predicate const& pred = nullptr, bool requestRestart = false) {return _Cancel(pred, requestRestart);}
     void Block(IECPresentationTasksBlocker const* blocker) {_Block(blocker);}
     void Unblock(IECPresentationTasksBlocker const* blocker) {_Unblock(blocker);}
     folly::Future<folly::Unit> GetAllTasksCompletion(IECPresentationTask::Predicate const& pred = nullptr) const {return _GetAllTasksCompletion(pred);}
@@ -538,8 +522,7 @@ private:
 protected:
     BeMutex& _GetMutex() const override {return m_queue->GetMutex();}
     ECPRESENTATION_EXPORT void _Schedule(IECPresentationTaskR) override;
-    ECPRESENTATION_EXPORT TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&) override;
-    ECPRESENTATION_EXPORT TasksCancelationResult _Restart(IECPresentationTask::Predicate const&) override;
+    ECPRESENTATION_EXPORT TasksCancelationResult _Cancel(IECPresentationTask::Predicate const&, bool requestRestart) override;
     ECPRESENTATION_EXPORT void _Block(IECPresentationTasksBlocker const*) override;
     ECPRESENTATION_EXPORT void _Unblock(IECPresentationTasksBlocker const*) override;
     ECPRESENTATION_EXPORT folly::Future<folly::Unit> _GetAllTasksCompletion(IECPresentationTask::Predicate const&) const override;
@@ -655,8 +638,7 @@ public:
         params.Apply(*task);
         return Execute<TResult>(*task);
         }
-    TasksCancelationResult Cancel(IECPresentationTask::Predicate const& pred) {return m_scheduler->Cancel(pred);}
-    TasksCancelationResult Restart(IECPresentationTask::Predicate const& pred) {return m_scheduler->Restart(pred);}
+    TasksCancelationResult Cancel(IECPresentationTask::Predicate const& pred, bool requestRestart = false) {return m_scheduler->Cancel(pred, requestRestart);}
     RefCountedPtr<ECPresentationTasksBlocker> Block(IECPresentationTask::Predicate pred) {return ECPresentationTasksBlocker::Create(*m_scheduler, pred);}
     folly::Future<folly::Unit> GetAllTasksCompletion(IECPresentationTask::Predicate const& pred = nullptr) const {return m_scheduler->GetAllTasksCompletion(pred);}
     unsigned GetThreadsCount() const {return m_threadsCount;}

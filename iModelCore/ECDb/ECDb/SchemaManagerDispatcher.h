@@ -235,6 +235,7 @@ public:
     SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
     SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
+    BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges) const;
     };
 
 //=======================================================================================

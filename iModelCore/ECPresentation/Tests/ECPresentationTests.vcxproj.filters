@@ -383,6 +383,9 @@
       <Filter>Integration\Hierarchies</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\Integration\Content\Content_WithExclusiveIncludePaths.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_Labels.cpp">
+      <Filter>Integration\Content</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\Helpers\ECDbTestProject.h">

@@ -1,0 +1,22 @@
+{
+  "scripts": {
+    "dhcp_server": "node dhcp_server.js",
+    "http_server": "npx http-server -p 8080"
+  },
+  "packageManager": "yarn@4.5.0",
+  "dependencies": {
+    "dhcp": "https://github.com/nmoinvaz/node-dhcp.git",
+    "http-server": "^14.1.1",
+    "pm2": "^6.0.8"
+  },
+  "resolutions": {
+    "chokidar": "^3.6.0",
+    "follow-redirects": "^1.15.9",
+    "ip": "^2.0.1",
+    "proxy-agent": "^6.4.0",
+    "semver": "^7.5.8",
+    "system-information": "^5.23.5",
+    "tar": "^6.2.1",
+    "ws": "^7.5.10"
+  }
+}

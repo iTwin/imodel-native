@@ -164,7 +164,7 @@ private:
 
     virtual Utf8StringCR _GetId() const = 0;
     virtual void _OnAliasChanged() = 0;
-    virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const = 0;
+    virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const = 0;
     virtual PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const = 0;
 protected:
     explicit RangeClassRefExp (Type type, PolymorphicInfo polymorphicInfo) : ClassRefExp (type), m_isPolymorphicConstraint(polymorphicInfo) {}
@@ -176,7 +176,7 @@ public:
     Utf8StringCR GetAlias() const { return m_alias;}
     PolymorphicInfo const& GetPolymorphicInfo() const { return m_isPolymorphicConstraint;}
 
-    void ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const { _ExpandSelectAsterisk(expandedSelectClauseItemList, ctx); }
+    void ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const { _ExpandSelectAsterisk(expandedSelectClauseItemList, ctx); }
     PropertyMatchResult FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const { return _FindProperty(ctx, propertyPath, options); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias; _OnAliasChanged();}
    };
@@ -214,7 +214,7 @@ private:
     virtual void _OnAliasChanged() override {}
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
-    void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+    void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
     void _ToJson(BeJsValue, JsonFormat const&) const override;
 
@@ -246,7 +246,7 @@ private:
     virtual void _OnAliasChanged() override {}
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual Utf8StringCR _GetId() const override;
-    virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+    virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
     virtual PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
     void _ToJson(BeJsValue, JsonFormat const&) const override;

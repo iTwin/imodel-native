@@ -186,6 +186,16 @@ ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool DerivedPropertyExp::OriginateInACommonTableBlockWithNoColumns() const {
+    Exp const* exp = this->FindParent(Exp::Type::CommonTableBlock);
+    if(exp == nullptr)
+        return false;
+    
+    return exp->GetAs<CommonTableBlockExp>().GetColumns().size() == 0;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool DerivedPropertyExp::IsWildCard() const {
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         return GetExpression()->GetAsCP<PropertyNameExp>()->IsWildCard();
@@ -761,11 +771,11 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(ECSqlParseContext const& ctx, DerivedPropertyExp const& asteriskExp, std::vector<RangeClassInfo> const& rangeClassRefs)
     {
-    std::vector<std::unique_ptr<DerivedPropertyExp>> derivedPropExpList;
+    std::vector<std::unique_ptr<Exp>> derivedPropExpList;
     for (RangeClassInfo const& classRef : rangeClassRefs)
         classRef.GetExp().ExpandSelectAsterisk(derivedPropExpList, ctx);
 
-    if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
+    if (!ReplaceChild(asteriskExp, derivedPropExpList))
         {
         BeAssert(false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
         return ERROR;
@@ -919,7 +929,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 if (propertyNameExp->GetResolvedPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
-                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
+                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlockWithColumns() && propertyNameExp->GetPropertyMap() != nullptr) {
                         if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
                             PropertyPath restOfAccessString = effectivePath.Skip(1);
                             auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
@@ -1209,7 +1219,7 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP ali
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
+void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {

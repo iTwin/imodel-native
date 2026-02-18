@@ -1518,7 +1518,7 @@ TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
 
     // compare against legacy way of calculating file size (that does not support names >= MAX_PATH)
     struct _stati64 status;
-    int e = _wstati64 (symLinkFileName.GetName(), &status);
+    int e = _wstati64 (targetFileName.GetName(), &status);
 
     ASSERT_TRUE (-1 != e);
     ASSERT_EQ (fileSize, status.st_size);

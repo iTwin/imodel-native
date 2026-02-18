@@ -407,7 +407,7 @@ void ECPresentationTasksScheduler::ExecuteTask(IECPresentationTaskR task)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TContainer>
-static void CancelTasks(bset<IECPresentationTaskCPtr>& matchingTasks, TContainer& tasks, IECPresentationTask::Predicate const& pred, bool complete)
+static void CancelTasks(bset<IECPresentationTaskCPtr>& matchingTasks, TContainer& tasks, IECPresentationTask::Predicate const& pred, bool complete, bool requestRestart)
     {
     bset<IECPresentationTaskCPtr> tasksToRemove;
     for (IECPresentationTaskPtr const& task : tasks)
@@ -418,7 +418,7 @@ static void CancelTasks(bset<IECPresentationTaskCPtr>& matchingTasks, TContainer
             if (task->GetCancelationToken() != nullptr)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_TRACE, Utf8PrintfString("Cancelling task `%s`", task->GetId().ToString().c_str()));
-                task->Cancel();
+                task->Cancel(requestRestart);
                 if (complete)
                     {
                     task->Complete();
@@ -438,17 +438,17 @@ static void CancelTasks(bset<IECPresentationTaskCPtr>& matchingTasks, TContainer
         }
     if (!tasksToRemove.empty())
         {
-        tasks.erase(std::remove_if(tasks.begin(), tasks.end(), [&tasksToRemove](IECPresentationTaskPtr const& task)
+        ContainerHelpers::RemoveIf(tasks, [&tasksToRemove](IECPresentationTaskPtr const& task)
             {
             return tasksToRemove.end() != tasksToRemove.find(task);
-            }), tasks.end());
+            });
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TasksCancelationResult ECPresentationTasksScheduler::_Cancel(IECPresentationTask::Predicate const& pred)
+TasksCancelationResult ECPresentationTasksScheduler::_Cancel(IECPresentationTask::Predicate const& pred, bool requestRestart)
     {
     auto scope = Diagnostics::Scope::Create("Tasks scheduler: cancel tasks");
     BeMutexHolder lock(GetMutex());
@@ -457,7 +457,7 @@ TasksCancelationResult ECPresentationTasksScheduler::_Cancel(IECPresentationTask
     // cancel queued tasks
     {
     auto queuedTasksScope = Diagnostics::Scope::Create("Cancel queued tasks");
-    TasksCancelationResult queueCancelationResult = m_queue->Cancel(pred);
+    TasksCancelationResult queueCancelationResult = m_queue->Cancel(pred, requestRestart);
     for (IECPresentationTaskCPtr const& task : queueCancelationResult.GetTasks())
         matchingTasks.insert(task);
     }
@@ -465,43 +465,16 @@ TasksCancelationResult ECPresentationTasksScheduler::_Cancel(IECPresentationTask
     // cancel pending tasks
     {
     auto pendingTasksScope = Diagnostics::Scope::Create("Cancel pending tasks");
-    CancelTasks(matchingTasks, m_pendingTasks, pred, true);
+    CancelTasks(matchingTasks, m_pendingTasks, pred, true, requestRestart);
     }
 
     // cancel running tasks
     {
     auto runningTasksScope = Diagnostics::Scope::Create("Cancel running tasks");
-    CancelTasks(matchingTasks, m_runningTasks, pred, false);
+    CancelTasks(matchingTasks, m_runningTasks, pred, false, requestRestart);
     }
 
     return TasksCancelationResult(matchingTasks);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TasksCancelationResult ECPresentationTasksScheduler::_Restart(IECPresentationTask::Predicate const& pred)
-    {
-    auto scope = Diagnostics::Scope::Create("Tasks scheduler: restart tasks");
-    BeMutexHolder lock(GetMutex());
-    bset<IECPresentationTaskCPtr> matchingTasks;
-
-    // restart running tasks
-    bvector<IECPresentationTaskPtr> restartedTasks;
-    for (IECPresentationTaskPtr const& task : m_runningTasks)
-        {
-        if (!pred || pred(*task))
-            {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Tasks, LOG_TRACE, Utf8PrintfString("Restarting task `%s`", task->GetId().ToString().c_str()));
-            task->Restart();
-            restartedTasks.push_back(task);
-            }
-        }
-
-    // put all restarted tasks to pending tasks list
-    ContainerHelpers::Push(m_pendingTasks, restartedTasks);
-
-    return TasksCancelationResult(ContainerHelpers::TransformContainer<bset<IECPresentationTaskCPtr>>(restartedTasks));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -621,7 +594,7 @@ bvector<IECPresentationTaskPtr> ECPresentationTasksQueue::_Get(IECPresentationTa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TasksCancelationResult ECPresentationTasksQueue::_Cancel(IECPresentationTask::Predicate const& pred)
+TasksCancelationResult ECPresentationTasksQueue::_Cancel(IECPresentationTask::Predicate const& pred, bool requestRestart)
     {
     auto scope = Diagnostics::Scope::Create("Tasks queue: cancel");
     BeMutexHolder lock(m_mutex);
@@ -629,7 +602,7 @@ TasksCancelationResult ECPresentationTasksQueue::_Cancel(IECPresentationTask::Pr
     bvector<int> emptyBuckets;
     for (auto& bucket : m_prioritizedQueue)
         {
-        CancelTasks(matchingTasks, bucket.second, pred, true);
+        CancelTasks(matchingTasks, bucket.second, pred, true, requestRestart);
         if (bucket.second.empty())
             emptyBuckets.push_back(bucket.first);
         }

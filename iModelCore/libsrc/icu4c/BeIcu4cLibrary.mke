@@ -4,6 +4,7 @@
 #---------------------------------------------------------------------------------------------
 # Ignore warnings in third-party code.
 IS_THIRD_PARTY_LIBRARY              = 1
+BUILD_WITH_C20=1
 HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 %if ($[@findstring GCC, $(BUILD_TOOLSET)] != " ") || ($[@findstring LINUX_CLANG, $(BUILD_TOOLSET)] != " ")
     # Export/make visible all functions in this library.

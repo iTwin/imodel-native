@@ -1,7 +1,6 @@
-
 /* pngstest.c
  *
- * Copyright (c) 2021 Cosmin Truta
+ * Copyright (c) 2021-2026 Cosmin Truta
  * Copyright (c) 2013-2017 John Cunningham Bowler
  *
  * This code is released under the libpng license.
@@ -38,7 +37,7 @@
 /* 1.6.1 added support for the configure test harness, which uses 77 to indicate
  * a skipped test, in earlier versions we need to succeed on a skipped test, so:
  */
-#if PNG_LIBPNG_VER >= 10601 && defined(HAVE_CONFIG_H)
+#if defined(HAVE_CONFIG_H)
 #  define SKIP 77
 #else
 #  define SKIP 0
@@ -84,7 +83,7 @@ static char tmpf[23] = "TMP";
  * Hill, "The Art of Electronics".
  */
 static void
-make_random_bytes(png_uint_32* seed, void* pv, size_t size)
+make_random_bytes(png_uint_32 *seed, void *pv, size_t size)
 {
    png_uint_32 u0 = seed[0], u1 = seed[1];
    png_bytep bytes = voidcast(png_bytep, pv);
@@ -476,7 +475,8 @@ typedef struct
 }
 format_list;
 
-static void format_init(format_list *pf)
+static void
+format_init(format_list *pf)
 {
    int i;
    for (i=0; i<FORMAT_SET_COUNT; ++i)
@@ -484,7 +484,8 @@ static void format_init(format_list *pf)
 }
 
 #if 0 /* currently unused */
-static void format_clear(format_list *pf)
+static void
+format_clear(format_list *pf)
 {
    int i;
    for (i=0; i<FORMAT_SET_COUNT; ++i)
@@ -492,7 +493,8 @@ static void format_clear(format_list *pf)
 }
 #endif
 
-static int format_is_initial(format_list *pf)
+static int
+format_is_initial(format_list *pf)
 {
    int i;
    for (i=0; i<FORMAT_SET_COUNT; ++i)
@@ -502,7 +504,8 @@ static int format_is_initial(format_list *pf)
    return 1;
 }
 
-static int format_set(format_list *pf, png_uint_32 format)
+static int
+format_set(format_list *pf, png_uint_32 format)
 {
    if (format < FORMAT_COUNT)
       return pf->bits[format >> 5] |= ((png_uint_32)1) << (format & 31);
@@ -511,7 +514,8 @@ static int format_set(format_list *pf, png_uint_32 format)
 }
 
 #if 0 /* currently unused */
-static int format_unset(format_list *pf, png_uint_32 format)
+static int
+format_unset(format_list *pf, png_uint_32 format)
 {
    if (format < FORMAT_COUNT)
       return pf->bits[format >> 5] &= ~((png_uint_32)1) << (format & 31);
@@ -520,13 +524,15 @@ static int format_unset(format_list *pf, png_uint_32 format)
 }
 #endif
 
-static int format_isset(format_list *pf, png_uint_32 format)
+static int
+format_isset(format_list *pf, png_uint_32 format)
 {
    return format < FORMAT_COUNT &&
       (pf->bits[format >> 5] & (((png_uint_32)1) << (format & 31))) != 0;
 }
 
-static void format_default(format_list *pf, int redundant)
+static void
+format_default(format_list *pf, int redundant)
 {
    if (redundant)
    {
@@ -596,7 +602,8 @@ newimage(Image *image)
    memset(image, 0, sizeof *image);
 }
 
-/* Reset the image to be read again - only needs to rewind the FILE* at present.
+/* Reset the image to be read again - only needs to rewind the FILE object at
+ * present.
  */
 static void
 resetimage(Image *image)
@@ -649,7 +656,8 @@ freeimage(Image *image)
 /* This is actually a re-initializer; allows an image structure to be re-used by
  * freeing everything that relates to an old image.
  */
-static void initimage(Image *image, png_uint_32 opts, const char *file_name,
+static void
+initimage(Image *image, png_uint_32 opts, const char *file_name,
    int stride_extra)
 {
    freeimage(image);
@@ -1151,7 +1159,7 @@ get_pixel(png_uint_32 format))(Pixel *p, png_const_voidp pb)
  *
  * 2) Remove color by mapping to grayscale.  (Grayscale to color is a no-op.)
  *
- * 3) Convert between 8-bit and 16-bit components.  (Both directtions are
+ * 3) Convert between 8-bit and 16-bit components.  (Both directions are
  *    relevant.)
  *
  * This gives the following base format conversion matrix:
@@ -3500,7 +3508,7 @@ main(int argc, char **argv)
    int retval = 0;
    int c;
 
-#if PNG_LIBPNG_VER >= 10700
+#if PNG_LIBPNG_VER == 10700
       /* This error should not exist in 1.7 or later: */
       opts |= GBG_ERROR;
 #endif
@@ -3571,6 +3579,33 @@ main(int argc, char **argv)
          opts |= NO_RESEED;
       else if (strcmp(arg, "--fault-gbg-warning") == 0)
          opts |= GBG_ERROR;
+      else if (strcmp(arg, "--stride-extra") == 0)
+      {
+         if (c+1 < argc)
+         {
+            char *ep;
+            unsigned long val = strtoul(argv[++c], &ep, 0);
+
+            if (ep > argv[c] && *ep == 0 && val <= 65535)
+               stride_extra = (int)val;
+
+            else
+            {
+               fflush(stdout);
+               fprintf(stderr, "%s: bad argument for --stride-extra: %s\n",
+                  argv[0], argv[c]);
+               exit(99);
+            }
+         }
+
+         else
+         {
+            fflush(stdout);
+            fprintf(stderr, "%s: missing argument for --stride-extra\n",
+               argv[0]);
+            exit(99);
+         }
+      }
       else if (strcmp(arg, "--tmpfile") == 0)
       {
          if (c+1 < argc)
@@ -3823,7 +3858,8 @@ main(int argc, char **argv)
 }
 
 #else /* !PNG_SIMPLIFIED_READ_SUPPORTED */
-int main(void)
+int
+main(void)
 {
    fprintf(stderr, "pngstest: no read support in libpng, test skipped\n");
    /* So the test is skipped: */

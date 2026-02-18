@@ -24,20 +24,18 @@ MSBsplineSurfacePtr MSBsplineSurface::CreatePtr ()           {return new RefCoun
 
 MSBsplineSurfacePtr MSBsplineSurface::CreateCopyTransformed (TransformCR transform) const
     {
-    MSBsplineSurfacePtr result = MSBsplineSurface::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineSurfacePtr result = MSBsplineSurface::CreatePtr();
+    if (SUCCESS == bspsurf_transformSurface(result.get(), this, &transform))
         return result;
-    bspsurf_transformSurface (result.get (), this, &transform);
-    return result;
+    return nullptr;
     }
 
 MSBsplineSurfacePtr MSBsplineSurface::Clone () const
     {
-    MSBsplineSurfacePtr result = MSBsplineSurface::CreatePtr ();
-    if (!result.IsValid ())
+    MSBsplineSurfacePtr result = MSBsplineSurface::CreatePtr();
+    if (SUCCESS == bspsurf_copySurface(result.get(), this))
         return result;
-    bspsurf_copySurface (result.get (), this);
-    return result;
+    return nullptr;
     }
 
 

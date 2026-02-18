@@ -3328,6 +3328,9 @@ public:
     //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.
     BE_SQLITE_EXPORT DbResult Vacuum(int newPageSizeInBytes = 0);
 
+    //! Run ANALYZE command to gather statistics about tables and indices.
+    BE_SQLITE_EXPORT DbResult Analyze();
+
     BE_SQLITE_EXPORT DbResult RestartDefaultTxn();
 
     //! DO NOT call this under normal circumstances. It is for obscure cases where you are opening an untrusted file (i.e. NOT from the hub).

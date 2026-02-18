@@ -6783,7 +6783,7 @@ static int bcvReadonlyVtabFilter(
     }else{
       pCur->iVersion = BCV_VTAB_VERSION;
       ENTER_VFS_MUTEX; {
-        pCur->data.aData = bcvDatabaseVtabData(&rc, &pFile->pFs->c, 
+        pCur->data.aData = bcvDatabaseVtabData(&rc, &pFs->c, 
             pTab->zMod, zCont, zDb, 
             bcvLocalClientCount,
             colUsed, &pCur->data.nData, &pCur->iVersion

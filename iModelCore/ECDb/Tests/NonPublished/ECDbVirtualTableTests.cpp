@@ -197,4 +197,78 @@ TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
     }
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbVirtualTableTests, TokenizeModuleTestWithMultipleVTabs) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    (new TokenizeModule(m_ecdb))->Register();
+    if ("multiple vtabs should work") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.token, b.token FROM test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') a, test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') b"));
+        auto expected = std::vector<std::string>{"The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"};
+        int i = -1;
+        int j = 0;
+        int rowCnt = 0;
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            if(j % 9 == 0) 
+            {
+                i++; j=0;
+            } 
+            std::string expectedFirstValue = expected[i];
+            std::string expectedSecondValue = expected[j++];
+            ASSERT_STREQ(expectedFirstValue.c_str(), stmt.GetValueText(0));
+            ASSERT_STREQ(expectedSecondValue.c_str(), stmt.GetValueText(1));
+            rowCnt++;
+        }
+        ASSERT_EQ(rowCnt, 81);
+
+    }
+    if ("multiple vtabs with column alias should work") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a.token x, b.token y FROM test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') a, test.tokenize_text('The quick brown fox jumps over the lazy dog', ' ') b"));
+        auto expected = std::vector<std::string>{"The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"};
+        int i = -1;
+        int j = 0;
+        int rowCnt = 0;
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            if(j % 9 == 0) 
+            {
+                i++; j=0;
+            } 
+            std::string expectedFirstValue = expected[i];
+            std::string expectedSecondValue = expected[j++];
+            ASSERT_STREQ(expectedFirstValue.c_str(), stmt.GetValueText(0));
+            ASSERT_STREQ(expectedSecondValue.c_str(), stmt.GetValueText(1));
+            rowCnt++;
+        }
+        ASSERT_EQ(rowCnt, 81);
+
+        ASSERT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    }
+    if ("multiple json_each vtabs should work") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM json_each('[1,2,3,4,5]') a, json_each('[1,2,3,4,5]') b"));
+        auto expected = std::vector<std::string>{"1", "2", "3", "4", "5"};
+        int i = -1;
+        int j = 0;
+        int rowCnt = 0;
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            if(j % 5 == 0) 
+            {
+                i++; j=0;
+            } 
+            std::string expectedFirstValue = expected[i];
+            std::string expectedSecondValue = expected[j++];
+            ASSERT_STREQ(expectedFirstValue.c_str(), stmt.GetValueText(1)); // value column
+            ASSERT_STREQ(expectedSecondValue.c_str(), stmt.GetValueText(8)); // value column
+            rowCnt++;
+        }
+        ASSERT_EQ(rowCnt, 25);
+        
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

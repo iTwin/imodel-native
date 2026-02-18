@@ -1229,6 +1229,8 @@ TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
     ECSchemaPtr referencedSchema2;
     ECSchema::CreateSchema(referencedSchema2, "RefSchema", "ref", 1, 1, 0);
 
+    DisableAssertions _notUsed; // The attempt produces an assertion which we need to ignore
+
     m_firstSchema->AddReferencedSchema(*referencedSchema1);
     m_firstSchema->AddReferencedSchema(*referencedSchema2);
 
@@ -1239,7 +1241,6 @@ TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
 
-    DisableAssertions _notUsed; // The attempt produces an assertion which we need to ignore
     //should fail since old schema has multiple references to RefSchema
     ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, first, second));
 

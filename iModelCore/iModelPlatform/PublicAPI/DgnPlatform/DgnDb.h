@@ -456,6 +456,12 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteLinkTableRelationship(BeSQLite::EC::ECInstanceKeyCR key);
 
+    //! Deletes multiple link table ECRelationships
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
+    //! @param keys Set of ECInstanceKeys identifying the ECRelationship instances to delete
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, const DgnElementIdSet& relationshipInstanceIds);
+
     //! Gets a cached and prepared ECSqlStatement that can be used only for select.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql, bool logPrepareErrors = true) const;
     //! Gets a cached and prepared ECSqlStatement that can be used to modify the Db. This should be used only for aspects.

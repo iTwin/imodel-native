@@ -156,9 +156,10 @@ struct ECSchemaHelper : NonCopyableClass
         ConstRef<bvector<RelatedClassPath>> m_relatedInstancePaths;
         ECClassUseCounter& m_relationshipsUseCounter;
         bool m_countTargets;
+        ICancelationTokenCP m_cancellationToken;
 
-        RelationshipPathsRequestParams(SelectClassWithExcludes<ECClass> source, ConstRef<bvector<PathSpecification>> paths, InstanceFilteringParams const* sourceInstanceFilter, ConstRef<bvector<RelatedClassPath>> relatedInstancePaths, ECClassUseCounter& relationshipsUseCounter, bool countTargets)
-            : m_source(source), m_paths(paths), m_sourceInstanceFilter(sourceInstanceFilter), m_relatedInstancePaths(relatedInstancePaths), m_relationshipsUseCounter(relationshipsUseCounter), m_countTargets(countTargets)
+        RelationshipPathsRequestParams(SelectClassWithExcludes<ECClass> source, ConstRef<bvector<PathSpecification>> paths, InstanceFilteringParams const* sourceInstanceFilter, ConstRef<bvector<RelatedClassPath>> relatedInstancePaths, ECClassUseCounter& relationshipsUseCounter, bool countTargets, ICancelationTokenCP cancellationToken)
+            : m_source(source), m_paths(paths), m_sourceInstanceFilter(sourceInstanceFilter), m_relatedInstancePaths(relatedInstancePaths), m_relationshipsUseCounter(relationshipsUseCounter), m_countTargets(countTargets), m_cancellationToken(cancellationToken)
             {}
         };
     struct RelationshipPathsResponse
@@ -250,7 +251,7 @@ public:
     //!
     //! Used by: ContentSpecificationsHandler, NavigationQueryBuilder to find related instance paths
     ECPRESENTATION_EXPORT bmap<Utf8String, bvector<RelatedClassPath>> GetRelatedInstancePaths(ECClassCR selectClass,
-        RelatedInstanceSpecificationList const&, ECClassUseCounter&) const;
+        RelatedInstanceSpecificationList const&, ECClassUseCounter&, ICancelationTokenCP) const;
 
     //! Returns ExtendedTypeName if property has it, otherwise returns TypeName.
     ECPRESENTATION_EXPORT static Utf8String GetTypeName(ECPropertyCR property);

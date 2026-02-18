@@ -183,22 +183,7 @@ struct HierarchyPerformanceTests : RulesEngineSingleProjectTests
         }
 
     void IncrementallyGetNodes(Utf8CP rulesetId, NavNodeCP parentNode, bool usePaging);
-    bvector<ECClassInstanceKey> GetGeometricElementKeys();
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECClassInstanceKey> HierarchyPerformanceTests::GetGeometricElementKeys()
-    {
-    // getting content for all geometric elements in the dataset
-    bvector<ECClassInstanceKey> keys;
-    ECSqlStatement stmt;
-    stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
-    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
-        keys.push_back(ECClassInstanceKey(m_project.Schemas().GetClass(stmt.GetValueId<ECClassId>(0)), stmt.GetValueId<ECInstanceId>(1)));
-    return keys;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest
@@ -294,10 +279,11 @@ TEST_F(HierarchyUpdatePerformanceTests, UpdateGeometricElementInHierarchy)
     {
     IncrementallyGetNodes("Items", nullptr, false);
 
-    bvector<ECClassInstanceKey> keys = GetGeometricElementKeys();
+    auto keys = PresentationManagerTestsHelper::GetGeometricElementKeys();
 
     ECInstanceId id = keys[0].GetId();
     ECClassCP ecClass = keys[0].GetClass();
+
     Timer _time;
     m_eventSource->NotifyECInstanceUpdated(m_project, ECClassInstanceKey(*ecClass, id));
     _time.Finish();

@@ -3,7 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode, using } from "@itwin/core-bentley";
-import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
+import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
@@ -45,6 +45,7 @@ describe("basic tests", () => {
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
   });
   it("resolveInstanceKey", () => {
+    // Test resolving by partialKey
     const r0 = dgndb.resolveInstanceKey({
       partialKey: {
         id: "0x1b",
@@ -53,6 +54,124 @@ describe("basic tests", () => {
     });
     assert.equal(r0.id, "0x1b", "id should be 0x1b");
     assert.equal(r0.classFullName, "BisCore:Subject", "className should be BisCore:Subject");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        baseClassName: "BisCore:Element"
+      } as any // missing id
+    } as any)).to.throw("missing id");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x1b"
+      } as any // missing baseClassName
+    } as any)).to.throw("missing baseClassName");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "invalid",
+        baseClassName: "BisCore:Element"
+      }
+    })).to.throw("invalid id");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x1b",
+        baseClassName: ""
+      }
+    })).to.throw("invalid baseClassName");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x999999",
+        baseClassName: "BisCore:Element"
+      }
+    })).to.throw("failed to resolve instance key");
+
+    // Test resolving by federationGuid
+    const elemStmt = new iModelJsNative.ECSqlStatement();
+    elemStmt.prepare(dgndb, "SELECT ECInstanceId, FederationGuid FROM bis.Element WHERE FederationGuid IS NOT NULL LIMIT 1");
+    if (elemStmt.step() === DbResult.BE_SQLITE_ROW) {
+      const elementId = elemStmt.getValue(0).getId();
+      const federationGuid = elemStmt.getValue(1).getGuid();
+      
+      const r2 = dgndb.resolveInstanceKey({
+        federationGuid
+      });
+      assert.equal(r2.id, elementId, "resolved element should match federation GUID query");
+      assert.isString(r2.classFullName, "classFullName should be a string");
+    }
+    elemStmt.dispose();
+
+    expect(() => dgndb.resolveInstanceKey({
+      federationGuid: "invalid-guid"
+    })).to.throw("failed to resolve element from federationGuid");
+
+    expect(() => dgndb.resolveInstanceKey({
+      federationGuid: "00000000-0000-0000-0000-000000000000"
+    })).to.throw("failed to resolve element from federationGuid");
+
+    // Test resolving by code
+    const codeStmt = new iModelJsNative.ECSqlStatement();
+    codeStmt.prepare(dgndb, "SELECT ECInstanceId, CodeSpec.Id, CodeScope.Id, CodeValue FROM bis.Element WHERE CodeValue IS NOT NULL AND CodeValue != '' LIMIT 1");
+    if (codeStmt.step() === DbResult.BE_SQLITE_ROW) {
+      const elementId = codeStmt.getValue(0).getId();
+      const specId = codeStmt.getValue(1).getId();
+      const scopeId = codeStmt.getValue(2).getId();
+      const codeValue = codeStmt.getValue(3).getString();
+      
+      const r3 = dgndb.resolveInstanceKey({
+        code: {
+          spec: specId,
+          scope: scopeId,
+          value: codeValue
+        }
+      });
+      assert.equal(r3.id, elementId, "resolved element should match code query");
+      assert.isString(r3.classFullName, "classFullName should be a string");
+    }
+    codeStmt.dispose();
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        scope: "0x1",
+        value: "test"
+      } as any // missing spec
+    } as any)).to.throw("missing spec");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x1",
+        value: "test"
+      } as any // missing scope
+    } as any)).to.throw("missing type");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x1",
+        scope: "0x1"
+      } as any // missing value
+    } as any)).to.throw("missing value");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x1",
+        scope: "0x1",
+        value: ""
+      } // empty code
+    })).to.throw("failed to resolve element from code: code value empty string");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x999999",
+        scope: "0x1",
+        value: "badvalue"
+      }
+    })).to.throw("failed to resolve element from code");
+
+    expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("invalid input");
+
+    expect(() => dgndb.resolveInstanceKey({} as any)).to.throw("must provide partialKey, federationGuid or");
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
@@ -347,6 +466,173 @@ describe("basic tests", () => {
     assert.equal(res, 0, `IModelDb.exportGraphics returned ${res}`);
     for (const id of elementIdArray)
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+  });
+
+  it("testExportGraphicsAsync", async () => {
+    // Find all 3D elements in the test file
+    const elementIdArray: Id64Array = [];
+    const statement = new iModelJsNative.ECSqlStatement();
+    statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
+    while (DbResult.BE_SQLITE_ROW === statement.step())
+      elementIdArray.push(statement.getValue(0).getId());
+    statement.dispose();
+
+    assert(elementIdArray.length > 0, "No 3D elements in test file");
+    // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+    const elementsWithGraphics: any = {};
+    const onGraphics = (info: any) => {
+      elementsWithGraphics[info.elementId] = true;
+    };
+    
+    await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics });
+
+    for (const id of elementIdArray)
+      assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+  });
+
+  function createPhysicalElementWithPart() {
+    const modelStmt = new iModelJsNative.ECSqlStatement();
+    modelStmt.prepare(dgndb, "SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1");
+    const modelId = DbResult.BE_SQLITE_ROW === modelStmt.step() ? modelStmt.getValue(0).getId() : undefined;
+    modelStmt.dispose();
+
+    if (modelId === undefined) {
+      throw new Error("No PhysicalModel found in database.");
+    }
+
+    const categoryStmt = new iModelJsNative.ECSqlStatement();
+    categoryStmt.prepare(dgndb, "SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1");
+    const categoryId = DbResult.BE_SQLITE_ROW === categoryStmt.step() ? categoryStmt.getValue(0).getId() : undefined;
+    categoryStmt.dispose();
+
+    if (categoryId === undefined) {
+      throw new Error("No SpatialCategory found in database.");
+    }
+
+    // Create a GeometryPart and attach it to a new physical element.
+    const geometryPartProps: GeometryPartProps = {
+      classFullName: "BisCore:GeometryPart",
+      model: IModel.dictionaryId,
+      code: Code.createEmpty(),
+      geom: [
+        { box: { origin: [0, 0, 0], baseX: 10, baseY: 10, height: 1 } }
+      ]
+    };
+
+    const partId = dgndb.insertElement(geometryPartProps);
+    assert(partId.length > 0, "Failed to create GeometryPart");
+
+    const elementProps: PhysicalElementProps = {
+      classFullName: "Generic:PhysicalObject",
+      model: modelId,
+      category: categoryId,
+      code: Code.createEmpty(),
+      placement: {
+        origin: [100, 0, 0],
+        angles: { yaw: 0, pitch: 0, roll: 0 }
+      },
+      geom: [
+        {
+          geomPart: {
+            part: partId,
+            origin: [5, 0, 0],
+            rotation: { yaw: 45, pitch: 0, roll: 0 }
+          }
+        }
+      ]
+    };
+
+    const elementId = dgndb.insertElement(elementProps);
+    assert(elementId.length > 0, "Failed to create PhysicalObject.");
+
+    return { elementId, partId };
+  }
+
+  it("exportGraphicsAsync enumerates parts directly if array is not provided", async () => {
+    try {
+      const partDetails = createPhysicalElementWithPart();
+
+      const elementsWithGraphics: any = {};
+      const onGraphics = (info: any) => {
+        elementsWithGraphics[info.elementId] = true;
+      };
+
+      await dgndb.exportGraphicsAsync({ elementIdArray: [partDetails.elementId], onGraphics });
+
+      assert(elementsWithGraphics[partDetails.elementId]);
+    } finally {
+      dgndb.abandonChanges();
+    }
+  });
+
+  it("exportPartGraphics", async () => {
+    try {
+      const partDetails = createPhysicalElementWithPart();
+
+      // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+      const elementsWithGraphics: any = {};
+      const onGraphics = (info: any) => {
+        elementsWithGraphics[info.elementId] = true;
+      };
+
+      const partInstanceArray: any[] = [];
+
+      await dgndb.exportGraphicsAsync({ elementIdArray: [partDetails.elementId], onGraphics, partInstanceArray });
+
+      assert(partInstanceArray.length === 1);
+      assert(partInstanceArray[0].partId === partDetails.partId, "Part instance array does not contain expected part ID.");
+      assert(partInstanceArray[0].partInstanceId === partDetails.elementId, "Part instance array does not contain expected instance ID.");
+      assert(!elementsWithGraphics[partDetails.elementId], `Graphics should not have been generated for part instance ${partDetails.elementId}`);
+
+      let onPartGraphicsCalls = 0;
+
+      dgndb.exportPartGraphics({
+        elementId: partInstanceArray[0].partId,
+        displayProps: partInstanceArray[0].displayProps,
+        onPartGraphics: (_: any) => {
+          ++onPartGraphicsCalls;
+        }
+      });
+
+      assert(onPartGraphicsCalls === 1, "Expected exactly one call to onPartGraphics.");
+    } finally {
+      dgndb.abandonChanges();
+    }
+  });
+
+  it("exportPartGraphicsAsync", async () => {
+    try {
+      const partDetails = createPhysicalElementWithPart();
+
+      // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+      const elementsWithGraphics: any = {};
+      const onGraphics = (info: any) => {
+        elementsWithGraphics[info.elementId] = true;
+      };
+
+      const partInstanceArray: any[] = [];
+
+      await dgndb.exportGraphicsAsync({ elementIdArray: [partDetails.elementId], onGraphics, partInstanceArray });
+
+      assert(partInstanceArray.length === 1);
+      assert(partInstanceArray[0].partId === partDetails.partId, "Part instance array does not contain expected part ID.");
+      assert(partInstanceArray[0].partInstanceId === partDetails.elementId, "Part instance array does not contain expected instance ID.");
+      assert(!elementsWithGraphics[partDetails.elementId], `Graphics should not have been generated for part instance ${partDetails.elementId}`);
+
+      let onPartGraphicsCalls = 0;
+
+      await dgndb.exportPartGraphicsAsync({
+        elementId: partInstanceArray[0].partId,
+        displayProps: partInstanceArray[0].displayProps,
+        onPartGraphics: (_: any) => {
+          ++onPartGraphicsCalls;
+        }
+      });
+
+      assert(onPartGraphicsCalls === 1, "Expected exactly one call to onPartGraphics.");
+    } finally {
+      dgndb.abandonChanges();
+    }
   });
 
   it("testSchemaImport", () => {

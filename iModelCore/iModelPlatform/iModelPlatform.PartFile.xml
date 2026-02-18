@@ -26,6 +26,7 @@
         <SubPart PartName="Freetype2Library" PartFile="iModelCore/libsrc/freetype2/freetype2"/>
         <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore/libsrc/proxyres/proxyres"/>
         <SubPart LibType="Static" PartName="pnglib" PartFile="iModelCore/libsrc/png/png"/>
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
@@ -82,7 +83,7 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <RequiredRepository>iModelUnitTestData</RequiredRepository>
         <SubPart PartName="iModelPlatformDLL"/>
-        <SubPart PartName="GeoCoordWorkspaceData" PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="GeoCoordDictionaryData" PartFile="iModelCore/libsrc/csmap/csmap"/>
         <SubPart PartName="iModelPlatformUnitTestHelpers"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>

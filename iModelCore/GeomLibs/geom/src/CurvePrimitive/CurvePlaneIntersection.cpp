@@ -39,20 +39,17 @@ void AppendTolerancedPlaneIntersections(DPlane3dCR plane, ICurvePrimitiveCP curv
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static void TestAndAppend(
-            ICurvePrimitiveCP curve,
-            DEllipse3dR ellipse,
-            double theta,
-            bvector<CurveLocationDetailPair> &intersections)
+static void TestAndAppend(ICurvePrimitiveCP curve, DEllipse3dR ellipse, double theta, bvector<CurveLocationDetailPair> &intersections, double tol)
     {
-    if (ellipse.IsAngleInSweep (theta))
+    DPoint3d point;
+    ellipse.Evaluate(point, theta);
+    if (ellipse.IsAngleInSweep(theta) ||
+        ellipse.FractionToPoint(0.0).AlmostEqual(point, tol) || // ADO#1874335: check arc endpoints that could be just outside sweep
+        ellipse.FractionToPoint(1.0).AlmostEqual(point, tol))
         {
-        DPoint3d point;
-        ellipse.Evaluate (point, theta);
         intersections.push_back (CurveLocationDetailPair (curve, ellipse.AngleToFraction (theta), point));
         }
     }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -79,26 +76,25 @@ void AppendTolerancedPlaneIntersections(DPlane3dCR plane, ICurvePrimitiveCP curv
         ellipse.Evaluate (pointB, ellipse.start + ellipse.sweep);
         intersections.push_back (CurveLocationDetailPair (curve, 0.0, pointA, 1.0, pointB));
         }
-    else if (fabs (hC) < tol)
+    else if (fabs (hC) < tol) // plane is tangent at thetaC
         {
-        TestAndAppend (curve, ellipse, thetaC, intersections);
+        TestAndAppend (curve, ellipse, thetaC, intersections, tol);
         }
-    else if (fabs (hD) < tol)
+    else if (fabs (hD) < tol) // plane is tangent at point opposite thetaC
         {
-        TestAndAppend (curve, ellipse, thetaC + msGeomConst_pi, intersections);
+        TestAndAppend (curve, ellipse, thetaC + msGeomConst_pi, intersections, tol);
         }
-    else if (hC * hD < 0.0) // amplitude is nonzero, tol cases are eliminated
+    else if (hC * hD < 0.0) // amplitude is nonzero, tangent cases are eliminated
         {
         double hBar = sqrt (dh0 * dh0 + dh90 * dh90);   // amplitude of cosine wave around thetaC
         double lambda = -hCenter / hBar;
         if (fabs (lambda) <= 1.0)
             {
             double delta = acos (lambda);
-            TestAndAppend (curve, ellipse, thetaC + delta, intersections);
-            TestAndAppend (curve, ellipse, thetaC - delta, intersections);
+            TestAndAppend (curve, ellipse, thetaC + delta, intersections, tol);
+            TestAndAppend (curve, ellipse, thetaC - delta, intersections, tol);
             }
         }
-
     }
 
 struct CurvePlaneIntersectionFunction : FunctionRToRD

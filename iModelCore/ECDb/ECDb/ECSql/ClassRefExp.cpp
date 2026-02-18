@@ -58,7 +58,7 @@ Utf8StringCR TableValuedFunctionExp::_GetId() const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TableValuedFunctionExp::_ExpandSelectAsterisk(
-    std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const {
+    std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const {
     if(m_virtualEntityClass == nullptr)
         return;
     BeAssert(m_virtualEntityClass != nullptr);
@@ -95,7 +95,7 @@ PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx
             return PropertyMatchResult::NotFound();
         }
         if (!GetAlias().EqualsIAscii(propertyPath.First().GetName())) {
-            PropertyMatchResult::NotFound();
+            return PropertyMatchResult::NotFound();
         }
         auto resolvedPath = propertyPath.Skip(1);
         resolvedPath.SetPropertyDef(0, *property);
@@ -161,7 +161,7 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
+void ClassNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
     if (m_info == nullptr)
         {
