@@ -102,18 +102,23 @@ bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent
                 continue;
             }
 
-        Utf8String unitStr;
-        crs->GetUnits(unitStr);
-        
+        Utf8String rawUnit;
+        crs->GetUnits(rawUnit);
+        Utf8String mappedUnit;
+        GeoCoordinates::BaseGCS::MapUnitToJsonName(mappedUnit, rawUnit.c_str());
+
         // Don't include CRS if it does not match the unit filter
-        if (unitFilter != nullptr && strlen(unitFilter) > 0 && !unitStr.EqualsIAscii(unitFilter))
-            continue;
+        if (unitFilter != nullptr && strlen(unitFilter) > 0)
+            {
+            if (mappedUnit.empty() || !mappedUnit.EqualsIAscii(unitFilter))
+                continue;
+            }
 
         props.m_name = Utf8String(crs->GetName());
         props.m_description = Utf8String(crs->GetDescription());
         props.m_deprecated = crs->IsDeprecated();
         props.m_crsExtent = crsRange;
-        props.m_unit = unitStr;
+        props.m_unit = mappedUnit;
 
         listOfCRS.push_back(props);
         }

@@ -3332,19 +3332,12 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
 
     static Napi::Value GetAvailableCRSUnitNames(NapiInfoCR info)
         {
-       bvector<Utf8String> const* unitNamesPtr = GeoCoordinates::BaseGCS::GetUnitNames();
-        
-        if (unitNamesPtr == nullptr)
-            return Napi::Array::New(info.Env(), 0);
-            
-        bvector<Utf8String> const& unitNames = *unitNamesPtr;
-        
+        T_Utf8StringVector unitNames = GeoCoordinates::BaseGCS::GetSupportedJsonUnitNames();
+
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), unitNames.size());
         for (auto const& unitName : unitNames)
-            {
             ret.Set(index++, Napi::String::New(info.Env(), unitName.c_str()));
-            }
 
         return ret;
         }

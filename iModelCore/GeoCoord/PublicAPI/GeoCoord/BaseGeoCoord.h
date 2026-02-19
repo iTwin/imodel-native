@@ -1420,6 +1420,23 @@ BASEGEOCOORD_EXPORTED Utf8CP           GetSource (Utf8StringR source) const;
 BASEGEOCOORD_EXPORTED StatusInt         SetSource (Utf8CP source);
 
 /*---------------------------------------------------------------------------------**//**
+* Maps a raw CSMAP unit name to the JSON UnitType name used in the CRS JSON representation.
+* Only Meter, USSurveyFoot, InternationalFoot, and Degree are supported.
+* @param    csmapUnitName   IN  The raw CSMAP unit name (case-insensitive).
+* @param    jsonUnitName    OUT The mapped JSON unit name, or empty if unsupported.
+* @return   SUCCESS if the unit is supported, ERROR otherwise.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED static StatusInt  MapUnitToJsonName (Utf8StringR jsonUnitName, Utf8CP csmapUnitName);
+
+/*---------------------------------------------------------------------------------**//**
+* Returns the list of JSON unit names supported by MapUnitToJsonName.
+* @return   vector of supported JSON unit name strings.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED static T_Utf8StringVector GetSupportedJsonUnitNames ();
+
+/*---------------------------------------------------------------------------------**//**
 * Gets the name of the Coordinate System units.
 * @return   Name of source of the Coordinate System units.
 * @bsimethod
