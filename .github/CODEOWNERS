@@ -20,15 +20,16 @@
 /iModelCore/Bentley/                         @bbastings @pmconne @khanaffan @nick4598
 /iModelCore/BeSQLite/                        @pmconne @khanaffan @nick4598
 /iModelCore/BRepCore/                        @pmconne @bbastings
-/iModelCore/ECDb/                            @khanaffan @pmconne @calebmshafer @rschili @ColinKerr
-/iModelCore/ecobjects/                       @calebmshafer @ColinKerr @c-macdonald @rschili
+/iModelCore/ECDb/                            @khanaffan @pmconne @calebmshafer @rschili @RohitPtnkr1996
+/iModelCore/ecobjects/                       @calebmshafer @c-macdonald @rschili @RohitPtnkr1996
 /iModelCore/ECPresentation/                  @iTwin/itwinjs-core-presentation
 /iModelCore/GeoCoord/                        @pmconne @AlainRobertAtBentley @bbastings
 /iModelCore/GeomLibs/                        @bbastings @dassaf4 @saeeedtorabi @EarlinLutz
 /iModelCore/iModelPlatform/                  @pmconne @khanaffan @nick4598 @bbastings
-/iModelCore/Units/                           @calebmshafer @ColinKerr @bbastings @rschili
+/iModelCore/Units/                           @calebmshafer @bbastings @rschili @RohitPtnkr1996
 /iModelCore/iModelPlatform/**/*Tile*.*       @pmconne @markschlosseratbentley
 /iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley @bbastings
 
 /iModelJsNodeAddon/                          @pmconne @khanaffan @nick4598 @calebmshafer @bbastings
 /iModelJsNodeAddon/presentation/             @iTwin/itwinjs-core-presentation
+
