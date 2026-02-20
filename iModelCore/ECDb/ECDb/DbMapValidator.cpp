@@ -322,7 +322,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (m_schemaImportContext.IsSynchronizeSchemas())
+            if (m_schemaImportContext.IsSemanticRebasing())
                 {
                 if (nonVirtualColumnCount > (int) physicalColumns.size())
                     {
@@ -365,7 +365,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (m_schemaImportContext.IsSynchronizeSchemas())
+            if (m_schemaImportContext.IsSemanticRebasing())
                 {
                 if (nonVirtualColumnCount > (int) physicalColumns.size())
                     {
@@ -400,7 +400,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
                 return ERROR;
                 }
 
-            if (m_schemaImportContext.IsSynchronizeSchemas())
+            if (m_schemaImportContext.IsSemanticRebasing())
                 {
                 if (nonVirtualColumnCount > (int) physicalColumns.size())
                     {
