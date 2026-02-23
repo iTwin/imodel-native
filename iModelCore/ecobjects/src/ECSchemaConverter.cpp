@@ -24,7 +24,6 @@ static Utf8CP const US_UNIT_SYSTEM                  = "US_UnitSystem";
 static Utf8CP const PROPERTY_PRIORITY               = "PropertyPriority";
 static Utf8CP const CATEGORY                        = "Category";
 static Utf8CP const HIDE_PROPERTY                   = "HideProperty";
-static Utf8CP const IF2D                            = "If2D";
 static Utf8CP const IF3D                            = "If3D";
 static Utf8CP const DISPLAY_OPTIONS                 = "DisplayOptions";
 static Utf8CP const HIDDEN                          = "Hidden";
@@ -1851,10 +1850,15 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
         return ECObjectsStatus::Success;
         }
 
-    // Property should be shown if either of the legacy properties is set to false
-    bool if2d = getBoolValue(instance, IF2D, true);
-    bool if3d = getBoolValue(instance, IF3D, true);
-    bool showProp = !if2d && !if3d;
+    // Only hide the property if If3D is explicitly True. In all other cases (absent, null, or
+    // false), the property is considered shown.
+    // BIS doesn't distinguish 2D/3D at the schema level (properties can belong to Aspects or
+    // TypeDefinitions connected via instance relationships), so we cannot determine 2D vs 3D
+    // statically during import. We use If3D as the sole indicator since 3D is the dominant use
+    // case, and showing a property that could be hidden is less harmful than hiding one that
+    // should be shown. If2D is completely ignored.
+    bool if3d = getBoolValue(instance, IF3D, false);
+    bool showProp = !if3d;
 
     auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
     IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
