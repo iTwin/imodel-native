@@ -30,7 +30,7 @@
 #define MIN_PROGRESS_OP_COUNT                       500
 #define MIN_WORKER_THREAD_COUNT                     1
 #define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
-#define V8_MAX_STRING_SIZE                          0x3B9ACA00 
+#define V8_MAX_STRING_SIZE                          0x3B9ACA00ul // 1GB - Max string size for V8 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 
