@@ -30,6 +30,7 @@
 #define MIN_PROGRESS_OP_COUNT                       500
 #define MIN_WORKER_THREAD_COUNT                     1
 #define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
+#define V8_MAX_STRING_SIZE                          0x3B9ACA00 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -79,6 +80,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
         void SetWorkerConn(Db const& conn) { m_conn = &conn; }
+        void ReleaseMemory();
         std::shared_ptr<CachedQueryAdaptor> Shared() { return shared_from_this(); }
         static std::shared_ptr<CachedQueryAdaptor> Make() {
             return std::make_shared<CachedQueryAdaptor>();
