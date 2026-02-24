@@ -40,6 +40,10 @@
 
 #include "cs_map.h"
 
+#ifdef GEOCOORD_ENHANCEMENT
+extern double cs_Zero;
+#endif
+
 struct csGeoidHeight_ *csGeoidHeight = NULL;
 
 /******************************************************************************
@@ -142,6 +146,68 @@ error:
 	if (__This != NULL) CS_free (__This);
 	return NULL;
 }
+
+#ifdef GEOCOORD_ENHANCEMENT
+/******************************************************************************
+Create from csGeoidHeightEntry_ list instead of from catalog file
+*/
+struct csGeoidHeight_* CSnewGeoidHeightFromCatalog(struct csDatumCatalog_* catPtr)
+{
+	if (catPtr == NULL)
+		goto error;
+
+	int index;
+	struct csGeoidHeight_ *__This;
+	struct csDatumCatalogEntry_ *catEntryPtr;
+	struct csGeoidHeightEntry_* ghEntryPtr;
+	struct csGeoidHeightEntry_* findPtr;
+
+	/* Prepare for an error. */
+	__This = NULL;
+	catEntryPtr = NULL;
+	ghEntryPtr = NULL;
+
+	__This = (struct csGeoidHeight_*) CS_malc (sizeof (struct csGeoidHeight_));
+	if (__This == NULL)
+	{
+		CS_erpt (cs_NO_MEM);
+		goto error;
+	}
+	__This->listHead = NULL;
+
+	/* For each entry in the catalog, we build an appropriate geoid height
+	grid file entry.  Right now, this is based on file names and file
+	extensions.  Not very good, but that's life. */
+
+	index = 0;
+	for (;;)
+	{
+		catEntryPtr = CSgetDatumCatalogEntry (catPtr,index++);
+		if (catEntryPtr == NULL) break;
+		ghEntryPtr = CSnewGeoidHeightEntry (catEntryPtr);
+		if (ghEntryPtr == NULL)
+		{
+			goto error;
+		}
+		/* Keep the list in the same order as they appear in the file. */
+		if (__This->listHead == NULL)
+		{
+			__This->listHead = ghEntryPtr;
+		}
+		else
+		{
+			/* Find the last element in the list. */
+			for (findPtr = __This->listHead;findPtr->next != NULL;findPtr = findPtr->next);		/*lint !e722  suspicious ';' */
+			findPtr->next = ghEntryPtr;
+		}
+	}
+	return __This;
+
+error:
+	if (__This != NULL) CS_free (__This);
+	return NULL;
+}
+#endif // GEOCOORD_ENHANCEMENT
 
 /******************************************************************************
 	Destructor
@@ -315,7 +381,12 @@ struct csGeoidHeightEntry_* CSnewGeoidHeightEntry (struct csDatumCatalogEntry_* 
 	cp += 1;
 
 	/* Do what's appropriate for this extension. */
+#ifdef GEOCOORD_ENHANCEMENT
+	if ((!CS_stricmp (cp,"GEO") && catPtr->gridFormat == verticalDatumGridFormatUnknown) ||
+			 (catPtr->gridFormat == verticalDatumGridFormatGEOID96))
+#else
 	if (!CS_stricmp (cp,"GEO"))
+#endif
 	{
 		/* Must not set the type until allocated for correct error handling. */
 		__This->pointers.geoid96Ptr = CSnewGeoid96GridFile (catPtr->pathName,catPtr->bufferSize,catPtr->flags,catPtr->density);
@@ -325,7 +396,12 @@ struct csGeoidHeightEntry_* CSnewGeoidHeightEntry (struct csDatumCatalogEntry_* 
 		}
 		__This->type = csGeoidHgtTypeGeoid96;
 	}
+#ifdef GEOCOORD_ENHANCEMENT
+	else if ((!CS_stricmp (cp,"bin") && catPtr->gridFormat == verticalDatumGridFormatUnknown) ||
+			 (catPtr->gridFormat == verticalDatumGridFormatBIN))
+#else
 	else if (!CS_stricmp (cp,"bin"))
+#endif
 	{
 		/* These are supposed to be Geoid99 type files. */
 		/* Must not set the type until allocated for correct error handling. */
@@ -336,7 +412,12 @@ struct csGeoidHeightEntry_* CSnewGeoidHeightEntry (struct csDatumCatalogEntry_* 
 		}
 		__This->type = csGeoidHgtTypeGeoid99;
 	}
+#ifdef GEOCOORD_ENHANCEMENT
+	else if ((!CS_stricmp (cp,"txt") && catPtr->gridFormat == verticalDatumGridFormatUnknown) ||
+			 (catPtr->gridFormat == verticalDatumGridFormatOSGM91))
+#else
 	else if (!CS_stricmp (cp,"txt"))
+#endif
 	{
 		/* These are supposed to be OSGM91 type files. */
 		/* Must not set the type until allocated for correct error handling. */
@@ -347,7 +428,12 @@ struct csGeoidHeightEntry_* CSnewGeoidHeightEntry (struct csDatumCatalogEntry_* 
 		}
 		__This->type = csGeoidHgtTypeOsgm91;
 	}
+#ifdef GEOCOORD_ENHANCEMENT
+	else if ((!CS_stricmp (cp,"byn") && catPtr->gridFormat == verticalDatumGridFormatUnknown) ||
+			 (catPtr->gridFormat == verticalDatumGridFormatBYN))
+#else
 	else if (!CS_stricmp (cp,"byn"))
+#endif
 	{
 		/* Must not set the type until allocated for correct error handling. */
 		__This->pointers.bynGridFilePtr = CSnewBynGridFile (catPtr->pathName,catPtr->bufferSize,catPtr->flags,catPtr->density);
@@ -357,7 +443,12 @@ struct csGeoidHeightEntry_* CSnewGeoidHeightEntry (struct csDatumCatalogEntry_* 
 		}
 		__This->type = csGeoidHgtTypeBynGridFile;
 	}
+#ifdef GEOCOORD_ENHANCEMENT
+	else if ((!CS_stricmp (cp,"grd") && catPtr->gridFormat == verticalDatumGridFormatUnknown) ||
+		     (catPtr->gridFormat == verticalDatumGridFormatEGM1996 && (0 != CS_stricmp(cp,"_08"))))
+#else
 	else if (!CS_stricmp (cp,"grd"))
+#endif
 	{
 		/* Must not set the type until allocated for correct error handling. */
 		__This->pointers.egm96Ptr = CSnewEgm96 (catPtr->pathName,catPtr->bufferSize,catPtr->flags,catPtr->density);
@@ -367,6 +458,59 @@ struct csGeoidHeightEntry_* CSnewGeoidHeightEntry (struct csDatumCatalogEntry_* 
 		}
 		__This->type = csGeoidHgtTypeEgm96;
 	}
+#ifdef GEOCOORD_ENHANCEMENT
+	// We include code for reading EGM2008 from the Csmap trunk, although we are using release version 14.06 of Csmap
+	else if ((!CS_stricmp (cp,"_08") && 
+	          (catPtr->gridFormat == verticalDatumGridFormatUnknown ||
+			   catPtr->gridFormat == verticalDatumGridFormatEGM1996)) || /* Previous def would be seen as EGM1996)*/
+			 (catPtr->gridFormat == verticalDatumGridFormatEGM2008))
+	{
+		/* Must not set the type until allocated for correct error handling. */
+		__This->pointers.egm2008Ptr = CSnewEgm2008 (catPtr->pathName,catPtr->density);
+		if (__This->pointers.egm2008Ptr == NULL)
+		{
+			goto error;
+		}
+		__This->type = csGeoidHgtTypeEgm2008;
+	}
+	else if ((!CS_stricmp (cp,"gtx") && catPtr->gridFormat == verticalDatumGridFormatUnknown) || 
+	         (catPtr->gridFormat == verticalDatumGridFormatGTX_TEXT) || 
+			 (catPtr->gridFormat == verticalDatumGridFormatGTXB)  || 
+			 (catPtr->gridFormat == verticalDatumGridFormatNOAA_GTX))
+	{
+		/* Must not set the type until allocated for correct error handling. */
+		__This->pointers.gtxFilePtr = CSnewGtxFile (catPtr->pathName,catPtr->bufferSize,catPtr->flags,catPtr->density, 
+			                                        ((catPtr->gridFormat == verticalDatumGridFormatGTXB) || (catPtr->gridFormat == verticalDatumGridFormatNOAA_GTX)), 
+													(catPtr->gridFormat == verticalDatumGridFormatNOAA_GTX), 
+													(catPtr->gridFormat == verticalDatumGridFormatGTXB));
+		if (__This->pointers.gtxFilePtr == NULL)
+		{
+			goto error;
+		}
+		__This->type = csGeoidHgtTypeGtxFile;
+	}
+	else if ((!CS_stricmp (cp,"gtxb") && catPtr->gridFormat == verticalDatumGridFormatUnknown))
+	{
+		/* Must not set the type until allocated for correct error handling. */
+		__This->pointers.gtxFilePtr = CSnewGtxFile (catPtr->pathName,catPtr->bufferSize,catPtr->flags,catPtr->density, 1, 0, 1);
+		if (__This->pointers.gtxFilePtr == NULL)
+		{
+			goto error;
+		}
+		__This->type = csGeoidHgtTypeGtxFile;
+	}	
+	else if (((!CS_stricmp (cp,"_02")) && catPtr->gridFormat == verticalDatumGridFormatUnknown) ||
+			 (catPtr->gridFormat == verticalDatumGridFormatOSGM02))
+	{
+		/* Must not set the type until allocated for correct error handling. */
+		__This->pointers.ostn02Ptr = CSnewOstn02 (catPtr->pathName,1);
+		if (__This->pointers.ostn02Ptr == NULL)
+		{
+			goto error;
+		}
+		__This->type = csGeoidHgtTypeOstn02;
+	}
+#endif
 	else
 	{
 		CS_erpt (cs_GHGT_EXT);
@@ -401,6 +545,17 @@ void CSdeleteGeoidHeightEntry (struct csGeoidHeightEntry_* __This)
 		case csGeoidHgtTypeEgm96:
 			CSdeleteEgm96 (__This->pointers.egm96Ptr);
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+		case csGeoidHgtTypeEgm2008:
+			CSdeleteEgm2008 (__This->pointers.egm2008Ptr);
+			break;
+		case csGeoidHgtTypeGtxFile:
+			CSdeleteGtxFile (__This->pointers.gtxFilePtr);
+			break;
+		case csGeoidHgtTypeOstn02:
+			CSdeleteOstn02 (__This->pointers.ostn02Ptr);
+			break;
+#endif
 		case csGeoidHgtTypeWorld:
 		case csGeoidHgtTypeAustralia:
 		case csGeoidHgtTypeNone:
@@ -435,6 +590,17 @@ void CSreleaseGeoidHeightEntry (struct csGeoidHeightEntry_* __This)
 		case csGeoidHgtTypeEgm96:
 			CSreleaseEgm96 (__This->pointers.egm96Ptr);
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+		case csGeoidHgtTypeEgm2008:
+			CSreleaseEgm2008 (__This->pointers.egm2008Ptr);
+			break;
+		case csGeoidHgtTypeGtxFile:
+			CSreleaseGtxFile (__This->pointers.gtxFilePtr);
+			break;
+		case csGeoidHgtTypeOstn02:
+			CSreleaseOstn02 (__This->pointers.ostn02Ptr);
+			break;
+#endif
 		case csGeoidHgtTypeWorld:
 		case csGeoidHgtTypeAustralia:
 		case csGeoidHgtTypeNone:
@@ -471,6 +637,28 @@ double CStestGeoidHeightEntry (struct csGeoidHeightEntry_* __This,Const double* 
 		case csGeoidHgtTypeEgm96:
 			rtnValue = CStestEgm96 (__This->pointers.egm96Ptr,ll84);
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+		case csGeoidHgtTypeEgm2008:
+			CScalcEgm2008 (__This->pointers.egm2008Ptr,&rtnValue,ll84);
+			break;
+		case csGeoidHgtTypeGtxFile:
+			CScalcGtxFile (__This->pointers.gtxFilePtr,&rtnValue,ll84);
+			break;
+		case csGeoidHgtTypeOstn02:
+		{
+			double llIn[3];
+			llIn[0] = ll84[0];
+			llIn[1] = ll84[1];
+			llIn[2] = cs_Zero;
+			double llOut[3];
+			llOut[0] = cs_Zero;
+			llOut[1] = cs_Zero;
+			llOut[2] = cs_Zero;
+			CSost02F3 (__This->pointers.ostn02Ptr,llOut,llIn);
+			rtnValue = llOut[2];
+			break;
+		}
+#endif
 		case csGeoidHgtTypeWorld:
 		case csGeoidHgtTypeAustralia:
 		case csGeoidHgtTypeNone:
@@ -510,6 +698,28 @@ int CScalcGeoidHeightEntry (struct csGeoidHeightEntry_* __This,double* geoidHgt,
 		case csGeoidHgtTypeEgm96:
 			status = CScalcEgm96 (__This->pointers.egm96Ptr,geoidHgt,ll84);
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+		case csGeoidHgtTypeEgm2008:
+			status = CScalcEgm2008 (__This->pointers.egm2008Ptr,geoidHgt,ll84);
+			break;
+		case csGeoidHgtTypeGtxFile:
+			status = CScalcGtxFile (__This->pointers.gtxFilePtr,geoidHgt,ll84);
+			break;
+		case csGeoidHgtTypeOstn02:
+		{
+			double llIn[3];
+			llIn[0] = ll84[0];
+			llIn[1] = ll84[1];
+			llIn[2] = cs_Zero;
+			double llOut[3];
+			llOut[0] = cs_Zero;
+			llOut[1] = cs_Zero;
+			llOut[2] = cs_Zero;
+			status = CSost02F3 (__This->pointers.ostn02Ptr,llOut,llIn);
+			*geoidHgt = llOut[2];
+			break;
+		}
+#endif
 		case csGeoidHgtTypeWorld:
 		case csGeoidHgtTypeAustralia:
 		case csGeoidHgtTypeNone:

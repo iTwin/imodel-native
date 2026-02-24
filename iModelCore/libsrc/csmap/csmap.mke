@@ -184,6 +184,8 @@ CCompOpts + -D__CPP__
 
     $(o)CS_egm96$(oext):              $(csSrcDir)CS_egm96.c ${MultiCompileDepends}
 
+    $(o)CS_egm2008$(oext):            $(csSrcDir)CS_egm2008.c ${MultiCompileDepends}
+
     $(o)CS_ekrt4$(oext):              $(csSrcDir)CS_ekrt4.c ${MultiCompileDepends}
 
     $(o)CS_ekrt6$(oext):              $(csSrcDir)CS_ekrt6.c ${MultiCompileDepends}
@@ -351,6 +353,8 @@ CCompOpts + -D__CPP__
     $(o)CS_winkelTripel$(oext):       $(csSrcDir)CS_winkelTripel.c ${MultiCompileDepends}
 
     $(o)CS_zones$(oext):              $(csSrcDir)CS_zones.c ${MultiCompileDepends}
+
+    $(o)CS_gtxFile$(oext):             $(csSrcDir)CS_gtxFile.c ${MultiCompileDepends}
 
     $(o)cscscomp$(oext):              $(csSrcDir)cscscomp.c ${MultiCompileDepends}
 
