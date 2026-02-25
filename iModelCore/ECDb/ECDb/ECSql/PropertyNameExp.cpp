@@ -150,6 +150,11 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         } else if (PropertyMap const *resolvedMap = GetPropertyRef()->TryGetPropertyMap()) {
             SetTypeInfo(ECSqlTypeInfo(*resolvedMap));
         } else {
+            ECSqlTypeInfo const& typeInfo = derivedProperty.GetExpression()->GetTypeInfo();
+            if(typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset) {
+                ctx.SetDeferFinalize(true);
+                return FinalizeParseStatus::NotCompleted;
+            }
             SetTypeInfo(derivedProperty.GetExpression()->GetTypeInfo());
         }
     } else {
