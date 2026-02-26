@@ -3882,6 +3882,7 @@ private:
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
     mutable std::map<uint64_t, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> m_jsonSelectAdapterCache;
+    bool m_isBulkOperation = false;
 
     void Destroy();
     void AddToPool(DgnElementCR) const;
@@ -4028,6 +4029,12 @@ public:
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
+
+    DGNPLATFORM_EXPORT void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
+    DGNPLATFORM_EXPORT bool IsBulkOperation() const { return m_isBulkOperation; }
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipValidation = false, const bool skipHandlerCallbacks = false);
+
+    void bulkDeleteLinkTableRelationships(const DgnElementIdSet elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

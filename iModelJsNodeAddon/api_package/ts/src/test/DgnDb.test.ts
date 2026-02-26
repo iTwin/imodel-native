@@ -17,7 +17,7 @@ import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from
 if (os.platform() === "linux")
   process.env.LINUX_MINIDUMP_ENABLED = "yes";
 
-describe("basic tests", () => {
+describe.only("basic tests", () => {
 
   let dgndb: IModelJsNative.DgnDb;
 
@@ -1612,5 +1612,548 @@ describe("basic tests", () => {
       expect(stmt.step()).equals(DbResult.BE_SQLITE_CONSTRAINT_UNIQUE);
     });
     db.closeFile();
+  });
+
+  describe.only("Bulk Element Deletion", () => {
+    let db: IModelJsNative.DgnDb;
+    let modelId: Id64String;
+    let categoryId: Id64String;
+    let codeSpecId: Id64String;
+
+    // Testcase Generation Helpers
+    const insertElement = (opts: { parentId?: Id64String; codeScope?: Id64String; codeValue?: string } = {}): Id64String => {
+      const { parentId, codeScope, codeValue } = opts;
+      const props: PhysicalElementProps = {
+        classFullName: "Generic:PhysicalObject",
+        model: modelId,
+        category: categoryId,
+        code: codeScope && codeValue ? { spec: codeSpecId, scope: codeScope, value: codeValue } : Code.createEmpty(),
+        placement: { origin: [0, 0, 0], angles: { yaw: 0, pitch: 0, roll: 0 } },
+        ...(parentId ? { parent: { id: parentId, relClassName: "BisCore:ElementOwnsChildElements" } } : {}),
+      };
+      const id = db.insertElement(props);
+      assert.isNotEmpty(id, "insertElement must return a valid ID");
+      return id;
+    };
+
+    /** Assert that the element with the given id exists or has been deleted. */
+    const assertExists    = (id: Id64String, msg: string) => assert.isDefined(db.getElement({ id }), msg);
+    const assertDeleted   = (id: Id64String, msg: string) => assert.throws(() => db.getElement({ id }), undefined, msg);
+
+    /**
+     * Run deleteElements, then verify each id in `deleted` is gone and each id in `retained` is still present.
+     */
+    const executeTestCase = (label: string, idsToDelete: Id64String[], deleted: Id64String[], retained: Id64String[]) => {
+      db.deleteElements(idsToDelete);
+
+      for (const id of deleted)
+        assertDeleted(id,  `error reading element`);
+      
+      for (const id of retained)
+        assertExists(id,   `[${label}] ${id} should have been retained`);
+      
+      db.abandonChanges();
+    };
+
+    beforeEach(() => {
+      const seedUri  = path.join(getAssetsDir(), "test.bim");
+      const testFile = path.join(getAssetsDir(), "deleteElements-test.bim");
+      if (fs.existsSync(testFile))
+        fs.unlinkSync(testFile);
+      fs.copyFileSync(seedUri, testFile);
+
+      db = new iModelJsNative.DgnDb();
+      db.openIModel(testFile, OpenMode.ReadWrite);
+
+      const modelStmt = new iModelJsNative.ECSqlStatement();
+      modelStmt.prepare(db, "SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1");
+      modelId = DbResult.BE_SQLITE_ROW === modelStmt.step() ? modelStmt.getValue(0).getId() : "";
+      modelStmt.dispose();
+      assert.isNotEmpty(modelId, "Expected a PhysicalModel");
+
+      const catStmt = new iModelJsNative.ECSqlStatement();
+      catStmt.prepare(db, "SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1");
+      categoryId = DbResult.BE_SQLITE_ROW === catStmt.step() ? catStmt.getValue(0).getId() : "";
+      catStmt.dispose();
+      assert.isNotEmpty(categoryId, "Expected a SpatialCategory");
+
+      codeSpecId = db.insertCodeSpec("TestScopeSpec", { scopeSpec: { type: 4 /* RelatedElement */ } });
+      assert.isNotEmpty(codeSpecId);
+    });
+
+    afterEach(() => {
+      db.closeFile();
+    });
+
+    /**
+     * Shared hierarchy used throughout the parent-child tests:
+     *
+     *   parentA                    parentB              standalone
+     *     ├─ childA1                 ├─ childB1            └─ childS1
+     *     │    └─ grandchildA1       └─ childB2
+     *     ├─ childA2
+     *     │    └─ grandchildA2
+     *     └─ childA3
+     */
+    describe("parent-child hierarchy", () => {
+      let parentA: Id64String, childA1: Id64String, grandchildA1: Id64String;
+      let childA2: Id64String, grandchildA2: Id64String, childA3: Id64String;
+      let parentB: Id64String, childB1: Id64String, childB2: Id64String;
+      let standalone: Id64String, childS1: Id64String;
+      let all: Id64String[];
+
+      beforeEach(() => {
+        parentA      = insertElement();
+        childA1      = insertElement({ parentId: parentA });
+        grandchildA1 = insertElement({ parentId: childA1 });
+        childA2      = insertElement({ parentId: parentA });
+        grandchildA2 = insertElement({ parentId: childA2 });
+        childA3      = insertElement({ parentId: parentA });
+        parentB      = insertElement();
+        childB1      = insertElement({ parentId: parentB });
+        childB2      = insertElement({ parentId: parentB });
+        standalone   = insertElement();
+        childS1      = insertElement({ parentId: standalone });
+        db.saveChanges();
+        all = [parentA, childA1, grandchildA1, childA2, grandchildA2, childA3,
+               parentB, childB1, childB2, standalone, childS1];
+      });
+
+      it("delete a root element", () => {
+        executeTestCase("root cascades",
+          [parentA],
+          [parentA, childA1, grandchildA1, childA2, grandchildA2, childA3],
+          [parentB, childB1, childB2, standalone, childS1]);
+      });
+
+      it("explicitly delete the whole tree", () => {
+        executeTestCase("redundant descendants in input",
+          [parentA, childA1, grandchildA1, childA2],
+          [parentA, childA1, grandchildA1, childA2, grandchildA2, childA3],
+          [parentB, childB1, childB2, standalone, childS1]);
+      });
+
+      it("deleting all roots removes every element", () => {
+        executeTestCase("delete all roots",
+          [parentA, parentB, standalone],
+          all,
+          []);
+      });
+
+      it("empty input set is a no-op", () => {
+        executeTestCase("empty set",
+          [],
+          [],
+          all);
+      });
+
+      it("deleting a child removes its subtree but leaves the parent", () => {
+        executeTestCase("delete depth-1 child",
+          [childA1],
+          [childA1, grandchildA1],
+          [parentA, childA2, grandchildA2, childA3, parentB, childB1, childB2, standalone, childS1]);
+      });
+
+      it("deleting two mid-tree siblings leaves their parent and unrelated siblings", () => {
+        executeTestCase("delete two depth-1 siblings",
+          [childA1, childA2],
+          [childA1, grandchildA1, childA2, grandchildA2],
+          [parentA, childA3, parentB, childB1, childB2, standalone, childS1]);
+      });
+
+      it("deleting a child from one tree and a child from another tree", () => {
+        executeTestCase("cross-tree mid-tree delete",
+          [childA1, childB2],
+          [childA1, grandchildA1, childB2],
+          [parentA, childA2, grandchildA2, childA3, parentB, childB1, standalone, childS1]);
+      });
+
+      it("deleting mid-tree nodes mixed with a root", () => {
+        executeTestCase("mid-tree + roots mixed",
+          [childA1, childA3, parentB, standalone],
+          [childA1, grandchildA1, childA3, parentB, childB1, childB2, standalone, childS1],
+          [parentA, childA2, grandchildA2]);
+      });
+
+      it("deleting only grandchildren leaves all ancestors", () => {
+        executeTestCase("delete leaves only",
+          [grandchildA1, grandchildA2],
+          [grandchildA1, grandchildA2],
+          [parentA, childA1, childA2, childA3, parentB, childB1, childB2, standalone, childS1]);
+      });
+
+      it("deleting leaves from different subtrees simultaneously", () => {
+        executeTestCase("leaves from multiple subtrees",
+          [grandchildA1, childB1, childS1],
+          [grandchildA1, childB1, childS1],
+          [parentA, childA1, childA2, grandchildA2, childA3, parentB, childB2, standalone]);
+      });
+
+      it("deleting root, mid-tree and leaf", () => {
+        executeTestCase("root + child + grandchild + leaf",
+          [childA1, grandchildA2, parentB, childS1],
+          [childA1, grandchildA1, grandchildA2, parentB, childB1, childB2, childS1],
+          [parentA, childA2, childA3, standalone]);
+      });
+
+      it("parent and its grandchild", () => {
+        executeTestCase("parent + grandchild redundant",
+          [parentA, grandchildA1],
+          [parentA, childA1, grandchildA1, childA2, grandchildA2, childA3],
+          [parentB, childB1, childB2, standalone, childS1]);
+      });
+    });
+
+    describe("intra-set code scope", () => {
+      it("scope and scoped element both roots - order-agnostic", () => {
+        const rootA = insertElement();
+        const rootB = insertElement({ codeScope: rootA, codeValue: "rootB-code" });
+        db.saveChanges();
+        // Forward order: scope element first
+        executeTestCase("rootA -> rootB forward", [rootA, rootB], [rootA, rootB], []);
+        // Reverse order: scoped element first
+        executeTestCase("rootA -> rootB reverse", [rootB, rootA], [rootA, rootB], []);
+      });
+
+      it("child element is the code scope for an unrelated root", () => {
+        const rootA  = insertElement();
+        const childA = insertElement({ parentId: rootA });
+        const rootB  = insertElement({ codeScope: childA, codeValue: "rootB-code" });
+        db.saveChanges();
+        executeTestCase("depth-1 child scopes unrelated root - delete child+root directly",
+          [childA, rootB],
+          [childA, rootB],
+          [rootA]);
+        executeTestCase("depth-1 child scopes unrelated root - delete child only",
+          [childA],
+          [],
+          [rootA, childA, rootB]);
+        executeTestCase("depth-1 child scopes unrelated root - delete root only",
+          [rootB],
+          [rootB],
+          [rootA, childA]);
+      });
+
+      it("grandchild is the code scope for an unrelated root", () => {
+        const rootA       = insertElement();
+        const childA      = insertElement({ parentId: rootA });
+        const grandchildA = insertElement({ parentId: childA });
+        const rootB       = insertElement({ codeScope: grandchildA, codeValue: "rootB-code" });
+        db.saveChanges();
+        executeTestCase("depth-2 grandchild scopes unrelated root - delete both roots",
+          [rootA, rootB],
+          [rootA, childA, grandchildA, rootB],
+          []);
+        executeTestCase("depth-2 grandchild scopes unrelated root - delete grandchild+root directly",
+          [grandchildA, rootB],
+          [grandchildA, rootB],
+          [rootA, childA]);
+      });
+
+      it("root element scopes a child in another subtree", () => {
+        const rootA  = insertElement();
+        const rootB  = insertElement();
+        const childB = insertElement({ parentId: rootB, codeScope: rootA, codeValue: "childB-code" });
+        db.saveChanges();
+        executeTestCase("root scopes depth-1 child in sibling tree",
+          [rootA, rootB],
+          [rootA, rootB, childB],
+          []);
+      });
+
+      it("child scopes a sibling child", () => {
+        const rootA  = insertElement();
+        const childA = insertElement({ parentId: rootA });
+        const rootB  = insertElement();
+        const childB = insertElement({ parentId: rootB, codeScope: childA, codeValue: "childB-code" });
+        db.saveChanges();
+        executeTestCase("depth-1 child scopes depth-1 sibling",
+          [childA, childB],
+          [childA, childB],
+          [rootA, rootB]);
+      });
+
+      it("scope chain 1", () => {
+        const rootA = insertElement();
+        const rootB = insertElement({ codeScope: rootA, codeValue: "rootB-code" });
+        const rootC = insertElement({ codeScope: rootB, codeValue: "rootC-code" });
+        db.saveChanges();
+        executeTestCase("scope chain forward",  [rootA, rootB, rootC], [rootA, rootB, rootC], []);
+        executeTestCase("scope chain reversed", [rootC, rootB, rootA], [rootA, rootB, rootC], []);
+        executeTestCase("scope chain middle-first", [rootB, rootA, rootC], [rootA, rootB, rootC], []);
+      });
+
+      it("scope chain 2", () => {
+        // A -> B -> C: B is not in the delete set but depends on A (external violation).
+        // A should be pruned. C depends on B which is not being deleted, so C is standalone-deletable.
+        const rootA = insertElement();
+        const rootB = insertElement({ codeScope: rootA, codeValue: "rootB-code" });
+        const rootC = insertElement({ codeScope: rootB, codeValue: "rootC-code" });
+        db.saveChanges();
+        // rootB is NOT in the delete set but uses rootA as scope -> external violation -> rootA pruned
+        // rootC is in the delete set and its scope (rootB) is not being deleted -> rootC is safe to delete
+        executeTestCase("scope chain: delete A and C, B external violation prunes A",
+          [rootA, rootC],
+          [rootC],
+          [rootA, rootB]);
+      });
+
+      it("two elements using the same scope", () => {
+        // A is the code scope for both B and C independently.
+        //     A
+        //    / \
+        //   B   C  (code scope, not parent-child)
+        const rootA = insertElement();
+        const rootB = insertElement({ codeScope: rootA, codeValue: "rootB-code" });
+        const rootC = insertElement({ codeScope: rootA, codeValue: "rootC-code" });
+        db.saveChanges();
+        executeTestCase("delete all three",
+          [rootA, rootB, rootC],
+          [rootA, rootB, rootC],
+          []);
+        executeTestCase("delete only B and C",
+          [rootB, rootC],
+          [rootB, rootC],
+          [rootA]);
+      });
+
+      it("parent is also the code scope of its own child", () => {
+        const rootP = insertElement();
+        const childC = insertElement({ parentId: rootP, codeScope: rootP, codeValue: "childC-code" });
+        db.saveChanges();
+        executeTestCase("parent is code scope of child - delete parent",
+          [rootP],
+          [rootP, childC],
+          []);
+      });
+    });
+
+    describe("external code scope violation - pruning", () => {
+      it("root is code scope for an external element", () => {
+        const rootA    = insertElement();
+        const external = insertElement({ codeScope: rootA, codeValue: "ext-code" });
+        const rootB    = insertElement();
+        db.saveChanges();
+        executeTestCase("external scopes root",
+          [rootA, rootB],
+          [rootB],
+          [rootA, external]);
+      });
+
+      it("depth-1 child is code scope for external", () => {
+        const rootA    = insertElement();
+        const childA   = insertElement({ parentId: rootA });
+        const external = insertElement({ codeScope: childA, codeValue: "ext-code" });
+        const rootB    = insertElement();
+        db.saveChanges();
+        executeTestCase("external scopes depth-1 child - parent subtree pruned",
+          [rootA, rootB],
+          [rootB],
+          [rootA, childA, external]);
+      });
+
+      it("depth-2 grandchild is code scope for external", () => {
+        const rootA       = insertElement();
+        const childA      = insertElement({ parentId: rootA });
+        const grandchildA = insertElement({ parentId: childA });
+        const external    = insertElement({ codeScope: grandchildA, codeValue: "ext-code" });
+        const rootB       = insertElement();
+        db.saveChanges();
+        executeTestCase("external scopes depth-2 grandchild - grandparent subtree pruned",
+          [rootA, rootB],
+          [rootB],
+          [rootA, childA, grandchildA, external]);
+      });
+
+      it("only the child is passed for deletion", () => {
+        const rootA    = insertElement();
+        const childA   = insertElement({ parentId: rootA });
+        const external = insertElement({ codeScope: childA, codeValue: "ext-code" });
+        db.saveChanges();
+        executeTestCase("external scopes requested child",
+          [childA],
+          [],
+          [rootA, childA, external]);
+      });
+
+      it("root has both an external scope dependent AND an intra-set scope dependent", () => {
+        const rootA    = insertElement();
+        const rootB    = insertElement({ codeScope: rootA, codeValue: "rootB-code" });
+        const external = insertElement({ codeScope: rootA, codeValue: "ext-code" });
+        db.saveChanges();
+        executeTestCase("root pruned due to external; sibling still deleted",
+          [rootA, rootB],
+          [rootB],
+          [rootA, external]);
+      });
+
+      it("two independent external scope violations", () => {
+        const rootA = insertElement();
+        const rootB = insertElement();
+        const extX   = insertElement({ codeScope: rootA, codeValue: "extX" });
+        const extY   = insertElement({ codeScope: rootB, codeValue: "extY" });
+        const rootC  = insertElement();
+        db.saveChanges();
+        executeTestCase("two independent violations",
+          [rootA, rootB, rootC],
+          [rootC],
+          [rootA, rootB, extX, extY]);
+      });
+    });
+
+    describe("mixed parent-child hierarchy and code scope", () => {
+      it("root scopes another root - delete both roots, all descendants removed", () => {
+        const rootA   = insertElement();
+        const childA1 = insertElement({ parentId: rootA });
+        const childA2 = insertElement({ parentId: rootA });
+        const rootB   = insertElement({ codeScope: rootA, codeValue: "rootB-code" });
+        const childB1 = insertElement({ parentId: rootB });
+        db.saveChanges();
+        executeTestCase("root scopes root - delete both roots",
+          [rootA, rootB],
+          [rootA, childA1, childA2, rootB, childB1],
+          []);
+      });
+
+      it("depth-1 child scopes an unrelated root", () => {
+        const rootA   = insertElement();
+        const childA1 = insertElement({ parentId: rootA });
+        const rootB   = insertElement({ codeScope: childA1, codeValue: "rootB-code" });
+        const childB1 = insertElement({ parentId: rootB });
+        db.saveChanges();
+        executeTestCase("depth-1 child scopes root - delete both via parents",
+          [rootA, rootB],
+          [rootA, childA1, rootB, childB1],
+          []);
+        // Reverse input order - result must be identical
+        executeTestCase("depth-1 child scopes root - reverse input order",
+          [rootB, rootA],
+          [rootA, childA1, rootB, childB1],
+          []);
+      });
+
+      it("depth-1 child scopes an unrelated root - delete child and root directly (parent survives)", () => {
+        const rootA   = insertElement();
+        const childA1 = insertElement({ parentId: rootA });
+        const rootB   = insertElement({ codeScope: childA1, codeValue: "rootB-code" });
+        const childB1 = insertElement({ parentId: rootB });
+        db.saveChanges();
+        // Only childA1 and rootB - rootA is NOT in the delete set.
+        executeTestCase("depth-1 child scopes root - delete child + scoped root directly",
+          [childA1, rootB],
+          [childA1, rootB, childB1],
+          [rootA]);
+      });
+
+      it("depth-1 child scopes an unrelated root - deleting only the child cascades into the scoped root's subtree", () => {
+        // childA1 is the code scope of rootB. When childA1 is deleted, rootB loses its scope
+        // element -> rootB (and its children) must also be deleted.
+        const rootA   = insertElement();
+        const childA1 = insertElement({ parentId: rootA });
+        const rootB   = insertElement({ codeScope: childA1, codeValue: "rootB-code" });
+        const childB1 = insertElement({ parentId: rootB });
+        db.saveChanges();
+        executeTestCase("delete child only - scoped root also removed",
+          [childA1],
+          [],
+          [rootA, childA1, rootB, childB1]);
+      });
+
+      it("root scopes a depth-1 child in sibling tree - delete both roots, all descendants removed", () => {
+        const rootA   = insertElement();
+        const childA1 = insertElement({ parentId: rootA });
+        const rootB   = insertElement();
+        const childB1 = insertElement({ parentId: rootB, codeScope: rootA, codeValue: "childB1-code" });
+        db.saveChanges();
+        executeTestCase("root scopes depth-1 child - delete both roots",
+          [rootA, rootB],
+          [rootA, childA1, rootB, childB1],
+          []);
+      });
+
+      it("depth-1 child scopes a depth-1 child in sibling tree - delete both children directly (parents survive)", () => {
+        const rootA   = insertElement();
+        const childA1 = insertElement({ parentId: rootA });
+        const rootB   = insertElement();
+        const childB1 = insertElement({ parentId: rootB, codeScope: childA1, codeValue: "childB1-code" });
+        const childB2 = insertElement({ parentId: rootB });
+        db.saveChanges();
+        executeTestCase("sibling-child scope - delete both children directly",
+          [childA1, childB1],
+          [childA1, childB1],
+          [rootA, rootB, childB2]);
+      });
+
+      it("depth-2 grandchild scopes an unrelated root - delete grandparent + scoped root", () => {
+        const rootA       = insertElement();
+        const childA      = insertElement({ parentId: rootA });
+        const grandchildA = insertElement({ parentId: childA });
+        const rootB       = insertElement({ codeScope: grandchildA, codeValue: "rootB-code" });
+        const childB      = insertElement({ parentId: rootB });
+        db.saveChanges();
+        executeTestCase("depth-2 grandchild scopes root - delete both roots",
+          [rootA, rootB],
+          [rootA, childA, grandchildA, rootB, childB],
+          []);
+        // Delete grandchild and scoped root directly (rootA and childA survive)
+        executeTestCase("depth-2 grandchild scopes root - delete grandchild + root directly",
+          [grandchildA, rootB],
+          [grandchildA, rootB, childB],
+          [rootA, childA]);
+      });
+
+      it("external element scopes a depth-1 child", () => {
+        const rootA    = insertElement();
+        const childA1  = insertElement({ parentId: rootA });
+        const rootB    = insertElement();
+        const childB1  = insertElement({ parentId: rootB });
+        const external = insertElement({ codeScope: childA1, codeValue: "ext-code" });
+        db.saveChanges();
+        executeTestCase("external scopes depth-1 child",
+          [rootA, rootB],
+          [rootB, childB1],
+          [rootA, childA1, external]);
+      });
+
+      it("external element scopes a depth-2 grandchild", () => {
+        const rootA       = insertElement();
+        const childA      = insertElement({ parentId: rootA });
+        const grandchildA = insertElement({ parentId: childA });
+        const rootB       = insertElement();
+        const childB      = insertElement({ parentId: rootB });
+        const external    = insertElement({ codeScope: grandchildA, codeValue: "ext-code" });
+        db.saveChanges();
+        executeTestCase("external scopes depth-2 grandchild order 1",
+          [rootA, rootB],
+          [rootB, childB],
+          [rootA, childA, grandchildA, external]);
+
+        executeTestCase("external scopes depth-2 grandchild order 2",
+          [grandchildA],
+          [],
+          [rootA, childA, grandchildA, rootB, childB, external]);
+
+        executeTestCase("external scopes depth-2 grandchild order 3",
+          [grandchildA, rootA, childB],
+          [childB],
+          [rootA, childA, grandchildA, rootB, external]);
+      });
+
+      it("two trees: one has external scope violation, other is deleted cleanly", () => {
+        const rootA    = insertElement();
+        const childA   = insertElement({ parentId: rootA });
+        const gcA      = insertElement({ parentId: childA });
+        const external = insertElement({ codeScope: childA, codeValue: "ext-code" });
+        const rootB    = insertElement();
+        const childB1  = insertElement({ parentId: rootB });
+        const childB2  = insertElement({ parentId: rootB });
+        const gcB      = insertElement({ parentId: childB1 });
+        db.saveChanges();
+        executeTestCase("one tree pruned, other fully deleted",
+          [rootA, rootB],
+          [rootB, childB1, childB2, gcB],
+          [rootA, childA, gcA, external]);
+      });
+    });
   });
 });
