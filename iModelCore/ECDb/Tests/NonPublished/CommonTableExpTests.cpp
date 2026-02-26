@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
-#include <iostream>
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
@@ -3649,6 +3648,43 @@ TEST_F(CommonTableExpTestFixture, SelectingAsteriskWithBoundParameters)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithSubColumns_NullOnlyRow)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_with_subcols_null_only_row.ecdb"));
+    // First row all-NULL, second row concrete
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a,b) AS (VALUES (NULL,NULL)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesWithSubColumns_NullFirstRow)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_with_subcols_null_first_row.ecdb"));
+    // First row all-NULL, second row concrete
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a,b) AS (VALUES (NULL,NULL),(10,20)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, Values_BoundNullParameter)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_bound_null.ecdb"));
@@ -3853,7 +3889,7 @@ TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_NullLiterals)
     ASSERT_STREQ("a", stmt.GetValueText(2));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(true, stmt.IsValueNull(0));
-    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(2, stmt.GetValueInt(1));
     ASSERT_EQ(true, stmt.IsValueNull(2));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
@@ -3873,8 +3909,8 @@ TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_AllNullRow)
     ASSERT_EQ(true, stmt.IsValueNull(0));
     ASSERT_EQ(true, stmt.IsValueNull(1));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(true, stmt.IsValueNull(0));
-    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -4117,6 +4153,26 @@ TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_MismatchedRowWidthExtraCols
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
         "WITH cte AS (VALUES (1,2),(3,4,5)) SELECT * FROM cte"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_NullVariation)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("values_no_subcols_all_null_row.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (NULL,NULL),(10,20)) SELECT * FROM cte"));
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(true, stmt.IsValueNull(0));
+    ASSERT_EQ(true, stmt.IsValueNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
 END_ECDBUNITTESTS_NAMESPACE

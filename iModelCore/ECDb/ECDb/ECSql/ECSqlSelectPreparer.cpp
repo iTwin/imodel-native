@@ -321,18 +321,9 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     const int startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount();
 
     size_t snippetCountBefore = nativeSqlSnippets.size();
-    if (!innerExp->IsParameterExp() && innerExp->GetTypeInfo().IsNull())
-        {
-        ECSqlStatus status = ECSqlExpPreparer::PrepareNullExp(nativeSqlSnippets, ctx, *innerExp, referenceSqliteSnippetCount);
-        if (!status.IsSuccess())
-            return status;
-        }
-    else
-        {
-        ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, *innerExp);
-        if (!status.IsSuccess())
-            return status;
-        }
+    ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, *innerExp);
+    if (!status.IsSuccess())
+        return status;
 
     std::vector<Utf8String> & resultSet = const_cast<DerivedPropertyExp&>(exp).SqlResultSetR();
     Utf8String alias = exp.GetColumnAlias();
