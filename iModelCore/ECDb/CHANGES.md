@@ -5,7 +5,12 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.2.1` |
+| ECSQL   | `2.0.3.0` |
+
+## ## `02/26/2026`: Added `VALUES(),()` support to CTE
+* ECSql version change `2.0.2.1` -> `2.0.3.0`.
+* Added support for use of `VALUES()` list to CTE.
+* Example: `WITH el AS (VALUES(1,2),(3,4)) SELECT * FROM el`
 
 ## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
 * ECSql version change `2.0.2.0` -> `2.0.2.1`.
