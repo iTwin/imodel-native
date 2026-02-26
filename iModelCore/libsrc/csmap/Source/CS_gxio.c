@@ -313,6 +313,9 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 	char currentDir[MAXPATH] = { '\0' };
 	char targetPaths[2][MAXPATH] = { {'\0'}, {'\0'} };
 	char const* pTargetPath;
+#ifdef GEOCOORD_ENHANCEMENT
+	int currentDirInitialized = FALSE;
+#endif
 
 	int globalFoundForward;
 	int globalFoundBackward;
@@ -357,6 +360,9 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 
 	CS_stncp(targetPaths[0], cs_UserDir, sizeof(targetPaths[0]));
 	CS_stncp(targetPaths[1], currentDir, sizeof(targetPaths[1]));
+#ifdef GEOCOORD_ENHANCEMENT
+    currentDirInitialized = TRUE;
+#endif
 
 	//go through all directories we've
 	for (i = 0; i < (sizeof(targetPaths) / sizeof(targetPaths[0])); ++i)
@@ -524,7 +530,12 @@ error:
 		gx_def = NULL;
 	}
 
-	CS_setdr(currentDir, NULL);			/*lint !e534  ignoring return value, can't do much here on failure */
+#ifdef GEOCOORD_ENHANCEMENT
+    if (currentDirInitialized)
+	    CS_setdr(currentDir, NULL);		/*lint !e534  ignoring return value, not much we can do about it here */
+#else
+    CS_setdr(currentDir, NULL);		/*lint !e534  ignoring return value, not much we can do about it here */
+#endif
 
 	return (gx_def);
 }
@@ -563,6 +574,7 @@ int EXP_LVL3 CS_gxdefFrom (struct cs_GeodeticTransform_ *array[], int numArray, 
 	char currentDir[MAXPATH] = { '\0' };
 	char targetPaths[2][MAXPATH] = { {'\0'}, {'\0'} };
 	char const* pTargetPath;
+    int currentDirInitialized = FALSE;
 	
 	int st;
 	size_t i;
@@ -601,6 +613,7 @@ int EXP_LVL3 CS_gxdefFrom (struct cs_GeodeticTransform_ *array[], int numArray, 
 
 	CS_stncp(targetPaths[0], cs_UserDir, sizeof(targetPaths[0]));
 	CS_stncp(targetPaths[1], currentDir, sizeof(targetPaths[1]));
+    currentDirInitialized = TRUE;
 
 	//go through all directories we've
 	for (i = 0; i < (sizeof(targetPaths) / sizeof(targetPaths[0])); ++i)
@@ -698,7 +711,8 @@ error:
 		gx_def = NULL;
 	}
 
-	CS_setdr(currentDir, NULL);			/*lint !e534  ignoring return value, can't do much here on failure */
+    if (currentDirInitialized)
+	    CS_setdr(currentDir, NULL);		/*lint !e534  ignoring return value, not much we can do about it here */
 
 	return 0;
 }
