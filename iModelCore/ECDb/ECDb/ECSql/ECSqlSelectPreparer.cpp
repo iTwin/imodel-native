@@ -321,6 +321,13 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     const int startColumnIndex = ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount();
 
     size_t snippetCountBefore = nativeSqlSnippets.size();
+    // Previously we used to prepare null expressions here if type info was null
+    // But there can be queries like select * from (select null union all select 10)
+    // In that case the derived property exp of * has a null type info so we used to create null exp for that
+    // so the resultant sql was select null from (select null union all select 10)
+    // But the correct one would be select [K0] from (select null [K0] union all select 10)
+    // So logically we should not prepare null expressions here as the type info can be derived from the reference select clause, 
+    //instead we should just prepare the value exp of this derived property exp
     ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, *innerExp);
     if (!status.IsSuccess())
         return status;

@@ -4175,4 +4175,58 @@ TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_NullVariation)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, ValuesNoSubColumns_BindString)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ValuesNoSubColumns_BindString.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte AS (VALUES (?,?),(?,?)) SELECT * FROM cte"));
+    stmt.BindText(1, "test", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(2, "Hi", IECSqlBinder::MakeCopy::No); 
+    stmt.BindText(3, "foo", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(4, "bar", IECSqlBinder::MakeCopy::No);
+    
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("test", stmt.GetValueText(0));
+    ASSERT_EQ("Hi", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("foo", stmt.GetValueText(0));
+    ASSERT_EQ("bar", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(0).GetProperty()->GetTypeFullName().c_str());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(1).GetProperty()->GetTypeFullName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, Values_BindString)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Values_BindString.ecdb"));
+    // First row all-NULL, second row concrete, no sub-column declarations
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "WITH cte(a,b) AS (VALUES (?,?),(?,?)) SELECT * FROM cte"));
+    stmt.BindText(1, "test", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(2, "Hi", IECSqlBinder::MakeCopy::No); 
+    stmt.BindText(3, "foo", IECSqlBinder::MakeCopy::No);
+    stmt.BindText(4, "bar", IECSqlBinder::MakeCopy::No);
+
+    ASSERT_EQ(2, stmt.GetColumnCount());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("test", stmt.GetValueText(0));
+    ASSERT_EQ("Hi", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ("foo", stmt.GetValueText(0));
+    ASSERT_EQ("bar", stmt.GetValueText(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(0).GetProperty()->GetTypeFullName().c_str());
+    ASSERT_STREQ("double", stmt.GetColumnInfo(1).GetProperty()->GetTypeFullName().c_str());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
