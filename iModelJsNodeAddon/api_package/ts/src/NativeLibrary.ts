@@ -625,6 +625,7 @@ export declare namespace IModelJsNative {
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
     public deleteElements(elementIds: Id64Array): Id64Array;
+    public deleteDefinitionElements(elementIds: Id64Array): Id64Array;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;

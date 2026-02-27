@@ -3906,6 +3906,10 @@ private:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
+
+    void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
+    bool IsBulkOperation() const { return m_isBulkOperation; }
+    void bulkDeleteLinkTableRelationships(const DgnElementIdSet elementIds);
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -4029,12 +4033,9 @@ public:
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
-
-    DGNPLATFORM_EXPORT void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
-    DGNPLATFORM_EXPORT bool IsBulkOperation() const { return m_isBulkOperation; }
+    
     DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipValidation = false, const bool skipHandlerCallbacks = false);
-
-    void bulkDeleteLinkTableRelationships(const DgnElementIdSet elementIds);
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

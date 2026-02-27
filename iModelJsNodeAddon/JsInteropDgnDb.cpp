@@ -696,6 +696,17 @@ DgnElementIdSet JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array  elementIds,
     return dgndb.Elements().DeleteElements(elementIdSet, skipValidation, skipHandlerCallbacks);
 }
 
+DgnElementIdSet JsInterop::DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds) {
+    DgnElementIdSet elementIdSet;
+    for (auto i = 0U; i < elementIds.Length(); ++i) {
+        Napi::Value arrayItem = elementIds[i];
+        auto val = BeInt64Id::FromString(arrayItem.As<Napi::String>().Utf8Value().c_str());
+        DgnElementId elementId(val.GetValue());
+        elementIdSet.insert(elementId);
+    }
+    return dgndb.Elements().DeleteDefinitionElements(elementIdSet);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -685,6 +685,9 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, const bool skipValidation, const bool skipHandlerCallbacks)
     {
     DgnDb::VerifyClientThread();
@@ -717,23 +720,23 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
         WITH RECURSIVE
         -- Expand input roots to their full descendant hierarchy
         fullDeleteSet(id) AS (
-            SELECT ECInstanceId FROM bis.Element WHERE InVirtualSet(?, ECInstanceId)
+            SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE InVirtualSet(?, ECInstanceId)
             UNION ALL
-            SELECT e.ECInstanceId FROM bis.Element e
+            SELECT e.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
                 INNER JOIN fullDeleteSet p ON e.Parent.Id = p.id
         ),
         -- Elements outside the delete set that use a delete-set element as their CodeScope
         violatingScopes(id) AS (
-            SELECT DISTINCT CodeScope.Id FROM bis.Element
+            SELECT DISTINCT CodeScope.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) "
             WHERE CodeScope.Id IN (SELECT id FROM fullDeleteSet)
                 AND ECInstanceId NOT IN (SELECT id FROM fullDeleteSet)
         ),
         -- For each violator, find its highest ancestor that is still inside the delete set
         subtreeRoots(id, parentId) AS (
-            SELECT ECInstanceId, Parent.Id FROM bis.Element
+            SELECT ECInstanceId, Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) "
                 WHERE ECInstanceId IN (SELECT id FROM violatingScopes)
             UNION ALL
-            SELECT e.ECInstanceId, e.Parent.Id FROM bis.Element e
+            SELECT e.ECInstanceId, e.Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
                 INNER JOIN subtreeRoots s ON e.ECInstanceId = s.parentId
                 WHERE s.parentId IN (SELECT id FROM fullDeleteSet)
         ),
@@ -742,7 +745,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
             SELECT id FROM subtreeRoots
                 WHERE parentId IS NULL OR parentId NOT IN (SELECT id FROM fullDeleteSet)
             UNION ALL
-            SELECT e.ECInstanceId FROM bis.Element e
+            SELECT e.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
                 INNER JOIN subtree s ON e.Parent.Id = s.id
         )
         SELECT fds.id AS id, 0 AS isScopeViolation FROM fullDeleteSet fds
@@ -809,17 +812,17 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
     if (ECSqlStatus::Success != rootIdsToDelete.Prepare(m_dgndb, R"sql(
         WITH RECURSIVE 
         deleteSet(id, parentid) AS (
-            SELECT ECInstanceId, Parent.Id FROM bis.Element WHERE InVirtualSet(?, ECInstanceId)
+            SELECT ECInstanceId, Parent.Id FROM  " BIS_SCHEMA(BIS_CLASS_Element) " WHERE InVirtualSet(?, ECInstanceId)
         ),
         elementTree(id, depth) AS (
             SELECT ECInstanceId, 0 
-            FROM bis.Element 
+            FROM " BIS_SCHEMA(BIS_CLASS_Element) "
             WHERE InVirtualSet(?, ECInstanceId) AND (Parent.Id IS NULL OR Parent.Id NOT IN (SELECT id FROM deleteSet))
             
             UNION ALL
 
             SELECT e.ECInstanceId, t.depth + 1
-            FROM bis.Element e
+            FROM  " BIS_SCHEMA(BIS_CLASS_Element) " e
                 INNER JOIN elementTree t 
                     ON e.Parent.Id = t.id
         )
@@ -868,6 +871,48 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
     m_dgndb.ExecuteSql("PRAGMA defer_foreign_keys = false");
 
     return failedToDeleteElements;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& elementIds)
+    {
+    DgnDb::VerifyClientThread();
+
+    if (elementIds.empty())
+        return {};
+
+    DgnElementIdSet definitionElementIds;
+    DgnElementIdSet nonDefinitionElementIds;
+
+    ECSqlStatement classifyStmt;
+    if (ECSqlStatus::Success != classifyStmt.Prepare(m_dgndb, R"sql(
+            SELECT e.ECInstanceId, CASE WHEN d.ECInstanceId IS NULL THEN 0 ELSE 1 END
+            FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
+            LEFT JOIN " BIS_SCHEMA(BIS_CLASS_DefinitionElement) " d ON d.ECInstanceId = e.ECInstanceId
+            WHERE InVirtualSet(?, e.ECInstanceId)
+    )sql"))
+        return elementIds;
+
+    classifyStmt.BindVirtualSet(1, std::make_shared<IdSet<BeInt64Id>>(BeIdSet(elementIds.GetBeIdSet())));
+
+    while (classifyStmt.Step() == BE_SQLITE_ROW)
+        {
+        const auto id = classifyStmt.GetValueId<DgnElementId>(0);
+        if (classifyStmt.GetValueInt(1) != 0)
+            definitionElementIds.insert(id);
+        else
+            nonDefinitionElementIds.insert(id);
+        }
+
+    if (!nonDefinitionElementIds.empty())
+        LOG.warningv("deleteDefinitionElements: Elements %s are not DefinitionElements and cannot be deleted with this API.", nonDefinitionElementIds.ToString().c_str());
+
+    if (definitionElementIds.empty())
+        return nonDefinitionElementIds;
+
+    return definitionElementIds;
     }
 
 void DgnElements::bulkDeleteLinkTableRelationships(const DgnElementIdSet elementIds)
