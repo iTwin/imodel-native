@@ -946,12 +946,19 @@ ErcWktEleType TrcWktElement::ParseWellKnownText (std::string& value,size_t& eleS
 			break;
 
 		case wktTrim:
+#ifdef GEOCOORD_ENHANCEMENT
+            /* If we have space chars at the end of string we still want a termination location */
+        	eleTerm = (unsigned)(chPtr - wellKnownText - 2);
+			if (!isspace (curChar))
+				state = wktDone;
+#else
 			if (!isspace (curChar))
 			{
 				eleTerm = (unsigned)(chPtr - wellKnownText - 2);
 				state = wktDone;
 			}
 			break;
+#endif
 
 		case wktDone:
 		default:

@@ -3217,7 +3217,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "      },"
 "      \"unit\": \"Meter\","
 "      \"projection\": {"
-"        \"method\": \"MercatorScale\","
+"        \"method\": \"Mercator\","
 "        \"centralMeridian\": 0,"
 "        \"scaleFactor\": 1,"
 "        \"standardParallel\": 0,"
