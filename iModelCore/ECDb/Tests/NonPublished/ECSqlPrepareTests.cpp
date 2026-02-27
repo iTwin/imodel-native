@@ -2077,7 +2077,7 @@ TEST_F(ECSqlSelectPrepareTests, Values_Null_with_and_without_subQuery)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
             "SELECT * FROM (SELECT NULL, NULL)"));
-        ASSERT_STREQ("SELECT [K0],[K1] FROM (SELECT NULL [K0],NULL [K1])", stmt.GetNativeSql());
+        ASSERT_STREQ("SELECT NULL,NULL FROM (SELECT NULL [K0],NULL [K1])", stmt.GetNativeSql());
         ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.IsValueNull(0));
@@ -2088,7 +2088,7 @@ TEST_F(ECSqlSelectPrepareTests, Values_Null_with_and_without_subQuery)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
             "SELECT * FROM (VALUES (NULL,NULL))"));
-        ASSERT_STREQ("SELECT [K0],[K1] FROM (SELECT NULL [K0],NULL [K1])", stmt.GetNativeSql());
+        ASSERT_STREQ("SELECT NULL,NULL FROM (SELECT NULL [K0],NULL [K1])", stmt.GetNativeSql());
         ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.IsValueNull(0));

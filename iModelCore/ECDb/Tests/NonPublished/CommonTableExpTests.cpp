@@ -4218,12 +4218,11 @@ TEST_F(CommonTableExpTestFixture, Values_BindString)
 TEST_F(CommonTableExpTestFixture, Values_OnlyNull)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Values_OnlyNull.ecdb"));
-    // First row all-NULL, second row concrete, no sub-column declarations
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
             "WITH cte(a,b) AS (VALUES (NULL,NULL)) SELECT * FROM cte"));
-
+        ASSERT_STREQ("WITH cte(a,b) AS (SELECT NULL,NULL)\nSELECT NULL,NULL FROM cte", stmt.GetNativeSql());
         ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.IsValueNull(0));
@@ -4234,12 +4233,38 @@ TEST_F(CommonTableExpTestFixture, Values_OnlyNull)
          ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
             "WITH cte(a,b) AS (VALUES (NULL,NULL)) SELECT a, b FROM cte"));
-
+        ASSERT_STREQ("WITH cte(a,b) AS (SELECT NULL,NULL)\nSELECT NULL,NULL FROM cte", stmt.GetNativeSql());
         ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.IsValueNull(0));
         ASSERT_EQ(true, stmt.IsValueNull(1));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());   
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "WITH cte AS (VALUES (NULL,NULL)) SELECT * FROM cte"));
+        ASSERT_STREQ("WITH cte AS (SELECT NULL [K0],NULL [K1])\nSELECT NULL,NULL FROM cte", stmt.GetNativeSql());
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0));
+        ASSERT_EQ(true, stmt.IsValueNull(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+            "WITH cte(a,b) AS (VALUES (NULL,NULL),(NULL, NULL)) SELECT * FROM cte"));
+        }
+        {
+         ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+            "WITH cte(a,b) AS (VALUES (NULL,NULL),(NULL, NULL)) SELECT a, b FROM cte"));  
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+            "WITH cte AS (VALUES (NULL,NULL),(null, null)) SELECT * FROM cte"));
         }
     }
 
