@@ -720,23 +720,23 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
         WITH RECURSIVE
         -- Expand input roots to their full descendant hierarchy
         fullDeleteSet(id) AS (
-            SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE InVirtualSet(?, ECInstanceId)
+            SELECT ECInstanceId FROM bis.Element WHERE InVirtualSet(?, ECInstanceId)
             UNION ALL
-            SELECT e.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
+            SELECT e.ECInstanceId FROM bis.Element e
                 INNER JOIN fullDeleteSet p ON e.Parent.Id = p.id
         ),
         -- Elements outside the delete set that use a delete-set element as their CodeScope
         violatingScopes(id) AS (
-            SELECT DISTINCT CodeScope.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) "
+            SELECT DISTINCT CodeScope.Id FROM bis.Element
             WHERE CodeScope.Id IN (SELECT id FROM fullDeleteSet)
                 AND ECInstanceId NOT IN (SELECT id FROM fullDeleteSet)
         ),
         -- For each violator, find its highest ancestor that is still inside the delete set
         subtreeRoots(id, parentId) AS (
-            SELECT ECInstanceId, Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) "
+            SELECT ECInstanceId, Parent.Id FROM bis.Element
                 WHERE ECInstanceId IN (SELECT id FROM violatingScopes)
             UNION ALL
-            SELECT e.ECInstanceId, e.Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
+            SELECT e.ECInstanceId, e.Parent.Id FROM bis.Element e
                 INNER JOIN subtreeRoots s ON e.ECInstanceId = s.parentId
                 WHERE s.parentId IN (SELECT id FROM fullDeleteSet)
         ),
@@ -745,7 +745,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
             SELECT id FROM subtreeRoots
                 WHERE parentId IS NULL OR parentId NOT IN (SELECT id FROM fullDeleteSet)
             UNION ALL
-            SELECT e.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Element) " e
+            SELECT e.ECInstanceId FROM bis.Element e
                 INNER JOIN subtree s ON e.Parent.Id = s.id
         )
         SELECT fds.id AS id, 0 AS isScopeViolation FROM fullDeleteSet fds
@@ -812,17 +812,17 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
     if (ECSqlStatus::Success != rootIdsToDelete.Prepare(m_dgndb, R"sql(
         WITH RECURSIVE 
         deleteSet(id, parentid) AS (
-            SELECT ECInstanceId, Parent.Id FROM  " BIS_SCHEMA(BIS_CLASS_Element) " WHERE InVirtualSet(?, ECInstanceId)
+            SELECT ECInstanceId, Parent.Id FROM  bis.Element WHERE InVirtualSet(?, ECInstanceId)
         ),
         elementTree(id, depth) AS (
             SELECT ECInstanceId, 0 
-            FROM " BIS_SCHEMA(BIS_CLASS_Element) "
+            FROM bis.Element
             WHERE InVirtualSet(?, ECInstanceId) AND (Parent.Id IS NULL OR Parent.Id NOT IN (SELECT id FROM deleteSet))
             
             UNION ALL
 
             SELECT e.ECInstanceId, t.depth + 1
-            FROM  " BIS_SCHEMA(BIS_CLASS_Element) " e
+            FROM bis.Element e
                 INNER JOIN elementTree t 
                     ON e.Parent.Id = t.id
         )
