@@ -22,6 +22,7 @@
         <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
         <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart LibType="Static" PartName="BeMsgPackC" PartFile="iModelCore\libsrc\msgpack-c\BeMsgPackC"/>
         <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinSQLite$(libext)</Libs>
