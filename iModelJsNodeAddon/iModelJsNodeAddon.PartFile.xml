@@ -9,6 +9,7 @@
 
   <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,macosx64,macosarm64">
     <SubPart PartName="iModelJsMakePackages"/>
+    <SubPart PartName="RunUnitTests"/>
   </Part>
 
   <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke">
@@ -62,6 +63,9 @@
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
     <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
   </Product>
+
+  <!-- This part is required as separate one to run the tests with Address Sanitizer -->
+  <Part Name="RunTestsWithAddressSanitizer" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke"></Part>
 
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNative-Windows" />
@@ -153,6 +157,10 @@
 
   <Part Name="CrashpadShim" OnlyPlatforms="Linux*">
     <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
+  </Part>
+
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
+    <SubPart PartName="iModelJsMakePackages"/>
   </Part>
 
 </BuildContext>

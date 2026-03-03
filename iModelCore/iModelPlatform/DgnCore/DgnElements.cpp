@@ -687,65 +687,95 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
 
 namespace
     {
-    DgnElementIdSet ExpandElementHierarchyAndValidate(DgnDbR db, DgnElementIdSet& elementIds)
+    void ExpandElementHierarchy(DgnDbR db, DgnElementIdSet& elementIds)
         {
-        const auto expandAndValidateSqlStr = R"sql(
+        constexpr auto expandHierarchySql = R"sql(
             WITH RECURSIVE
-            -- Expand input roots to their full descendant hierarchy
             fullDeleteSet(id) AS (
-                SELECT ECInstanceId FROM bis.Element WHERE InVirtualSet(?, ECInstanceId)
+                SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
                 UNION ALL
-                SELECT e.ECInstanceId FROM bis.Element e
-                    INNER JOIN fullDeleteSet p ON e.Parent.Id = p.id
-            ),
-            -- Elements outside the delete set that use a delete-set element as their CodeScope
-            violatingScopes(id) AS (
-                SELECT DISTINCT CodeScope.Id FROM bis.Element
-                WHERE CodeScope.Id IN (SELECT id FROM fullDeleteSet)
-                    AND ECInstanceId NOT IN (SELECT id FROM fullDeleteSet)
-            ),
-            -- For each violator, find its highest ancestor that is still inside the delete set
-            subtreeRoots(id, parentId) AS (
-                SELECT ECInstanceId, Parent.Id FROM bis.Element
-                    WHERE ECInstanceId IN (SELECT id FROM violatingScopes)
-                UNION ALL
-                SELECT e.ECInstanceId, e.Parent.Id FROM bis.Element e
-                    INNER JOIN subtreeRoots s ON e.ECInstanceId = s.parentId
-                    WHERE s.parentId IN (SELECT id FROM fullDeleteSet)
-            ),
-            -- Walk DOWN from each root to collect the entire subtree that must be excluded
-            subtree(id) AS (
-                SELECT id FROM subtreeRoots
-                    WHERE parentId IS NULL OR parentId NOT IN (SELECT id FROM fullDeleteSet)
-                UNION ALL
-                SELECT e.ECInstanceId FROM bis.Element e
-                    INNER JOIN subtree s ON e.Parent.Id = s.id
+                SELECT e.Id FROM bis_Element e
+                    INNER JOIN fullDeleteSet p ON e.ParentId = p.id
             )
-            SELECT fds.id AS id, FALSE AS isCodeScopeViolation FROM fullDeleteSet fds
-            UNION ALL
-            SELECT DISTINCT s.id AS id, TRUE AS isCodeScopeViolation FROM subtree s
+            SELECT id FROM fullDeleteSet
         )sql";
 
-        ECSqlStatement expandAndValidate;
-        if (ECSqlStatus::Success != expandAndValidate.Prepare(db, expandAndValidateSqlStr))
-            return elementIds;
+        Statement expandHierarchyStmt;
+        if (BE_SQLITE_OK != expandHierarchyStmt.Prepare(db, expandHierarchySql))
+            return;
 
-        expandAndValidate.BindVirtualSet(1, std::make_shared<IdSet<BeInt64Id>>(BeIdSet(elementIds.GetBeIdSet())));
+        expandHierarchyStmt.BindVirtualSet(1, elementIds);
+        while (expandHierarchyStmt.Step() == BE_SQLITE_ROW)
+            elementIds.insert(expandHierarchyStmt.GetValueId<DgnElementId>(0));
+        }
 
+    DgnElementIdSet FindViolatingCodeScopeIds(DgnDbR db, const DgnElementIdSet& elementIds)
+        {
+        constexpr auto violatingCodeScopesSql = R"sql(
+            SELECT DISTINCT CodeScopeId FROM bis_Element
+            WHERE InVirtualSet(?, CodeScopeId)
+              AND NOT InVirtualSet(?, Id)
+        )sql";
+
+        Statement violatingCodeScopesStmt;
+        if (BE_SQLITE_OK != violatingCodeScopesStmt.Prepare(db, violatingCodeScopesSql))
+            return {};
+
+        violatingCodeScopesStmt.BindVirtualSet(1, elementIds);
+        violatingCodeScopesStmt.BindVirtualSet(2, elementIds);
+
+        DgnElementIdSet violatingScopeIds;
+        while (violatingCodeScopesStmt.Step() == BE_SQLITE_ROW)
+            violatingScopeIds.insert(violatingCodeScopesStmt.GetValueId<DgnElementId>(0));
+
+        return violatingScopeIds;
+        }
+
+    DgnElementIdSet CollectSubtreesToExclude(DgnDbR db, const DgnElementIdSet& violatingScopeIds)
+        {
+        constexpr auto elementSubtreeSql = R"sql(
+            WITH RECURSIVE
+            subtree(id) AS (
+                SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
+                UNION ALL
+                SELECT e.Id FROM bis_Element e
+                    INNER JOIN subtree s ON e.ParentId = s.id
+            )
+            SELECT id FROM subtree
+        )sql";
+
+        Statement elementSubtreeStmt;
+        if (BE_SQLITE_OK != elementSubtreeStmt.Prepare(db, elementSubtreeSql))
+            return {};
+
+        elementSubtreeStmt.BindVirtualSet(1, violatingScopeIds);
+
+        DgnElementIdSet subtreeIds;
+        while (elementSubtreeStmt.Step() == BE_SQLITE_ROW)
+            subtreeIds.insert(elementSubtreeStmt.GetValueId<DgnElementId>(0));
+
+        return subtreeIds;
+        }
+
+    DgnElementIdSet ExpandElementHierarchyAndValidateCodeScopes(DgnDbR db, DgnElementIdSet& elementIds)
+        {
+        // Expand input roots to their full descendant hierarchy to get all affected child elements
+        ExpandElementHierarchy(db, elementIds);
+
+        // Elements outside the delete set that use a delete-set element as their CodeScope will lead to FK violations.
+        DgnElementIdSet violatingScopeIds = FindViolatingCodeScopeIds(db, elementIds);
+        if (violatingScopeIds.empty())
+            return {};
+
+        // For each violator, find its highest ancestor that is still inside the delete set
+        DgnElementIdSet subtreesToExclude = CollectSubtreesToExclude(db, violatingScopeIds);
+
+        // Remove excluded subtrees from the delete set and return them as the failed set.
         DgnElementIdSet failedToDeleteElements;
-        while (expandAndValidate.Step() == BE_SQLITE_ROW)
+        for (const auto& id : subtreesToExclude)
             {
-            const auto id = expandAndValidate.GetValueId<DgnElementId>(0);
-
-            if (const bool isCodeScopeViolation = expandAndValidate.GetValueBoolean(1); isCodeScopeViolation)
-                {
-                failedToDeleteElements.insert(id);
-                elementIds.erase(id);
-                }
-            else
-                {
-                elementIds.insert(id);
-                }
+            failedToDeleteElements.insert(id);
+            elementIds.erase(id);
             }
 
         return failedToDeleteElements;
@@ -766,7 +796,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
 
     // Expand the input set to include all descendants, then detect any elements that must be excluded
     // because an external element uses one of them as a CodeScope (deleting would leave a dangling FK).
-    DgnElementIdSet failedToDeleteElements = ExpandElementHierarchyAndValidate(m_dgndb, validatedElementIds);
+    DgnElementIdSet failedToDeleteElements = ExpandElementHierarchyAndValidateCodeScopes(m_dgndb, validatedElementIds);
     if (!failedToDeleteElements.empty())
         LOG.warningv("deleteElements: Skipping elements as them or their subtrees contain code scopes for elements outside the delete set: %s", failedToDeleteElements.ToString().c_str());
 
@@ -886,13 +916,15 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
     DgnElementIdSet definitionElementIds;
     DgnElementIdSet nonDefinitionElementIds;
 
+    constexpr auto classifySql = R"sql(
+        SELECT e.ECInstanceId, CASE WHEN d.ECInstanceId IS NULL THEN 0 ELSE 1 END
+        FROM bis.Element e
+        LEFT JOIN bis.DefinitionElement d ON d.ECInstanceId = e.ECInstanceId
+        WHERE InVirtualSet(?, e.ECInstanceId)
+    )sql";
+
     ECSqlStatement classifyStmt;
-    if (ECSqlStatus::Success != classifyStmt.Prepare(m_dgndb, R"sql(
-            SELECT e.ECInstanceId, CASE WHEN d.ECInstanceId IS NULL THEN 0 ELSE 1 END
-            FROM bis.Element e
-            LEFT JOIN bis.DefinitionElement d ON d.ECInstanceId = e.ECInstanceId
-            WHERE InVirtualSet(?, e.ECInstanceId)
-    )sql"))
+    if (ECSqlStatus::Success != classifyStmt.Prepare(m_dgndb, classifySql))
         return elementIds;
 
     classifyStmt.BindVirtualSet(1, std::make_shared<IdSet<BeInt64Id>>(BeIdSet(elementIds.GetBeIdSet())));
