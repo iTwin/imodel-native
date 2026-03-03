@@ -50,6 +50,7 @@ ECDb::Impl::Impl(ECDbR ecdb) :
     m_ecdb(ecdb),
     m_profileManager(ecdb),
     m_changeManager(ecdb),
+    m_featureManager(ecdb),
     m_sqliteStatementCache(50, &m_mutex),
     m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
     m_disableDDLTracking(false) {
@@ -197,6 +198,9 @@ DbResult ECDb::Impl::OnDbOpened(OpenParams const& params) const
         Schemas().GetSchemaSync().SetDefaultSyncDbUri(params.m_schemaSyncDbUri.c_str());
         }
 
+    if (SUCCESS != m_featureManager.OnDbOpened())
+        return BE_SQLITE_ERROR;
+
     return BE_SQLITE_OK;
     }
 
@@ -215,7 +219,14 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return m_profileManager.CreateProfile();
+    stat = m_profileManager.CreateProfile();
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    if (SUCCESS != m_featureManager.OnProfileCreated())
+        return BE_SQLITE_ERROR;
+
+    return BE_SQLITE_OK;
     }
 
 
@@ -265,6 +276,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     GetPragmaManager().Register(PragmaDbList::Create());
     GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
+    GetPragmaManager().Register(PragmaECDbFeatures::Create());
     }
 
 //--------------------------------------------------------------------------------------

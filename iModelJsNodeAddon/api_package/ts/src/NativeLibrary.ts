@@ -597,6 +597,9 @@ export declare namespace IModelJsNative {
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
+    public getFeatures(): ECDbFeatures;
+    public enableFeature(name: string): void;
+    public disableFeature(name: string): void;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -840,6 +843,32 @@ export declare namespace IModelJsNative {
     /** Converts given schemas and their reference schemas to EC3.2 schemas */
     public static convertCustomAttributes(xmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
     public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+  }
+
+  /** Descriptor for a single well-known ECDb feature. */
+  interface ECDbFeatureDescriptor {
+    /** Unique string identifier, e.g. "strict-schema-loading". */
+    name: string;
+    /** Short human-readable label. */
+    label: string;
+    /** Longer description suitable for error messages and tooling UI. */
+    description: string;
+    /** Lifecycle status of this feature. */
+    status: "Experimental" | "Stable" | "Deprecated";
+    /** If true, the feature is automatically enabled when a new file is created. */
+    enabledByDefault: boolean;
+    /** If false, the feature cannot be disabled once enabled. */
+    toggleable: boolean;
+    /** If true, the enabled state is not persisted and only lasts for the current session. */
+    ephemeral: boolean;
+  }
+
+  /** Result of [[DgnDb.getFeatures]]. */
+  interface ECDbFeatures {
+    /** Names of features enabled in the currently open file. */
+    used: string[];
+    /** All features known to this build of the native library. */
+    available: ECDbFeatureDescriptor[];
   }
 
   class ECDb implements IDisposable, IConcurrentQueryManager {

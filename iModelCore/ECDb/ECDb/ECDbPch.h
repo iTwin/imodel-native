@@ -25,6 +25,7 @@
 
 #include "ECDbImpl.h"
 #include "FeatureManager.h"
+#include "ECDbFeatureManager.h"
 
 #include "ProfileManager.h"
 #include "ProfileUpgrader.h"

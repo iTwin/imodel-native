@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECInstanceId.h>
+#include <ECDb/ECDbFeatures.h>
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
@@ -545,6 +546,31 @@ public:
 
     BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
     BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged) { return _AfterDataChangeSetApplied(schemaChanged); }
+
+    //! Returns the process-wide registry of all known features.
+    ECDB_EXPORT static ECDbFeatureRegistry const& GetFeatureRegistry();
+
+    //! Returns the set of features enabled in this file.
+    ECDB_EXPORT ECDbFeatureSet const& GetEnabledFeatures() const;
+
+    //! Enables a feature on this file.
+    //!
+    //! The operation is transactional — it must be called inside an active write transaction.
+    //! An AbandonChanges() call will undo the enablement. The feature is permanently recorded
+    //! once the transaction is committed.
+    //!
+    //! @param[in] featureName  Well-known feature name (see ECDbFeatureRegistry).
+    //! @return SUCCESS, or ERROR with a reason reported via the issue listener.
+    ECDB_EXPORT BentleyStatus EnableFeature(Utf8CP featureName);
+
+    //! Disables a feature on this file.
+    //!
+    //! Returns ERROR if the feature is not toggleable (toggleable == false means the
+    //! operation could compromise data integrity).
+    //!
+    //! @param[in] featureName  Well-known feature name.
+    //! @return SUCCESS, or ERROR with a reason reported via the issue listener.
+    ECDB_EXPORT BentleyStatus DisableFeature(Utf8CP featureName);
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;

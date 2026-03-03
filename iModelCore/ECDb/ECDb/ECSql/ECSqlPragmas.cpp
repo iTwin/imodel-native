@@ -892,6 +892,50 @@ DbResult PragmaCheckECSqlWriteValues::Write(PragmaManager::RowSet& rowSet, ECDbC
 	return BE_SQLITE_OK;
 }
 
+//=======================================================================================
+// PragmaECDbFeatures
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaECDbFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&)
+    {
+    auto result = std::make_unique<StaticPragmaResult>(ecdb);
+    result->AppendProperty("name",        PRIMITIVETYPE_String);
+    result->AppendProperty("label",       PRIMITIVETYPE_String);
+    result->AppendProperty("description", PRIMITIVETYPE_String);
+    result->AppendProperty("status",      PRIMITIVETYPE_String);
+    result->AppendProperty("enabled",     PRIMITIVETYPE_Boolean);
+    result->FreezeSchemaChanges();
+
+    ECDbFeatureRegistry const& registry = ECDbFeatureRegistry::GetInstance();
+    ECDbFeatureSet const& usedFeatures = ecdb.GetImpl().GetFeatureManager().GetEnabledFeatures();
+
+    for (ECDbFeatureDescriptor const& desc : registry.GetAll())
+        {
+        auto row = result->AppendRow();
+        row.appendValue() = desc.GetName().c_str();
+        row.appendValue() = desc.GetLabel().c_str();
+        row.appendValue() = desc.GetDescription().c_str();
+        row.appendValue() = ECDbFeatureDescriptor::StatusToString(desc.GetStatus());
+        row.appendValue() = usedFeatures.IsEnabled(desc.GetName().c_str());
+        }
+
+    rowSet = std::move(result);
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaECDbFeatures::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&)
+    {
+    ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+        ECDbIssueId::ECDb_0743, "PRAGMA %s is read-only. Use PRAGMA enable_feature('name') to enable a feature.", GetName().c_str());
+    rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+    rowSet->FreezeSchemaChanges();
+    return BE_SQLITE_READONLY;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

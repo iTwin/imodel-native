@@ -132,6 +132,8 @@ DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
 
+    m_pimpl->GetFeatureManager().Reload();
+
     if (schemaChanged) {
         status = Schemas().UpgradeECInstances();
         if (status != SUCCESS)
@@ -258,6 +260,39 @@ bool ECDb::IsChangeCacheAttached() const { return m_pimpl->IsChangeCacheAttached
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
 bool ECDb::TryGetChangeCacheFileName(BeFileNameR changeCachePath) const { return m_pimpl->TryGetChangeCacheFileName(changeCachePath); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+ECDbFeatureRegistry const& ECDb::GetFeatureRegistry()
+    {
+    return ECDbFeatureRegistry::GetInstance();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+ECDbFeatureSet const& ECDb::GetEnabledFeatures() const
+    {
+    return m_pimpl->GetFeatureManager().GetEnabledFeatures();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::EnableFeature(Utf8CP featureName)
+    {
+    return m_pimpl->GetFeatureManager().EnableFeature(featureName);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::DisableFeature(Utf8CP featureName)
+    {
+    return m_pimpl->GetFeatureManager().DisableFeature(featureName);
+    }
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------

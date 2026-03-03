@@ -17,6 +17,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDbApi.h \
                 $(publicApiDir)ECDbTypes.h \
                 $(publicApiDir)ECDb.h \
+                $(publicApiDir)ECDbFeatures.h \
                 $(publicApiDir)ECInstanceId.h \
                 $(publicApiDir)SchemaManager.h \
                 $(publicApiDir)ECInstanceFinder.h \
@@ -47,6 +48,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BuiltInFuncs.h \
                 $(baseDir)FeatureManager.h \
+                $(baseDir)ECDbFeatureManager.h \
                 $(baseDir)DbUtilities.h \
                 $(baseDir)SchemaManagerDispatcher.h \
                 $(baseDir)RemapManager.h \
@@ -209,6 +211,8 @@ $(o)BuiltInFuncs$(oext):                                      $(baseDir)BuiltInF
 $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)FeatureManager$(oext):                                    $(baseDir)FeatureManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECDbFeatureManager$(oext):                                 $(baseDir)ECDbFeatureManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)IssueReporter$(oext):                                     $(baseDir)IssueReporter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

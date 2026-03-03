@@ -759,6 +759,16 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0739;  // this issue id is being used to report instance query related ambiguity
     static ECN::IssueId ECDb_0740;
     static ECN::IssueId ECDb_0741;
+
+    // ECDb_0742..ECDb_0749 are reserved for the feature system (ECDbFeatureManager).
+    static ECN::IssueId ECDb_0742;  // invalid/corrupt feature JSON in be_prop
+    static ECN::IssueId ECDb_0743;  // failed to persist feature set to be_prop
+    static ECN::IssueId ECDb_0744;  // Enable/DisableFeature called with null/empty name
+    static ECN::IssueId ECDb_0745;  // Enable/DisableFeature called with an unknown feature name
+    static ECN::IssueId ECDb_0746;  // Enable/DisableFeature called on a closed file
+    static ECN::IssueId ECDb_0747;  // Enable/DisableFeature called on a read-only file
+    static ECN::IssueId ECDb_0748;  // Enable/DisableFeature called without an active transaction
+    static ECN::IssueId ECDb_0749;  // DisableFeature called on a non-toggleable feature
     };
 
 //---------------------------------------------------------------------------------------

@@ -7,6 +7,7 @@
 #include <ECDb/SchemaManager.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include "ChangeManager.h"
+#include "ECDbFeatureManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
 #include <atomic>
@@ -150,6 +151,7 @@ private:
     ProfileManager m_profileManager;
     std::unique_ptr<SchemaManager> m_schemaManager;
     ChangeManager m_changeManager;
+    ECDbFeatureManager m_featureManager;
     SettingsManager m_settingsManager;
     StatementCache m_sqliteStatementCache;
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
@@ -234,6 +236,7 @@ public:
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
+    ECDbFeatureManager const& GetFeatureManager() const { return m_featureManager; }
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;

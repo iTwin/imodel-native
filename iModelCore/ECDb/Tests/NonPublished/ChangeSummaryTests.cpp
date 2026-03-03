@@ -1039,6 +1039,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
             {
             ECDb cache;
             ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cache, cachePath));
+            cache.SaveChanges();
             }
 
         sp.Cancel();
@@ -1072,6 +1073,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
 
     ECDb db;
     ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(cachePath));
+    db.SaveChanges();
     }
 
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));

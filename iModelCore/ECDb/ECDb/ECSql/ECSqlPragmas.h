@@ -135,6 +135,23 @@ struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+//! PRAGMA ecdb_features
+//!
+//! Read-only pragma that lists all features known to this ECDb release, together with
+//! whether each is currently enabled in the open file.
+//!
+//! Result columns: name (string), label (string), description (string),
+//!                 status (string), enabled (boolean)
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECDbFeatures : PragmaManager::GlobalHandler {
+    PragmaECDbFeatures() : GlobalHandler("ecdb_features", "list all known features and whether they are enabled in this file") {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaECDbFeatures>(); }
+};
+
+//=========================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SHA3Helper final {

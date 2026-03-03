@@ -515,6 +515,7 @@ TEST_F(TableSpaceTestFixture, DetachTableSpace)
 
     ECDb attached;
     ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+    attached.SaveChanges();
     }
     // test that the current default transaction remains active after attach/detach calls
     // (because internally attach/detach commits and restarts the transaction)

@@ -2118,6 +2118,67 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int) status);
         }
 
+    Napi::Value GetFeatures(NapiInfoCR info)
+        {
+        auto& env = info.Env();
+        Napi::Object result = Napi::Object::New(env);
+        auto& ecdb = GetOpenedDb(info);
+        // "available" — all features known to this build of the engine
+        Napi::Array available = Napi::Array::New(env);
+        ECDbFeatureRegistry const& registry = ECDb::GetFeatureRegistry();
+        uint32_t idx = 0;
+        for (ECDbFeatureDescriptor const& desc : registry.GetAll())
+            {
+            Napi::Object entry = Napi::Object::New(env);
+            entry.Set("name",             Napi::String::New(env, desc.GetName().c_str()));
+            entry.Set("label",            Napi::String::New(env, desc.GetLabel().c_str()));
+            entry.Set("description",      Napi::String::New(env, desc.GetDescription().c_str()));
+            entry.Set("status",           Napi::String::New(env, ECDbFeatureDescriptor::StatusToString(desc.GetStatus())));
+            entry.Set("enabledByDefault", Napi::Boolean::New(env, desc.IsEnabledByDefault()));
+            entry.Set("toggleable",       Napi::Boolean::New(env, desc.IsToggleable()));
+            entry.Set("ephemeral",        Napi::Boolean::New(env, desc.IsEphemeral()));
+            available.Set(idx++, entry);
+            }
+        result.Set("available", available);
+
+        // "used" — feature names enabled in the open file
+        Napi::Array used = Napi::Array::New(env);
+        uint32_t usedIdx = 0;
+        if (ecdb.IsDbOpen())
+            {
+            for (Utf8StringCR name : ecdb.GetEnabledFeatures().GetAll())
+                used.Set(usedIdx++, Napi::String::New(env, name.c_str()));
+            }
+        result.Set("used", used);
+        return result;
+        }
+
+    void EnableFeature(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, featureName);
+        auto& db = GetOpenedDb(info);
+        LastErrorListener lastError(db);
+        BentleyStatus status = db.EnableFeature(featureName.c_str());
+        if (SUCCESS != status)
+            {
+            Utf8String msg = lastError.HasError() ? lastError.GetLastError() : Utf8PrintfString("Failed to enable feature '%s'", featureName.c_str());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), msg.c_str(), IModelJsNativeErrorKey::NotEnabled);
+            }
+        }
+
+    void DisableFeature(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, featureName);
+        auto& db = GetOpenedDb(info);
+        LastErrorListener lastError(db);
+        BentleyStatus status = db.DisableFeature(featureName.c_str());
+        if (SUCCESS != status)
+            {
+            Utf8String msg = lastError.HasError() ? lastError.GetLastError() : Utf8PrintfString("Failed to disable feature '%s'", featureName.c_str());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), msg.c_str(), IModelJsNativeErrorKey::NotEnabled);
+            }
+        }
+
     Napi::Value ImportFunctionalSchema(NapiInfoCR info)
         {
         DbResult result = JsInterop::ImportFunctionalSchema(GetOpenedDb(info));
@@ -3261,6 +3322,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
+            InstanceMethod("getFeatures", &NativeDgnDb::GetFeatures),
+            InstanceMethod("enableFeature", &NativeDgnDb::EnableFeature),
+            InstanceMethod("disableFeature", &NativeDgnDb::DisableFeature),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
