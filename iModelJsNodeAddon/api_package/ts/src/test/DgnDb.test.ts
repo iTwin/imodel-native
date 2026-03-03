@@ -1643,14 +1643,14 @@ describe.only("basic tests", () => {
     /**
      * Run deleteElements, then verify each id in `deleted` is gone and each id in `retained` is still present.
      */
-    const executeTestCase = (label: string, idsToDelete: Id64String[], deleted: Id64String[], retained: Id64String[]) => {
+    const executeTestCase = (label: string, idsToDelete: Id64Array, deleted: Id64Array, retained: Id64Array) => {
       db.deleteElements(idsToDelete);
 
       for (const id of deleted)
-        assertDeleted(id,  `error reading element`);
+        assertDeleted(id, `error reading element`);
       
       for (const id of retained)
-        assertExists(id,   `[${label}] ${id} should have been retained`);
+        assertExists(id, `[${label}] ${id} should have been retained`);
       
       db.abandonChanges();
     };
@@ -1700,7 +1700,7 @@ describe.only("basic tests", () => {
       let childA2: Id64String, grandchildA2: Id64String, childA3: Id64String;
       let parentB: Id64String, childB1: Id64String, childB2: Id64String;
       let standalone: Id64String, childS1: Id64String;
-      let all: Id64String[];
+      let all: Id64Array;
 
       beforeEach(() => {
         parentA      = insertElement();

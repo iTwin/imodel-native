@@ -511,8 +511,8 @@ public:
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
-    static DgnElementIdSet DeleteElements(DgnDbR dgndb, Napi::Array elementIds, const bool skipValidation = false, const bool skipHandlerCallbacks = false);
-    static DgnElementIdSet DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds);
+    static DgnElementIdSet DeleteElements(DgnDbR dgndb, Napi::Array elementIds, const bool skipHandlerCallbacks = false);
+    static DgnElementIdSet DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds, const bool skipHandlerCallbacks = false);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
