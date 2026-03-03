@@ -40,6 +40,7 @@
   },
   "overrides": {
     "diff": "^8.0.3",
+    "mocha": "^11.7.5",
     "serialize-javascript": "^7.0.3"
   }
 }
