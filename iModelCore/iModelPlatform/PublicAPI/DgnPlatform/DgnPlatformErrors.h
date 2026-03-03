@@ -191,7 +191,8 @@ enum class IModelJsNativeErrorKey : int
     ECClassError,
     RuntimeError,
     NativeAssertion,
-    LockNotHeld
+    LockNotHeld,
+    FeatureError
 };
 
 class IModelJsNativeErrorKeyHelper {
@@ -214,6 +215,7 @@ class IModelJsNativeErrorKeyHelper {
             case IModelJsNativeErrorKey::RuntimeError: return {"imodel-native", "RuntimeError"};
             case IModelJsNativeErrorKey::NativeAssertion: return {"imodel-native", "NativeAssertion"};
             case IModelJsNativeErrorKey::LockNotHeld: return {"imodel-native", "LockNotHeld"};
+            case IModelJsNativeErrorKey::FeatureError: return {"imodel-native", "FeatureError"};
             default: return {"imodel-native", "UnknownIModelJsNativeErrorKey"};
             }
     }

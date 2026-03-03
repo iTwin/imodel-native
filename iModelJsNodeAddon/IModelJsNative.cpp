@@ -2120,7 +2120,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value GetFeatures(NapiInfoCR info)
         {
-        auto& env = info.Env();
+        auto env = info.Env();
         Napi::Object result = Napi::Object::New(env);
         auto& ecdb = GetOpenedDb(info);
         // "available" — all features known to this build of the engine
@@ -2162,7 +2162,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (SUCCESS != status)
             {
             Utf8String msg = lastError.HasError() ? lastError.GetLastError() : Utf8PrintfString("Failed to enable feature '%s'", featureName.c_str());
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), msg.c_str(), IModelJsNativeErrorKey::NotEnabled);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), msg.c_str(), IModelJsNativeErrorKey::FeatureError);
             }
         }
 
@@ -2175,7 +2175,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (SUCCESS != status)
             {
             Utf8String msg = lastError.HasError() ? lastError.GetLastError() : Utf8PrintfString("Failed to disable feature '%s'", featureName.c_str());
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), msg.c_str(), IModelJsNativeErrorKey::NotEnabled);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), msg.c_str(), IModelJsNativeErrorKey::FeatureError);
             }
         }
 
