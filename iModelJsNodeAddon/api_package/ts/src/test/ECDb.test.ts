@@ -1,9 +1,10 @@
 import { expect } from "chai";
 import * as os from "os";
 import {
-  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, DbResult,
+  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
   ECSqlReader, IModelError, QueryBinder, QueryOptions,
 } from "@itwin/core-common";
+import { DbResult } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { openDgnDb } from "./";
 /*---------------------------------------------------------------------------------------------
