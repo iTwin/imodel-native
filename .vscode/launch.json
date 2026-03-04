@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug iModelConsole",
+            "presentation": {
+                "group": "0_Windows",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelConsoleNuGet/iModelConsole.exe",
+            "stopAtEntry": false,
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
             "name": "Debug a specific iModelPlatform test",
             "presentation": {
                 "group": "0_Windows",

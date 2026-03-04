@@ -350,7 +350,12 @@ int EXP_LVL9 CSlmtanF (Const struct cs_Lmtan_ *lmtan,double xy [2],Const double 
 	del_lng = lng - lmtan->org_lng;
 	if      (del_lng > cs_Pi  && lmtan->org_lng < 0.0) del_lng -= cs_Two_pi;
 	else if (del_lng < cs_Mpi && lmtan->org_lng > 0.0) del_lng += cs_Two_pi;
+#ifdef GEOCOORD_ENHANCEMENT
+    // PI angle from center is way too much ... we prefer a slightly narrower limit
+    if (fabs (del_lng) > (cs_Pi_o_2 + cs_Pi_o_4))
+#else
 	if (fabs (del_lng) > cs_Pi)
+#endif
 	{
 		rtn_val = cs_CNVRT_RNG;
 		del_lng = CS_adj2piI (del_lng);
