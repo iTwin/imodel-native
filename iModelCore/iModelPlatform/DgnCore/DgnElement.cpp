@@ -1048,7 +1048,7 @@ void DgnElement::_OnDeleted() const
     GetDgnDb().Elements().DropFromPool(*this);
 
     // For a bulk delete operation, the relationship classes will be handled separately
-    if (GetDgnDb().Elements().IsBulkOperation())
+    if (!GetDgnDb().Elements().IsBulkOperation())
         deleteLinkTableRelationships(GetDgnDb(), GetElementId());
 
     DgnModelPtr model = GetModel();
