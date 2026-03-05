@@ -853,15 +853,6 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
     // defer the FK integrity check for all the intra set violations as all of them are being deleted anyway
     m_dgndb.ExecuteSql("PRAGMA defer_foreign_keys = true");
 
-    // Clear up the link-table relationships in bulk
-    if (!DeleteLinkTableRelationships(m_dgndb, validatedElementIds))
-        {
-        LOG.errorv("deleteElements: Failed to delete link table relationships for element Ids: %s", validatedElementIds.ToString().c_str());
-        failedToDeleteElements.insert(validatedElementIds.begin(), validatedElementIds.end());
-        resetDbState();
-        return failedToDeleteElements;
-        }
-
     // Delete the elements
     auto statement = GetStatement("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE InVirtualSet(?, Id)");
     statement->BindVirtualSet(1, validatedElementIds);
@@ -873,9 +864,14 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
         return failedToDeleteElements;
         }
 
-    // Evict all deleted elements from the MRU cache so stale pointers are not returned to callers
-    for (const auto& elementId : validatedElementIds)
-        m_mruCache->DropElement(elementId);
+    // Clear up the link-table relationships in bulk
+    if (!DeleteLinkTableRelationships(m_dgndb, validatedElementIds))
+        {
+        LOG.errorv("deleteElements: Failed to delete link table relationships for element Ids: %s", validatedElementIds.ToString().c_str());
+        failedToDeleteElements.insert(validatedElementIds.begin(), validatedElementIds.end());
+        resetDbState();
+        return failedToDeleteElements;
+        }
 
     // Call the post delete handlers
     std::for_each(elementsToDelete.begin(), elementsToDelete.end(), [&](const DgnElementCPtr& element)
