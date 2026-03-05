@@ -798,7 +798,7 @@ namespace
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, const bool skipHandlerCallbacks)
+DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
     {
     DgnDb::VerifyClientThread();
 
@@ -826,31 +826,28 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
     // Call the pre-delete handlers. Remove the elements that get veto'd off the delete list from the handlers.
     // We need to save these elements to avoid a re-load when calling the post-delete handlers
     std::vector<DgnElementCPtr> elementsToDelete;
-    if (!skipHandlerCallbacks)
+    for (const auto& elementId : validatedElementIds)
         {
-        for (const auto& elementId : validatedElementIds)
-            {
-            const auto element = GetElement(elementId);
-            // Call the pre-delete handler
-            if (!element.IsValid() || element->_OnDelete() != DgnDbStatus::Success)
-                continue;
+        const auto element = GetElement(elementId);
+        // Call the pre-delete handler
+        if (!element.IsValid() || element->_OnDelete() != DgnDbStatus::Success)
+            continue;
 
-            // Ask the parent if it's okay to delete the child.
-            // Also, skip parent callback if the parent itself is also being deleted.
-            auto parent = GetElement(element->m_parent.m_id);
-            if (parent.IsValid() &&
-                validatedElementIds.find(element->m_parent.m_id) == validatedElementIds.end() &&
-                parent->_OnChildDelete(*element) != DgnDbStatus::Success)
-                continue;
+        // Ask the parent if it's okay to delete the child.
+        // Also, skip parent callback if the parent itself is also being deleted.
+        auto parent = GetElement(element->m_parent.m_id);
+        if (parent.IsValid() &&
+            validatedElementIds.find(element->m_parent.m_id) == validatedElementIds.end() &&
+            parent->_OnChildDelete(*element) != DgnDbStatus::Success)
+            continue;
 
-            elementsToDelete.push_back(element);
-            }
-
-        // Rebuild validatedElementIds from only the elements that passed all pre-delete checks.
-        validatedElementIds.clear();
-        for (const auto& element : elementsToDelete)
-            validatedElementIds.insert(element->GetElementId());
+        elementsToDelete.push_back(element);
         }
+
+    // Rebuild validatedElementIds from only the elements that passed all pre-delete checks.
+    validatedElementIds.clear();
+    for (const auto& element : elementsToDelete)
+        validatedElementIds.insert(element->GetElementId());
 
     // Since we have already handled all the external code scope violations, 
     // defer the FK integrity check for all the intra set violations as all of them are being deleted anyway
@@ -881,20 +878,17 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
         m_mruCache->DropElement(elementId);
 
     // Call the post delete handlers
-    if (!skipHandlerCallbacks)
+    std::for_each(elementsToDelete.begin(), elementsToDelete.end(), [&](const DgnElementCPtr& element)
         {
-        std::for_each(elementsToDelete.begin(), elementsToDelete.end(), [&](const DgnElementCPtr& element)
+        element->_OnDeleted();
+        // Notify parent only if it is not itself being deleted
+        if (element->m_parent.m_id.IsValid() && validatedElementIds.find(element->m_parent.m_id) == validatedElementIds.end())
             {
-            element->_OnDeleted();
-            // Notify parent only if it is not itself being deleted
-            if (element->m_parent.m_id.IsValid() && validatedElementIds.find(element->m_parent.m_id) == validatedElementIds.end())
-                {
-                auto parent = GetElement(element->m_parent.m_id);
-                if (parent.IsValid())
-                    parent->_OnChildDeleted(*element);
-                }
-            });
-        }
+            auto parent = GetElement(element->m_parent.m_id);
+            if (parent.IsValid())
+                parent->_OnChildDeleted(*element);
+            }
+        });
     resetDbState();
 
     if (!failedToDeleteElements.empty())
@@ -925,7 +919,7 @@ bool DgnElements::DeleteLinkTableRelationships(DgnDbR db, const DgnElementIdSet&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& elementIds, bool skipHandlerCallbacks)
+DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& elementIds)
     {
     DgnDb::VerifyClientThread();
 
@@ -989,7 +983,7 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
         }
 
     m_dgndb.BeginPurgeOperation();
-    const auto failedToDeleteIds = DeleteElements(toBeDeleted, skipHandlerCallbacks);
+    const auto failedToDeleteIds = DeleteElements(toBeDeleted);
     m_dgndb.EndPurgeOperation();
 
     cannotBeDeleted.insert(failedToDeleteIds.begin(), failedToDeleteIds.end());

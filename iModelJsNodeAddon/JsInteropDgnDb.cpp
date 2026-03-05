@@ -684,7 +684,7 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting element", stat);
 }
 
-DgnElementIdSet JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj) {
+DgnElementIdSet JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds) {
     DgnElementIdSet elementIdSet;
     for (auto i = 0U; i < elementIds.Length(); ++i) {
         Napi::Value arrayItem = elementIds[i];
@@ -694,11 +694,10 @@ DgnElementIdSet JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds, 
             elementIdSet.insert(DgnElementId(val.GetValue()));
     }
 
-    BeJsConst deleteOptionsJson(deleteOptionsObj);
-    return dgndb.Elements().DeleteElements(elementIdSet, deleteOptionsJson.isObject() && deleteOptionsJson.Get(json_skipHandlerCallbacks()).asBool());
+    return dgndb.Elements().DeleteElements(elementIdSet);
 }
 
-DgnElementIdSet JsInterop::DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj) {
+DgnElementIdSet JsInterop::DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds) {
     DgnElementIdSet elementIdSet;
     for (auto i = 0U; i < elementIds.Length(); ++i) {
         Napi::Value arrayItem = elementIds[i];
@@ -708,8 +707,7 @@ DgnElementIdSet JsInterop::DeleteDefinitionElements(DgnDbR dgndb, Napi::Array el
             elementIdSet.insert(DgnElementId(val.GetValue()));
     }
 
-    BeJsConst deleteOptionsJson(deleteOptionsObj);
-    return dgndb.Elements().DeleteDefinitionElements(elementIdSet, deleteOptionsJson.isObject() && deleteOptionsJson.Get(json_skipHandlerCallbacks()).asBool());
+    return dgndb.Elements().DeleteDefinitionElements(elementIdSet);
 }
 
 /*---------------------------------------------------------------------------------**//**

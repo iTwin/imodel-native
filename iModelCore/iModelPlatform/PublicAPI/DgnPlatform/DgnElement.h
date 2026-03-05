@@ -4038,17 +4038,15 @@ public:
     
     //! Delete multiple DgnElements from this DgnDb.
     //! @param[in] elementIds The element set to delete.
-    //! @param[in] skipHandlerCallbacks Skip any domain handler callbacks before and after deletion. Defaults to false.
     //! @return A DgnElementIdSet of elements that failed to delete.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipHandlerCallbacks = false);
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
 
     //! Delete multiple definition elements from this DgnDb.
     //! @param[in] elementIds The set of definition elements to delete.
-    //! @param[in] skipHandlerCallbacks Skip any domain handler callbacks before and after deletion. Defaults to false.
     //! @return A DgnElementIdSet of definition elements that failed to delete.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds, const bool skipHandlerCallbacks = false);
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
