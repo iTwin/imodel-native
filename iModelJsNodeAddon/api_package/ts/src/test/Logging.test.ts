@@ -81,9 +81,6 @@ describe("Logger", () => {
           clearInterval(this._timer);
         }
       }
-      public [Symbol.dispose]() {
-        this.dispose();
-      }
       private onInterval() {
         ++this._triggerCount;
       }
@@ -91,12 +88,9 @@ describe("Logger", () => {
     }
 
     const count = 50;
+    let onFirstEmission: () => void;
     let isFirstEmission = true;
     const logTrace = sinon.stub(iModelJsNative.logger, "logTrace").withArgs(testCategory, sinon.match.string);
-
-    using monitor = new MainThreadMonitor();
-    const onFirstEmission = () => monitor.start();
-
     logTrace.callsFake(() => {
       if (isFirstEmission) {
         onFirstEmission();
@@ -104,11 +98,17 @@ describe("Logger", () => {
       }
     });
 
-    await new Promise<void>((resolve) => {
-      iModelJsNative.NativeDevTools.emitLogs(count, testCategory, LogLevel.Trace, "worker", resolve);
-    });
-    await waitFor(() => expect(logTrace.callCount).to.eq(count));
-    expect(monitor.triggerCount).to.be.above(0);
+    const monitor = new MainThreadMonitor();
+    try {
+      onFirstEmission = () => monitor.start();
+      await new Promise<void>((resolve) => {
+        iModelJsNative.NativeDevTools.emitLogs(count, testCategory, LogLevel.Trace, "worker", resolve);
+      });
+      await waitFor(() => expect(logTrace.callCount).to.eq(count));
+      expect(monitor.triggerCount).to.be.above(0);
+    } finally {
+      monitor.dispose();
+    }
   });
 });
 
