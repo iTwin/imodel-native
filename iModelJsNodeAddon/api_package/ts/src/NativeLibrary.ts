@@ -516,6 +516,7 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
@@ -608,7 +609,7 @@ export declare namespace IModelJsNative {
     public cancelElementGraphicsRequests(requestIds: string[]): void;
     public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public cancelTo(txnId: TxnIdString): IModelStatus;
-    public classIdToName(idString: string): string;
+    public classIdToName(idString: string): string | undefined;
     public classNameToId(className: string): Id64String;
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
@@ -700,6 +701,7 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
+    public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;

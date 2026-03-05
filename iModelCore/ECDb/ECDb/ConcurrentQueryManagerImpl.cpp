@@ -126,6 +126,21 @@ ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void CachedQueryAdaptor::CachedQueryAdaptor::ReleaseMemory() {
+    m_stmt.Reset();
+    m_adaptor.reset();
+    m_cachedString.clear();
+    m_cachedString.shrink_to_fit();
+    m_cachedJsonDoc.Clear();
+    m_allocator.Clear();
+    if (m_conn){
+        m_conn->FreeMemory();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void CachedConnection::SyncAttachDbs() {
     recursive_guard_t lock(m_mutexReq);
     if (m_request != nullptr || !m_db.IsDbOpen()) {
@@ -1225,6 +1240,14 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
                 result.append(",").append(rows.Stringify());
             }
         }
+
+        if (result.size() > V8_MAX_STRING_SIZE) {
+            cachedAdaptor.ReleaseMemory();
+            log_trace("%s result size exceeded V8_MAX_STRING_SIZE [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
+            setError(QueryResponse::Status::Error, "result size exceeded maximum allowed size");
+            return;
+        }
+
         if (runnableRequest.IsTimeOrMemoryExceeded(result)) {
             log_trace("%s time or memory exceeded for request [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
             setResult(status::partial);
