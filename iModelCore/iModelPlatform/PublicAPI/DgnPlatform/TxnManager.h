@@ -443,7 +443,7 @@ private:
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
     void CallMonitors(std::function<void (TxnMonitor&)>);
-    void OnBeforeUndoRedo(bool isUndo);
+    void OnBeforeUndoRedo(bool isUndo, TxnRange const& txnRange);
     void OnUndoRedo(TxnAction action);
     void OnRollback(BeSQLite::ChangeStreamCR);
 

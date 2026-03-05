@@ -1539,7 +1539,7 @@ DbResult TxnManager::DiscardLocalChanges() {
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = TxnId(m_curr.GetSession(), std::numeric_limits<uint32_t>::max());
     if (startTxnId < endTxnId) {
-        OnBeforeUndoRedo(true);
+        OnBeforeUndoRedo(true, TxnRange(startTxnId, endTxnId));
         for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) { 
             if (IsTxnReversed(curr))
                 continue;
@@ -2623,8 +2623,9 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
     if (firstUndoable >= lastId || pos < firstUndoable)
         return DgnDbStatus::CannotUndo;
 
-    OnBeforeUndoRedo(true);
-    return ReverseActions(TxnRange(pos, lastId));
+    TxnRange range(pos, lastId);
+    OnBeforeUndoRedo(true, range);
+    return ReverseActions(range);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -2679,8 +2680,9 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions) {
     if (firstId == lastId)
         return DgnDbStatus::NothingToUndo;
 
-    OnBeforeUndoRedo(true);
-    return ReverseActions(TxnRange(firstId, lastId));
+    TxnRange range(firstId, lastId);
+    OnBeforeUndoRedo(true, range);
+    return ReverseActions(range);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2698,8 +2700,9 @@ DgnDbStatus TxnManager::ReverseAll() {
     if (startId >= lastId)
         return DgnDbStatus::NothingToUndo;
 
-    OnBeforeUndoRedo(true);
-    return ReverseActions(TxnRange(startId, GetCurrentTxnId()));
+    TxnRange range(startId, lastId);
+    OnBeforeUndoRedo(true, range);
+    return ReverseActions(range);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2783,8 +2786,9 @@ DgnDbStatus TxnManager::ReinstateTxn() {
     if (!IsRedoPossible())
         return DgnDbStatus::NothingToRedo;
 
-    OnBeforeUndoRedo(false);
-    return ReinstateActions(m_reversedTxn.back());
+    TxnRange range = m_reversedTxn.back();
+    OnBeforeUndoRedo(false, range);
+    return ReinstateActions(range);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -3493,13 +3497,20 @@ void TxnManager::CallMonitors(std::function<void(TxnMonitor&)> caller) {
     }
 }
 
+BE_JSON_NAME(firstTxnId);
+BE_JSON_NAME(lastTxnId);
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnBeforeUndoRedo(bool isUndo) {
+void TxnManager::OnBeforeUndoRedo(bool isUndo, TxnRange const& txnRange) {
     auto jsTxns = m_dgndb.GetJsTxns();
-    if (nullptr != jsTxns)
-        m_dgndb.CallJsFunction(jsTxns, "_onBeforeUndoRedo", {Napi::Boolean::New(jsTxns.Env(), isUndo)});
+    if (nullptr != jsTxns) {
+        Napi::Object args = Napi::Object::New(jsTxns.Env());
+        args[json_firstTxnId()] = Napi::String::New(jsTxns.Env(), BeInt64Id(txnRange.GetFirst().GetValue()).ToHexStr());
+        args[json_lastTxnId()] = Napi::String::New(jsTxns.Env(), BeInt64Id(txnRange.GetLast().GetValue()).ToHexStr());
+        m_dgndb.CallJsFunction(jsTxns, "_onBeforeUndoRedo", {Napi::Boolean::New(jsTxns.Env(), isUndo), args});
+    }
 }
 
 BE_JSON_NAME(inserted);
@@ -3826,7 +3837,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     TxnId endTxnId = GetCurrentTxnId();
     std::vector<TxnId> reversedTxns;
     if (startTxnId < endTxnId) {
-        OnBeforeUndoRedo(true);
+        OnBeforeUndoRedo(true, TxnRange(startTxnId, endTxnId));
         for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) {
             if (IsTxnReversed(curr))
                 continue;
