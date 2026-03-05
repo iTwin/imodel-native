@@ -22,6 +22,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_ExtractInst "extract_inst"
 #define SQLFUNC_ExtractProp "extract_prop"
 #define SQLFUNC_PropExists "prop_exists"
+#define SQLFUNC_SupportInstanceQuery "supports_instance_query"
 
 //=======================================================================================
 //! S ClassName(I)
@@ -223,5 +224,22 @@ struct XmlCAToJson final : ScalarFunction
         ~XmlCAToJson() {}
         static std::unique_ptr<XmlCAToJson> Create(SchemaManager const& schemaManager);
     };
+
+//=======================================================================================
+//! I supports_instance_query(S)
+//! Returns 1 if the given class (by name e.g. 'BisCore.Element' or by classId) supports
+//! instance queries (SELECT $), 0 otherwise.
+// @bsiclass
+//=======================================================================================
+struct SupportInstanceQueryFunc final : ScalarFunction {
+    private:
+        ECDbCR m_ecdb;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        explicit SupportInstanceQueryFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_SupportInstanceQuery, 1, DbValueType::IntegerVal), m_ecdb(ecdb) {}
+        ~SupportInstanceQueryFunc() {}
+        static std::unique_ptr<SupportInstanceQueryFunc> Create(ECDbCR);
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
