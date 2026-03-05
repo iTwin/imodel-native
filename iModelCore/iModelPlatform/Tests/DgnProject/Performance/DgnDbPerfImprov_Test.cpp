@@ -1,5 +1,6 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include <DgnPlatform/PlatformLib.h>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -16,7 +17,9 @@ TEST_F(DgnDbPerfImprovTest, GenerateEmptyIModel)
 
     db = DgnDbTestUtils::OpenSeedDbCopy(L"D:\\imodel_schemas_full_time\\XL_Imodels_For_Perf_Testing\\0.bim", "ModifiableDb.bim");
     ASSERT_TRUE(db.IsValid()) << "Failed to create AutoHandledGeometryProps test dgndb";
-
+    
+    db->CreateTable("bis_GeometryStream", "ElementId INTEGER PRIMARY KEY,"
+                                "GeometryStream BLOB");
     ECSqlStatement selectGeoEl3d;
     ASSERT_EQ(ECSqlStatus::Success, selectGeoEl3d.Prepare(*db, "SELECT ElementId, GeometryStream FROM bis.GeometricElement3d"));
     ECSqlStatement insertGeoEl3d;
