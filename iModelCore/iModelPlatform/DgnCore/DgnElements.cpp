@@ -811,7 +811,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
     // because an external element uses one of them as a CodeScope (deleting would leave a dangling FK).
     DgnElementIdSet failedToDeleteElements = ExpandElementHierarchyAndValidateCodeScopes(m_dgndb, validatedElementIds);
     if (!failedToDeleteElements.empty())
-        LOG.warningv("deleteElements: Skipping elements as them or their subtrees contain code scopes for elements outside the delete Id set: %s", failedToDeleteElements.ToString().c_str());
+        LOG.warningv("deleteElements: Skipping elements as they (or their subtrees) contain code scopes for elements outside the delete Id set: %s", failedToDeleteElements.ToString().c_str());
 
     // Prep the elements, handlers and the Db for a bulk deletion
     SetBulkOperation(true);

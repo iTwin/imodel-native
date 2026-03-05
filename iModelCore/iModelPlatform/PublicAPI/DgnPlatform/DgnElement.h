@@ -319,7 +319,7 @@ public:
     //! Generate usage information for the specified set of DefinitionElementIds
     DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds, std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> excludeIds = nullptr);
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
-    DGNPLATFORM_EXPORT DgnElementIdSet GetUsedIds() const { return m_usedIds; }
+    DGNPLATFORM_EXPORT DgnElementIdSet const& GetUsedIds() const { return m_usedIds; }
 };
 
 //=======================================================================================
