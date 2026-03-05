@@ -1745,9 +1745,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElements");
         }
-        OPTIONAL_ARGUMENT_BOOL(1, skipHandlerCallbacks, false);
 
-        auto elemIds = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), skipHandlerCallbacks);
+        const auto deleteOptions = ARGUMENT_IS_PRESENT(1) ? info[1].As<Napi::Object>() : Env().Undefined();
+
+        auto elemIds = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), deleteOptions);
         uint32_t index = 0;
         auto ret = Napi::Array::New(Env(), elemIds.size());
         for (const auto& elemId : elemIds)
@@ -1761,9 +1762,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
             THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteDefinitionElements");
         }
-        OPTIONAL_ARGUMENT_BOOL(1, skipHandlerCallbacks, false);
+        const auto deleteOptions = ARGUMENT_IS_PRESENT(1) ? info[1].As<Napi::Object>() : Env().Undefined();
 
-        auto elemIds = JsInterop::DeleteDefinitionElements(db, info[0].As<Napi::Array>(), skipHandlerCallbacks);
+        auto elemIds = JsInterop::DeleteDefinitionElements(db, info[0].As<Napi::Array>(), deleteOptions);
         uint32_t index = 0;
         auto ret = Napi::Array::New(Env(), elemIds.size());
         for (const auto& elemId : elemIds)

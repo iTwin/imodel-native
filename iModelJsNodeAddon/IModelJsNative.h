@@ -488,6 +488,7 @@ struct JsInterop {
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
     BE_JSON_NAME(uncompressedSize)
+    BE_JSON_NAME(skipHandlerCallbacks)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -511,8 +512,8 @@ public:
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
-    static DgnElementIdSet DeleteElements(DgnDbR dgndb, Napi::Array elementIds, const bool skipHandlerCallbacks = false);
-    static DgnElementIdSet DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds, const bool skipHandlerCallbacks = false);
+    static DgnElementIdSet DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
+    static DgnElementIdSet DeleteDefinitionElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);

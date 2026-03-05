@@ -3911,7 +3911,7 @@ private:
 
     void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
     bool IsBulkOperation() const { return m_isBulkOperation; }
-    static void DeleteLinkTableRelationships(DgnDbR db, const DgnElementIdSet& elementIds);
+    static bool DeleteLinkTableRelationships(DgnDbR db, const DgnElementIdSet& elementIds);
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
