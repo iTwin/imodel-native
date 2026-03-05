@@ -849,6 +849,7 @@ export declare namespace IModelJsNative {
     public closeDb(): void;
     public createDb(dbName: string): DbResult;
     public dispose(): void;
+    public [Symbol.dispose](): void;
     public dropSchemas(schemaNames: ReadonlyArray<string>): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
@@ -882,6 +883,7 @@ export declare namespace IModelJsNative {
   class ChangedElementsECDb {
     constructor();
     public dispose(): void;
+    public [Symbol.dispose](): void;
     public createDb(db: DgnDb, dbName: string): DbResult;
     public openDb(dbName: string, mode: OpenMode, upgradeProfiles?: boolean): DbResult;
     public isOpen(): boolean;
@@ -897,6 +899,7 @@ export declare namespace IModelJsNative {
     constructor();
     public clearBindings(): DbResult;
     public dispose(): void;
+    public [Symbol.dispose](): void;
     public getBinder(param: number | string): ECSqlBinder;
     public getColumnCount(): number;
     public getValue(columnIndex: number): ECSqlValue;
@@ -1026,6 +1029,7 @@ export declare namespace IModelJsNative {
     public closeDb(): void;
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
+    public [Symbol.dispose](): void;
     public embedFile(arg: EmbedFileArg): void;
     public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
@@ -1061,6 +1065,7 @@ export declare namespace IModelJsNative {
     public bindString(param: number | string, val: string): DbResult;
     public clearBindings(): DbResult;
     public dispose(): void;
+    public [Symbol.dispose](): void;
     public getColumnBytes(columnIndex: number): number;
     public getColumnCount(): number;
     public getColumnName(columnIndex: number): string;
@@ -1448,6 +1453,7 @@ export declare namespace IModelJsNative {
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
     public dispose(): void;
+    public [Symbol.dispose](): void;
   }
 
   namespace ECSchemaXmlContext {
@@ -1529,11 +1535,13 @@ export declare namespace IModelJsNative {
   class DisableNativeAssertions {
     constructor();
     public dispose(): void;
+    public [Symbol.dispose](): void;
   }
 
   class ImportContext {
     constructor(sourceDb: DgnDb, targetDb: DgnDb);
     public dispose(): void;
+    public [Symbol.dispose](): void;
     public dump(outputFileName: string): BentleyStatus;
     public addClass(sourceClassFullName: string, targetClassFullName: string): BentleyStatus;
     public addCodeSpecId(sourceId: Id64String, targetId: Id64String): BentleyStatus;
