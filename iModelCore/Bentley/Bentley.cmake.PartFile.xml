@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    cmake-optimized PartFile for Bentley libraries.
+    Loaded automatically when USE_CMAKE=1 (via GetPartFile auto-substitution).
+    Consolidates prewire + library parts; uses CMakeFile attribute for explicit cmake paths.
+-->
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd">
+
+    <!-- Combined: Base prewire + BentleyDll compile.
+         CMakeLists.txt handles PublicAPI/Bentley delivery via bb_deliver_public_api.
+         Notice files delivered via bb_deliver_file. -->
+    <Part Name="BentleyDll" CMakeFile="CMakeLists.txt">
+        <SubPart PartName="BeGtest-Includes" PartFile="iModelCore/BeGTest/BeGTest" />
+        <SubPart PartName="BeIcu4cLibrary" PartFile="iModelCore/libsrc/icu4c/BeIcu4cLibrary"/>
+        <Bindings>
+            <PublicAPI Domain="Bentley" />
+            <Libs>Delivery/$(libprefix)iTwinBentley$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinBentley$(shlibext)</Assemblies>
+            <VendorNotices>
+                Delivery/bentley-notice.txt
+                Delivery/btree-notice.txt
+                Delivery/btree-license.txt
+            </VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- Base kept as alias for backward compat (gtest.PartFile.xml references it) -->
+    <Part Name="Base">
+        <SubPart PartName="BentleyDll" />
+        <Bindings>
+            <PublicAPI Domain="Bentley" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BentleyLib">
+        <SubPart PartName="BentleyDll" />
+    </Part>
+
+    <!-- BeRapidJson: header-only delivery, folded into BentleyDll's cmake.
+         Kept as a part because many external PartFiles reference it. -->
+    <Part Name="BeRapidJson">
+        <SubPart PartName="BentleyDll" />
+        <SubPart PartName="rapidjsonapi" PartFile="iModelCore/libsrc/rapidjson/rapidjson"/>
+        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <Bindings>
+            <PublicAPI Domain="BeRapidJson"/>
+        </Bindings>
+    </Part>
+
+    <!-- BeXml: separate cmake because it's an independent library -->
+    <Part Name="BeXml" CMakeFile="BeXml/CMakeLists.txt">
+        <SubPart PartName="BentleyDll"/>
+        <SubPart PartName="LibXml2" PartFile="iModelCore/libsrc/libxml2/BeLibxml2"/>
+        <Bindings>
+            <PublicAPI Domain="BeXml"/>
+            <Assemblies>Delivery/$(shlibprefix)iTwinXml$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iTwinXml$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- BeJpeg: NOT migrated to cmake, keep bmake -->
+    <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke">
+        <SubPart PartName="BentleyDll"/>
+        <SubPart LibType="Static" PartName="BeLibJpegTurbo" PartFile="iModelCore/libsrc/libjpegturbo/BeLibJpegTurbo"/>
+        <Bindings>
+            <PublicAPI Domain="BeJpeg"/>
+            <Libs>Delivery/$(stlibprefix)iTwinJpeg$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)iTwinJpeg$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- ******* Unit Tests (kept as bmake — test infrastructure is not migrated) ******* -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="BentleyDll"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Bentley" SubPartDirectory="UnitTests/Bentley"> Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="Bentley-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BentleyTest -dTEST_COLLECTION_PRODUCT=Bentley-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+        <SubProduct ProductName="Bentley-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BentleyTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BentleyTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Bentley-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Bentley-Gtest -dGTEST_NAME=BentleyTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Bentley-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BentleyTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Stubs for mobile test runners (platform-excluded on Linux) -->
+    <Part Name="RunAndroidJUnitTest" OnlyPlatforms="Android*"/>
+    <Part Name="RuniOSXCTest" OnlyPlatforms="iOS*"/>
+
+</BuildContext>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    cmake-optimized PartFile for ECObjects.
+    Loaded automatically when USE_CMAKE=1.
+-->
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../bentleybuild/PartFile.xsd" >
+
+    <!-- Combined: PublicAPI prewire + ECObjectsNative compile.
+         CMakeLists.txt delivers PublicAPI/ECObjects. -->
+    <Part Name="ECObjectsNative" CMakeFile="src/CMakeLists.txt">
+        <SubPart PartName="Schemas" />
+        <SubPart PartName="BentleyDll"              PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="GeomDlls"                PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="GeomlibsSerialization"   PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="BeXml"                   PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeJsonCpp"               PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="PugiXml"                 PartFile="iModelCore/libsrc/pugixml/pugixml" />
+        <SubPart PartName="BeRapidJson"             PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="UnitsNative"             PartFile="iModelCore/Units/Units" />
+        <Bindings>
+            <PublicAPI Domain="ECObjects" />
+            <Libs>Delivery/$(libprefix)iTwinECObjects$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinECObjects$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="Schemas">
+        <SubPart PartName="StandardSchemasBim"      PartFile="schemas/ECStandards/ECStandards"/>
+        <SubPart PartName="StandardSchemas"         PartFile="schemas/BisSchemas/BisSchemas"/>
+        <SubPart PartName="V3ConversionSchemas"     PartFile="schemas/ECStandards/ECStandards"/>
+    </Part>
+
+    <Part Name="ECObjects">
+        <SubPart PartName="ECObjectsNative" />
+    </Part>
+
+    <!-- PublicAPI alias for compat -->
+    <Part Name="PublicAPI">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <PublicAPI Domain="ECObjects" />
+        </Bindings>
+    </Part>
+
+    <!-- ******* Unit Tests (kept as bmake) ******* -->
+    <Part Name="ECObjectsTestsBasicDependencies" DeferType="BuildUnitTests">
+        <SubPart PartName="ECObjectsNative" />
+    </Part>
+
+    <Part Name="ECObjectsTestsSeedData" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/SeedData.prewire.mke">
+        <Bindings>
+            <Files SubPartDirectory="SeedData"                  ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
+            <Files SubPartDirectory="SeedData"                  ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*.json</Files>
+            <Files SubPartDirectory="SeedData"                  ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*.csv</Files>
+            <Files SubPartDirectory="SeedData/V3Conversion"     ProductDirectoryName="ECObjectsTestSeedDataV3Conversion">Delivery/SeedData/V3Conversion/*.xml</Files>
+            <Files SubPartDirectory="SeedData/ECJson"           ProductDirectoryName="ECObjectsTestSeedDataECJson">Delivery/SeedData/ECJson/*.json</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/prewire.mke">
+        <SubPart PartName="ECObjectsTestsBasicDependencies"/>
+        <SubPart PartName="ECObjectsTestsSeedData"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECObjects" SubPartDirectory="UnitTests/ECObjects">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestFixture" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="TestDependencies"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests" DeferType="BuildUnitTests">
+        <SubPart PartName="NonPublishedTests" />
+    </Part>
+
+    <Product Name="ECObjects-Tests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsTest -dTEST_COLLECTION_PRODUCT=ECObjects-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECObjectsTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECObjectsTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECObjects-Gtest" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECObjectsTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Stubs for mobile test runners (platform-excluded on Linux) -->
+    <Part Name="RunAndroidJUnitTest" OnlyPlatforms="Android*"/>
+    <Part Name="RuniOSXCTest" OnlyPlatforms="iOS*"/>
+
+    <!-- Stub for NuGet strategy (not used on Linux) -->
+    <Part Name="ECObjectsToolsNuGet-TopLevel"/>
+
+</BuildContext>

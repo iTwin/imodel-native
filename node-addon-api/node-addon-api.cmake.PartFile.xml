@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    cmake-optimized PartFile for node-addon-api (iTwinNapi).
+    Loaded automatically when USE_CMAKE=1.
+-->
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../BentleyBuild/PartFile.xsd">
+
+    <!-- Combined: VendorAPI prewire + napi-lib compile.
+         CMakeLists.txt delivers VendorAPI/Napi. -->
+    <Part Name="napi-lib" CMakeFile="CMakeLists.txt">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
+        <Bindings>
+            <VendorAPI Domain="Napi"/>
+            <Libs>Delivery/$(stlibprefix)iTwinNapi$(stlibext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- VendorAPI alias for compat -->
+    <Part Name="VendorAPI">
+        <SubPart PartName="napi-lib" />
+        <Bindings>
+            <VendorAPI Domain="Napi"/>
+        </Bindings>
+    </Part>
+
+    <!-- napi-dll-win: Windows-only, links the real Node DLL -->
+    <Part Name="napi-dll-win" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="napi-lib" />
+        <Bindings>
+            <Assemblies>Delivery/Node/iTwinNapi.dll</Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- napi-stub: no build target, just binds the stub assembly -->
+    <Part Name="napi-stub">
+        <SubPart PartName="napi-lib"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)iTwinNapi$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+</BuildContext>
