@@ -508,7 +508,7 @@ VuSortFunction0 compare
 )
     {
     if (headerP->size () > 1)
-        qsort (&headerP->at(0), (int)headerP->size (), sizeof (VuP), (int (*)(const void *,const void *)) compare);
+        BeStringUtilities::Qsort (&headerP->at(0), (int)headerP->size (), sizeof (VuP), BSIBaseGeom::QSortAdaptor, (void*)compare);
     }
 
 #ifdef CompileSortBuckets

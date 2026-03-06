@@ -193,4 +193,38 @@ bvector<DPoint3d> const &source
         }
     }
 
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    BSIBaseGeom             12/25
+*
+* Global Adaptor to bridge standard qsort comparison functions with BeStringUtilities::Qsort.
+* Eliminates qsort deprecation warnings by passing original function through context.
+*
+* This adaptor allows existing qsort comparison functions (which take only two void*
+* parameters) to work with BeStringUtilities::Qsort (which expects a comparison function
+* that takes a context parameter). The adaptor receives the original comparison function
+* as the context parameter and forwards the actual comparison to that function.
+*
+* How it works:
+* 1. BeStringUtilities::Qsort calls this adaptor with context + two elements to compare
+* 2. The context contains the original comparison function pointer
+* 3. We cast the context back to a function pointer
+* 4. We call the original comparison function with the two elements
+* 5. We return the comparison result (-1, 0, or 1)
+*
+* Usage: BeStringUtilities::Qsort(array, count, size, BSIBaseGeom::QSortAdaptor, (void*)originalCompareFunc)
+*
+* @param context   Original comparison function cast as void*
+* @param a         First element to compare
+* @param b         Second element to compare
+* @return          Comparison result: <0 if a<b, 0 if a==b, >0 if a>b
++---------------+---------------+---------------+---------------+---------------+------*/
+int BSIBaseGeom::QSortAdaptor(void* context, const void* a, const void* b)
+    {
+    // Cast context back to a standard comparison function pointer
+    int (*compare)(const void*, const void*) = (int (*)(const void*, const void*))context;
+    return compare(a, b);
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE
