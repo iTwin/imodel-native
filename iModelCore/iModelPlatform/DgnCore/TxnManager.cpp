@@ -1539,7 +1539,7 @@ DbResult TxnManager::DiscardLocalChanges() {
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = TxnId(m_curr.GetSession(), std::numeric_limits<uint32_t>::max());
     if (startTxnId < endTxnId) {
-        OnBeforeUndoRedo(true, TxnRange(startTxnId, endTxnId));
+        OnBeforeUndoRedo(true);
         for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) { 
             if (IsTxnReversed(curr))
                 continue;
@@ -2623,9 +2623,8 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
     if (firstUndoable >= lastId || pos < firstUndoable)
         return DgnDbStatus::CannotUndo;
 
-    TxnRange range(pos, lastId);
-    OnBeforeUndoRedo(true, range);
-    return ReverseActions(range);
+    OnBeforeUndoRedo(true);
+    return ReverseActions(TxnRange(pos, lastId));
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -2680,9 +2679,8 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions) {
     if (firstId == lastId)
         return DgnDbStatus::NothingToUndo;
 
-    TxnRange range(firstId, lastId);
-    OnBeforeUndoRedo(true, range);
-    return ReverseActions(range);
+    OnBeforeUndoRedo(true);
+    return ReverseActions(TxnRange(firstId, lastId));
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2700,9 +2698,8 @@ DgnDbStatus TxnManager::ReverseAll() {
     if (startId >= lastId)
         return DgnDbStatus::NothingToUndo;
 
-    TxnRange range(startId, lastId);
-    OnBeforeUndoRedo(true, range);
-    return ReverseActions(range);
+    OnBeforeUndoRedo(true);
+    return ReverseActions(TxnRange(startId, GetCurrentTxnId()));
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2786,18 +2783,8 @@ DgnDbStatus TxnManager::ReinstateTxn() {
     if (!IsRedoPossible())
         return DgnDbStatus::NothingToRedo;
 
-    TxnRange range = m_reversedTxn.back();
-    OnBeforeUndoRedo(false, range);
-    return ReinstateActions(range);
-}
-
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnRange TxnManager::GetNextReinstateTxnRange() const {
-    if (m_reversedTxn.empty())
-        return TxnRange(TxnId(), TxnId());
-    return m_reversedTxn.back();
+    OnBeforeUndoRedo(false);
+    return ReinstateActions(m_reversedTxn.back());
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -3506,20 +3493,13 @@ void TxnManager::CallMonitors(std::function<void(TxnMonitor&)> caller) {
     }
 }
 
-BE_JSON_NAME(firstTxnId);
-BE_JSON_NAME(lastTxnId);
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnBeforeUndoRedo(bool isUndo, TxnRange const& txnRange) {
+void TxnManager::OnBeforeUndoRedo(bool isUndo) {
     auto jsTxns = m_dgndb.GetJsTxns();
-    if (nullptr != jsTxns) {
-        Napi::Object args = Napi::Object::New(jsTxns.Env());
-        args[json_firstTxnId()] = Napi::String::New(jsTxns.Env(), BeInt64Id(txnRange.GetFirst().GetValue()).ToHexStr());
-        args[json_lastTxnId()] = Napi::String::New(jsTxns.Env(), BeInt64Id(txnRange.GetLast().GetValue()).ToHexStr());
-        m_dgndb.CallJsFunction(jsTxns, "_onBeforeUndoRedo", {Napi::Boolean::New(jsTxns.Env(), isUndo), args});
-    }
+    if (nullptr != jsTxns)
+        m_dgndb.CallJsFunction(jsTxns, "_onBeforeUndoRedo", {Napi::Boolean::New(jsTxns.Env(), isUndo)});
 }
 
 BE_JSON_NAME(inserted);
@@ -3846,7 +3826,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     TxnId endTxnId = GetCurrentTxnId();
     std::vector<TxnId> reversedTxns;
     if (startTxnId < endTxnId) {
-        OnBeforeUndoRedo(true, TxnRange(startTxnId, endTxnId));
+        OnBeforeUndoRedo(true);
         for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) {
             if (IsTxnReversed(curr))
                 continue;
