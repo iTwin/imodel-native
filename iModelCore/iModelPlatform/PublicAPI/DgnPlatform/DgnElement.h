@@ -278,6 +278,7 @@ private:
     BeSQLite::IdSet<DgnTextureId> m_textureIds;
     BeSQLite::IdSet<DgnElementId> m_otherDefinitionElementIds;
     BeSQLite::IdSet<DgnElementId> m_usedIds;
+    std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> m_excludeIds;
 
     BE_JSON_NAME(spatialCategoryIds)
     BE_JSON_NAME(drawingCategoryIds)
@@ -316,8 +317,9 @@ private:
 
 public:
     //! Generate usage information for the specified set of DefinitionElementIds
-    DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds);
+    DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds, std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> excludeIds = nullptr);
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
+    DGNPLATFORM_EXPORT DgnElementIdSet const& GetUsedIds() const { return m_usedIds; }
 };
 
 //=======================================================================================
@@ -3882,6 +3884,7 @@ private:
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
     mutable std::map<uint64_t, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> m_jsonSelectAdapterCache;
+    bool m_isBulkOperation = false;
 
     void Destroy();
     void AddToPool(DgnElementCR) const;
@@ -3905,6 +3908,10 @@ private:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
+
+    void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
+    bool IsBulkOperation() const { return m_isBulkOperation; }
+    static bool DeleteLinkTableRelationships(DgnDbR db, const DgnElementIdSet& elementIds);
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -4028,6 +4035,18 @@ public:
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
+    
+    //! Delete multiple DgnElements from this DgnDb.
+    //! @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
+    //! @return A DgnElementIdSet of valid element Ids that failed to delete.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
+
+    //! Delete multiple definition elements from this DgnDb.
+    //! @param[in] elementIds The set of definition elements to delete. Invalid and non-definition element Ids will be ignored.
+    //! @return A DgnElementIdSet of valid definition element Ids that failed to delete.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

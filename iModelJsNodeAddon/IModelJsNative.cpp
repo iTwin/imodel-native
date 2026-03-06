@@ -1741,6 +1741,36 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::DeleteElement(db, elemIdStr);
     }
 
+    Napi::Value DeleteElements(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElements");
+        }
+
+        auto elemIds = JsInterop::DeleteElements(db, info[0].As<Napi::Array>());
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(Env(), elemIds.size());
+        for (const auto& elemId : elemIds)
+            ret.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+
+        return ret;
+    }
+
+    Napi::Value DeleteDefinitionElements(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteDefinitionElements");
+        }
+
+        auto elemIds = JsInterop::DeleteDefinitionElements(db, info[0].As<Napi::Array>());
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(Env(), elemIds.size());
+        for (const auto& elemId : elemIds)
+            ret.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+
+        return ret;
+    }
+
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -3119,6 +3149,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
+            InstanceMethod("deleteElements", &NativeDgnDb::DeleteElements),
+            InstanceMethod("deleteDefinitionElements", &NativeDgnDb::DeleteDefinitionElements),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),

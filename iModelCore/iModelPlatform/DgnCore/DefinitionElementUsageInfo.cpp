@@ -7,12 +7,13 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionElementUsageInfoPtr DefinitionElementUsageInfo::Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& elementIds)
+DefinitionElementUsageInfoPtr DefinitionElementUsageInfo::Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& elementIds, std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> excludeIds)
     {
     DefinitionElementUsageInfoPtr context = new DefinitionElementUsageInfo(db);
     if (!context.IsValid())
         return nullptr;
 
+    context->m_excludeIds = excludeIds;
     context->Initialize(elementIds);
     context->QueryUsage();
     return context;
@@ -215,9 +216,14 @@ void DefinitionElementUsageInfo::QueryUsage()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefinitionElementUsageInfo::IsSpatialCategoryUsed(DgnCategoryId categoryId) const
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Category.Id=? LIMIT 1";
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Category.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     statement->BindId(1, categoryId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
     return BE_SQLITE_ROW == statement->Step();
     }
 
@@ -226,9 +232,14 @@ bool DefinitionElementUsageInfo::IsSpatialCategoryUsed(DgnCategoryId categoryId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefinitionElementUsageInfo::IsDrawingCategoryUsed(DgnCategoryId categoryId) const
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Category.Id=? LIMIT 1";
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Category.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     statement->BindId(1, categoryId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
     return BE_SQLITE_ROW == statement->Step();
     }
 
@@ -237,9 +248,14 @@ bool DefinitionElementUsageInfo::IsDrawingCategoryUsed(DgnCategoryId categoryId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefinitionElementUsageInfo::IsDisplayStyleUsed(DgnElementId displayStyleId) const
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition) " WHERE DisplayStyle.Id=? LIMIT 1";
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition) " WHERE DisplayStyle.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     statement->BindId(1, displayStyleId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
     return BE_SQLITE_ROW == statement->Step();
     }
 
@@ -248,9 +264,14 @@ bool DefinitionElementUsageInfo::IsDisplayStyleUsed(DgnElementId displayStyleId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefinitionElementUsageInfo::IsCategorySelectorUsed(DgnElementId categorySelectorId) const
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition) " WHERE CategorySelector.Id=? LIMIT 1";
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition) " WHERE CategorySelector.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     statement->BindId(1, categorySelectorId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
     return BE_SQLITE_ROW == statement->Step();
     }
 
@@ -259,9 +280,14 @@ bool DefinitionElementUsageInfo::IsCategorySelectorUsed(DgnElementId categorySel
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefinitionElementUsageInfo::IsModelSelectorUsed(DgnElementId modelSelectorId) const
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition) " WHERE ModelSelector.Id=? LIMIT 1";
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition) " WHERE ModelSelector.Id=?";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    sql.append(" LIMIT 1");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
     statement->BindId(1, modelSelectorId);
+    if (m_excludeIds)
+        statement->BindVirtualSet(2, m_excludeIds);
     return BE_SQLITE_ROW == statement->Step();
     }
 
@@ -272,24 +298,39 @@ bool DefinitionElementUsageInfo::IsViewDefinitionUsed(DgnViewId viewDefinitionId
     {
     if (m_db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionDrawing)->GetPropertyP("SpatialView") != nullptr)
         {
-        Utf8CP sectionDrawingSql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SectionDrawing) " WHERE SpatialView.Id=? LIMIT 1";
-        CachedECSqlStatementPtr sectionDrawingStatement = m_db.GetPreparedECSqlStatement(sectionDrawingSql);
+        Utf8String sectionDrawingSql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SectionDrawing) " WHERE SpatialView.Id=?";
+        if (m_excludeIds)
+            sectionDrawingSql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+        sectionDrawingSql.append(" LIMIT 1");
+        CachedECSqlStatementPtr sectionDrawingStatement = m_db.GetPreparedECSqlStatement(sectionDrawingSql.c_str());
         sectionDrawingStatement->BindId(1, viewDefinitionId);
+        if (m_excludeIds)
+            sectionDrawingStatement->BindVirtualSet(2, m_excludeIds);
         if (BE_SQLITE_ROW == sectionDrawingStatement->Step())
             return true;
         }
 
-    Utf8CP viewAttachmentSql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE View.Id=? LIMIT 1";
-    CachedECSqlStatementPtr viewAttachmentStatement = m_db.GetPreparedECSqlStatement(viewAttachmentSql);
+    Utf8String viewAttachmentSql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE View.Id=?";
+    if (m_excludeIds)
+        viewAttachmentSql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    viewAttachmentSql.append(" LIMIT 1");
+    CachedECSqlStatementPtr viewAttachmentStatement = m_db.GetPreparedECSqlStatement(viewAttachmentSql.c_str());
     viewAttachmentStatement->BindId(1, viewDefinitionId);
+    if (m_excludeIds)
+        viewAttachmentStatement->BindVirtualSet(2, m_excludeIds);
     if (BE_SQLITE_ROW == viewAttachmentStatement->Step())
         return true;
 
     if (m_db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionDrawingLocation).IsValid())
         {
-        Utf8CP sectionDrawingLocationSql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SectionDrawingLocation) " WHERE SectionView.Id=? LIMIT 1";
-        CachedECSqlStatementPtr sectionDrawingLocationStatement = m_db.GetPreparedECSqlStatement(sectionDrawingLocationSql);
+        Utf8String sectionDrawingLocationSql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SectionDrawingLocation) " WHERE SectionView.Id=?";
+        if (m_excludeIds)
+            sectionDrawingLocationSql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+        sectionDrawingLocationSql.append(" LIMIT 1");
+        CachedECSqlStatementPtr sectionDrawingLocationStatement = m_db.GetPreparedECSqlStatement(sectionDrawingLocationSql.c_str());
         sectionDrawingLocationStatement->BindId(1, viewDefinitionId);
+        if (m_excludeIds)
+            sectionDrawingLocationStatement->BindVirtualSet(2, m_excludeIds);
         if (BE_SQLITE_ROW == sectionDrawingLocationStatement->Step())
             return true;
         }
@@ -315,12 +356,15 @@ void DefinitionElementUsageInfo::ScanGeometricElement3ds(std::shared_ptr<BeSQLit
     Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE GeometryStream IS NOT NULL";
     if (nullptr != categoriesToScan)
         sql.append(" AND (InVirtualSet(?, Category.Id))");
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
 
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    int bindIdx = 1;
     if (nullptr != categoriesToScan)
-        {
-        statement->BindVirtualSet(1, categoriesToScan);
-        }
+        statement->BindVirtualSet(bindIdx++, categoriesToScan);
+    if (m_excludeIds)
+        statement->BindVirtualSet(bindIdx, m_excludeIds);
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -337,12 +381,15 @@ void DefinitionElementUsageInfo::ScanGeometricElement2ds(std::shared_ptr<BeSQLit
     Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE GeometryStream IS NOT NULL";
     if (nullptr != categoriesToScan)
         sql.append(" AND (InVirtualSet(?, Category.Id))");
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
 
     CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    int bindIdx = 1;
     if (nullptr != categoriesToScan)
-        {
-        statement->BindVirtualSet(1, categoriesToScan);
-        }
+        statement->BindVirtualSet(bindIdx++, categoriesToScan);
+    if (m_excludeIds)
+        statement->BindVirtualSet(bindIdx, m_excludeIds);
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -367,8 +414,12 @@ void DefinitionElementUsageInfo::ScanGeometricElement(DgnElementId elementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefinitionElementUsageInfo::ScanGeometryParts()
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE GeometryStream IS NOT NULL";
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE GeometryStream IS NOT NULL";
+    if (m_excludeIds)
+        sql.append(" AND NOT InVirtualSet(?, ECInstanceId)");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    if (m_excludeIds)
+        statement->BindVirtualSet(1, m_excludeIds);
     while (BE_SQLITE_ROW == statement->Step())
         {
         DgnElementId elementId = statement->GetValueId<DgnElementId>(0);
@@ -383,8 +434,12 @@ void DefinitionElementUsageInfo::ScanGeometryParts()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefinitionElementUsageInfo::ScanLineStyles()
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_LineStyle);
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_LineStyle);
+    if (m_excludeIds)
+        sql.append(" WHERE NOT InVirtualSet(?, ECInstanceId)");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    if (m_excludeIds)
+        statement->BindVirtualSet(1, m_excludeIds);
     while (BE_SQLITE_ROW == statement->Step())
         {
         DgnElementId lineStyleElementId = statement->GetValueId<DgnElementId>(0);
@@ -460,8 +515,12 @@ void DefinitionElementUsageInfo::ScanLineStyleComponent(LsComponentCP lineStyleC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefinitionElementUsageInfo::ScanDisplayStyles()
     {
-    Utf8CP sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_DisplayStyle3d);
-    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql);
+    Utf8String sql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_DisplayStyle3d);
+    if (m_excludeIds)
+        sql.append(" WHERE NOT InVirtualSet(?, ECInstanceId)");
+    CachedECSqlStatementPtr statement = m_db.GetPreparedECSqlStatement(sql.c_str());
+    if (m_excludeIds)
+        statement->BindVirtualSet(1, m_excludeIds);
     while (BE_SQLITE_ROW == statement->Step())
         {
         DgnElementId displayStyleId = statement->GetValueId<DgnElementId>(0);
