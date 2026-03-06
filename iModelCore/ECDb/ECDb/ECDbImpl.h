@@ -169,6 +169,7 @@ private:
     mutable std::unique_ptr<IdFactory> m_idFactory;
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
+    mutable std::unique_ptr<SupportInstanceQueryFunc> m_supportInstanceQueryFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
