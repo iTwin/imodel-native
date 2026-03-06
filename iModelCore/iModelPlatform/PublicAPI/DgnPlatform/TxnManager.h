@@ -708,6 +708,8 @@ public:
     //! @note If there are any outstanding uncommitted changes, they are reversed before the Txn is reinstated.
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
 
+    //! Gets the range of reversed transactions that will be reinstated by the next call to [[ReinstateTxn]].
+    //! If there is no reversed transaction to reinstate, the TxnIds in the returned range will be invalid.
     DGNPLATFORM_EXPORT TxnRange GetNextReinstateTxnRange() const;
     //@}
 
