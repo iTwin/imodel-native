@@ -707,6 +707,8 @@ public:
     //! @return DgnDbStatus::Success if a reversed transaction was reinstated, error status otherwise.
     //! @note If there are any outstanding uncommitted changes, they are reversed before the Txn is reinstated.
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
+
+    DGNPLATFORM_EXPORT TxnRange GetNextReinstateTxnRange() const;
     //@}
 
     //! Get the DgnDb for this TxnManager

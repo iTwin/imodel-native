@@ -1504,6 +1504,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
         return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseTxns(numTxns));
     }
+    Napi::Value GetNextReinstateTxnRange(NapiInfoCR info) {
+        auto& txns = GetOpenedDb(info).Txns();
+        auto range = txns.GetNextReinstateTxnRange();
+        BeJsNapiObject jsRange(Env());
+        jsRange["firstTxnId"] = TxnIdToString(range.GetFirst());
+        jsRange["lastTxnId"] = TxnIdToString(range.GetLast());
+        return jsRange;
+    }
+
     Napi::Value ClassNameToId(NapiInfoCR info) {
         auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(info[0], GetOpenedDb(info).GetClassLocater());
         return toJsString(Env(), classId);
@@ -3229,6 +3238,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("queryTextureData", &NativeDgnDb::QueryTextureData),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
+            InstanceMethod("getNextReinstateTxnRange", &NativeDgnDb::GetNextReinstateTxnRange),
             InstanceMethod("removeEmbeddedFile", &NativeDgnDb::RemoveEmbeddedFile),
             InstanceMethod("replaceEmbeddedFile", &NativeDgnDb::ReplaceEmbeddedFile),
             InstanceMethod("resetBriefcaseId", &NativeDgnDb::ResetBriefcaseId),

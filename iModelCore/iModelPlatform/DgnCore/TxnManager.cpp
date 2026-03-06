@@ -2794,6 +2794,15 @@ DgnDbStatus TxnManager::ReinstateTxn() {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnRange TxnManager::GetNextReinstateTxnRange() const {
+    if (m_reversedTxn.empty())
+        return TxnRange(TxnId(), TxnId());
+    return m_reversedTxn.back();
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TxnManager::GetUndoString() {
     return IsUndoPossible() ? GetTxnDescription(QueryPreviousTxnId(GetCurrentTxnId())) : "";
 }
