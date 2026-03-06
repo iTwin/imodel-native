@@ -3352,7 +3352,16 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
 
         bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
-        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
+        
+        Utf8CP unitFilter = nullptr;
+        Utf8String unitFilterStr;
+        if (ARGUMENT_IS_STRING(2))
+            {
+            unitFilterStr = info[2].As<Napi::String>().Utf8Value();
+            unitFilter = unitFilterStr.c_str();
+            }
+
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld, unitFilter);
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
@@ -3361,13 +3370,28 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             auto gcsDefinition = Napi::Object::New(info.Env());
             gcsDefinition.Set(Napi::String::New(info.Env(), "name"), Napi::String::New(info.Env(), gcs.m_name.c_str()));
             gcsDefinition.Set(Napi::String::New(info.Env(), "description"), Napi::String::New(info.Env(), gcs.m_description.c_str()));
+            gcsDefinition.Set(Napi::String::New(info.Env(), "unit"),  Napi::String::New(info.Env(), gcs.m_unit.c_str()));
+            
             gcsDefinition.Set(("deprecated"), gcs.m_deprecated);
             Napi::Object crsExtent = Napi::Object::New(info.Env());
             BeJsGeomUtils::DRange2dToJson(crsExtent, gcs.m_crsExtent);
             gcsDefinition.Set("crsExtent", crsExtent);
+            
 
             ret.Set(index++, gcsDefinition);
             }
+
+        return ret;
+        }
+
+    static Napi::Value GetAvailableCRSUnitNames(NapiInfoCR info)
+        {
+        T_Utf8StringVector unitNames = GeoCoordinates::BaseGCS::GetSupportedJsonUnitNames();
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), unitNames.size());
+        for (auto const& unitName : unitNames)
+            ret.Set(index++, Napi::String::New(info.Env(), unitName.c_str()));
 
         return ret;
         }
@@ -3378,11 +3402,11 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "GeoServices", {
             StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation),
-            StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS)
+            StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS),
+            StaticMethod("getAvailableUnitNames", &NativeGeoServices::GetAvailableCRSUnitNames)
         });
 
         exports.Set("GeoServices", t);
-
         SET_CONSTRUCTOR(t);
         }
     };
