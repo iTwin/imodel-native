@@ -228,7 +228,7 @@ using namespace connectivity;
 /* non-standard */
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
-%type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
+%type <pParseNode> cte opt_cte_recursive cte_column_list cte_block_body cte_table_name cte_block_list
 %type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
 %type <pParseNode> value_creation_fct
 %%
@@ -349,8 +349,22 @@ cte_column_list:
         }
     ;
 
+cte_block_body:
+        select_statement
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }
+    |   SQL_TOKEN_VALUES values_commalist
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
+    ;
+
 cte_table_name:
-    SQL_TOKEN_NAME  '(' cte_column_list ')' SQL_TOKEN_AS '(' select_statement ')'
+    SQL_TOKEN_NAME  '(' cte_column_list ')' SQL_TOKEN_AS '(' cte_block_body ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -362,7 +376,7 @@ cte_table_name:
             $$->append($7);
             $$->append($8 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |   SQL_TOKEN_NAME SQL_TOKEN_AS '(' select_statement ')'
+    |   SQL_TOKEN_NAME SQL_TOKEN_AS '(' cte_block_body ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
