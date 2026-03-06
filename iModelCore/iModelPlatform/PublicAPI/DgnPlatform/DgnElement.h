@@ -4037,14 +4037,14 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
     
     //! Delete multiple DgnElements from this DgnDb.
-    //! @param[in] elementIds The element set to delete.
-    //! @return A DgnElementIdSet of elements that failed to delete.
+    //! @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
+    //! @return A DgnElementIdSet of valid element Ids that failed to delete.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
 
     //! Delete multiple definition elements from this DgnDb.
-    //! @param[in] elementIds The set of definition elements to delete.
-    //! @return A DgnElementIdSet of definition elements that failed to delete.
+    //! @param[in] elementIds The set of definition elements to delete. Invalid and non-definition element Ids will be ignored.
+    //! @return A DgnElementIdSet of valid definition element Ids that failed to delete.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
 
