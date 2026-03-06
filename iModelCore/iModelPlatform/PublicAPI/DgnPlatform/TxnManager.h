@@ -443,7 +443,7 @@ private:
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
     void CallMonitors(std::function<void (TxnMonitor&)>);
-    void OnBeforeUndoRedo(bool isUndo, TxnRange const& txnRange);
+    void OnBeforeUndoRedo(bool isUndo);
     void OnUndoRedo(TxnAction action);
     void OnRollback(BeSQLite::ChangeStreamCR);
 
@@ -707,8 +707,6 @@ public:
     //! @return DgnDbStatus::Success if a reversed transaction was reinstated, error status otherwise.
     //! @note If there are any outstanding uncommitted changes, they are reversed before the Txn is reinstated.
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
-
-    DGNPLATFORM_EXPORT TxnRange GetNextReinstateTxnRange() const;
     //@}
 
     //! Get the DgnDb for this TxnManager
