@@ -350,16 +350,16 @@ cte_column_list:
     ;
 
 cte_block_body:
-    SQL_TOKEN_VALUES values_commalist
+        select_statement
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }
+    |   SQL_TOKEN_VALUES values_commalist
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
-        }
-    |   select_statement
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
         }
     ;
 
