@@ -58,6 +58,17 @@ struct PragmaECDbVersion : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECSqlVersion : PragmaManager::GlobalHandler {
+    PragmaECSqlVersion() : GlobalHandler("ecsql_ver", "return current ECSQL version") {}
+    ~PragmaECSqlVersion() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaECSqlVersion>(); }
+};
+
+//=======================================================================================
 // @bsiclass PragmaChecksum
 //+===============+===============+===============+===============+===============+======
 struct PragmaChecksum : PragmaManager::GlobalHandler {

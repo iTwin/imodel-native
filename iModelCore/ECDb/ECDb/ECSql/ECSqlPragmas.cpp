@@ -178,6 +178,32 @@ DbResult PragmaECDbVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pr
 }
 
 //=======================================================================================
+// PragmaECSqlVersion
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaECSqlVersion::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, const PragmaVal&, const PragmaManager::OptionsMap& options) {
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty(GetName(), PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+	auto row = result->AppendRow();
+	row.appendValue() = ECDb::GetECSqlVersion().ToString();
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaECSqlVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, const PragmaVal&, const PragmaManager::OptionsMap& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
+	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+	rowSet->FreezeSchemaChanges();
+	return BE_SQLITE_READONLY;
+}
+
+//=======================================================================================
 // DisqualifyTypeIndex
 //=======================================================================================
 //---------------------------------------------------------------------------------------

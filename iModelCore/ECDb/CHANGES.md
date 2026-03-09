@@ -5,7 +5,12 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.2.1` |
+| ECSQL   | `2.0.2.2` |
+
+## ## `03/09/2026`: Added PRAGMA `ecsql_ver` to return the current ECSQL version
+* ECSql version change `2.0.2.1` -> `2.0.2.2`.
+* Added `PRAGMA ecsql_ver` which returns the current ECSQL version. This will allow applications to check feature availability when working with ECSql.
+* Example: `PRAGMA ecsql_ver` returns `2.0.2.2`.
 
 ## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
 * ECSql version change `2.0.2.0` -> `2.0.2.1`.

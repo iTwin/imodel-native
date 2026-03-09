@@ -44,6 +44,19 @@ TEST_F(ECSqlPragmasTestFixture, ecdb_ver){
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, ecsql_ver)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecsql_ver.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecsql_ver"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ(stmt.GetValueText(0), ECDb::GetECSqlVersion().ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlPragmasTestFixture, experimental_features_enabled){
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("experimental_features_enabled.ecdb"));
 
