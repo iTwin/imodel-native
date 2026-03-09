@@ -1,3 +1,6 @@
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 /* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison implementation for Yacc-like parsers in C
