@@ -876,6 +876,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
+    public clearECDbCache(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {
@@ -907,7 +908,8 @@ export declare namespace IModelJsNative {
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
     public toRow(arg: ECSqlRowAdaptorOptions): any;
-    public getMetadata(): any;
+    public getMetadata(arg?: ECSqlRowAdaptorOptions): any;
+    public bindParams(args: object): StatusCodeWithMessage<boolean>;
   }
 
   class ECSqlBinder {
