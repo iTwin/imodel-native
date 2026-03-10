@@ -4036,16 +4036,32 @@ public:
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
     
-    //! Delete multiple DgnElements from this DgnDb.
-    //! @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
-    //! @return A DgnElementIdSet of valid element Ids that failed to delete.
-    //! @note This function can only be safely invoked from the client thread.
+    /**
+     * Delete multiple DgnElements from this DgnDb, including their descendants.
+     *
+     * This method is intended for general non-definition elements.
+     * Definition elements need to be handled as per their usage which makes them a special case for element deletion.
+     * The handlers for definition elements veto deletion unless a purge operation is enabled.
+     * Hence, for bulk deletion of definition Elements, DeleteDefinitionElements API should be used instead.
+     * This method will fail to delete definition elements.
+     *
+     * @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
+     * @return A DgnElementIdSet of valid element Ids that failed to delete (either vetoed or blocked by FK/code scope constraints).
+     * @note This function can only be safely invoked from the client thread.
+     */
     DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
 
-    //! Delete multiple definition elements from this DgnDb.
-    //! @param[in] elementIds The set of definition elements to delete. Invalid and non-definition element Ids will be ignored.
-    //! @return A DgnElementIdSet of valid definition element Ids that failed to delete.
-    //! @note This function can only be safely invoked from the client thread.
+    /**
+     * Delete multiple definition elements from this DgnDb.
+     *
+     * Definition elements need to be handled as per their usage which makes them a special case for element deletion.
+     * The handlers for definition elements veto deletion unless a purge operation is enabled.
+     * Any non-definition element will be ignored and should use the general purpose DeleteElements API instead.
+     *
+     * @param[in] elementIds The set of definition elements to delete. Invalid and non-definition element Ids will be ignored.
+     * @return A DgnElementIdSet of valid definition element Ids that failed to delete (either not DefinitionElements or in use).
+     * @note This function can only be safely invoked from the client thread.
+     */
     DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
