@@ -150,7 +150,12 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         } else if (PropertyMap const *resolvedMap = GetPropertyRef()->TryGetPropertyMap()) {
             SetTypeInfo(ECSqlTypeInfo(*resolvedMap));
         } else {
-            SetTypeInfo(derivedProperty.GetExpression()->GetTypeInfo());
+            ECSqlTypeInfo const& typeInfo = GetTypeInfoFromPropertyRef();
+            if(typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset) {
+                ctx.SetDeferFinalize(true);
+                return FinalizeParseStatus::NotCompleted;
+            }
+            SetTypeInfo(typeInfo);
         }
     } else {
         SetTypeInfo(ECSqlTypeInfo(*GetPropertyMap()));
@@ -166,6 +171,47 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         m_sysPropInfo = &ctx.Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(GetPropertyMap()->GetProperty());
 
     return FinalizeParseStatus::Completed;
+}
+
+ECSqlTypeInfo PropertyNameExp::GetTypeInfoFromPropertyRef() const {
+    if(!IsPropertyRef()) {
+        BeAssert(false && "Error: GetTypeInfoFromPropertyRef is expected to be called only when this exp is a property ref");
+        ECSqlTypeInfo defaultTypeInfo; // unset is sent back
+        return defaultTypeInfo;
+    }
+    DerivedPropertyExp const& derivedProperty = GetPropertyRef()->LinkedTo();
+    ECSqlTypeInfo const& typeInfo = derivedProperty.GetExpression()->GetTypeInfo();
+    if(!typeInfo.IsUnset() && !typeInfo.IsNull()) {
+        return typeInfo; // return if its not unset and also not null.
+    }
+    Exp const* parentSelectExp = derivedProperty.FindParent(Exp::Type::Select);
+    Exp const* parentSelectClauseExp = derivedProperty.FindParent(Exp::Type::Selection);
+    if(parentSelectExp == nullptr || parentSelectClauseExp == nullptr) {
+        return typeInfo; // return if there is no select parent.
+    }
+    SelectStatementExp const& selectExp = parentSelectExp->GetAs<SelectStatementExp>();
+    std::vector<SingleSelectStatementExp const*> const& flatList = selectExp.GetFlatListOfStatements();
+    if(flatList.size() == 1) {
+        return typeInfo; // return if there is a single select statement.
+    }
+    SelectClauseExp const& selectClause = parentSelectClauseExp->GetAs<SelectClauseExp>();
+
+    int colIdx = -1;
+    for(Exp const* childExp : selectClause.GetChildren()) {
+        colIdx++;
+        if(childExp == &derivedProperty)
+            break;
+    }
+    ECSqlTypeInfo resolvedTypeInfo;
+    for (auto stmtIdx = 0; stmtIdx < flatList.size(); ++stmtIdx) {
+        BeAssert(flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx) != nullptr && "Programmer Error: All the select statements in the compound statement are expected to have the same number of columns in their select clause");
+        auto typeInfo = flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx)->GetExpression()->GetTypeInfo();
+        // try to find non-null type info
+        if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !typeInfo.IsNull()) {
+            resolvedTypeInfo = typeInfo;
+        }
+    }
+    return resolvedTypeInfo;
 }
 
 //-----------------------------------------------------------------------------------------

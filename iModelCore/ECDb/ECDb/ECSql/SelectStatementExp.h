@@ -425,6 +425,7 @@ struct SelectStatementExp final : QueryExp
         int m_rhsSelectStatementExpIndex;
         CompoundOperator m_operator;
         bool m_isAll;
+        std::vector<SingleSelectStatementExp const *> m_flatListOfStatements;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
@@ -444,14 +445,8 @@ struct SelectStatementExp final : QueryExp
         SelectStatementExp const* GetRhsStatement() const;
         bool IsAll()const { return m_isAll; }
         CompoundOperator GetOperator() const { return m_operator; }
-        std::vector<SingleSelectStatementExp const*> GetFlatListOfStatements() const {
-            std::vector<SingleSelectStatementExp const *> list;
-            auto cur = this;
-            do {
-                list.push_back(&cur->GetFirstStatement());
-                cur = cur->GetRhsStatement();
-            } while(cur != nullptr);
-            return list;
+        std::vector<SingleSelectStatementExp const*> const& GetFlatListOfStatements() const {
+            return m_flatListOfStatements;
         }
 
     };
