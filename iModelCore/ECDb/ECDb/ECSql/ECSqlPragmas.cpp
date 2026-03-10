@@ -204,6 +204,42 @@ DbResult PragmaECSqlVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, c
 }
 
 //=======================================================================================
+// PragmaSqliteSql
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaSqliteSql::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, const PragmaVal& val, const PragmaManager::OptionsMap& options) {
+	if (!val.IsString()) {
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0601, "PRAGMA %s expect a ECSQL query as string argument.", GetName().c_str());
+		return BE_SQLITE_ERROR;
+	}
+	ECSqlStatement stmt;
+	if (ECSqlStatus::Success != stmt.Prepare(ecdb, val.GetString().c_str())) {
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0602, "PRAGMA %s failed to prepare ECSQL query.", GetName().c_str());
+		return BE_SQLITE_ERROR;
+	}
+
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty(GetName(), PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+	auto row = result->AppendRow();
+	row.appendValue() = stmt.GetNativeSql();
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaSqliteSql::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, const PragmaVal&, const PragmaManager::OptionsMap& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
+	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+	rowSet->FreezeSchemaChanges();
+	return BE_SQLITE_READONLY;
+}
+
+//=======================================================================================
 // DisqualifyTypeIndex
 //=======================================================================================
 //---------------------------------------------------------------------------------------

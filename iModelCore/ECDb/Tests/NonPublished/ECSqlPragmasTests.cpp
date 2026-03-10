@@ -490,4 +490,43 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("sqlite_sql.ecdb"));
+
+    // Valid input cases
+    for (const auto& [testCaseName, ecsqlStmt] : std::vector<std::pair<std::string, std::string>> {
+        std::make_pair("Valid ECSQL", "SELECT * FROM meta.ECClassDef WHERE Name='Element'"),
+        std::make_pair("Parameterized ECSQL", "SELECT * FROM meta.ECClassDef WHERE Name=?"),
+        std::make_pair("Complex ECSQL with joins", "SELECT a.Name, b.Name FROM meta.ECClassDef a JOIN meta.ECClassDef b ON a.Name=b.Name"),
+        std::make_pair("CTE", "WITH el AS (SELECT ECInstanceId, ECClassId FROM meta.ECClassDef) SELECT * FROM el"),
+    })
+        {
+        // Prepare the ECSql directly to compare the Pragma results
+        ECSqlStatement expectedStmt;
+        ASSERT_EQ(ECSqlStatus::Success, expectedStmt.Prepare(m_ecdb, ecsqlStmt.c_str()));
+
+        ECSqlStatement pragmaStmt;
+        ASSERT_EQ(ECSqlStatus::Success, pragmaStmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA sqlite_sql(\"%s\")", ecsqlStmt.c_str()))) << "Test case '" << testCaseName << "' failed to prepare";
+        ASSERT_EQ(BE_SQLITE_ROW, pragmaStmt.Step()) << "Test case '" << testCaseName << "' failed to execute";
+
+        ASSERT_STREQ(pragmaStmt.GetValueText(0), expectedStmt.GetNativeSql()) << "Test case '" << testCaseName << "' failed to match expected output";
+        }
+
+    // Invalid input cases:
+    for (const auto& [testCaseName, ecsqlStmt] : std::vector<std::pair<std::string, std::string>> {
+        std::make_pair("Empty String", "\"\""),
+        std::make_pair("Non-String input", "12345"),
+        std::make_pair("Invalid ECSQL input", "\"SELECT * FROM non_existent_table\""),
+        std::make_pair("Malformed ECSQL", "\"SELECT FROM WHERE\""),
+    })
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA sqlite_sql(%s)", ecsqlStmt.c_str()))) << "Test case '" << testCaseName << "' was expected to fail";
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

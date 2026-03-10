@@ -7,10 +7,12 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.2.2` |
 
-## ## `03/09/2026`: Added PRAGMA `ecsql_ver` to return the current ECSQL version
+## ## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
 * ECSql version change `2.0.2.1` -> `2.0.2.2`.
 * Added `PRAGMA ecsql_ver` which returns the current ECSQL version. This will allow applications to check feature availability when working with ECSql.
 * Example: `PRAGMA ecsql_ver` returns `2.0.2.2`.
+* Added `PRAGMA sqlite_sql` which returns the underlying sqlite sql as a string. This will help debugging ECSql statements.
+* Example: `PRAGMA sqlite_sql("SELECT * FROM meta.ECClassDef WHERE Name='Element'")`.
 
 ## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
 * ECSql version change `2.0.2.0` -> `2.0.2.1`.
