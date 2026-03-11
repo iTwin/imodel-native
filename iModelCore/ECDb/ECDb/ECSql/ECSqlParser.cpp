@@ -157,10 +157,10 @@ BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& e
     {
         auto blockName = parseNode->getChild(0)->getTokenValue();
         auto pColumnList = parseNode->getChild(2);
-        auto pSelectStmt = parseNode->getChild(6);
+        auto blockBody = parseNode->getChild(6);
 
-        std::unique_ptr<SelectStatementExp> selectStmt;
-        if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
+        std::unique_ptr<SelectStatementExp> selectStmt = nullptr;
+        if (SUCCESS != ParseCTEBlockBody(selectStmt, blockBody))
             return ERROR;
         // Grab column names in block definition
         std::vector<Utf8String> columns;
@@ -183,15 +183,57 @@ BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& e
         if(isRecursive)
             return ERROR;
         auto blockName = parseNode->getChild(0)->getTokenValue();
-        auto pSelectStmt = parseNode->getChild(3);
+        auto blockBody = parseNode->getChild(3);
 
-        std::unique_ptr<SelectStatementExp> selectStmt;
-        if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
+        std::unique_ptr<SelectStatementExp> selectStmt = nullptr;
+        if (SUCCESS != ParseCTEBlockBody(selectStmt, blockBody))
             return ERROR;
         
         exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), std::move(selectStmt));
         return SUCCESS;
     }
+    return ERROR;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseCTEBlockBody(std::unique_ptr<SelectStatementExp>& exp, OSQLParseNode const* parseNode) const {
+     if (!SQL_ISRULE(parseNode, cte_block_body))
+        {
+        BeAssert(false && "Wrong grammar. Expecting cte_block_body");
+        return ERROR;
+        }
+
+    if (parseNode->count() == 1)
+        {
+        //select_statement
+        OSQLParseNode const* selectExpNode = parseNode->getChild(0/*select_exp*/);
+        if(!SQL_ISRULE(selectExpNode, select_statement))
+            {
+            BeAssert(false && "Wrong grammar. Expecting select_statement");
+            return ERROR;
+            }
+        if (SUCCESS != ParseSelectStatement(exp, *selectExpNode))
+            return ERROR;
+
+        return SUCCESS;
+        }
+    else if (parseNode->count() == 2)
+        {
+        //values_commalist
+        OSQLParseNode const* valuesCommalistNode = parseNode->getChild(1/*values_commalist*/);
+        if(!SQL_ISRULE(valuesCommalistNode, values_commalist))
+            {
+            BeAssert(false && "Wrong grammar. Expecting values_commalist");
+            return ERROR;
+            }
+        if (SUCCESS != ParseValuesCommalist(exp, *valuesCommalistNode))
+            return ERROR;
+
+        return SUCCESS;
+        }
+    BeAssert(false && "Wrong grammar. Expecting cte_block_body with two child nodes or exactly one child");
     return ERROR;
 }
 
@@ -4461,17 +4503,17 @@ BentleyStatus ECSqlParseContext::FinalizeParsing(Exp& rootExp)
     if (SUCCESS != rootExp.FinalizeParsing(*this))
         return ERROR;
 
-    if (GetDeferFinalize()) {
-        SetDeferFinalize(false);
-        if (SUCCESS != rootExp.FinalizeParsing(*this))
-            return ERROR;
-    }
-
     for (ParameterExp* parameterExp : m_parameterExpList)
         {
         if (!parameterExp->TryDetermineParameterExpType(*this, *parameterExp))
             parameterExp->SetDefaultTargetExpInfo();
         }
+
+    if (GetDeferFinalize()) {
+        SetDeferFinalize(false);
+        if (SUCCESS != rootExp.FinalizeParsing(*this))
+            return ERROR;
+    }
 
     return SUCCESS;
     }
