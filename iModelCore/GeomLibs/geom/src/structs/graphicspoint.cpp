@@ -304,7 +304,7 @@ int           n
     if (n > m)
         n = m;
 
-    memcpy (pOutPoint, pInPoint, n * sizeof (GraphicsPoint));
+    BeStringUtilities::Memcpy (pOutPoint, m * sizeof (GraphicsPoint), pInPoint, n * sizeof (GraphicsPoint));
 
     return n;
     }

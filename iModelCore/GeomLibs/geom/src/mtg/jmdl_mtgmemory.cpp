@@ -106,11 +106,11 @@ int             numToAdd
         )
         {
         /* copy oldNodeSize ints from original node list */
-        memcpy (pWritePtr, pReadPtr, charsToCopy);
+        BeStringUtilities::Memcpy (pWritePtr, charsToCopy, pReadPtr, charsToCopy);
 
         /* append default values of new labels to node list */
         pWritePtr += oldNodeSize;
-        memcpy (pWritePtr, pDefault, charsToAdd);
+        BeStringUtilities::Memcpy (pWritePtr, charsToAdd, pDefault, charsToAdd);
         }
     jmdlEmbeddedIntArray_drop (pOldNodeListHdr);
 
@@ -120,9 +120,9 @@ int             numToAdd
     /* set remaining relevant MTG fields/arrays */
     pGraph->numIntPerNode   = nodeSize;
     pGraph->numLabelPerNode = numLabels;
-    memcpy (pGraph->labelMask + oldNumLabels,           pMask,      charsToAdd);
-    memcpy (pGraph->defaultLabelValue + oldNumLabels,   pDefault,   charsToAdd);
-    memcpy (pGraphTag + oldNumLabels,                   pTag,       charsToAdd);
+    BeStringUtilities::Memcpy (pGraph->labelMask + oldNumLabels,           charsToAdd, pMask,      charsToAdd);
+    BeStringUtilities::Memcpy (pGraph->defaultLabelValue + oldNumLabels,   charsToAdd, pDefault,   charsToAdd);
+    BeStringUtilities::Memcpy (pGraphTag + oldNumLabels,                   charsToAdd, pTag,       charsToAdd);
 
     return true;
     }
@@ -192,7 +192,7 @@ int             numToDrop
         i < numNodes;
         i++, pReadPtr += oldNodeSize, pWritePtr += nodeSize
         )
-        memcpy (pWritePtr, pReadPtr, charsToCopy);
+        BeStringUtilities::Memcpy (pWritePtr, charsToCopy, pReadPtr, charsToCopy);
 
     /* new (smaller) size (in ints) of node list */
     pNodeListHdr->count = nodeSize * numNodes;
