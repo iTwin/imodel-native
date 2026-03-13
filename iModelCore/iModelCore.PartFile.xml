@@ -42,7 +42,7 @@
         <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
     </NuGetProduct>
 
-    <UPackProduct Name="iModelNativeUPack" Description="iModel Native SDK" OnlyPlatforms="linux*,x64">
+    <UPackProduct Name="iModelNativeUPack" Description="iModel Native SDK" OnlyPlatforms="linux*,x64,macos*">
         <Directories DirectoryListName="iModelCoreNugetDirs"/>
         <SubPart PartName="iModelCore"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
@@ -69,7 +69,7 @@
 
     </ProductDirectoryList>
 
-    <NuGetProduct Name="iModelCoreTestingNuget" Description="iModel Core Testing SDK" OnlyPlatforms="x64,linux*,macos*">
+    <NuGetProduct Name="iModelCoreTestingNuget" Description="iModel Core Testing SDK" OnlyPlatforms="x64,linux*,macosarm64">
         <Directories DirectoryListName="iModelCoreTestingNugetDirs"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="UnitTestSchemas" PartFile="iModelCore/iModelPlatform/iModelPlatform"/>
