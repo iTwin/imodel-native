@@ -697,9 +697,13 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
 
 namespace
     {
-    std::unordered_map<uint64_t, uint64_t> fullSetParents;
+    struct ExpandedElementSet
+        {
+        DgnElementIdSet ids;
+        std::unordered_map<uint64_t, uint64_t> logicalParents; // might be a parent element or a modeled element
+        };
 
-    DgnElementIdSet ExpandIdSet(DgnDbR db, const DgnElementIdSet& elementIds)
+    ExpandedElementSet ExpandIdSet(DgnDbR db, const DgnElementIdSet& elementIds)
         {
         constexpr auto expandSql = R"sql(
             WITH RECURSIVE fullSet(id, logicalParentId) AS (
@@ -722,16 +726,16 @@ namespace
 
         expandStmt.BindVirtualSet(1, elementIds);
 
-        DgnElementIdSet expandedIds;
+        ExpandedElementSet result;
         while (BE_SQLITE_ROW == expandStmt.Step())
             {
             if (auto id = expandStmt.GetValueId<DgnElementId>(0); id.IsValid())
                 {
-                expandedIds.insert(id);
-                fullSetParents[id.GetValueUnchecked()] = expandStmt.GetValueId<DgnElementId>(1).GetValueUnchecked();
+                result.ids.insert(id);
+                result.logicalParents[id.GetValueUnchecked()] = expandStmt.GetValueId<DgnElementId>(1).GetValueUnchecked();
                 }
             }
-        return expandedIds;
+        return result;
         }
 
     DgnElementIdSet FindViolators(DgnDbR db, const DgnElementIdSet& elementIds)
@@ -765,7 +769,7 @@ namespace
         return violators;
         }
 
-    DgnElementIdSet GetRootsToPrune(DgnDbR db, const DgnElementIdSet& violators)
+    DgnElementIdSet GetRootsToPrune(DgnDbR db, const DgnElementIdSet& violators, const std::unordered_map<uint64_t, uint64_t>& logicalParents)
         {
         // Find all root elements of the violators that need to be pruned from the delete set
         DgnElementIdSet pruneRoots;
@@ -774,12 +778,12 @@ namespace
             uint64_t current = violatorId.GetValueUnchecked();
             while (true)
                 {
-                auto it = fullSetParents.find(current);
-                if (it == fullSetParents.end())
+                auto it = logicalParents.find(current);
+                if (it == logicalParents.end())
                     break;
 
                 uint64_t parentVal = it->second;
-                if (parentVal == 0 || fullSetParents.find(parentVal) == fullSetParents.end())
+                if (parentVal == 0 || logicalParents.find(parentVal) == logicalParents.end())
                     {
                     pruneRoots.insert(DgnElementId(current));
                     break;
@@ -859,21 +863,21 @@ namespace
         // Expand the element IDs to recursively include:
         // 1. All children elements
         // 2. If the delete set contains a modeled element, then all the elements in the sub model.
-        auto expandedIds = ExpandIdSet(db, elementIds);
-        const auto violators = FindViolators(db, expandedIds);
+        auto expanded = ExpandIdSet(db, elementIds);
+        const auto violators = FindViolators(db, expanded.ids);
         if (!violators.empty())
             {
-            const auto pruneRoots = GetRootsToPrune(db, violators);
-            PruneViolators(db, pruneRoots, expandedIds);
+            const auto pruneRoots = GetRootsToPrune(db, violators, expanded.logicalParents);
+            PruneViolators(db, pruneRoots, expanded.ids);
 
             for (const auto& elementId : elementIds)
                 {
-                if (expandedIds.find(elementId) == expandedIds.end())
+                if (expanded.ids.find(elementId) == expanded.ids.end())
                     failedToDeleteElements.insert(elementId);
                 }
             }
 
-        return expandedIds;
+        return expanded.ids;
         }
 
     void SegregateDefinitionElements(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& definitionElementIds, DgnElementIdSet& nonDefinitionElementIds)
@@ -906,6 +910,37 @@ namespace
             }
         }
 
+    // Expand a subtree rooted at a definition element that is in use and cannot be deleted.
+    void ExpandBlockedSubtrees(DgnDbR db, const DgnElementIdSet& blockedRoots, DgnElementIdSet& candidateSet, DgnElementIdSet& blockedSet)
+        {
+        constexpr auto expandBlockedSql = R"sql(
+            WITH RECURSIVE blockedSubtree(id) AS (
+                SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
+                UNION ALL
+                SELECT e.Id FROM bis_Element e INNER JOIN blockedSubtree b ON e.ParentId = b.id
+                UNION ALL
+                SELECT e.Id FROM bis_Element e
+                    INNER JOIN bis_Model m ON m.Id = e.ModelId
+                    INNER JOIN blockedSubtree b ON m.ModeledElementId = b.id
+            )
+            SELECT id FROM blockedSubtree
+        )sql";
+
+        Statement stmt;
+        if (BE_SQLITE_OK != stmt.Prepare(db, expandBlockedSql))
+            return;
+
+        stmt.BindVirtualSet(1, blockedRoots);
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            auto id = stmt.GetValueId<DgnElementId>(0);
+            if (!id.IsValid())
+                continue;
+            if (candidateSet.erase(id) > 0)
+                blockedSet.insert(id);
+            }
+        }
+
     bool DeleteLinkTableRelationships(DgnDbR db, const std::vector<Utf8String>& tableNames, const DgnElementIdSet& sourceElementIds, const DgnElementIdSet& targetElementIds)
         {
         for (const auto& table : tableNames)
@@ -929,7 +964,7 @@ namespace
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, const bool skipIdSetExpansion)
+DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
     {
     DgnDb::VerifyClientThread();
 
@@ -937,14 +972,25 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
         return {};
 
     DgnElementIdSet failedToDeleteElements;
-    DgnElementIdSet elementsToDelete = elementIds;
-    if (!skipIdSetExpansion)
-        elementsToDelete = ExpandAndPruneElementIds(m_dgndb, elementIds, failedToDeleteElements);
+    const DgnElementIdSet elementsToDelete = ExpandAndPruneElementIds(m_dgndb, elementIds, failedToDeleteElements);
 
     if (failedToDeleteElements.empty())
         LOG.infov("DeleteElements: All requested element Ids are being deleted as part of the bulk delete operation: %s", elementIds.ToString().c_str());
     else
         LOG.warningv("DeleteElements: The following element Ids are not being deleted as part of the bulk delete operation due to external code scope violations: %s", failedToDeleteElements.ToString().c_str());
+
+    const auto additionalFailures = DeleteElementsPreExpanded(elementsToDelete, elementIds);
+    failedToDeleteElements.insert(additionalFailures.begin(), additionalFailures.end());
+    return failedToDeleteElements;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElements::DeleteElementsPreExpanded(const DgnElementIdSet& expandedElementIdSet, const DgnElementIdSet& originalElementIdSet)
+    {
+    // Work on a mutable copy so veto resolution can shrink the set without modifying the caller's data.
+    DgnElementIdSet elementsToDelete = expandedElementIdSet;
 
     std::vector<DgnElementCPtr> elementsToDeletePtrs;
     std::vector<DgnModelPtr> subModelsToDelete;
@@ -982,7 +1028,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
             subModelIds.insert(DgnElementId(subModel->GetModelId().GetValueUnchecked()));
             }
 
-        if (elementIds.find(elementId) == elementIds.end())
+        if (originalElementIdSet.find(elementId) == originalElementIdSet.end())
             continue;
 
         // Call the element's own pre-delete handler.
@@ -1006,6 +1052,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
         elementsToDeletePtrs.push_back(element);
         }
 
+    DgnElementIdSet failedToDeleteElements;
     if (!vetoedElementIds.empty())
         elementsToDelete = ResolveElementsAfterPossibleVeto(m_dgndb, vetoedElementIds, failedToDeleteElements);
 
@@ -1060,7 +1107,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, c
         {
         element->_OnDeleted();
 
-        if (element->m_parent.m_id.IsValid() && elementIds.find(element->m_parent.m_id) == elementIds.end())
+        if (element->m_parent.m_id.IsValid() && originalElementIdSet.find(element->m_parent.m_id) == originalElementIdSet.end())
             {
             auto parent = GetElement(element->m_parent.m_id);
             if (parent.IsValid())
@@ -1137,22 +1184,10 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
             toBeDeleted.insert(elementId);
         }
 
-    // It might happen that a parent element is in use, but the child element might not be.
-    // We need to scan the descendants of each blocked element and mark them as blocked too.
+    // It might happen that a parent element is in use, but its structural descendants might not be.
+    // We need to ensure that all descendants are marked for deletion as well.
     if (!cannotBeDeleted.empty())
-        {
-        DgnElementIdSet blockedDescendants = toBeDeleted;
-        PruneViolators(m_dgndb, cannotBeDeleted, blockedDescendants);
-        // blockedDescendants now contains only the elements NOT affected by the cannotBeDeleted roots.
-        for (const auto& elementId : toBeDeleted)
-            {
-            // The element was pruned from the list, mark it as cannot be deleted.
-            if (blockedDescendants.find(elementId) == blockedDescendants.end())
-                cannotBeDeleted.insert(elementId);
-            }
-        // Now we have a fresh list of elements of which they themselves and their descendants are not in use.
-        toBeDeleted = std::move(blockedDescendants);
-        }
+        ExpandBlockedSubtrees(m_dgndb, cannotBeDeleted, toBeDeleted, cannotBeDeleted);
 
     if (toBeDeleted.empty())
         {
@@ -1162,7 +1197,7 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
         }
 
     m_dgndb.BeginPurgeOperation();
-    const auto failedToDeleteIds = DeleteElements(toBeDeleted, true);
+    const auto failedToDeleteIds = DeleteElementsPreExpanded(toBeDeleted, toBeDeleted);
     m_dgndb.EndPurgeOperation();
 
     cannotBeDeleted.insert(failedToDeleteIds.begin(), failedToDeleteIds.end());

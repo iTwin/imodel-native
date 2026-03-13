@@ -4046,11 +4046,10 @@ public:
      * This method will fail to delete definition elements.
      *
      * @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
-     * @param[in] skipIdSetExpansion The elementIds set will not be expanded to include all descendants or sub-models. Defaults to false.
      * @return A DgnElementIdSet of valid element Ids that failed to delete (either vetoed or blocked by FK/code scope constraints).
      * @note This function can only be safely invoked from the client thread.
      */
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipIdSetExpansion = false);
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
 
     /**
      * Delete multiple definition elements from this DgnDb.
@@ -4064,6 +4063,10 @@ public:
      * @note This function can only be safely invoked from the client thread.
      */
     DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
+
+private:
+    DgnElementIdSet DeleteElementsPreExpanded(const DgnElementIdSet& expandedElementIdSet, const DgnElementIdSet& originalElementIdSet);
+public:
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
