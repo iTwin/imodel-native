@@ -1098,8 +1098,10 @@ DgnElementIdSet DgnElements::DeleteElementsPreExpanded(const DgnElementIdSet& ex
         auto modelDeleteStmt = GetStatement("DELETE FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE InVirtualSet(?, Id)");
         modelDeleteStmt->BindVirtualSet(1, subModelIds);
         if (modelDeleteStmt->Step() != BE_SQLITE_DONE)
+            {
             LOG.errorv("DeleteElements: Failed to delete sub-model rows for element Ids: %s", subModelIds.ToString().c_str());
-        return failedToDeleteElements;
+            return failedToDeleteElements;
+            }
         }
 
     // Call the post delete handlers for the deleted elements
