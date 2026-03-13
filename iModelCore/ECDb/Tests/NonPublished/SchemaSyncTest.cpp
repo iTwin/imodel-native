@@ -11354,7 +11354,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
             );
             ECSqlStatement stmt;
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
