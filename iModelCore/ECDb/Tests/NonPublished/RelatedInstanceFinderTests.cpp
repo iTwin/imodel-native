@@ -8,6 +8,7 @@
 #include <random>
 #include <filesystem>
 #include <ECDb/RelatedInstanceFinder.h>
+#include <iostream>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -246,6 +247,56 @@ TEST_F(RelatedInstanceFinderFixture, Basic) {
 
     // printf("%s\n", getRelatedInstanceJson(e1, "forward").c_str());
 
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelatedInstanceFinderFixture, Using_Table_Alias) {
+    ASSERT_EQ(SUCCESS, SetupECDb("relatedInstanceFinderUsingTableAlias.ecdb", GetTestSchema()));
+
+    auto& db = m_ecdb;
+    const auto e1 = InsertElement(db);
+    const auto e2 = InsertElement(db);
+
+    SetElementParent(db, e1, e2);
+    InsertElementRefersToElements(db, e2, e1);
+    InsertElementRefersToElements(db, e1, e2);
+    InsertElementRefersToElements(db, e1, e1);
+    InsertElementRefersToElements(db, e2, e2);
+    db.SaveChanges();
+
+    {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT g.ECInstanceId, ec_className(g.ECClassId), ec_className(g.RelECClassId), g.Direction FROM ts.Element e, rel1.related_instances(e.ECInstanceId, e.ECClassId, 'forward') g OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:Element", stmt.GetValueText(1));
+        EXPECT_STREQ("TestSchema:ElementOwnsChildElements", stmt.GetValueText(2));
+        EXPECT_EQ(1, stmt.GetValueInt(3));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:Element", stmt.GetValueText(1));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(2));
+        EXPECT_EQ(1, stmt.GetValueInt(3));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(1, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:Element", stmt.GetValueText(1));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(2));
+        EXPECT_EQ(1, stmt.GetValueInt(3));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(1, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:Element", stmt.GetValueText(1));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(2));
+        EXPECT_EQ(1, stmt.GetValueInt(3));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:Element", stmt.GetValueText(1));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(2));
+        EXPECT_EQ(1, stmt.GetValueInt(3));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    
 }
 
 END_ECDBUNITTESTS_NAMESPACE
