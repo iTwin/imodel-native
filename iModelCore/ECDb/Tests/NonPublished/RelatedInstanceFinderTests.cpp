@@ -8,7 +8,6 @@
 #include <random>
 #include <filesystem>
 #include <ECDb/RelatedInstanceFinder.h>
-#include <iostream>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
