@@ -20,7 +20,7 @@ BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const
     [[maybe_unused]] auto _ =  doNotTrackDDLChanges ? std::make_unique<ECDb::Impl::DisableDDLTracking> (m_ecdb) : nullptr;
 
     BeMutexHolder holder(m_ecdb.GetImpl().GetMutex());
-    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
+    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions(), /* semanticRebasing = */true);
     auto& mainDisp = m_ecdb.Schemas().Main();
     m_ecdb.ClearECDbCache();
     m_ecdb.GetImpl().RefreshProfileVersion();
@@ -2042,7 +2042,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (!sqliteIndexItor->second.EqualsIAscii(ddl))
                     {
                     LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
-                    if (!ctx.IsSynchronizeSchemas())
+                    if (!ctx.IsSemanticRebasing())
                         {
                         // Delete its entry from ec_index table
                         if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
@@ -2056,7 +2056,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                         return ERROR;
 
-                    if (!ctx.IsSynchronizeSchemas())
+                    if (!ctx.IsSemanticRebasing())
                         {
                         if (SUCCESS != m_dbSchema.PersistIndexDef(index))
                             return ERROR;
@@ -2077,7 +2077,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                     return ERROR;
 
-                if (!ctx.IsSynchronizeSchemas())
+                if (!ctx.IsSemanticRebasing())
                     {
                     // Delete its entry from ec_index table
                     if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
@@ -2090,7 +2090,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             }
         else
             {
-            if (!ctx.IsSynchronizeSchemas())
+            if (!ctx.IsSemanticRebasing())
                 {
                 //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
                 //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))

@@ -396,6 +396,7 @@ struct JsInterop {
         {
         Utf8String m_schemaSyncDbUri;
         bool m_schemaLockHeld = true;
+        bool m_skipSaveChanges = false;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
 
@@ -524,6 +525,7 @@ public:
     static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DgnDbStatus ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps);
     static Napi::Value ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps);
+    static Napi::Value ExportPartGraphicsAsync(DgnDbR db, Napi::Object const& exportProps);
     static Napi::Value GenerateElementMeshes(DgnDbR, Napi::Object const&);
 
     static DgnDbStatus ProcessGeometryStream(DgnDbR db, Napi::Object const& requestProps);

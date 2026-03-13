@@ -676,6 +676,7 @@ public:
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
+            InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
 
@@ -1854,6 +1855,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return JsInterop::ExportGraphicsAsync(db, exportProps);
         }
 
+    Napi::Value ExportPartGraphicsAsync(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
+
+        Napi::Value onPartGraphicsVal = exportProps.Get("onPartGraphics");
+        if (!onPartGraphicsVal.IsFunction())
+            THROW_JS_TYPE_EXCEPTION("onPartsGraphics must be a function");
+
+        Napi::Value displayPropsVal = exportProps.Get("displayProps");
+        if (!displayPropsVal.IsObject())
+            THROW_JS_TYPE_EXCEPTION("displayProps must be an object");
+
+        Napi::Value elementIdVal = exportProps.Get("elementId");
+        if (!elementIdVal.IsString())
+            THROW_JS_TYPE_EXCEPTION("elementId must be a string");
+
+        return JsInterop::ExportPartGraphicsAsync(db, exportProps);
+        }
+
     Napi::Value ProcessGeometryStream(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2206,6 +2227,57 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         }
     }
+
+    void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+
+        if (db.Txns().HasChanges()) // equivalent to hasUnsavedChanges()
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas during semantic rebase with existing unsaved changes.", DgnDbStatus::BadRequest);
+
+        if (db.Txns().PullMergeGetStage() != TxnManager::PullMergeStage::Rebasing) // equivalent to isRebasing()
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Should be called while rebasing", DgnDbStatus::BadRequest);
+
+        if (db.Txns().GetMode() == ChangeTracker::Mode::Indirect) // equivalent to isIndirectChange
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas while in an indirect change scope", DgnDbStatus::BadRequest);
+
+        JsInterop::SchemaImportOptions options;
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        options.m_skipSaveChanges = true; // pull/merge/rebase will update existing txns for this
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
+
+        // Clear the schema cache BEFORE importing so that SchemaWriter::CompareSchemas reads
+        // fresh schemas from the DB. Without this, the schema reader cache may still hold schemas
+        // from before the incoming changeset was applied, causing the SchemaComparer to think
+        // properties already present in ec_Property are "new" and attempt to re-INSERT them
+        // (triggering UNIQUE constraint violations on ec_Property.ClassId/Ordinal).
+        db.ClearECDbCache();
+
+        LastErrorListener lastError(db);
+        DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
+        if (DbResult::BE_SQLITE_OK != result)
+            {
+                if (lastError.HasError()) {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
+                } else {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
+                }
+            }
+
+        // Clear caches again after import so subsequent operations see the updated schema state.
+        db.ClearECDbCache();
+        db.Elements().ClearCache();
+        db.Models().ClearCache();
+        }
+
     void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2853,6 +2925,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
+
         return array;
     }
 
@@ -3065,6 +3138,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
             InstanceMethod("exportPartGraphics", &NativeDgnDb::ExportPartGraphics),
             InstanceMethod("exportGraphicsAsync", &NativeDgnDb::ExportGraphicsAsync),
+            InstanceMethod("exportPartGraphicsAsync", &NativeDgnDb::ExportPartGraphicsAsync),
             InstanceMethod("exportSchema", &NativeDgnDb::ExportSchema),
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractChangedInstanceIdsFromChangeSets", &NativeDgnDb::ExtractChangedInstanceIdsFromChangeSets),
@@ -3118,6 +3192,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("hasPendingTxns", &NativeDgnDb::HasPendingTxns),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
+            InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
@@ -5042,7 +5117,8 @@ public:
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
             InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
             InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
-            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata),
+            InstanceMethod("bindParams", &NativeECSqlStatement::BindParams)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -5197,13 +5273,36 @@ public:
         if (!m_stmt.IsPrepared())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, optObj, Napi::Object::New(Env()));
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
         BeJsNapiObject out(info.Env());
         BeJsValue metaJson = out["meta"];
-        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         ECSqlRowProperty::List props;
         adaptor.GetMetaData(props, m_stmt);
         props.ToJs(metaJson);
         return out;
+    }
+
+    Napi::Value BindParams(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
+        BeJsValue args(argsObj);
+
+        Json::Value jsonArgs;
+        BeJsValue jsArgs(jsonArgs);
+        jsArgs.From(args);
+        ECSqlParams params(jsonArgs);
+        if(params.IsEmpty())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
+        std::string errMsg;
+        if(!params.TryBindTo(m_stmt, errMsg))
+            return CreateErrorObject0(false, errMsg.c_str(), info.Env());
+         return CreateErrorObject0(true, nullptr, info.Env());  
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
@@ -6271,7 +6370,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return
             f->onError([this, requestId = Utf8String(requestId), &db, getParams, abortEvent](CancellationException const& e)
                 {
-                if (!e.IsRestartRequested() || !m_mainThreadExecutor)
+                if (!e.IsRestartRequested() || !m_mainThreadExecutor || !db.IsOpen())
                     throw e;
 
                 return folly::via(m_mainThreadExecutor.get(), [this, requestId, &db, getParams, abortEvent]()
