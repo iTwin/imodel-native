@@ -265,6 +265,8 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     GetPragmaManager().Register(PragmaDbList::Create());
     GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
+    GetPragmaManager().Register(PragmaECSqlVersion::Create());
+    GetPragmaManager().Register(PragmaSqliteSql::Create());
     }
 
 //--------------------------------------------------------------------------------------
