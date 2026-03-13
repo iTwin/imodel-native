@@ -69,7 +69,7 @@
 
     </ProductDirectoryList>
 
-    <NuGetProduct Name="iModelCoreTestingNuget" Description="iModel Core Testing SDK" OnlyPlatforms="x64,linux*,macos*">
+    <NuGetProduct Name="iModelCoreTestingNuget" Description="iModel Core Testing SDK" OnlyPlatforms="x64,linux*,macosarm64">
         <Directories DirectoryListName="iModelCoreTestingNugetDirs"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="UnitTestSchemas" PartFile="iModelCore/iModelPlatform/iModelPlatform"/>
