@@ -267,7 +267,7 @@ TEST_F(RelatedInstanceFinderFixture, Using_Table_Alias) {
 
     {
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT g.ECInstanceId, ec_className(g.ECClassId), ec_className(g.RelECClassId), g.Direction FROM ts.Element e, rel1.related_instances(e.ECInstanceId, e.ECClassId, 'forward') g OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT g.ECInstanceId, ec_className(g.ECClassId), ec_className(g.RelECClassId), g.Direction FROM ts.Element e, related_instances(e.ECInstanceId, e.ECClassId, 'forward') g OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_EQ(2, stmt.GetValueInt64(0));
         EXPECT_STREQ("TestSchema:Element", stmt.GetValueText(1));
@@ -321,7 +321,7 @@ TEST_F(RelatedInstanceFinderFixture, Multiple_Table_Aliases) {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db,
             "SELECT g.ECInstanceId, ec_className(g.RelECClassId), g.Direction "
-            "FROM ts.Element a, ts.Element b, rel1.related_instances(a.ECInstanceId, a.ECClassId, 'forward') g "
+            "FROM ts.Element a, ts.Element b, related_instances(a.ECInstanceId, a.ECClassId, 'forward') g "
             "WHERE a.ECInstanceId = ? AND b.ECInstanceId = ? "
             "OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
         stmt.BindId(1, e1.GetInstanceId());
@@ -349,7 +349,7 @@ TEST_F(RelatedInstanceFinderFixture, Multiple_Table_Aliases) {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db,
             "SELECT g.ECInstanceId, ec_className(g.RelECClassId), g.Direction "
-            "FROM ts.Element a, ts.Element b, rel1.related_instances(b.ECInstanceId, b.ECClassId, 'forward') g "
+            "FROM ts.Element a, ts.Element b, related_instances(b.ECInstanceId, b.ECClassId, 'forward') g "
             "WHERE a.ECInstanceId = ? AND b.ECInstanceId = ? "
             "OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
         stmt.BindId(1, e2.GetInstanceId());
@@ -377,7 +377,7 @@ TEST_F(RelatedInstanceFinderFixture, Multiple_Table_Aliases) {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db,
             "SELECT g.ECInstanceId, ec_className(g.RelECClassId), g.Direction "
-            "FROM ts.Element a, ts.Element b, ts.Element c, rel1.related_instances(c.ECInstanceId, c.ECClassId, 'backward') g "
+            "FROM ts.Element a, ts.Element b, ts.Element c, related_instances(c.ECInstanceId, c.ECClassId, 'backward') g "
             "WHERE a.ECInstanceId = ? AND b.ECInstanceId = ? AND c.ECInstanceId = ? "
             "OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
         stmt.BindId(1, e2.GetInstanceId());
