@@ -299,4 +299,103 @@ TEST_F(RelatedInstanceFinderFixture, Using_Table_Alias) {
     
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelatedInstanceFinderFixture, Multiple_Table_Aliases) {
+    ASSERT_EQ(SUCCESS, SetupECDb("relatedInstanceFinderMultipleAliases.ecdb", GetTestSchema()));
+
+    auto& db = m_ecdb;
+    const auto e1 = InsertElement(db);
+    const auto e2 = InsertElement(db);
+
+    SetElementParent(db, e1, e2);
+    InsertElementRefersToElements(db, e2, e1);
+    InsertElementRefersToElements(db, e1, e2);
+    InsertElementRefersToElements(db, e1, e1);
+    InsertElementRefersToElements(db, e2, e2);
+    db.SaveChanges();
+
+    // Two aliases: alias 'a' used in related_instances while 'b' is also present
+    // Verifies that 'a' resolves to the correct table and not 'b'
+    {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db,
+            "SELECT g.ECInstanceId, ec_className(g.RelECClassId), g.Direction "
+            "FROM ts.Element a, ts.Element b, rel1.related_instances(a.ECInstanceId, a.ECClassId, 'forward') g "
+            "WHERE a.ECInstanceId = ? AND b.ECInstanceId = ? "
+            "OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        stmt.BindId(1, e1.GetInstanceId());
+        stmt.BindId(2, e2.GetInstanceId());
+
+        // Expected: e1's forward related instances (3 rows)
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementOwnsChildElements", stmt.GetValueText(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(1, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    // Two aliases: alias 'b' used in related_instances while 'a' is also present
+    // Verifies that 'b' resolves to the correct table and not 'a'
+    {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db,
+            "SELECT g.ECInstanceId, ec_className(g.RelECClassId), g.Direction "
+            "FROM ts.Element a, ts.Element b, rel1.related_instances(b.ECInstanceId, b.ECClassId, 'forward') g "
+            "WHERE a.ECInstanceId = ? AND b.ECInstanceId = ? "
+            "OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        stmt.BindId(1, e2.GetInstanceId());
+        stmt.BindId(2, e1.GetInstanceId());
+
+        // Expected: e1's forward related instances (3 rows), same as above since b=e1
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementOwnsChildElements", stmt.GetValueText(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(1, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(1));
+        EXPECT_EQ(1, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    // Three aliases: alias 'c' used in related_instances while 'a' and 'b' are also present
+    // Verifies that 'c' resolves to the correct table among three aliases
+    {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db,
+            "SELECT g.ECInstanceId, ec_className(g.RelECClassId), g.Direction "
+            "FROM ts.Element a, ts.Element b, ts.Element c, rel1.related_instances(c.ECInstanceId, c.ECClassId, 'backward') g "
+            "WHERE a.ECInstanceId = ? AND b.ECInstanceId = ? AND c.ECInstanceId = ? "
+            "OPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        stmt.BindId(1, e2.GetInstanceId());
+        stmt.BindId(2, e2.GetInstanceId());
+        stmt.BindId(3, e1.GetInstanceId());
+
+        // Expected: e1's backward related instances (2 rows)
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(1, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(1));
+        EXPECT_EQ(2, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(2, stmt.GetValueInt64(0));
+        EXPECT_STREQ("TestSchema:ElementRefersToElements", stmt.GetValueText(1));
+        EXPECT_EQ(2, stmt.GetValueInt(2));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE
