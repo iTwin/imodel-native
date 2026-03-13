@@ -91,7 +91,12 @@ void DefinitionElementUsageInfo::Initialize(BeSQLite::IdSet<DgnElementId> const&
             DgnSubCategoryId subCategoryId = subCategory->GetSubCategoryId();
             m_subCategoryIds.insert(subCategoryId);
             if (subCategory->IsDefaultSubCategory())
-                m_usedIds.insert(subCategoryId);
+                {
+                // If a parent category is being excluded from the check then exclude the default sub category as well.
+                const bool parentCategoryAlsoBeingExcluded = (m_excludeIds != nullptr && m_excludeIds->find(subCategory->GetCategoryId()) != m_excludeIds->end());
+                if (!parentCategoryAlsoBeingExcluded)
+                    m_usedIds.insert(subCategoryId);
+                }
             continue;
             }
 

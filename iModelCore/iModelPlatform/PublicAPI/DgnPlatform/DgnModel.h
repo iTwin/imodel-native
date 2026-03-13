@@ -371,6 +371,10 @@ protected:
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
 
+    //! Handles on deletion notifications only.
+    //! @note Do not override this method. Override _OnDelete instead.
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDeleteNotify();
+
     //! Called after this DgnModel was loaded from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
     DGNPLATFORM_EXPORT virtual void _OnLoaded();

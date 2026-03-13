@@ -3911,7 +3911,6 @@ private:
 
     void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
     bool IsBulkOperation() const { return m_isBulkOperation; }
-    static bool DeleteLinkTableRelationships(DgnDbR db, const DgnElementIdSet& elementIds);
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3931,6 +3930,7 @@ public:
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementIdSet) const; //!< @private
     DGNPLATFORM_EXPORT DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
     DGNPLATFORM_EXPORT bool ElementExists(DgnElementId);
@@ -4046,10 +4046,11 @@ public:
      * This method will fail to delete definition elements.
      *
      * @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
+     * @param[in] skipIdSetExpansion The elementIds set will not be expanded to include all descendants or sub-models. Defaults to false.
      * @return A DgnElementIdSet of valid element Ids that failed to delete (either vetoed or blocked by FK/code scope constraints).
      * @note This function can only be safely invoked from the client thread.
      */
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipIdSetExpansion = false);
 
     /**
      * Delete multiple definition elements from this DgnDb.

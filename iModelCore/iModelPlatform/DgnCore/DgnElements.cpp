@@ -146,6 +146,16 @@ void DgnElements::DropFromPool(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::DropFromPool(DgnElementIdSet ids) const
+    {
+    BeMutexHolder _v_v(m_mutex);
+    for (const auto& id : ids)
+        m_mruCache->DropElement(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCP DgnElements::FindLoadedElement(DgnElementId id) const
     {
     BeMutexHolder _v_v(m_mutex);
@@ -687,229 +697,396 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
 
 namespace
     {
-    void ExpandElementHierarchy(DgnDbR db, DgnElementIdSet& elementIds)
+    std::unordered_map<uint64_t, uint64_t> fullSetParents;
+
+    DgnElementIdSet ExpandIdSet(DgnDbR db, const DgnElementIdSet& elementIds)
         {
-        constexpr auto expandHierarchySql = R"sql(
-            WITH RECURSIVE
-            fullDeleteSet(id) AS (
+        constexpr auto expandSql = R"sql(
+            WITH RECURSIVE fullSet(id, logicalParentId) AS (
+                SELECT Id, ParentId FROM bis_Element WHERE InVirtualSet(?, Id)
+                UNION ALL
+                -- Get all the child elements
+                SELECT e.Id, e.ParentId FROM bis_Element e INNER JOIN fullSet f ON e.ParentId = f.id
+                UNION ALL
+                -- Get all the elements in a possible sub model
+                SELECT e.Id, m.ModeledElementId FROM bis_Element e
+                    INNER JOIN bis_Model m ON m.Id = e.ModelId
+                    INNER JOIN fullSet f ON m.ModeledElementId = f.id
+            )
+            SELECT id, logicalParentId FROM fullSet
+        )sql";
+
+        Statement expandStmt;
+        if (BE_SQLITE_OK != expandStmt.Prepare(db, expandSql))
+            return {};
+
+        expandStmt.BindVirtualSet(1, elementIds);
+
+        DgnElementIdSet expandedIds;
+        while (BE_SQLITE_ROW == expandStmt.Step())
+            {
+            if (auto id = expandStmt.GetValueId<DgnElementId>(0); id.IsValid())
+                {
+                expandedIds.insert(id);
+                fullSetParents[id.GetValueUnchecked()] = expandStmt.GetValueId<DgnElementId>(1).GetValueUnchecked();
+                }
+            }
+        return expandedIds;
+        }
+
+    DgnElementIdSet FindViolators(DgnDbR db, const DgnElementIdSet& elementIds)
+        {
+        constexpr auto violatorSql = R"sql(
+            -- Find elements that are in a code scope but not in the delete set
+            SELECT DISTINCT CodeScopeId FROM bis_Element
+                WHERE CodeScopeId IN (
+                    SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
+                )
+                AND Id NOT IN (
+                    SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
+                )
+        )sql";
+
+        Statement violatorStmt;
+        if (BE_SQLITE_OK != violatorStmt.Prepare(db, violatorSql))
+            return {};
+
+        violatorStmt.BindVirtualSet(1, elementIds);
+        violatorStmt.BindVirtualSet(2, elementIds);
+
+        DgnElementIdSet violators;
+        while (BE_SQLITE_ROW == violatorStmt.Step())
+            {
+            auto id = violatorStmt.GetValueId<DgnElementId>(0);
+            if (id.IsValid())
+                violators.insert(id);
+            }
+
+        return violators;
+        }
+
+    DgnElementIdSet GetRootsToPrune(DgnDbR db, const DgnElementIdSet& violators)
+        {
+        // Find all root elements of the violators that need to be pruned from the delete set
+        DgnElementIdSet pruneRoots;
+        for (const auto& violatorId : violators)
+            {
+            uint64_t current = violatorId.GetValueUnchecked();
+            while (true)
+                {
+                auto it = fullSetParents.find(current);
+                if (it == fullSetParents.end())
+                    break;
+
+                uint64_t parentVal = it->second;
+                if (parentVal == 0 || fullSetParents.find(parentVal) == fullSetParents.end())
+                    {
+                    pruneRoots.insert(DgnElementId(current));
+                    break;
+                    }
+                current = parentVal;
+                }
+            }
+
+        return pruneRoots;
+        }
+
+    void PruneViolators(DgnDbR db, const DgnElementIdSet& pruneRoots, DgnElementIdSet& elementsToDelete)
+        {
+        constexpr auto pruneSql = R"sql(
+            WITH RECURSIVE pruned(id) AS (
                 SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
                 UNION ALL
+                -- Get all the child elements
+                SELECT e.Id FROM bis_Element e INNER JOIN pruned p ON e.ParentId = p.id
+                UNION ALL
+                -- Get all the modeled elements in a possible sub model
                 SELECT e.Id FROM bis_Element e
-                    INNER JOIN fullDeleteSet p ON e.ParentId = p.id
+                    INNER JOIN bis_Model m ON m.Id = e.ModelId
+                    INNER JOIN pruned p ON m.ModeledElementId = p.id
             )
-            SELECT id FROM fullDeleteSet
+            SELECT id FROM pruned
         )sql";
 
-        Statement expandHierarchyStmt;
-        if (BE_SQLITE_OK != expandHierarchyStmt.Prepare(db, expandHierarchySql))
+        Statement pruneStmt;
+        if (BE_SQLITE_OK == pruneStmt.Prepare(db, pruneSql))
+            {
+            pruneStmt.BindVirtualSet(1, pruneRoots);
+            while (BE_SQLITE_ROW == pruneStmt.Step())
+                {
+                auto id = pruneStmt.GetValueId<DgnElementId>(0);
+                if (id.IsValid())
+                    elementsToDelete.erase(id);
+                }
+            }
+        }
+
+    DgnElementIdSet ResolveElementsAfterPossibleVeto(DgnDbR db, const DgnElementIdSet& vetoedElementIds, DgnElementIdSet& failedToDeleteElements)
+        {
+        constexpr auto expandVetoedSql = R"sql(
+            WITH RECURSIVE
+            vetoedSubtree(id) AS (
+                SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
+                UNION ALL
+                SELECT e.Id FROM bis_Element e INNER JOIN vetoedSubtree v ON e.ParentId = v.id
+                UNION ALL
+                SELECT e.Id FROM bis_Element e
+                    INNER JOIN bis_Model m ON m.Id = e.ModelId
+                    INNER JOIN vetoedSubtree v ON m.ModeledElementId = v.id
+            )
+            SELECT id FROM vetoedSubtree
+        )sql";
+
+        Statement vetoStmt;
+        DgnElementIdSet finalDeleteSet;
+        if (BE_SQLITE_OK == vetoStmt.Prepare(db, expandVetoedSql))
+            {
+            vetoStmt.BindVirtualSet(1, vetoedElementIds);
+            while (BE_SQLITE_ROW == vetoStmt.Step())
+                {
+                auto id = vetoStmt.GetValueId<DgnElementId>(0);
+                if (id.IsValid())
+                    finalDeleteSet.erase(id);
+                }
+            }
+        // Also record the vetoed input elements themselves as having failed.
+        failedToDeleteElements.insert(vetoedElementIds.begin(), vetoedElementIds.end());
+        return finalDeleteSet;
+        }
+
+    DgnElementIdSet ExpandAndPruneElementIds(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& failedToDeleteElements)
+        {
+        // Expand the element IDs to recursively include:
+        // 1. All children elements
+        // 2. If the delete set contains a modeled element, then all the elements in the sub model.
+        auto expandedIds = ExpandIdSet(db, elementIds);
+        const auto violators = FindViolators(db, expandedIds);
+        if (!violators.empty())
+            {
+            const auto pruneRoots = GetRootsToPrune(db, violators);
+            PruneViolators(db, pruneRoots, expandedIds);
+
+            for (const auto& elementId : elementIds)
+                {
+                if (expandedIds.find(elementId) == expandedIds.end())
+                    failedToDeleteElements.insert(elementId);
+                }
+            }
+
+        return expandedIds;
+        }
+
+    void SegregateDefinitionElements(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& definitionElementIds, DgnElementIdSet& nonDefinitionElementIds)
+        {
+        definitionElementIds.clear();
+        nonDefinitionElementIds.clear();
+
+        // Remove all the non-definition elements from the original delete set.
+        // Any definition partition elements will get removed as they are not definition elements themselves.
+        constexpr auto classifySql = R"sql(
+            SELECT e.ECInstanceId, CASE WHEN d.ECInstanceId IS NULL THEN 0 ELSE 1 END
+            FROM bis.Element e
+            LEFT JOIN bis.DefinitionElement d ON d.ECInstanceId = e.ECInstanceId
+            WHERE InVirtualSet(?, e.ECInstanceId)
+        )sql";
+
+        ECSqlStatement classifyStmt;
+        if (ECSqlStatus::Success != classifyStmt.Prepare(db, classifySql))
             return;
 
-        expandHierarchyStmt.BindVirtualSet(1, elementIds);
-        while (expandHierarchyStmt.Step() == BE_SQLITE_ROW)
-            elementIds.insert(expandHierarchyStmt.GetValueId<DgnElementId>(0));
+        classifyStmt.BindVirtualSet(1, std::make_shared<IdSet<BeInt64Id>>(BeIdSet(elementIds.GetBeIdSet())));
+
+        while (classifyStmt.Step() == BE_SQLITE_ROW)
+            {
+            const auto id = classifyStmt.GetValueId<DgnElementId>(0);
+            if (classifyStmt.GetValueInt(1) != 0)
+                definitionElementIds.insert(id);
+            else
+                nonDefinitionElementIds.insert(id);
+            }
         }
 
-    DgnElementIdSet FindViolatingCodeScopeIds(DgnDbR db, const DgnElementIdSet& elementIds)
+    bool DeleteLinkTableRelationships(DgnDbR db, const std::vector<Utf8String>& tableNames, const DgnElementIdSet& sourceElementIds, const DgnElementIdSet& targetElementIds)
         {
-        constexpr auto violatingCodeScopesSql = R"sql(
-            SELECT DISTINCT CodeScopeId FROM bis_Element
-            WHERE InVirtualSet(?, CodeScopeId)
-              AND NOT InVirtualSet(?, Id)
-        )sql";
+        for (const auto& table : tableNames)
+            {
+            BeAssert(db.TableExists(table.c_str()));
 
-        Statement violatingCodeScopesStmt;
-        if (BE_SQLITE_OK != violatingCodeScopesStmt.Prepare(db, violatingCodeScopesSql))
-            return {};
+            auto statement = db.GetCachedStatement(Utf8PrintfString("DELETE FROM %s WHERE InVirtualSet(?, SourceId) OR InVirtualSet(?, TargetId)", table.c_str()).c_str());
+            if (!statement.IsValid())
+                return false;
 
-        violatingCodeScopesStmt.BindVirtualSet(1, elementIds);
-        violatingCodeScopesStmt.BindVirtualSet(2, elementIds);
+            statement->BindVirtualSet(1, sourceElementIds);
+            statement->BindVirtualSet(2, targetElementIds);
+            if (statement->Step() != BE_SQLITE_DONE)
+                return false;
+            }
 
-        DgnElementIdSet violatingScopeIds;
-        while (violatingCodeScopesStmt.Step() == BE_SQLITE_ROW)
-            violatingScopeIds.insert(violatingCodeScopesStmt.GetValueId<DgnElementId>(0));
-
-        return violatingScopeIds;
-        }
-
-    DgnElementIdSet CollectSubtreesToExclude(DgnDbR db, const DgnElementIdSet& violatingScopeIds, const DgnElementIdSet& expandedDeleteSet)
-        {
-        constexpr auto elementSubtreeSql = R"sql(
-            WITH RECURSIVE
-            subtreeRoots(id, parentId) AS (
-                SELECT Id, ParentId FROM bis_Element
-                    WHERE InVirtualSet(?, Id)
-                UNION ALL
-                SELECT e.Id, e.ParentId FROM bis_Element e
-                    INNER JOIN subtreeRoots s ON e.Id = s.parentId
-                    WHERE InVirtualSet(?, s.parentId)
-            ),
-            subtree(id) AS (
-                SELECT id FROM subtreeRoots
-                    WHERE parentId IS NULL OR NOT InVirtualSet(?, parentId)
-                UNION ALL
-                SELECT e.Id FROM bis_Element e
-                    INNER JOIN subtree s ON e.ParentId = s.id
-                    WHERE InVirtualSet(?, e.Id)
-            )
-            SELECT id FROM subtree
-        )sql";
-
-        Statement elementSubtreeStmt;
-        if (BE_SQLITE_OK != elementSubtreeStmt.Prepare(db, elementSubtreeSql))
-            return {};
-
-        elementSubtreeStmt.BindVirtualSet(1, violatingScopeIds);
-        elementSubtreeStmt.BindVirtualSet(2, expandedDeleteSet);
-        elementSubtreeStmt.BindVirtualSet(3, expandedDeleteSet);
-        elementSubtreeStmt.BindVirtualSet(4, expandedDeleteSet);
-
-        DgnElementIdSet subtreeIds;
-        while (elementSubtreeStmt.Step() == BE_SQLITE_ROW)
-            subtreeIds.insert(elementSubtreeStmt.GetValueId<DgnElementId>(0));
-
-        return subtreeIds;
-        }
-
-    DgnElementIdSet ExpandElementHierarchyAndValidateCodeScopes(DgnDbR db, DgnElementIdSet& elementIds)
-        {
-        // Expand input roots to their full descendant hierarchy to get all affected child elements
-        ExpandElementHierarchy(db, elementIds);
-
-        // Elements outside the delete set that use a delete-set element as their CodeScope will lead to FK violations.
-        DgnElementIdSet violatingScopeIds = FindViolatingCodeScopeIds(db, elementIds);
-        if (violatingScopeIds.empty())
-            return {};
-
-        // Walk up from each violating element to its highest ancestor still inside the delete set,
-        // then collect the full downward subtree from those roots. The entire subtree must be
-        // excluded from deletion so that code-scope integrity is preserved.
-        DgnElementIdSet subtreesToExclude = CollectSubtreesToExclude(db, violatingScopeIds, elementIds);
-
-        // Remove excluded subtrees from the delete set and return them as the failed set.
-        DgnElementIdSet failedToDeleteElements;
-        failedToDeleteElements.insert(subtreesToExclude.begin(), subtreesToExclude.end());
-        for (const auto& id : subtreesToExclude)
-            elementIds.erase(id);
-
-        return failedToDeleteElements;
+        return true;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
+DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, const bool skipIdSetExpansion)
     {
     DgnDb::VerifyClientThread();
 
     if (elementIds.empty())
         return {};
 
-    DgnElementIdSet validatedElementIds = elementIds;
+    DgnElementIdSet failedToDeleteElements;
+    DgnElementIdSet elementsToDelete = elementIds;
+    if (!skipIdSetExpansion)
+        elementsToDelete = ExpandAndPruneElementIds(m_dgndb, elementIds, failedToDeleteElements);
 
-    // Expand the input set to include all descendants, then detect any elements that must be excluded
-    // because an external element uses one of them as a CodeScope (deleting would leave a dangling FK).
-    DgnElementIdSet failedToDeleteElements = ExpandElementHierarchyAndValidateCodeScopes(m_dgndb, validatedElementIds);
-    if (!failedToDeleteElements.empty())
-        LOG.warningv("deleteElements: Skipping elements as they (or their subtrees) contain code scopes for elements outside the delete Id set: %s", failedToDeleteElements.ToString().c_str());
+    if (failedToDeleteElements.empty())
+        LOG.infov("DeleteElements: All requested element Ids are being deleted as part of the bulk delete operation: %s", elementIds.ToString().c_str());
+    else
+        LOG.warningv("DeleteElements: The following element Ids are not being deleted as part of the bulk delete operation due to external code scope violations: %s", failedToDeleteElements.ToString().c_str());
 
-    // Prep the elements, handlers and the Db for a bulk deletion
+    std::vector<DgnElementCPtr> elementsToDeletePtrs;
+    std::vector<DgnModelPtr> subModelsToDelete;
+    DgnElementIdSet subModelIds;    // ModelId = Modeling element's id, so we're good with this
+    DgnElementIdSet vetoedElementIds;
+    bool subModelsExist = false;
+
+    // Call the pre-delete handlers for the elements from the original delete set and any sub-models that will be deleted.
+    for (const auto& elementId : elementsToDelete)
+        {
+        const auto element = GetElement(elementId);
+        if (!element.IsValid())
+            {
+            vetoedElementIds.insert(elementId);
+            continue;
+            }
+
+        // Sub-Model deletion should trigger callback even if they are being deleted implicitly
+        DgnModelPtr subModel = element->GetSubModel();
+        if (subModel.IsValid())
+            {
+            subModelsExist = true;
+            if (element->_OnSubModelDelete(*subModel) != DgnDbStatus::Success)
+                {
+                vetoedElementIds.insert(elementId);
+                continue;
+                }
+            
+            if (subModel->_OnDeleteNotify() != DgnDbStatus::Success)
+                {
+                vetoedElementIds.insert(elementId);
+                continue;
+                }
+            subModelsToDelete.emplace_back(subModel);
+            subModelIds.insert(DgnElementId(subModel->GetModelId().GetValueUnchecked()));
+            }
+
+        if (elementIds.find(elementId) == elementIds.end())
+            continue;
+
+        // Call the element's own pre-delete handler.
+        if (element->_OnDelete() != DgnDbStatus::Success)
+            {
+            vetoedElementIds.insert(elementId);
+            continue;
+            }
+
+        // Ask the parent whether it is ok to delete this child.
+        // Skip the parent callback when the parent itself is also in the caller's input set
+        auto parent = GetElement(element->m_parent.m_id);
+        if (parent.IsValid() &&
+            elementsToDelete.find(element->m_parent.m_id) == elementsToDelete.end() &&
+            parent->_OnChildDelete(*element) != DgnDbStatus::Success)
+            {
+            vetoedElementIds.insert(elementId);
+            continue;
+            }
+
+        elementsToDeletePtrs.push_back(element);
+        }
+
+    if (!vetoedElementIds.empty())
+        elementsToDelete = ResolveElementsAfterPossibleVeto(m_dgndb, vetoedElementIds, failedToDeleteElements);
+
+    // Prep the elements and handlers and the Db for a bulk deletion
     SetBulkOperation(true);
 
-    // Use a scope guard to ensure the DB state is always reset, even on early return.
+    // Since we have already handled all the external code scope violations and sub model deletes, 
+    // defer the FK integrity check for all the intra set violations as all of them are being deleted anyway
+    m_dgndb.ExecuteSql("PRAGMA defer_foreign_keys = true");
+
     auto resetDbState = [&]()
         {
         m_dgndb.ExecuteSql("PRAGMA defer_foreign_keys = false");
         SetBulkOperation(false);
         };
 
-    // Call the pre-delete handlers. Remove the elements that get veto'd off the delete list from the handlers.
-    // We need to save these elements to avoid a re-load when calling the post-delete handlers
-    std::vector<DgnElementCPtr> elementsToDelete;
-    for (const auto& elementId : validatedElementIds)
-        {
-        const auto element = GetElement(elementId);
-        // Call the pre-delete handler
-        if (!element.IsValid() || element->_OnDelete() != DgnDbStatus::Success)
-            continue;
-
-        // Ask the parent if it's okay to delete the child.
-        // Also, skip parent callback if the parent itself is also being deleted.
-        auto parent = GetElement(element->m_parent.m_id);
-        if (parent.IsValid() &&
-            validatedElementIds.find(element->m_parent.m_id) == validatedElementIds.end() &&
-            parent->_OnChildDelete(*element) != DgnDbStatus::Success)
-            continue;
-
-        elementsToDelete.push_back(element);
-        }
-
-    // Rebuild validatedElementIds from only the elements that passed all pre-delete checks.
-    validatedElementIds.clear();
-    for (const auto& element : elementsToDelete)
-        validatedElementIds.insert(element->GetElementId());
-
-    // Since we have already handled all the external code scope violations, 
-    // defer the FK integrity check for all the intra set violations as all of them are being deleted anyway
-    m_dgndb.ExecuteSql("PRAGMA defer_foreign_keys = true");
-
-    // Delete the elements
+    // Delete the elements in a single delete sql statement
     auto statement = GetStatement("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE InVirtualSet(?, Id)");
-    statement->BindVirtualSet(1, validatedElementIds);
+    statement->BindVirtualSet(1, elementsToDelete);
     if (statement->Step() != BE_SQLITE_DONE)
         {
-        LOG.errorv("deleteElements: Failed to delete element Ids from database: %s", validatedElementIds.ToString().c_str());
-        failedToDeleteElements.insert(validatedElementIds.begin(), validatedElementIds.end());
+        LOG.errorv("DeleteElements: Failed to delete element Ids from database: %s", elementsToDelete.ToString().c_str());
+        failedToDeleteElements.insert(elementsToDelete.begin(), elementsToDelete.end());
         resetDbState();
         return failedToDeleteElements;
         }
+
+    // Clear out the elements from the cache
+    DropFromPool(elementsToDelete);
 
     // Clear up the link-table relationships in bulk
-    if (!DeleteLinkTableRelationships(m_dgndb, validatedElementIds))
+    if (!DeleteLinkTableRelationships(m_dgndb, { BIS_TABLE(BIS_REL_ElementRefersToElements), BIS_TABLE(BIS_REL_ElementDrivesElement) }, elementsToDelete, elementsToDelete))
         {
-        LOG.errorv("deleteElements: Failed to delete link table relationships for element Ids: %s", validatedElementIds.ToString().c_str());
-        failedToDeleteElements.insert(validatedElementIds.begin(), validatedElementIds.end());
+        LOG.errorv("DeleteElements: Failed to delete link table relationships for element Ids: %s", elementsToDelete.ToString().c_str());
+        failedToDeleteElements.insert(elementsToDelete.begin(), elementsToDelete.end());
         resetDbState();
         return failedToDeleteElements;
         }
 
-    // Call the post delete handlers
-    std::for_each(elementsToDelete.begin(), elementsToDelete.end(), [&](const DgnElementCPtr& element)
+    // If any modeling elements have been deleted, clear out the model table entries as well
+    if (!subModelsToDelete.empty())
+        {
+        auto modelDeleteStmt = GetStatement("DELETE FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE InVirtualSet(?, Id)");
+        modelDeleteStmt->BindVirtualSet(1, subModelIds);
+        if (modelDeleteStmt->Step() != BE_SQLITE_DONE)
+            LOG.errorv("DeleteElements: Failed to delete sub-model rows for element Ids: %s", subModelIds.ToString().c_str());
+        return failedToDeleteElements;
+        }
+
+    // Call the post delete handlers for the deleted elements
+    for (const auto& element : elementsToDeletePtrs)
         {
         element->_OnDeleted();
-        // Notify parent only if it is not itself being deleted
-        if (element->m_parent.m_id.IsValid() && validatedElementIds.find(element->m_parent.m_id) == validatedElementIds.end())
+
+        if (element->m_parent.m_id.IsValid() && elementIds.find(element->m_parent.m_id) == elementIds.end())
             {
             auto parent = GetElement(element->m_parent.m_id);
             if (parent.IsValid())
                 parent->_OnChildDeleted(*element);
             }
-        });
+        }
+
+    // Call the post delete handlers for the deleted sub-models
+    for (const auto& model : subModelsToDelete)
+        model->_OnDeleted();
+
+    // Clear up the model's link-table relationships in bulk
+    if (!DeleteLinkTableRelationships(m_dgndb, { BIS_TABLE(BIS_REL_ModelSelectorRefersToModels) }, DgnElementIdSet() /* all ModelSelectors */, subModelIds)) // replicate former foreign key behavior
+        {
+        LOG.errorv("DeleteElements: Failed to delete link table relationships for model Ids: %s", subModelIds.ToString().c_str());
+        failedToDeleteElements.insert(subModelIds.begin(), subModelIds.end());
+        resetDbState();
+        return failedToDeleteElements;
+        }
+
     resetDbState();
 
     if (!failedToDeleteElements.empty())
-        LOG.errorv("deleteElements: Failed to delete element Ids: %s", failedToDeleteElements.ToString().c_str());
+        LOG.errorv("DeleteElements: Failed to delete element Ids: %s", failedToDeleteElements.ToString().c_str());
+
     return failedToDeleteElements;
-    }
-
-/* static */
-bool DgnElements::DeleteLinkTableRelationships(DgnDbR db, const DgnElementIdSet& elementIds)
-    {
-    for (const auto& table : { BIS_TABLE(BIS_REL_ElementRefersToElements), BIS_TABLE(BIS_REL_ElementDrivesElement) })
-        {
-        BeAssert(db.TableExists(table));
-            
-        auto statement = db.GetCachedStatement(Utf8PrintfString("DELETE FROM %s WHERE InVirtualSet(?, SourceId) OR InVirtualSet(?, TargetId)", table).c_str());
-        if (!statement.IsValid())
-            return false;
-
-        statement->BindVirtualSet(1, elementIds);
-        statement->BindVirtualSet(2, elementIds);
-        if (statement->Step() != BE_SQLITE_DONE)
-            return false;
-        }
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -925,44 +1102,33 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
     DgnElementIdSet definitionElementIds;
     DgnElementIdSet nonDefinitionElementIds;
 
-    constexpr auto classifySql = R"sql(
-        SELECT e.ECInstanceId, CASE WHEN d.ECInstanceId IS NULL THEN 0 ELSE 1 END
-        FROM bis.Element e
-        LEFT JOIN bis.DefinitionElement d ON d.ECInstanceId = e.ECInstanceId
-        WHERE InVirtualSet(?, e.ECInstanceId)
-    )sql";
-
-    ECSqlStatement classifyStmt;
-    if (ECSqlStatus::Success != classifyStmt.Prepare(m_dgndb, classifySql))
-        return elementIds;
-
-    classifyStmt.BindVirtualSet(1, std::make_shared<IdSet<BeInt64Id>>(BeIdSet(elementIds.GetBeIdSet())));
-
-    while (classifyStmt.Step() == BE_SQLITE_ROW)
-        {
-        const auto id = classifyStmt.GetValueId<DgnElementId>(0);
-        if (classifyStmt.GetValueInt(1) != 0)
-            definitionElementIds.insert(id);
-        else
-            nonDefinitionElementIds.insert(id);
-        }
+    SegregateDefinitionElements(m_dgndb, elementIds, definitionElementIds, nonDefinitionElementIds);
 
     if (!nonDefinitionElementIds.empty())
-        LOG.warningv("deleteDefinitionElements: Element Ids %s are not DefinitionElements and cannot be deleted with this API.", nonDefinitionElementIds.ToString().c_str());
+        LOG.warningv("DeleteDefinitionElements: Element Ids %s are not DefinitionElements and cannot be deleted with this API.", nonDefinitionElementIds.ToString().c_str());
 
     if (definitionElementIds.empty())
-        return {};
+        return nonDefinitionElementIds.empty() ? elementIds : DgnElementIdSet();
 
-    // Get the usage info for all the elements except for the ones in elementIds.
-    // This will give us all the dependencies that exist outside the user supplied set.
-    // For any intra set dependencies, since we are bulk deleting, they will all get deleted anyway.
+    DgnElementIdSet failedToDeleteElements;
+    // Expand the set of definition element IDs to include all related elements so implicitly added element's usage can be verified.
+    const DgnElementIdSet expandedIds = ExpandAndPruneElementIds(m_dgndb, definitionElementIds, failedToDeleteElements);
+
+    if (!failedToDeleteElements.empty())
+        LOG.errorv("DeleteDefinitionElements: Failed to delete definition element Ids: %s", failedToDeleteElements.ToString().c_str());
+
+    DgnElementIdSet toBeDeleted;
+    // After expansion, we need to re-classify into definition vs non-definition elements.
+    // DefinitionElementUsageInfo::Create skips non-definition elements, so we must separate them out and mark them for deletion directly.
+    SegregateDefinitionElements(m_dgndb, expandedIds, definitionElementIds, toBeDeleted);
+
+    // Get the usage info for all definition elements in the expanded set, excluding intra-set usages.
+    // For any intra-set dependencies, since we are bulk deleting, they will all get deleted anyway.
     auto usageInfo = DefinitionElementUsageInfo::Create(m_dgndb, definitionElementIds, std::make_shared<BeSQLite::IdSet<BeInt64Id>>(BeIdSet(definitionElementIds.GetBeIdSet())));
     if (!usageInfo.IsValid())
         return definitionElementIds;
 
-    DgnElementIdSet toBeDeleted;
     DgnElementIdSet cannotBeDeleted;
-
     for (const auto& elementId : definitionElementIds)
         {
         if (usageInfo->GetUsedIds().Contains(elementId))
@@ -971,21 +1137,38 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
             toBeDeleted.insert(elementId);
         }
 
+    // It might happen that a parent element is in use, but the child element might not be.
+    // We need to scan the descendants of each blocked element and mark them as blocked too.
+    if (!cannotBeDeleted.empty())
+        {
+        DgnElementIdSet blockedDescendants = toBeDeleted;
+        PruneViolators(m_dgndb, cannotBeDeleted, blockedDescendants);
+        // blockedDescendants now contains only the elements NOT affected by the cannotBeDeleted roots.
+        for (const auto& elementId : toBeDeleted)
+            {
+            // The element was pruned from the list, mark it as cannot be deleted.
+            if (blockedDescendants.find(elementId) == blockedDescendants.end())
+                cannotBeDeleted.insert(elementId);
+            }
+        // Now we have a fresh list of elements of which they themselves and their descendants are not in use.
+        toBeDeleted = std::move(blockedDescendants);
+        }
+
     if (toBeDeleted.empty())
         {
         if (!cannotBeDeleted.empty())
-            LOG.warningv("deleteDefinitionElements: Skipping element Ids that are in use: %s", cannotBeDeleted.ToString().c_str());
+            LOG.warningv("DeleteDefinitionElements: Skipping element Ids that are in use: %s", cannotBeDeleted.ToString().c_str());
         return cannotBeDeleted;
         }
 
     m_dgndb.BeginPurgeOperation();
-    const auto failedToDeleteIds = DeleteElements(toBeDeleted);
+    const auto failedToDeleteIds = DeleteElements(toBeDeleted, true);
     m_dgndb.EndPurgeOperation();
 
     cannotBeDeleted.insert(failedToDeleteIds.begin(), failedToDeleteIds.end());
 
     if (!cannotBeDeleted.empty())
-        LOG.warningv("deleteDefinitionElements: Skipping element Ids that are in use or blocked: %s", cannotBeDeleted.ToString().c_str());
+        LOG.warningv("DeleteDefinitionElements: Skipping element Ids that are in use or blocked: %s", cannotBeDeleted.ToString().c_str());
 
     return cannotBeDeleted;
     }

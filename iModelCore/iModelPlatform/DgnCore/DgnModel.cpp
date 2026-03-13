@@ -1235,13 +1235,23 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnDelete() {
+DgnDbStatus DgnModel::_OnDeleteNotify() {
     ModelHandlerR modelHandler = GetModelHandler();
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
     CallJsPostHandler("onDelete");
     NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnDelete(model); });
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnDelete() {
+    DgnDbStatus stat = _OnDeleteNotify();
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
     Statement stmt(m_dgndb, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
@@ -1256,13 +1266,11 @@ DgnDbStatus DgnModel::_OnDelete() {
         }
 
         // Note: this may look dangerous (deleting an element in the model we're iterating), but is is actually safe in SQLite.
-        auto stat = el->Delete();
+        stat = el->Delete();
         if (DgnDbStatus::Success != stat)
             return stat;
     }
 
-    BeAssert(GetRefCount() > 1);
-    m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
 }
 
@@ -1276,7 +1284,12 @@ struct DeletedCaller {
 void DgnModel::_OnDeleted() {
     CallJsPostHandler("onDeleted");
     CallAppData(DeletedCaller());
-    GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
+
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
+
+    BeAssert(GetRefCount() > 1);
+    m_dgndb.Models().DropLoadedModel(*this);
 }
 
 /*---------------------------------------------------------------------------------**//**
