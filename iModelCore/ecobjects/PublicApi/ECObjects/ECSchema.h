@@ -1540,7 +1540,7 @@ protected:
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus SetName (Utf8StringCR name);
 
-    virtual SchemaReadStatus _ReadXmlAttributes (pugi::xml_node classNode);
+    virtual SchemaReadStatus _ReadXmlAttributes (pugi::xml_node classNode, ECSchemaReadContextR context);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
@@ -1875,7 +1875,7 @@ private:
     bool _Validate() const override {return true;}
 
 protected:
-    SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode) override;
+    SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode, ECSchemaReadContextR context) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::CustomAttributeClass;}
@@ -2193,7 +2193,7 @@ private:
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
-    SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode) override;
+    SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode, ECSchemaReadContextR context) override;
     SchemaReadStatus _ReadXmlContents(pugi::xml_node classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
 
     ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;

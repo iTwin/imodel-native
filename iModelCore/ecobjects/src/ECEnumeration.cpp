@@ -52,8 +52,7 @@ Utf8String ECEnumeration::GetQualifiedName(ECSchemaCR primarySchema) const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetType(PrimitiveType value)
     {
-    if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String
-        && !GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // If is it greater than we know about allow the parsed primitive type to be set.
+    if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String)
         return ECObjectsStatus::DataTypeNotSupported;
 
     m_primitiveType = value;
@@ -68,13 +67,7 @@ ECObjectsStatus ECEnumeration::SetTypeName(Utf8CP typeName)
     PrimitiveType primitiveType;
     ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType(primitiveType, typeName);
     if (ECObjectsStatus::Success != status)
-        {
-        if (!GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
-            return status;
-
-        LOG.warningv("ECEnumeration '%s' has an unknown backing type '%s'. Setting to string", GetFullName().c_str(), typeName);
-        primitiveType = PRIMITIVETYPE_String;
-        }
+        return status;
 
     return SetType(primitiveType);
     }
@@ -208,14 +201,17 @@ bool ECEnumeration::EnumeratorIsUnique(Utf8CP enumeratorName, Utf8CP enumeratorV
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, pugi::xml_node childNode)
+static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, pugi::xml_node childNode, ECSchemaReadContextR context)
     {
     PrimitiveType const primitiveType = enumeration->GetType();
     Utf8String childNodeName = childNode.name();
     if (0 != strcmp(childNodeName.c_str(), ECXML_ENUMERATOR_ELEMENT))
         {
-        if (enumeration->GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+        if (enumeration->GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
+            {
+            LOG.warningv("Enumeration '%s' has an unknown child element '%s'. Skipping.", enumeration->GetName().c_str(), childNodeName.c_str());
             return SUCCESS;
+            }
         return ERROR;
         }
 
@@ -234,9 +230,9 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, pug
         enumeratorValueInteger = valueAttr.as_int();
     else if (PrimitiveType::PRIMITIVETYPE_String == primitiveType)
         enumeratorValueString = valueAttr.as_string();
-    else if (enumeration->GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+    else if (enumeration->GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
         {
-        LOG.warningv("Enumeration %s has unknown primitive type possibly because of newer version", enumeration->GetName().c_str());
+        LOG.warningv("Enumeration '%s' has unknown primitive type, possibly because of newer version. Skipping enumerator.", enumeration->GetName().c_str());
         return SUCCESS;
         }
     else
@@ -347,8 +343,16 @@ SchemaReadStatus ECEnumeration::ReadXml(pugi::xml_node enumerationNode, ECSchema
 
     if (ECObjectsStatus::Success != this->SetTypeName(typeAttr.as_string()))
         {
-        LOG.errorv("Invalid type name on enumeration '%s': '%s'.", this->GetName().c_str(), typeAttr.as_string());
-        return SchemaReadStatus::InvalidPrimitiveType;
+        if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
+            {
+            LOG.warningv("ECEnumeration '%s' has an unknown backing type '%s'. Setting to string.", GetName().c_str(), typeAttr.as_string());
+            m_primitiveType = PRIMITIVETYPE_String;
+            }
+        else
+            {
+            LOG.errorv("Invalid type name on enumeration '%s': '%s'.", this->GetName().c_str(), typeAttr.as_string());
+            return SchemaReadStatus::InvalidPrimitiveType;
+            }
         }
 
     SetIsStrict(enumerationNode.attribute(IS_STRICT_ATTRIBUTE).as_bool(true));
@@ -358,7 +362,7 @@ SchemaReadStatus ECEnumeration::ReadXml(pugi::xml_node enumerationNode, ECSchema
         if(childNode.type() != pugi::xml_node_type::node_element)
             continue;
 
-        if (SUCCESS != createEnumeratorFromXmlNode(this, childNode))
+        if (SUCCESS != createEnumeratorFromXmlNode(this, childNode, context))
             return SchemaReadStatus::InvalidECSchemaXml;
         }
 

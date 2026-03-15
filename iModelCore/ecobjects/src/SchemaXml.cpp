@@ -217,7 +217,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
             continue;
             }
 
-        if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(classNode)))
+        if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(classNode, m_schemaContext)))
             {
             delete ecClass;
             return status;

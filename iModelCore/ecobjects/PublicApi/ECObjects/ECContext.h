@@ -31,12 +31,27 @@ friend struct SearchPathSchemaFileLocater;
 private:
     using SearchPathList = bset<WString, WStringComparer>;
 
+    // If true, the serialization order of schema elements (classes, enums, etc.) is preserved as-is from the source XML
+    // rather than re-ordering by type. Used for round-trip fidelity.
     bool m_preserveElementOrder = false;
+    // If true, naming conflicts during deserialization (e.g. duplicate property names from V2→V3 conversion)
+    // are resolved silently instead of erroring. Always on for EC2 schemas.
     bool m_resolveConflicts = false;
+    // If true, schema files without a version number in their filename (e.g. "MySchema.ecschema.xml")
+    // are included when searching for schemas by file. Normally only versioned filenames are matched.
     bool m_includeFilesWithNoVerExt = false;
+    // If true, ECSchema::Validate() is NOT called after deserialization. This skips post-load rule checks
+    // (class hierarchy validity, CA container rules, etc.). The schema is still fully parsed.
     bool m_skipValidation = false;
+    // Legacy compat: if true, LatestWriteCompatible schema matching only checks read+write versions,
+    // accepting schemas whose minor version is lower than requested (with a warning).
     bool m_acceptLegacyImperfectLatestCompatibleMatch;
+    // If true, the schema checksum is computed during deserialization. Off by default for performance.
     bool m_calculateChecksum = false;
+    // If true, unknown constructs (unrecognized modifiers, strength types, primitive types, etc.) in schemas
+    // with ECXml version > Latest cause hard errors instead of being tolerated with warnings and defaults.
+    // Off by default (tolerant mode). ECDb import paths set this to true.
+    bool m_strictSchemaValidation = false;
 
     SearchPathList m_searchPaths;
     bvector<WString> m_cultureStrings;
@@ -110,6 +125,13 @@ public:
 
     //! Sets calculate checksum on every schema loaded into context
     void SetCalculateChecksum(bool calculateChecksum) {m_calculateChecksum = calculateChecksum;}
+
+    //! If true, unknown constructs (unrecognized enum values, primitive types, modifier strings, etc.) in schemas with version > Latest
+    //! will cause errors instead of being tolerated with warnings. Default is false (tolerant mode).
+    //! ECDb's importSchemas sets this to true to enforce strict validation on schemas entering iModels.
+    bool GetStrictSchemaValidation() const {return m_strictSchemaValidation;}
+    //! Sets strict schema validation. @see GetStrictSchemaValidation
+    void SetStrictSchemaValidation(bool strict) {m_strictSchemaValidation = strict;}
 
     //! Host should call to establish search paths for standard ECSchemas.
     //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,

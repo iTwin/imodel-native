@@ -44,12 +44,17 @@ SchemaReadStatus ReadTypeNameWithPruning(pugi::xml_node node, ECPropertyP prop, 
     // must come after prune check to make sure we don't default to string properties that should be pruned
     if (setTypeStatus == ECObjectsStatus::ParseError && ignoreParseErrors)
         {
-        // Unknown type(s) encountered in a schema for ECXml versions that are 
-        // 'V3_2 <= ECXml version <= Latest'
-        // then we return InvalidECSchemaXml as SchemaReadStatus
+        // Unknown type(s) in schemas within the known version range are always errors
         if (prop->GetClass().GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) && !prop->GetClass().GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
             {
             LOG.errorv("Invalid ECSchemaXML: The Property '%s.%s' has a type name '%s' that can not be resolved to a known type.",
+                prop->GetClass().GetFullName(), prop->GetName().c_str(), typeName.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        // Unknown type(s) in schemas newer than Latest: strict mode rejects, tolerant mode uses default
+        if (prop->GetClass().GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && readContext.GetStrictSchemaValidation())
+            {
+            LOG.errorv("Strict schema validation: The Property '%s.%s' has a type name '%s' that can not be resolved to a known type.",
                 prop->GetClass().GetFullName(), prop->GetName().c_str(), typeName.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
