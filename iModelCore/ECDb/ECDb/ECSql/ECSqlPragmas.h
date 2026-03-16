@@ -58,6 +58,28 @@ struct PragmaECDbVersion : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECSqlVersion : PragmaManager::GlobalHandler {
+    PragmaECSqlVersion() : GlobalHandler("ecsql_ver", "return current ECSQL version") {}
+    ~PragmaECSqlVersion() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaECSqlVersion>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaSqliteSql : PragmaManager::GlobalHandler {
+    PragmaSqliteSql() : GlobalHandler("sqlite_sql", "return underlying SQLite SQL") {}
+    ~PragmaSqliteSql() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, const PragmaVal&, const PragmaManager::OptionsMap&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaSqliteSql>(); }
+};
+
+//=======================================================================================
 // @bsiclass PragmaChecksum
 //+===============+===============+===============+===============+===============+======
 struct PragmaChecksum : PragmaManager::GlobalHandler {

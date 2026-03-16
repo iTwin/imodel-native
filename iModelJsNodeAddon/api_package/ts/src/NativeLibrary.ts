@@ -744,6 +744,7 @@ export declare namespace IModelJsNative {
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
     public readFontMap(): FontMapProps;
     public reinstateTxn(): IModelStatus;
+    public getNextReinstateTxnRange(): { firstTxnId: TxnIdString, lastTxnId: TxnIdString };
     public removeEmbeddedFile(name: string): void;
     public replaceEmbeddedFile(arg: EmbedFileArg): void;
     public resetBriefcaseId(idValue: number): void;
