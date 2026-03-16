@@ -62,7 +62,7 @@ struct RelatedInstanceFinder final {
             ECDB_EXPORT void Reset();
             ECDB_EXPORT bool Step();
             ECDB_EXPORT bool Eof() const;
-            ECN::ECClassId GetClassId() const { return m_state != nullptr ? m_state->m_classId : ECN::ECClassId(0ull); };
+            ECN::ECClassId GetClassId() const { return m_state != nullptr ? m_state->m_classId : ECN::ECClassId(0ULL); };
             Result GetResult() const { return m_state != nullptr ? m_state->m_result : Result::Empty(); };
 
             ECDB_EXPORT static StandaloneIterator Make(RelatedInstanceFinder const& finder, ECN::ECClassId id);
