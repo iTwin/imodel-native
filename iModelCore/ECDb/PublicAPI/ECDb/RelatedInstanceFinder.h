@@ -5,7 +5,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECDb/ECSqlStatement.h>
-#include <ecobjects/ECObjects.h>
+#include <ECObjects/ECObjects.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
