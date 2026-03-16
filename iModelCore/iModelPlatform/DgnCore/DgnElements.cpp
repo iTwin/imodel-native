@@ -769,10 +769,10 @@ namespace
         return violators;
         }
 
-    DgnElementIdSet GetRootsToPrune(DgnDbR db, const DgnElementIdSet& violators, const std::unordered_map<uint64_t, uint64_t>& logicalParents)
+    DgnElementIdSet GetRootsToIgnore(DgnDbR db, const DgnElementIdSet& violators, const std::unordered_map<uint64_t, uint64_t>& logicalParents)
         {
-        // Find all root elements of the violators that need to be pruned from the delete set
-        DgnElementIdSet pruneRoots;
+        // Find all root elements of the violators that need to be ignored from the delete set
+        DgnElementIdSet ignoreRoots;
         for (const auto& violatorId : violators)
             {
             uint64_t current = violatorId.GetValueUnchecked();
@@ -785,40 +785,40 @@ namespace
                 uint64_t parentVal = it->second;
                 if (parentVal == 0 || logicalParents.find(parentVal) == logicalParents.end())
                     {
-                    pruneRoots.insert(DgnElementId(current));
+                    ignoreRoots.insert(DgnElementId(current));
                     break;
                     }
                 current = parentVal;
                 }
             }
 
-        return pruneRoots;
+        return ignoreRoots;
         }
 
-    void PruneViolators(DgnDbR db, const DgnElementIdSet& pruneRoots, DgnElementIdSet& elementsToDelete)
+    void IgnoreViolators(DgnDbR db, const DgnElementIdSet& ignoreRoots, DgnElementIdSet& elementsToDelete)
         {
-        constexpr auto pruneSql = R"sql(
-            WITH RECURSIVE pruned(id) AS (
+        constexpr auto ignoreSql = R"sql(
+            WITH RECURSIVE ignored(id) AS (
                 SELECT Id FROM bis_Element WHERE InVirtualSet(?, Id)
                 UNION ALL
                 -- Get all the child elements
-                SELECT e.Id FROM bis_Element e INNER JOIN pruned p ON e.ParentId = p.id
+                SELECT e.Id FROM bis_Element e INNER JOIN ignored p ON e.ParentId = p.id
                 UNION ALL
                 -- Get all the modeled elements in a possible sub model
                 SELECT e.Id FROM bis_Element e
                     INNER JOIN bis_Model m ON m.Id = e.ModelId
-                    INNER JOIN pruned p ON m.ModeledElementId = p.id
+                    INNER JOIN ignored p ON m.ModeledElementId = p.id
             )
-            SELECT id FROM pruned
+            SELECT id FROM ignored
         )sql";
 
-        Statement pruneStmt;
-        if (BE_SQLITE_OK == pruneStmt.Prepare(db, pruneSql))
+        Statement ignoreStmt;
+        if (BE_SQLITE_OK == ignoreStmt.Prepare(db, ignoreSql))
             {
-            pruneStmt.BindVirtualSet(1, pruneRoots);
-            while (BE_SQLITE_ROW == pruneStmt.Step())
+            ignoreStmt.BindVirtualSet(1, ignoreRoots);
+            while (BE_SQLITE_ROW == ignoreStmt.Step())
                 {
-                auto id = pruneStmt.GetValueId<DgnElementId>(0);
+                auto id = ignoreStmt.GetValueId<DgnElementId>(0);
                 if (id.IsValid())
                     elementsToDelete.erase(id);
                 }
@@ -858,7 +858,7 @@ namespace
         return finalDeleteSet;
         }
 
-    ExpandedElementSet ExpandAndPruneElementIds(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& failedToDeleteElements)
+    ExpandedElementSet ExpandAndIgnoreElementIds(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& failedToDeleteElements)
         {
         // Expand the element IDs to recursively include:
         // 1. All children elements
@@ -867,8 +867,8 @@ namespace
         const auto violators = FindViolators(db, expanded.ids);
         if (!violators.empty())
             {
-            const auto pruneRoots = GetRootsToPrune(db, violators, expanded.logicalParents);
-            PruneViolators(db, pruneRoots, expanded.ids);
+            const auto ignoreRoots = GetRootsToIgnore(db, violators, expanded.logicalParents);
+            IgnoreViolators(db, ignoreRoots, expanded.ids);
 
             for (const auto& elementId : elementIds)
                 {
@@ -972,7 +972,7 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
         return {};
 
     DgnElementIdSet failedToDeleteElements;
-    const auto expandedIds = ExpandAndPruneElementIds(m_dgndb, elementIds, failedToDeleteElements);
+    const auto expandedIds = ExpandAndIgnoreElementIds(m_dgndb, elementIds, failedToDeleteElements);
 
     if (failedToDeleteElements.empty())
         LOG.infov("DeleteElements: All requested element Ids are being deleted as part of the bulk delete operation: %s", elementIds.ToString().c_str());
@@ -1159,7 +1159,7 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
 
     DgnElementIdSet failedToDeleteElements;
     // Expand the set of definition element IDs to include all related elements so implicitly added element's usage can be verified.
-    const ExpandedElementSet expanded = ExpandAndPruneElementIds(m_dgndb, definitionElementIds, failedToDeleteElements);
+    const ExpandedElementSet expanded = ExpandAndIgnoreElementIds(m_dgndb, definitionElementIds, failedToDeleteElements);
 
     if (!failedToDeleteElements.empty())
         LOG.errorv("DeleteDefinitionElements: Failed to delete definition element Ids: %s", failedToDeleteElements.ToString().c_str());
@@ -1188,7 +1188,7 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
     // We need to ensure that all affected are marked for deletion as well.
     if (!cannotBeDeleted.empty())
         {
-        const auto blockedRoots = GetRootsToPrune(m_dgndb, cannotBeDeleted, expanded.logicalParents);
+        const auto blockedRoots = GetRootsToIgnore(m_dgndb, cannotBeDeleted, expanded.logicalParents);
         ExpandBlockedSubtrees(m_dgndb, blockedRoots, toBeDeleted, cannotBeDeleted);
         }
 
