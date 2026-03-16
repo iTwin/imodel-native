@@ -858,7 +858,7 @@ namespace
         return finalDeleteSet;
         }
 
-    DgnElementIdSet ExpandAndPruneElementIds(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& failedToDeleteElements)
+    ExpandedElementSet ExpandAndPruneElementIds(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& failedToDeleteElements)
         {
         // Expand the element IDs to recursively include:
         // 1. All children elements
@@ -877,7 +877,7 @@ namespace
                 }
             }
 
-        return expanded.ids;
+        return expanded;
         }
 
     void SegregateDefinitionElements(DgnDbR db, const DgnElementIdSet& elementIds, DgnElementIdSet& definitionElementIds, DgnElementIdSet& nonDefinitionElementIds)
@@ -972,14 +972,14 @@ DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
         return {};
 
     DgnElementIdSet failedToDeleteElements;
-    const DgnElementIdSet elementsToDelete = ExpandAndPruneElementIds(m_dgndb, elementIds, failedToDeleteElements);
+    const auto expandedIds = ExpandAndPruneElementIds(m_dgndb, elementIds, failedToDeleteElements);
 
     if (failedToDeleteElements.empty())
         LOG.infov("DeleteElements: All requested element Ids are being deleted as part of the bulk delete operation: %s", elementIds.ToString().c_str());
     else
         LOG.warningv("DeleteElements: The following element Ids are not being deleted as part of the bulk delete operation due to external code scope violations: %s", failedToDeleteElements.ToString().c_str());
 
-    const auto additionalFailures = DeleteElementsPreExpanded(elementsToDelete, elementIds);
+    const auto additionalFailures = DeleteElementsPreExpanded(expandedIds.ids, elementIds);
     failedToDeleteElements.insert(additionalFailures.begin(), additionalFailures.end());
     return failedToDeleteElements;
     }
@@ -996,7 +996,6 @@ DgnElementIdSet DgnElements::DeleteElementsPreExpanded(const DgnElementIdSet& ex
     std::vector<DgnModelPtr> subModelsToDelete;
     DgnElementIdSet subModelIds;    // ModelId = Modeling element's id, so we're good with this
     DgnElementIdSet vetoedElementIds;
-    bool subModelsExist = false;
 
     // Call the pre-delete handlers for the elements from the original delete set and any sub-models that will be deleted.
     for (const auto& elementId : elementsToDelete)
@@ -1012,7 +1011,6 @@ DgnElementIdSet DgnElements::DeleteElementsPreExpanded(const DgnElementIdSet& ex
         DgnModelPtr subModel = element->GetSubModel();
         if (subModel.IsValid())
             {
-            subModelsExist = true;
             if (element->_OnSubModelDelete(*subModel) != DgnDbStatus::Success)
                 {
                 vetoedElementIds.insert(elementId);
@@ -1161,7 +1159,7 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
 
     DgnElementIdSet failedToDeleteElements;
     // Expand the set of definition element IDs to include all related elements so implicitly added element's usage can be verified.
-    const DgnElementIdSet expandedIds = ExpandAndPruneElementIds(m_dgndb, definitionElementIds, failedToDeleteElements);
+    const ExpandedElementSet expanded = ExpandAndPruneElementIds(m_dgndb, definitionElementIds, failedToDeleteElements);
 
     if (!failedToDeleteElements.empty())
         LOG.errorv("DeleteDefinitionElements: Failed to delete definition element Ids: %s", failedToDeleteElements.ToString().c_str());
@@ -1169,7 +1167,7 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
     DgnElementIdSet toBeDeleted;
     // After expansion, we need to re-classify into definition vs non-definition elements.
     // DefinitionElementUsageInfo::Create skips non-definition elements, so we must separate them out and mark them for deletion directly.
-    SegregateDefinitionElements(m_dgndb, expandedIds, definitionElementIds, toBeDeleted);
+    SegregateDefinitionElements(m_dgndb, expanded.ids, definitionElementIds, toBeDeleted);
 
     // Get the usage info for all definition elements in the expanded set, excluding intra-set usages.
     // For any intra-set dependencies, since we are bulk deleting, they will all get deleted anyway.
@@ -1186,28 +1184,33 @@ DgnElementIdSet DgnElements::DeleteDefinitionElements(const DgnElementIdSet& ele
             toBeDeleted.insert(elementId);
         }
 
-    // It might happen that a parent element is in use, but its structural descendants might not be.
-    // We need to ensure that all descendants are marked for deletion as well.
+    // It might happen that a parent element is in use, but its structural descendants might not be and vice versa.
+    // We need to ensure that all affected are marked for deletion as well.
     if (!cannotBeDeleted.empty())
-        ExpandBlockedSubtrees(m_dgndb, cannotBeDeleted, toBeDeleted, cannotBeDeleted);
+        {
+        const auto blockedRoots = GetRootsToPrune(m_dgndb, cannotBeDeleted, expanded.logicalParents);
+        ExpandBlockedSubtrees(m_dgndb, blockedRoots, toBeDeleted, cannotBeDeleted);
+        }
 
     if (toBeDeleted.empty())
         {
         if (!cannotBeDeleted.empty())
             LOG.warningv("DeleteDefinitionElements: Skipping element Ids that are in use: %s", cannotBeDeleted.ToString().c_str());
-        return cannotBeDeleted;
+        failedToDeleteElements.insert(cannotBeDeleted.begin(), cannotBeDeleted.end());
+        return failedToDeleteElements;
         }
 
     m_dgndb.BeginPurgeOperation();
-    const auto failedToDeleteIds = DeleteElementsPreExpanded(toBeDeleted, toBeDeleted);
+    const auto failedToDelete = DeleteElementsPreExpanded(toBeDeleted, toBeDeleted);
     m_dgndb.EndPurgeOperation();
 
-    cannotBeDeleted.insert(failedToDeleteIds.begin(), failedToDeleteIds.end());
+    failedToDeleteElements.insert(cannotBeDeleted.begin(), cannotBeDeleted.end());
+    failedToDeleteElements.insert(failedToDelete.begin(), failedToDelete.end());
 
-    if (!cannotBeDeleted.empty())
-        LOG.warningv("DeleteDefinitionElements: Skipping element Ids that are in use or blocked: %s", cannotBeDeleted.ToString().c_str());
+    if (!failedToDeleteElements.empty())
+        LOG.warningv("DeleteDefinitionElements: Skipping element Ids that are in use or blocked: %s", failedToDeleteElements.ToString().c_str());
 
-    return cannotBeDeleted;
+    return failedToDeleteElements;
     }
 
 //---------------------------------------------------------------------------------------
