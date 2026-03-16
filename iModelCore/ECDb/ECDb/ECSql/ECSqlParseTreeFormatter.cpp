@@ -19,7 +19,7 @@ BentleyStatus ECSqlParseTreeFormatter::ECSqlToJson(BeJsValue out, ECDbCR ecdb, U
     if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
         return ERROR;
 
-    ECSqlParser parser;
+    ECSqlRDParser parser;
     std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, ecdb.GetImpl().Issues());
     if (exp == nullptr)
         return ERROR;
@@ -41,7 +41,7 @@ BentleyStatus ECSqlParseTreeFormatter::NormalizeECSql(Utf8StringR out, ECDbCR ec
     if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
         return ERROR;
 
-    ECSqlParser parser;
+    ECSqlRDParser parser;
     std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, ecdb.GetImpl().Issues());
     if (exp == nullptr)
         return ERROR;
@@ -83,7 +83,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& e
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
-    ECSqlParser parser;
+    ECSqlRDParser parser;
     std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, ecdb.GetImpl().Issues());
     if (exp == nullptr)
         return ERROR;

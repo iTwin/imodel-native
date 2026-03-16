@@ -460,6 +460,7 @@ struct SelectStatementExp final : QueryExp
 struct SubqueryRefExp final : RangeClassRefExp
     {
     friend struct ECSqlParser;
+    friend struct ECSqlRDParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
 	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
