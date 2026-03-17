@@ -22396,30 +22396,51 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
 TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
     {
     //Note: for each test schema we test it with the minor version being incremented and the major version being incremented
-    auto assertImport = [this](Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options, std::tuple<Utf8CP, Utf8CP, Utf8CP> hashes)
+
+    // Do the full setup once and save seed copies of the briefcase and channel files.
+    // Each assertImport call restores from these seeds instead of repeating the expensive full setup.
+    auto initialSchema = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Parent" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Code" typeName="int"/>
+                <ECProperty propertyName="Val" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub" >
+                <BaseClass>Parent</BaseClass>
+                <ECProperty propertyName="SubProp" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml"
+    );
+    SetupECDb("schemaupgrade_DisallowMajorSchemaUpgrade", initialSchema);
+
+    BeFileName seedBriefcasePath(m_briefcase->GetDbFileName());
+    seedBriefcasePath.append(L".seed");
+    BeFileName seedChannelPath(m_schemaChannel->GetFileName());
+    seedChannelPath.append(L".seed");
+    BeFileName briefcasePath(m_briefcase->GetDbFileName());
+    BeFileName channelPath(m_schemaChannel->GetFileName());
+
+    m_briefcase->SaveChanges();
+    BeFileName::BeCopyFile(briefcasePath, seedBriefcasePath);
+    BeFileName::BeCopyFile(channelPath, seedChannelPath);
+
+    auto assertImport = [this, &seedBriefcasePath, &seedChannelPath, &briefcasePath, &channelPath](Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options, std::tuple<Utf8CP, Utf8CP, Utf8CP> hashes)
         {
-        auto initialSchema = SchemaItem(
-            R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
-                <ECEntityClass typeName="Parent" >
-                    <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00">
-                            <MapStrategy>TablePerHierarchy</MapStrategy>
-                        </ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00"/>
-                    </ECCustomAttributes>
-                    <ECProperty propertyName="Name" typeName="string" />
-                    <ECProperty propertyName="Code" typeName="int"/>
-                    <ECProperty propertyName="Val" typeName="int" />
-                </ECEntityClass>
-                <ECEntityClass typeName="Sub" >
-                    <BaseClass>Parent</BaseClass>
-                    <ECProperty propertyName="SubProp" typeName="string" />
-                </ECEntityClass>
-            </ECSchema>)xml"
-        );
-        SetupECDb("schemaupgrade_DisallowMajorSchemaUpgrade", initialSchema);
+        // Restore briefcase and channel from seed copies
+        m_briefcase->CloseDb();
+        BeFileName::BeCopyFile(seedBriefcasePath, briefcasePath);
+        BeFileName::BeCopyFile(seedChannelPath, channelPath);
+        EXPECT_EQ(BE_SQLITE_OK, m_briefcase->OpenBeSQLiteDb(briefcasePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+
         Utf8String schemaXml;
         schemaXml.Sprintf(schemaTemplate, newSchemaVersion);
         SchemaImportResult actualStat = ImportSchema(SchemaItem(schemaXml), options);
