@@ -22420,7 +22420,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
             </ECEntityClass>
         </ECSchema>)xml"
     );
-    SetupECDb("schemaupgrade_DisallowMajorSchemaUpgrade", initialSchema);
+    ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_DisallowMajorSchemaUpgrade", initialSchema));
 
     BeFileName seedBriefcasePath(m_briefcase->GetDbFileName());
     seedBriefcasePath.append(L".seed");
@@ -22429,17 +22429,17 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
     BeFileName briefcasePath(m_briefcase->GetDbFileName());
     BeFileName channelPath(m_schemaChannel->GetFileName());
 
-    m_briefcase->SaveChanges();
-    BeFileName::BeCopyFile(briefcasePath, seedBriefcasePath);
-    BeFileName::BeCopyFile(channelPath, seedChannelPath);
+    ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(briefcasePath, seedBriefcasePath));
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(channelPath, seedChannelPath));
 
     auto assertImport = [this, &seedBriefcasePath, &seedChannelPath, &briefcasePath, &channelPath](Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options, std::tuple<Utf8CP, Utf8CP, Utf8CP> hashes)
         {
         // Restore briefcase and channel from seed copies
         m_briefcase->CloseDb();
-        BeFileName::BeCopyFile(seedBriefcasePath, briefcasePath);
-        BeFileName::BeCopyFile(seedChannelPath, channelPath);
-        EXPECT_EQ(BE_SQLITE_OK, m_briefcase->OpenBeSQLiteDb(briefcasePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedBriefcasePath, briefcasePath));
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedChannelPath, channelPath));
+        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->OpenBeSQLiteDb(briefcasePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
         Utf8String schemaXml;
         schemaXml.Sprintf(schemaTemplate, newSchemaVersion);
