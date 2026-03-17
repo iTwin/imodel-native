@@ -4117,33 +4117,51 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (pugi::xml_node classNo
 
     Utf8String value;
 
-    // Handle Strength attribute with tolerance for unknown values from newer schemas
+    // Handle Strength attribute with tolerance for unknown values from newer schemas.
+    // Parse via SchemaParseUtils directly to avoid the error log in SetStrength(Utf8CP).
     {
     auto strengthAttr = classNode.attribute(STRENGTH_ATTRIBUTE);
-    if (strengthAttr && (ECObjectsStatus::Success != this->SetStrength(strengthAttr.as_string())))
+    if (strengthAttr)
         {
-        if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
+        StrengthType strengthType;
+        if (ECObjectsStatus::Success == SchemaParseUtils::ParseStrengthType(strengthType, strengthAttr.as_string()))
+            {
+            SetStrength(strengthType);
+            }
+        else if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
             {
             LOG.warningv("ECRelationshipClass '%s' has an unknown Strength type '%s'. Setting to 'Referencing'.", GetFullName(), strengthAttr.as_string());
-            SetStrength(StrengthType::Referencing);
+            SetStrength(StrengthType::Referencing); // referencing is the initial default
             }
         else
+            {
+            LOG.errorv("ECRelationshipClass '%s' has an invalid Strength attribute value '%s'.", GetFullName(), strengthAttr.as_string());
             return SchemaReadStatus::InvalidECSchemaXml;
+            }
         }
     }
 
-    // Handle StrengthDirection attribute with tolerance for unknown values from newer schemas
+    // Handle StrengthDirection attribute with tolerance for unknown values from newer schemas.
+    // Parse via SchemaParseUtils directly to avoid the error log in SetStrengthDirection(Utf8CP).
     {
     auto strengthDirAttr = classNode.attribute(STRENGTHDIRECTION_ATTRIBUTE);
-    if (strengthDirAttr && (ECObjectsStatus::Success != this->SetStrengthDirection(strengthDirAttr.as_string())))
+    if (strengthDirAttr)
         {
-        if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
+        ECRelatedInstanceDirection direction;
+        if (ECObjectsStatus::Success == SchemaParseUtils::ParseDirectionString(direction, strengthDirAttr.as_string()))
+            {
+            SetStrengthDirection(direction);
+            }
+        else if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
             {
             LOG.warningv("ECRelationshipClass '%s' has an unknown StrengthDirection type '%s'. Setting to 'Forward'.", GetFullName(), strengthDirAttr.as_string());
             SetStrengthDirection(ECRelatedInstanceDirection::Forward);
             }
         else
+            {
+            LOG.errorv("ECRelationshipClass '%s' has an invalid StrengthDirection attribute value '%s'.", GetFullName(), strengthDirAttr.as_string());
             return SchemaReadStatus::InvalidECSchemaXml;
+            }
         }
     }
 
