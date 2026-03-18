@@ -22433,7 +22433,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(briefcasePath, seedBriefcasePath));
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(channelPath, seedChannelPath));
 
-    auto assertImport = [this, &seedBriefcasePath, &seedChannelPath, &briefcasePath, &channelPath](Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options, std::tuple<Utf8CP, Utf8CP, Utf8CP> hashes)
+    auto assertImport = [this, &seedBriefcasePath, &seedChannelPath, &briefcasePath, &channelPath](Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options, std::tuple<Utf8CP, Utf8CP, Utf8CP> hashes) -> SchemaImportResult
         {
         // Restore briefcase and channel from seed copies
         m_briefcase->CloseDb();
