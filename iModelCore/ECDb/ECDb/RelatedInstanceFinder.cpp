@@ -252,7 +252,7 @@ bool RelatedInstanceFinder::StandaloneIterator::PrepareNextRelationship(){
 // @bsimethod
 //=======================================================================================
 RelatedInstanceFinder::Result RelatedInstanceFinder::Result::Empty() {
-    static auto s_empty = Result(ECInstanceKey(ECClassId(0ULL), ECInstanceId(0ULL)) , ECClassId(0ULL), ECRelatedInstanceDirection::Forward);
+    static auto s_empty = Result(ECInstanceKey(ECClassId(), ECInstanceId()) , ECClassId(), ECRelatedInstanceDirection::Forward);
     return s_empty;
 }
 
