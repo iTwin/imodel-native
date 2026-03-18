@@ -14,6 +14,7 @@
 #include <Bentley/BeThread.h>
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <BeSQLite/NativeChangeSetReader.h>
 #include "DgnDbWorker.h"
 #ifndef BENTLEY_WIN32
     #include <signal.h>
@@ -651,30 +652,16 @@ struct GeoServicesInterop
 //=======================================================================================
 struct NativeChangeset {
     private:
+        NativeChangeSetReader m_changeset;
 
-        bool m_invert;
-        Byte* m_primaryKeyColumns;
-        Changes::Change m_currentChange;
-        DbOpcode m_opcode;
-        int m_columnCount;
-        int m_indirect;
-        int m_primaryKeyColumnCount;
-        int m_primaryKeyCount;
-        std::unique_ptr<Changes> m_changes;
-        std::unique_ptr<ChangeStream> m_changeStream;
-        std::unique_ptr<ChangeGroup> m_changeGroup;
-        Utf8CP m_tableName;
-        Utf8String m_ddl;
-
-    private:
         Napi::Value SerializeValue(Napi::Env, DbValue&val);
-        bool HasRow() { return IsOpen() && m_currentChange.IsValid(); }
-        bool IsOpen() { return m_changeStream != nullptr; }
-        bool IsValidColumnIndex(int col) { return HasRow() && (col>=0 && col< m_columnCount); }
-        bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
+        bool HasRow() { return m_changeset.HasRow(); }
+        bool IsOpen() { return m_changeset.IsOpen(); }
+        bool IsValidColumnIndex(int col) { return m_changeset.IsValidColumnIndex(col); }
+        bool IsValidPrimaryKeyColumnIndex(int col) { return m_changeset.IsValidPrimaryKeyColumnIndex(col); }
 
     public:
-        NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
+        NativeChangeset(){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
         void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);
