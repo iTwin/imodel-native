@@ -25,39 +25,18 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Various type stubs for the open-source version of Snappy.
-//
-// This file cannot include config.h, as it is included from snappy.h,
-// which is a public header. Instead, snappy-stubs-public.h is generated
-// from snappy-stubs-public.h.in at configure time.
 
-#ifndef THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
-#define THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
+#include <algorithm>
+#include <string>
 
-#include <cstddef>
-
-#if defined(__linux__) || defined(__APPLE__)  // HAVE_SYS_UIO_H
-#include <sys/uio.h>
-#endif  // HAVE_SYS_UIO_H
-
-#define SNAPPY_MAJOR 1
-#define SNAPPY_MINOR 2
-#define SNAPPY_PATCHLEVEL 2
-#define SNAPPY_VERSION \
-    ((SNAPPY_MAJOR << 16) | (SNAPPY_MINOR << 8) | SNAPPY_PATCHLEVEL)
+#include "snappy-stubs-internal.h"
 
 namespace snappy {
 
-#if !defined(__linux__) && !defined(__APPLE__)  // !HAVE_SYS_UIO_H
-// Windows does not have an iovec type, yet the concept is universally useful.
-// It is simple to define it ourselves, so we put it inside our own namespace.
-struct iovec {
-  void* iov_base;
-  size_t iov_len;
-};
-#endif  // !HAVE_SYS_UIO_H
+void Varint::Append32(std::string* s, uint32_t value) {
+  char buf[Varint::kMax32];
+  const char* p = Varint::Encode32(buf, value);
+  s->append(buf, p - buf);
+}
 
 }  // namespace snappy
-
-#endif  // THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
