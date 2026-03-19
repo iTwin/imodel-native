@@ -138,7 +138,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::BestIndex(IndexInfo& indexInf
     indexInfo.SetEstimatedCost(0);
     indexInfo.SetEstimatedRows(100);
     indexInfo.SetIdxNum(idxNum);
-    // indexInfo.SetIdxFlags(IndexInfo::ScanFlags::UNIQUE);
+    indexInfo.SetIdxFlags(IndexInfo::ScanFlags::UNIQUE);
     return BE_SQLITE_OK;
 }
 
@@ -157,7 +157,12 @@ DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc,
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
-    ++m_index;
+    // For point lookups, only return one row
+    if (m_isPointLookup) {
+        m_index = m_idSet.end();
+    } else {
+        ++m_index;
+    }
     return BE_SQLITE_OK;
 }
 
@@ -233,10 +238,24 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
-    int recompute = false;
-    if( idxNum & 1 ){
-        if(argv[0].GetValueType() == DbValueType::TextVal) {
-            Utf8String valueGiven = argv[0].GetValueText();
+    int argIndex = 0;
+    bool recompute = false;
+    m_isPointLookup = false;
+    m_lookupId = 0;
+    
+    // Bit 0: Id column constraint
+    if (idxNum & 1) {
+        if (argv[argIndex].GetValueType() == DbValueType::IntegerVal) {
+            m_lookupId = (uint64_t)argv[argIndex].GetValueInt64();
+            m_isPointLookup = true;
+        }
+        argIndex++;
+    }
+    
+    // Bit 1: Json_array_ids column constraint
+    if (idxNum & 2) {
+        if(argv[argIndex].GetValueType() == DbValueType::TextVal) {
+            Utf8String valueGiven = argv[argIndex].GetValueText();
             if(!valueGiven.EqualsIAscii(m_text)) {
                 m_text = valueGiven;
                 recompute = true;
@@ -244,9 +263,11 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         } else {
             Reset();
         }
+        argIndex++;
     } else {
         Reset();
     }
+    
     if(recompute) {
         m_idSet.clear();
         BeJsDocument doc;
@@ -254,11 +275,19 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         
         if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
             Reset();
+            m_isPointLookup = false;
             m_index = m_idSet.begin();
             return BE_SQLITE_ERROR;
         }
     }
-    m_index = m_idSet.begin();
+    
+    // Handle point lookup - only return matching ID if it exists in set
+    if (m_isPointLookup) {
+        m_index = m_idSet.find(m_lookupId);
+    } else {
+        m_index = m_idSet.begin();
+    }
+    
     return BE_SQLITE_OK;
 }
 
@@ -268,6 +297,8 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
     m_text = "[]";
     m_idSet.clear();
+    m_lookupId = 0;
+    m_isPointLookup = false;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -276,40 +307,59 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
     int i, j;              /* Loop over constraints */
     int idxNum = 0;        /* The query plan bitmask */
     int unusableMask = 0;  /* Mask of unusable constraints */
-    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-    int aIdx[2];           /* Constraints on start, stop, and step */
+    int nArg = 0;          /* Number of arguments that Filter() expects */
+    int aIdx[2];           /* Constraints on Id and Json_array_ids columns */
     const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
     aIdx[0] = aIdx[1] = -1;
     int nConstraint = indexInfo.GetConstraintCount();
+    double estimatedCost = 100.0;
+    int64_t estimatedRows = 100;
 
+    // Process constraints for both columns
+    // Bit 0 (mask 1): Id column (Columns::Id = 0)
+    // Bit 1 (mask 2): Json_array_ids column (Columns::Json_array_ids = 1)
     for(i=0; i<nConstraint; i++) {
         auto pConstraint = indexInfo.GetConstraint(i);
-        int iCol;    /* 0 for start, 1 for stop, 2 for step */
-        int iMask;   /* bitmask for those column */
-        if( pConstraint->GetColumn()< (int)IdSetCursor::Columns::Json_array_ids) continue;
-        iCol = pConstraint->GetColumn() - (int)IdSetCursor::Columns::Json_array_ids;
-        iMask = 1 << iCol;
+        int iCol = pConstraint->GetColumn();
+        int iMask;
+        
+        if (iCol == (int)IdSetCursor::Columns::Id) {
+            iMask = 1; // Bit 0 for Id column
+        } else if (iCol == (int)IdSetCursor::Columns::Json_array_ids) {
+            iMask = 2; // Bit 1 for Json_array_ids column
+        } else {
+            continue;
+        }
+        
         if (!pConstraint->IsUsable()){
-            unusableMask |=  iMask;
+            unusableMask |= iMask;
             continue;
         } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
             idxNum |= iMask;
             aIdx[iCol] = i;
         }
     }
-    for( i = 0; i < 1; i++) {
-        if( (j = aIdx[i]) >= 0 ) {
+    
+    // Set argument indices for the constraints we're using
+    for(i = 0; i < 2; i++) {
+        if((j = aIdx[i]) >= 0) {
             indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
             indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
         }
     }
 
-    if ((unusableMask & ~idxNum)!=0 ) {
+    if ((unusableMask & ~idxNum)!=0) {
         return BE_SQLITE_CONSTRAINT;
     }
 
-    indexInfo.SetEstimatedCost(0);
-    indexInfo.SetEstimatedRows(100);
+    // If we have an Id constraint (point lookup), estimated cost is much lower
+    if (idxNum & 1) {
+        estimatedCost = 1.0;  // Point lookup is very cheap
+        estimatedRows = 1;     // Expect at most 1 row
+    }
+
+    indexInfo.SetEstimatedCost(estimatedCost);
+    indexInfo.SetEstimatedRows(estimatedRows);
     indexInfo.SetIdxNum(idxNum);
     return BE_SQLITE_OK;
 

@@ -11,7 +11,38 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbIdSetVirtualTableTestFixture : ECDbTestFixture {};
+TEST_F(ECDbIdSetVirtualTableTestFixture, Constraint) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+    printf("Db path: %s\n", m_ecdb.GetDbFileName());
+    m_ecdb.ExecuteSql(R"sql(CREATE TABLE test1 (Id INTEGER PRIMARY KEY, none_index_id INTEGER, indexed_id INTEGER);)sql");
+    m_ecdb.ExecuteSql(R"sql(CREATE INDEX idx_indexed_id_test1 ON test1(indexed_id);)sql");
+    m_ecdb.ExecuteSql(R"sql(CREATE TABLE test2 (Id INTEGER PRIMARY KEY, none_index_id INTEGER, indexed_id INTEGER);)sql");
+    m_ecdb.ExecuteSql(R"sql(CREATE INDEX idx_indexed_id_test2 ON test2(indexed_id);)sql");
 
+    // file test table with random integers and 1 million rows in pure sql
+    m_ecdb.ExecuteSql(R"sql(
+        WITH RECURSIVE cnt(x) AS (
+            SELECT 1
+            UNION ALL
+            SELECT x + 1 FROM cnt WHERE x < 5000000
+        )
+        INSERT INTO test1 (id, none_index_id, indexed_id)   
+        SELECT x, abs(random())%1000000, abs(random())%1000000 FROM cnt
+    ;)sql");
+    m_ecdb.ExecuteSql(R"sql(
+        WITH RECURSIVE cnt(x) AS (
+            SELECT 1
+            UNION ALL
+            SELECT x + 1 FROM cnt WHERE x < 5000000
+        )
+        INSERT INTO test2 (id, none_index_id, indexed_id)   
+        SELECT x, abs(random())%1000000, abs(random())%1000000 FROM cnt
+    ;)sql");
+    m_ecdb.ExecuteSql("ANALYZE;");
+    m_ecdb.SaveChanges();
+    ReopenECDb();
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

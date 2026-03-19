@@ -57,9 +57,11 @@ struct IdSetModule : ECDbModule {
                 Utf8String m_text;
                 bset<uint64_t> m_idSet;
                 bset<uint64_t>::const_iterator m_index;
+                uint64_t m_lookupId;
+                bool m_isPointLookup;
 
             public:
-                IdSetCursor(IdSetTable& vt): ECDbCursor(vt), m_index(m_idSet.begin()){}
+                IdSetCursor(IdSetTable& vt): ECDbCursor(vt), m_index(m_idSet.begin()), m_lookupId(0), m_isPointLookup(false){}
                 bool Eof() final { return m_index == m_idSet.end() ; }
                 DbResult Next() final;
                 DbResult GetColumn(int i, Context& ctx) final;
