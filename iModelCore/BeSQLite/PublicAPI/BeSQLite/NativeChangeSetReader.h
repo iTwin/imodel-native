@@ -13,7 +13,6 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
 //! A reader for changeset data. Holds all changeset state and implements the core read
 //! logic. Returns raw C++ types (DbValue for column data, DbResult for operations).
-//! Has no dependency on Napi — all JS conversion is left to the caller.
 //! @bsiclass
 //=======================================================================================
 struct NativeChangeSetReader
