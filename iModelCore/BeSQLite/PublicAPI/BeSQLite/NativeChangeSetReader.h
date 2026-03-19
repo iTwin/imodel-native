@@ -71,34 +71,43 @@ public:
     // --- Accessors (only valid after a successful Step() returning BE_SQLITE_ROW) ---
 
     //! Get the name of the table affected by the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetTableName(Utf8StringR out) const;
     //! Get the opcode (Insert/Update/Delete) of the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetOpCode(DbOpcode& out) const;
     //! Returns true if the current change row is an indirect (cascaded) change.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult IsIndirectChange(bool& out) const;
     //! Get the number of columns in the table affected by the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetColumnCount(int& out) const;
     //! Get the accumulated DDL (schema) changes recorded in the changeset.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetDdlChanges(Utf8StringR out) const;
     //! Get a pointer to the primary-key column bitmap for the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetPrimaryKeyColumns(Byte* out) const;
     //! Returns the last error message set by any method.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT Utf8StringCR GetLastError() const { return m_lastError; }
     //! Returns true if there is a current change row available.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT bool HasRow() const { return IsOpen() && m_currentChange.IsValid(); }
 
 
     // --- Column value accessors ---
     //! Get the old (target==0) or new (target==1) value for a column in the current change row.
-    //! Returns BE_SQLITE_ERROR when the access is invalid (wrong opcode for target,
-    //! out-of-range column, or no current row).
-
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetColumnValue(int col, int target, DbValue& out) const;
     //! Get all old (target==0) or new (target==1) column values for the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetRow(int target, std::vector<DbValue>& out) const;
     //! Get the primary-key column values for the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetPrimaryKeys(std::vector<DbValue>& out) const;
     //! Get the 0-based column indexes that form the primary key for the current change row.
+    //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
     BE_SQLITE_EXPORT DbResult GetPrimaryKeyColumnIndexes(std::vector<uint64_t>& out) const;
     };
 
