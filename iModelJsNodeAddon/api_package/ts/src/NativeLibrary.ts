@@ -516,6 +516,7 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
@@ -608,7 +609,7 @@ export declare namespace IModelJsNative {
     public cancelElementGraphicsRequests(requestIds: string[]): void;
     public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public cancelTo(txnId: TxnIdString): IModelStatus;
-    public classIdToName(idString: string): string;
+    public classIdToName(idString: string): string | undefined;
     public classNameToId(className: string): Id64String;
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
@@ -700,6 +701,7 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
+    public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
@@ -740,6 +742,7 @@ export declare namespace IModelJsNative {
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
     public readFontMap(): FontMapProps;
     public reinstateTxn(): IModelStatus;
+    public getNextReinstateTxnRange(): { firstTxnId: TxnIdString, lastTxnId: TxnIdString };
     public removeEmbeddedFile(name: string): void;
     public replaceEmbeddedFile(arg: EmbedFileArg): void;
     public resetBriefcaseId(idValue: number): void;
@@ -874,6 +877,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
+    public clearECDbCache(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {
@@ -905,7 +909,8 @@ export declare namespace IModelJsNative {
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
     public toRow(arg: ECSqlRowAdaptorOptions): any;
-    public getMetadata(): any;
+    public getMetadata(arg?: ECSqlRowAdaptorOptions): any;
+    public bindParams(args: object): StatusCodeWithMessage<boolean>;
   }
 
   class ECSqlBinder {

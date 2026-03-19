@@ -486,6 +486,7 @@ private:
     void PullMergeSetTxnActive(TxnManager::TxnId txnId);
     void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
     bool PullMergeEraseTxn(TxnManager::TxnId txnId);
+    BeSQLite::DbResult SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation);
         
 public:
     void StartNewSession();
@@ -706,6 +707,10 @@ public:
     //! @return DgnDbStatus::Success if a reversed transaction was reinstated, error status otherwise.
     //! @note If there are any outstanding uncommitted changes, they are reversed before the Txn is reinstated.
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
+
+    //! Gets the range of reversed transactions that will be reinstated by the next call to [[ReinstateTxn]].
+    //! If there is no reversed transaction to reinstate, the TxnIds in the returned range will be invalid.
+    DGNPLATFORM_EXPORT TxnRange GetNextReinstateTxnRange() const;
     //@}
 
     //! Get the DgnDb for this TxnManager

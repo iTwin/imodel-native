@@ -676,6 +676,7 @@ public:
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
+            InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
 
@@ -1504,6 +1505,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
         return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseTxns(numTxns));
     }
+    Napi::Value GetNextReinstateTxnRange(NapiInfoCR info) {
+        auto& txns = GetOpenedDb(info).Txns();
+        auto range = txns.GetNextReinstateTxnRange();
+        BeJsNapiObject jsRange(Env());
+        jsRange["firstTxnId"] = TxnIdToString(range.GetFirst());
+        jsRange["lastTxnId"] = TxnIdToString(range.GetLast());
+        return jsRange;
+    }
+
     Napi::Value ClassNameToId(NapiInfoCR info) {
         auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(info[0], GetOpenedDb(info).GetClassLocater());
         return toJsString(Env(), classId);
@@ -2226,6 +2236,57 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         }
     }
+
+    void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+
+        if (db.Txns().HasChanges()) // equivalent to hasUnsavedChanges()
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas during semantic rebase with existing unsaved changes.", DgnDbStatus::BadRequest);
+
+        if (db.Txns().PullMergeGetStage() != TxnManager::PullMergeStage::Rebasing) // equivalent to isRebasing()
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Should be called while rebasing", DgnDbStatus::BadRequest);
+
+        if (db.Txns().GetMode() == ChangeTracker::Mode::Indirect) // equivalent to isIndirectChange
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas while in an indirect change scope", DgnDbStatus::BadRequest);
+
+        JsInterop::SchemaImportOptions options;
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        options.m_skipSaveChanges = true; // pull/merge/rebase will update existing txns for this
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
+
+        // Clear the schema cache BEFORE importing so that SchemaWriter::CompareSchemas reads
+        // fresh schemas from the DB. Without this, the schema reader cache may still hold schemas
+        // from before the incoming changeset was applied, causing the SchemaComparer to think
+        // properties already present in ec_Property are "new" and attempt to re-INSERT them
+        // (triggering UNIQUE constraint violations on ec_Property.ClassId/Ordinal).
+        db.ClearECDbCache();
+
+        LastErrorListener lastError(db);
+        DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
+        if (DbResult::BE_SQLITE_OK != result)
+            {
+                if (lastError.HasError()) {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
+                } else {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
+                }
+            }
+
+        // Clear caches again after import so subsequent operations see the updated schema state.
+        db.ClearECDbCache();
+        db.Elements().ClearCache();
+        db.Models().ClearCache();
+        }
+
     void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2873,6 +2934,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
+
         return array;
     }
 
@@ -3139,6 +3201,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("hasPendingTxns", &NativeDgnDb::HasPendingTxns),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
+            InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
@@ -3176,6 +3239,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("queryTextureData", &NativeDgnDb::QueryTextureData),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
+            InstanceMethod("getNextReinstateTxnRange", &NativeDgnDb::GetNextReinstateTxnRange),
             InstanceMethod("removeEmbeddedFile", &NativeDgnDb::RemoveEmbeddedFile),
             InstanceMethod("replaceEmbeddedFile", &NativeDgnDb::ReplaceEmbeddedFile),
             InstanceMethod("resetBriefcaseId", &NativeDgnDb::ResetBriefcaseId),
@@ -5063,7 +5127,8 @@ public:
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
             InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
             InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
-            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata),
+            InstanceMethod("bindParams", &NativeECSqlStatement::BindParams)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -5218,13 +5283,36 @@ public:
         if (!m_stmt.IsPrepared())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, optObj, Napi::Object::New(Env()));
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
         BeJsNapiObject out(info.Env());
         BeJsValue metaJson = out["meta"];
-        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         ECSqlRowProperty::List props;
         adaptor.GetMetaData(props, m_stmt);
         props.ToJs(metaJson);
         return out;
+    }
+
+    Napi::Value BindParams(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
+        BeJsValue args(argsObj);
+
+        Json::Value jsonArgs;
+        BeJsValue jsArgs(jsonArgs);
+        jsArgs.From(args);
+        ECSqlParams params(jsonArgs);
+        if(params.IsEmpty())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
+        std::string errMsg;
+        if(!params.TryBindTo(m_stmt, errMsg))
+            return CreateErrorObject0(false, errMsg.c_str(), info.Env());
+         return CreateErrorObject0(true, nullptr, info.Env());  
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {

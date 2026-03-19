@@ -265,6 +265,8 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     GetPragmaManager().Register(PragmaDbList::Create());
     GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
+    GetPragmaManager().Register(PragmaECSqlVersion::Create());
+    GetPragmaManager().Register(PragmaSqliteSql::Create());
     }
 
 //--------------------------------------------------------------------------------------
@@ -651,6 +653,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr)
         m_ecdb.AddFunction(*m_extractPropFunc);
 
+    m_supportInstanceQueryFunc = SupportInstanceQueryFunc::Create(m_ecdb);
+    if (m_supportInstanceQueryFunc != nullptr)
+        m_ecdb.AddFunction(*m_supportInstanceQueryFunc);
+
     m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
     if (m_xmlCAToJsonFunc != nullptr)
         m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
@@ -692,6 +698,10 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_extractPropFunc);
         m_extractPropFunc = nullptr;
+    }
+    if (m_supportInstanceQueryFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_supportInstanceQueryFunc);
+        m_supportInstanceQueryFunc = nullptr;
     }
     if (m_xmlCAToJsonFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);
