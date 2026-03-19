@@ -2599,6 +2599,7 @@ DgnDbStatus TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
         auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
         if (BE_SQLITE_OK != rc) {
             LOG.errorv("ReverseTxnRange: ApplyTxnChanges failed for txn 0x%" PRIx64 ": %s", curr.GetValue(), BeSQLiteLib::GetErrorName(rc));
+            m_dgndb.AbandonChanges();
             return DgnDbStatus::SQLiteError;
         }
     }
@@ -2761,6 +2762,7 @@ DgnDbStatus TxnManager::ReinstateTxn(TxnRange const& revTxn) {
         auto rc = ApplyTxnChanges(curr, TxnAction::Reinstate);
         if (BE_SQLITE_OK != rc) {
             LOG.errorv("ReinstateTxn: ApplyTxnChanges failed for txn 0x%" PRIx64 ": %s", curr.GetValue(), BeSQLiteLib::GetErrorName(rc));
+            m_dgndb.AbandonChanges();
             return DgnDbStatus::SQLiteError;
         }
     }
