@@ -192,6 +192,11 @@ DbResult NativeChangeSetReader::WriteToFile(Utf8String const& fileName, bool con
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult NativeChangeSetReader::Step()
     {
+    if(!IsOpen())
+        {
+        m_lastError = "step(): no changeset opened.";
+        return BE_SQLITE_ERROR;
+        }
     if (m_changes == nullptr)
         {
         m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
@@ -227,6 +232,233 @@ DbResult NativeChangeSetReader::Step()
         }
 
     return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NativeChangeSetReader::IsOpCodeAndTargetMatch(DbOpcode opcode, int target) const
+    {
+    if (!HasRow())
+        return false;
+    if (target == 0 && opcode == DbOpcode::Insert)
+        return false;
+    if (target != 0 && opcode == DbOpcode::Delete)
+        return false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetColumnValue(int col, int target, DbValue& out) const
+    {
+    if (!IsValidColumnIndex(col) || (target != 0 && target != 1))
+        {
+        m_lastError = "getColumnValue(): invalid column index or target.";
+        out = DbValue(nullptr);
+        return BE_SQLITE_ERROR;
+        }
+    if (!IsOpCodeAndTargetMatch(m_opcode, target))
+        {
+        m_lastError = "getColumnValue(): target does not match change opcode.";
+        out = DbValue(nullptr);
+        return BE_SQLITE_ERROR;
+        }
+    out = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);   
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetRow(int target, std::vector<DbValue>& out) const
+    {
+    out.clear();
+    int columnCount;
+    auto rc = GetColumnCount(columnCount);
+    if (rc != BE_SQLITE_OK)
+        {
+        m_lastError = "getRow(): unable to retrieve column count.";
+        return rc;
+        }
+
+    for (int col = 0; col < columnCount; ++col)
+        {
+        DbValue val(nullptr);
+        auto rc = GetColumnValue(col, target, val);
+        if (rc != BE_SQLITE_OK)
+            {
+            m_lastError = "getRow(): unable to retrieve column value.";
+            return rc;
+            }
+        out.push_back(val);
+        }
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetPrimaryKeys(std::vector<DbValue>& out) const
+    {
+    out.clear();
+    int columnCount;
+    auto rc = GetColumnCount(columnCount);
+    if (rc != BE_SQLITE_OK)
+        {
+        m_lastError = "getPrimaryKeys(): unable to retrieve column count.";
+        return rc;
+        }
+
+    DbOpcode opcode;
+    rc = GetOpCode(opcode);
+    if (rc != BE_SQLITE_OK)
+        {
+        m_lastError = "getPrimaryKeys(): unable to retrieve opcode.";
+        return rc;
+        }
+    
+    Byte* primaryKeyColumns = nullptr;
+    rc = GetPrimaryKeyColumns(primaryKeyColumns);
+    if (rc != BE_SQLITE_OK)        
+        {
+        m_lastError = "getPrimaryKeys(): unable to retrieve primary key column info.";
+        return rc;
+        }
+
+    for (int col = 0; col < columnCount; ++col)
+        {
+        if(primaryKeyColumns[col])
+            {
+            DbValue val(nullptr);
+            int target = (opcode == DbOpcode::Delete) ? 0 : 1;
+            auto rc = GetColumnValue(col, target, val);
+            if (rc != BE_SQLITE_OK)
+                {
+                m_lastError = "getPrimaryKeys(): unable to retrieve primary key column value.";
+                return rc;
+                }
+            out.push_back(val);
+            }
+        }
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetPrimaryKeyColumnIndexes(std::vector<uint64_t>& out) const
+    {
+    out.clear();
+    int columnCount;
+    auto rc = GetColumnCount(columnCount);
+    if (rc != BE_SQLITE_OK)
+        {
+        m_lastError = "getPrimaryKeyColumnIndexes(): unable to retrieve column count.";
+        return rc;
+        }
+    
+    Byte* primaryKeyColumns = nullptr;
+    rc = GetPrimaryKeyColumns(primaryKeyColumns);
+    if (rc != BE_SQLITE_OK)        
+        {
+        m_lastError = "getPrimaryKeyColumnIndexes(): unable to retrieve primary key column info.";
+        return rc;
+        }
+
+    for (int col = 0; col < columnCount; ++col)
+        {
+        if(primaryKeyColumns[col])
+            {
+            out.push_back(col);
+            }
+        }
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetTableName(Utf8StringR out) const 
+    { 
+    if(!HasRow())
+        {
+        m_lastError = "getTableName(): there is no current row.";
+        return BE_SQLITE_ERROR;
+        }    
+    out = m_tableName; 
+    return BE_SQLITE_OK; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetOpCode(DbOpcode& out) const 
+    { 
+    if(!HasRow())
+        {
+        m_lastError = "getOpCode(): there is no current row.";
+        return BE_SQLITE_ERROR;
+        }    
+    out = m_opcode; 
+    return BE_SQLITE_OK; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::IsIndirectChange(bool& out) const 
+    { 
+    if(!HasRow())
+        {
+        m_lastError = "isIndirectChange(): there is no current row.";
+        return BE_SQLITE_ERROR;
+        }    
+    out = m_indirect != 0; 
+    return BE_SQLITE_OK; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetColumnCount(int& out) const 
+    { 
+    if(!HasRow())
+        {
+        m_lastError = "getColumnCount(): there is no current row.";
+        return BE_SQLITE_ERROR;
+        }    
+    out = m_columnCount; 
+    return BE_SQLITE_OK; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetDdlChanges(Utf8StringR out) const 
+    { 
+    if(!HasRow())
+        {
+        m_lastError = "getDdlChanges(): there is no current row.";
+        return BE_SQLITE_ERROR;
+        }    
+    out = m_ddl; 
+    return BE_SQLITE_OK; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult NativeChangeSetReader::GetPrimaryKeyColumns(Byte* out) const 
+    { 
+    if(!HasRow())
+        {
+        m_lastError = "getPrimaryKeyColumns(): there is no current row.";
+        return BE_SQLITE_ERROR;
+        }    
+    out = m_primaryKeyColumns; 
+    return BE_SQLITE_OK; 
     }
 
 END_BENTLEY_SQLITE_NAMESPACE

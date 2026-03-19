@@ -656,9 +656,6 @@ struct NativeChangeset {
 
         Napi::Value SerializeValue(Napi::Env, DbValue&val);
         bool HasRow() { return m_changeset.HasRow(); }
-        bool IsOpen() { return m_changeset.IsOpen(); }
-        bool IsValidColumnIndex(int col) { return m_changeset.IsValidColumnIndex(col); }
-        bool IsValidPrimaryKeyColumnIndex(int col) { return m_changeset.IsValidPrimaryKeyColumnIndex(col); }
 
     public:
         NativeChangeset(){}

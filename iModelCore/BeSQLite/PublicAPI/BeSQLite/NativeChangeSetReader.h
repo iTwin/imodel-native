@@ -14,11 +14,11 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //! A reader for changeset data. Holds all changeset state and implements the core read
 //! logic. Returns raw C++ types (DbValue for column data, DbResult for operations).
 //! Has no dependency on Napi — all JS conversion is left to the caller.
-// @bsiclass
+//! @bsiclass
 //=======================================================================================
 struct NativeChangeSetReader
     {
-public:
+private:
     bool m_invert;
     Byte* m_primaryKeyColumns;
     Changes::Change m_currentChange;
@@ -33,31 +33,13 @@ public:
     Utf8CP m_tableName;
     Utf8String m_ddl;
     //! Populated with a human-readable description when a method returns an error DbResult.
-    Utf8String m_lastError;
+    mutable Utf8String m_lastError;
 
-private:
-    //! Common guard + value-fetch logic shared by all column-value accessors.
-    //! Returns DbValue(nullptr) when access is invalid, otherwise the old/new column value.
-    DbValue GetColValue(int col, int target) const
-        {
-        if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1))
-            return DbValue(nullptr);
-        if (target == 0 && m_opcode == DbOpcode::Insert)
-            return DbValue(nullptr);
-        if (target != 0 && m_opcode == DbOpcode::Delete)
-            return DbValue(nullptr);
-        return target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
-        }
-
-public:
-    bool HasRow() const { return IsOpen() && m_currentChange.IsValid(); }
-    bool IsOpen() const { return m_changeStream != nullptr; }
     bool IsValidColumnIndex(int col) const { return HasRow() && (col >= 0 && col < m_columnCount); }
-    bool IsValidPrimaryKeyColumnIndex(int col) const { return HasRow() && (col >= 0 && col < m_primaryKeyColumnCount); }
-
-    NativeChangeSetReader() : m_invert(false), m_primaryKeyColumns(nullptr), m_currentChange(nullptr, false),
-        m_opcode(DbOpcode::Insert), m_columnCount(0), m_indirect(0), m_primaryKeyColumnCount(0),
-        m_primaryKeyCount(0), m_tableName(nullptr) {}
+    bool IsOpCodeAndTargetMatch(DbOpcode opcode, int target) const;
+    bool IsOpen() const { return m_changeStream != nullptr; }
+public:
+    NativeChangeSetReader() : m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false) {}
 
     //! Open a changeset from a file on disk.
     //! @return BE_SQLITE_OK on success; sets m_lastError and returns an error code on failure.
@@ -88,25 +70,36 @@ public:
 
     // --- Accessors (only valid after a successful Step() returning BE_SQLITE_ROW) ---
 
-    Utf8CP         GetTableName()      const { return m_tableName; }
-    DbOpcode       GetOpCode()         const { return m_opcode; }
-    bool           IsIndirectChange()  const { return m_indirect != 0; }
-    int            GetColumnCount()    const { return m_columnCount; }
-    bool           GetHasRow()         const { return HasRow(); }
-    Utf8StringCR   GetDdlChanges()     const { return m_ddl; }
+    //! Get the name of the table affected by the current change row.
+    BE_SQLITE_EXPORT DbResult GetTableName(Utf8StringR out) const;
+    //! Get the opcode (Insert/Update/Delete) of the current change row.
+    BE_SQLITE_EXPORT DbResult GetOpCode(DbOpcode& out) const;
+    //! Returns true if the current change row is an indirect (cascaded) change.
+    BE_SQLITE_EXPORT DbResult IsIndirectChange(bool& out) const;
+    //! Get the number of columns in the table affected by the current change row.
+    BE_SQLITE_EXPORT DbResult GetColumnCount(int& out) const;
+    //! Get the accumulated DDL (schema) changes recorded in the changeset.
+    BE_SQLITE_EXPORT DbResult GetDdlChanges(Utf8StringR out) const;
+    //! Get a pointer to the primary-key column bitmap for the current change row.
+    BE_SQLITE_EXPORT DbResult GetPrimaryKeyColumns(Byte* out) const;
+    //! Returns the last error message set by any method.
+    BE_SQLITE_EXPORT Utf8StringCR GetLastError() const { return m_lastError; }
+    //! Returns true if there is a current change row available.
+    BE_SQLITE_EXPORT bool HasRow() const { return IsOpen() && m_currentChange.IsValid(); }
+
 
     // --- Column value accessors ---
-    // All return DbValue(nullptr) when the access is invalid (wrong opcode for target,
-    // out-of-range column, or no current row). Otherwise returns the raw sqlite value.
+    //! Get the old (target==0) or new (target==1) value for a column in the current change row.
+    //! Returns BE_SQLITE_ERROR when the access is invalid (wrong opcode for target,
+    //! out-of-range column, or no current row).
 
-    DbValue GetColumnValue(int col, int target)        const { return GetColValue(col, target); }
-    DbValue GetColumnValueType(int col, int target)    const { return GetColValue(col, target); }
-    DbValue GetColumnValueId(int col, int target)      const { return GetColValue(col, target); }
-    DbValue GetColumnValueInteger(int col, int target) const { return GetColValue(col, target); }
-    DbValue GetColumnValueDouble(int col, int target)  const { return GetColValue(col, target); }
-    DbValue GetColumnValueText(int col, int target)    const { return GetColValue(col, target); }
-    DbValue GetColumnValueBinary(int col, int target)  const { return GetColValue(col, target); }
-    DbValue IsColumnValueNull(int col, int target)     const { return GetColValue(col, target); }
+    BE_SQLITE_EXPORT DbResult GetColumnValue(int col, int target, DbValue& out) const;
+    //! Get all old (target==0) or new (target==1) column values for the current change row.
+    BE_SQLITE_EXPORT DbResult GetRow(int target, std::vector<DbValue>& out) const;
+    //! Get the primary-key column values for the current change row.
+    BE_SQLITE_EXPORT DbResult GetPrimaryKeys(std::vector<DbValue>& out) const;
+    //! Get the 0-based column indexes that form the primary key for the current change row.
+    BE_SQLITE_EXPORT DbResult GetPrimaryKeyColumnIndexes(std::vector<uint64_t>& out) const;
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
