@@ -4663,7 +4663,7 @@ void SnappyToBlob::Finish()
     if (m_chunks.size() <= m_currChunk)
         m_chunks.push_back(new SnappyChunk((uint32_t) snappy::MaxCompressedLength(m_rawSize)));
 
-    unsigned int compressedBytes;
+    size_t compressedBytes;
     snappy::RawCompress((char const*) m_rawBuf, m_rawCurr, (char*) &m_chunks[m_currChunk]->m_data[1], &compressedBytes);
     BeAssert((compressedBytes+2) < 64*1024);
     m_chunks[m_currChunk]->m_data[0] = (uint16_t) compressedBytes + 2; // add 2 because compressed data starts 2 bytes into buffer

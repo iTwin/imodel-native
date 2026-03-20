@@ -2587,7 +2587,7 @@ void TxnManager::OnEndApplyChanges() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
+DgnDbStatus TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -2595,8 +2595,14 @@ void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
     if (HasChanges())
         m_dgndb.AbandonChanges();
 
-    for (TxnId curr = QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr = QueryPreviousTxnId(curr))
-        ApplyTxnChanges(curr, TxnAction::Reverse);
+    for (TxnId curr = QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr = QueryPreviousTxnId(curr)) {
+        auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
+        if (BE_SQLITE_OK != rc) {
+            LOG.errorv("ReverseTxnRange: ApplyTxnChanges failed for txn 0x%" PRIx64 ": %s", curr.GetValue(), BeSQLiteLib::GetErrorName(rc));
+            m_dgndb.AbandonChanges();
+            return DgnDbStatus::SQLiteError;
+        }
+    }
 
     BeAssert(!HasChanges());
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
@@ -2605,6 +2611,7 @@ void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
 
     // save in reversed Txns list
     m_reversedTxn.push_back(txnRange);
+    return DgnDbStatus::Success;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2648,7 +2655,9 @@ DgnDbStatus TxnManager::ReverseActions(TxnRange const& txnRange) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
-    ReverseTxnRange(txnRange); // do the actual undo now.
+    auto status = ReverseTxnRange(txnRange); // do the actual undo now.
+    if (DgnDbStatus::Success != status)
+        return status;
 
     while (GetCurrentTxnId() < GetMultiTxnOperationStart())
         EndMultiTxnOperation();
@@ -2737,7 +2746,7 @@ void TxnManager::ReplayExternalTxns(TxnId from) {
 * Reinstate ("redo") a range of transactions.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReinstateTxn(TxnRange const& revTxn) {
+DgnDbStatus TxnManager::ReinstateTxn(TxnRange const& revTxn) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -2749,13 +2758,20 @@ void TxnManager::ReinstateTxn(TxnRange const& revTxn) {
         m_dgndb.AbandonChanges();
 
     TxnId last = QueryPreviousTxnId(revTxn.GetLast());
-    for (TxnId curr = revTxn.GetFirst(); curr.IsValid() && curr <= last; curr = QueryNextTxnId(curr))
-        ApplyTxnChanges(curr, TxnAction::Reinstate);
+    for (TxnId curr = revTxn.GetFirst(); curr.IsValid() && curr <= last; curr = QueryNextTxnId(curr)) {
+        auto rc = ApplyTxnChanges(curr, TxnAction::Reinstate);
+        if (BE_SQLITE_OK != rc) {
+            LOG.errorv("ReinstateTxn: ApplyTxnChanges failed for txn 0x%" PRIx64 ": %s", curr.GetValue(), BeSQLiteLib::GetErrorName(rc));
+            m_dgndb.AbandonChanges();
+            return DgnDbStatus::SQLiteError;
+        }
+    }
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     m_curr = revTxn.GetLast();
     m_reversedTxn.pop_back();
+    return DgnDbStatus::Success;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -2766,7 +2782,9 @@ DgnDbStatus TxnManager::ReinstateActions(TxnRange const& revTxn) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
-    ReinstateTxn(revTxn); // do the actual redo now.
+    auto status = ReinstateTxn(revTxn); // do the actual redo now.
+    if (DgnDbStatus::Success != status)
+        return status;
 
     OnUndoRedo(TxnAction::Reinstate);
     return DgnDbStatus::Success;
