@@ -521,6 +521,7 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
         case SolidPrimitiveType_DgnBox:
             {
             DgnBoxDetail detail;
+            memset (&detail, 0, sizeof (detail));
             if (parent.TryGetDgnBoxDetail (detail))
                 {
                 auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
@@ -535,6 +536,7 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
         case SolidPrimitiveType_DgnCone:
             {
             DgnConeDetail detail;
+            memset (&detail, 0, sizeof (detail));
             if (parent.TryGetDgnConeDetail (detail))
                 {
                 auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
@@ -549,6 +551,7 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
         case SolidPrimitiveType_DgnTorusPipe:
             {
             DgnTorusPipeDetail detail;
+            memset (&detail, 0, sizeof (detail));
             if (parent.TryGetDgnTorusPipeDetail (detail))
                 {
                 auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
@@ -563,6 +566,7 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
         case SolidPrimitiveType_DgnSphere:
             {
             DgnSphereDetail detail;
+            memset (&detail, 0, sizeof (detail));
             if (parent.TryGetDgnSphereDetail (detail))
                 {
                 auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
