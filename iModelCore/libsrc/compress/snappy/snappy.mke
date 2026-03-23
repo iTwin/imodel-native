@@ -36,7 +36,11 @@ always:
 MultiCompileDepends     = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)snappy$(oext)                   : $(baseDir)snappy.cpp ${MultiCompileDepends}
+$(o)snappy$(oext) : $(baseDir)snappy.cpp ${MultiCompileDepends}
+
+$(o)snappy-sinksource$(oext) : $(baseDir)snappy-sinksource.cpp ${MultiCompileDepends}
+
+$(o)snappy-stubs-internal$(oext) : $(baseDir)snappy-stubs-internal.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
