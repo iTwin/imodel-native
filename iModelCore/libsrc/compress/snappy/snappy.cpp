@@ -2646,3 +2646,7 @@ bool Uncompress(Source* compressed, Sink* uncompressed) {
 }
 
 }  // namespace snappy
+
+// Bentley: fold additional compilation units into single TU for bmake compatibility
+#include "snappy-sinksource.cpp"
+#include "snappy-stubs-internal.cpp"
