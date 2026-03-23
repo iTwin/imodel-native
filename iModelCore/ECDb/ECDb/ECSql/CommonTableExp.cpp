@@ -117,11 +117,12 @@ ECSqlTypeInfo CommonTableBlockExp::FindType (Utf8StringCR col) const {
     auto it = std::find(m_columnList.begin(), m_columnList.end(), col);
     if (it != m_columnList.end()) {
         auto columnIdx = std::distance(m_columnList.begin(), it);
-        auto singleStmtExp = GetQuery()->GetFlatListOfStatements();
+        std::vector<SingleSelectStatementExp const*> const& singleStmtExp = GetQuery()->GetFlatListOfStatements();
         for (auto stmtIdx = 0; stmtIdx < singleStmtExp.size(); ++stmtIdx) {
+            BeAssert(singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(columnIdx) != nullptr && "Programmer Error: All the select statements in the compound statement are expected to have the same number of columns in their select clause");
             auto typeInfo = singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(columnIdx)->GetExpression()->GetTypeInfo();
             // try to find non-null type info
-            if (resolvedTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset || resolvedTypeInfo.IsNull() && !typeInfo.IsNull()) {
+            if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !typeInfo.IsNull()) {
                 resolvedTypeInfo = typeInfo;
             }
         }

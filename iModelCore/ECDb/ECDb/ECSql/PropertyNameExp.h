@@ -64,6 +64,7 @@ struct PropertyNameExp final : ValueExp
         void SetClassRefExp(RangeClassRefExp const& classRefExp);
         void SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
         void SetVirtualProperty(ECN::ECPropertyCR property) { m_property = &property; }
+        ECSqlTypeInfo GetTypeInfoFromPropertyRef() const;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;

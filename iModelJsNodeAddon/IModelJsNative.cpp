@@ -676,6 +676,7 @@ public:
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
+            InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
 
@@ -1504,6 +1505,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
         return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseTxns(numTxns));
     }
+    Napi::Value GetNextReinstateTxnRange(NapiInfoCR info) {
+        auto& txns = GetOpenedDb(info).Txns();
+        auto range = txns.GetNextReinstateTxnRange();
+        BeJsNapiObject jsRange(Env());
+        jsRange["firstTxnId"] = TxnIdToString(range.GetFirst());
+        jsRange["lastTxnId"] = TxnIdToString(range.GetLast());
+        return jsRange;
+    }
+
     Napi::Value ClassNameToId(NapiInfoCR info) {
         auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(info[0], GetOpenedDb(info).GetClassLocater());
         return toJsString(Env(), classId);
@@ -3229,6 +3239,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("queryTextureData", &NativeDgnDb::QueryTextureData),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
+            InstanceMethod("getNextReinstateTxnRange", &NativeDgnDb::GetNextReinstateTxnRange),
             InstanceMethod("removeEmbeddedFile", &NativeDgnDb::RemoveEmbeddedFile),
             InstanceMethod("replaceEmbeddedFile", &NativeDgnDb::ReplaceEmbeddedFile),
             InstanceMethod("resetBriefcaseId", &NativeDgnDb::ResetBriefcaseId),
@@ -5116,7 +5127,8 @@ public:
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
             InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
             InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
-            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata),
+            InstanceMethod("bindParams", &NativeECSqlStatement::BindParams)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -5271,13 +5283,36 @@ public:
         if (!m_stmt.IsPrepared())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, optObj, Napi::Object::New(Env()));
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
         BeJsNapiObject out(info.Env());
         BeJsValue metaJson = out["meta"];
-        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         ECSqlRowProperty::List props;
         adaptor.GetMetaData(props, m_stmt);
         props.ToJs(metaJson);
         return out;
+    }
+
+    Napi::Value BindParams(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
+        BeJsValue args(argsObj);
+
+        Json::Value jsonArgs;
+        BeJsValue jsArgs(jsonArgs);
+        jsArgs.From(args);
+        ECSqlParams params(jsonArgs);
+        if(params.IsEmpty())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no parameters to bind", IModelJsNativeErrorKey::BadArg);
+        std::string errMsg;
+        if(!params.TryBindTo(m_stmt, errMsg))
+            return CreateErrorObject0(false, errMsg.c_str(), info.Env());
+         return CreateErrorObject0(true, nullptr, info.Env());  
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
