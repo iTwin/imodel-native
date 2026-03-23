@@ -114,11 +114,11 @@ $(o)cshutdn$(oext) : $(BeCurlLibDir)cshutdn.c ${MultiCompileDepends}
 
 $(o)curl_addrinfo$(oext) : $(BeCurlLibDir)curl_addrinfo.c ${MultiCompileDepends}
 
-$(o)curl_des$(oext) : $(BeCurlLibDir)curl_des.c ${MultiCompileDepends}
-
 $(o)curl_endian$(oext) : $(BeCurlLibDir)curl_endian.c ${MultiCompileDepends}
 
 $(o)curl_fnmatch$(oext) : $(BeCurlLibDir)curl_fnmatch.c ${MultiCompileDepends}
+
+$(o)curl_fopen$(oext) : $(BeCurlLibDir)curl_fopen.c ${MultiCompileDepends}
 
 $(o)curl_gethostname$(oext) : $(BeCurlLibDir)curl_gethostname.c ${MultiCompileDepends}
 
@@ -132,7 +132,7 @@ $(o)curl_ntlm_core$(oext) : $(BeCurlLibDir)curl_ntlm_core.c ${MultiCompileDepend
 
 $(o)cw-out$(oext) : $(BeCurlLibDir)cw-out.c ${MultiCompileDepends}
 
-$(o)cw-out$(oext) : $(BeCurlLibDir)cw-pause.c ${MultiCompileDepends}
+$(o)cw-pause$(oext) : $(BeCurlLibDir)cw-pause.c ${MultiCompileDepends}
 
 $(o)curl_rtmp$(oext) : $(BeCurlLibDir)curl_rtmp.c ${MultiCompileDepends}
 
@@ -156,6 +156,10 @@ $(o)dllmain$(oext) : $(BeCurlLibDir)dllmain.c ${MultiCompileDepends}
 
 $(o)easy$(oext) : $(BeCurlLibDir)easy.c ${MultiCompileDepends}
 
+$(o)easygetopt$(oext) : $(BeCurlLibDir)easygetopt.c ${MultiCompileDepends}
+
+$(o)easyoptions$(oext) : $(BeCurlLibDir)easyoptions.c ${MultiCompileDepends}
+
 $(o)escape$(oext) : $(BeCurlLibDir)escape.c ${MultiCompileDepends}
 
 $(o)fake_addrinfo$(oext) : $(BeCurlLibDir)fake_addrinfo.c ${MultiCompileDepends}
@@ -163,8 +167,6 @@ $(o)fake_addrinfo$(oext) : $(BeCurlLibDir)fake_addrinfo.c ${MultiCompileDepends}
 $(o)file$(oext) : $(BeCurlLibDir)file.c ${MultiCompileDepends}
 
 $(o)fileinfo$(oext) : $(BeCurlLibDir)fileinfo.c ${MultiCompileDepends}
-
-$(o)fopen$(oext) : $(BeCurlLibDir)fopen.c ${MultiCompileDepends}
 
 $(o)formdata$(oext) : $(BeCurlLibDir)formdata.c ${MultiCompileDepends}
 
@@ -218,8 +220,6 @@ $(o)if2ip$(oext) : $(BeCurlLibDir)if2ip.c ${MultiCompileDepends}
 
 $(o)imap$(oext) : $(BeCurlLibDir)imap.c ${MultiCompileDepends}
 
-$(o)krb5$(oext) : $(BeCurlLibDir)krb5.c ${MultiCompileDepends}
-
 $(o)ldap$(oext) : $(BeCurlLibDir)ldap.c ${MultiCompileDepends}
 
 $(o)llist$(oext) : $(BeCurlLibDir)llist.c ${MultiCompileDepends}
@@ -236,6 +236,8 @@ $(o)mprintf$(oext) : $(BeCurlLibDir)mprintf.c ${MultiCompileDepends}
 
 $(o)multi$(oext) : $(BeCurlLibDir)multi.c ${MultiCompileDepends}
 
+$(o)multi_ntfy$(oext) : $(BeCurlLibDir)multi_ntfy.c ${MultiCompileDepends}
+
 $(o)netrc$(oext) : $(BeCurlLibDir)netrc.c ${MultiCompileDepends}
 
 $(o)noproxy$(oext) : $(BeCurlLibDir)noproxy.c ${MultiCompileDepends}
@@ -250,7 +252,11 @@ $(o)pop3$(oext) : $(BeCurlLibDir)pop3.c ${MultiCompileDepends}
 
 $(o)progress$(oext) : $(BeCurlLibDir)progress.c ${MultiCompileDepends}
 
+$(o)psl$(oext) : $(BeCurlLibDir)psl.c ${MultiCompileDepends}
+
 $(o)rand$(oext) : $(BeCurlLibDir)rand.c ${MultiCompileDepends}
+
+$(o)ratelimit$(oext) : $(BeCurlLibDir)ratelimit.c ${MultiCompileDepends}
 
 $(o)request$(oext) : $(BeCurlLibDir)request.c ${MultiCompileDepends}
 
@@ -260,7 +266,7 @@ $(o)select$(oext) : $(BeCurlLibDir)select.c ${MultiCompileDepends}
 
 $(o)sendf$(oext) : $(BeCurlLibDir)sendf.c ${MultiCompileDepends}
 
-$(o)share$(oext) : $(BeCurlLibDir)share.c ${MultiCompileDepends}
+$(o)curl_share$(oext) : $(BeCurlLibDir)curl_share.c ${MultiCompileDepends}
 
 $(o)slist$(oext) : $(BeCurlLibDir)slist.c ${MultiCompileDepends}
 
@@ -274,13 +280,9 @@ $(o)socks_gssapi$(oext) : $(BeCurlLibDir)socks_gssapi.c ${MultiCompileDepends}
 
 $(o)socks_sspi$(oext) : $(BeCurlLibDir)socks_sspi.c ${MultiCompileDepends}
 
-$(o)speedcheck$(oext) : $(BeCurlLibDir)speedcheck.c ${MultiCompileDepends}
-
 $(o)splay$(oext) : $(BeCurlLibDir)splay.c ${MultiCompileDepends}
 
 $(o)strcase$(oext) : $(BeCurlLibDir)strcase.c ${MultiCompileDepends}
-
-$(o)strdup$(oext) : $(BeCurlLibDir)strdup.c ${MultiCompileDepends}
 
 $(o)strerror$(oext) : $(BeCurlLibDir)strerror.c ${MultiCompileDepends}
 
@@ -310,7 +312,11 @@ $(o)version$(oext) : $(BeCurlLibDir)version.c ${MultiCompileDepends}
 
 $(o)base64$(oext) : $(BeCurlLibDir)curlx/base64.c ${MultiCompileDepends}
 
+$(o)curlx_basename$(oext) : $(BeCurlLibDir)curlx/basename.c ${MultiCompileDepends}
+
 $(o)dynbuf$(oext) : $(BeCurlLibDir)curlx/dynbuf.c ${MultiCompileDepends}
+
+$(o)curlx_fopen$(oext) : $(BeCurlLibDir)curlx/fopen.c ${MultiCompileDepends}
 
 $(o)inet_pton$(oext) : $(BeCurlLibDir)curlx/inet_pton.c ${MultiCompileDepends}
 
@@ -319,6 +325,14 @@ $(o)multibyte$(oext) : $(BeCurlLibDir)curlx/multibyte.c ${MultiCompileDepends}
 $(o)inet_ntop$(oext) : $(BeCurlLibDir)curlx/inet_ntop.c ${MultiCompileDepends}
 
 $(o)nonblock$(oext) : $(BeCurlLibDir)curlx/nonblock.c ${MultiCompileDepends}
+
+$(o)curlx_snprintf$(oext) : $(BeCurlLibDir)curlx/snprintf.c ${MultiCompileDepends}
+
+$(o)curlx_strcopy$(oext) : $(BeCurlLibDir)curlx/strcopy.c ${MultiCompileDepends}
+
+$(o)curlx_strdup$(oext) : $(BeCurlLibDir)curlx/strdup.c ${MultiCompileDepends}
+
+$(o)curlx_strerr$(oext) : $(BeCurlLibDir)curlx/strerr.c ${MultiCompileDepends}
 
 $(o)strparse$(oext) : $(BeCurlLibDir)curlx/strparse.c ${MultiCompileDepends}
 
@@ -360,6 +374,8 @@ $(o)spnego_sspi$(oext) : $(BeCurlLibDir)vauth/spnego_sspi.c ${MultiCompileDepend
 
 $(o)vauth$(oext) : $(BeCurlLibDir)vauth/vauth.c ${MultiCompileDepends}
 
+$(o)apple$(oext) : $(BeCurlLibDir)vtls/apple.c ${MultiCompileDepends}
+
 $(o)gtls$(oext) : $(BeCurlLibDir)vtls/gtls.c ${MultiCompileDepends}
 
 $(o)hostcheck$(oext) : $(BeCurlLibDir)vtls/hostcheck.c ${MultiCompileDepends}
@@ -390,15 +406,11 @@ $(o)setopt$(oext) : $(BeCurlLibDir)setopt.c ${MultiCompileDepends}
 
 $(o)sha256$(oext) : $(BeCurlLibDir)sha256.c ${MultiCompileDepends}
 
-$(o)curl_path$(oext) : $(BeCurlLibDir)vssh/curl_path.c ${MultiCompileDepends}
-
 $(o)curl_range$(oext) : $(BeCurlLibDir)curl_range.c ${MultiCompileDepends}
 
 $(o)schannel_verify$(oext) : $(BeCurlLibDir)vtls/schannel_verify.c ${MultiCompileDepends}
 
 $(o)socketpair$(oext) : $(BeCurlLibDir)socketpair.c ${MultiCompileDepends}
-
-$(o)rename$(oext) : $(BeCurlLibDir)rename.c ${MultiCompileDepends}
 
 $(o)ws$(oext) : $(BeCurlLibDir)ws.c ${MultiCompileDepends}
 
@@ -408,9 +420,17 @@ $(o)keylog$(oext) : $(BeCurlLibDir)vtls/keylog.c ${MultiCompileDepends}
 
 $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
-$(o)curl_osslq$(oext) : $(BeCurlLibDir)vquic/curl_osslq.c ${MultiCompileDepends}
+$(o)curl_ngtcp2$(oext) : $(BeCurlLibDir)vquic/curl_ngtcp2.c ${MultiCompileDepends}
+
+$(o)curl_quiche$(oext) : $(BeCurlLibDir)vquic/curl_quiche.c ${MultiCompileDepends}
 
 $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
+
+$(o)libssh$(oext) : $(BeCurlLibDir)vssh/libssh.c ${MultiCompileDepends}
+
+$(o)libssh2$(oext) : $(BeCurlLibDir)vssh/libssh2.c ${MultiCompileDepends}
+
+$(o)vssh$(oext) : $(BeCurlLibDir)vssh/vssh.c ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
 
