@@ -32,7 +32,7 @@ use warnings;
 sub checkcmd {
     my ($cmd)=@_;
     my @paths;
-    if ($^O eq 'MSWin32' || $^O eq 'dos' || $^O eq 'os2') {
+    if($^O eq 'MSWin32' || $^O eq 'dos' || $^O eq 'os2') {
         # PATH separator is different
         @paths=(split(';', $ENV{'PATH'}));
     }
@@ -41,7 +41,7 @@ sub checkcmd {
                 "/sbin", "/usr/bin", "/usr/local/bin");
     }
     for(@paths) {
-        if( -x "$_/$cmd" && ! -d "$_/$cmd" ) {
+        if(-x "$_/$cmd" && ! -d "$_/$cmd") {
             # executable bit but not a directory!
             return "$_/$cmd";
         }
@@ -64,7 +64,7 @@ open(F, "git ls-files '*.c'|");
 while(<F>) {
     chomp $_;
     my $file = $_;
-    # we can't filter these with git so do it here
+    # we cannot filter these with git so do it here
     if($file =~ /^(lib|src)/) {
         push @files, $file;
     }
@@ -75,39 +75,42 @@ my @output=`$cmd`;
 
 # these functions can have these scores, but not higher
 my %whitelist = (
-    'getparameter' => 142
+
     );
 
-# functions with complexity above this level causes the function to return error
-my $cutoff = 100;
+# complexity above this level is treated as an error and contributes to the
+# script's exit code
+my $cutoff = 60;
 
-# functions above this complexity level are shown
-my $show = 70;
+# show this many from the top
+my $top = $ARGV[0] ? $ARGV[0] : 25;
 
 my $error = 0;
 my %where;
 my %perm;
+my $allscore = 0;
+my $alllines = 0;
 # each line starts with the complexity score
 # 142     417     809     1677    1305    src/tool_getparam.c(1677): getparameter
 for my $l (@output) {
     chomp $l;
-    if($l =~/^(\d+)\t\d+\t\d+\t\d+\t\d+\t([^\(]+).*: ([^ ]*)/) {
-        my ($score, $path, $func)=($1, $2, $3);
+    if($l =~/^(\d+)\t\d+\t\d+\t\d+\t(\d+)\t([^\(]+).*: ([^ ]*)/) {
+        my ($score, $len, $path, $func)=($1, $2, $3, $4);
 
-        if($score > $show) {
-            my $allow = 0;
-            if($whitelist{$func} &&
-               ($score <= $whitelist{$func})) {
-                $allow = 1;
-            }
-            $where{"$path:$func"}=$score;
-            $perm{"$path:$func"}=$allow;
-            if(($score > $cutoff) && !$allow) {
-                $error++;
-            }
+        my $allow = 0;
+        if($whitelist{$func} &&
+           ($score <= $whitelist{$func})) {
+            $allow = 1;
         }
-    }
+        $where{"$path:$func"}=$score;
+        $perm{"$path:$func"}=$allow;
+        if(($score > $cutoff) && !$allow) {
+            $error++;
+        }
 
+        $alllines += $len;
+        $allscore += ($len * $score);
+    }
 }
 
 my $showncutoff;
@@ -118,7 +121,12 @@ for my $e (sort {$where{$b} <=> $where{$a}} keys %where) {
         $showncutoff = 1;
     }
     printf "%-5d %s%s\n", $where{$e}, $e,
-        $perm{$e} ? " [ALLOWED]": "";
+        $perm{$e} ? " [ALLOWED]" : "";
+    if(!--$top) {
+        last;
+    }
 }
+
+printf "\nAverage complexity: %.2f\n", $allscore / $alllines;
 
 exit $error;
