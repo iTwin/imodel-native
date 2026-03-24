@@ -6,7 +6,7 @@ description: Expert reference for the BentleyBuild (`bb`) system used in the imo
 # Bentley Build System (BentleyBuild / bb)
 
 **`bb`** = `python src/BentleyBuild/BentleyBuild.py`  
-Set by `source env.sh` (Unix) or `call env.bat` (Windows), or invoke Python directly.
+Set required environment variables, then invoke Python directly.
 
 ---
 
@@ -19,23 +19,25 @@ Set by `source env.sh` (Unix) or `call env.bat` (Windows), or invoke Python dire
 | `SrcRoot` | `<workspace>/src/` | Trailing slash required |
 | `OutRoot` | `<workspace>/out/debug/` (Unix) · `<workspace>\outd\` (Win) | |
 | `BuildStrategy` | `iModelConsole` | See strategies below |
-| `BuildArchitecture` | `macosarm64` (Mac) · `x64` (Win/Linux) | |
+| `BuildArchitecture` | `macosarm64` (Mac) · `x64` (Win) `linuxx64` (Linux)| |
 | `BB_PRIMARY_REPO` | `imodel-native-internal` | |
 | `DEBUG` | `1` | Debug build; use `NDEBUG=1` for release |
 | `BSI` | `1` | **Required.** Enables `InternalPlatformSetup.mki` which defines `sharedMki`, `BuildContextPublicApiDir`, `LinkFirstDepToFirstTarget`. Without it builds silently misfire or fail with `can't open include file linkLibrary.mki`. |
 | `imodeljsDir` | `<workspace>/itwinjs-core` | Addon builds only |
 
-### Unix/macOS quick setup
+### Quick setup (Unix/macOS)
 
 ```bash
-cd <workspace-root>
-source env.sh           # iModelConsole debug
-source env-addon.sh     # iModelJsNodeAddon debug
-source env-release.sh   # iModelConsole release
-source env-addon-rel.sh # iModelJsNodeAddon release
+export SrcRoot="<workspace>/src/"
+export OutRoot="<workspace>/out/debug/"
+export BuildStrategy="iModelConsole"
+export BuildArchitecture="macosarm64"   # or macosx64, linuxx64
+export BB_PRIMARY_REPO="imodel-native-internal"
+export DEBUG="1"                        # use NDEBUG=1 for release
+export BSI="1"
 ```
 
-### Windows (PowerShell)
+### Quick setup (Windows PowerShell)
 
 ```powershell
 $env:SrcRoot = "<workspace>\src\"; $env:OutRoot = "<workspace>\outd\"
@@ -272,14 +274,14 @@ iModelJsNodeAddonPRG
 | `BSI=1` not set | Set `BSI=1`. Without it `sharedMki`, `BuildContextPublicApiDir`, `LinkFirstDepToFirstTarget` are undefined — silent failures or `can't open include file linkLibrary.mki`. |
 | Static binding file missing after broken run | Prior run without `BSI=1` left stale `.log` files in `outd\<arch>\static\BuildContexts\<Part>\Logs\`. Delete them and re-run with `BSI=1`. |
 | GeomLibs prewire: `cannot create link ... already exists` | Prior run without `BSI=1` wrote a relative symlink into source. Set `BSI=1` so `BuildContextPublicApiDir` resolves to `outd`. |
-| `Error: SrcRoot needs to be specified` | Source `env.sh` or set `SrcRoot` env var. |
+| `Error: SrcRoot needs to be specified` | Set `SrcRoot` env var (with trailing slash). |
 | Part uses LKG instead of source | Add `<PartStrategy PartFile="X" PartName="*" BuildFromSource="Once"/>`. |
 | Toolset error / BootStrapToolset fails | Run `bb troubleshoot`; delete `outd\Winx64\ToolSetEnv.mki` to force regeneration. |
 | Architecture mismatch | Check `BuildArchitecture`; use `-a` to override. |
 | Stale PCH | Delete `<OutRoot>/<arch>/build/<Part>/*.pch` and rebuild. |
 | Stale MultiCompile markers | Delete `*.o`, `*.time`, `*.opt`, `*.rsp` in `<OutRoot>/<arch>/build/<Part>/`. |
 | Symlink conflict (`cacert.pem already linked to...`) | `rm -f <OutRoot>/<arch>/BuildContexts/<Part>/SubParts/Files/<file>` |
-| Node addon not loading | Set `imodeljsDir` to `itwinjs-core`; use `env-addon.sh`. |
+| Node addon not loading | Set `imodeljsDir` to `itwinjs-core` and ensure addon strategy/paths are correct. |
 | Strategy cache stale | Delete `src/bbcache/strategy.cache`. |
 | `Cannot find Part <X>` | Grep `Part Name=` in the PartFile.xml to confirm exact name. |
 
