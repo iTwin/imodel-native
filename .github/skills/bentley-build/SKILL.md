@@ -283,7 +283,7 @@ iModelJsNodeAddonPRG
 | Symlink conflict (`cacert.pem already linked to...`) | `rm -f <OutRoot>/<arch>/BuildContexts/<Part>/SubParts/Files/<file>` |
 | Node addon not loading | Set `imodeljsDir` to `itwinjs-core` and ensure addon strategy/paths are correct. |
 | Strategy cache stale | Delete `src/bbcache/strategy.cache`. |
-| `Cannot find Part <X>` | Grep `Part Name=` in the PartFile.xml to confirm exact name. |
+| `Cannot find Part <X>` | Grep `<Part Name=` in the PartFile.xml to confirm exact name. |
 
 ### macOS/Linux pitfalls
 
