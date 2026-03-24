@@ -408,6 +408,8 @@ $(o)InstanceWriterImpl$(oext):                                $(baseDir)Instance
 
 $(o)InstanceRepository$(oext):                                $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)RuntimeSchemaWriter$(oext):                               $(baseDir)RuntimeSchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =

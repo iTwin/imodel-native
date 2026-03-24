@@ -534,8 +534,22 @@ Utf8CP PragmaResult::Field::_GetText() const {
     return row == nullptr ? NoopECSqlValue::GetSingleton().GetText() : row->operator[](m_columnIndex).asCString();
 }
 
-// unsupported value type
-void const* PragmaResult::Field::_GetBlob(int* blobSize) const { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
+// Binary value support - decodes base64 from the BeJsDocument row into a persistent buffer
+void const* PragmaResult::Field::_GetBlob(int* blobSize) const {
+    BeMutexHolder lock(m_result.GetMutex());
+    auto row = m_result._CurrentRow();
+    if (row == nullptr || row->operator[](m_columnIndex).isNull()) {
+        if (blobSize) *blobSize = 0;
+        return nullptr;
+    }
+    m_blobBuffer.clear();
+    if (row->operator[](m_columnIndex).GetBinary(m_blobBuffer) != SUCCESS) {
+        if (blobSize) *blobSize = 0;
+        return nullptr;
+    }
+    if (blobSize) *blobSize = (int)m_blobBuffer.size();
+    return m_blobBuffer.data();
+}
 uint64_t PragmaResult::Field::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const{ return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
 double PragmaResult::Field::_GetDateTimeJulianDays(DateTime::Info& metadata) const { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }
 DPoint2d PragmaResult::Field::_GetPoint2d() const { return NoopECSqlValue::GetSingleton().GetPoint2d(); }

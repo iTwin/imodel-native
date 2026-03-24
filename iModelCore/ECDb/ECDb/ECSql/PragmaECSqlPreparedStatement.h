@@ -23,6 +23,7 @@ struct PragmaResult : NonCopyableClass{
                 ECSqlColumnInfo m_ecsqlColumnInfo;
                 PragmaResult& m_result;
                 int m_columnIndex;
+                mutable bvector<Byte> m_blobBuffer; // persistent buffer for _GetBlob() results
                 ECSqlColumnInfoCR _GetColumnInfo() const override { return m_ecsqlColumnInfo; }
                 bool _IsNull() const override;
                 bool _GetBoolean() const override;
