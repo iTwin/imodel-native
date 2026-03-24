@@ -35,11 +35,15 @@
 #endif
 
 #include <ConditionalMacros.h>
+#if TYPE_LONGLONG
+#define HAVE_LONGLONG           1
+#endif
 
 /* Define if you want the built-in manual */
 #define USE_MANUAL              1
 
 #define HAVE_NETINET_IN_H       1
+#define HAVE_SYS_SOCKET_H       1
 #define HAVE_NETDB_H            1
 #define HAVE_ARPA_INET_H        1
 #define HAVE_UNISTD_H           1
@@ -47,7 +51,9 @@
 #define HAVE_SYS_TYPES_H        1
 #define HAVE_GETTIMEOFDAY       1
 #define HAVE_FCNTL_H            1
+#define HAVE_SYS_STAT_H         1
 #define HAVE_UTIME_H            1
+#define HAVE_SYS_TIME_H         1
 #define HAVE_SYS_UTIME_H        1
 #define HAVE_SYS_IOCTL_H        1
 #define HAVE_ALARM              1
@@ -59,14 +65,18 @@
 
 #define HAVE_SIGACTION          1
 
-#define CURL_DISABLE_LDAP
+#define CURL_DISABLE_LDAP       1
 
 #define HAVE_IOCTL_FIONBIO      1
 
 #define SIZEOF_INT              4
 #define SIZEOF_LONG             4
 #define SIZEOF_SIZE_T           4
+#ifdef HAVE_LONGLONG
 #define SIZEOF_CURL_OFF_T       8
+#else
+#define SIZEOF_CURL_OFF_T       4
+#endif
 
 #define HAVE_RECV 1
 #define RECV_TYPE_ARG1 int
@@ -77,9 +87,49 @@
 
 #define HAVE_SEND 1
 #define SEND_TYPE_ARG1 int
+#define SEND_QUAL_ARG2 const
 #define SEND_TYPE_ARG2 void *
 #define SEND_TYPE_ARG3 size_t
 #define SEND_TYPE_ARG4 int
 #define SEND_TYPE_RETV ssize_t
+
+#define HAVE_EXTRA_STRICMP_H 1
+#define HAVE_EXTRA_STRDUP_H  1
+
+/* Define if you have inet_ntop. */
+#define HAVE_INET_NTOP 1
+
+/* Define to enable OpenSSL support */
+#define USE_OPENSSL             1
+
+/* Define to enable c-ares support */
+#define USE_ARES 1
+
+/* Define to 1 if have struct sockaddr_in6. CARES */
+#define HAVE_STRUCT_SOCKADDR_IN6 1
+
+/* Define to 1 if have struct addrinfo. CARES */
+#define HAVE_STRUCT_ADDRINFO 1
+
+/* Define to 1 if have writev. CARES */
+#define HAVE_WRITEV 1
+
+/* Define if you have the <limits.h> header file. CARES */
+#define HAVE_LIMITS_H 1
+
+/* Define if you have strcasecmp. CARES */
+#define HAVE_STRCASECMP 1
+
+/* Define if you have strncasecmp. CARES */
+#define HAVE_STRNCASECMP 1
+
+/* Define if you have errno.h. CARES */
+#define HAVE_ERRNO_H 1
+
+/* Define if you have recvfrom. CARES */
+#define HAVE_RECVFROM 1
+
+/* Define to the type of arg 3 for recvfrom. */
+#define RECVFROM_TYPE_ARG3 size_t
 
 #endif /* HEADER_CURL_CONFIG_MAC_H */
