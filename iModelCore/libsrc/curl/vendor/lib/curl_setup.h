@@ -141,6 +141,10 @@
 
 #else /* HAVE_CONFIG_H */
 
+// ===== Bentley Configuration =====
+#include "../../BeCurlConfig.h"
+// ===== Bentley Configuration =====
+
 #ifdef _WIN32
 #  include "config-win32.h"
 #endif

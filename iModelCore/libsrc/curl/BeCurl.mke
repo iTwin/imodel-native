@@ -648,6 +648,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES	    + advapi32.lib
     LINKER_LIBRARIES	    + crypt32.lib
     LINKER_LIBRARIES	    + secur32.lib
+    LINKER_LIBRARIES	    + Iphlpapi.lib
 %elif $(TARGET_PLATFORM) == "WinRT"
     LINKER_LIBRARIES	    + crypt32.lib
     LINKER_LIBRARIES	    + secur32.lib
