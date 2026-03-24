@@ -214,9 +214,9 @@ Every `.mke` starts with `%include mdl.mki` (at `src/bsicommon/PublicSDK/mdl.mki
 | `OutputRootDir` | `$(OutRoot)$(arch)/` |
 | `sharedMki` | `$(SrcRoot)bsicommon/sharedmki/` |
 | `libprefix` | `lib` (Unix) · empty (Windows) |
-| `libext` | `.a` / `.lib` |
-| `shlibext` | `.dylib` / `.so` / `.dll` |
-| `stlibext` | always `.a` / `.lib` (static) |
+| `libext` | link library extension: typically `.lib` (Windows), `.a` (most Unix), **may be `.dylib` on MacOS when linking shared libs**. Use `$(stlibext)` for “always static” archives. |
+| `shlibext` | shared-library filename extension: `.dylib` / `.so` / `.dll`. Use for naming shared objects, not for abstract link names (use `$(libext)` there). |
+| `stlibext` | static library extension (always `.a` / `.lib`), even when `$(libext)` resolves to a shared-lib extension such as `.dylib` on MacOS. |
 
 ### .mke syntax
 
