@@ -20,6 +20,7 @@
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
+#include "../iModelCore/ECDb/ECDb/RuntimeSchemaWriter.h"
 
 // cspell:ignore napi strbuf propsize
 
