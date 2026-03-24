@@ -150,6 +150,6 @@ DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
-LINKER_LIBRARIES = $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
+LINKER_LIBRARIES = $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki
