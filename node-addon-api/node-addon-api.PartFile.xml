@@ -14,7 +14,7 @@
         <SubPart PartName="VendorAPI"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)iTwinNapi$(libext)</Libs>
+            <Libs>Delivery/$(stlibprefix)iTwinNapi$(stlibext)</Libs>
         </Bindings>
     </Part>
 
