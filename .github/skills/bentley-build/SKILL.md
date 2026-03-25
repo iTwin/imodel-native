@@ -1,6 +1,6 @@
 ---
 name: bentley-build
-description: Expert reference for the BentleyBuild (`bb`) system used in the imodel-native codebase. Use when asked to build, compile, or run `bb` commands; when editing `.PartFile.xml` or `.mke` files; when working with build strategies, part names, or architectures; or when diagnosing build failures.
+description: Expert reference for the BentleyBuild (`bb`) system used in the imodel-native codebase. Use when asked to build, compile, or run `bb` commands; when editing `.PartFile.xml`, `.mke`, or `.mki` files; when working with build strategies, part names, or architectures; or when diagnosing build failures.
 ---
 
 # Bentley Build System (BentleyBuild / bb)
@@ -19,7 +19,7 @@ Set required environment variables, then invoke Python directly.
 | `SrcRoot` | `<workspace>/src/` | Trailing slash required |
 | `OutRoot` | `<workspace>/out/debug/` (Unix) · `<workspace>\outd\` (Win) | |
 | `BuildStrategy` | `iModelConsole` | See strategies below |
-| `BuildArchitecture` | `macosarm64` (Mac) · `x64` (Win) `linuxx64` (Linux)| |
+| `BuildArchitecture` | `macosarm64` / `macosx64` (Mac) · `x64` (Win) · `linuxx64` (Linux) · `androidarm64` / `androidx64` (Android) · `iosarm64` (iOS) | |
 | `BB_PRIMARY_REPO` | `imodel-native-internal` | |
 | `DEBUG` | `1` | Debug build; use `NDEBUG=1` for release |
 | `BSI` | `1` | **Required.** Enables `InternalPlatformSetup.mki` which defines `sharedMki`, `BuildContextPublicApiDir`, `LinkFirstDepToFirstTarget`. Without it builds silently misfire or fail with `can't open include file linkLibrary.mki`. |
@@ -31,7 +31,7 @@ Set required environment variables, then invoke Python directly.
 export SrcRoot="<workspace>/src/"
 export OutRoot="<workspace>/out/debug/"
 export BuildStrategy="iModelConsole"
-export BuildArchitecture="macosarm64"   # or macosx64, linuxx64
+export BuildArchitecture="macosarm64"   # or macosx64, linuxx64, androidarm64, androidx64, iosarm64
 export BB_PRIMARY_REPO="imodel-native-internal"
 export DEBUG="1"                        # use NDEBUG=1 for release
 export BSI="1"
