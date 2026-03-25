@@ -23,7 +23,7 @@ Set required environment variables, then invoke Python directly.
 | `BB_PRIMARY_REPO` | `imodel-native-internal` | |
 | `DEBUG` | `1` | Debug build; use `NDEBUG=1` for release |
 | `BSI` | `1` | **Required.** Enables `InternalPlatformSetup.mki` which defines `sharedMki`, `BuildContextPublicApiDir`, `LinkFirstDepToFirstTarget`. Without it builds silently misfire or fail with `can't open include file linkLibrary.mki`. |
-| `imodeljsDir` | `<workspace>/itwinjs-core` | Addon builds only |
+| `imodeljsDir` | `<workspace>/../itwinjs-core` | Addon builds only |
 
 ### Quick setup (Unix/macOS)
 
