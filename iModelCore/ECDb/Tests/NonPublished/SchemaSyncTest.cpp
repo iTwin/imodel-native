@@ -22437,9 +22437,12 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
         {
         // Restore briefcase and channel from seed copies
         m_briefcase->CloseDb();
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedBriefcasePath, briefcasePath));
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedChannelPath, channelPath));
-        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->OpenBeSQLiteDb(briefcasePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedBriefcasePath, briefcasePath));
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedChannelPath, channelPath));
+        auto openStat = m_briefcase->OpenBeSQLiteDb(briefcasePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+        EXPECT_EQ(BE_SQLITE_OK, openStat);
+        if (openStat != BE_SQLITE_OK)
+            return SchemaImportResult::ERROR;
 
         Utf8String schemaXml;
         schemaXml.Sprintf(schemaTemplate, newSchemaVersion);
