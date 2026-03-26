@@ -127,15 +127,6 @@ DbResult PreparedECChangesetReader::Step() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int PreparedECChangesetReader::GetColumnCount() const {
-    if (!m_currentChange.IsValid())
-        return 0;
-    return (int)m_fields.size();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::ReFetchValues() {
     clearFields();
     if (m_currentChange.IsValid()) {
@@ -147,11 +138,15 @@ void PreparedECChangesetReader::ReFetchValues() {
         }
         m_fields[Stage::New] = {};
         m_fields[Stage::Old] = {};
-        for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::New)) {
-            ValidateAndUpdateField(std::move(field), Stage::New);
+        if(GetOpcode() != DbOpcode::Delete) {
+            for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::New)) {
+                ValidateAndUpdateField(std::move(field), Stage::New);
+            }
         }
-        for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::Old)) {
-            ValidateAndUpdateField(std::move(field), Stage::Old);
+        if(GetOpcode() != DbOpcode::Insert) {
+            for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::Old)) {
+                ValidateAndUpdateField(std::move(field), Stage::Old);
+            }
         }
     }
 }

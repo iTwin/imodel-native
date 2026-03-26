@@ -19,22 +19,28 @@ private:
 
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;
-
+    bool IsOpen() const { return m_prepared != nullptr && m_prepared->IsOpen(); }
 public:
     Impl() {}
     ~Impl() {}
 
     void OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert) {
+        if(IsOpen())
+            Close();
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
         m_prepared->OpenFile(file, invert);
     }
 
     void OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert) {
+        if(IsOpen())
+            Close();
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
         m_prepared->Open(std::move(changeStream), invert);
     }
 
     void OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert) {
+        if(IsOpen())
+            Close();
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
         m_prepared->OpenGroup(files, db, invert);
     }
@@ -45,8 +51,6 @@ public:
         m_prepared = nullptr;
     }
 
-    bool IsOpen() const { return m_prepared != nullptr && m_prepared->IsOpen(); }
-    bool HasRow() const { return m_prepared != nullptr && m_prepared->HasRow(); }
 
     DbResult Step() {
         if (m_prepared == nullptr)
@@ -54,17 +58,11 @@ public:
         return m_prepared->Step();
     }
 
-    Utf8StringCR GetTableName()  const { return m_prepared->GetTableName(); }
-    DbOpcode     GetOpcode()     const { return m_prepared->GetOpcode(); }
-    bool         IsDirect()      const { return m_prepared->IsDirect(); }
-    bool         IsIndirect()    const { return m_prepared->IsIndirect(); }
-    bool         IsUpdate()      const { return m_prepared->IsUpdate(); }
-    bool         IsInsert()      const { return m_prepared->IsInsert(); }
-    bool         IsDelete()      const { return m_prepared->IsDelete(); }
-    Utf8StringCR GetDdl()        const { return m_prepared->GetDdl(); }
-    int          GetColumnCount() const { return m_prepared->GetColumnCount(); }
-
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const {
+        if(!IsOpen()) {
+            LOG.error("ECChangesetReader is not open.");
+            return NoopECSqlValue::GetSingleton();
+        }
         return m_prepared->GetValue(stage, columnIndex);
     }
 };

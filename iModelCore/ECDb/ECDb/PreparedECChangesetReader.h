@@ -30,6 +30,8 @@ private:
     void ValidateAndUpdateField(std::unique_ptr<ECSqlField>, Stage);
     void ReFetchValues();
     DbResult OnAfterStep() const;
+    Utf8StringCR GetTableName() const { return m_currentChange.GetTableName(); }
+    DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); }
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
 
@@ -39,18 +41,8 @@ public:
     void Close();
     DbResult Step();
 
-    bool         IsOpen()        const { return m_changeStream != nullptr; }
-    bool         HasRow()        const { return IsOpen() && m_currentChange.IsValid(); }
-    Utf8StringCR GetTableName()  const { return m_currentChange.GetTableName(); }
-    DbOpcode     GetOpcode()     const { return m_currentChange.GetOpcode(); }
-    bool         IsDirect()      const { return m_currentChange.IsDirect(); }
-    bool         IsIndirect()    const { return m_currentChange.IsIndirect(); }
-    bool         IsUpdate()      const { return m_currentChange.IsUpdate(); }
-    bool         IsInsert()      const { return m_currentChange.IsInsert(); }
-    bool         IsDelete()      const { return m_currentChange.IsDelete(); }
-    Utf8StringCR GetDdl()        const { return m_ddl; }
+    bool IsOpen() const { return m_changeStream != nullptr; }
 
-    int GetColumnCount() const;
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
 };
 
