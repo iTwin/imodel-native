@@ -12,41 +12,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using TableView = InstanceReader::Impl::TableView;
 using Stage = Changes::Change::Stage;
 
-// Replaces a virtual ClassId/SourceClassId/TargetClassId with a constant ClassId field.
-struct ClassIdField final : public ECSqlField {
-   private:
-    ECN::ECClassId m_classId;
-    mutable Utf8String m_idStr;
-
-   private:
-    bool _IsNull() const override { return !m_classId.IsValid(); }
-    void const* _GetBlob(int* blobSize) const override { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
-    bool _GetBoolean() const override { return NoopECSqlValue::GetSingleton().GetBoolean(); }
-    uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
-    double _GetDateTimeJulianDays(DateTime::Info& metadata) const override { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }
-    double _GetDouble() const override { return NoopECSqlValue::GetSingleton().GetDouble(); }
-    int _GetInt() const override { return NoopECSqlValue::GetSingleton().GetInt(); }
-    IGeometryPtr _GetGeometry() const override { return NoopECSqlValue::GetSingleton().GetGeometry(); }
-    DPoint2d _GetPoint2d() const override { return NoopECSqlValue::GetSingleton().GetPoint2d(); }
-    DPoint3d _GetPoint3d() const override { return NoopECSqlValue::GetSingleton().GetPoint3d(); }
-    IECSqlValue const& _GetStructMemberValue(Utf8CP structMemberName) const override { return NoopECSqlValue::GetSingleton(); }
-    IECSqlValueIterable const& _GetStructIterable() const override { return NoopECSqlValue::GetSingleton().GetStructIterable(); }
-    int _GetArrayLength() const override { return NoopECSqlValue::GetSingleton().GetArrayLength(); }
-    IECSqlValueIterable const& _GetArrayIterable() const override { return NoopECSqlValue::GetSingleton().GetArrayIterable(); }
-    Utf8CP _GetText() const override {
-        if (m_idStr.empty())
-            m_idStr = m_classId.ToHexStr();
-        return m_idStr.c_str();
-    }
-    int64_t _GetInt64() const override {
-        return static_cast<int64_t>(m_classId.GetValueUnchecked());
-    }
-
-   public:
-    ClassIdField(ECDbCR ecdb, ECSqlColumnInfo const& columnInfo, ECN::ECClassId classId)
-        : ECSqlField(ecdb, Changes::Change(nullptr, false), Stage::New, columnInfo, false, false), m_classId(classId) {}
-};
-
 struct ChangesetFieldFactory final {
    private:
     static const ClassMap* GetRootClassMap(DbTable const& tbl, ECDbCR conn);
@@ -58,7 +23,7 @@ struct ChangesetFieldFactory final {
     static std::unique_ptr<ECSqlField> CreateNavigationField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
     static std::unique_ptr<ECSqlField> CreateArrayField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
     static std::unique_ptr<ECSqlField> CreateField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<ECSqlField> CreateClassIdField(ECDbCR ecdb, PropertyMap const&, ECN::ECClassId, TableView const&);
+    static std::unique_ptr<ECSqlField> CreateClassIdField(ECDbCR ecdb, PropertyMap const&, ECN::ECClassId, TableView const&, Changes::Change const&, Stage const&);
 
    public:
     using FieldPtr = std::unique_ptr<ECSqlField>;
@@ -197,7 +162,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateStructField(ECDbCR ecdb
     return std::move(newStructField);
 }
 
-std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateClassIdField(ECDbCR ecdb, PropertyMap const& propertyMap, ECN::ECClassId id, TableView const& tbl) {
+std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateClassIdField(ECDbCR ecdb, PropertyMap const& propertyMap, ECN::ECClassId id, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
         DateTime::Info(),
@@ -209,7 +174,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateClassIdField(ECDbCR ecd
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    return std::make_unique<ClassIdField>(ecdb, columnInfo, id);
+    return std::make_unique<ClassIdECSqlField>(ecdb, change, stage, columnInfo, id);
 }
 
 std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateNavigationField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
@@ -230,7 +195,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateNavigationField(ECDbCR 
     std::unique_ptr<ECSqlField> relClassIdField;
     auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
     if (relClassIdMap.GetColumn().IsVirtual()) {
-        relClassIdField = CreateClassIdField(ecdb, relClassIdMap, prim->GetRelationshipClass()->GetId(), tbl);
+        relClassIdField = CreateClassIdField(ecdb, relClassIdMap, prim->GetRelationshipClass()->GetId(), tbl, change, stage);
     } else {
         relClassIdField = CreatePrimitiveField(ecdb, navMap.GetRelECClassIdPropertyMap(), tbl, change, stage);
     }
