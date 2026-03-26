@@ -115,6 +115,7 @@
 #include "ECSql/ArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
 #include "ECSql/ClassIdECSqlField.h"
+#include "ChangesetFieldFactory.h"
 
 #include "ECSql/ECSqlBinder.h"
 #include "ECSql/IdECSqlBinder.h"
