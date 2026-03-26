@@ -39,6 +39,7 @@ private:
 
 public:
     PrimitiveECSqlField(ECSqlSelectPreparedStatement&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
+    PrimitiveECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& columnInfo, int columnIndex);
     ~PrimitiveECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

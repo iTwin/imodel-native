@@ -44,6 +44,11 @@ public:
         : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
         {}
     PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
+    PointECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
+        : ECSqlField(ecdb, change, stage, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
+        {}
+    PointECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex)
+        : PointECSqlField(ecdb, change, stage, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}
     };
 

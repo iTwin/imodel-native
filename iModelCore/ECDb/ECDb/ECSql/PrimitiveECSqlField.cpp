@@ -21,6 +21,15 @@ PrimitiveECSqlField::PrimitiveECSqlField(ECSqlSelectPreparedStatement& stmt, ECS
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+PrimitiveECSqlField::PrimitiveECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
+    : ECSqlField(ecdb, change, stage, ecsqlColumnInfo, false, false), m_sqliteColumnIndex(columnIndex)
+    {
+    UpdateDateTimeMetaData();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 void PrimitiveECSqlField::_OnDynamicPropertyUpdated()  {
     UpdateDateTimeMetaData();
 }

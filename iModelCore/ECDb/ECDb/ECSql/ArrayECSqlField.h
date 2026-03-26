@@ -141,6 +141,7 @@ private:
     JsonECSqlValue const& GetValue() const { BeAssert(m_value != nullptr); return *m_value; }
 public:
     ArrayECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
+    ArrayECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(ecdb, change, stage, colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
     ~ArrayECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

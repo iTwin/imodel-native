@@ -63,6 +63,7 @@ struct StructECSqlField final : public ECSqlField, IECSqlValueIterable
         ECSqlStatus _OnAfterStep() override;
     public:
         StructECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, false, false) {}
+        StructECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo) : ECSqlField(ecdb, change, stage, colInfo, false, false) {}
         //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
         //Otherwise the flags m_needsInit and m_needsReset might become wrong
         void AppendField(std::unique_ptr<ECSqlField> field);

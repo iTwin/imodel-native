@@ -12,11 +12,46 @@ struct ECSqlSelectPreparedStatement;
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct IECSqlDataReaderStrategy
+    {
+    virtual ~IECSqlDataReaderStrategy() = default;
+    virtual DbValue GetSqliteValue(int colNum) const = 0;
+    };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SqliteStatementDataReaderStrategy : IECSqlDataReaderStrategy
+    {
+    private:
+        Statement& m_sqliteStatement;
+    public:
+        SqliteStatementDataReaderStrategy(Statement& sqliteStatement) : m_sqliteStatement(sqliteStatement) {}
+        DbValue GetSqliteValue(int colNum) const override { return m_sqliteStatement.GetDbValue(colNum); }
+    };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ChangeSetDataReaderStrategy : IECSqlDataReaderStrategy
+    {
+    private:
+        Changes::Change m_change;
+        Changes::Change::Stage m_stage;
+    public:
+        ChangeSetDataReaderStrategy(Changes::Change const& change, Changes::Change::Stage const& stage) : m_change(change), m_stage(stage) {}
+        DbValue GetSqliteValue(int colNum) const override { BeAssert(colNum >= 0 && colNum < m_change.GetColumnCount() && "Column index is out of bounds.");
+    return m_change.GetValue(colNum, m_stage); }
+    };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct ECSqlField : public IECSqlValue
     {
 private:
     ECDbCR m_ecdb;
-    Statement& m_sqliteStatement;
+    std::unique_ptr<IECSqlDataReaderStrategy> m_dataReaderStrategy;
     ECSqlColumnInfo m_ecsqlColumnInfo;
     ECSqlColumnInfo m_ecsqlDynamicColumnInfo;
     bool m_requiresOnAfterStep = false;
@@ -29,8 +64,16 @@ private:
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
     virtual void _OnDynamicPropertyUpdated() {}
 protected:
+    //! Constructor for Statement-based fields (existing ECSql path)
     ECSqlField(ECDbCR ecdb, Statement& sqliteStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_ecdb(ecdb), m_sqliteStatement(sqliteStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+        : m_ecdb(ecdb),  m_dataReaderStrategy(std::make_unique<SqliteStatementDataReaderStrategy>(sqliteStatement)),
+          m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+        {}
+
+    //! Constructor for Change-based fields (changeset reader path)
+    ECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_ecdb(ecdb), m_dataReaderStrategy(std::make_unique<ChangeSetDataReaderStrategy>(change, stage)),
+          m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
     DbValue GetSqliteValue(int colNum) const;
