@@ -140,7 +140,7 @@ ECDbAllHeaders = \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
-                $(baseDir)ECChangesetReaderImpl.h \
+                $(baseDir)ECChangesetReader.h \
                 $(baseDir)ClassViews.h
 
 

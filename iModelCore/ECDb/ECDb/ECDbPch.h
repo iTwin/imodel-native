@@ -11,6 +11,7 @@
 #include <Bentley/CatchNonPortable.h>
 #include <Bentley/Nullable.h>
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/ChangesetFile.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/SchemaComparer.h>
 #include <ECDb/ECDbApi.h>
@@ -66,7 +67,7 @@
 #include "ConcurrentQueryManagerImpl.h"
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
-#include "ECChangesetReaderImpl.h"
+#include "ECChangesetReader.h"
 #include "BuiltInVTabs.h"
 #include "ClassViews.h"
 #include "InstanceWriterImpl.h"
@@ -116,6 +117,8 @@
 #include "ECSql/NavigationPropertyECSqlField.h"
 #include "ECSql/ClassIdECSqlField.h"
 #include "ChangesetFieldFactory.h"
+#include "PreparedECChangesetReader.h"
+#include "ECChangesetReaderImpl.h"
 
 #include "ECSql/ECSqlBinder.h"
 #include "ECSql/IdECSqlBinder.h"
