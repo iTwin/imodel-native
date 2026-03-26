@@ -1383,7 +1383,7 @@ Napi::Value NativeChangeset::SerializeValue(Napi::Env env, DbValue&value) {
 
     switch(value.GetValueType()) {
         case DbValueType::IntegerVal:
-            return Napi::String::New(env, BeInt64Id(value.GetValueUInt64()).ToHexStr());
+            return Napi::Number::New(env, value.GetValueInt());
         case DbValueType::FloatVal:
             return Napi::Number::New(env, value.GetValueDouble());
         case DbValueType::TextVal:
