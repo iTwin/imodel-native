@@ -15,9 +15,11 @@ using Stage = Changes::Change::Stage;
 struct Field : public IECSqlValue {
     using Ptr = std::unique_ptr<Field>;
 
-   protected:
+   private:
+   ECDbCR m_ecdb;
     Changes::Change m_change;
     ECSqlColumnInfo m_columnInfo;
+    ECSqlColumnInfo m_ecsqlDynamicColumnInfo;
     bool m_requiresOnAfterStep = false;
     bool m_requiresOnAfterReset = false;
     Stage m_stage;
@@ -26,10 +28,14 @@ struct Field : public IECSqlValue {
     ECSqlColumnInfoCR _GetColumnInfo() const override;
     virtual ECSqlStatus _OnAfterReset();
     virtual ECSqlStatus _OnAfterStep();
+    virtual void _OnDynamicPropertyUpdated() {}
 
    protected:
-    Field(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& columnInfo, bool needsOnAfterStep, bool needsOnAfterReset); 
+    Field(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& columnInfo, bool needsOnAfterStep, bool needsOnAfterReset); 
     DbValue GetSqliteValue(int colNum) const;
+    ECDbCR GetECDb() const { return m_ecdb; }
+    void SetRequiresOnAfterStep(bool requires) { m_requiresOnAfterStep = requires; }
+    void SetRequiresOnAfterReset(bool requires) { m_requiresOnAfterReset = requires; }
 
    public:
     virtual ~Field() {}
@@ -37,19 +43,20 @@ struct Field : public IECSqlValue {
     ECSqlStatus OnAfterStep();
     bool RequiresOnAfterReset() const;
     ECSqlStatus OnAfterReset();
+    void SetDynamicColumnInfo(ECSqlColumnInfoCR info);
 };
 struct Factory final {
    private:
     static const ClassMap* GetRootClassMap(DbTable const& tbl, ECDbCR conn);
     static DateTime::Info GetDateTimeInfo(PropertyMap const& propertyMap);
     static ECSqlPropertyPath GetPropertyPath(PropertyMap const&);
-    static std::unique_ptr<Field> CreatePrimitiveField(PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<Field> CreateSystemField(PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<Field> CreateStructField(PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<Field> CreateNavigationField(PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<Field> CreateArrayField(PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<Field> CreateField(PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
-    static std::unique_ptr<Field> CreateClassIdField(PropertyMap const&, ECN::ECClassId, TableView const&);
+    static std::unique_ptr<Field> CreatePrimitiveField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
+    static std::unique_ptr<Field> CreateSystemField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
+    static std::unique_ptr<Field> CreateStructField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
+    static std::unique_ptr<Field> CreateNavigationField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
+    static std::unique_ptr<Field> CreateArrayField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
+    static std::unique_ptr<Field> CreateField(ECDbCR ecdb, PropertyMap const&, TableView const&, Changes::Change const&, Stage const&);
+    static std::unique_ptr<Field> CreateClassIdField(ECDbCR ecdb, PropertyMap const&, ECN::ECClassId, TableView const&);
 
    public:
     static std::vector<Field::Ptr> Create(ECDbCR conn, DbTable const& tbl, Changes::Change const& change, Changes::Change::Stage const& stage);
@@ -87,7 +94,7 @@ struct PrimitiveField final : public Field {
     void UpdateDateTimeMetaData();
 
    public:
-    PrimitiveField(Changes::Change const& change, Stage const& stage,ECSqlColumnInfo const& columnInfo, int columnIndex);
+    PrimitiveField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage,ECSqlColumnInfo const& columnInfo, int columnIndex);
     ~PrimitiveField() {}
 };
 struct PointField final : public Field {
@@ -116,8 +123,8 @@ struct PointField final : public Field {
     bool IsPoint3d() const;
 
    public:
-    PointField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex);
-    PointField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex);
+    PointField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex);
+    PointField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex);
     ~PointField() {}
 };
 struct StructField final : public Field, IECSqlValueIterable {
@@ -160,7 +167,7 @@ struct StructField final : public Field, IECSqlValueIterable {
     ECSqlStatus _OnAfterStep() override;
 
    public:
-    StructField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo);
+    StructField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo);
     void AppendField(std::unique_ptr<Field> field);
 };
 struct ArrayField final : public Field {
@@ -268,7 +275,7 @@ struct ArrayField final : public Field {
     JsonECSqlValue const& GetValue() const;
 
    public:
-    ArrayField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex);
+    ArrayField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex);
     ~ArrayField() {}
 };
 struct NavigationField final : public Field, IECSqlValueIterable {
@@ -320,7 +327,7 @@ struct NavigationField final : public Field, IECSqlValueIterable {
     ECSqlStatus _OnAfterStep() override;
 
    public:
-    NavigationField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo);
+    NavigationField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo);
     void SetMembers(std::unique_ptr<Field> idField, std::unique_ptr<Field> relClassIdField);
 };
 // Replaces a virtual ClassId/SourceClassId/TargetClassId with a constant ClassId field.
@@ -354,19 +361,33 @@ struct ClassIdField final : public Field {
     }
 
    public:
-    ClassIdField(ECSqlColumnInfo const& columnInfo, ECN::ECClassId classId)
-        : Field(Changes::Change(nullptr, false), Stage::New, columnInfo, false, false), m_classId(classId) {}
+    ClassIdField(ECDbCR ecdb, ECSqlColumnInfo const& columnInfo, ECN::ECClassId classId)
+        : Field(ecdb, Changes::Change(nullptr, false), Stage::New, columnInfo, false, false), m_classId(classId) {}
 };
 
-ECSqlColumnInfoCR Field::_GetColumnInfo() const { return m_columnInfo; }
-ECSqlStatus Field::_OnAfterReset() { return ECSqlStatus::Success; }
+ECSqlColumnInfoCR Field::_GetColumnInfo() const { return m_ecsqlDynamicColumnInfo.IsValid() ? m_ecsqlDynamicColumnInfo : m_columnInfo; }
+ECSqlStatus Field::_OnAfterReset() { SetDynamicColumnInfo(ECSqlColumnInfo()); return ECSqlStatus::Success; }
 ECSqlStatus Field::_OnAfterStep() { return ECSqlStatus::Success; }
-Field::Field(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& columnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-    : m_columnInfo(columnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset), m_change(change), m_stage(stage) {}
+Field::Field(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& columnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+    : m_ecdb(ecdb), m_columnInfo(columnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset), m_change(change), m_stage(stage) {}
 bool Field::RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
 ECSqlStatus Field::OnAfterStep() { return _OnAfterStep(); }
 bool Field::RequiresOnAfterReset() const { return m_requiresOnAfterReset || _GetColumnInfo().IsDynamic(); }
 ECSqlStatus Field::OnAfterReset() { return _OnAfterReset(); }
+void Field::SetDynamicColumnInfo(ECSqlColumnInfoCR info){ 
+    if (!m_columnInfo.IsDynamic())
+        return;
+
+    if (info.IsValid()) {
+        if (info.GetDataType() != m_columnInfo.GetDataType() || (info.GetProperty() != m_columnInfo.GetProperty())) {
+            m_ecsqlDynamicColumnInfo = ECSqlColumnInfo(info, true);
+            _OnDynamicPropertyUpdated();
+        }
+    } else {
+        m_ecsqlDynamicColumnInfo = ECSqlColumnInfo();
+        _OnDynamicPropertyUpdated();
+    }
+}
 DbValue Field::GetSqliteValue(int colNum) const {
     BeAssert(colNum >= 0 && colNum < m_change.GetColumnCount() && "Column index is out of bounds. Please double-check the column index provided to the Field constructor.");
     return m_change.GetValue(colNum, m_stage);
@@ -410,18 +431,18 @@ void PrimitiveField::UpdateDateTimeMetaData() {
     }
 }
 
-PrimitiveField::PrimitiveField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& columnInfo, int columnIndex)
-    : Field(change, stage, columnInfo, false, false), m_columnIndex(columnIndex) {
+PrimitiveField::PrimitiveField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& columnInfo, int columnIndex)
+    : Field(ecdb, change, stage, columnInfo, false, false), m_columnIndex(columnIndex) {
     UpdateDateTimeMetaData();
 }
 
 bool PointField::IsPoint3d() const { return m_zColumnIndex >= 0; }
 
-PointField::PointField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-    : Field(change, stage, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex) {}
+PointField::PointField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
+    : Field(ecdb, change, stage, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex) {}
 
-PointField::PointField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex)
-    : PointField(change, stage, colInfo, xColumnIndex, yColumnIndex, -1) {}
+PointField::PointField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex)
+    : PointField(ecdb, change, stage, colInfo, xColumnIndex, yColumnIndex, -1) {}
 
 StructField::IteratorState::IteratorState(IteratorState const& rhs) : m_it(rhs.m_it), m_endIt(rhs.m_endIt) {}
 
@@ -447,7 +468,7 @@ IECSqlValueIterable::const_iterator StructField::_CreateIterator() const {
     return IECSqlValueIterable::const_iterator(std::make_unique<IteratorState>(m_structMemberFields));
 }
 
-StructField::StructField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo) : Field(change, stage, colInfo, false, false) {}
+StructField::StructField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo) : Field(ecdb, change, stage, colInfo, false, false) {}
 
 ArrayField::JsonECSqlValue::ArrayIteratorState::ArrayIteratorState(ArrayIteratorState const& rhs)
     : m_value(rhs.m_value), m_jsonIterator(rhs.m_jsonIterator), m_jsonIteratorIndex(rhs.m_jsonIteratorIndex) {}
@@ -502,8 +523,8 @@ ArrayField::JsonECSqlValue const& ArrayField::GetValue() const {
     return *m_value;
 }
 
-ArrayField::ArrayField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex)
-    : Field(change, stage, colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
+ArrayField::ArrayField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex)
+    : Field(ecdb, change, stage, colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
 
 NavigationField::IteratorState::IteratorState(IteratorState const& rhs) : m_field(rhs.m_field), m_state(rhs.m_state) {}
 
@@ -528,7 +549,7 @@ IECSqlValueIterable::const_iterator NavigationField::_CreateIterator() const {
     return const_iterator(std::make_unique<IteratorState>(*this));
 }
 
-NavigationField::NavigationField(Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo) : Field(change, stage, colInfo, false, false) {}
+NavigationField::NavigationField(ECDbCR ecdb, Changes::Change const& change, Stage const& stage, ECSqlColumnInfo const& colInfo) : Field(ecdb, change, stage, colInfo, false, false) {}
 
 NoopECSqlValue::NoopECSqlValue() : IECSqlValue() {}
 NoopECSqlValue::~NoopECSqlValue() {}
@@ -734,10 +755,10 @@ void StructField::AppendField(std::unique_ptr<Field> field) {
     }
 
     if (field->RequiresOnAfterStep())
-        m_requiresOnAfterStep = true;
+        SetRequiresOnAfterStep(true);
 
     if (field->RequiresOnAfterReset())
-        m_requiresOnAfterReset = true;
+        SetRequiresOnAfterReset(true);
 
     Utf8CP memberName = field->GetColumnInfo().GetProperty()->GetName().c_str();
     BeAssert(m_structMemberFields.find(memberName) == m_structMemberFields.end());
@@ -970,7 +991,7 @@ std::vector<Field::Ptr> Factory::Create(ECDbCR conn, DbTable const& tbl, Changes
             return std::vector<Field::Ptr>();
         }
         queryProps.emplace_back(
-            CreateField(*propertyMap, *(queryTable.get()), change, stage));
+            CreateField(conn, *propertyMap, *(queryTable.get()), change, stage));
     }
     return queryProps;
 }
@@ -983,7 +1004,7 @@ ECSqlPropertyPath Factory::GetPropertyPath(PropertyMap const& propertyMap) {
     return propertyPath;
 }
 
-std::unique_ptr<Field> Factory::CreatePrimitiveField(PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
+std::unique_ptr<Field> Factory::CreatePrimitiveField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor(prim->GetType()),
@@ -999,21 +1020,21 @@ std::unique_ptr<Field> Factory::CreatePrimitiveField(PropertyMap const& property
         const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
         const auto xCol = tbl.GetColumnIndexOf(pt2dMap.GetX().GetColumn());
         const auto yCol = tbl.GetColumnIndexOf(pt2dMap.GetY().GetColumn());
-        return std::make_unique<PointField>(change, stage,columnInfo, xCol, yCol);
+        return std::make_unique<PointField>(ecdb, change, stage,columnInfo, xCol, yCol);
     } else if (prim->GetType() == PRIMITIVETYPE_Point3d) {
         const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
         const auto xCol = tbl.GetColumnIndexOf(pt3dMap.GetX().GetColumn());
         const auto yCol = tbl.GetColumnIndexOf(pt3dMap.GetY().GetColumn());
         const auto zCol = tbl.GetColumnIndexOf(pt3dMap.GetZ().GetColumn());
-        return std::make_unique<PointField>(change, stage, columnInfo, xCol, yCol, zCol);
+        return std::make_unique<PointField>(ecdb, change, stage, columnInfo, xCol, yCol, zCol);
     } else {
         const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
         const auto nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
-        return std::make_unique<PrimitiveField>(change, stage, columnInfo, nCol);
+        return std::make_unique<PrimitiveField>(ecdb, change, stage, columnInfo, nCol);
     }
 }
 
-std::unique_ptr<Field> Factory::CreateSystemField(PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
+std::unique_ptr<Field> Factory::CreateSystemField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor(prim->GetType()),
@@ -1028,13 +1049,13 @@ std::unique_ptr<Field> Factory::CreateSystemField(PropertyMap const& propertyMap
 
     const auto extendedType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
     if (extendedType == ExtendedTypeHelper::ExtendedType::ClassId && tbl.GetClassIdCol() >= 0) {
-        return std::make_unique<PrimitiveField>(change, stage, columnInfo, tbl.GetClassIdCol());
+        return std::make_unique<PrimitiveField>(ecdb, change, stage, columnInfo, tbl.GetClassIdCol());
     }
     if (extendedType == ExtendedTypeHelper::ExtendedType::SourceClassId && tbl.GetSourceClassIdCol() >= 0) {
-        return std::make_unique<PrimitiveField>(change, stage, columnInfo, tbl.GetSourceClassIdCol());
+        return std::make_unique<PrimitiveField>(ecdb, change, stage, columnInfo, tbl.GetSourceClassIdCol());
     }
     if (extendedType == ExtendedTypeHelper::ExtendedType::TargetClassId && tbl.GetTargetClassIdCol() >= 0) {
-        return std::make_unique<PrimitiveField>(change, stage, columnInfo, tbl.GetTargetClassIdCol());
+        return std::make_unique<PrimitiveField>(ecdb, change, stage, columnInfo, tbl.GetTargetClassIdCol());
     }
 
     const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
@@ -1043,10 +1064,10 @@ std::unique_ptr<Field> Factory::CreateSystemField(PropertyMap const& propertyMap
         BeAssert(false);
     }
     const auto nCol = tbl.GetColumnIndexOf(dataMap->GetColumn());
-    return std::make_unique<PrimitiveField>(change, stage, columnInfo, nCol);
+    return std::make_unique<PrimitiveField>(ecdb, change, stage, columnInfo, nCol);
 }
 
-std::unique_ptr<Field> Factory::CreateStructField(PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
+std::unique_ptr<Field> Factory::CreateStructField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     const auto structProp = propertyMap.GetProperty().GetAsStructProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreateStructTypeDescriptor(),
@@ -1059,15 +1080,15 @@ std::unique_ptr<Field> Factory::CreateStructField(PropertyMap const& propertyMap
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    auto newStructField = std::make_unique<StructField>(change, stage, columnInfo);
+    auto newStructField = std::make_unique<StructField>(ecdb, change, stage, columnInfo);
     auto& structPropertyMap = propertyMap.GetAs<StructPropertyMap>();
     for (auto& memberMap : structPropertyMap) {
-        newStructField->AppendField(CreateField(*memberMap, tbl, change, stage));
+        newStructField->AppendField(CreateField(ecdb, *memberMap, tbl, change, stage));
     }
     return std::move(newStructField);
 }
 
-std::unique_ptr<Field> Factory::CreateClassIdField(PropertyMap const& propertyMap, ECN::ECClassId id, TableView const& tbl) {
+std::unique_ptr<Field> Factory::CreateClassIdField(ECDbCR ecdb, PropertyMap const& propertyMap, ECN::ECClassId id, TableView const& tbl) {
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
         DateTime::Info(),
@@ -1079,10 +1100,10 @@ std::unique_ptr<Field> Factory::CreateClassIdField(PropertyMap const& propertyMa
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    return std::make_unique<ClassIdField>(columnInfo, id);
+    return std::make_unique<ClassIdField>(ecdb, columnInfo, id);
 }
 
-std::unique_ptr<Field> Factory::CreateNavigationField(PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
+std::unique_ptr<Field> Factory::CreateNavigationField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     const auto prim = propertyMap.GetProperty().GetAsNavigationProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreateNavigationTypeDescriptor(prim->GetType(), prim->IsMultiple()),
@@ -1095,16 +1116,16 @@ std::unique_ptr<Field> Factory::CreateNavigationField(PropertyMap const& propert
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
     const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
-    auto idField = CreatePrimitiveField(navMap.GetIdPropertyMap(), tbl, change, stage);
+    auto idField = CreatePrimitiveField(ecdb, navMap.GetIdPropertyMap(), tbl, change, stage);
 
     std::unique_ptr<Field> relClassIdField;
     auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
     if (relClassIdMap.GetColumn().IsVirtual()) {
-        relClassIdField = CreateClassIdField(relClassIdMap, prim->GetRelationshipClass()->GetId(), tbl);
+        relClassIdField = CreateClassIdField(ecdb, relClassIdMap, prim->GetRelationshipClass()->GetId(), tbl);
     } else {
-        relClassIdField = CreatePrimitiveField(navMap.GetRelECClassIdPropertyMap(), tbl, change, stage);
+        relClassIdField = CreatePrimitiveField(ecdb, navMap.GetRelECClassIdPropertyMap(), tbl, change, stage);
     }
-    auto navField = std::make_unique<NavigationField>(change, stage, columnInfo);
+    auto navField = std::make_unique<NavigationField>(ecdb, change, stage, columnInfo);
     navField->SetMembers(std::move(idField), std::move(relClassIdField));
     return std::move(navField);
 }
@@ -1133,7 +1154,7 @@ DateTime::Info Factory::GetDateTimeInfo(PropertyMap const& propertyMap) {
     return info;
 }
 
-std::unique_ptr<Field> Factory::CreateArrayField(PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
+std::unique_ptr<Field> Factory::CreateArrayField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     ECN::ECTypeDescriptor desc;
     const auto& prop = propertyMap.GetProperty();
     if (prop.GetIsStructArray()) {
@@ -1154,21 +1175,21 @@ std::unique_ptr<Field> Factory::CreateArrayField(PropertyMap const& propertyMap,
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
     auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
     auto nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
-    return std::make_unique<ArrayField>(change, stage, columnInfo, nCol);
+    return std::make_unique<ArrayField>(ecdb, change, stage, columnInfo, nCol);
 }
 
-std::unique_ptr<Field> Factory::CreateField(PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
+std::unique_ptr<Field> Factory::CreateField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
     const auto& prop = propertyMap.GetProperty();
     if (propertyMap.IsSystem()) {
-        return CreateSystemField(propertyMap, tbl, change, stage);
+        return CreateSystemField(ecdb, propertyMap, tbl, change, stage);
     } else if (prop.GetIsPrimitive()) {
-        return CreatePrimitiveField(propertyMap, tbl, change, stage);
+        return CreatePrimitiveField(ecdb, propertyMap, tbl, change, stage);
     } else if (prop.GetIsStruct()) {
-        return CreateStructField(propertyMap, tbl, change, stage);
+        return CreateStructField(ecdb, propertyMap, tbl, change, stage);
     } else if (prop.GetIsNavigation()) {
-        return CreateNavigationField(propertyMap, tbl, change, stage);
+        return CreateNavigationField(ecdb, propertyMap, tbl, change, stage);
     } else if (prop.GetIsArray()) {
-        return CreateArrayField(propertyMap, tbl, change, stage);
+        return CreateArrayField(ecdb, propertyMap, tbl, change, stage);
     }
     return nullptr;
 }

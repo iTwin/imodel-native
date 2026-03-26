@@ -47,10 +47,10 @@ void StructECSqlField::AppendField(std::unique_ptr<ECSqlField> field)
         }
 
     if (field->RequiresOnAfterStep())
-        m_requiresOnAfterStep = true;
+        SetRequiresOnAfterStep(true);
 
     if (field->RequiresOnAfterReset())
-        m_requiresOnAfterReset = true;
+        SetRequiresOnAfterReset(true);
 
     Utf8CP memberName = field->GetColumnInfo().GetProperty()->GetName().c_str();
     BeAssert(m_structMemberFields.find(memberName) == m_structMemberFields.end());

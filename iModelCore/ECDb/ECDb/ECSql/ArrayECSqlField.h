@@ -112,7 +112,7 @@ private:
     mutable std::unique_ptr<JsonECSqlValue> m_value = nullptr;
 
     //IECSqlValue
-    bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
+    bool _IsNull() const override { return GetSqliteValue(m_sqliteColumnIndex).IsNull(); }
 
     void const* _GetBlob(int* blobSize) const override { return GetValue().GetBlob(blobSize); }
     bool _GetBoolean() const override { return GetValue().GetBoolean(); }
@@ -140,7 +140,7 @@ private:
 
     JsonECSqlValue const& GetValue() const { BeAssert(m_value != nullptr); return *m_value; }
 public:
-    ArrayECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(stmt, colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
+    ArrayECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
     ~ArrayECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

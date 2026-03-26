@@ -15,16 +15,16 @@ private:
     int m_sqliteColumnIndex;
     DateTime::Info m_datetimeMetadata;
 
-    bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
+    bool _IsNull() const override { return GetSqliteValue(m_sqliteColumnIndex).IsNull(); }
 
     void const* _GetBlob(int* blobSize) const override;
-    bool _GetBoolean() const override { return  GetSqliteStatement().GetValueBoolean(m_sqliteColumnIndex); }
+    bool _GetBoolean() const override { return  GetSqliteValue(m_sqliteColumnIndex).GetValueInt(); }
     uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
     double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
-    double _GetDouble() const override { return GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex); }
-    int _GetInt() const override { return GetSqliteStatement().GetValueInt(m_sqliteColumnIndex); }
-    int64_t _GetInt64() const override { return GetSqliteStatement().GetValueInt64(m_sqliteColumnIndex); }
-    Utf8CP _GetText() const override { return GetSqliteStatement().GetValueText(m_sqliteColumnIndex); }
+    double _GetDouble() const override { return GetSqliteValue(m_sqliteColumnIndex).GetValueDouble(); }
+    int _GetInt() const override { return GetSqliteValue(m_sqliteColumnIndex).GetValueInt(); }
+    int64_t _GetInt64() const override { return GetSqliteValue(m_sqliteColumnIndex).GetValueInt64(); }
+    Utf8CP _GetText() const override { return GetSqliteValue(m_sqliteColumnIndex).GetValueText(); }
     DPoint2d _GetPoint2d() const override;
     DPoint3d _GetPoint3d() const override;
     IGeometryPtr _GetGeometry() const override;

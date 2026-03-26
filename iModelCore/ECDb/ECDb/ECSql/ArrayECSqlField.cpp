@@ -22,11 +22,11 @@ ECSqlStatus ArrayECSqlField::_OnAfterStep()
     {
     DoReset();
 
-    if (GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex))
+    if (GetSqliteValue(m_sqliteColumnIndex).IsNull())
         m_json.SetArray();
     else
         {
-        Utf8CP jsonStr = GetSqliteStatement().GetValueText(m_sqliteColumnIndex);
+        Utf8CP jsonStr = GetSqliteValue(m_sqliteColumnIndex).GetValueText();
         if (m_json.Parse<0>(jsonStr).HasParseError())
             {
             LOG.errorv("Could not deserialize struct array JSON: '%s'", jsonStr);
@@ -35,7 +35,7 @@ ECSqlStatus ArrayECSqlField::_OnAfterStep()
         }
 
     BeAssert(m_json.IsArray());
-    m_value = std::make_unique<JsonECSqlValue>(m_preparedECSqlStatement.GetECDb(), m_json, GetColumnInfo());
+    m_value = std::make_unique<JsonECSqlValue>(GetECDb(), m_json, GetColumnInfo());
     return ECSqlStatus::Success;
     }
 

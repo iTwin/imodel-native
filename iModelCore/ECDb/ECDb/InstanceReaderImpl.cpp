@@ -39,7 +39,7 @@ struct ClassIdECSqlField : ECSqlField {
 
     public:
         ClassIdECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECClassId classId)
-            :ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_classId(classId){}
+            :ECSqlField(ecsqlStatement.GetECDb(), ecsqlStatement.GetSqliteStatement(), ecsqlColumnInfo, false, false), m_classId(classId){}
 };
 
 // ======================================================================================

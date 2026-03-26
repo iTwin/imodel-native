@@ -41,7 +41,7 @@ private:
 
 public:
     PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(stmt, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
+        : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
         {}
     PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}

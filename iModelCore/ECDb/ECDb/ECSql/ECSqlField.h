@@ -14,8 +14,9 @@ struct ECSqlSelectPreparedStatement;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlField : public IECSqlValue
     {
-protected:
-    ECSqlSelectPreparedStatement& m_preparedECSqlStatement;
+private:
+    ECDbCR m_ecdb;
+    Statement& m_sqliteStatement;
     ECSqlColumnInfo m_ecsqlColumnInfo;
     ECSqlColumnInfo m_ecsqlDynamicColumnInfo;
     bool m_requiresOnAfterStep = false;
@@ -28,11 +29,14 @@ private:
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
     virtual void _OnDynamicPropertyUpdated() {}
 protected:
-    ECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_preparedECSqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+    ECSqlField(ECDbCR ecdb, Statement& sqliteStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_ecdb(ecdb), m_sqliteStatement(sqliteStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    Statement& GetSqliteStatement() const;
+    DbValue GetSqliteValue(int colNum) const;
+    ECDbCR GetECDb() const { return m_ecdb; }
+    void SetRequiresOnAfterStep(bool requires) { m_requiresOnAfterStep = requires; }
+    void SetRequiresOnAfterReset(bool requires) { m_requiresOnAfterReset = requires; }
 
 public:
     virtual ~ECSqlField() {}

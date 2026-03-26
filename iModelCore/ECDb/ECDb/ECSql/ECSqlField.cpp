@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Statement& ECSqlField::GetSqliteStatement() const { return m_preparedECSqlStatement.GetSqliteStatement(); }
+DbValue ECSqlField::GetSqliteValue(int colNum) const { return m_sqliteStatement.GetDbValue(colNum); }
 
 
 //---------------------------------------------------------------------------------------
