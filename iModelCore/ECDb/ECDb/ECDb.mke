@@ -140,6 +140,7 @@ ECDbAllHeaders = \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
+                $(baseDir)ECChangesetReaderImpl.h \
                 $(baseDir)ClassViews.h
 
 
@@ -249,6 +250,8 @@ $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSu
 $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedIdsIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECChangesetReaderImpl$(oext):                             $(baseDir)ECChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
