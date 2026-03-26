@@ -47,17 +47,6 @@ void ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changes
 void ECChangesetReader::Close() { m_pimpl->Close(); }
 DbResult ECChangesetReader::Step() { return m_pimpl->Step(); }
 
-bool         ECChangesetReader::IsOpen()        const { return m_pimpl->IsOpen(); }
-Utf8StringCR ECChangesetReader::GetTableName()  const { return m_pimpl->GetTableName(); }
-DbOpcode     ECChangesetReader::GetOpcode()     const { return m_pimpl->GetOpcode(); }
-bool         ECChangesetReader::IsDirect()      const { return m_pimpl->IsDirect(); }
-bool         ECChangesetReader::IsUpdate()      const { return m_pimpl->IsUpdate(); }
-bool         ECChangesetReader::IsInsert()      const { return m_pimpl->IsInsert(); }
-bool         ECChangesetReader::IsDelete()      const { return m_pimpl->IsDelete(); }
-bool         ECChangesetReader::IsIndirect()    const { return m_pimpl->IsIndirect(); }
-int          ECChangesetReader::GetColumnCount() const { return m_pimpl->GetColumnCount(); }
-Utf8StringCR ECChangesetReader::GetDdl()        const { return m_pimpl->GetDdl(); }
-
 IECSqlValue const& ECChangesetReader::GetValue(Stage stage, int columnIndex) const {
     return m_pimpl->GetValue(stage, columnIndex);
 }
