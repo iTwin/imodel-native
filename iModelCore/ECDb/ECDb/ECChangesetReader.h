@@ -35,7 +35,8 @@ public:
     ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert = false);
     ECDB_EXPORT void Close();
     ECDB_EXPORT DbResult Step();
-
+    ECDB_EXPORT DbResult GetTableName(Utf8StringR tableName) const;
+    ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
     // Primary value accessor
     ECDB_EXPORT IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
 

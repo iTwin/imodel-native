@@ -19,6 +19,10 @@ PreparedECChangesetReader::PreparedECChangesetReader(ECDbCR ecdb)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert) {
+    if(IsOpen()) {
+        LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+    }
     BeFileName input;
     input.AppendUtf8(changesetFile.c_str());
 
@@ -40,6 +44,10 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert) {
+    if(IsOpen()) {
+        LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+    }
     if (m_changeStream != nullptr)
         return BE_SQLITE_ERROR;
 
@@ -55,6 +63,10 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert) {
+    if(IsOpen()) {
+        LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+    }
     m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
     for (auto& changesetFile : files) {
@@ -124,6 +136,10 @@ DbResult PreparedECChangesetReader::OnAfterStep() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::Step() {
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to step a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+    }
     if (m_changes == nullptr) {
         m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
         m_currentChange = m_changes->begin();
@@ -173,8 +189,51 @@ void PreparedECChangesetReader::ReFetchValues() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+int PreparedECChangesetReader::GetColumnCount(Stage stage) const {
+    if(!IsOpen())
+    {
+        LOG.warningv("Attempting to get column count from a closed PreparedECChangesetReader.");
+        return 0;
+    }
+    if(!IsStepped())
+    {
+        LOG.warningv("Attempting to get column count from a PreparedECChangesetReader that has not been stepped.");
+        return 0;
+    }
+    return m_fields.find(stage) != m_fields.end() ? (int)m_fields.at(stage).size() : 0;
+}
+
+DbResult PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {
+    if (!IsOpen())
+        {
+        LOG.errorv("Attempting to get table name from a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+        }
+    if (!IsStepped())
+        {
+        LOG.errorv("Attempting to get table name from a PreparedECChangesetReader that has not been stepped.");
+        return BE_SQLITE_ERROR;
+        }
+    tableName = GetTableName();
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIndex) const {
-    if (columnIndex < 0 || columnIndex >= (int)m_fields[stage].size()) {
+    if (!IsOpen())
+        {
+        LOG.warningv("Attempting to get value from a closed PreparedECChangesetReader.");
+        return NoopECSqlValue::GetSingleton();
+        }
+    if (!IsStepped())
+        {
+        LOG.warningv("Attempting to get value from a PreparedECChangesetReader that has not been stepped.");
+        return NoopECSqlValue::GetSingleton();
+        }
+    int size = GetColumnCount(stage);
+    if (columnIndex < 0 || columnIndex >= size) {
         LOG.warningv("Column index %d is out of range for table '%s'.", columnIndex, GetTableName().c_str());
         return NoopECSqlValue::GetSingleton();
     }

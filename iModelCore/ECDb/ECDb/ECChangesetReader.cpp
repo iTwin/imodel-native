@@ -34,6 +34,14 @@ DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& cha
 void ECChangesetReader::Close() { m_pimpl->Close(); }
 DbResult ECChangesetReader::Step() { return m_pimpl->Step(); }
 
+DbResult ECChangesetReader::GetTableName(Utf8StringR tableName) const {
+    return m_pimpl->GetTableName(tableName);
+}
+
+DbResult ECChangesetReader::GetOpcode(DbOpcode& opcode) const {
+    return m_pimpl->GetOpcode(opcode);
+}
+
 IECSqlValue const& ECChangesetReader::GetValue(Stage stage, int columnIndex) const {
     return m_pimpl->GetValue(stage, columnIndex);
 }
