@@ -62,6 +62,7 @@
 #include "SchemaImportContext.h"
 #include "ChangeManager.h"
 #include "ChangeIteratorImpl.h"
+#include "ECChangesetReader.h"
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
 #include "InstanceReaderImpl.h"

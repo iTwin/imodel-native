@@ -4,10 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/IECSqlValue.h>
+#include "IECSqlFieldReader.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-struct ECSqlSelectPreparedStatement;
 
 //=======================================================================================
 //! @bsiclass
@@ -15,7 +14,7 @@ struct ECSqlSelectPreparedStatement;
 struct ECSqlField : public IECSqlValue
     {
 protected:
-    ECSqlSelectPreparedStatement& m_preparedECSqlStatement;
+    IECSqlFieldReader& m_reader;
     ECSqlColumnInfo m_ecsqlColumnInfo;
     ECSqlColumnInfo m_ecsqlDynamicColumnInfo;
     bool m_requiresOnAfterStep = false;
@@ -28,11 +27,11 @@ private:
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
     virtual void _OnDynamicPropertyUpdated() {}
 protected:
-    ECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_preparedECSqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+    ECSqlField(IECSqlFieldReader& reader, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_reader(reader), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    Statement& GetSqliteStatement() const;
+    IECSqlFieldReader& GetReader() const { return m_reader; }
 
 public:
     virtual ~ECSqlField() {}

@@ -71,6 +71,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbMapSchemaHelper.h \
                 $(baseDir)PolicyManager.h \
                 $(baseDir)ChangeIteratorImpl.h \
+                $(baseDir)ECChangesetReader.h \
                 $(baseDir)ChangeManager.h \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
@@ -125,6 +126,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/VirtualSetBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
+                $(baseDir)ECSql/IECSqlFieldReader.h \
                 $(baseDir)ECSql/PointECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \
                 $(baseDir)ECSql/StructECSqlField.h \
@@ -249,6 +251,8 @@ $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSu
 $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedIdsIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECChangesetReader$(oext):                                 $(baseDir)ECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

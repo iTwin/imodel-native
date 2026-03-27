@@ -40,10 +40,10 @@ private:
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 
 public:
-    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(stmt, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
+    PointECSqlField(IECSqlFieldReader& reader, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
+        : ECSqlField(reader, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
         {}
-    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
+    PointECSqlField(IECSqlFieldReader& reader, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (reader, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}
     };
 

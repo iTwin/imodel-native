@@ -104,6 +104,7 @@ public:
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
     ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
+    BeSQLite::Statement& GetSqliteStatement() const { return m_sqliteStatement; }
     };
 
 //=======================================================================================
@@ -253,7 +254,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparedStatement final : public SingleECSqlPreparedStatement
+struct ECSqlSelectPreparedStatement final : public SingleECSqlPreparedStatement, public IECSqlFieldReader
     {
     constexpr static auto SELECT_PTR_NAME = "#select#";
     private:
@@ -284,6 +285,17 @@ struct ECSqlSelectPreparedStatement final : public SingleECSqlPreparedStatement
         ECSqlField* GetField(int columnIndex);
         void AddField(std::unique_ptr<ECSqlField>);
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
+
+        // IECSqlFieldReader
+        ECDb const& GetECDb() const override { return m_ecdb; }
+        bool IsColumnNull(int col) const override { return GetSqliteStatement().IsColumnNull(col); }
+        bool GetValueBoolean(int col) const override { return GetSqliteStatement().GetValueBoolean(col); }
+        double GetValueDouble(int col) const override { return GetSqliteStatement().GetValueDouble(col); }
+        int GetValueInt(int col) const override { return GetSqliteStatement().GetValueInt(col); }
+        int64_t GetValueInt64(int col) const override { return GetSqliteStatement().GetValueInt64(col); }
+        Utf8CP GetValueText(int col) const override { return GetSqliteStatement().GetValueText(col); }
+        int GetColumnBytes(int col) const override { return GetSqliteStatement().GetColumnBytes(col); }
+        void const* GetValueBlob(int col) const override { return GetSqliteStatement().GetValueBlob(col); }
     };
 
 //=======================================================================================

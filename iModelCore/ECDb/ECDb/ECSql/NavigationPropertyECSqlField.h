@@ -68,7 +68,7 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterab
         ECSqlStatus _OnAfterStep() override;
 
     public:
-        NavigationPropertyECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
+    NavigationPropertyECSqlField(IECSqlFieldReader& reader, ECSqlColumnInfo const& colInfo) : ECSqlField(reader, colInfo, false, false) {}
         void SetMembers(std::unique_ptr<ECSqlField> idField, std::unique_ptr<ECSqlField> relClassIdField);
     };
 
