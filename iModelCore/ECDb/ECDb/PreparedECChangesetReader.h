@@ -35,9 +35,9 @@ private:
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
 
-    void OpenFile(Utf8StringCR changesetFile, bool invert);
-    void Open(std::unique_ptr<ChangeStream> changeStream, bool invert);
-    void OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert);
+    DbResult OpenFile(Utf8StringCR changesetFile, bool invert);
+    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert);
+    DbResult OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert);
     void Close();
     DbResult Step();
 

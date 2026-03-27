@@ -18,9 +18,12 @@ PreparedECChangesetReader::PreparedECChangesetReader(ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert) {
+DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert) {
     BeFileName input;
     input.AppendUtf8(changesetFile.c_str());
+
+    if (!input.DoesPathExist())
+        return BE_SQLITE_CANTOPEN;
 
     bvector<BeFileName> files{input};
     auto reader = std::make_unique<ChangesetFileReaderBase>(files);
@@ -30,40 +33,56 @@ void PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert
     if (!ddlChanges._IsEmpty())
         m_ddl = ddlChanges.ToString();
 
-    Open(std::move(reader), invert);
+    return Open(std::move(reader), invert);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert) {
+DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert) {
+    if (m_changeStream != nullptr)
+        return BE_SQLITE_ERROR;
+
+    if (changeStream == nullptr)
+        return BE_SQLITE_ERROR;
+
     m_invert = invert;
     m_changeStream = std::move(changeStream);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert) {
+DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert) {
     m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
+        if (!inputFile.DoesPathExist())
+            return BE_SQLITE_CANTOPEN;
+
         bvector<BeFileName> fileVec{inputFile};
         ChangesetFileReaderBase reader(fileVec);
         bool containsSchemaChanges;
         DdlChanges ddlChanges;
-        reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
+        if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges))
+            return BE_SQLITE_ERROR;
+
         for (auto& ddl : ddlChanges.GetDDLs()) {
             ddlGroup.AddDDL(ddl.c_str());
         }
-        reader.AddToChangeGroup(*m_changeGroup);
+        if (BE_SQLITE_OK != reader.AddToChangeGroup(*m_changeGroup))
+            return BE_SQLITE_ERROR;
     }
 
     m_changeStream = std::make_unique<ChangeSet>();
-    m_changeStream->FromChangeGroup(*m_changeGroup);
+    if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup))
+        return BE_SQLITE_ERROR;
+
     m_ddl = ddlGroup.ToString();
     m_invert = invert;
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -156,7 +175,7 @@ void PreparedECChangesetReader::ReFetchValues() {
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIndex) const {
     if (columnIndex < 0 || columnIndex >= (int)m_fields[stage].size()) {
-        LOG.errorv("Column index %d is out of range for table '%s'.", columnIndex, GetTableName().c_str());
+        LOG.warningv("Column index %d is out of range for table '%s'.", columnIndex, GetTableName().c_str());
         return NoopECSqlValue::GetSingleton();
     }
     return *(m_fields[stage][columnIndex]);

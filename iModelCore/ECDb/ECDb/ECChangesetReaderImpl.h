@@ -24,25 +24,31 @@ public:
     Impl() {}
     ~Impl() {}
 
-    void OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert) {
-        if(IsOpen())
-            Close();
+    DbResult OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert) {
+        if(IsOpen()) {
+            LOG.errorv("ECChangesetReader is already open.");
+            return BE_SQLITE_ERROR;
+        }
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-        m_prepared->OpenFile(file, invert);
+        return m_prepared->OpenFile(file, invert);
     }
 
-    void OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert) {
-        if(IsOpen())
-            Close();
+    DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert) {
+        if(IsOpen()) {
+            LOG.errorv("ECChangesetReader is already open.");
+            return BE_SQLITE_ERROR;
+        }
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-        m_prepared->Open(std::move(changeStream), invert);
+        return m_prepared->Open(std::move(changeStream), invert);
     }
 
-    void OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert) {
-        if(IsOpen())
-            Close();
+    DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert) {
+        if(IsOpen()) {
+            LOG.errorv("ECChangesetReader is already open.");
+            return BE_SQLITE_ERROR;
+        }
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-        m_prepared->OpenGroup(files, db, invert);
+        return m_prepared->OpenGroup(files, db, invert);
     }
 
     void Close() {

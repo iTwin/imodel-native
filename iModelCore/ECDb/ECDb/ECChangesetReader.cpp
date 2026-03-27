@@ -19,29 +19,16 @@ ECChangesetReader::ECChangesetReader() : m_pimpl(new Impl()) {}
 
 ECChangesetReader::~ECChangesetReader() { delete m_pimpl; }
 
-ECChangesetReader::ECChangesetReader(ECChangesetReader&& rhs) : m_pimpl(rhs.m_pimpl) {
-    rhs.m_pimpl = nullptr;
+DbResult ECChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert) {
+    return m_pimpl->OpenFile(ecdb, changesetFile, invert);
 }
 
-ECChangesetReader& ECChangesetReader::operator=(ECChangesetReader&& rhs) {
-    if (this != &rhs) {
-        delete m_pimpl;
-        m_pimpl = rhs.m_pimpl;
-        rhs.m_pimpl = nullptr;
-    }
-    return *this;
+DbResult ECChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert) {
+    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert);
 }
 
-void ECChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert) {
-    m_pimpl->OpenFile(ecdb, changesetFile, invert);
-}
-
-void ECChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert) {
-    m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert);
-}
-
-void ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
-    m_pimpl->OpenGroup(ecdb, changesetFiles, db, invert);
+DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
+    return m_pimpl->OpenGroup(ecdb, changesetFiles, db, invert);
 }
 
 void ECChangesetReader::Close() { m_pimpl->Close(); }

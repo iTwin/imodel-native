@@ -22,17 +22,17 @@ private:
 
     ECChangesetReader(ECChangesetReader const&) = delete;
     ECChangesetReader& operator=(ECChangesetReader const&) = delete;
+    ECChangesetReader(ECChangesetReader&& rhs) = delete;
+    ECChangesetReader& operator=(ECChangesetReader&& rhs) = delete;
 
 public:
     ECChangesetReader();
     ~ECChangesetReader();
-    ECChangesetReader(ECChangesetReader&& rhs);
-    ECChangesetReader& operator=(ECChangesetReader&& rhs);
 
     // Lifecycle
-    ECDB_EXPORT void OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert = false);
-    ECDB_EXPORT void OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert = false);
-    ECDB_EXPORT void OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert = false);
+    ECDB_EXPORT DbResult OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert = false);
+    ECDB_EXPORT DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert = false);
+    ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert = false);
     ECDB_EXPORT void Close();
     ECDB_EXPORT DbResult Step();
 
