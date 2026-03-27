@@ -58,9 +58,9 @@ void PrimitiveECSqlField::UpdateDateTimeMetaData() {
 void const* PrimitiveECSqlField::_GetBlob(int* blobSize) const
     {
     if (blobSize != nullptr)
-        *blobSize = GetSqliteValue(m_sqliteColumnIndex).GetValueBytes();
+        *blobSize = GetSqliteValue(m_sqliteColumnIndex)->GetBytes();
 
-    return GetSqliteValue(m_sqliteColumnIndex).GetValueBlob();
+    return GetSqliteValue(m_sqliteColumnIndex)->GetBlob();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ void const* PrimitiveECSqlField::_GetBlob(int* blobSize) const
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    const double jd = GetSqliteValue(m_sqliteColumnIndex).GetValueDouble();
+    const double jd = GetSqliteValue(m_sqliteColumnIndex)->GetDouble();
     metadata = m_datetimeMetadata;
     return jd;
     }

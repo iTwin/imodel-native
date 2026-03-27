@@ -11,9 +11,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbValue ECSqlField::GetSqliteValue(int colNum) const
+std::unique_ptr<IDbValueView> ECSqlField::GetSqliteValue(int colNum) const
     {
-    return m_dataReaderStrategy->GetSqliteValue(colNum);
+    return m_dataReaderStrategy->GetValue(colNum);
     }
 
 

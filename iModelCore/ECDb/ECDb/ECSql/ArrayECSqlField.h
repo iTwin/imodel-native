@@ -112,7 +112,7 @@ private:
     mutable std::unique_ptr<JsonECSqlValue> m_value = nullptr;
 
     //IECSqlValue
-    bool _IsNull() const override { return GetSqliteValue(m_sqliteColumnIndex).IsNull(); }
+    bool _IsNull() const override { return GetSqliteValue(m_sqliteColumnIndex)->IsNull(); }
 
     void const* _GetBlob(int* blobSize) const override { return GetValue().GetBlob(blobSize); }
     bool _GetBoolean() const override { return GetValue().GetBoolean(); }

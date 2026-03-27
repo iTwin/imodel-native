@@ -22,11 +22,11 @@ ECSqlStatus ArrayECSqlField::_OnAfterStep()
     {
     DoReset();
 
-    if (GetSqliteValue(m_sqliteColumnIndex).IsNull())
+    if (GetSqliteValue(m_sqliteColumnIndex)->IsNull())
         m_json.SetArray();
     else
         {
-        Utf8CP jsonStr = GetSqliteValue(m_sqliteColumnIndex).GetValueText();
+        Utf8CP jsonStr = GetSqliteValue(m_sqliteColumnIndex)->GetText();
         if (m_json.Parse<0>(jsonStr).HasParseError())
             {
             LOG.errorv("Could not deserialize struct array JSON: '%s'", jsonStr);

@@ -4,21 +4,25 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/IECSqlValue.h>
+#include "IDbValueView.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlSelectPreparedStatement;
 
 //=======================================================================================
+//! Strategy interface for providing column values to an ECSqlField.
+//! Produces an IDbValueView for the given column index.
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct IECSqlDataReaderStrategy
     {
     virtual ~IECSqlDataReaderStrategy() = default;
-    virtual DbValue GetSqliteValue(int colNum) const = 0;
+    virtual std::unique_ptr<IDbValueView> GetValue(int colNum) const = 0;
     };
 
 //=======================================================================================
+//! IECSqlDataReaderStrategy backed by a SQLite Statement.
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SqliteStatementDataReaderStrategy : IECSqlDataReaderStrategy
@@ -27,21 +31,26 @@ struct SqliteStatementDataReaderStrategy : IECSqlDataReaderStrategy
         Statement& m_sqliteStatement;
     public:
         SqliteStatementDataReaderStrategy(Statement& sqliteStatement) : m_sqliteStatement(sqliteStatement) {}
-        DbValue GetSqliteValue(int colNum) const override { return m_sqliteStatement.GetDbValue(colNum); }
+        std::unique_ptr<IDbValueView> GetValue(int colNum) const override
+            { return std::make_unique<StatementDbValueView>(m_sqliteStatement, colNum); }
     };
 
 //=======================================================================================
+//! IECSqlDataReaderStrategy backed by a changeset iterator row.
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangeSetDataReaderStrategy : IECSqlDataReaderStrategy
     {
     private:
-        Changes::Change m_change;
-        Changes::Change::Stage m_stage;
+        Changes::Change const& m_change;
+        Changes::Change::Stage const& m_stage;
     public:
         ChangeSetDataReaderStrategy(Changes::Change const& change, Changes::Change::Stage const& stage) : m_change(change), m_stage(stage) {}
-        DbValue GetSqliteValue(int colNum) const override { BeAssert(colNum >= 0 && colNum < m_change.GetColumnCount() && "Column index is out of bounds.");
-    return m_change.GetValue(colNum, m_stage); }
+        std::unique_ptr<IDbValueView> GetValue(int colNum) const override
+            {
+            BeAssert(colNum >= 0 && colNum < m_change.GetColumnCount() && "Column index is out of bounds.");
+            return std::make_unique<ChangeSetDbValueView>(m_change.GetValue(colNum, m_stage));
+            }
     };
 
 //=======================================================================================
@@ -66,7 +75,7 @@ private:
 protected:
     //! Constructor for Statement-based fields (existing ECSql path)
     ECSqlField(ECDbCR ecdb, Statement& sqliteStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_ecdb(ecdb),  m_dataReaderStrategy(std::make_unique<SqliteStatementDataReaderStrategy>(sqliteStatement)),
+        : m_ecdb(ecdb), m_dataReaderStrategy(std::make_unique<SqliteStatementDataReaderStrategy>(sqliteStatement)),
           m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
@@ -76,7 +85,7 @@ protected:
           m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    DbValue GetSqliteValue(int colNum) const;
+    std::unique_ptr<IDbValueView> GetSqliteValue(int colNum) const;
     ECDbCR GetECDb() const { return m_ecdb; }
     void SetRequiresOnAfterStep(bool req) { m_requiresOnAfterStep = req; }
     void SetRequiresOnAfterReset(bool req) { m_requiresOnAfterReset = req; }

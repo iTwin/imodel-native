@@ -13,11 +13,11 @@ bool PointECSqlField::_IsNull() const
     {
     //To be consistent with the ECSQL parser which translates "MyPoint IS NULL" to "MyPoint.X IS NULL *AND* MyPoint.Y IS NULL"
     //this method uses the same semantics.
-    const auto coordXValue = GetSqliteValue(m_xColumnIndex).GetValueDouble();
-    const auto coordYValue = GetSqliteValue(m_yColumnIndex).GetValueDouble();
-    const auto coordZValue = GetSqliteValue(m_zColumnIndex).GetValueDouble();
-    return (GetSqliteValue(m_xColumnIndex).IsNull() || std::isinf(coordXValue) || std::isnan(coordXValue) || GetSqliteValue(m_yColumnIndex).IsNull() || std::isinf(coordYValue) || std::isnan(coordYValue)
-        || (IsPoint3d() && (GetSqliteValue(m_zColumnIndex).IsNull() || std::isinf(coordZValue) || std::isnan(coordZValue))));
+    const auto coordXValue = GetSqliteValue(m_xColumnIndex)->GetDouble();
+    const auto coordYValue = GetSqliteValue(m_yColumnIndex)->GetDouble();
+    const auto coordZValue = GetSqliteValue(m_zColumnIndex)->GetDouble();
+    return (GetSqliteValue(m_xColumnIndex)->IsNull() || std::isinf(coordXValue) || std::isnan(coordXValue) || GetSqliteValue(m_yColumnIndex)->IsNull() || std::isinf(coordYValue) || std::isnan(coordYValue)
+        || (IsPoint3d() && (GetSqliteValue(m_zColumnIndex)->IsNull() || std::isinf(coordZValue) || std::isnan(coordZValue))));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -31,8 +31,8 @@ DPoint2d PointECSqlField::_GetPoint2d() const
         return NoopECSqlValue::GetSingleton().GetPoint2d();
         }
 
-    return DPoint2d::From(GetSqliteValue(m_xColumnIndex).GetValueDouble(),
-                          GetSqliteValue(m_yColumnIndex).GetValueDouble());
+    return DPoint2d::From(GetSqliteValue(m_xColumnIndex)->GetDouble(),
+                          GetSqliteValue(m_yColumnIndex)->GetDouble());
     }
 
 
@@ -47,9 +47,9 @@ DPoint3d PointECSqlField::_GetPoint3d() const
         return NoopECSqlValue::GetSingleton().GetPoint3d();
         }
 
-    return DPoint3d::From(GetSqliteValue(m_xColumnIndex).GetValueDouble(),
-                          GetSqliteValue(m_yColumnIndex).GetValueDouble(),
-                          GetSqliteValue(m_zColumnIndex).GetValueDouble());
+    return DPoint3d::From(GetSqliteValue(m_xColumnIndex)->GetDouble(),
+                          GetSqliteValue(m_yColumnIndex)->GetDouble(),
+                          GetSqliteValue(m_zColumnIndex)->GetDouble());
     }
 
 
