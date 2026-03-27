@@ -13,6 +13,12 @@ BUILD_WITH_C20=1
 
 baseDir = $(_MakeFilePath)
 
+dirToSearch = $(BuildContext)VendorAPI/
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/msgpack
+%include cincapnd.mki
+
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)BeSQLite
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
