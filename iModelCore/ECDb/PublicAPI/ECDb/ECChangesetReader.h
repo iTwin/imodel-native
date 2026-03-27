@@ -38,7 +38,6 @@ public:
     // Primary value accessor
     ECDB_EXPORT ECDb const* GetECDb() const;
     int GetColumnCount(Stage stage) const;
-    ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
     ECDB_EXPORT DbResult GetTableName(Utf8StringR tableName) const;
     ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
     ECDB_EXPORT IECSqlValue const& GetValue(Stage stage, int columnIndex) const;

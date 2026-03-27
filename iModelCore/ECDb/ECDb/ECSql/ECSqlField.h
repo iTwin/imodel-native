@@ -78,8 +78,8 @@ protected:
 
     DbValue GetSqliteValue(int colNum) const;
     ECDbCR GetECDb() const { return m_ecdb; }
-    void SetRequiresOnAfterStep(bool requires) { m_requiresOnAfterStep = requires; }
-    void SetRequiresOnAfterReset(bool requires) { m_requiresOnAfterReset = requires; }
+    void SetRequiresOnAfterStep(bool req) { m_requiresOnAfterStep = req; }
+    void SetRequiresOnAfterReset(bool req) { m_requiresOnAfterReset = req; }
 
 public:
     virtual ~ECSqlField() {}

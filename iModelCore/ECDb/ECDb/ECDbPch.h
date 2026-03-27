@@ -67,7 +67,6 @@
 #include "ConcurrentQueryManagerImpl.h"
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
-#include "ECChangesetReader.h"
 #include "BuiltInVTabs.h"
 #include "ClassViews.h"
 #include "InstanceWriterImpl.h"

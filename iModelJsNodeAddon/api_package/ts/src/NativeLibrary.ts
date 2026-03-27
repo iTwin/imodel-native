@@ -1537,7 +1537,7 @@ export declare namespace IModelJsNative {
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public close(): void;
     public step(): boolean;
-    public getValue(stage: number, columnIndex: number): any;
+    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): any;
   }
 
   class DisableNativeAssertions implements IDisposable {
