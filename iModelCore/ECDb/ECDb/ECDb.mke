@@ -35,7 +35,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDbVirtualTab.h \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
-                $(publicApiDir)InstanceRepository.h
+                $(publicApiDir)InstanceRepository.h \
+                $(publicApiDir)ECChangesetReader.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \

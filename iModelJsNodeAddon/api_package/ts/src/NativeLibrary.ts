@@ -1528,6 +1528,18 @@ export declare namespace IModelJsNative {
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
+  class ECChangesetReader {
+    constructor();
+    public openFile(db: AnyECDb, fileName: string, invert: boolean): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
+    public close(): void;
+    public step(): boolean;
+    public getValue(stage: number, columnIndex: number): any;
+  }
+
   class DisableNativeAssertions implements IDisposable {
     constructor();
     public dispose(): void;

@@ -3,7 +3,7 @@
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include <ECDb/ECChangesetReader.h>
+#include <ECDb/ECDb.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
