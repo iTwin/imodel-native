@@ -254,6 +254,8 @@ $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIt
 
 $(o)ECChangesetReader$(oext):                                 $(baseDir)ECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECChangesetReaderImpl$(oext):                             $(baseDir)ECChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
