@@ -3,7 +3,7 @@
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include <ECDb/ECDb.h>
+#include <ECDb/ECChangesetReader.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -35,10 +35,28 @@ public:
     ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert = false);
     ECDB_EXPORT void Close();
     ECDB_EXPORT DbResult Step();
-
     // Primary value accessor
+    ECDB_EXPORT ECDb const* GetECDb() const;
+    int GetColumnCount(Stage stage) const;
+    ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
+    ECDB_EXPORT DbResult GetTableName(Utf8StringR tableName) const;
+    ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
     ECDB_EXPORT IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
 
+};
+
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECChangesetRow : public IECSqlRow {
+    private:
+        ECChangesetReader const& m_reader;
+        ECChangesetReader::Stage m_stage;       
+    public:
+        ECChangesetRow(ECChangesetReader const& reader, ECChangesetReader::Stage stage) : m_reader(reader), m_stage(stage) {}
+        virtual int GetColumnCount() const override { return m_reader.GetColumnCount(m_stage); }
+        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_reader.GetValue(m_stage, columnIndex); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

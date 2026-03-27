@@ -5094,7 +5094,7 @@ private:
     DEFINE_CONSTRUCTOR;
     ECChangesetReader m_reader;
 
-    static ECDb* ExtractECDb(NapiInfoCR info, Napi::Object dbObj)
+    ECDb* ExtractECDb(NapiInfoCR info, Napi::Object dbObj)
         {
         ECDb* ecdb = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj))
@@ -5106,6 +5106,15 @@ private:
         if (!ecdb || !ecdb->IsDbOpen())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
         return ecdb;
+        }
+    
+    ECChangesetReader::Stage GetStage(NapiInfoCR info, int targetStage)
+        {
+        if (targetStage < 0 || targetStage > 1)
+            THROW_JS_TYPE_EXCEPTION("Invalid stage. Expected 0 (BeforeFirst) or 1");
+        if(targetStage == 0)
+            return ECChangesetReader::Stage::Old;
+        return ECChangesetReader::Stage::New;
         }
 
 public:
@@ -5215,9 +5224,19 @@ public:
     Napi::Value GetValue(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_INTEGER(0, stage);
-        REQUIRE_ARGUMENT_INTEGER(1, columnIndex);
-        // TODO: implement
-        return Env().Undefined();
+        REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_reader.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
+        ECChangesetReader::Stage stageEnum = GetStage(info, stage);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue rowJson = out["data"];
+        if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+
+        return out;
         }
 };
 

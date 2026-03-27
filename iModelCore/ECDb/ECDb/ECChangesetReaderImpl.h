@@ -32,6 +32,8 @@ public:
     DbResult GetOpcode(DbOpcode& opcode) const;
     DbResult Step();
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
+    ECDb const* GetECDb() const;
+    int GetColumnCount(Stage stage) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

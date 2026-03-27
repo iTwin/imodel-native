@@ -63,4 +63,20 @@ IECSqlValue const& ECChangesetReader::Impl::GetValue(Stage stage, int columnInde
     return m_prepared->GetValue(stage, columnIndex);
 }
 
+ECDb const* ECChangesetReader::Impl::GetECDb() const {
+    if (!IsPrepared()) {
+        LOG.error("A file or a txn or in memory changes must be opened before accessing values.");
+        return nullptr;
+    }
+    return &m_prepared->GetECDb();
+}
+
+int ECChangesetReader::Impl::GetColumnCount(Stage stage) const {
+    if (!IsPrepared()) {
+        LOG.error("A file or a txn or in memory changes must be opened before accessing values.");
+        return 0;
+    }
+    return m_prepared->GetColumnCount(stage);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

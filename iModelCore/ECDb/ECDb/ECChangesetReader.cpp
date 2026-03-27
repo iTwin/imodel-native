@@ -46,4 +46,12 @@ IECSqlValue const& ECChangesetReader::GetValue(Stage stage, int columnIndex) con
     return m_pimpl->GetValue(stage, columnIndex);
 }
 
+ECDb const* ECChangesetReader::GetECDb() const {
+    return  m_pimpl->GetECDb();
+}
+
+int ECChangesetReader::GetColumnCount(Stage stage) const {
+    return m_pimpl->GetColumnCount(stage);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
