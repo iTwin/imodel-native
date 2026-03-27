@@ -5132,6 +5132,8 @@ public:
             InstanceMethod("openTxn",             &NativeECChangesetReader::OpenTxn),
             InstanceMethod("close",               &NativeECChangesetReader::Close),
             InstanceMethod("step",                &NativeECChangesetReader::Step),
+            InstanceMethod("getTableName",        &NativeECChangesetReader::GetTableName),
+            InstanceMethod("getOpcode",           &NativeECChangesetReader::GetOpcode),
             InstanceMethod("getValue",            &NativeECChangesetReader::GetValue),
         });
         exports.Set("ECChangesetReader", t);
@@ -5213,6 +5215,24 @@ public:
     void Close(NapiInfoCR info)
         {
         m_reader.Close();
+        }
+
+    Napi::Value GetTableName(NapiInfoCR info)
+        {
+        Utf8String tableName;
+        DbResult rc = m_reader.GetTableName(tableName);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getTableName() failed", rc);
+        return Napi::String::New(Env(), tableName.c_str());
+        }
+
+    Napi::Value GetOpcode(NapiInfoCR info)
+        {
+        DbOpcode opcode;
+        DbResult rc = m_reader.GetOpcode(opcode);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getOpcode() failed", rc);
+        return Napi::Number::New(Env(), (int)opcode);
         }
 
     Napi::Value Step(NapiInfoCR info)

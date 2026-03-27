@@ -23,7 +23,6 @@ private:
     std::map<Stage, std::vector<std::unique_ptr<ECSqlField>>> m_fields;
     //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
     std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
-    uint64_t m_currentChangeIndex;
 
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;

@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedECChangesetReader::PreparedECChangesetReader(ECDbCR ecdb)
-    : m_ecdb(ecdb), m_currentChange(nullptr, false), m_currentChangeIndex(0)
+    : m_ecdb(ecdb), m_currentChange(nullptr, false)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -110,7 +110,6 @@ void PreparedECChangesetReader::clearFields() {
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::Close() {
     m_currentChange = Changes::Change(nullptr, false);
-    m_currentChangeIndex = 0;
     m_changes = nullptr;
     m_changeStream = nullptr;
     m_changeGroup = nullptr;
@@ -147,7 +146,6 @@ DbResult PreparedECChangesetReader::Step() {
     } else {
         ++m_currentChange;
     }
-    ++m_currentChangeIndex;
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
     ReFetchValues();
 
@@ -202,7 +200,7 @@ int PreparedECChangesetReader::GetColumnCount(Stage stage) const {
         LOG.warningv("Attempting to get column count from a PreparedECChangesetReader that has not been stepped.");
         return 0;
     }
-    return m_fields.find(stage) != m_fields.end() ? (int)m_fields.at(stage).size() : 0;
+    return m_fields.find(stage) != m_fields.end() ? static_cast<int>(m_fields.at(stage).size()) : 0;
 }
 
 DbResult PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {

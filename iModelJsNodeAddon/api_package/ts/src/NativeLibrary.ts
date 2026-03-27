@@ -1537,6 +1537,8 @@ export declare namespace IModelJsNative {
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public close(): void;
     public step(): boolean;
+    public getTableName(): string;
+    public getOpcode(): DbOpcode;
     public getValue(stage: number, arg: ECSqlRowAdaptorOptions): any;
   }
 

@@ -27,9 +27,10 @@ public:
     DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert);
     DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert);
     void Close();
+    DbResult Step();
+
     DbResult GetTableName(Utf8StringR tableName) const;
     DbResult GetOpcode(DbOpcode& opcode) const;
-    DbResult Step();
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     ECDb const* GetECDb() const;
     int GetColumnCount(Stage stage) const;
