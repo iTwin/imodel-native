@@ -15,29 +15,22 @@ struct ClassIdECSqlField : ECSqlField {
         ECN::ECClassId m_classId;
         mutable Utf8String m_idStr;
     private:
-        virtual bool _IsNull() const override { return !m_classId.IsValid(); }
-        virtual void const* _GetBlob(int* blobSize) const override { return NoopECSqlValue::GetSingleton().GetBlob(blobSize);}
-        virtual bool _GetBoolean() const override { return NoopECSqlValue::GetSingleton().GetBoolean();}
-        virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);}
-        virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);}
-        virtual double _GetDouble() const override { return NoopECSqlValue::GetSingleton().GetDouble();}
-        virtual int _GetInt() const override { return NoopECSqlValue::GetSingleton().GetInt();}
-        virtual IGeometryPtr _GetGeometry() const override { return NoopECSqlValue::GetSingleton().GetGeometry();}
-        virtual DPoint2d _GetPoint2d() const override { return NoopECSqlValue::GetSingleton().GetPoint2d();}
-        virtual DPoint3d _GetPoint3d() const override { return NoopECSqlValue::GetSingleton().GetPoint3d();}
-        virtual IECSqlValue const& _GetStructMemberValue(Utf8CP structMemberName) const  override { return NoopECSqlValue::GetSingleton();}
-        virtual IECSqlValueIterable const& _GetStructIterable() const  override { return NoopECSqlValue::GetSingleton().GetStructIterable();}
-        virtual int _GetArrayLength() const override  { return NoopECSqlValue::GetSingleton().GetArrayLength();}
-        virtual IECSqlValueIterable const& _GetArrayIterable() const override { return NoopECSqlValue::GetSingleton().GetArrayIterable();}
-        virtual Utf8CP _GetText() const override {
-            if (m_idStr.empty()) {
-                m_idStr = m_classId.ToHexStr();
-            }
-            return m_idStr.c_str();
-        }
-        virtual int64_t _GetInt64() const override {
-            return static_cast<int64_t>(m_classId.GetValueUnchecked());
-        }
+        virtual bool _IsNull() const override;
+        virtual void const* _GetBlob(int* blobSize) const override;
+        virtual bool _GetBoolean() const override;
+        virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
+        virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
+        virtual double _GetDouble() const override;
+        virtual int _GetInt() const override;
+        virtual IGeometryPtr _GetGeometry() const override;
+        virtual DPoint2d _GetPoint2d() const override;
+        virtual DPoint3d _GetPoint3d() const override;
+        virtual IECSqlValue const& _GetStructMemberValue(Utf8CP structMemberName) const override;
+        virtual IECSqlValueIterable const& _GetStructIterable() const override;
+        virtual int _GetArrayLength() const override;
+        virtual IECSqlValueIterable const& _GetArrayIterable() const override;
+        virtual Utf8CP _GetText() const override;
+        virtual int64_t _GetInt64() const override;
 
     public:
         //! Constructor for Statement-based path (InstanceReader)

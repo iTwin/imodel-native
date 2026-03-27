@@ -20,9 +20,10 @@ private:
     std::unique_ptr<Changes>       m_changes;
     Changes::Change                m_currentChange;
     Utf8String                     m_ddl;
-    mutable std::map<Stage, std::vector<std::unique_ptr<ECSqlField>>> m_fields;
+    std::map<Stage, std::vector<std::unique_ptr<ECSqlField>>> m_fields;
     //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
-    mutable std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
+    std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
+    uint64_t m_currentChangeIndex;
 
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
@@ -34,6 +35,7 @@ private:
     DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
     bool IsOpen() const { return m_changeStream != nullptr; }
     bool IsStepped() const { return m_changes != nullptr && m_currentChange.IsValid(); }
+    void FetchCurrentClassInfo();
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
 

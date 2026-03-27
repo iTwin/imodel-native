@@ -141,8 +141,10 @@ ECDbAllHeaders = \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
-                $(baseDir)ECChangesetReader.h \
-                $(baseDir)ClassViews.h
+                $(baseDir)ClassViews.h \
+                $(baseDir)ChangesetFieldFactory.h \
+                $(baseDir)ECChangesetReaderImpl.h \
+                $(baseDir)PreparedECChangesetReader.h
 
 
 #----------------------------------------------------------------------
@@ -256,9 +258,15 @@ $(o)ECChangesetReader$(oext):                                 $(baseDir)ECChange
 
 $(o)ECChangesetReaderImpl$(oext):                             $(baseDir)ECChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)PreparedECChangesetReader$(oext):                         $(baseDir)PreparedECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetFieldFactory$(oext):                             $(baseDir)ChangesetFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ClassIdECSqlField$(oext):                                 $(baseDir)ECSql/ClassIdECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DynamicSelectClauseECClass$(oext):                        $(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

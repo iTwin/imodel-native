@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedECChangesetReader::PreparedECChangesetReader(ECDbCR ecdb)
-    : m_ecdb(ecdb), m_currentChange(nullptr, false)
+    : m_ecdb(ecdb), m_currentChange(nullptr, false), m_currentChangeIndex(0)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -110,6 +110,7 @@ void PreparedECChangesetReader::clearFields() {
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::Close() {
     m_currentChange = Changes::Change(nullptr, false);
+    m_currentChangeIndex = 0;
     m_changes = nullptr;
     m_changeStream = nullptr;
     m_changeGroup = nullptr;
@@ -146,6 +147,7 @@ DbResult PreparedECChangesetReader::Step() {
     } else {
         ++m_currentChange;
     }
+    ++m_currentChangeIndex;
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
     ReFetchValues();
 
@@ -171,8 +173,8 @@ void PreparedECChangesetReader::ReFetchValues() {
             LOG.errorv("Table '%s' not found in schema.", GetTableName().c_str());
             return;
         }
-        m_fields[Stage::New] = {};
-        m_fields[Stage::Old] = {};
+        m_fields.try_emplace(Stage::New);
+        m_fields.try_emplace(Stage::Old);
         if(GetOpcode() != DbOpcode::Delete) {
             for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::New)) {
                 ValidateAndUpdateField(std::move(field), Stage::New);
@@ -221,6 +223,24 @@ DbResult PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedECChangesetReader::GetOpcode(DbOpcode& opcode) const {
+    if (!IsOpen())
+        {
+        LOG.errorv("Attempting to get opcode from a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+        }
+    if (!IsStepped())
+        {
+        LOG.errorv("Attempting to get opcode from a PreparedECChangesetReader that has not been stepped.");
+        return BE_SQLITE_ERROR;
+        }
+    opcode = GetOpcode();
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIndex) const {
     if (!IsOpen())
         {
@@ -237,7 +257,7 @@ IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIn
         LOG.warningv("Column index %d is out of range for table '%s'.", columnIndex, GetTableName().c_str());
         return NoopECSqlValue::GetSingleton();
     }
-    return *(m_fields[stage][columnIndex]);
+    return *m_fields.at(stage).at(columnIndex);
 }
 
 //---------------------------------------------------------------------------------------
