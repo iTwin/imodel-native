@@ -58,4 +58,8 @@ DbResult ECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
     return m_pimpl->GetInstanceKey(stage, key);
 }
 
+DbResult ECChangesetReader::IsECTable(bool& isECTable) const {
+    return m_pimpl->IsECTable(isECTable);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

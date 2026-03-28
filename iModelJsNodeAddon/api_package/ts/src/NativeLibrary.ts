@@ -1528,6 +1528,12 @@ export declare namespace IModelJsNative {
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
+  interface ECChangesetRowValue {
+    isECTable: boolean;
+    data?: any;
+    key?: string;
+  }
+
   class ECChangesetReader {
     constructor();
     public openFile(db: AnyECDb, fileName: string, invert: boolean): void;
@@ -1539,7 +1545,7 @@ export declare namespace IModelJsNative {
     public step(): boolean;
     public getTableName(): string;
     public getOpcode(): DbOpcode;
-    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): any;
+    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue;
   }
 
   class DisableNativeAssertions implements IDisposable {

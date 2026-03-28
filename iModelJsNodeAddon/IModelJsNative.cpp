@@ -5252,14 +5252,24 @@ public:
         ECChangesetReader::Stage stageEnum = GetStage(info, stage);
 
         BeJsNapiObject out(info.Env());
+        bool isECTable = false;
+        if (m_reader.IsECTable(isECTable) != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to check if EC table", BE_SQLITE_ERROR);
+        out["isECTable"] = isECTable;
+        if (!isECTable)
+            return out;
+
         BeJsValue rowJson = out["data"];
         if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+        if (rowJson.empty())
+            out.removeMember("data");
 
         Utf8String instanceKey;
         if (m_reader.GetInstanceKey(stageEnum, instanceKey) != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get instance key", BE_SQLITE_ERROR);
-        out["key"] = instanceKey.c_str();
+        if (!instanceKey.empty())
+            out["key"] = instanceKey.c_str();
 
         return out;
         }

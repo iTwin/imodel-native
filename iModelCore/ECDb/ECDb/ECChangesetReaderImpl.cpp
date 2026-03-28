@@ -85,4 +85,10 @@ DbResult ECChangesetReader::Impl::GetInstanceKey(Stage stage, Utf8StringR key) c
     return m_prepared->GetInstanceKey(stage, key);
 }
 
+DbResult ECChangesetReader::Impl::IsECTable(bool& isECTable) const {
+    if (!IsPrepared())
+        return BE_SQLITE_ERROR;
+    return m_prepared->IsECTable(isECTable);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

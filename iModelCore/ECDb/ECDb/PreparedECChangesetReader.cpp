@@ -144,7 +144,7 @@ DbResult PreparedECChangesetReader::Step() {
         m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
         m_currentChange = m_changes->begin();
     } else {
-        ++m_currentChange;
+        if(m_currentChange.IsValid()) ++m_currentChange;
     }
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
     ReFetchValues();
@@ -293,6 +293,12 @@ DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key)
         else if (extType == ExtendedTypeHelper::ExtendedType::ClassId && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
             classId = val.GetId<ECN::ECClassId>().ToHexStr();
         }
+    if(instanceId.empty() || classId.empty())
+        {
+        LOG.warningv("Could not find both ECInstanceId and ECClassId for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
+        key.clear();
+        return BE_SQLITE_OK;
+        }
     key.Sprintf("%s-%s", instanceId.c_str(), classId.c_str());
     return BE_SQLITE_OK;
 }
@@ -309,6 +315,32 @@ void PreparedECChangesetReader::ValidateAndUpdateField(std::unique_ptr<ECSqlFiel
 
         m_fields[stage].push_back(std::move(field));
         }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
+    if (!IsOpen())
+        {
+        LOG.errorv("Attempting to check IsECTable on a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+        }
+    if (!IsStepped())
+        {
+        LOG.errorv("Attempting to check IsECTable on a PreparedECChangesetReader that has not been stepped.");
+        return BE_SQLITE_ERROR;
+        }
+    Utf8String tableName = GetTableName();
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT 1 FROM ec_Table WHERE Name=?");
+    if (stmt == nullptr)
+        return BE_SQLITE_ERROR;
+    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
+    DbResult rc = stmt->Step();
+    if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE)
+        return rc;
+    isECTable = (rc == BE_SQLITE_ROW);
+    return BE_SQLITE_OK;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

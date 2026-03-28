@@ -42,6 +42,7 @@ public:
     ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
     ECDB_EXPORT IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     ECDB_EXPORT DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
+    ECDB_EXPORT DbResult IsECTable(bool& isECTable) const;
 
 };
 

@@ -35,6 +35,7 @@ public:
     ECDb const* GetECDb() const;
     int GetColumnCount(Stage stage) const;
     DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
+    DbResult IsECTable(bool& isECTable) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
