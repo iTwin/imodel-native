@@ -18319,8 +18319,16 @@ TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChange)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, MaxColumnLimitPerTable2000)
     {
+    // This test validates the 2000-column-per-table limit. The schema update (adding props to
+    // subclass Foo) is the expensive part — schema upgrade import time scales super-linearly with
+    // the number of new properties. To keep total test time reasonable, we front-load most properties
+    // on Koo (1800 in initial setup, which is fast) and only add 198 on Foo in the update.
+    // Total: 1800 (Koo) + 198 (Foo) + 2 system columns = 2000 — exactly at the limit.
+    const size_t kooPropertyCount = 1800;
+    const size_t fooPropertyCount = 198; // kooPropertyCount + fooPropertyCount + 2 system cols = 2000
+
     std::ostringstream baseInnerXml;
-    for (size_t i = 1; i <= 999; i++)
+    for (size_t i = 1; i <= kooPropertyCount; i++)
         {
         baseInnerXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
         }
@@ -18352,16 +18360,16 @@ TEST_F(SchemaUpgradeTestFixture, MaxColumnLimitPerTable2000)
     {
     ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
     ASSERT_NE(kooClass, nullptr);
-    ASSERT_EQ(999, kooClass->GetPropertyCount());
+    ASSERT_EQ(kooPropertyCount, kooClass->GetPropertyCount());
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
     ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(999, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(kooPropertyCount, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
     std::ostringstream innerXml;
-    for (size_t i = 1000; i <= 1998; i++)
+    for (size_t i = kooPropertyCount + 1; i <= kooPropertyCount + fooPropertyCount; i++)
         {
         innerXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
         }
@@ -18394,12 +18402,12 @@ TEST_F(SchemaUpgradeTestFixture, MaxColumnLimitPerTable2000)
 
     ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
     ASSERT_NE(kooClass, nullptr);
-    ASSERT_EQ(999, kooClass->GetPropertyCount());
+    ASSERT_EQ(kooPropertyCount, kooClass->GetPropertyCount());
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
-    ASSERT_EQ(999, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(1998, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(fooPropertyCount, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(kooPropertyCount + fooPropertyCount, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Koo"));
@@ -18473,10 +18481,18 @@ TEST_F(SchemaUpgradeTestFixture, MaxColumnLimitPerTable2000)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSet)
     {
+    // Performance note: The update schema import is the bottleneck (~14s for 1099 new props).
+    // We front-load most Foo properties in the initial setup (fast) so the update only adds ~100 new properties.
     std::ostringstream baseInnerXml;
     for (size_t i = 1; i <= 1099; i++)
         {
         baseInnerXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
+        }
+
+    std::ostringstream initialFooXml;
+    for (size_t i = 1100; i <= 2098; i++)
+        {
+        initialFooXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
         }
 
     Utf8PrintfString schemaXml = Utf8PrintfString(
@@ -18498,9 +18514,10 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSet)
             </ECEntityClass>
             <ECEntityClass typeName="Foo">
               <BaseClass>Koo</BaseClass>
+              %s
             </ECEntityClass>
         </ECSchema>
-        )xml", baseInnerXml.str().c_str());
+        )xml", baseInnerXml.str().c_str(), initialFooXml.str().c_str());
 
     SchemaItem schemaItem(schemaXml);
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TooManyColumnsInResultSet.ecdb", schemaItem));
@@ -18512,8 +18529,8 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSet)
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
-    ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(1099, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(999, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(2098, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
     std::ostringstream innerXml;
@@ -18637,10 +18654,24 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSet)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetHierarchical)
     {
+    // Performance note: The update schema import is the bottleneck (~14s per 1099 new props per subclass).
+    // We front-load most Foo/Goo properties in the initial setup so the update only adds ~100 new properties each.
     std::ostringstream baseInnerXml;
     for (size_t i = 1; i <= 1099; i++)
         {
         baseInnerXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
+        }
+
+    std::ostringstream initialFooXml;
+    for (size_t i = 1100; i <= 2098; i++)
+        {
+        initialFooXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
+        }
+
+    std::ostringstream initialGooXml;
+    for (size_t i = 2199; i <= 3197; i++)
+        {
+        initialGooXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
         }
 
     Utf8PrintfString schemaXml = Utf8PrintfString(
@@ -18662,12 +18693,14 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetHierarchical)
                 </ECEntityClass>
                 <ECEntityClass typeName="Foo">
                     <BaseClass>Koo</BaseClass>
+                    %s
                 </ECEntityClass>
                 <ECEntityClass typeName="Goo">
                     <BaseClass>Koo</BaseClass>
+                    %s
                 </ECEntityClass>
         </ECSchema>
-        )xml", baseInnerXml.str().c_str());
+        )xml", baseInnerXml.str().c_str(), initialFooXml.str().c_str(), initialGooXml.str().c_str());
 
     SchemaItem schemaItem(schemaXml);
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TooManyColumnsInResultSetHierarchical.ecdb", schemaItem));
@@ -18679,8 +18712,8 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetHierarchical)
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
-    ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(1099, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(999, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(2098, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
     std::ostringstream fooInnerXml;
@@ -18830,10 +18863,18 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetHierarchical)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetAbstractClass)
     {
+    // Performance note: The update schema import is the bottleneck (~14s for 1099 new props).
+    // We front-load most Foo properties in the initial setup so the update only adds ~100 new properties.
     std::ostringstream baseInnerXml;
     for (size_t i = 1; i <= 1099; i++)
         {
         baseInnerXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
+        }
+
+    std::ostringstream initialFooXml;
+    for (size_t i = 1100; i <= 2098; i++)
+        {
+        initialFooXml << "<ECProperty propertyName=\"PropElement" << i << "\" typeName=\"string\" />\n";
         }
 
     Utf8PrintfString schemaXml = Utf8PrintfString(
@@ -18855,9 +18896,10 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetAbstractClass)
             </ECEntityClass>
             <ECEntityClass typeName="Foo" modifier="Abstract">
               <BaseClass>Koo</BaseClass>
+              %s
             </ECEntityClass>
         </ECSchema>
-        )xml", baseInnerXml.str().c_str());
+        )xml", baseInnerXml.str().c_str(), initialFooXml.str().c_str());
 
     SchemaItem schemaItem(schemaXml);
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TooManyColumnsInResultSetAbstractClass.ecdb", schemaItem));
@@ -18869,8 +18911,8 @@ TEST_F(SchemaUpgradeTestFixture, TooManyColumnsInResultSetAbstractClass)
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
-    ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(1099, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(999, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(2098, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
     std::ostringstream innerXml;
