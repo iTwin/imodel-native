@@ -991,7 +991,7 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 
 	// Build the binary blob (v1: property definition dedup)
 	RuntimeSchemaWriter writer;
-	writer.WriteAllSchemas(ecdb, false /* no CAs - loaded lazily via ECSQL */);
+	writer.WriteAllSchemas(ecdb);
 	auto const& output = writer.GetOutput();
 
 	// Compute schema token for cache invalidation
