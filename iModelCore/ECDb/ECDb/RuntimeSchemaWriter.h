@@ -7,6 +7,7 @@
 #include <BeSQLite/BeSQLite.h>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -41,10 +42,13 @@ private:
         uint8_t kind;
         uint16_t primitiveType;
         uint32_t extTypeSid;
+        uint32_t enumSchemaSid;
         uint32_t enumNameSid;
         uint32_t structSchemaSid;
         uint32_t structClassSid;
+        uint32_t koqSchemaSid;
         uint32_t koqNameSid;
+        uint32_t catSchemaSid;
         uint32_t catNameSid;
         uint32_t arrayMinOccurs;
         uint32_t arrayMaxOccurs;
@@ -52,6 +56,7 @@ private:
         uint32_t navRelClassSid;
         uint8_t navDirection;
         uint8_t isReadonly;
+        uint8_t isHidden;
         uint32_t descriptionSid;
         };
 
@@ -65,7 +70,9 @@ private:
     bvector<PropertyDefRecord> m_propDefs;
     std::unordered_map<std::string, uint32_t> m_propDefIndex;
     std::unordered_map<int64_t, bvector<PropertyRefRecord>> m_classPropRefs;
+    std::unordered_set<int64_t> m_hiddenPropertyIds;
 
+    void CollectHiddenPropertyIds(DbCR db);
     void CollectPropertyDedup(DbCR db);
     uint32_t AddPropertyDef(PropertyDefRecord const& def);
     std::string PropertyDefSignature(PropertyDefRecord const& def) const;

@@ -85,17 +85,56 @@ uint32_t RuntimeSchemaWriter::Intern(Utf8CP str)
     }
 
 //---------------------------------------------------------------------------------------
+// Bulk-load IDs of all properties that have CoreCustomAttributes:HiddenProperty CA.
+// The HiddenProperty CA is a simple presence marker - if it exists on a property, that
+// property is hidden. The CA has an optional `Show` boolean (default false), but in
+// practice only the presence/absence matters. We check the Instance XML only if the CA
+// explicitly sets Show=True (which would mean "not hidden after all").
+//---------------------------------------------------------------------------------------
+void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
+    {
+    m_hiddenPropertyIds.clear();
+
+    Statement stmt;
+    stmt.Prepare(db,
+        "SELECT ca.ContainerId, ca.Instance "
+        "FROM ec_CustomAttribute ca "
+        "JOIN ec_Class cac ON ca.ClassId=cac.Id "
+        "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
+        "WHERE ca.ContainerType & 992 <> 0 "
+        "AND cas.Name='CoreCustomAttributes' AND cac.Name='HiddenProperty'");
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        int64_t propertyId = stmt.GetValueInt64(0);
+        Utf8CP instance = Safe(stmt.GetValueText(1));
+        // Check for explicit Show=True override (case-insensitive substring check).
+        // The XML looks like: <HiddenProperty ...><Show>True</Show></HiddenProperty>
+        // If Show is absent or False, the property is hidden.
+        if (instance && strstr(instance, ">True</") != nullptr)
+            continue; // Show=True means NOT hidden
+        m_hiddenPropertyIds.insert(propertyId);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // Property definition dedup - builds a table of unique PropertyDef records and per-class
 // PropertyRef lists. Called before writing so the PropertyDef table can precede schema records.
 //---------------------------------------------------------------------------------------
 std::string RuntimeSchemaWriter::PropertyDefSignature(PropertyDefRecord const& def) const
     {
     char buf[256];
-    snprintf(buf, sizeof(buf), "%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u",
-        def.nameSid, def.descriptionSid, def.kind, def.primitiveType, def.extTypeSid,
-        def.enumNameSid, def.koqNameSid, def.structSchemaSid, def.structClassSid,
+    // Dedup signature: structural shape only. Description and label are NOT part of the
+    // signature because they don't affect the property's type/semantics.
+    snprintf(buf, sizeof(buf), "%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u",
+        def.nameSid, def.kind, def.primitiveType, def.extTypeSid,
+        def.enumSchemaSid, def.enumNameSid, def.koqSchemaSid, def.koqNameSid,
+        def.structSchemaSid, def.structClassSid,
         def.navRelSchemaSid, def.navRelClassSid, (uint32_t)def.navDirection,
-        def.catNameSid, (uint32_t)def.isReadonly, def.arrayMinOccurs, def.arrayMaxOccurs);
+        def.catSchemaSid, def.catNameSid,
+        (uint32_t)def.isReadonly, (uint32_t)def.isHidden,
+        def.arrayMinOccurs, def.arrayMaxOccurs,
+        def.descriptionSid);
     return std::string(buf);
     }
 
@@ -118,12 +157,13 @@ void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
     m_classPropRefs.clear();
 
     // Single query for all properties, joined to schema for exclusion check.
+    // Includes schema names for enum/KoQ/category to support cross-schema references.
     // Ordered by ClassId,Ordinal so m_classPropRefs preserves per-class order.
     Statement stmt;
     stmt.Prepare(db,
         "SELECT c.Id, s.Name, "
-        "p.Name, p.DisplayLabel, p.Description, p.Kind, p.PrimitiveType, p.ExtendedTypeName, "
-        "e.Name, ss.Name, sc.Name, k.Name, pc.Name, "
+        "p.Id, p.Name, p.DisplayLabel, p.Description, p.Kind, p.PrimitiveType, p.ExtendedTypeName, "
+        "es.Name, e.Name, ss.Name, sc.Name, ks.Name, k.Name, pcs.Name, pc.Name, "
         "p.ArrayMinOccurs, p.ArrayMaxOccurs, "
         "nrs.Name, nrc.Name, p.NavigationDirection, "
         "p.IsReadonly, p.Priority "
@@ -131,10 +171,13 @@ void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
         "JOIN ec_Class c ON p.ClassId=c.Id "
         "JOIN ec_Schema s ON c.SchemaId=s.Id "
         "LEFT JOIN ec_Enumeration e ON p.EnumerationId=e.Id "
+        "LEFT JOIN ec_Schema es ON e.SchemaId=es.Id "
         "LEFT JOIN ec_Class sc ON p.StructClassId=sc.Id "
         "LEFT JOIN ec_Schema ss ON sc.SchemaId=ss.Id "
         "LEFT JOIN ec_KindOfQuantity k ON p.KindOfQuantityId=k.Id "
+        "LEFT JOIN ec_Schema ks ON k.SchemaId=ks.Id "
         "LEFT JOIN ec_PropertyCategory pc ON p.CategoryId=pc.Id "
+        "LEFT JOIN ec_Schema pcs ON pc.SchemaId=pcs.Id "
         "LEFT JOIN ec_Class nrc ON p.NavigationRelationshipClassId=nrc.Id "
         "LEFT JOIN ec_Schema nrs ON nrc.SchemaId=nrs.Id "
         "ORDER BY c.Id, p.Ordinal");
@@ -146,31 +189,36 @@ void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
             continue;
 
         int64_t classId = stmt.GetValueInt64(0);
+        int64_t propertyId = stmt.GetValueInt64(2);
 
         PropertyDefRecord def;
-        def.nameSid       = Intern(Safe(stmt.GetValueText(2)));
-        def.descriptionSid= Intern(Safe(stmt.GetValueText(4)));
-        def.kind          = (uint8_t)stmt.GetValueInt(5);
-        def.primitiveType = (uint16_t)stmt.GetValueInt(6);
-        def.extTypeSid    = Intern(Safe(stmt.GetValueText(7)));
-        def.enumNameSid   = Intern(Safe(stmt.GetValueText(8)));
-        def.structSchemaSid = Intern(Safe(stmt.GetValueText(9)));
-        def.structClassSid  = Intern(Safe(stmt.GetValueText(10)));
-        def.koqNameSid    = Intern(Safe(stmt.GetValueText(11)));
-        def.catNameSid    = Intern(Safe(stmt.GetValueText(12)));
-        def.arrayMinOccurs= (uint32_t)stmt.GetValueInt(13);
-        def.arrayMaxOccurs= (uint32_t)stmt.GetValueInt(14);
-        def.navRelSchemaSid = Intern(Safe(stmt.GetValueText(15)));
-        def.navRelClassSid  = Intern(Safe(stmt.GetValueText(16)));
-        def.navDirection  = (uint8_t)stmt.GetValueInt(17);
-        def.isReadonly    = stmt.GetValueInt(18) != 0 ? (uint8_t)1 : (uint8_t)0;
+        def.nameSid       = Intern(Safe(stmt.GetValueText(3)));
+        def.descriptionSid= Intern(Safe(stmt.GetValueText(5)));
+        def.kind          = (uint8_t)stmt.GetValueInt(6);
+        def.primitiveType = (uint16_t)stmt.GetValueInt(7);
+        def.extTypeSid    = Intern(Safe(stmt.GetValueText(8)));
+        def.enumSchemaSid = Intern(Safe(stmt.GetValueText(9)));
+        def.enumNameSid   = Intern(Safe(stmt.GetValueText(10)));
+        def.structSchemaSid = Intern(Safe(stmt.GetValueText(11)));
+        def.structClassSid  = Intern(Safe(stmt.GetValueText(12)));
+        def.koqSchemaSid  = Intern(Safe(stmt.GetValueText(13)));
+        def.koqNameSid    = Intern(Safe(stmt.GetValueText(14)));
+        def.catSchemaSid  = Intern(Safe(stmt.GetValueText(15)));
+        def.catNameSid    = Intern(Safe(stmt.GetValueText(16)));
+        def.arrayMinOccurs= (uint32_t)stmt.GetValueInt(17);
+        def.arrayMaxOccurs= (uint32_t)stmt.GetValueInt(18);
+        def.navRelSchemaSid = Intern(Safe(stmt.GetValueText(19)));
+        def.navRelClassSid  = Intern(Safe(stmt.GetValueText(20)));
+        def.navDirection  = (uint8_t)stmt.GetValueInt(21);
+        def.isReadonly    = stmt.GetValueInt(22) != 0 ? (uint8_t)1 : (uint8_t)0;
+        def.isHidden      = m_hiddenPropertyIds.count(propertyId) ? (uint8_t)1 : (uint8_t)0;
 
         uint32_t defIdx = AddPropertyDef(def);
 
         PropertyRefRecord ref;
         ref.defIdx   = defIdx;
-        ref.labelSid = Intern(Safe(stmt.GetValueText(3)));
-        ref.priority = stmt.GetValueInt(19);
+        ref.labelSid = Intern(Safe(stmt.GetValueText(4)));
+        ref.priority = stmt.GetValueInt(23);
 
         m_classPropRefs[classId].push_back(ref);
         }
@@ -187,7 +235,8 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
     m_stringIndex.clear();
     Intern(""); // index 0 = empty string
 
-    // ---- Pre-pass: collect and deduplicate all property definitions ----
+    // ---- Pre-pass: bulk-load hidden property IDs, then collect and dedup all properties ----
+    CollectHiddenPropertyIds(db);
     CollectPropertyDedup(db);
 
     // Header: magic(4) + version(1) + stringTableOffset placeholder(4)
@@ -204,10 +253,13 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
         PutU8(def.kind);
         PutU16(def.primitiveType);
         PutU32(def.extTypeSid);
+        PutU32(def.enumSchemaSid);
         PutU32(def.enumNameSid);
         PutU32(def.structSchemaSid);
         PutU32(def.structClassSid);
+        PutU32(def.koqSchemaSid);
         PutU32(def.koqNameSid);
+        PutU32(def.catSchemaSid);
         PutU32(def.catNameSid);
         PutU32(def.arrayMinOccurs);
         PutU32(def.arrayMaxOccurs);
@@ -215,6 +267,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
         PutU32(def.navRelClassSid);
         PutU8(def.navDirection);
         PutU8(def.isReadonly);
+        PutU8(def.isHidden);
         PutU32(def.descriptionSid);
         }
 
