@@ -541,7 +541,7 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
         "  </ECEntityClass>"
         "</ECSchema>")));
 
-    if ("basic pragma returns one row with expected columns") {
+    { // basic pragma returns one row with expected columns
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -585,7 +585,7 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
         "  </ECEntityClass>"
         "</ECSchema>")));
 
-    if ("explicit version 1 should succeed") {
+    { // explicit version 1 should succeed
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(1)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -599,23 +599,23 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
         ASSERT_EQ(1, bytes[4]);
     }
 
-    if ("unsupported high version should fail") {
+    { // unsupported high version should fail
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(99)"));
     }
 
-    if ("version 0 should fail") {
+    { // version 0 should fail
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(0)"));
     }
 
-    if ("negative version should fail to parse") {
+    { // negative version should fail to parse
         ECSqlStatement stmt;
         // -1 is not a valid pragma_value (no unary minus in grammar), so this fails at parse
         ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(-1)"));
     }
 
-    if ("string argument should fail") {
+    { // string argument should fail
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas('2')"));
     }
