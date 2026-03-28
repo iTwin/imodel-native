@@ -41,6 +41,7 @@ namespace ElementDependency { struct Graph; struct Edge;};
 struct ElementAutoHandledPropertiesECInstanceAdapter;
 struct LsComponent;
 struct ExternalSourceAttachment;
+class BulkElementDeletion;
 
 //=======================================================================================
 //! Holds Id remapping tables
@@ -546,6 +547,35 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const;
 };
 
+#define TEMP_ELEMENT_DELETION "ElementsToDelete"
+class BulkElementDeletion
+    {
+    DgnDbR m_dgndb;
+    DgnElementIdSet m_originalElementIds;
+    DgnElementIdSet m_failedToDelete;
+    bool m_skipFkValidation = false;
+    bool m_definitionElementsExist = false;
+    bool m_subModelRootExists = false;
+
+    // Create temporary tables for bulk deletion
+    bool CreateTempTables() const;
+    bool ExpandElementIdList() const;
+
+    // Find and prune constraint violators
+    bool FindAndPruneConstraintViolators();
+    bool FindAndPruneInUseDefinitionElements();
+    bool FindAndNullTypeDefinitionReferences() const;
+    bool PruneViolators();
+
+    bool FireAllCallbacks();
+    bool DeleteLinkTableRelationships();
+    bool ExecuteDeletion();
+
+public:
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds, const bool skipFkValidation) : m_dgndb(dgndb), m_originalElementIds(originalElementIds), m_skipFkValidation(skipFkValidation) {}
+    DgnElementIdSet Execute();
+    };
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -712,6 +742,7 @@ public:
     friend struct GeometrySource;
     friend struct ElementECPropertyAccessor;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
+    friend class BulkElementDeletion;
 
     enum class ColumnNumbers : int32_t {
         ElementId = 0,
@@ -3857,6 +3888,7 @@ struct DgnElements : DgnDbTable
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
+    friend class BulkElementDeletion;
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
@@ -4049,24 +4081,7 @@ public:
      * @return A DgnElementIdSet of valid element Ids that failed to delete (either vetoed or blocked by FK/code scope constraints).
      * @note This function can only be safely invoked from the client thread.
      */
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
-
-    /**
-     * Delete multiple definition elements from this DgnDb.
-     *
-     * Definition elements need to be handled as per their usage which makes them a special case for element deletion.
-     * The handlers for definition elements veto deletion unless a purge operation is enabled.
-     * Any non-definition element will be ignored and should use the general purpose DeleteElements API instead.
-     *
-     * @param[in] elementIds The set of definition elements to delete. Invalid and non-definition element Ids will be ignored.
-     * @return A DgnElementIdSet of valid definition element Ids that failed to delete (either not DefinitionElements or in use).
-     * @note This function can only be safely invoked from the client thread.
-     */
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteDefinitionElements(const DgnElementIdSet& elementIds);
-
-private:
-    DgnElementIdSet DeleteElementsPreExpanded(const DgnElementIdSet& expandedElementIdSet, const DgnElementIdSet& originalElementIdSet);
-public:
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipFkValidation = false);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

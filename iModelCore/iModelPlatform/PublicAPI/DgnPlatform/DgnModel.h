@@ -115,6 +115,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct dgn_TxnTable::Model;
     friend struct dgn_TxnTable::Element;
     friend struct dgn_ModelHandler::Model;
+    friend class BulkElementDeletion;
 
     enum class ColumnNumbers : int32_t {
         ECClassId = 1
