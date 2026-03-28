@@ -1845,7 +1845,7 @@ bool ECClass::Validate() const { return _Validate(); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlAttributes (pugi::xml_node classNode)
+SchemaReadStatus ECClass::_ReadXmlAttributes (pugi::xml_node classNode, ECSchemaReadContextCR context)
     {
     Utf8String value;      // used by the macros.
     if (GetName().length() == 0)
@@ -1862,10 +1862,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (pugi::xml_node classNode)
         modifierString = modifierAttr.as_string();
         if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierXmlString(m_modifier, modifierString))
             {
-            // Don't fail if the modifier string is unknown with >EC3.x versions. Default is None.
-            if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
                 {
-                LOG.debugv("Class '%s' has an unknown modifier '%s'. Setting to None.", this->GetFullName(), modifierString.c_str());
+                LOG.warningv("Class '%s' has an unknown modifier '%s'. Setting to None.", this->GetFullName(), modifierString.c_str());
                 return SchemaReadStatus::Success;
                 }
 
@@ -2684,10 +2683,10 @@ bool ECCustomAttributeClass::_ToJson(BeJsValue outValue, bool standalone, bool i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(pugi::xml_node classNode)
+SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(pugi::xml_node classNode, ECSchemaReadContextCR context)
     {
     SchemaReadStatus status;
-    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes(classNode)))
+    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes(classNode, context)))
         return status;
 
     auto appliesToAttr = classNode.attribute(CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE);
@@ -3981,11 +3980,6 @@ ECObjectsStatus ECRelationshipClass::SetStrength(Utf8CP strength)
     ECObjectsStatus status = SchemaParseUtils::ParseStrengthType(strengthType, strength);
     if (ECObjectsStatus::Success == status)
         SetStrength(strengthType);
-    else if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
-        {
-        LOG.debugv("ECRelationshipClass '%s' has an unknown Strength type '%s'. Setting to 'Referencing'", GetFullName(), strength);
-        return SetStrength(StrengthType::Referencing); // Default if the ECVersion is greater than the latest known version. Return so error status is not returned.
-        }
     else
         LOG.errorv ("Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->GetName().c_str());
 
@@ -4115,15 +4109,61 @@ bool ECRelationshipClass::_ToJson(BeJsValue outValue, bool standalone, bool incl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (pugi::xml_node classNode)
+SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (pugi::xml_node classNode, ECSchemaReadContextCR context)
     {
     SchemaReadStatus status;
-    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes (classNode)))
+    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes (classNode, context)))
         return status;
 
     Utf8String value;
-    READ_OPTIONAL_XML_ATTRIBUTE (classNode, STRENGTH_ATTRIBUTE, this, Strength)
-    READ_OPTIONAL_XML_ATTRIBUTE (classNode, STRENGTHDIRECTION_ATTRIBUTE, this, StrengthDirection)
+
+    // Handle Strength attribute with tolerance for unknown values from newer schemas.
+    // Parse via SchemaParseUtils directly to avoid the error log in SetStrength(Utf8CP).
+    {
+    auto strengthAttr = classNode.attribute(STRENGTH_ATTRIBUTE);
+    if (strengthAttr)
+        {
+        StrengthType strengthType;
+        if (ECObjectsStatus::Success == SchemaParseUtils::ParseStrengthType(strengthType, strengthAttr.as_string()))
+            {
+            SetStrength(strengthType);
+            }
+        else if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
+            {
+            LOG.warningv("ECRelationshipClass '%s' has an unknown Strength type '%s'. Setting to 'Referencing'.", GetFullName(), strengthAttr.as_string());
+            SetStrength(StrengthType::Referencing); // referencing is the initial default
+            }
+        else
+            {
+            LOG.errorv("ECRelationshipClass '%s' has an invalid Strength attribute value '%s'.", GetFullName(), strengthAttr.as_string());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    }
+
+    // Handle StrengthDirection attribute with tolerance for unknown values from newer schemas.
+    // Parse via SchemaParseUtils directly to avoid the error log in SetStrengthDirection(Utf8CP).
+    {
+    auto strengthDirAttr = classNode.attribute(STRENGTHDIRECTION_ATTRIBUTE);
+    if (strengthDirAttr)
+        {
+        ECRelatedInstanceDirection direction;
+        if (ECObjectsStatus::Success == SchemaParseUtils::ParseDirectionString(direction, strengthDirAttr.as_string()))
+            {
+            SetStrengthDirection(direction);
+            }
+        else if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest) && !context.GetStrictSchemaValidation())
+            {
+            LOG.warningv("ECRelationshipClass '%s' has an unknown StrengthDirection type '%s'. Setting to 'Forward'.", GetFullName(), strengthDirAttr.as_string());
+            SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+            }
+        else
+            {
+            LOG.errorv("ECRelationshipClass '%s' has an invalid StrengthDirection attribute value '%s'.", GetFullName(), strengthDirAttr.as_string());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    }
 
     return SchemaReadStatus::Success;
     }

@@ -203,6 +203,7 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
     Context ctx(schemaImportCtx);
     bvector<ECSchemaCP> schemas;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetStrictSchemaValidation(true);
     if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw, *schemaContext))
         {
         LOG.debug("SchemaWriter::ImportSchemas - failed to PreprocessSchemas");
