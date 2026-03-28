@@ -3,7 +3,9 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "RuntimeSchemaWriter.h"
+#include "ECDbLogger.h"
 #include <BeSQLite/BeSQLite.h>
+#include <cinttypes>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -68,18 +70,38 @@ namespace Tag
 static constexpr uint32_t MAGIC = 0x43534348; // "CSCH"
 static constexpr uint8_t  FORMAT_VERSION = 1;
 
+// Safely narrow int64_t SQLite row ID to uint32_t for the binary format.
+// EC metadata IDs are small sequential values; overflow indicates data corruption.
+static uint32_t SafeU32Id(int64_t val)
+    {
+    if (val >= 0 && val <= (int64_t)UINT32_MAX)
+        return (uint32_t)val;
+    ECDbLogger::Get().warningv("RuntimeSchemaWriter::SafeU32Id: EC metadata row ID %" PRIi64 " exceeds uint32_t range, using sentinel", val);
+    return UINT32_MAX;
+    }
+
+// Helper: prepare a statement and return error on failure.
+static DbResult PrepareStmt(Statement& stmt, DbCR db, Utf8CP sql)
+    {
+    auto rc = stmt.Prepare(db, sql);
+    if (rc != BE_SQLITE_OK)
+        ECDbLogger::Get().errorv("RuntimeSchemaWriter::PrepareStmt: failed to prepare statement (rc=%d): %.120s", (int)rc, sql);
+    return rc;
+    }
+
 //---------------------------------------------------------------------------------------
 // String interning
 //---------------------------------------------------------------------------------------
 uint32_t RuntimeSchemaWriter::Intern(Utf8CP str)
     {
     str = Safe(str);
-    auto it = m_stringIndex.find(std::string(str));
+    std::string key(str);
+    auto it = m_stringIndex.find(key);
     if (it != m_stringIndex.end())
         return it->second;
     uint32_t idx = (uint32_t)m_stringTable.size();
-    m_stringTable.push_back(Utf8String(str));
-    m_stringIndex[std::string(str)] = idx;
+    auto result = m_stringIndex.emplace(std::move(key), idx);
+    m_stringTable.push_back(result.first->first.c_str()); // pointer into map key (stable)
     return idx;
     }
 
@@ -90,18 +112,20 @@ uint32_t RuntimeSchemaWriter::Intern(Utf8CP str)
 // practice only the presence/absence matters. We check the Instance XML only if the CA
 // explicitly sets Show=True (which would mean "not hidden after all").
 //---------------------------------------------------------------------------------------
-void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
+DbResult RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
     {
     m_hiddenPropertyIds.clear();
 
     Statement stmt;
-    stmt.Prepare(db,
+    auto rc = PrepareStmt(stmt, db,
         "SELECT ca.ContainerId, ca.Instance "
         "FROM ec_CustomAttribute ca "
         "JOIN ec_Class cac ON ca.ClassId=cac.Id "
         "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
         "WHERE ca.ContainerType & 992 <> 0 "
         "AND cas.Name='CoreCustomAttributes' AND cac.Name='HiddenProperty'");
+    if (rc != BE_SQLITE_OK)
+        return rc;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -124,6 +148,7 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
             }
         m_hiddenPropertyIds.insert(propertyId);
         }
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -132,67 +157,71 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
 // records in the binary blob. Only presence matters; the ECSQL query property is
 // intentionally omitted from the runtime blob.
 //---------------------------------------------------------------------------------------
-void RuntimeSchemaWriter::CollectQueryViewClassIds(DbCR db)
+DbResult RuntimeSchemaWriter::CollectQueryViewClassIds(DbCR db)
     {
     m_queryViewClassIds.clear();
 
     Statement stmt;
-    stmt.Prepare(db,
+    auto rc = PrepareStmt(stmt, db,
         "SELECT ca.ContainerId "
         "FROM ec_CustomAttribute ca "
         "JOIN ec_Class cac ON ca.ClassId=cac.Id "
         "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
         "WHERE ca.ContainerType & 30 <> 0 "
         "AND cas.Name='ECDbMap' AND cac.Name='QueryView'");
+    if (rc != BE_SQLITE_OK)
+        return rc;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         m_queryViewClassIds.insert(stmt.GetValueInt64(0));
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// Pre-collect IDs of schemas in the exclusion list. This avoids per-row name checks
+// and enables SQL-level filtering in the property query.
+//---------------------------------------------------------------------------------------
+DbResult RuntimeSchemaWriter::CollectExcludedSchemaIds(DbCR db)
+    {
+    m_excludedSchemaIds.clear();
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db, "SELECT Id, Name FROM ec_Schema");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (IsExcludedSchema(Safe(stmt.GetValueText(1))))
+            m_excludedSchemaIds.insert(stmt.GetValueInt64(0));
+        }
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // Property definition dedup - builds a table of unique PropertyDef records and per-class
 // PropertyRef lists. Called before writing so the PropertyDef table can precede schema records.
 //---------------------------------------------------------------------------------------
-std::string RuntimeSchemaWriter::PropertyDefSignature(PropertyDefRecord const& def) const
-    {
-    // Dedup signature: all PropertyDef fields. Label and priority are per-PropertyRef
-    // and excluded. No fixed buffer - safe for any number of fields.
-    Utf8PrintfString sig("%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u",
-        def.nameSid, (unsigned)def.kind, (unsigned)def.primitiveType, def.extTypeSid,
-        def.enumSchemaSid, def.enumNameSid, def.koqSchemaSid, def.koqNameSid,
-        def.structSchemaSid, def.structClassSid,
-        def.navRelSchemaSid, def.navRelClassSid, (unsigned)def.navDirection,
-        def.catSchemaSid, def.catNameSid,
-        (unsigned)def.isReadonly, (unsigned)def.isHidden,
-        def.arrayMinOccurs, def.arrayMaxOccurs,
-        def.descriptionSid);
-    return sig;
-    }
-
 uint32_t RuntimeSchemaWriter::AddPropertyDef(PropertyDefRecord const& def)
     {
-    auto sig = PropertyDefSignature(def);
-    auto it = m_propDefIndex.find(sig);
+    auto it = m_propDefIndex.find(def);
     if (it != m_propDefIndex.end())
         return it->second;
     uint32_t idx = (uint32_t)m_propDefs.size();
     m_propDefs.push_back(def);
-    m_propDefIndex[sig] = idx;
+    m_propDefIndex[def] = idx;
     return idx;
     }
 
-void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
+DbResult RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
     {
     m_propDefs.clear();
     m_propDefIndex.clear();
     m_classPropRefs.clear();
 
-    // Single query for all properties, joined to schema for exclusion check.
-    // Includes schema names for enum/KoQ/category to support cross-schema references.
+    // Single query for all properties with schema names for cross-schema references.
+    // Excluded schemas are filtered at the SQL level via NOT IN for efficiency.
     // Ordered by ClassId,Ordinal so m_classPropRefs preserves per-class order.
-    Statement stmt;
-    stmt.Prepare(db,
-        "SELECT c.Id, s.Name, "
+    Utf8String sql =
+        "SELECT c.Id, "
         "p.Id, p.Name, p.DisplayLabel, p.Description, p.Kind, p.PrimitiveType, p.ExtendedTypeName, "
         "es.Name, e.Name, ss.Name, sc.Name, ks.Name, k.Name, pcs.Name, pc.Name, "
         "p.ArrayMinOccurs, p.ArrayMaxOccurs, "
@@ -210,56 +239,70 @@ void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
         "LEFT JOIN ec_PropertyCategory pc ON p.CategoryId=pc.Id "
         "LEFT JOIN ec_Schema pcs ON pc.SchemaId=pcs.Id "
         "LEFT JOIN ec_Class nrc ON p.NavigationRelationshipClassId=nrc.Id "
-        "LEFT JOIN ec_Schema nrs ON nrc.SchemaId=nrs.Id "
-        "ORDER BY c.Id, p.Ordinal");
+        "LEFT JOIN ec_Schema nrs ON nrc.SchemaId=nrs.Id ";
+    if (!m_excludedSchemaIds.empty())
+        {
+        sql.append("WHERE s.Id NOT IN (");
+        bool first = true;
+        for (auto id : m_excludedSchemaIds)
+            {
+            if (!first) sql.append(",");
+            sql.append(Utf8PrintfString("%" PRIi64, id));
+            first = false;
+            }
+        sql.append(") ");
+        }
+    sql.append("ORDER BY c.Id, p.Ordinal");
+
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db, sql.c_str());
+    if (rc != BE_SQLITE_OK)
+        return rc;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP schemaName = Safe(stmt.GetValueText(1));
-        if (IsExcludedSchema(schemaName))
-            continue;
-
         int64_t classId = stmt.GetValueInt64(0);
-        int64_t propertyId = stmt.GetValueInt64(2);
+        int64_t propertyId = stmt.GetValueInt64(1);
 
         PropertyDefRecord def;
-        def.nameSid       = Intern(Safe(stmt.GetValueText(3)));
-        def.descriptionSid= Intern(Safe(stmt.GetValueText(5)));
-        def.kind          = (uint8_t)stmt.GetValueInt(6);
-        def.primitiveType = (uint16_t)stmt.GetValueInt(7);
-        def.extTypeSid    = Intern(Safe(stmt.GetValueText(8)));
-        def.enumSchemaSid = Intern(Safe(stmt.GetValueText(9)));
-        def.enumNameSid   = Intern(Safe(stmt.GetValueText(10)));
-        def.structSchemaSid = Intern(Safe(stmt.GetValueText(11)));
-        def.structClassSid  = Intern(Safe(stmt.GetValueText(12)));
-        def.koqSchemaSid  = Intern(Safe(stmt.GetValueText(13)));
-        def.koqNameSid    = Intern(Safe(stmt.GetValueText(14)));
-        def.catSchemaSid  = Intern(Safe(stmt.GetValueText(15)));
-        def.catNameSid    = Intern(Safe(stmt.GetValueText(16)));
-        def.arrayMinOccurs= (uint32_t)stmt.GetValueInt(17);
-        def.arrayMaxOccurs= (uint32_t)stmt.GetValueInt(18);
-        def.navRelSchemaSid = Intern(Safe(stmt.GetValueText(19)));
-        def.navRelClassSid  = Intern(Safe(stmt.GetValueText(20)));
-        def.navDirection  = (uint8_t)stmt.GetValueInt(21);
-        def.isReadonly    = stmt.GetValueInt(22) != 0 ? (uint8_t)1 : (uint8_t)0;
+        def.nameSid       = Intern(Safe(stmt.GetValueText(2)));
+        def.descriptionSid= Intern(Safe(stmt.GetValueText(4)));
+        def.kind          = (uint8_t)stmt.GetValueInt(5);
+        def.primitiveType = (uint16_t)stmt.GetValueInt(6);
+        def.extTypeSid    = Intern(Safe(stmt.GetValueText(7)));
+        def.enumSchemaSid = Intern(Safe(stmt.GetValueText(8)));
+        def.enumNameSid   = Intern(Safe(stmt.GetValueText(9)));
+        def.structSchemaSid = Intern(Safe(stmt.GetValueText(10)));
+        def.structClassSid  = Intern(Safe(stmt.GetValueText(11)));
+        def.koqSchemaSid  = Intern(Safe(stmt.GetValueText(12)));
+        def.koqNameSid    = Intern(Safe(stmt.GetValueText(13)));
+        def.catSchemaSid  = Intern(Safe(stmt.GetValueText(14)));
+        def.catNameSid    = Intern(Safe(stmt.GetValueText(15)));
+        def.arrayMinOccurs= (uint32_t)stmt.GetValueInt(16);
+        def.arrayMaxOccurs= (uint32_t)stmt.GetValueInt(17);
+        def.navRelSchemaSid = Intern(Safe(stmt.GetValueText(18)));
+        def.navRelClassSid  = Intern(Safe(stmt.GetValueText(19)));
+        def.navDirection  = (uint8_t)stmt.GetValueInt(20);
+        def.isReadonly    = stmt.GetValueInt(21) != 0 ? (uint8_t)1 : (uint8_t)0;
         def.isHidden      = m_hiddenPropertyIds.count(propertyId) ? (uint8_t)1 : (uint8_t)0;
 
         uint32_t defIdx = AddPropertyDef(def);
 
         PropertyRefRecord ref;
         ref.defIdx   = defIdx;
-        ref.labelSid = Intern(Safe(stmt.GetValueText(4)));
-        ref.priority = stmt.GetValueInt(23);
-        ref.ecInstanceId = (uint32_t)propertyId;
+        ref.labelSid = Intern(Safe(stmt.GetValueText(3)));
+        ref.priority = stmt.GetValueInt(22);
+        ref.ecInstanceId = SafeU32Id(propertyId);
 
         m_classPropRefs[classId].push_back(ref);
         }
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // Main orchestration - reads ec_ tables with raw SQLite, writes binary records
 //---------------------------------------------------------------------------------------
-void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
+DbResult RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     {
     m_output.clear();
     m_output.reserve(2 * 1024 * 1024);
@@ -267,10 +310,12 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     m_stringIndex.clear();
     Intern(""); // index 0 = empty string
 
-    // ---- Pre-pass: bulk-load hidden property IDs and QueryView class IDs, then collect and dedup all properties ----
-    CollectHiddenPropertyIds(db);
-    CollectQueryViewClassIds(db);
-    CollectPropertyDedup(db);
+    // ---- Pre-pass: identify excluded schemas, bulk-load hidden property IDs and QueryView class IDs, then collect and dedup all properties ----
+    DbResult rc;
+    if ((rc = CollectExcludedSchemaIds(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = CollectHiddenPropertyIds(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = CollectQueryViewClassIds(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = CollectPropertyDedup(db)) != BE_SQLITE_OK) return rc;
 
     // Header: magic(4) + version(1) + stringTableOffset placeholder(4)
     PutU32(MAGIC);
@@ -306,67 +351,77 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
 
     // ---- Prepare statements ----
     Statement schemaStmt;
-    schemaStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema ORDER BY Id");
+    if ((rc = PrepareStmt(schemaStmt, db, "SELECT Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema ORDER BY Id")) != BE_SQLITE_OK)
+        return rc;
 
     Statement schemaRefStmt;
-    schemaRefStmt.Prepare(db,
+    if ((rc = PrepareStmt(schemaRefStmt, db,
         "SELECT rs.Name FROM ec_SchemaReference sr "
         "JOIN ec_Schema rs ON sr.ReferencedSchemaId=rs.Id "
-        "WHERE sr.SchemaId=? ORDER BY sr.Id");
+        "WHERE sr.SchemaId=? ORDER BY sr.Id")) != BE_SQLITE_OK)
+        return rc;
 
     Statement enumStmt;
-    enumStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE SchemaId=? ORDER BY Id");
+    if ((rc = PrepareStmt(enumStmt, db, "SELECT Id,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE SchemaId=? ORDER BY Id")) != BE_SQLITE_OK)
+        return rc;
 
     Statement koqStmt;
-    koqStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE SchemaId=? ORDER BY Id");
+    if ((rc = PrepareStmt(koqStmt, db, "SELECT Id,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE SchemaId=? ORDER BY Id")) != BE_SQLITE_OK)
+        return rc;
 
     Statement catStmt;
-    catStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE SchemaId=? ORDER BY Id");
+    if ((rc = PrepareStmt(catStmt, db, "SELECT Id,Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE SchemaId=? ORDER BY Id")) != BE_SQLITE_OK)
+        return rc;
 
     Statement classStmt;
-    classStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection FROM ec_Class WHERE SchemaId=? ORDER BY Id");
+    if ((rc = PrepareStmt(classStmt, db, "SELECT Id,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection FROM ec_Class WHERE SchemaId=? ORDER BY Id")) != BE_SQLITE_OK)
+        return rc;
 
     // Detect mixins: Entity classes with CoreCustomAttributes:IsMixin CA
     Statement isMixinStmt;
-    isMixinStmt.Prepare(db,
+    if ((rc = PrepareStmt(isMixinStmt, db,
         "SELECT 1 FROM ec_CustomAttribute ca "
         "JOIN ec_Class cac ON ca.ClassId=cac.Id "
         "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
         "WHERE ca.ContainerId=? AND ca.ContainerType & 30 <> 0 "
-        "AND cas.Name='CoreCustomAttributes' AND cac.Name='IsMixin' LIMIT 1");
+        "AND cas.Name='CoreCustomAttributes' AND cac.Name='IsMixin' LIMIT 1")) != BE_SQLITE_OK)
+        return rc;
 
     Statement baseStmt;
-    baseStmt.Prepare(db,
+    if ((rc = PrepareStmt(baseStmt, db,
         "SELECT s.Name, bc.Name, b.Ordinal "
         "FROM ec_ClassHasBaseClasses b "
         "JOIN ec_Class bc ON b.BaseClassId=bc.Id "
         "JOIN ec_Schema s ON bc.SchemaId=s.Id "
-        "WHERE b.ClassId=? ORDER BY b.Ordinal");
+        "WHERE b.ClassId=? ORDER BY b.Ordinal")) != BE_SQLITE_OK)
+        return rc;
 
     Statement constrStmt;
-    constrStmt.Prepare(db,
+    if ((rc = PrepareStmt(constrStmt, db,
         "SELECT rc.Id, rc.RelationshipEnd, rc.MultiplicityLowerLimit, rc.MultiplicityUpperLimit, "
         "rc.IsPolymorphic, rc.RoleLabel, acs.Name, acc.Name "
         "FROM ec_RelationshipConstraint rc "
         "LEFT JOIN ec_Class acc ON rc.AbstractConstraintClassId=acc.Id "
         "LEFT JOIN ec_Schema acs ON acc.SchemaId=acs.Id "
-        "WHERE rc.RelationshipClassId=? ORDER BY rc.RelationshipEnd");
+        "WHERE rc.RelationshipClassId=? ORDER BY rc.RelationshipEnd")) != BE_SQLITE_OK)
+        return rc;
 
     Statement constrClassStmt;
-    constrClassStmt.Prepare(db,
+    if ((rc = PrepareStmt(constrClassStmt, db,
         "SELECT s.Name, c.Name FROM ec_RelationshipConstraintClass rcc "
         "JOIN ec_Class c ON rcc.ClassId=c.Id "
         "JOIN ec_Schema s ON c.SchemaId=s.Id "
-        "WHERE rcc.ConstraintId=? ORDER BY rcc.Id");
+        "WHERE rcc.ConstraintId=? ORDER BY rcc.Id")) != BE_SQLITE_OK)
+        return rc;
 
     // ---- Iterate schemas ----
     while (schemaStmt.Step() == BE_SQLITE_ROW)
         {
         int64_t schemaId = schemaStmt.GetValueInt64(0);
-        Utf8CP name = Safe(schemaStmt.GetValueText(1));
-
-        if (IsExcludedSchema(name))
+        if (m_excludedSchemaIds.count(schemaId))
             continue;
+
+        Utf8CP name = Safe(schemaStmt.GetValueText(1));
 
         Utf8CP displayLabel = Safe(schemaStmt.GetValueText(2));
         Utf8CP description = Safe(schemaStmt.GetValueText(3));
@@ -383,7 +438,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
         PutSRef(alias);
         PutSRef(displayLabel);
         PutSRef(description);
-        PutU32((uint32_t)schemaId);
+        PutU32(SafeU32Id(schemaId));
 
         // Schema references
         schemaRefStmt.Reset();
@@ -407,7 +462,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
             PutSRef(Safe(enumStmt.GetValueText(2))); // label
             PutSRef(Safe(enumStmt.GetValueText(3))); // description
             PutSRef(Safe(enumStmt.GetValueText(6))); // enumValues JSON
-            PutU32((uint32_t)enumStmt.GetValueInt64(0)); // ecInstanceId
+            PutU32(SafeU32Id(enumStmt.GetValueInt64(0))); // ecInstanceId
             }
 
         // KindOfQuantity
@@ -422,7 +477,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
             PutSRef(Safe(koqStmt.GetValueText(4))); // persistenceUnit
             PutF64(koqStmt.GetValueDouble(5));        // relativeError
             PutSRef(Safe(koqStmt.GetValueText(6))); // presentationUnits
-            PutU32((uint32_t)koqStmt.GetValueInt64(0)); // ecInstanceId
+            PutU32(SafeU32Id(koqStmt.GetValueInt64(0))); // ecInstanceId
             }
 
         // PropertyCategory
@@ -435,7 +490,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
             PutSRef(Safe(catStmt.GetValueText(2))); // label
             PutSRef(Safe(catStmt.GetValueText(3))); // description
             PutI32(catStmt.GetValueInt(4));            // priority
-            PutU32((uint32_t)catStmt.GetValueInt64(0)); // ecInstanceId
+            PutU32(SafeU32Id(catStmt.GetValueInt64(0))); // ecInstanceId
             }
 
         // Classes
@@ -470,7 +525,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
                 PutU8((uint8_t)classStmt.GetValueInt(6)); // strength
                 PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
                 }
-            PutU32((uint32_t)classId); // ecInstanceId
+            PutU32(SafeU32Id(classId)); // ecInstanceId
 
             // Base classes
             baseStmt.Reset(); baseStmt.ClearBindings();
@@ -535,12 +590,12 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     // ---- Write string table and patch offset ----
     uint32_t stOffset = (uint32_t)m_output.size();
     PutU32((uint32_t)m_stringTable.size());
-    for (auto const& s : m_stringTable)
+    for (auto s : m_stringTable)
         {
-        uint32_t len = (uint32_t)s.size();
+        uint32_t len = (uint32_t)strlen(s);
         PutU32(len);
         if (len)
-            m_output.insert(m_output.end(), (Byte const*)s.c_str(), (Byte const*)s.c_str() + len);
+            m_output.insert(m_output.end(), (Byte const*)s, (Byte const*)s + len);
         }
 
     // Patch string table offset at position 5 (after magic(4) + version(1))
@@ -548,6 +603,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     m_output[6] = (Byte)((stOffset >> 8) & 0xFF);
     m_output[7] = (Byte)((stOffset >> 16) & 0xFF);
     m_output[8] = (Byte)((stOffset >> 24) & 0xFF);
+    return BE_SQLITE_OK;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
