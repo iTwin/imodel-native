@@ -87,9 +87,6 @@ private:
     //! Intern a string and write its index as a U32 reference.
     void PutSRef(Utf8CP str) { PutU32(Intern(str)); }
 
-    //! Write raw bytes with a U32 length prefix.
-    void PutRaw(Utf8CP data, uint32_t len) { PutU32(len); if (len) m_output.insert(m_output.end(), (Byte const*)data, (Byte const*)data + len); }
-
     static Utf8CP Safe(Utf8CP s) { return s ? s : ""; }
 
 public:
@@ -99,13 +96,13 @@ public:
 
     //! Read all schemas from the given database and write the binary blob.
     //! @param db  The database to read from (ECDb or DgnDb).
-    //! @param includeCustomAttributes  Whether to include custom attribute data.
-    //!        Should be false for RuntimeSchemaContext (CAs are loaded lazily via ECSQL).
     //! Schemas in the exclusion list (Formats, Units, ECDb internal, pure-CA system schemas)
     //! are silently skipped. Their classes, properties, enums, etc. are not emitted.
     //! KindOfQuantity persistence units and presentation formats reference Units/Formats
     //! only as strings, so consumers don't need those schemas in the context.
-    void WriteAllSchemas(DbCR db, bool includeCustomAttributes);
+    //! Custom attributes are not included - they are loaded lazily via ECSQL in
+    //! RuntimeSchemaContext when needed.
+    void WriteAllSchemas(DbCR db);
 
     //! Get the output blob. Valid after WriteAllSchemas() completes.
     bvector<Byte> const& GetOutput() const { return m_output; }

@@ -59,7 +59,6 @@ namespace Tag
     constexpr uint8_t BaseClass    = 0x41;
     // 0x50 was inline Property in prototypes (not used in v1)
     constexpr uint8_t PropRef      = 0x51; // reference into PropertyDef table
-    constexpr uint8_t CA           = 0x60;
     constexpr uint8_t RelConstr    = 0x70;
     constexpr uint8_t ConstrClass  = 0x71;
     constexpr uint8_t EndSchema    = 0x1F;
@@ -111,6 +110,10 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
         // Check for explicit Show=True override (case-insensitive).
         // The XML looks like: <HiddenProperty ...><Show>True</Show></HiddenProperty>
         // If Show is absent or not "true", the property is hidden.
+        // We use a simple substring search on the lowercased XML instance rather than a
+        // full XML parser. This is safe because HiddenProperty has exactly one optional
+        // boolean property (Show) - there's no other element that could contain ">true</.".
+        // If the CA schema ever adds more boolean properties, this would need revisiting.
         if (*instance != '\0')
             {
             std::string lower(instance);
@@ -232,7 +235,7 @@ void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
 //---------------------------------------------------------------------------------------
 // Main orchestration - reads ec_ tables with raw SQLite, writes binary records
 //---------------------------------------------------------------------------------------
-void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
+void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     {
     m_output.clear();
     m_output.reserve(2 * 1024 * 1024);
@@ -331,32 +334,6 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
         "JOIN ec_Schema s ON c.SchemaId=s.Id "
         "WHERE rcc.ConstraintId=? ORDER BY rcc.Id");
 
-    // ---- Bulk-load custom attributes if requested ----
-    // Note: property CAs are not emitted inline (properties use deduped PropRef).
-    // Property CAs are loaded lazily via ECSQL in RuntimeSchemaContext.
-    struct CaEntry { Utf8String schemaName; Utf8String className; int containerType; Utf8String instance; };
-    std::unordered_map<int64_t, bvector<CaEntry>> schemaCAs, classCAs, constraintCAs;
-
-    if (includeCustomAttributes)
-        {
-        Statement caStmt;
-        caStmt.Prepare(db,
-            "SELECT ca.ContainerId, ca.ContainerType, cas.Name, cac.Name, ca.Instance "
-            "FROM ec_CustomAttribute ca "
-            "JOIN ec_Class cac ON ca.ClassId=cac.Id "
-            "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
-            "ORDER BY ca.ContainerId, ca.Ordinal");
-        while (caStmt.Step() == BE_SQLITE_ROW)
-            {
-            int64_t containerId = caStmt.GetValueInt64(0);
-            int ct = caStmt.GetValueInt(1);
-            CaEntry entry{Safe(caStmt.GetValueText(2)), Safe(caStmt.GetValueText(3)), ct, Safe(caStmt.GetValueText(4))};
-            if (ct & 1)         schemaCAs[containerId].push_back(std::move(entry));
-            else if (ct & 30)   classCAs[containerId].push_back(std::move(entry));
-            else if (ct & 3072) constraintCAs[containerId].push_back(std::move(entry));
-            }
-        }
-
     // ---- Iterate schemas ----
     while (schemaStmt.Step() == BE_SQLITE_ROW)
         {
@@ -390,21 +367,6 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
             {
             PutU8(Tag::SchemaRef);
             PutSRef(Safe(schemaRefStmt.GetValueText(0)));
-            }
-
-        // CAs on schema
-        if (includeCustomAttributes)
-            {
-            auto it = schemaCAs.find(schemaId);
-            if (it != schemaCAs.end())
-                for (auto const& ca : it->second)
-                    {
-                    PutU8(Tag::CA);
-                    PutU16((uint16_t)ca.containerType);
-                    PutSRef(ca.schemaName.c_str());
-                    PutSRef(ca.className.c_str());
-                    PutRaw(ca.instance.c_str(), (uint32_t)ca.instance.size());
-                    }
             }
 
         // Enumerations
@@ -498,21 +460,6 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
                     PutI32(ref.priority);
                     }
 
-            // CAs on class
-            if (includeCustomAttributes)
-                {
-                auto it = classCAs.find(classId);
-                if (it != classCAs.end())
-                    for (auto const& ca : it->second)
-                        {
-                        PutU8(Tag::CA);
-                        PutU16((uint16_t)ca.containerType);
-                        PutSRef(ca.schemaName.c_str());
-                        PutSRef(ca.className.c_str());
-                        PutRaw(ca.instance.c_str(), (uint32_t)ca.instance.size());
-                        }
-                }
-
             // Relationship constraints
             if (classType == 1)
                 {
@@ -541,20 +488,6 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
                         PutSRef(Safe(constrClassStmt.GetValueText(1))); // class name
                         }
 
-                    // CAs on constraints
-                    if (includeCustomAttributes)
-                        {
-                        auto it = constraintCAs.find(constraintId);
-                        if (it != constraintCAs.end())
-                            for (auto const& ca : it->second)
-                                {
-                                PutU8(Tag::CA);
-                                PutU16((uint16_t)ca.containerType);
-                                PutSRef(ca.schemaName.c_str());
-                                PutSRef(ca.className.c_str());
-                                PutRaw(ca.instance.c_str(), (uint32_t)ca.instance.size());
-                                }
-                        }
                     }
                 }
 
