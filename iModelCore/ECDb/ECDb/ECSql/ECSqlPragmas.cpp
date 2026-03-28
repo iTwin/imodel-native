@@ -989,7 +989,9 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 	result->AppendProperty("schemaToken", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
-	// Build the binary blob (v1: property definition dedup)
+	// Build the binary blob (v1: property definition dedup).
+	// Currently only one format version exists. When adding v2+, this must route to
+	// the appropriate writer based on requestedVersion instead of always using v1.
 	RuntimeSchemaWriter writer;
 	writer.WriteAllSchemas(ecdb);
 	auto const& output = writer.GetOutput();

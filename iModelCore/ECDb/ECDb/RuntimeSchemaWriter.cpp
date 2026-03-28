@@ -252,6 +252,7 @@ void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
         ref.defIdx   = defIdx;
         ref.labelSid = Intern(Safe(stmt.GetValueText(4)));
         ref.priority = stmt.GetValueInt(23);
+        ref.ecInstanceId = (uint32_t)propertyId;
 
         m_classPropRefs[classId].push_back(ref);
         }
@@ -316,13 +317,13 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
         "WHERE sr.SchemaId=? ORDER BY sr.Id");
 
     Statement enumStmt;
-    enumStmt.Prepare(db, "SELECT Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE SchemaId=? ORDER BY Id");
+    enumStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE SchemaId=? ORDER BY Id");
 
     Statement koqStmt;
-    koqStmt.Prepare(db, "SELECT Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE SchemaId=? ORDER BY Id");
+    koqStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE SchemaId=? ORDER BY Id");
 
     Statement catStmt;
-    catStmt.Prepare(db, "SELECT Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE SchemaId=? ORDER BY Id");
+    catStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE SchemaId=? ORDER BY Id");
 
     Statement classStmt;
     classStmt.Prepare(db, "SELECT Id,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection FROM ec_Class WHERE SchemaId=? ORDER BY Id");
@@ -384,6 +385,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
         PutSRef(alias);
         PutSRef(displayLabel);
         PutSRef(description);
+        PutU32((uint32_t)schemaId);
 
         // Schema references
         schemaRefStmt.Reset();
@@ -401,12 +403,13 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
         while (enumStmt.Step() == BE_SQLITE_ROW)
             {
             PutU8(Tag::Enum);
-            PutSRef(Safe(enumStmt.GetValueText(0))); // name
-            PutU8((uint8_t)enumStmt.GetValueInt(3));  // primitiveType
-            PutU8(enumStmt.GetValueInt(4) != 0 ? 1 : 0); // isStrict
-            PutSRef(Safe(enumStmt.GetValueText(1))); // label
-            PutSRef(Safe(enumStmt.GetValueText(2))); // description
-            PutSRef(Safe(enumStmt.GetValueText(5))); // enumValues JSON
+            PutSRef(Safe(enumStmt.GetValueText(1))); // name
+            PutU8((uint8_t)enumStmt.GetValueInt(4));  // primitiveType
+            PutU8(enumStmt.GetValueInt(5) != 0 ? 1 : 0); // isStrict
+            PutSRef(Safe(enumStmt.GetValueText(2))); // label
+            PutSRef(Safe(enumStmt.GetValueText(3))); // description
+            PutSRef(Safe(enumStmt.GetValueText(6))); // enumValues JSON
+            PutU32((uint32_t)enumStmt.GetValueInt64(0)); // ecInstanceId
             }
 
         // KindOfQuantity
@@ -415,12 +418,13 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
         while (koqStmt.Step() == BE_SQLITE_ROW)
             {
             PutU8(Tag::KoQ);
-            PutSRef(Safe(koqStmt.GetValueText(0))); // name
-            PutSRef(Safe(koqStmt.GetValueText(1))); // label
-            PutSRef(Safe(koqStmt.GetValueText(2))); // description
-            PutSRef(Safe(koqStmt.GetValueText(3))); // persistenceUnit
-            PutF64(koqStmt.GetValueDouble(4));        // relativeError
-            PutSRef(Safe(koqStmt.GetValueText(5))); // presentationUnits
+            PutSRef(Safe(koqStmt.GetValueText(1))); // name
+            PutSRef(Safe(koqStmt.GetValueText(2))); // label
+            PutSRef(Safe(koqStmt.GetValueText(3))); // description
+            PutSRef(Safe(koqStmt.GetValueText(4))); // persistenceUnit
+            PutF64(koqStmt.GetValueDouble(5));        // relativeError
+            PutSRef(Safe(koqStmt.GetValueText(6))); // presentationUnits
+            PutU32((uint32_t)koqStmt.GetValueInt64(0)); // ecInstanceId
             }
 
         // PropertyCategory
@@ -429,10 +433,11 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
         while (catStmt.Step() == BE_SQLITE_ROW)
             {
             PutU8(Tag::PropCat);
-            PutSRef(Safe(catStmt.GetValueText(0))); // name
-            PutSRef(Safe(catStmt.GetValueText(1))); // label
-            PutSRef(Safe(catStmt.GetValueText(2))); // description
-            PutI32(catStmt.GetValueInt(3));            // priority
+            PutSRef(Safe(catStmt.GetValueText(1))); // name
+            PutSRef(Safe(catStmt.GetValueText(2))); // label
+            PutSRef(Safe(catStmt.GetValueText(3))); // description
+            PutI32(catStmt.GetValueInt(4));            // priority
+            PutU32((uint32_t)catStmt.GetValueInt64(0)); // ecInstanceId
             }
 
         // Classes
@@ -466,6 +471,8 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
                     PutSRef(""); // no base class
                     }
 
+                PutU32((uint32_t)classId); // ecInstanceId (views are classes in ec_Class)
+
                 // Properties
                 auto propIt = m_classPropRefs.find(classId);
                 if (propIt != m_classPropRefs.end())
@@ -475,6 +482,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
                         PutU32(ref.defIdx);
                         PutU32(ref.labelSid);
                         PutI32(ref.priority);
+                        PutU32(ref.ecInstanceId);
                         }
 
                 PutU8(Tag::EndView);
@@ -501,6 +509,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
                 PutU8((uint8_t)classStmt.GetValueInt(6)); // strength
                 PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
                 }
+            PutU32((uint32_t)classId); // ecInstanceId
 
             // Base classes
             baseStmt.Reset(); baseStmt.ClearBindings();
@@ -522,6 +531,7 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
                     PutU32(ref.defIdx);
                     PutU32(ref.labelSid);
                     PutI32(ref.priority);
+                    PutU32(ref.ecInstanceId);
                     }
 
             // Relationship constraints
