@@ -7,6 +7,45 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+// Schemas excluded from the runtime binary blob. These fall into three categories:
+// 1. Units/Formats: empty schemas whose items (Unit, Format, Phenomenon, UnitSystem)
+//    are only referenced as strings from KindOfQuantity. Including them would add
+//    zero useful classes/properties but bloat the string table.
+// 2. ECDb-internal: ECDbSystem, ECDbMap, ECDbFileInfo, ECDbSchemaPolicies
+//    describe the EC storage layer. No runtime consumer needs these.
+//    Note: ECDbMeta is NOT excluded - consumers use it for metadata queries.
+// 3. Pure CA schemas: CoreCustomAttributes, ECv3ConversionAttributes,
+//    EditorCustomAttributes, BisCustomAttributes, SchemaLocalizationCustomAttributes,
+//    SchemaUpgradeCustomAttributes. Their classes are only CustomAttribute and Struct
+//    types used for decoration. Since the blob doesn't include CA instances, including
+//    these schema definitions provides no value.
+// The list is checked case-insensitively via BeStringUtilities::StricmpAscii.
+static bool IsExcludedSchema(Utf8CP name)
+    {
+    // Sorted for readability, case-insensitive comparison
+    static const Utf8CP s_excluded[] =
+        {
+        "BisCustomAttributes",
+        "CoreCustomAttributes",
+        "ECDbFileInfo",
+        "ECDbMap",
+        "ECDbSchemaPolicies",
+        "ECDbSystem",
+        "ECv3ConversionAttributes",
+        "EditorCustomAttributes",
+        "Formats",
+        "SchemaLocalizationCustomAttributes",
+        "SchemaUpgradeCustomAttributes",
+        "Units",
+        };
+    for (auto excluded : s_excluded)
+        {
+        if (0 == BeStringUtilities::StricmpAscii(name, excluded))
+            return true;
+        }
+    return false;
+    }
+
 // Binary record tags - must stay in sync with Tag enum in RuntimeSchemaBinaryReader.ts
 namespace Tag
     {
@@ -161,6 +200,10 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
         {
         int64_t schemaId = schemaStmt.GetValueInt64(0);
         Utf8CP name = Safe(schemaStmt.GetValueText(1));
+
+        if (IsExcludedSchema(name))
+            continue;
+
         Utf8CP displayLabel = Safe(schemaStmt.GetValueText(2));
         Utf8CP description = Safe(schemaStmt.GetValueText(3));
         Utf8CP alias = Safe(schemaStmt.GetValueText(4));
