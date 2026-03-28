@@ -161,7 +161,7 @@ struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
 // Returns all EC schema metadata as a single binary blob.
 // Usage: PRAGMA runtime_schemas           -- returns current format version (v1)
 //        PRAGMA runtime_schemas(1)        -- explicitly request format version 1
-// Result: single row with columns: format (string), data (binary), schemaToken (string)
+// Result: single row with columns: format (string), formatVersion (int), data (binary), schemaToken (string)
 //+===============+===============+===============+===============+===============+======
 struct PragmaRuntimeSchemas : PragmaManager::GlobalHandler {
     static constexpr uint8_t CURRENT_FORMAT_VERSION = 1;
