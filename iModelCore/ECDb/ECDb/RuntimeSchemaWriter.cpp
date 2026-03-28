@@ -60,8 +60,6 @@ namespace Tag
     // 0x50 was inline Property in prototypes (not used in v1)
     constexpr uint8_t PropRef      = 0x51; // reference into PropertyDef table
     constexpr uint8_t RelConstr    = 0x70;
-    constexpr uint8_t View         = 0x0C; // ECView (QueryView CA)
-    constexpr uint8_t EndView      = 0x0D;
     constexpr uint8_t ConstrClass  = 0x71;
     constexpr uint8_t EndSchema    = 0x1F;
     constexpr uint8_t EndClass     = 0x4F;
@@ -130,7 +128,7 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
 
 //---------------------------------------------------------------------------------------
 // Bulk-load IDs of all classes that have the ECDbMap:QueryView custom attribute.
-// These entity classes are ECViews - they get emitted as View records instead of Class
+// These entity classes are ECViews - they get emitted as Class records with type=5 (View).
 // records in the binary blob. Only presence matters; the ECSQL query property is
 // intentionally omitted from the runtime blob.
 //---------------------------------------------------------------------------------------
@@ -448,46 +446,9 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
             int64_t classId = classStmt.GetValueInt64(0);
             int classType = classStmt.GetValueInt(4);
 
-            // Entity classes with ECDbMap:QueryView CA are views - emit as View records
+            // Entity classes with ECDbMap:QueryView CA are views (type 5)
             if (m_queryViewClassIds.count(classId))
-                {
-                PutU8(Tag::View);
-                PutSRef(Safe(classStmt.GetValueText(1))); // name
-                PutU8((uint8_t)classStmt.GetValueInt(5));  // modifier
-                PutSRef(Safe(classStmt.GetValueText(2))); // label
-                PutSRef(Safe(classStmt.GetValueText(3))); // description
-
-                // Views have at most one base class (ordinal 0), no mixins
-                baseStmt.Reset(); baseStmt.ClearBindings();
-                baseStmt.BindInt64(1, classId);
-                if (baseStmt.Step() == BE_SQLITE_ROW)
-                    {
-                    PutSRef(Safe(baseStmt.GetValueText(0))); // base schema name
-                    PutSRef(Safe(baseStmt.GetValueText(1))); // base class name
-                    }
-                else
-                    {
-                    PutSRef(""); // no base schema
-                    PutSRef(""); // no base class
-                    }
-
-                PutU32((uint32_t)classId); // ecInstanceId (views are classes in ec_Class)
-
-                // Properties
-                auto propIt = m_classPropRefs.find(classId);
-                if (propIt != m_classPropRefs.end())
-                    for (auto const& ref : propIt->second)
-                        {
-                        PutU8(Tag::PropRef);
-                        PutU32(ref.defIdx);
-                        PutU32(ref.labelSid);
-                        PutI32(ref.priority);
-                        PutU32(ref.ecInstanceId);
-                        }
-
-                PutU8(Tag::EndView);
-                continue;
-                }
+                classType = 5; // View
 
             // Entity classes with CoreCustomAttributes:IsMixin are mixins (type 4)
             if (classType == 0) // Entity
