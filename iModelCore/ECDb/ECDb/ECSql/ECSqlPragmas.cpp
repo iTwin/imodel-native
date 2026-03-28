@@ -985,7 +985,7 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
 	result->AppendProperty("format", PRIMITIVETYPE_String);
 	result->AppendProperty("formatVersion", PRIMITIVETYPE_Integer);
-	result->AppendProperty("data", PRIMITIVETYPE_Binary);
+	result->AppendProperty("data", PRIMITIVETYPE_String);
 	result->AppendProperty("schemaToken", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 

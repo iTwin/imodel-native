@@ -448,16 +448,20 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         return nullptr;
     }
     ECN::PrimitiveECPropertyP property = nullptr;
+    // Note: Binary is intentionally NOT supported here. StaticPragmaResult stores rows in a
+    // BeJsDocument (JSON), so "binary" values get base64-encoded on write (SetBinary) and must be
+    // decoded on read (_GetBlob), only to be re-encoded when ConcurrentQuery serializes the response.
+    // Use PRIMITIVETYPE_String with BeJsValue::SetBinary() instead - the base64 string passes through
+    // as-is and the TS ECSqlReader auto-detects the "encoding=base64;" prefix, decoding it to Uint8Array.
     if (type == ECN::PRIMITIVETYPE_Boolean ||
         type == ECN::PRIMITIVETYPE_Double ||
         type == ECN::PRIMITIVETYPE_Integer||
         type == ECN::PRIMITIVETYPE_Long ||
-        type == ECN::PRIMITIVETYPE_String ||
-        type == ECN::PRIMITIVETYPE_Binary) {
+        type == ECN::PRIMITIVETYPE_String) {
         if (m_class->CreatePrimitiveProperty(property, name, type) != ECObjectsStatus::Success)
             return nullptr;
     } else {
-        BeAssert(false && "unsupported type. Only bool, double, integer, long, string, and binary are supported");
+        BeAssert(false && "unsupported type. Only bool, double, integer, long, and string are supported");
         return nullptr;
     }
     DateTime::Info dateTimeInfo;
@@ -535,22 +539,7 @@ Utf8CP PragmaResult::Field::_GetText() const {
     return row == nullptr ? NoopECSqlValue::GetSingleton().GetText() : row->operator[](m_columnIndex).asCString();
 }
 
-// Binary value support - decodes base64 from the BeJsDocument row into a persistent buffer
-void const* PragmaResult::Field::_GetBlob(int* blobSize) const {
-    BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    if (row == nullptr || row->operator[](m_columnIndex).isNull()) {
-        if (blobSize) *blobSize = 0;
-        return nullptr;
-    }
-    m_blobBuffer.clear();
-    if (row->operator[](m_columnIndex).GetBinary(m_blobBuffer) != SUCCESS) {
-        if (blobSize) *blobSize = 0;
-        return nullptr;
-    }
-    if (blobSize) *blobSize = (int)m_blobBuffer.size();
-    return m_blobBuffer.data();
-}
+void const* PragmaResult::Field::_GetBlob(int* blobSize) const { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
 uint64_t PragmaResult::Field::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const{ return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
 double PragmaResult::Field::_GetDateTimeJulianDays(DateTime::Info& metadata) const { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }
 DPoint2d PragmaResult::Field::_GetPoint2d() const { return NoopECSqlValue::GetSingleton().GetPoint2d(); }
