@@ -18,8 +18,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! The writer reads directly from ec_ SQLite tables, bypassing the C++ ECObjects object
 //! graph entirely. This is significantly faster than JSON serialization via ECSchema.
 //!
-//! Binary format v2: tag-delimited records with a deduplicated string table.
-//! Layout: header + records + string table (offset patched in header).
+//! Binary format v1: tag-delimited records with a deduplicated string table and
+//! property definition deduplication. Layout: header + PropertyDef table + schema
+//! records (properties as PropRef) + string table (offset patched in header).
 //! The TS reader's parseRuntimeSchemaBlob() understands this exact format.
 //!
 //! Thread safety: safe for concurrent reads when ECDb is in WAL mode.
@@ -32,6 +33,42 @@ private:
     bvector<Byte> m_output;
     bvector<Utf8String> m_stringTable;
     std::unordered_map<std::string, uint32_t> m_stringIndex;
+
+    // Property definition dedup
+    struct PropertyDefRecord
+        {
+        uint32_t nameSid;
+        uint8_t kind;
+        uint16_t primitiveType;
+        uint32_t extTypeSid;
+        uint32_t enumNameSid;
+        uint32_t structSchemaSid;
+        uint32_t structClassSid;
+        uint32_t koqNameSid;
+        uint32_t catNameSid;
+        uint32_t arrayMinOccurs;
+        uint32_t arrayMaxOccurs;
+        uint32_t navRelSchemaSid;
+        uint32_t navRelClassSid;
+        uint8_t navDirection;
+        uint8_t isReadonly;
+        uint32_t descriptionSid;
+        };
+
+    struct PropertyRefRecord
+        {
+        uint32_t defIdx;
+        uint32_t labelSid;
+        int32_t priority;
+        };
+
+    bvector<PropertyDefRecord> m_propDefs;
+    std::unordered_map<std::string, uint32_t> m_propDefIndex;
+    std::unordered_map<int64_t, bvector<PropertyRefRecord>> m_classPropRefs;
+
+    void CollectPropertyDedup(DbCR db);
+    uint32_t AddPropertyDef(PropertyDefRecord const& def);
+    std::string PropertyDefSignature(PropertyDefRecord const& def) const;
 
     // Binary encoding helpers
     void PutU8(uint8_t v) { m_output.push_back(v); }

@@ -452,11 +452,12 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         type == ECN::PRIMITIVETYPE_Double ||
         type == ECN::PRIMITIVETYPE_Integer||
         type == ECN::PRIMITIVETYPE_Long ||
-        type == ECN::PRIMITIVETYPE_String) {
+        type == ECN::PRIMITIVETYPE_String ||
+        type == ECN::PRIMITIVETYPE_Binary) {
         if (m_class->CreatePrimitiveProperty(property, name, type) != ECObjectsStatus::Success)
             return nullptr;
     } else {
-        BeAssert(false && "unsupported type. Only bool, double, integer, long and string are supported type");
+        BeAssert(false && "unsupported type. Only bool, double, integer, long, string, and binary are supported");
         return nullptr;
     }
     DateTime::Info dateTimeInfo;
