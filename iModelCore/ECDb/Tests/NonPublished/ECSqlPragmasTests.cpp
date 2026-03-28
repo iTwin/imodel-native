@@ -549,7 +549,7 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
         // Column 0: format (string)
         ASSERT_STREQ("binary", stmt.GetValueText(0));
         // Column 1: formatVersion (integer)
-        ASSERT_EQ(2, stmt.GetValueInt(1));
+        ASSERT_EQ(1, stmt.GetValueInt(1));
         // Column 2: data (binary blob)
         int blobSize = 0;
         void const* blob = stmt.GetValueBlob(2, &blobSize);
@@ -561,7 +561,7 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
         uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
         ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
         // Verify format version in blob header matches
-        ASSERT_EQ(2, bytes[4]);
+        ASSERT_EQ(1, bytes[4]);
 
         // Column 3: schemaToken (string, non-empty SHA hash)
         Utf8CP token = stmt.GetValueText(3);
@@ -585,18 +585,18 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
         "  </ECEntityClass>"
         "</ECSchema>")));
 
-    if ("explicit version 2 should succeed") {
+    if ("explicit version 1 should succeed") {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(2)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(1)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(2, stmt.GetValueInt(1)); // formatVersion column
+        ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion column
         int blobSize = 0;
         void const* blob = stmt.GetValueBlob(2, &blobSize);
         ASSERT_NE(nullptr, blob);
         ASSERT_GT(blobSize, 9);
         // Verify blob header format version matches requested version
         auto bytes = static_cast<uint8_t const*>(blob);
-        ASSERT_EQ(2, bytes[4]);
+        ASSERT_EQ(1, bytes[4]);
     }
 
     if ("unsupported high version should fail") {

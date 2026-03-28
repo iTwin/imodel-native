@@ -989,8 +989,7 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 	result->AppendProperty("schemaToken", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
-	// Build the binary blob (currently only v2 exists; when new versions are added,
-	// branch here based on requestedVersion)
+	// Build the binary blob (v1: property definition dedup)
 	RuntimeSchemaWriter writer;
 	writer.WriteAllSchemas(ecdb, false /* no CAs - loaded lazily via ECSQL */);
 	auto const& output = writer.GetOutput();

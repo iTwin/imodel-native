@@ -49,6 +49,7 @@ static bool IsExcludedSchema(Utf8CP name)
 // Binary record tags - must stay in sync with Tag enum in RuntimeSchemaBinaryReader.ts
 namespace Tag
     {
+    constexpr uint8_t PropertyDefTable = 0x0A; // deduplicated property definition table
     constexpr uint8_t Schema       = 0x10;
     constexpr uint8_t SchemaRef    = 0x11;
     constexpr uint8_t Enum         = 0x20;
@@ -56,7 +57,8 @@ namespace Tag
     constexpr uint8_t PropCat      = 0x31;
     constexpr uint8_t Class        = 0x40;
     constexpr uint8_t BaseClass    = 0x41;
-    constexpr uint8_t Property     = 0x50;
+    // 0x50 was inline Property in prototypes (not used in v1)
+    constexpr uint8_t PropRef      = 0x51; // reference into PropertyDef table
     constexpr uint8_t CA           = 0x60;
     constexpr uint8_t RelConstr    = 0x70;
     constexpr uint8_t ConstrClass  = 0x71;
@@ -65,7 +67,7 @@ namespace Tag
     }
 
 static constexpr uint32_t MAGIC = 0x43534348; // "CSCH"
-static constexpr uint8_t  FORMAT_VERSION = 2;
+static constexpr uint8_t  FORMAT_VERSION = 1;
 
 //---------------------------------------------------------------------------------------
 // String interning
@@ -83,6 +85,98 @@ uint32_t RuntimeSchemaWriter::Intern(Utf8CP str)
     }
 
 //---------------------------------------------------------------------------------------
+// Property definition dedup - builds a table of unique PropertyDef records and per-class
+// PropertyRef lists. Called before writing so the PropertyDef table can precede schema records.
+//---------------------------------------------------------------------------------------
+std::string RuntimeSchemaWriter::PropertyDefSignature(PropertyDefRecord const& def) const
+    {
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u",
+        def.nameSid, def.descriptionSid, def.kind, def.primitiveType, def.extTypeSid,
+        def.enumNameSid, def.koqNameSid, def.structSchemaSid, def.structClassSid,
+        def.navRelSchemaSid, def.navRelClassSid, (uint32_t)def.navDirection,
+        def.catNameSid, (uint32_t)def.isReadonly, def.arrayMinOccurs, def.arrayMaxOccurs);
+    return std::string(buf);
+    }
+
+uint32_t RuntimeSchemaWriter::AddPropertyDef(PropertyDefRecord const& def)
+    {
+    auto sig = PropertyDefSignature(def);
+    auto it = m_propDefIndex.find(sig);
+    if (it != m_propDefIndex.end())
+        return it->second;
+    uint32_t idx = (uint32_t)m_propDefs.size();
+    m_propDefs.push_back(def);
+    m_propDefIndex[sig] = idx;
+    return idx;
+    }
+
+void RuntimeSchemaWriter::CollectPropertyDedup(DbCR db)
+    {
+    m_propDefs.clear();
+    m_propDefIndex.clear();
+    m_classPropRefs.clear();
+
+    // Single query for all properties, joined to schema for exclusion check.
+    // Ordered by ClassId,Ordinal so m_classPropRefs preserves per-class order.
+    Statement stmt;
+    stmt.Prepare(db,
+        "SELECT c.Id, s.Name, "
+        "p.Name, p.DisplayLabel, p.Description, p.Kind, p.PrimitiveType, p.ExtendedTypeName, "
+        "e.Name, ss.Name, sc.Name, k.Name, pc.Name, "
+        "p.ArrayMinOccurs, p.ArrayMaxOccurs, "
+        "nrs.Name, nrc.Name, p.NavigationDirection, "
+        "p.IsReadonly, p.Priority "
+        "FROM ec_Property p "
+        "JOIN ec_Class c ON p.ClassId=c.Id "
+        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "LEFT JOIN ec_Enumeration e ON p.EnumerationId=e.Id "
+        "LEFT JOIN ec_Class sc ON p.StructClassId=sc.Id "
+        "LEFT JOIN ec_Schema ss ON sc.SchemaId=ss.Id "
+        "LEFT JOIN ec_KindOfQuantity k ON p.KindOfQuantityId=k.Id "
+        "LEFT JOIN ec_PropertyCategory pc ON p.CategoryId=pc.Id "
+        "LEFT JOIN ec_Class nrc ON p.NavigationRelationshipClassId=nrc.Id "
+        "LEFT JOIN ec_Schema nrs ON nrc.SchemaId=nrs.Id "
+        "ORDER BY c.Id, p.Ordinal");
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP schemaName = Safe(stmt.GetValueText(1));
+        if (IsExcludedSchema(schemaName))
+            continue;
+
+        int64_t classId = stmt.GetValueInt64(0);
+
+        PropertyDefRecord def;
+        def.nameSid       = Intern(Safe(stmt.GetValueText(2)));
+        def.descriptionSid= Intern(Safe(stmt.GetValueText(4)));
+        def.kind          = (uint8_t)stmt.GetValueInt(5);
+        def.primitiveType = (uint16_t)stmt.GetValueInt(6);
+        def.extTypeSid    = Intern(Safe(stmt.GetValueText(7)));
+        def.enumNameSid   = Intern(Safe(stmt.GetValueText(8)));
+        def.structSchemaSid = Intern(Safe(stmt.GetValueText(9)));
+        def.structClassSid  = Intern(Safe(stmt.GetValueText(10)));
+        def.koqNameSid    = Intern(Safe(stmt.GetValueText(11)));
+        def.catNameSid    = Intern(Safe(stmt.GetValueText(12)));
+        def.arrayMinOccurs= (uint32_t)stmt.GetValueInt(13);
+        def.arrayMaxOccurs= (uint32_t)stmt.GetValueInt(14);
+        def.navRelSchemaSid = Intern(Safe(stmt.GetValueText(15)));
+        def.navRelClassSid  = Intern(Safe(stmt.GetValueText(16)));
+        def.navDirection  = (uint8_t)stmt.GetValueInt(17);
+        def.isReadonly    = stmt.GetValueInt(18) != 0 ? (uint8_t)1 : (uint8_t)0;
+
+        uint32_t defIdx = AddPropertyDef(def);
+
+        PropertyRefRecord ref;
+        ref.defIdx   = defIdx;
+        ref.labelSid = Intern(Safe(stmt.GetValueText(3)));
+        ref.priority = stmt.GetValueInt(19);
+
+        m_classPropRefs[classId].push_back(ref);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // Main orchestration - reads ec_ tables with raw SQLite, writes binary records
 //---------------------------------------------------------------------------------------
 void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
@@ -93,10 +187,36 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
     m_stringIndex.clear();
     Intern(""); // index 0 = empty string
 
+    // ---- Pre-pass: collect and deduplicate all property definitions ----
+    CollectPropertyDedup(db);
+
     // Header: magic(4) + version(1) + stringTableOffset placeholder(4)
     PutU32(MAGIC);
     PutU8(FORMAT_VERSION);
     PutU32(0); // placeholder for string table offset, patched in at end
+
+    // ---- Write PropertyDef table ----
+    PutU8(Tag::PropertyDefTable);
+    PutU32((uint32_t)m_propDefs.size());
+    for (auto const& def : m_propDefs)
+        {
+        PutU32(def.nameSid);
+        PutU8(def.kind);
+        PutU16(def.primitiveType);
+        PutU32(def.extTypeSid);
+        PutU32(def.enumNameSid);
+        PutU32(def.structSchemaSid);
+        PutU32(def.structClassSid);
+        PutU32(def.koqNameSid);
+        PutU32(def.catNameSid);
+        PutU32(def.arrayMinOccurs);
+        PutU32(def.arrayMaxOccurs);
+        PutU32(def.navRelSchemaSid);
+        PutU32(def.navRelClassSid);
+        PutU8(def.navDirection);
+        PutU8(def.isReadonly);
+        PutU32(def.descriptionSid);
+        }
 
     // ---- Prepare statements ----
     Statement schemaStmt;
@@ -137,23 +257,6 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
         "JOIN ec_Schema s ON bc.SchemaId=s.Id "
         "WHERE b.ClassId=? ORDER BY b.Ordinal");
 
-    Statement propStmt;
-    propStmt.Prepare(db,
-        "SELECT p.Name, p.DisplayLabel, p.Description, p.Kind, p.PrimitiveType, p.ExtendedTypeName, "
-        "e.Name, ss.Name, sc.Name, k.Name, pc.Name, "
-        "p.ArrayMinOccurs, p.ArrayMaxOccurs, "
-        "nrs.Name, nrc.Name, p.NavigationDirection, "
-        "p.IsReadonly, p.Priority, p.Id "
-        "FROM ec_Property p "
-        "LEFT JOIN ec_Enumeration e ON p.EnumerationId=e.Id "
-        "LEFT JOIN ec_Class sc ON p.StructClassId=sc.Id "
-        "LEFT JOIN ec_Schema ss ON sc.SchemaId=ss.Id "
-        "LEFT JOIN ec_KindOfQuantity k ON p.KindOfQuantityId=k.Id "
-        "LEFT JOIN ec_PropertyCategory pc ON p.CategoryId=pc.Id "
-        "LEFT JOIN ec_Class nrc ON p.NavigationRelationshipClassId=nrc.Id "
-        "LEFT JOIN ec_Schema nrs ON nrc.SchemaId=nrs.Id "
-        "WHERE p.ClassId=? ORDER BY p.Ordinal");
-
     Statement constrStmt;
     constrStmt.Prepare(db,
         "SELECT rc.Id, rc.RelationshipEnd, rc.MultiplicityLowerLimit, rc.MultiplicityUpperLimit, "
@@ -171,8 +274,10 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
         "WHERE rcc.ConstraintId=? ORDER BY rcc.Id");
 
     // ---- Bulk-load custom attributes if requested ----
+    // Note: property CAs are not emitted inline (properties use deduped PropRef).
+    // Property CAs are loaded lazily via ECSQL in RuntimeSchemaContext.
     struct CaEntry { Utf8String schemaName; Utf8String className; int containerType; Utf8String instance; };
-    std::unordered_map<int64_t, bvector<CaEntry>> schemaCAs, classCAs, propertyCAs, constraintCAs;
+    std::unordered_map<int64_t, bvector<CaEntry>> schemaCAs, classCAs, constraintCAs;
 
     if (includeCustomAttributes)
         {
@@ -190,7 +295,6 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
             CaEntry entry{Safe(caStmt.GetValueText(2)), Safe(caStmt.GetValueText(3)), ct, Safe(caStmt.GetValueText(4))};
             if (ct & 1)         schemaCAs[containerId].push_back(std::move(entry));
             else if (ct & 30)   classCAs[containerId].push_back(std::move(entry));
-            else if (ct & 992)  propertyCAs[containerId].push_back(std::move(entry));
             else if (ct & 3072) constraintCAs[containerId].push_back(std::move(entry));
             }
         }
@@ -325,47 +429,16 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db, bool includeCustomAttributes)
                 PutU8((uint8_t)baseStmt.GetValueInt(2));  // ordinal
                 }
 
-            // Properties
-            propStmt.Reset(); propStmt.ClearBindings();
-            propStmt.BindInt64(1, classId);
-            while (propStmt.Step() == BE_SQLITE_ROW)
-                {
-                PutU8(Tag::Property);
-                PutSRef(Safe(propStmt.GetValueText(0)));   // name
-                PutU8((uint8_t)propStmt.GetValueInt(3));    // kind
-                PutU16((uint16_t)propStmt.GetValueInt(4));  // primitiveType
-                PutSRef(Safe(propStmt.GetValueText(5)));   // extendedTypeName
-                PutSRef(Safe(propStmt.GetValueText(6)));   // enumName
-                PutSRef(Safe(propStmt.GetValueText(7)));   // structSchemaName
-                PutSRef(Safe(propStmt.GetValueText(8)));   // structClassName
-                PutSRef(Safe(propStmt.GetValueText(9)));   // koqName
-                PutSRef(Safe(propStmt.GetValueText(10)));  // categoryName
-                PutU32((uint32_t)propStmt.GetValueInt(11)); // arrayMinOccurs
-                PutU32((uint32_t)propStmt.GetValueInt(12)); // arrayMaxOccurs
-                PutSRef(Safe(propStmt.GetValueText(13)));  // navRelSchemaName
-                PutSRef(Safe(propStmt.GetValueText(14)));  // navRelClassName
-                PutU8((uint8_t)propStmt.GetValueInt(15));   // navDirection
-                PutU8(propStmt.GetValueInt(16) != 0 ? 1 : 0); // isReadonly
-                PutI32(propStmt.GetValueInt(17));            // priority
-                PutSRef(Safe(propStmt.GetValueText(1)));   // label
-                PutSRef(Safe(propStmt.GetValueText(2)));   // description
-
-                // CAs on property
-                if (includeCustomAttributes)
+            // Properties (emit PropRef referencing the pre-built PropertyDef table)
+            auto propIt = m_classPropRefs.find(classId);
+            if (propIt != m_classPropRefs.end())
+                for (auto const& ref : propIt->second)
                     {
-                    int64_t propertyId = propStmt.GetValueInt64(18);
-                    auto it = propertyCAs.find(propertyId);
-                    if (it != propertyCAs.end())
-                        for (auto const& ca : it->second)
-                            {
-                            PutU8(Tag::CA);
-                            PutU16((uint16_t)ca.containerType);
-                            PutSRef(ca.schemaName.c_str());
-                            PutSRef(ca.className.c_str());
-                            PutRaw(ca.instance.c_str(), (uint32_t)ca.instance.size());
-                            }
+                    PutU8(Tag::PropRef);
+                    PutU32(ref.defIdx);
+                    PutU32(ref.labelSid);
+                    PutI32(ref.priority);
                     }
-                }
 
             // CAs on class
             if (includeCustomAttributes)
