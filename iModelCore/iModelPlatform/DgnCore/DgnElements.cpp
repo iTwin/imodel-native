@@ -146,6 +146,16 @@ void DgnElements::DropFromPool(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::DropFromPool(DgnElementIdSet ids) const
+    {
+    BeMutexHolder _v_v(m_mutex);
+    for (const auto& id : ids)
+        m_mruCache->DropElement(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCP DgnElements::FindLoadedElement(DgnElementId id) const
     {
     BeMutexHolder _v_v(m_mutex);
@@ -460,6 +470,538 @@ DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::CreateTempTables() const
+    {
+    // Create a temp table to hold the entries for the elements to be deleted
+    auto stat = m_dgndb.CreateTableIfNotExists(TEMP_TABLE(TEMP_ELEMENT_DELETION), 
+    R"sql(
+        ElementId       INTEGER PRIMARY KEY,
+        LogicalParentId INTEGER,
+        IsSubModelRoot  INTEGER NOT NULL DEFAULT 0,
+        Depth           INTEGER NOT NULL DEFAULT 0,
+        IsViolator      INTEGER NOT NULL DEFAULT 0
+    )sql");
+    if (stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("Error creating temp table %s: %s", TEMP_TABLE(TEMP_ELEMENT_DELETION), BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_logicalParent ON " TEMP_ELEMENT_DELETION " (LogicalParentId)"))
+        return false;
+
+    // Partial index to accelerate IsViolator=1 scans (PruneViolators, deleteAllViolators).
+    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_violator ON " TEMP_ELEMENT_DELETION " (IsViolator) WHERE IsViolator = 1"))
+        return false;
+
+    // Partial index to accelerate IsSubModelRoot=1 scans (DeleteLinkTableRelationships, ExecuteDeletion).
+    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_submodelroot ON " TEMP_ELEMENT_DELETION " (IsSubModelRoot) WHERE IsSubModelRoot = 1"))
+        return false;
+
+    // Clear out table to avoid stale entries
+    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("DELETE FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION)))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::ExpandElementIdList() const
+    {
+    constexpr auto expandSql = 
+        "WITH RECURSIVE fullSet(id, logicalParentId, isSubModelRoot, depth) AS ("
+            "SELECT e.Id, "
+                "e.ParentId, "
+                "CASE WHEN m.Id IS NOT NULL THEN 1 ELSE 0 END, "
+                "0 "
+            "FROM bis_Element e "
+            "LEFT JOIN bis_Model m ON m.ModeledElementId = e.Id "
+            "WHERE InVirtualSet(?, e.Id) "
+            "UNION ALL "
+            "SELECT e.Id,"
+                "e.ParentId, "
+                "CASE WHEN m.Id IS NOT NULL THEN 1 ELSE 0 END, "
+                "f.depth + 1 "
+            "FROM bis_Element e "
+            "INNER JOIN fullSet f ON e.ParentId = f.id "
+            "LEFT JOIN bis_Model m ON m.ModeledElementId = e.Id "
+            "UNION ALL "
+            "SELECT e.Id,"
+                "sm.ModeledElementId, "
+                "CASE WHEN m.Id IS NOT NULL THEN 1 ELSE 0 END, "
+                "f.depth + 1 "
+            "FROM bis_Element e "
+            "INNER JOIN bis_Model sm ON sm.Id = e.ModelId "
+            "INNER JOIN fullSet f ON sm.ModeledElementId = f.id "
+            "LEFT JOIN bis_Model m ON m.ModeledElementId = e.Id "
+        ") "
+        "INSERT OR REPLACE INTO " TEMP_TABLE(TEMP_ELEMENT_DELETION) " (ElementId, LogicalParentId, IsSubModelRoot, Depth) "
+        "SELECT id, logicalParentId, isSubModelRoot, depth "
+        "FROM fullSet";
+
+    const auto expandStmt = m_dgndb.GetCachedStatement(expandSql);
+    if (!expandStmt.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to add dependent elements");
+        return false;
+        }
+    expandStmt->BindVirtualSet(1, m_originalElementIds);
+    if (const auto stat = expandStmt->Step(); stat != BE_SQLITE_DONE)
+        {
+        LOG.errorv("BulkElementDeletion: Failed to add dependent elements: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    m_dgndb.TryExecuteSql("ANALYZE " TEMP_TABLE(TEMP_ELEMENT_DELETION));
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::PruneViolators()
+    {
+    // This is purely for error reporting.
+    // While this is a hinderance for the performance, it is important to import the caller exactly which elements failed deletion.
+    constexpr auto collectViolatorsSql =
+        "SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsViolator = 1";
+
+    auto pruneStmt = m_dgndb.GetCachedStatement(collectViolatorsSql);
+    if (!pruneStmt.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to find constraint violators");
+        return false;
+        }
+
+    while (BE_SQLITE_ROW == pruneStmt->Step())
+        {
+        auto id = pruneStmt->GetValueId<DgnElementId>(0);
+        if (id.IsValid() && m_originalElementIds.Contains(id))
+            m_failedToDelete.insert(id);
+        }
+
+    constexpr auto deleteAllViolators = "DELETE FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsViolator = 1";
+    if (const auto stat = m_dgndb.TryExecuteSql(deleteAllViolators); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: Failed to delete all constraint violators: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::FindAndPruneConstraintViolators()
+    {
+    // Optimization guard: Don't run the expensive search queries if no violators exist
+    constexpr auto guardSql = 
+        "SELECT 1 FROM bis_Element e "
+        "WHERE e.CodeScopeId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+            "AND e.Id NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+        "UNION ALL "
+        "SELECT 1 FROM bis_GeometricElement3d g "
+        "WHERE g.CategoryId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+            "AND g.ElementId NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+        "UNION ALL "
+        "SELECT 1 FROM bis_GeometricElement2d g "
+        "WHERE g.CategoryId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+            "AND g.ElementId NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+        "LIMIT 1";
+    auto guardStmt = m_dgndb.GetCachedStatement(guardSql);
+    if (guardStmt.IsNull())
+        {
+        LOG.error("BulkElementDeletion: Constraint violator guard check failed");
+        return false;
+        }
+
+    if (BE_SQLITE_ROW != guardStmt->Step())
+        return true;
+
+    constexpr auto findViolators =
+        "WITH "
+        // Get the direct constraint violators from the delete set
+        "directViolators AS ("
+            "SELECT DISTINCT t.ElementId "
+            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+            "WHERE EXISTS ("
+                "SELECT 1 FROM bis_Element e "
+                "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = e.Id "
+                "WHERE e.CodeScopeId = t.ElementId AND td.ElementId IS NULL"
+            ") "
+            "OR EXISTS ("
+                "SELECT 1 FROM bis_GeometricElement3d g3 "
+                "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g3.ElementId "
+                "WHERE g3.CategoryId = t.ElementId AND td.ElementId IS NULL"
+            ") "
+            "OR EXISTS ("
+                "SELECT 1 FROM bis_GeometricElement2d g2 "
+                "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g2.ElementId "
+                "WHERE g2.CategoryId = t.ElementId AND td.ElementId IS NULL"
+            ")"
+        "), "
+        // Walk UP from each direct violator to find its highest ancestor in the delete set
+        "ancestors(id, logicalParentId) AS ("
+            "SELECT t.ElementId, t.LogicalParentId "
+            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+            "WHERE t.ElementId IN (SELECT ElementId FROM directViolators) "
+            "UNION ALL "
+            "SELECT t.ElementId, t.LogicalParentId "
+            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+            "INNER JOIN ancestors a ON t.ElementId = a.logicalParentId"
+        "), "
+        "subtreeRoots AS ("
+            "SELECT DISTINCT a.id FROM ancestors a "
+            "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " p ON p.ElementId = a.logicalParentId "
+            "WHERE a.logicalParentId IS NULL OR p.ElementId IS NULL"
+        "), "
+        // Walk DOWN from each root to collect all descendants
+        "subtree(id) AS ("
+            "SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " "
+            "WHERE ElementId IN (SELECT id FROM subtreeRoots) "
+            "UNION ALL "
+            "SELECT t.ElementId "
+            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+            "INNER JOIN subtree s ON t.LogicalParentId = s.id"
+        ") "
+        "UPDATE " TEMP_TABLE(TEMP_ELEMENT_DELETION) " SET IsViolator = 1 WHERE ElementId IN (SELECT id FROM subtree)";
+
+    if (const auto stat = m_dgndb.TryExecuteSql(findViolators); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: Failed to find constraint violators: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    return PruneViolators();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::FindAndPruneInUseDefinitionElements()
+    {
+    // Collect only the DefinitionElement rows from the temp table.
+    // Non-definition elements in the set don't need usage checking.
+    constexpr auto defIdsSql = 
+        "SELECT t.ElementId "
+        "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+        "INNER JOIN bis_DefinitionElement d ON d.ElementId = t.ElementId";
+
+    auto defStmt = m_dgndb.GetCachedStatement(defIdsSql);
+    if (!defStmt.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to query for definition elements");
+        return false;
+        }
+
+    DgnElementIdSet definitionIds;
+    while (BE_SQLITE_ROW == defStmt->Step())
+        {
+        if (auto id = defStmt->GetValueId<DgnElementId>(0); id.IsValid())
+            definitionIds.insert(id);
+        }
+
+    if (definitionIds.empty())
+        return true;
+
+    m_definitionElementsExist = true;
+
+    // Exclude intra-set usages from the usage check — elements referencing
+    // each other inside the delete set are fine since all will be deleted.
+    auto usageInfo = DefinitionElementUsageInfo::Create(m_dgndb, definitionIds, std::make_shared<BeSQLite::IdSet<BeInt64Id>>(BeIdSet(definitionIds.GetBeIdSet())));
+    if (!usageInfo.IsValid())
+        return true; // no usage info means nothing blocks deletion
+
+    DgnElementIdSet inUse;
+    for (const auto& id : definitionIds)
+        {
+        if (usageInfo->GetUsedIds().Contains(id))
+            inUse.insert(id);
+        }
+
+    if (inUse.empty())
+        return true;
+
+    constexpr auto findDependents = 
+        "WITH RECURSIVE ancestry(id, logicalParentId) AS ("
+            // Get all in-use elements in the delete list
+            "SELECT ElementId, LogicalParentId "
+            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " "
+            "WHERE InVirtualSet(?, ElementId) "
+
+            "UNION ALL "
+
+            // Get all descendants of the current element
+            "SELECT t.ElementId, t.LogicalParentId "
+            "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+            "INNER JOIN ancestry a ON t.ElementId = a.logicalParentId"
+        ") "
+        "Update " TEMP_TABLE(TEMP_ELEMENT_DELETION) " SET IsViolator = 1 WHERE ElementId IN (SELECT id FROM ancestry)";
+
+    const auto findDependentsStmt = m_dgndb.GetCachedStatement(findDependents);
+    if (!findDependentsStmt.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to query for dependent elements");
+        return false;
+        }
+    findDependentsStmt->BindVirtualSet(1, inUse);
+    if (const auto stat = findDependentsStmt->Step(); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: Failed to prune in-use definition elements: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    return PruneViolators();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::FindAndNullTypeDefinitionReferences() const
+    {
+    if (!m_definitionElementsExist)
+        return true;
+
+    // Optimization guard against unnecessary scans
+    auto guard = m_dgndb.GetCachedStatement(
+        "SELECT 1 "
+        "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+        "WHERE EXISTS ("
+            "SELECT 1 FROM bis_GeometricElement3d g "
+            "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g.ElementId "
+            "WHERE g.TypeDefinitionId = t.ElementId AND td.ElementId IS NULL"
+        ") "
+        "OR EXISTS ("
+            "SELECT 1 FROM bis_GeometricElement2d g "
+            "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g.ElementId "
+            "WHERE g.TypeDefinitionId = t.ElementId AND td.ElementId IS NULL"
+        ") "
+        "LIMIT 1");
+
+    if (!guard.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to query for TypeDefinition references");
+        return false;
+        }
+
+    if (BE_SQLITE_ROW != guard->Step())
+        return true;
+
+    // NULL out TypeDefinitionId on all surviving GeometricElements that point to an element we are about to delete.
+    constexpr auto null3dSql =
+        "UPDATE bis_GeometricElement3d SET TypeDefinitionId = NULL "
+        "WHERE TypeDefinitionId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+          "AND EXISTS ("
+              "SELECT 1 FROM bis_GeometricElement3d g2 "
+              "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g2.ElementId "
+              "WHERE g2.ElementId = bis_GeometricElement3d.ElementId AND td.ElementId IS NULL"
+          ")";
+
+    if (const auto stat = m_dgndb.TryExecuteSql(null3dSql); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: TypeDefinitionId NULL (3d) failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    constexpr auto null2dSql =
+        "UPDATE bis_GeometricElement2d SET TypeDefinitionId = NULL "
+        "WHERE TypeDefinitionId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+          "AND EXISTS ("
+              "SELECT 1 FROM bis_GeometricElement2d g2 "
+              "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g2.ElementId "
+              "WHERE g2.ElementId = bis_GeometricElement2d.ElementId AND td.ElementId IS NULL"
+          ")";
+
+    if (const auto stat = m_dgndb.TryExecuteSql(null2dSql); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: TypeDefinitionId NULL (2d) failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::FireAllCallbacks()
+    {
+    constexpr auto getAllElements =
+        "SELECT t.ElementId, t.IsSubModelRoot, t.Depth, "
+            "CASE WHEN InVirtualSet(?, t.ElementId) THEN 1 ELSE 0 END AS IsOriginal "
+        "FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+        "ORDER BY t.Depth DESC";
+
+    const auto stmt = m_dgndb.GetCachedStatement(getAllElements);
+    if (!stmt.IsValid())
+        {
+        LOG.error("BulkElementDeletion: Failed to fire element callbacks");
+        return false;
+        }
+    stmt->BindVirtualSet(1, m_originalElementIds);
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        const auto elementId = stmt->GetValueId<DgnElementId>(0);
+        if (!elementId.IsValid())
+            return false;
+
+        const auto element = m_dgndb.Elements().GetElement(elementId);
+        if (!element.IsValid())
+            return false;
+
+        if (const auto isSubModelRoot = stmt->GetValueInt(1); isSubModelRoot != 0)
+            {
+            if (auto subModel = element->GetSubModel(); subModel.IsValid())
+                {
+                element->_OnSubModelDelete(*subModel);
+                subModel->_OnDeleteNotify();
+                subModel->_OnDeleted();
+                element->_OnSubModelDeleted(*subModel);
+                }
+            m_subModelRootExists = true;
+            }
+
+        if (stmt->GetValueInt(3) != 0)
+            {
+            element->_OnDelete();
+
+            if (const auto parentId = element->m_parent.m_id; parentId.IsValid())
+                {
+                if (const auto parentElement = m_dgndb.Elements().GetElement(parentId); parentElement.IsValid())
+                    {
+                    parentElement->_OnChildDelete(*element);
+                    parentElement->_OnChildDeleted(*element);
+                    }
+                }
+            }
+
+        element->_OnDeleted();
+        }
+    return true;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::ExecuteDeletion()
+    {
+    // Prep the db and handlers for a bulk delete
+    if (m_definitionElementsExist)
+        m_dgndb.BeginPurgeOperation();
+    m_dgndb.Elements().SetBulkOperation(true);
+    m_dgndb.TryExecuteSql("PRAGMA defer_foreign_keys = true");
+
+    auto reset = [&]() {
+        m_dgndb.Elements().SetBulkOperation(false);
+        if (m_definitionElementsExist)
+            m_dgndb.EndPurgeOperation();
+        m_dgndb.TryExecuteSql("PRAGMA defer_foreign_keys = false");
+    };
+
+    const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")");
+    if (stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("BulkElementDeletion: Element deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+        reset();
+        return false;
+        }
+
+    if (m_subModelRootExists)
+        {
+        const auto modelStat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1)");
+        if (modelStat != BE_SQLITE_OK)
+            {
+            LOG.errorv("BulkElementDeletion: Sub-model root deletion failed: %s", BeSQLiteLib::GetLogError(modelStat).c_str());
+            reset();
+            return false;
+            }
+        }
+
+    reset();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BulkElementDeletion::DeleteLinkTableRelationships()
+    {
+    for (const auto& tableName : { BIS_TABLE(BIS_REL_ElementRefersToElements), BIS_TABLE(BIS_REL_ElementDrivesElement) })
+        {
+        auto stat = m_dgndb.TryExecuteSql(Utf8PrintfString("DELETE FROM %s WHERE SourceId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", tableName).c_str());
+        if (stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("BulkElementDeletion: Link table SourceId deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+
+        stat = m_dgndb.TryExecuteSql(Utf8PrintfString("DELETE FROM %s WHERE TargetId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", tableName).c_str());
+        if (stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("BulkElementDeletion: Link table TargetId deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+        }
+
+    if (m_subModelRootExists)
+        {
+        const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " WHERE IsSubModelRoot = 1)");
+        if (stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("BulkElementDeletion: Sub-model root deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet BulkElementDeletion::Execute()
+    {
+    DgnDb::VerifyClientThread();
+
+    if (!CreateTempTables())
+        return m_originalElementIds;
+
+    if (!ExpandElementIdList())
+        return m_originalElementIds;
+
+    if (!m_skipFkValidation && !FindAndPruneConstraintViolators())
+        return m_originalElementIds;
+
+    // If definition elements exist in the delete set, check usage and null out any externally references type definitions
+    if (!FindAndPruneInUseDefinitionElements())
+        return m_originalElementIds;
+
+    if (!m_skipFkValidation && !FindAndNullTypeDefinitionReferences())
+        return m_originalElementIds;
+
+    // Fire the pre and post delete callbacks at once
+    if (!FireAllCallbacks())
+        return m_originalElementIds;
+
+    // Bulk delete the elements
+    if (!ExecuteDeletion() && m_failedToDelete.empty())
+        return m_originalElementIds;
+
+    // Clean up link-table relationships
+    if (!DeleteLinkTableRelationships())
+        return m_originalElementIds;
+
+    return m_failedToDelete;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
     if (element.m_flags.m_preassignedId)  {
@@ -683,6 +1225,18 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
         parent->_OnChildDeleted(element);
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, const bool skipFkValidation)
+    {
+    DgnDb::VerifyClientThread();
+    if (elementIds.empty())
+        return {};
+
+    return BulkElementDeletion(m_dgndb, elementIds, skipFkValidation).Execute();
     }
 
 //---------------------------------------------------------------------------------------
