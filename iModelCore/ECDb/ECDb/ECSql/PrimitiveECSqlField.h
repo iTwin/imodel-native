@@ -15,16 +15,16 @@ private:
     int m_sqliteColumnIndex;
     DateTime::Info m_datetimeMetadata;
 
-    bool _IsNull() const override { return GetSqliteValue(m_sqliteColumnIndex)->IsNull(); }
+    bool _IsNull() const override { return GetRow().IsColumnNull(m_sqliteColumnIndex); }
 
     void const* _GetBlob(int* blobSize) const override;
-    bool _GetBoolean() const override { return  GetSqliteValue(m_sqliteColumnIndex)->GetInt(); }
+    bool _GetBoolean() const override { return GetRow().GetValueInt(m_sqliteColumnIndex) != 0; }
     uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
     double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
-    double _GetDouble() const override { return GetSqliteValue(m_sqliteColumnIndex)->GetDouble(); }
-    int _GetInt() const override { return GetSqliteValue(m_sqliteColumnIndex)->GetInt(); }
-    int64_t _GetInt64() const override { return GetSqliteValue(m_sqliteColumnIndex)->GetInt64(); }
-    Utf8CP _GetText() const override { return GetSqliteValue(m_sqliteColumnIndex)->GetText(); }
+    double _GetDouble() const override { return GetRow().GetValueDouble(m_sqliteColumnIndex); }
+    int _GetInt() const override { return GetRow().GetValueInt(m_sqliteColumnIndex); }
+    int64_t _GetInt64() const override { return GetRow().GetValueInt64(m_sqliteColumnIndex); }
+    Utf8CP _GetText() const override { return GetRow().GetValueText(m_sqliteColumnIndex); }
     DPoint2d _GetPoint2d() const override;
     DPoint3d _GetPoint3d() const override;
     IGeometryPtr _GetGeometry() const override;
@@ -38,8 +38,7 @@ private:
     void UpdateDateTimeMetaData();
 
 public:
-    PrimitiveECSqlField(ECSqlSelectPreparedStatement&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
-    PrimitiveECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& columnInfo, int columnIndex);
+    PrimitiveECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& columnInfo, int columnIndex);
     ~PrimitiveECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

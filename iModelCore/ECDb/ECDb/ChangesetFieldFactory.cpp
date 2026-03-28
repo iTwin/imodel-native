@@ -74,17 +74,17 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreatePrimitiveField(ECDbCR e
         const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
         const auto xCol = tbl.GetColumnIndexOf(pt2dMap.GetX().GetColumn());
         const auto yCol = tbl.GetColumnIndexOf(pt2dMap.GetY().GetColumn());
-        return std::make_unique<PointECSqlField>(ecdb, change, stage, columnInfo, xCol, yCol);
+        return std::make_unique<PointECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, xCol, yCol);
     } else if (prim->GetType() == PRIMITIVETYPE_Point3d) {
         const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
         const auto xCol = tbl.GetColumnIndexOf(pt3dMap.GetX().GetColumn());
         const auto yCol = tbl.GetColumnIndexOf(pt3dMap.GetY().GetColumn());
         const auto zCol = tbl.GetColumnIndexOf(pt3dMap.GetZ().GetColumn());
-        return std::make_unique<PointECSqlField>(ecdb, change, stage, columnInfo, xCol, yCol, zCol);
+        return std::make_unique<PointECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, xCol, yCol, zCol);
     } else {
         const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
         const auto nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
-        return std::make_unique<PrimitiveECSqlField>(ecdb, change, stage, columnInfo, nCol);
+        return std::make_unique<PrimitiveECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, nCol);
     }
 }
 
@@ -103,13 +103,13 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateSystemField(ECDbCR ecdb
 
     const auto extendedType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
     if (extendedType == ExtendedTypeHelper::ExtendedType::ClassId && tbl.GetClassIdCol() >= 0) {
-        return std::make_unique<PrimitiveECSqlField>(ecdb, change, stage, columnInfo, tbl.GetClassIdCol());
+        return std::make_unique<PrimitiveECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, tbl.GetClassIdCol());
     }
     if (extendedType == ExtendedTypeHelper::ExtendedType::SourceClassId && tbl.GetSourceClassIdCol() >= 0) {
-        return std::make_unique<PrimitiveECSqlField>(ecdb, change, stage, columnInfo, tbl.GetSourceClassIdCol());
+        return std::make_unique<PrimitiveECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, tbl.GetSourceClassIdCol());
     }
     if (extendedType == ExtendedTypeHelper::ExtendedType::TargetClassId && tbl.GetTargetClassIdCol() >= 0) {
-        return std::make_unique<PrimitiveECSqlField>(ecdb, change, stage, columnInfo, tbl.GetTargetClassIdCol());
+        return std::make_unique<PrimitiveECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, tbl.GetTargetClassIdCol());
     }
 
     const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
@@ -118,7 +118,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateSystemField(ECDbCR ecdb
         BeAssert(false);
     }
     const auto nCol = tbl.GetColumnIndexOf(dataMap->GetColumn());
-    return std::make_unique<PrimitiveECSqlField>(ecdb, change, stage, columnInfo, nCol);
+    return std::make_unique<PrimitiveECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, nCol);
 }
 
 std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateStructField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
@@ -134,7 +134,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateStructField(ECDbCR ecdb
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    auto newStructField = std::make_unique<StructECSqlField>(ecdb, change, stage, columnInfo);
+    auto newStructField = std::make_unique<StructECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo);
     auto& structPropertyMap = propertyMap.GetAs<StructPropertyMap>();
     for (auto& memberMap : structPropertyMap) {
         newStructField->AppendField(CreateField(ecdb, *memberMap, tbl, change, stage));
@@ -154,7 +154,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateClassIdField(ECDbCR ecd
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    return std::make_unique<ClassIdECSqlField>(ecdb, change, stage, columnInfo, id);
+    return std::make_unique<ClassIdECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, id);
 }
 
 std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateNavigationField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {
@@ -179,7 +179,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateNavigationField(ECDbCR 
     } else {
         relClassIdField = CreatePrimitiveField(ecdb, navMap.GetRelECClassIdPropertyMap(), tbl, change, stage);
     }
-    auto navField = std::make_unique<NavigationPropertyECSqlField>(ecdb, change, stage, columnInfo);
+    auto navField = std::make_unique<NavigationPropertyECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo);
     navField->SetMembers(std::move(idField), std::move(relClassIdField));
     return std::move(navField);
 }
@@ -229,7 +229,7 @@ std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateArrayField(ECDbCR ecdb,
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
     auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
     auto nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
-    return std::make_unique<ArrayECSqlField>(ecdb, change, stage, columnInfo, nCol);
+    return std::make_unique<ArrayECSqlField>(ecdb, std::make_unique<ChangeSetDbRow>(change, stage), columnInfo, nCol);
 }
 
 std::unique_ptr<ECSqlField> ChangesetFieldFactory::CreateField(ECDbCR ecdb, PropertyMap const& propertyMap, TableView const& tbl, Changes::Change const& change, Stage const& stage) {

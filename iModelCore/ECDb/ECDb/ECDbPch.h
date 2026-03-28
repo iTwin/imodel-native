@@ -108,7 +108,7 @@
 #include "ECSql/ECSqlPreparedStatement.h"
 
 #include "ECSql/ECSqlFieldFactory.h"
-#include "ECSql/IDbValueView.h"
+#include "ECSql/IDbRow.h"
 #include "ECSql/ECSqlField.h"
 #include "ECSql/PrimitiveECSqlField.h"
 #include "ECSql/PointECSqlField.h"

@@ -33,13 +33,8 @@ struct ClassIdECSqlField : ECSqlField {
         virtual int64_t _GetInt64() const override;
 
     public:
-        //! Constructor for Statement-based path (InstanceReader)
-        ClassIdECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECClassId classId)
-            :ECSqlField(ecsqlStatement.GetECDb(), ecsqlStatement.GetSqliteStatement(), ecsqlColumnInfo, false, false), m_classId(classId){}
-
-        //! Constructor for Change-based path (changeset reader)
-        ClassIdECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECClassId classId)
-            :ECSqlField(ecdb, change, stage, ecsqlColumnInfo, false, false), m_classId(classId){}
+        ClassIdECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECClassId classId)
+            :ECSqlField(ecdb, std::move(row), ecsqlColumnInfo, false, false), m_classId(classId){}
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

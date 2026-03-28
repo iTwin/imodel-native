@@ -40,15 +40,11 @@ private:
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 
 public:
-    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
+    PointECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
+        : ECSqlField(ecdb, std::move(row), colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
         {}
-    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
-    PointECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(ecdb, change, stage, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
-        {}
-    PointECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex)
-        : PointECSqlField(ecdb, change, stage, colInfo, xColumnIndex, yColumnIndex, -1) {}
+    PointECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex)
+        : PointECSqlField(ecdb, std::move(row), colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}
     };
 

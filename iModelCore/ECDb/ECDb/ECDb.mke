@@ -125,7 +125,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/IdECSqlBinder.h \
                 $(baseDir)ECSql/VirtualSetBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
-                $(baseDir)ECSql/IDbValueView.h \
+                $(baseDir)ECSql/IDbRow.h \
                 $(baseDir)ECSql/ECSqlField.h \
                 $(baseDir)ECSql/PointECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \

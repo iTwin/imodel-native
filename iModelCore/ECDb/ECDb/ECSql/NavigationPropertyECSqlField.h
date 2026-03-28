@@ -68,8 +68,7 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterab
         ECSqlStatus _OnAfterStep() override;
 
     public:
-        NavigationPropertyECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, false, false) {}
-        NavigationPropertyECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo) : ECSqlField(ecdb, change, stage, colInfo, false, false) {}
+        NavigationPropertyECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& colInfo) : ECSqlField(ecdb, std::move(row), colInfo, false, false) {}
         void SetMembers(std::unique_ptr<ECSqlField> idField, std::unique_ptr<ECSqlField> relClassIdField);
     };
 

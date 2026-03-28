@@ -11,15 +11,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::unique_ptr<IDbValueView> ECSqlField::GetSqliteValue(int colNum) const
-    {
-    return m_dataReaderStrategy->GetValue(colNum);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 void ECSqlField::SetDynamicColumnInfo(ECSqlColumnInfoCR info) {
     if (!m_ecsqlColumnInfo.IsDynamic())
         return;

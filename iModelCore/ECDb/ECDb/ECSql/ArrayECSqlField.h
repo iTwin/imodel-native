@@ -112,7 +112,7 @@ private:
     mutable std::unique_ptr<JsonECSqlValue> m_value = nullptr;
 
     //IECSqlValue
-    bool _IsNull() const override { return GetSqliteValue(m_sqliteColumnIndex)->IsNull(); }
+    bool _IsNull() const override { return GetRow().IsColumnNull(m_sqliteColumnIndex); }
 
     void const* _GetBlob(int* blobSize) const override { return GetValue().GetBlob(blobSize); }
     bool _GetBoolean() const override { return GetValue().GetBoolean(); }
@@ -140,8 +140,7 @@ private:
 
     JsonECSqlValue const& GetValue() const { BeAssert(m_value != nullptr); return *m_value; }
 public:
-    ArrayECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(stmt.GetECDb(), stmt.GetSqliteStatement(), colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
-    ArrayECSqlField(ECDbCR ecdb, Changes::Change const& change, Changes::Change::Stage const& stage, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(ecdb, change, stage, colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
+    ArrayECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& colInfo, int sqliteColumnIndex) : ECSqlField(ecdb, std::move(row), colInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex) {}
     ~ArrayECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
