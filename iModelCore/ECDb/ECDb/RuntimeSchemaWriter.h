@@ -57,6 +57,10 @@ public:
     //! @param db  The database to read from (ECDb or DgnDb).
     //! @param includeCustomAttributes  Whether to include custom attribute data.
     //!        Should be false for RuntimeSchemaContext (CAs are loaded lazily via ECSQL).
+    //! Schemas in the exclusion list (Formats, Units, ECDb internal, pure-CA system schemas)
+    //! are silently skipped. Their classes, properties, enums, etc. are not emitted.
+    //! KindOfQuantity persistence units and presentation formats reference Units/Formats
+    //! only as strings, so consumers don't need those schemas in the context.
     void WriteAllSchemas(DbCR db, bool includeCustomAttributes);
 
     //! Get the output blob. Valid after WriteAllSchemas() completes.
