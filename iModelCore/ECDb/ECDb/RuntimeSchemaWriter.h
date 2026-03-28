@@ -32,7 +32,7 @@ struct RuntimeSchemaWriter
     {
 private:
     bvector<Byte> m_output;
-    bvector<Utf8String> m_stringTable;
+    bvector<Utf8CP> m_stringTable; // pointers into m_stringIndex keys (stable across rehash)
     std::unordered_map<std::string, uint32_t> m_stringIndex;
 
     // Property definition dedup
@@ -58,6 +58,36 @@ private:
         uint8_t isReadonly;
         uint8_t isHidden;
         uint32_t descriptionSid;
+
+        bool operator==(PropertyDefRecord const& o) const
+            {
+            return nameSid == o.nameSid && kind == o.kind && primitiveType == o.primitiveType
+                && extTypeSid == o.extTypeSid && enumSchemaSid == o.enumSchemaSid && enumNameSid == o.enumNameSid
+                && structSchemaSid == o.structSchemaSid && structClassSid == o.structClassSid
+                && koqSchemaSid == o.koqSchemaSid && koqNameSid == o.koqNameSid
+                && catSchemaSid == o.catSchemaSid && catNameSid == o.catNameSid
+                && arrayMinOccurs == o.arrayMinOccurs && arrayMaxOccurs == o.arrayMaxOccurs
+                && navRelSchemaSid == o.navRelSchemaSid && navRelClassSid == o.navRelClassSid
+                && navDirection == o.navDirection && isReadonly == o.isReadonly && isHidden == o.isHidden
+                && descriptionSid == o.descriptionSid;
+            }
+        };
+
+    struct PropertyDefRecordHash
+        {
+        size_t operator()(PropertyDefRecord const& d) const
+            {
+            // FNV-1a hash over all fields (all POD integers, safe to combine directly)
+            size_t h = 14695981039346656037ULL;
+            auto mix = [&h](uint64_t v) { h ^= v; h *= 1099511628211ULL; };
+            mix(d.nameSid); mix(d.kind); mix(d.primitiveType); mix(d.extTypeSid);
+            mix(d.enumSchemaSid); mix(d.enumNameSid); mix(d.structSchemaSid); mix(d.structClassSid);
+            mix(d.koqSchemaSid); mix(d.koqNameSid); mix(d.catSchemaSid); mix(d.catNameSid);
+            mix(d.arrayMinOccurs); mix(d.arrayMaxOccurs);
+            mix(d.navRelSchemaSid); mix(d.navRelClassSid); mix(d.navDirection);
+            mix(d.isReadonly); mix(d.isHidden); mix(d.descriptionSid);
+            return h;
+            }
         };
 
     struct PropertyRefRecord
@@ -69,16 +99,17 @@ private:
         };
 
     bvector<PropertyDefRecord> m_propDefs;
-    std::unordered_map<std::string, uint32_t> m_propDefIndex;
+    std::unordered_map<PropertyDefRecord, uint32_t, PropertyDefRecordHash> m_propDefIndex;
     std::unordered_map<int64_t, bvector<PropertyRefRecord>> m_classPropRefs;
     std::unordered_set<int64_t> m_hiddenPropertyIds;
     std::unordered_set<int64_t> m_queryViewClassIds;
+    std::unordered_set<int64_t> m_excludedSchemaIds;
 
-    void CollectHiddenPropertyIds(DbCR db);
-    void CollectQueryViewClassIds(DbCR db);
-    void CollectPropertyDedup(DbCR db);
+    DbResult CollectExcludedSchemaIds(DbCR db);
+    DbResult CollectHiddenPropertyIds(DbCR db);
+    DbResult CollectQueryViewClassIds(DbCR db);
+    DbResult CollectPropertyDedup(DbCR db);
     uint32_t AddPropertyDef(PropertyDefRecord const& def);
-    std::string PropertyDefSignature(PropertyDefRecord const& def) const;
 
     // Binary encoding helpers
     void PutU8(uint8_t v) { m_output.push_back(v); }
@@ -105,7 +136,8 @@ public:
     //! only as strings, so consumers don't need those schemas in the context.
     //! Custom attributes are not included - they are loaded lazily via ECSQL in
     //! RuntimeSchemaContext when needed.
-    void WriteAllSchemas(DbCR db);
+    //! @return BE_SQLITE_OK on success, or an error code if the ec_ tables are missing/corrupt.
+    DbResult WriteAllSchemas(DbCR db);
 
     //! Get the output blob. Valid after WriteAllSchemas() completes.
     bvector<Byte> const& GetOutput() const { return m_output; }

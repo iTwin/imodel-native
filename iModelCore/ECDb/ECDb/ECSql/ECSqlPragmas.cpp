@@ -993,7 +993,9 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 	// Currently only one format version exists. When adding v2+, this must route to
 	// the appropriate writer based on requestedVersion instead of always using v1.
 	RuntimeSchemaWriter writer;
-	writer.WriteAllSchemas(ecdb);
+	auto writeResult = writer.WriteAllSchemas(ecdb);
+	if (writeResult != BE_SQLITE_OK)
+		return writeResult;
 	auto const& output = writer.GetOutput();
 
 	// Compute schema token for cache invalidation
