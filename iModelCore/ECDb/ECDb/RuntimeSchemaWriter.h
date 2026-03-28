@@ -65,6 +65,7 @@ private:
         uint32_t defIdx;
         uint32_t labelSid;
         int32_t priority;
+        uint32_t ecInstanceId;  // ec_Property.Id - per-ref because defs are deduplicated
         };
 
     bvector<PropertyDefRecord> m_propDefs;
