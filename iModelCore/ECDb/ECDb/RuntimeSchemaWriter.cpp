@@ -60,6 +60,8 @@ namespace Tag
     // 0x50 was inline Property in prototypes (not used in v1)
     constexpr uint8_t PropRef      = 0x51; // reference into PropertyDef table
     constexpr uint8_t RelConstr    = 0x70;
+    constexpr uint8_t View         = 0x0C; // ECView (QueryView CA)
+    constexpr uint8_t EndView      = 0x0D;
     constexpr uint8_t ConstrClass  = 0x71;
     constexpr uint8_t EndSchema    = 0x1F;
     constexpr uint8_t EndClass     = 0x4F;
@@ -124,6 +126,29 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
             }
         m_hiddenPropertyIds.insert(propertyId);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// Bulk-load IDs of all classes that have the ECDbMap:QueryView custom attribute.
+// These entity classes are ECViews - they get emitted as View records instead of Class
+// records in the binary blob. Only presence matters; the ECSQL query property is
+// intentionally omitted from the runtime blob.
+//---------------------------------------------------------------------------------------
+void RuntimeSchemaWriter::CollectQueryViewClassIds(DbCR db)
+    {
+    m_queryViewClassIds.clear();
+
+    Statement stmt;
+    stmt.Prepare(db,
+        "SELECT ca.ContainerId "
+        "FROM ec_CustomAttribute ca "
+        "JOIN ec_Class cac ON ca.ClassId=cac.Id "
+        "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
+        "WHERE ca.ContainerType & 30 <> 0 "
+        "AND cas.Name='ECDbMap' AND cac.Name='QueryView'");
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        m_queryViewClassIds.insert(stmt.GetValueInt64(0));
     }
 
 //---------------------------------------------------------------------------------------
@@ -243,8 +268,9 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     m_stringIndex.clear();
     Intern(""); // index 0 = empty string
 
-    // ---- Pre-pass: bulk-load hidden property IDs, then collect and dedup all properties ----
+    // ---- Pre-pass: bulk-load hidden property IDs and QueryView class IDs, then collect and dedup all properties ----
     CollectHiddenPropertyIds(db);
+    CollectQueryViewClassIds(db);
     CollectPropertyDedup(db);
 
     // Header: magic(4) + version(1) + stringTableOffset placeholder(4)
@@ -416,6 +442,44 @@ void RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
             {
             int64_t classId = classStmt.GetValueInt64(0);
             int classType = classStmt.GetValueInt(4);
+
+            // Entity classes with ECDbMap:QueryView CA are views - emit as View records
+            if (m_queryViewClassIds.count(classId))
+                {
+                PutU8(Tag::View);
+                PutSRef(Safe(classStmt.GetValueText(1))); // name
+                PutU8((uint8_t)classStmt.GetValueInt(5));  // modifier
+                PutSRef(Safe(classStmt.GetValueText(2))); // label
+                PutSRef(Safe(classStmt.GetValueText(3))); // description
+
+                // Views have at most one base class (ordinal 0), no mixins
+                baseStmt.Reset(); baseStmt.ClearBindings();
+                baseStmt.BindInt64(1, classId);
+                if (baseStmt.Step() == BE_SQLITE_ROW)
+                    {
+                    PutSRef(Safe(baseStmt.GetValueText(0))); // base schema name
+                    PutSRef(Safe(baseStmt.GetValueText(1))); // base class name
+                    }
+                else
+                    {
+                    PutSRef(""); // no base schema
+                    PutSRef(""); // no base class
+                    }
+
+                // Properties
+                auto propIt = m_classPropRefs.find(classId);
+                if (propIt != m_classPropRefs.end())
+                    for (auto const& ref : propIt->second)
+                        {
+                        PutU8(Tag::PropRef);
+                        PutU32(ref.defIdx);
+                        PutU32(ref.labelSid);
+                        PutI32(ref.priority);
+                        }
+
+                PutU8(Tag::EndView);
+                continue;
+                }
 
             // Entity classes with CoreCustomAttributes:IsMixin are mixins (type 4)
             if (classType == 0) // Entity

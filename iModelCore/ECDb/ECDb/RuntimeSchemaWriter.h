@@ -71,8 +71,10 @@ private:
     std::unordered_map<std::string, uint32_t> m_propDefIndex;
     std::unordered_map<int64_t, bvector<PropertyRefRecord>> m_classPropRefs;
     std::unordered_set<int64_t> m_hiddenPropertyIds;
+    std::unordered_set<int64_t> m_queryViewClassIds;
 
     void CollectHiddenPropertyIds(DbCR db);
+    void CollectQueryViewClassIds(DbCR db);
     void CollectPropertyDedup(DbCR db);
     uint32_t AddPropertyDef(PropertyDefRecord const& def);
     std::string PropertyDefSignature(PropertyDefRecord const& def) const;
