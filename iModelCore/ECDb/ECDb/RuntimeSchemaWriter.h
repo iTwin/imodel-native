@@ -25,7 +25,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! The TS reader's parseRuntimeSchemaBlob() understands this exact format.
 //!
 //! Thread safety: safe for concurrent reads when ECDb is in WAL mode.
-//! Intended to be called from a DgnDbWorker::Execute() on a background thread.
+//! Called from the PragmaRuntimeSchemas handler on the ConcurrentQuery thread pool.
 // @bsistruct
 //=======================================================================================
 struct RuntimeSchemaWriter

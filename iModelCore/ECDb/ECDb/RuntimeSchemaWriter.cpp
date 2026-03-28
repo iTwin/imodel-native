@@ -108,11 +108,17 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
         {
         int64_t propertyId = stmt.GetValueInt64(0);
         Utf8CP instance = Safe(stmt.GetValueText(1));
-        // Check for explicit Show=True override (case-insensitive substring check).
+        // Check for explicit Show=True override (case-insensitive).
         // The XML looks like: <HiddenProperty ...><Show>True</Show></HiddenProperty>
-        // If Show is absent or False, the property is hidden.
-        if (instance && strstr(instance, ">True</") != nullptr)
-            continue; // Show=True means NOT hidden
+        // If Show is absent or not "true", the property is hidden.
+        if (*instance != '\0')
+            {
+            std::string lower(instance);
+            for (char& c : lower)
+                if (c >= 'A' && c <= 'Z') c += 32;
+            if (lower.find(">true</") != std::string::npos)
+                continue; // Show=True/true/TRUE means NOT hidden
+            }
         m_hiddenPropertyIds.insert(propertyId);
         }
     }
@@ -123,19 +129,18 @@ void RuntimeSchemaWriter::CollectHiddenPropertyIds(DbCR db)
 //---------------------------------------------------------------------------------------
 std::string RuntimeSchemaWriter::PropertyDefSignature(PropertyDefRecord const& def) const
     {
-    char buf[256];
-    // Dedup signature: structural shape only. Description and label are NOT part of the
-    // signature because they don't affect the property's type/semantics.
-    snprintf(buf, sizeof(buf), "%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u",
-        def.nameSid, def.kind, def.primitiveType, def.extTypeSid,
+    // Dedup signature: all PropertyDef fields. Label and priority are per-PropertyRef
+    // and excluded. No fixed buffer - safe for any number of fields.
+    Utf8PrintfString sig("%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u",
+        def.nameSid, (unsigned)def.kind, (unsigned)def.primitiveType, def.extTypeSid,
         def.enumSchemaSid, def.enumNameSid, def.koqSchemaSid, def.koqNameSid,
         def.structSchemaSid, def.structClassSid,
-        def.navRelSchemaSid, def.navRelClassSid, (uint32_t)def.navDirection,
+        def.navRelSchemaSid, def.navRelClassSid, (unsigned)def.navDirection,
         def.catSchemaSid, def.catNameSid,
-        (uint32_t)def.isReadonly, (uint32_t)def.isHidden,
+        (unsigned)def.isReadonly, (unsigned)def.isHidden,
         def.arrayMinOccurs, def.arrayMaxOccurs,
         def.descriptionSid);
-    return std::string(buf);
+    return sig;
     }
 
 uint32_t RuntimeSchemaWriter::AddPropertyDef(PropertyDefRecord const& def)
