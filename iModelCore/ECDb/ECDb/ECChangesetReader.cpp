@@ -54,4 +54,8 @@ int ECChangesetReader::GetColumnCount(Stage stage) const {
     return m_pimpl->GetColumnCount(stage);
 }
 
+DbResult ECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
+    return m_pimpl->GetInstanceKey(stage, key);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

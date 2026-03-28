@@ -50,6 +50,7 @@ public:
     int GetColumnCount(Stage stage) const;
 
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
+    DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

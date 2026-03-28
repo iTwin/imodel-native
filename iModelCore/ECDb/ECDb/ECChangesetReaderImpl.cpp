@@ -79,4 +79,10 @@ int ECChangesetReader::Impl::GetColumnCount(Stage stage) const {
     return m_prepared->GetColumnCount(stage);
 }
 
+DbResult ECChangesetReader::Impl::GetInstanceKey(Stage stage, Utf8StringR key) const {
+    if (!IsPrepared())
+        return BE_SQLITE_ERROR;
+    return m_prepared->GetInstanceKey(stage, key);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

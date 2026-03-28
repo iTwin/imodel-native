@@ -261,6 +261,45 @@ IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
+    if (!IsOpen())
+        {
+        LOG.errorv("Attempting to get instance key from a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+        }
+    if (!IsStepped())
+        {
+        LOG.errorv("Attempting to get instance key from a PreparedECChangesetReader that has not been stepped.");
+        return BE_SQLITE_ERROR;
+        }
+    const int count = GetColumnCount(stage);
+    Utf8String instanceId;
+    Utf8String classId;
+    for (int i = 0; i < count; ++i)
+        {
+        IECSqlValue const& val = GetValue(stage, i);
+        if (val.IsNull())
+            continue;
+        auto const* prop = val.GetColumnInfo().GetProperty();
+        if (prop == nullptr)
+            continue;
+        auto const* primProp = prop->GetAsPrimitiveProperty();
+        if (primProp == nullptr)
+            continue;
+        const auto extType = ExtendedTypeHelper::GetExtendedType(primProp->GetExtendedTypeName());
+        Utf8StringCR propName = prop->GetName();
+        if (extType == ExtendedTypeHelper::ExtendedType::Id && propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+            instanceId = val.GetId<ECInstanceId>().ToHexStr();
+        else if (extType == ExtendedTypeHelper::ExtendedType::ClassId && propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            classId = val.GetId<ECN::ECClassId>().ToHexStr();
+        }
+    key.Sprintf("%s-%s", instanceId.c_str(), classId.c_str());
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::ValidateAndUpdateField(std::unique_ptr<ECSqlField> field, Stage stage) {
     BeAssert(field != nullptr);
     if (field != nullptr)

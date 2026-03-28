@@ -34,6 +34,7 @@ public:
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     ECDb const* GetECDb() const;
     int GetColumnCount(Stage stage) const;
+    DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -5256,6 +5256,11 @@ public:
         if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
 
+        Utf8String instanceKey;
+        if (m_reader.GetInstanceKey(stageEnum, instanceKey) != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get instance key", BE_SQLITE_ERROR);
+        out["key"] = instanceKey.c_str();
+
         return out;
         }
 };
