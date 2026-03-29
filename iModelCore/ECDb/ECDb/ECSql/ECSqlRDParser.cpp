@@ -972,8 +972,15 @@ BentleyStatus ECSqlRDParser::ParseOptECSqlOptionsClause(std::unique_ptr<OptionsE
 
         if (TryConsume(ECSqlTokenType::Equal))
             {
+            // Boolean keywords
+            if (At(ECSqlTokenType::KW_TRUE) || At(ECSqlTokenType::KW_FALSE))
+                {
+                optionValue = TokenText();
+                dataType    = ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Boolean);
+                Advance();
+                }
             // value is either a bare identifier / keyword or a typed literal
-            if (At(ECSqlTokenType::Name) || m_current.IsKeyword())
+            else if (At(ECSqlTokenType::Name) || m_current.IsKeyword())
                 {
                 optionValue = TokenText();
                 dataType    = ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String);
@@ -2357,16 +2364,29 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
         return ERROR;
         }
     bool firstNameIsKeyword = (m_current.type != ECSqlTokenType::Name);
+    ECSqlTokenType firstTokenType = m_current.type;  // save before advancing
     Utf8String firstName = TokenText();
     Advance();
 
     // Bare reserved keywords are not valid as unescaped identifiers.
-    // They are only allowed here as function names (must be followed by '(').
-    if (firstNameIsKeyword && !At(ECSqlTokenType::LParen))
+    // They are allowed as function names (followed by '(') UNLESS they are operator keywords.
+    if (firstNameIsKeyword)
         {
-        ECSQLERR("Reserved keyword '%s' cannot be used as an unescaped identifier; use [%s]",
-                 firstName.c_str(), firstName.c_str());
-        return ERROR;
+        static const ECSqlTokenType operatorKeywords[] = {
+            ECSqlTokenType::KW_LIKE, ECSqlTokenType::KW_IN, ECSqlTokenType::KW_BETWEEN,
+            ECSqlTokenType::KW_MATCH, ECSqlTokenType::KW_AND, ECSqlTokenType::KW_OR,
+            ECSqlTokenType::KW_NOT, ECSqlTokenType::KW_IS,
+        };
+        bool isOperatorKeyword = false;
+        for (auto kw : operatorKeywords)
+            if (firstTokenType == kw) { isOperatorKeyword = true; break; }
+
+        if (!At(ECSqlTokenType::LParen) || isOperatorKeyword)
+            {
+            ECSQLERR("Reserved keyword '%s' cannot be used as an unescaped identifier; use [%s]",
+                     firstName.c_str(), firstName.c_str());
+            return ERROR;
+            }
         }
 
     // Check for function call: name(args)
