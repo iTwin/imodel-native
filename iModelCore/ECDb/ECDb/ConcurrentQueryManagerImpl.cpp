@@ -1066,7 +1066,8 @@ std::string QueryHelper::FormatQuery(const char* query) {
 void QueryHelper::BindLimits(ECSqlStatement& stmt, QueryLimit const& limit) {
     const auto idxCount = stmt.GetParameterIndex(LIMIT_VAR_COUNT);
     const auto idxOffset = stmt.GetParameterIndex(LIMIT_VAR_OFFSET);
-    // bind limit
+    if (idxCount < 0 || idxOffset < 0)
+        return; // PRAGMA or other statement without LIMIT/OFFSET parameters
     stmt.BindInt64(idxCount, limit.GetCount());
     stmt.BindInt64(idxOffset, limit.GetOffset());
 }
