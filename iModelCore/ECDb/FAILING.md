@@ -1,6 +1,6 @@
 # Pre-existing Test Failures
 
-These 35 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
+These 32 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
 
 Excluded from counts: `ThreadSafetyTests`, `ConcurrentQueryFixture`, `SchemaSyncTests`, `InstanceReaderFixture` (5 failures), `ECDbTestFixture.TestDropSchemasWithInstances` (segfault).
 
@@ -74,28 +74,16 @@ Query:    PRAGMA sqlite_sql("SELECT ...")
 
 ---
 
-## Group 3 — Semantic: parenthesized literals now valid (3 failures)
+## Group 3 — Semantic: parenthesized literals now valid ✅ FIXED
 
 The old Bison grammar treated `(expr)` in a WHERE context as a `(search_condition)`, making
 comparisons like `(1) = 1` invalid. The new RD parser correctly accepts `(1)` as a
-parenthesized value expression, so these queries now succeed. The test expectations are wrong
-for the new (correct) behavior.
+parenthesized value expression, so these queries now succeed.
 
-**Fix needed:** Update test expectations from `InvalidECSql` → `Success`.
-
-Failing tests:
-```
-ECSqlStatementTestFixture.WhereBitwiseOperators
-ECSqlUpdatePrepareTests.WhereBasics
-ECSqlDeletePrepareTests.WhereBasics
-```
-
-Example failure:
-```
-Expected: ECSqlStatus::InvalidECSql
-Actual:   ECSqlStatus::Success
-Query:    WHERE (1)=1
-```
+**Fixed:** Test expectations updated from `InvalidECSql` → `Success` in:
+- `ECSqlStatementTestFixture.WhereBitwiseOperators` — `(1)=1`, `(1)=(1)`, `((1)=(1))` forms
+- `ECSqlUpdatePrepareTests.WhereBasics` — `(P2D.X)>=(P3D.X)` form; added `(I&1)=1 AND (I|2=I)` Success variant
+- `ECSqlDeletePrepareTests.WhereBasics` — same as above
 
 ---
 
@@ -136,7 +124,7 @@ ECSqlStatementTestFixture.WhereBitwiseOperators   — see Group 3
 |-------|-----------|-------|----------------|
 | 1 | `schema:ClassName` colon syntax unsupported | 20 | Medium — lexer/parser change |
 | 2 | Pragma SQLITE_AUTH in test environment | 7 | Low — test setup issue |
-| 3 | Test expectations wrong for new correct behavior | 3 | Trivial — update expectations |
+| 3 | Test expectations wrong for new correct behavior | 0 | ✅ Fixed |
 | 4 | SQL generation structure differs | 2 | Low — update assertions |
 | 5 | Colon syntax + other | 3 | Covered by Group 1 & 3 fixes |
-| **Total** | | **35** | |
+| **Total** | | **32** | |
