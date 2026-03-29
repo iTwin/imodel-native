@@ -448,6 +448,11 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         return nullptr;
     }
     ECN::PrimitiveECPropertyP property = nullptr;
+    // Note: Binary is intentionally NOT supported here. StaticPragmaResult stores rows in a
+    // BeJsDocument (JSON), so "binary" values get base64-encoded on write (SetBinary) and must be
+    // decoded on read (_GetBlob), only to be re-encoded when ConcurrentQuery serializes the response.
+    // Use PRIMITIVETYPE_String with BeJsValue::SetBinary() instead - the base64 string passes through
+    // as-is and the TS ECSqlReader auto-detects the "encoding=base64;" prefix, decoding it to Uint8Array.
     if (type == ECN::PRIMITIVETYPE_Boolean ||
         type == ECN::PRIMITIVETYPE_Double ||
         type == ECN::PRIMITIVETYPE_Integer||
@@ -456,7 +461,7 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         if (m_class->CreatePrimitiveProperty(property, name, type) != ECObjectsStatus::Success)
             return nullptr;
     } else {
-        BeAssert(false && "unsupported type. Only bool, double, integer, long and string are supported type");
+        BeAssert(false && "unsupported type. Only bool, double, integer, long, and string are supported");
         return nullptr;
     }
     DateTime::Info dateTimeInfo;
@@ -534,7 +539,6 @@ Utf8CP PragmaResult::Field::_GetText() const {
     return row == nullptr ? NoopECSqlValue::GetSingleton().GetText() : row->operator[](m_columnIndex).asCString();
 }
 
-// unsupported value type
 void const* PragmaResult::Field::_GetBlob(int* blobSize) const { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
 uint64_t PragmaResult::Field::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const{ return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
 double PragmaResult::Field::_GetDateTimeJulianDays(DateTime::Info& metadata) const { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }
