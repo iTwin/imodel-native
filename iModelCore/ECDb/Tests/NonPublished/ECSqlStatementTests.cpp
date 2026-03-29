@@ -444,11 +444,10 @@ TEST_F(ECSqlStatementTestFixture, WhereBitwiseOperators)
     EXPECT_EQ(ECSqlStatus::Success, testOp("1>1|1&1"));
     EXPECT_EQ(ECSqlStatus::Success, testOp("1>1+1"));
 
-    // issue with grammer where left side recursion cause boolean exp and value exp to hit '(' as prefix.
-    // the only way around it to compbine boolean/value exp into one.
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, testOp("(1)=1"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, testOp("(1)=(1)"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, testOp("((1)=(1))"));
+    // The new RD parser correctly accepts parenthesized literals in comparisons.
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(1)=1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(1)=(1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("((1)=(1))"));
 
     EXPECT_EQ(ECSqlStatus::Success, testOp("(1+1)=1+1"));
     EXPECT_EQ(ECSqlStatus::Success, testOp("(1+1)=(1+1)"));

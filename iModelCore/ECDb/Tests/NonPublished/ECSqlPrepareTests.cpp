@@ -2975,7 +2975,7 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
     //with parentheses around
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE ?"));
@@ -3059,7 +3059,7 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE 8 % 3 = 2"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE 8 % 2 = 0"));
     //with parentheses around
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE ?"));
@@ -3466,7 +3466,7 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
     //with parentheses around. grammer issue
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE ?"));

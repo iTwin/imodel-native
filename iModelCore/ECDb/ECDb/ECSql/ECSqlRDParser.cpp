@@ -127,6 +127,8 @@ std::unique_ptr<Exp> ECSqlRDParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSo
         return nullptr;
         }
 
+    TryConsume(ECSqlTokenType::Semicolon);  // optional trailing semicolon
+
     // Ensure all input was consumed
     if (!AtEnd())
         {
@@ -847,8 +849,21 @@ BentleyStatus ECSqlRDParser::ParseOrderByClause(std::unique_ptr<OrderByExp>& exp
         if (SUCCESS != ParseValueExp(valExp))
             return ERROR;
 
-        // Upcast to ComputedExp as required by OrderBySpecExp constructor
-        std::unique_ptr<ComputedExp> sortExp = std::move(valExp);
+        // Allow comparison operators in ORDER BY (e.g. ORDER BY I < 123)
+        std::unique_ptr<ComputedExp> sortExp;
+        if (IsComparisonOp())
+            {
+            BooleanSqlOperator op = ParseComparisonOp();
+            Advance(); // consume the comparison operator token
+            std::unique_ptr<ValueExp> rhs;
+            if (SUCCESS != ParseValueExp(rhs))
+                return ERROR;
+            sortExp = std::make_unique<BinaryBooleanExp>(std::move(valExp), op, std::move(rhs));
+            }
+        else
+            {
+            sortExp = std::move(valExp);
+            }
 
         OrderBySpecExp::SortDirection dir = OrderBySpecExp::SortDirection::NotSpecified;
         if (TryConsume(ECSqlTokenType::KW_ASC))
@@ -956,8 +971,12 @@ BentleyStatus ECSqlRDParser::ParseOptECSqlOptionsClause(std::unique_ptr<OptionsE
         auto optionExp = std::make_unique<OptionExp>(optionName.c_str(), optionValue.c_str(), dataType);
         if (SUCCESS != optionsExp->AddOptionExp(std::move(optionExp), Issues()))
             return ERROR;
+
+        // Consume optional comma separator between options
+        TryConsume(ECSqlTokenType::Comma);
         }
-    while (TryConsume(ECSqlTokenType::Comma));
+    // Continue only for plain Name tokens; stop at SQL keywords (UNION, ORDER, LIMIT, etc.)
+    while (At(ECSqlTokenType::Name));
 
     exp = std::move(optionsExp);
     return SUCCESS;
@@ -1145,16 +1164,26 @@ BentleyStatus ECSqlRDParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, 
     Utf8String part1 = TokenText();
     Advance();
 
-    if (!Expect(ECSqlTokenType::Dot))
-        return ERROR;
-
-    if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+    Utf8String part2;
+    if (At(ECSqlTokenType::NamedParam))
         {
-        ECSQLERR("Expected class name component after '.'");
-        return ERROR;
+        // schema:ClassName — colon was consumed by lexer as part of the named param token
+        part2 = TokenText();
+        Advance();
         }
-    Utf8String part2 = TokenText();
-    Advance();
+    else
+        {
+        if (!Expect(ECSqlTokenType::Dot))
+            return ERROR;
+
+        if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+            {
+            ECSQLERR("Expected class name component after '.'");
+            return ERROR;
+            }
+        part2 = TokenText();
+        Advance();
+        }
 
     Utf8String tableSpaceName, schemaName, className;
     if (At(ECSqlTokenType::Dot))
@@ -1304,6 +1333,15 @@ BentleyStatus ECSqlRDParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Cla
         {
         ECSQLERR("Expected class name");
         return ERROR;
+        }
+
+    // Handle schema:ClassName — colon was consumed by lexer as part of a named param token
+    if (At(ECSqlTokenType::NamedParam))
+        {
+        PathEntry namedEntry;
+        namedEntry.name = TokenText();
+        Advance();
+        path.push_back(std::move(namedEntry));
         }
 
     while (At(ECSqlTokenType::Dot))
@@ -1484,7 +1522,7 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
         }
 
     // 5b. No dot follows → single-identifier → could be CTE block name
-    if (!At(ECSqlTokenType::Dot))
+    if (!At(ECSqlTokenType::Dot) && !At(ECSqlTokenType::NamedParam))
         {
         if (ecsqlType == ECSqlType::Select && polymorphic.IsPolymorphic())
             {
@@ -1505,16 +1543,26 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
         return ERROR;
         }
 
-    // 5c. Consume dot and read rest of path
-    Advance(); // consume '.'
-
-    if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+    // 5c. Get secondName either from dot.Name or NamedParam (schema:ClassName)
+    Utf8String secondName;
+    if (At(ECSqlTokenType::NamedParam))
         {
-        ECSQLERR("Expected name after '.'");
-        return ERROR;
+        // schema:ClassName — colon was consumed by lexer as part of named param token
+        secondName = TokenText();
+        Advance();
         }
-    Utf8String secondName = TokenText();
-    Advance();
+    else
+        {
+        Advance(); // consume '.'
+
+        if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+            {
+            ECSQLERR("Expected name after '.'");
+            return ERROR;
+            }
+        secondName = TokenText();
+        Advance();
+        }
 
     // 5d. schema.funcName( → TVF with schema prefix
     if (At(ECSqlTokenType::LParen) && ecsqlType == ECSqlType::Select && polymorphic.IsPolymorphic())
@@ -1873,7 +1921,7 @@ BentleyStatus ECSqlRDParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp)
     else if (At(ECSqlTokenType::KW_VALUES))
         {
         std::unique_ptr<SelectStatementExp> valExp;
-        if (SUCCESS != ParseValuesCommalist(valExp))
+        if (SUCCESS != ParseSelectStatement(valExp))
             return ERROR;
         exp = std::make_unique<SubqueryExp>(std::move(valExp));
         }

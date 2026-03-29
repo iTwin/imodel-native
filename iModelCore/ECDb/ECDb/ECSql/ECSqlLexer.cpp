@@ -569,11 +569,21 @@ ECSqlToken ECSqlLexer::Next()
                 else
                     break;
                 }
+            // Reject bare :keyword — reserved words must use bracket form :[keyword]
+            size_t nameLen = (size_t)(m_cur - nameStart);
+            if (ClassifyKeyword(nameStart, nameLen) != ECSqlTokenType::Name)
+                {
+                // Back up to before ':'; ScanOperatorOrPunct will emit Invalid token → parse error
+                m_cur  = nameStart - 1;  // point back before ':'
+                m_col  = col;
+                m_line = line;
+                return ScanOperatorOrPunct();
+                }
             // Return the name part only (without the ':')
             ECSqlToken tok;
             tok.type = ECSqlTokenType::NamedParam;
             tok.text = nameStart;
-            tok.len  = (size_t)(m_cur - nameStart);
+            tok.len  = nameLen;
             tok.line = line;
             tok.col  = col;
             return tok;
