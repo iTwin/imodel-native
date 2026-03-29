@@ -5,9 +5,11 @@
 #pragma once
 
 #include <BeSQLite/BeSQLite.h>
+#include <set>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <optional>
 #include <string>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -23,6 +25,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! property definition deduplication. Layout: header + PropertyDef table + schema
 //! records (properties as PropRef) + string table (offset patched in header).
 //! The TS reader's parseRuntimeSchemaBlob() understands this exact format.
+//!
+//! Format spec: docs/learning/metadata/RuntimeSchemaBinaryFormat.md in itwinjs-core.
 //!
 //! Thread safety: safe for concurrent reads when ECDb is in WAL mode.
 //! Called from the PragmaRuntimeSchemas handler on the ConcurrentQuery thread pool.
@@ -42,18 +46,13 @@ private:
         uint8_t kind;
         uint16_t primitiveType;
         uint32_t extTypeSid;
-        uint32_t enumSchemaSid;
-        uint32_t enumNameSid;
-        uint32_t structSchemaSid;
-        uint32_t structClassSid;
-        uint32_t koqSchemaSid;
-        uint32_t koqNameSid;
-        uint32_t catSchemaSid;
-        uint32_t catNameSid;
+        uint32_t enumRowId;        // ec_Enumeration.Id (0 = none)
+        uint32_t structClassRowId; // ec_Class.Id for struct type (0 = none)
+        uint32_t koqRowId;         // ec_KindOfQuantity.Id (0 = none)
+        uint32_t catRowId;         // ec_PropertyCategory.Id (0 = none)
         uint32_t arrayMinOccurs;
         uint32_t arrayMaxOccurs;
-        uint32_t navRelSchemaSid;
-        uint32_t navRelClassSid;
+        uint32_t navRelClassRowId; // ec_Class.Id for nav relationship (0 = none)
         uint8_t navDirection;
         uint8_t isReadonly;
         uint8_t isHidden;
@@ -62,12 +61,11 @@ private:
         bool operator==(PropertyDefRecord const& o) const
             {
             return nameSid == o.nameSid && kind == o.kind && primitiveType == o.primitiveType
-                && extTypeSid == o.extTypeSid && enumSchemaSid == o.enumSchemaSid && enumNameSid == o.enumNameSid
-                && structSchemaSid == o.structSchemaSid && structClassSid == o.structClassSid
-                && koqSchemaSid == o.koqSchemaSid && koqNameSid == o.koqNameSid
-                && catSchemaSid == o.catSchemaSid && catNameSid == o.catNameSid
+                && extTypeSid == o.extTypeSid && enumRowId == o.enumRowId
+                && structClassRowId == o.structClassRowId
+                && koqRowId == o.koqRowId && catRowId == o.catRowId
                 && arrayMinOccurs == o.arrayMinOccurs && arrayMaxOccurs == o.arrayMaxOccurs
-                && navRelSchemaSid == o.navRelSchemaSid && navRelClassSid == o.navRelClassSid
+                && navRelClassRowId == o.navRelClassRowId
                 && navDirection == o.navDirection && isReadonly == o.isReadonly && isHidden == o.isHidden
                 && descriptionSid == o.descriptionSid;
             }
@@ -81,10 +79,10 @@ private:
             size_t h = 14695981039346656037ULL;
             auto mix = [&h](uint64_t v) { h ^= v; h *= 1099511628211ULL; };
             mix(d.nameSid); mix(d.kind); mix(d.primitiveType); mix(d.extTypeSid);
-            mix(d.enumSchemaSid); mix(d.enumNameSid); mix(d.structSchemaSid); mix(d.structClassSid);
-            mix(d.koqSchemaSid); mix(d.koqNameSid); mix(d.catSchemaSid); mix(d.catNameSid);
+            mix(d.enumRowId); mix(d.structClassRowId);
+            mix(d.koqRowId); mix(d.catRowId);
             mix(d.arrayMinOccurs); mix(d.arrayMaxOccurs);
-            mix(d.navRelSchemaSid); mix(d.navRelClassSid); mix(d.navDirection);
+            mix(d.navRelClassRowId); mix(d.navDirection);
             mix(d.isReadonly); mix(d.isHidden); mix(d.descriptionSid);
             return h;
             }
@@ -101,15 +99,30 @@ private:
     bvector<PropertyDefRecord> m_propDefs;
     std::unordered_map<PropertyDefRecord, uint32_t, PropertyDefRecordHash> m_propDefIndex;
     std::unordered_map<int64_t, bvector<PropertyRefRecord>> m_classPropRefs;
-    std::unordered_set<int64_t> m_hiddenPropertyIds;
-    std::unordered_set<int64_t> m_queryViewClassIds;
+    std::optional<int64_t> m_hiddenPropertyCAClassId;
+    std::optional<int64_t> m_queryViewCAClassId;
     std::unordered_set<int64_t> m_excludedSchemaIds;
+    std::unordered_set<int64_t> m_mixinClassIds;
+    std::unordered_set<int64_t> m_queryViewClassIds;
 
+    // Pre-pass: collect metadata needed before writing
     DbResult CollectExcludedSchemaIds(DbCR db);
-    DbResult CollectHiddenPropertyIds(DbCR db);
+    DbResult ResolveHiddenPropertyCAClassId(DbCR db);
+    DbResult ResolveQueryViewCAClassId(DbCR db);
+    static bool IsHiddenFromInstanceXml(Utf8CP instanceXml);
+    DbResult CollectPropertyDefsAndRefs(DbCR db);
+    DbResult CollectMixinClassIds(DbCR db);
     DbResult CollectQueryViewClassIds(DbCR db);
-    DbResult CollectPropertyDedup(DbCR db);
-    uint32_t AddPropertyDef(PropertyDefRecord const& def);
+    uint32_t InternPropertyDef(PropertyDefRecord const& def);
+
+    // Per-table writers (v2 flat format)
+    DbResult WritePropertyDefTable();
+    DbResult WriteSchemaTable(DbCR db);
+    DbResult WriteEnumTable(DbCR db);
+    DbResult WriteKoqTable(DbCR db);
+    DbResult WritePropCatTable(DbCR db);
+    DbResult WriteClassTable(DbCR db);
+    void WriteStringTable(size_t stOffsetPos);
 
     // Binary encoding helpers
     void PutU8(uint8_t v) { m_output.push_back(v); }
@@ -117,6 +130,8 @@ private:
     void PutU32(uint32_t v) { for (int i = 0; i < 4; i++) { m_output.push_back((Byte)(v & 0xFF)); v >>= 8; } }
     void PutI32(int32_t v) { PutU32((uint32_t)v); }
     void PutF64(double v) { auto p = reinterpret_cast<Byte const*>(&v); m_output.insert(m_output.end(), p, p + 8); }
+    void PatchU32(size_t pos, uint32_t val) { m_output[pos]=(Byte)(val&0xFF); m_output[pos+1]=(Byte)((val>>8)&0xFF); m_output[pos+2]=(Byte)((val>>16)&0xFF); m_output[pos+3]=(Byte)((val>>24)&0xFF); }
+    void PatchU16(size_t pos, uint16_t val) { m_output[pos]=(Byte)(val&0xFF); m_output[pos+1]=(Byte)(val>>8); }
 
     //! Intern a string and write its index as a U32 reference.
     void PutSRef(Utf8CP str) { PutU32(Intern(str)); }
