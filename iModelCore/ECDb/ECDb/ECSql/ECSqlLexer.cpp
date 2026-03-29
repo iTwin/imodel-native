@@ -65,8 +65,8 @@ static const KwEntry s_keywords[] = {
     { "FROM",              ECSqlTokenType::KW_FROM },
     { "FULL",              ECSqlTokenType::KW_FULL },
     { "GROUP",             ECSqlTokenType::KW_GROUP },
-    { "GROUP_CONCAT",      ECSqlTokenType::KW_GROUP_CONCAT },
     { "GROUPS",            ECSqlTokenType::KW_GROUPS },
+    { "GROUP_CONCAT",      ECSqlTokenType::KW_GROUP_CONCAT },
     { "HAVING",            ECSqlTokenType::KW_HAVING },
     { "IIF",               ECSqlTokenType::KW_IIF },
     { "IN",                ECSqlTokenType::KW_IN },
@@ -552,7 +552,7 @@ ECSqlToken ECSqlLexer::Next()
     if (c == '`')  return ScanQuotedIdentifier('`');
     if (c == '[')  return ScanQuotedIdentifier(']');
 
-    // Named parameter :name
+    // Named parameter :name  or  :[name]  (bracket-quoted form used in rebuilt ECSQL)
     if (c == ':' && m_cur + 1 < m_end)
         {
         char next = m_cur[1];
@@ -574,6 +574,26 @@ ECSqlToken ECSqlLexer::Next()
             tok.type = ECSqlTokenType::NamedParam;
             tok.text = nameStart;
             tok.len  = (size_t)(m_cur - nameStart);
+            tok.line = line;
+            tok.col  = col;
+            return tok;
+            }
+        // Bracket-quoted form: :[name]  — ToECSql() renders named params this way when rebuilding ECSQL
+        if (next == '[' && m_cur + 2 < m_end)
+            {
+            uint32_t line = m_line, col = m_col;
+            Consume(); // ':'
+            Consume(); // '['
+            Utf8CP nameStart = m_cur;
+            while (m_cur < m_end && *m_cur != ']')
+                Consume();
+            Utf8CP nameEnd = m_cur;
+            if (m_cur < m_end)
+                Consume(); // ']'
+            ECSqlToken tok;
+            tok.type = ECSqlTokenType::NamedParam;
+            tok.text = nameStart;
+            tok.len  = (size_t)(nameEnd - nameStart);
             tok.line = line;
             tok.col  = col;
             return tok;

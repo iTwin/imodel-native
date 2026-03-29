@@ -10,8 +10,9 @@ USING_NAMESPACE_BENTLEY_EC
 
 // Error reporting macro – expands inside any ECSqlRDParser member so Issues() is in scope.
 #define ECSQLERR(fmt, ...) do { \
-    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, \
-        ECDbIssueId::ECDb_0471, fmt, ##__VA_ARGS__); \
+    if (!m_suppressErrors) \
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, \
+            ECDbIssueId::ECDb_0471, fmt, ##__VA_ARGS__); \
 } while(0)
 
 //=============================================================================
@@ -126,6 +127,13 @@ std::unique_ptr<Exp> ECSqlRDParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSo
         return nullptr;
         }
 
+    // Ensure all input was consumed
+    if (!AtEnd())
+        {
+        ECSQLERR("Unexpected token '%s' after end of ECSQL statement", m_current.GetText().c_str());
+        return nullptr;
+        }
+
     m_lexer = nullptr;
     if (exp == nullptr)
         return nullptr;
@@ -145,7 +153,8 @@ BentleyStatus ECSqlRDParser::ParseInsertStatement(std::unique_ptr<InsertStatemen
     {
     insertExp = nullptr;
     Advance();                            // consume INSERT
-    TryConsume(ECSqlTokenType::KW_INTO);  // optional INTO
+    if (!Expect(ECSqlTokenType::KW_INTO))  // INTO is required
+        return ERROR;
 
     // Optional ONLY polymorphic constraint (INSERT INTO ONLY ts.A ...)
     // NOTE: ALL is NOT valid for INSERT (only for SELECT/UPDATE/DELETE)
@@ -679,7 +688,7 @@ BentleyStatus ECSqlRDParser::ParseSelection(std::unique_ptr<SelectClauseExp>& ex
     {
     exp = std::make_unique<SelectClauseExp>();
 
-    // SELECT *
+    // SELECT *  or  SELECT *, col1, col2, ...
     if (At(ECSqlTokenType::Star))
         {
         PropertyPath pp;
@@ -687,12 +696,25 @@ BentleyStatus ECSqlRDParser::ParseSelection(std::unique_ptr<SelectClauseExp>& ex
         exp->AddProperty(std::make_unique<DerivedPropertyExp>(
             std::make_unique<PropertyNameExp>(pp), nullptr));
         Advance();
-        return SUCCESS;
+        // If there are more columns after the *, continue parsing them
+        if (!TryConsume(ECSqlTokenType::Comma))
+            return SUCCESS;
+        // Fall through to the loop below to parse remaining columns
         }
 
-    // SELECT col1 [AS alias], col2 ...
+    // SELECT col1 [AS alias], col2 ...  (also handles * appearing mid-list)
     do
         {
+        // Wildcard (*) can appear at any position in the select list
+        if (At(ECSqlTokenType::Star))
+            {
+            PropertyPath pp;
+            pp.Push(Exp::ASTERISK_TOKEN);
+            exp->AddProperty(std::make_unique<DerivedPropertyExp>(
+                std::make_unique<PropertyNameExp>(pp), nullptr));
+            Advance();
+            continue;
+            }
         std::unique_ptr<DerivedPropertyExp> col;
         if (SUCCESS != ParseDerivedColumn(col))
             return ERROR;
@@ -2286,8 +2308,20 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
         bool isKnownSqlFunction = firstNameIsKeyword || IsAggregateFunction(upperName) || IsWindowFunctionName(upperName);
         if (isKnownSqlFunction)
             funcName = upperName;
+        // ntile: old parser hardcodes lowercase "ntile" for column label compatibility
+        if (funcName.EqualsIAscii("NTILE"))
+            funcName = "ntile";
         if (IsAggregateFunction(funcName) || IsAggregateFunction(upperName))
-            return ParseAggregateFct(exp, funcName.empty() ? upperName : funcName);
+            {
+            // Parse aggregate first, then check for OVER/FILTER (aggregate used as window function)
+            std::unique_ptr<ValueExp> aggExp;
+            if (SUCCESS != ParseAggregateFct(aggExp, funcName.empty() ? upperName : funcName))
+                return ERROR;
+            if (At(ECSqlTokenType::KW_OVER) || At(ECSqlTokenType::KW_FILTER))
+                return ParseWindowFunction(exp, std::move(aggExp));
+            exp = std::move(aggExp);
+            return SUCCESS;
+            }
         if (IsWindowFunctionName(funcName) || IsWindowFunctionName(upperName))
             {
             Utf8StringCR canonName = isKnownSqlFunction ? funcName : firstName;
@@ -2940,14 +2974,106 @@ BentleyStatus ECSqlRDParser::ParseSearchConditionNot(std::unique_ptr<BooleanExp>
 
 BentleyStatus ECSqlRDParser::ParsePredicate(std::unique_ptr<BooleanExp>& exp)
     {
-    // Parenthesised search condition
+    // Parenthesised expression — could be (value_expr) in comparison or (boolean_expr) predicate.
+    // Strategy:
+    //   1. Optimistically try parsing as a value expression (handles (I&1)=1, (4|1)&1=1, etc.)
+    //   2. If value-expression path succeeds, continue with comparison handling.
+    //   3. If it fails (e.g. content is a boolean like "L < 3.14 AND I > 3"), restore and
+    //      fall back to the boolean (search_condition) path.
     if (At(ECSqlTokenType::LParen))
         {
-        // Distinguish: ( search_cond ) vs ( subquery ) in EXISTS
-        // Check if inner starts with SELECT / WITH
         ECSqlToken next = m_lexer->Peek1();
         if (next.type != ECSqlTokenType::KW_SELECT && next.type != ECSqlTokenType::KW_WITH)
             {
+            // Save parser+lexer state before trying value path
+            ECSqlLexer::Snapshot lexSnap = m_lexer->SavePos();
+            ECSqlToken savedTok = m_current;
+
+            // Speculatively try value-expression path (handles value operators & comparisons).
+            // Suppress errors during this attempt — if it fails, we'll use the boolean path.
+            m_suppressErrors = true;
+            std::unique_ptr<ValueExp> lhsVal;
+            bool valuePathOk = (SUCCESS == ParseValueExp(lhsVal));
+            m_suppressErrors = false;
+            if (valuePathOk)
+                {
+                // Value path succeeded: handle comparison, IS, BETWEEN, LIKE, IN, etc.
+                // Fall through to the standard predicate completion logic below.
+                if (At(ECSqlTokenType::KW_IS))
+                    {
+                    Advance();
+                    bool isNot = TryConsume(ECSqlTokenType::KW_NOT);
+                    if (At(ECSqlTokenType::KW_NULL) || At(ECSqlTokenType::KW_TRUE)
+                        || At(ECSqlTokenType::KW_FALSE) || At(ECSqlTokenType::KW_UNKNOWN))
+                        {
+                        Utf8String lit; ECSqlTypeInfo dtype;
+                        if (SUCCESS != ParseLiteral(lit, dtype)) return ERROR;
+                        std::unique_ptr<ValueExp> rhsVal;
+                        if (SUCCESS != LiteralValueExp::Create(rhsVal, *m_context, lit.c_str(), dtype)) return ERROR;
+                        exp = std::make_unique<BinaryBooleanExp>(std::move(lhsVal),
+                            isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is, std::move(rhsVal));
+                        return SUCCESS;
+                        }
+                    if (At(ECSqlTokenType::LParen))
+                        {
+                        std::unique_ptr<ValueExp> typeListExp;
+                        if (SUCCESS != ParseTypePredicate(typeListExp)) return ERROR;
+                        BooleanSqlOperator op = isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is;
+                        exp = std::make_unique<BinaryBooleanExp>(std::move(lhsVal), op, std::move(typeListExp));
+                        return SUCCESS;
+                        }
+                    ECSQLERR("Expected NULL, TRUE, FALSE, UNKNOWN, or type list after IS");
+                    return ERROR;
+                    }
+
+                bool isNot2 = false;
+                if (At(ECSqlTokenType::KW_NOT) || At(ECSqlTokenType::KW_BETWEEN)
+                    || At(ECSqlTokenType::KW_LIKE) || At(ECSqlTokenType::KW_IN)
+                    || At(ECSqlTokenType::KW_MATCH))
+                    {
+                    isNot2 = TryConsume(ECSqlTokenType::KW_NOT);
+                    if (At(ECSqlTokenType::KW_BETWEEN))
+                        return ParseBetweenPredicate(exp, std::move(lhsVal), isNot2);
+                    if (At(ECSqlTokenType::KW_LIKE))
+                        return ParseLikePredicate(exp, std::move(lhsVal), isNot2);
+                    if (At(ECSqlTokenType::KW_IN))
+                        return ParseInPredicate(exp, std::move(lhsVal), isNot2);
+                    if (At(ECSqlTokenType::KW_MATCH))
+                        return ParseMatchPredicate(exp, std::move(lhsVal), isNot2);
+                    ECSQLERR("Expected BETWEEN, LIKE, IN, or MATCH after NOT");
+                    return ERROR;
+                    }
+
+                if (IsComparisonOp())
+                    {
+                    BooleanSqlOperator op = ParseComparisonOp();
+                    Advance();
+                    if (At(ECSqlTokenType::KW_ALL) || At(ECSqlTokenType::KW_ANY) || At(ECSqlTokenType::KW_SOME))
+                        {
+                        SqlCompareListType quantifier = At(ECSqlTokenType::KW_ALL) ? SqlCompareListType::All
+                                                      : (At(ECSqlTokenType::KW_ANY) ? SqlCompareListType::Any
+                                                                                    : SqlCompareListType::Some);
+                        Advance();
+                        std::unique_ptr<SubqueryExp> subExp;
+                        if (SUCCESS != ParseSubquery(subExp)) return ERROR;
+                        exp = std::make_unique<AllOrAnyExp>(std::move(lhsVal), op, quantifier, std::move(subExp));
+                        return SUCCESS;
+                        }
+                    std::unique_ptr<ValueExp> rhs;
+                    if (SUCCESS != ParseValueExp(rhs)) return ERROR;
+                    exp = std::make_unique<BinaryBooleanExp>(std::move(lhsVal), op, std::move(rhs));
+                    return SUCCESS;
+                    }
+
+                // Bare value used as boolean predicate
+                exp = std::make_unique<UnaryPredicateExp>(std::move(lhsVal));
+                return SUCCESS;
+                }
+
+            // Value path failed (content is a boolean expression like "L < 3.14 AND I > 3").
+            // Restore state and parse as (search_condition).
+            m_lexer->RestorePos(lexSnap);
+            m_current = savedTok;
             Advance(); // consume '('
             std::unique_ptr<BooleanExp> inner;
             if (SUCCESS != ParseSearchCondition(inner))
@@ -3152,6 +3278,12 @@ BentleyStatus ECSqlRDParser::ParseLikePredicate(std::unique_ptr<BooleanExp>& exp
     if (At(ECSqlTokenType::KW_ESCAPE))
         {
         Advance();
+        // ESCAPE must be a single-character string literal
+        if (!At(ECSqlTokenType::String))
+            {
+            ECSQLERR("ESCAPE clause requires a string literal");
+            return ERROR;
+            }
         if (SUCCESS != ParseValueExp(escapeExp))
             return ERROR;
         }
@@ -3252,11 +3384,13 @@ BentleyStatus ECSqlRDParser::ParseWindowSpecification(std::unique_ptr<WindowSpec
         && !At(ECSqlTokenType::KW_ORDER) && !At(ECSqlTokenType::KW_ROWS)
         && !At(ECSqlTokenType::KW_RANGE) && !At(ECSqlTokenType::KW_GROUPS))
         {
-        // Might be an existing window name — peek to see if next is PARTITION/ORDER/frame or ')'
+        // If the NEXT token is a clause-starter (PARTITION/ORDER/frame-unit) or ')' (end of spec),
+        // the current Name is the existing window reference.
+        // e.g.  OVER(win ROWS BETWEEN ...) — 'win' followed by ROWS → it's the window name.
         ECSqlToken next = m_lexer->Peek1();
-        if (next.type != ECSqlTokenType::KW_PARTITION && next.type != ECSqlTokenType::KW_ORDER
-            && next.type != ECSqlTokenType::KW_ROWS && next.type != ECSqlTokenType::KW_RANGE
-            && next.type != ECSqlTokenType::KW_GROUPS && next.type != ECSqlTokenType::RParen)
+        if (next.type == ECSqlTokenType::KW_PARTITION || next.type == ECSqlTokenType::KW_ORDER
+            || next.type == ECSqlTokenType::KW_ROWS || next.type == ECSqlTokenType::KW_RANGE
+            || next.type == ECSqlTokenType::KW_GROUPS || next.type == ECSqlTokenType::RParen)
             {
             existingWindowName = TokenText();
             Advance();

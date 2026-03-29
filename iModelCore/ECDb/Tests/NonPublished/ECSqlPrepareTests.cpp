@@ -1766,8 +1766,8 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
-    //with parentheses around
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    //with parentheses around (new parser correctly accepts parenthesized value expressions in comparisons)
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE ?"));
