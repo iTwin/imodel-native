@@ -359,7 +359,6 @@ BentleyStatus ECSqlRDParser::ParsePragmaStatement(std::unique_ptr<PragmaStatemen
     else if (At(ECSqlTokenType::LParen))
         {
         Advance();  // consume (
-        isReadValue = false;
         if (SUCCESS != parsePragmaValue())
             return ERROR;
         if (!Expect(ECSqlTokenType::RParen))
@@ -371,11 +370,20 @@ BentleyStatus ECSqlRDParser::ParsePragmaStatement(std::unique_ptr<PragmaStatemen
     if (At(ECSqlTokenType::KW_FOR))
         {
         Advance();  // consume FOR
-        while (At(ECSqlTokenType::Name) || m_current.IsKeyword())
+        while (At(ECSqlTokenType::Name))
             {
             forPath.push_back(TokenText());
             Advance();
-            if (!TryConsume(ECSqlTokenType::Dot))
+            if (TryConsume(ECSqlTokenType::Dot))
+                continue;
+            // :[BracketedName] is lexed as a single NamedParam token
+            if (At(ECSqlTokenType::NamedParam))
+                {
+                forPath.push_back(TokenText());
+                Advance();
+                continue;
+                }
+            if (!TryConsume(ECSqlTokenType::Colon))
                 break;
             }
         }
