@@ -1,6 +1,6 @@
 # Pre-existing Test Failures
 
-These 12 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
+These 11 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
 
 Excluded from counts: `ThreadSafetyTests`, `ConcurrentQueryFixture`, `SchemaSyncTests`, `InstanceReaderFixture` (4 failures), `IntegrityCheckerFixture.check_nav_class_ids` (pragma SQLiteError 8 + null-ptr crash; same root cause as Group 2).
 
@@ -116,27 +116,17 @@ Query:    SELECT * FROM (SELECT * FROM +ts.Doo)
 
 ---
 
-## Group 7 — Navigation value column alias not reflected in property name (1 failure)
+## Group 7 — Navigation value column alias not reflected in property name ✅ FIXED
 
-When a `NAVIGATION_VALUE(...)` expression is given a column alias (e.g. `[MyNavProp]`),
-`ECSqlStatement::GetColumnInfo().GetProperty()->GetName()` returns the underlying nav
-property name (`"Author"`) instead of the alias (`"MyNavProp"`).
+**Fixed in commit (this one):** `PrepareNavValueCreationFuncExp` now passes the **outer**
+`DerivedPropertyExp` (which carries the column alias) to `ECSqlFieldFactory::CreateField`
+instead of the inner column-reference derived property. `DerivedPropertyExp::GetName()`
+already handles the `NavValueCreationFunc` expression type, returning the column alias when
+present or the underlying nav property name when not.
 
-**Fix needed:** Propagate the column alias into the generated property / column-info when
-building the select expression for `NAVIGATION_VALUE`.
-
-Failing tests:
-```
-NavValueTestFixture.SimpleSelectNavValue
-```
-
-Example failure:
-```
-Expected: "MyNavProp"
-Actual:   "Author"
-Query:    SELECT NAVIGATION_VALUE(ts.Book.Author, Author.Id, Author.RelECClassId) [MyNavProp]
-          FROM ts.Book LIMIT 1
-```
+Before the fix, `SELECT NAVIGATION_VALUE(ts.Book.Author, ...) [MyNavProp]` created an
+"Author"-named generated property regardless of the alias; after the fix it correctly
+creates a "MyNavProp"-named property.
 
 ---
 
@@ -150,5 +140,5 @@ Query:    SELECT NAVIGATION_VALUE(ts.Book.Author, Author.Id, Author.RelECClassId
 | 4 | SQL generation / error message differences | 0 | ✅ Fixed |
 | 5 | Miscellaneous parser keyword/colon issues | 2 | Low |
 | 6 | Disqualifying `+` prefix on table references | 1 | Medium — parser feature gap |
-| 7 | Nav value alias not reflected in column property name | 1 | Medium — semantic/column-info gap |
-| **Total** | | **12** | |
+| 7 | Nav value alias not reflected in column property name | 0 | ✅ Fixed |
+| **Total** | | **11** | |
