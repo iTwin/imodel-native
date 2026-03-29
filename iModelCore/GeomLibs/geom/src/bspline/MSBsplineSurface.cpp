@@ -2100,7 +2100,7 @@ MSBsplineStatus MSBsplineSurface::InitFromPointsAndOrder (int uOrder, int vOrder
         vParams.numPoles = vNumPoles;
         if (SUCCESS == (status = Allocate ()))
             {
-            memcpy (poles, pPoints, (uNumPoles*vNumPoles)*sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (poles, (uNumPoles * vNumPoles) * sizeof(DPoint3d), pPoints, (uNumPoles*vNumPoles)*sizeof(DPoint3d));
             status = bspknot_computeKnotVector (uKnots, &uParams, NULL);
             status = bspknot_computeKnotVector (vKnots, &vParams, NULL);
             }

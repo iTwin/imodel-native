@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <Bentley/BeFile.h>
 #include <Mtg/MtgApi.h>
 
 #include "MTGLoopDetector.h"
@@ -456,7 +457,7 @@ void TestTetrahedralFile (char const *filename)
         printf ("\n\n Tetrahedral solid from file %s\n", filename);
         int vertexIndexA, vertexIndexB, vertexIndexC, vertexIndexD;
         size_t numTet = 0;
-        for (;4 == fscanf_s (m_fp, "%d %d %d %d", &vertexIndexA, &vertexIndexB, &vertexIndexC, &vertexIndexD);)
+        for (;4 == BeFile::Fscanf (m_fp, "%d %d %d %d", &vertexIndexA, &vertexIndexB, &vertexIndexC, &vertexIndexD);)
             {
             numTet++;
             graph.AddTetrahedron (vertexIndexA, vertexIndexB, vertexIndexC, vertexIndexD);

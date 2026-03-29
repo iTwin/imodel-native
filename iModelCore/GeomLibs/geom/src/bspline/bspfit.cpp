@@ -31,8 +31,8 @@ InterpolationParam      *pParams
         {
         DPoint3d    zeroTan = {0.0, 0.0, 0.0};
 
-        memcpy (pCurve->fitPoints, pPoints, pParams->numPoints * sizeof(*pPoints));
-        memcpy (pCurve->knots, pKnots, pParams->numKnots * sizeof(*pKnots));
+        BeStringUtilities::Memcpy (pCurve->fitPoints, pParams->numPoints * sizeof(*pPoints), pPoints, pParams->numPoints * sizeof(*pPoints));
+        BeStringUtilities::Memcpy (pCurve->knots, pParams->numKnots * sizeof(*pKnots), pKnots, pParams->numKnots * sizeof(*pKnots));
         pCurve->startTangent = (!pParams->isPeriodic && pStartTan) ? *pStartTan : zeroTan;
         pCurve->endTangent = (!pParams->isPeriodic && pEndTan) ? *pEndTan : zeroTan;
         }
@@ -292,8 +292,8 @@ MSInterpolationCurve  *outCurve
         {
         double      *knots = (double*)BSIBaseGeom::Malloc (inCurve->params.numKnots * sizeof(double));
         DPoint3d    *points = (DPoint3d*)BSIBaseGeom::Malloc (inCurve->params.numPoints * sizeof(DPoint3d));
-        memcpy (points, inCurve->fitPoints, inCurve->params.numPoints * sizeof(DPoint3d));
-        memcpy (knots,  inCurve->knots, inCurve->params.numKnots * sizeof(double));
+        BeStringUtilities::Memcpy (points, inCurve->params.numPoints * sizeof(DPoint3d), inCurve->fitPoints, inCurve->params.numPoints * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (knots, inCurve->params.numKnots * sizeof(double), inCurve->knots, inCurve->params.numKnots * sizeof(double));
         for (i = 0; i < inCurve->params.numPoints; i++)
             {
             outCurve->fitPoints[i] = points[inCurve->params.numPoints - i - 1];
@@ -1368,13 +1368,13 @@ double          mag2           /*    tangent between 0.0 and 1.0 */
 
     copySize = necessaryDegree * sizeof(DPoint3d);
     offset = seg[1].params.numPoles - necessaryDegree;
-    memcpy (blend->poles, seg[0].poles, copySize);
-    memcpy (blend->poles + necessaryDegree, seg[1].poles + offset, copySize);
+    BeStringUtilities::Memcpy (blend->poles, copySize ,seg[0].poles, copySize);
+    BeStringUtilities::Memcpy (blend->poles + necessaryDegree, copySize, seg[1].poles + offset, copySize);
     if (blend->rational)
         {
         copySize = necessaryDegree * sizeof(double);
-        memcpy (blend->weights, seg[0].weights, copySize);
-        memcpy (blend->weights + necessaryDegree, seg[1].weights + offset, copySize);
+        BeStringUtilities::Memcpy (blend->weights, copySize, seg[0].weights, copySize);
+        BeStringUtilities::Memcpy (blend->weights + necessaryDegree, copySize, seg[1].weights + offset, copySize);
         }
     blend->display.curveDisplay = true;
     bspknot_computeKnotVector (blend->knots, &blend->params, NULL);
@@ -1466,7 +1466,7 @@ int             numPnts
         approximation points; i.e. normalized cumulative length */
     if (uValues)
         {
-        memcpy (u, uValues, numPnts * sizeof (double));
+        BeStringUtilities::Memcpy (u, numPnts * sizeof(double), uValues, numPnts * sizeof (double));
         if (curve->params.closed)
             u[numPoints-1] = 1.0;
         }

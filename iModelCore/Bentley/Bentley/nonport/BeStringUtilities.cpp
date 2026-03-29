@@ -5,6 +5,7 @@
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     #define NOMINMAX
+    #define _CRT_RAND_S
     #include <Windows.h>
     #include <WinNls.h>
     #include <objbase.h>
@@ -2676,6 +2677,26 @@ BentleyStatus BeStringUtilities::Wmemcpy(wchar_t *dest, size_t numberOfElements,
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeStringUtilities::Qsort(void* base, size_t num, size_t width, int(__cdecl* compare)(void*, const void*, const void*), void* context)
+{
+    qsort_s(base, num, width, compare, context);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int BeStringUtilities::Sscanf(const char *buffer, const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int result = vsscanf_s(buffer, format, args);
+    va_end(args);
+    return result;
+}
+
 template <typename value_type> void MyStrCpy(value_type *pDest, size_t count, value_type* src){}
 template<> void MyStrCpy<char>(char *pDest, size_t count, char *src)
     {    BeStringUtilities::Strncpy(pDest, count, src);    }
@@ -3044,6 +3065,14 @@ bool BeStringUtilities::IsInvalidUtf8Sequence(Utf8CP str)
     u_strFromUTF8(NULL, 0, NULL, str, (int32_t)strlen(str), &icuError);
     return (U_INVALID_CHAR_FOUND == icuError);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BeStringUtilities::Rand(unsigned int* randomValue)
+{
+    return rand_s(randomValue) == 0 ? SUCCESS : ERROR;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
