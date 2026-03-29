@@ -7,40 +7,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-// This class replace virtual ClassId/SourceClassId/TargetClassId with constant ClassIdField
-struct ClassIdECSqlField : ECSqlField {
-    private:
-        ECN::ECClassId m_classId;
-        mutable Utf8String m_idStr;
-    private:
-        virtual bool _IsNull() const override { return !m_classId.IsValid(); }
-        virtual void const* _GetBlob(int* blobSize) const override { return NoopECSqlValue::GetSingleton().GetBlob(blobSize);}
-        virtual bool _GetBoolean() const override { return NoopECSqlValue::GetSingleton().GetBoolean();}
-        virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);}
-        virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);}
-        virtual double _GetDouble() const override { return NoopECSqlValue::GetSingleton().GetDouble();}
-        virtual int _GetInt() const override { return NoopECSqlValue::GetSingleton().GetInt();}
-        virtual IGeometryPtr _GetGeometry() const override { return NoopECSqlValue::GetSingleton().GetGeometry();}
-        virtual DPoint2d _GetPoint2d() const override { return NoopECSqlValue::GetSingleton().GetPoint2d();}
-        virtual DPoint3d _GetPoint3d() const override { return NoopECSqlValue::GetSingleton().GetPoint3d();}
-        virtual IECSqlValue const& _GetStructMemberValue(Utf8CP structMemberName) const  override { return NoopECSqlValue::GetSingleton();}
-        virtual IECSqlValueIterable const& _GetStructIterable() const  override { return NoopECSqlValue::GetSingleton().GetStructIterable();}
-        virtual int _GetArrayLength() const override  { return NoopECSqlValue::GetSingleton().GetArrayLength();}
-        virtual IECSqlValueIterable const& _GetArrayIterable() const override { return NoopECSqlValue::GetSingleton().GetArrayIterable();}
-        virtual Utf8CP _GetText() const override {
-            if (m_idStr.empty()) {
-                m_idStr = m_classId.ToHexStr();
-            }
-            return m_idStr.c_str();
-        }
-        virtual int64_t _GetInt64() const override {
-            return static_cast<int64_t>(m_classId.GetValueUnchecked());
-        }
-
-    public:
-        ClassIdECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECClassId classId)
-            :ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_classId(classId){}
-};
 
 // ======================================================================================
 using Class=InstanceReader::Impl::Class;
@@ -589,17 +555,17 @@ std::unique_ptr<ECSqlField> Class::Factory::CreatePrimitiveField(ECSqlSelectPrep
         const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
         const auto xCol = tbl.GetColumnIndexOf(pt2dMap.GetX().GetColumn());
         const auto yCol = tbl.GetColumnIndexOf(pt2dMap.GetY().GetColumn());
-        return std::make_unique<PointECSqlField>(stmt, columnInfo, xCol, yCol);
+        return std::make_unique<PointECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, xCol, yCol);
     } else if (prim->GetType() == PRIMITIVETYPE_Point3d) {
         const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
         const auto xCol = tbl.GetColumnIndexOf(pt3dMap.GetX().GetColumn());
         const auto yCol = tbl.GetColumnIndexOf(pt3dMap.GetY().GetColumn());
         const auto zCol = tbl.GetColumnIndexOf(pt3dMap.GetZ().GetColumn());
-        return std::make_unique<PointECSqlField>(stmt, columnInfo, xCol, yCol, zCol);
+        return std::make_unique<PointECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, xCol, yCol, zCol);
     } else {
         const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
         const auto nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
-        return std::make_unique<PrimitiveECSqlField>(stmt, columnInfo, nCol);
+        return std::make_unique<PrimitiveECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, nCol);
     }
 }
 
@@ -622,13 +588,13 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateSystemField(ECSqlSelectPrepar
 
     const auto extendedType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
     if (extendedType == ExtendedTypeHelper::ExtendedType::ClassId && tbl.GetClassIdCol() >= 0) {
-         return std::make_unique<PrimitiveECSqlField>(stmt, columnInfo, tbl.GetClassIdCol());
+         return std::make_unique<PrimitiveECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, tbl.GetClassIdCol());
     }
     if (extendedType == ExtendedTypeHelper::ExtendedType::SourceClassId && tbl.GetSourceClassIdCol() >= 0) {
-         return std::make_unique<PrimitiveECSqlField>(stmt, columnInfo, tbl.GetSourceClassIdCol());
+         return std::make_unique<PrimitiveECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, tbl.GetSourceClassIdCol());
     }
     if (extendedType == ExtendedTypeHelper::ExtendedType::TargetClassId && tbl.GetTargetClassIdCol() >= 0) {
-         return std::make_unique<PrimitiveECSqlField>(stmt, columnInfo, tbl.GetTargetClassIdCol());
+         return std::make_unique<PrimitiveECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, tbl.GetTargetClassIdCol());
     }
 
 
@@ -649,7 +615,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateSystemField(ECSqlSelectPrepar
 //        }
     }
      const auto nCol = tbl.GetColumnIndexOf(dataMap->GetColumn());
-     return std::make_unique<PrimitiveECSqlField>(stmt, columnInfo, nCol);
+     return std::make_unique<PrimitiveECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, nCol);
 }
 
 //---------------------------------------------------------------------------------------
@@ -669,7 +635,7 @@ std::unique_ptr<ECSqlField> Class::Factory::CreateStructField(ECSqlSelectPrepare
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), "")
     );
 
-    auto newStructField = std::make_unique<StructECSqlField>(stmt, columnInfo);
+    auto newStructField = std::make_unique<StructECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo);
     auto& structPropertyMap =  propertyMap.GetAs<StructPropertyMap>();
     for(auto& memberMap : structPropertyMap) {
         newStructField->AppendField(CreateField(stmt, *memberMap, tbl));
@@ -693,7 +659,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateClassIdField(ECSqlSelectPrepa
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), "")
     );
 
-    return std::make_unique<ClassIdECSqlField>(stmt, columnInfo, id);
+    return std::make_unique<ClassIdECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, id);
 }
 
 //---------------------------------------------------------------------------------------
@@ -722,7 +688,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
     } else {
         relClassIdField = CreatePrimitiveField(stmt, navMap.GetRelECClassIdPropertyMap(), tbl);
     }
-    auto navField = std::make_unique<NavigationPropertyECSqlField>(stmt, columnInfo);
+    auto navField = std::make_unique<NavigationPropertyECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo);
     navField->SetMembers(std::move(idField), std::move(relClassIdField));
     return std::move(navField);
 }
@@ -780,7 +746,7 @@ std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPrepar
     );
     auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
     auto nCol =tbl. GetColumnIndexOf(primMap.GetColumn());
-    return std::make_unique<ArrayECSqlField>(stmt, columnInfo, nCol);
+    return std::make_unique<ArrayECSqlField>(stmt.GetECDb(), std::make_unique<StatementDbRow>(stmt.GetSqliteStatement()), columnInfo, nCol);
 }
 
 //---------------------------------------------------------------------------------------

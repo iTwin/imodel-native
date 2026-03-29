@@ -355,7 +355,7 @@ ECSqlStatus ECSqlFieldFactory::CreateChildField(std::unique_ptr<ECSqlField>& chi
 ECSqlStatus ECSqlFieldFactory::CreateNullField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo)
     {
     ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
-    field = std::make_unique<PrimitiveECSqlField>(selectPreparedStatement, ecsqlColumnInfo, sqlColumnIndex++);
+    field = std::make_unique<PrimitiveECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), ecsqlColumnInfo, sqlColumnIndex++);
     return ECSqlStatus::Success;
     }
 
@@ -374,7 +374,7 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
             int xColumnIndex = sqlColumnIndex++;
             int yColumnIndex = sqlColumnIndex++;
 
-            field = std::make_unique<PointECSqlField>(selectPreparedStatement, ecsqlColumnInfo, xColumnIndex, yColumnIndex);
+            field = std::make_unique<PointECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), ecsqlColumnInfo, xColumnIndex, yColumnIndex);
             break;
             }
             case PRIMITIVETYPE_Point3d:
@@ -383,11 +383,11 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
             int yColumnIndex = sqlColumnIndex++;
             int zColumnIndex = sqlColumnIndex++;
 
-            field = std::make_unique<PointECSqlField>(selectPreparedStatement, ecsqlColumnInfo, xColumnIndex, yColumnIndex, zColumnIndex);
+            field = std::make_unique<PointECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), ecsqlColumnInfo, xColumnIndex, yColumnIndex, zColumnIndex);
             break;
             }
             default:
-                field = std::make_unique<PrimitiveECSqlField>(selectPreparedStatement, ecsqlColumnInfo, sqlColumnIndex++);
+                field = std::make_unique<PrimitiveECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), ecsqlColumnInfo, sqlColumnIndex++);
                 break;
         }
 
@@ -411,7 +411,7 @@ ECSqlStatus ECSqlFieldFactory::CreateNavigationPropertyField(std::unique_ptr<ECS
     {
     ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
 
-    std::unique_ptr<NavigationPropertyECSqlField> newField = std::make_unique<NavigationPropertyECSqlField>(selectPreparedStatement, ecsqlColumnInfo);
+    std::unique_ptr<NavigationPropertyECSqlField> newField = std::make_unique<NavigationPropertyECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), ecsqlColumnInfo);
 
     std::unique_ptr<ECSqlField> idField = nullptr;
     ECSqlStatus stat = CreateChildField(idField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId()));
@@ -434,7 +434,8 @@ ECSqlStatus ECSqlFieldFactory::CreateNavigationPropertyField(std::unique_ptr<ECS
 //static
 ECSqlStatus ECSqlFieldFactory::CreateArrayField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo)
     {
-    field = std::make_unique<ArrayECSqlField>(GetPreparedStatement(ctx), ecsqlColumnInfo, sqlColumnIndex++);
+    ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
+    field = std::make_unique<ArrayECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), ecsqlColumnInfo, sqlColumnIndex++);
     return ECSqlStatus::Success;
     }
 
@@ -444,7 +445,8 @@ ECSqlStatus ECSqlFieldFactory::CreateArrayField(std::unique_ptr<ECSqlField>& fie
 //static
 ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields(std::unique_ptr<ECSqlField>& structField, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECN::ECStructClassCR structType, ECSqlColumnInfo const& structFieldColumnInfo)
     {
-    std::unique_ptr<StructECSqlField> newStructField = std::make_unique<StructECSqlField>(GetPreparedStatement(ctx), structFieldColumnInfo);
+    ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
+    std::unique_ptr<StructECSqlField> newStructField = std::make_unique<StructECSqlField>(selectPreparedStatement.GetECDb(), std::make_unique<StatementDbRow>(selectPreparedStatement.GetSqliteStatement()), structFieldColumnInfo);
 
     for (ECPropertyCP prop : structType.GetProperties(true))
         {

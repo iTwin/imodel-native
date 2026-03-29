@@ -5085,6 +5085,197 @@ public:
 };
 
 //=======================================================================================
+// Projects the ECChangesetReader class into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeECChangesetReader : BeObjectWrap<NativeECChangesetReader>
+{
+private:
+    DEFINE_CONSTRUCTOR;
+    ECChangesetReader m_reader;
+
+    ECDb* ExtractECDb(NapiInfoCR info, Napi::Object dbObj)
+        {
+        ECDb* ecdb = nullptr;
+        if (NativeDgnDb::InstanceOf(dbObj))
+            ecdb = &NativeDgnDb::Unwrap(dbObj)->GetDgnDb();
+        else if (NativeECDb::InstanceOf(dbObj))
+            ecdb = &NativeECDb::Unwrap(dbObj)->GetECDb();
+        else
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+        if (!ecdb || !ecdb->IsDbOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        return ecdb;
+        }
+    
+    ECChangesetReader::Stage GetStage(NapiInfoCR info, int targetStage)
+        {
+        if (targetStage < 0 || targetStage > 1)
+            THROW_JS_TYPE_EXCEPTION("Invalid stage. Expected 0 (BeforeFirst) or 1");
+        if(targetStage == 0)
+            return ECChangesetReader::Stage::Old;
+        return ECChangesetReader::Stage::New;
+        }
+
+public:
+    NativeECChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeECChangesetReader>(info) {}
+    ~NativeECChangesetReader() { SetInDestructor(); }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ECChangesetReader", {
+            InstanceMethod("openFile",            &NativeECChangesetReader::OpenFile),
+            InstanceMethod("openGroup",           &NativeECChangesetReader::OpenGroup),
+            InstanceMethod("openLocalChanges",    &NativeECChangesetReader::OpenLocalChanges),
+            InstanceMethod("openInMemoryChanges", &NativeECChangesetReader::OpenInMemoryChanges),
+            InstanceMethod("openTxn",             &NativeECChangesetReader::OpenTxn),
+            InstanceMethod("close",               &NativeECChangesetReader::Close),
+            InstanceMethod("step",                &NativeECChangesetReader::Step),
+            InstanceMethod("getTableName",        &NativeECChangesetReader::GetTableName),
+            InstanceMethod("getOpcode",           &NativeECChangesetReader::GetOpcode),
+            InstanceMethod("getValue",            &NativeECChangesetReader::GetValue),
+        });
+        exports.Set("ECChangesetReader", t);
+        SET_CONSTRUCTOR(t);
+        }
+
+    void OpenFile(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        ECDb* ecdb = ExtractECDb(info, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, fileName);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        DbResult rc = m_reader.OpenFile(*ecdb, fileName, invert);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openFile() failed", rc);
+        }
+
+    void OpenGroup(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        ECDb* ecdb = ExtractECDb(info, dbObj);
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, *ecdb, invert);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
+        }
+
+    void OpenLocalChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
+        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openLocalChanges() failed", rc);
+        }
+
+    void OpenInMemoryChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
+        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openInMemoryChanges() failed", rc);
+        }
+
+    void OpenTxn(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, idStr);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        BeInt64Id id;
+        if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str()))
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
+        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openTxn() failed", rc);
+        }
+
+    void Close(NapiInfoCR info)
+        {
+        m_reader.Close();
+        }
+
+    Napi::Value GetTableName(NapiInfoCR info)
+        {
+        Utf8String tableName;
+        DbResult rc = m_reader.GetTableName(tableName);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getTableName() failed", rc);
+        return Napi::String::New(Env(), tableName.c_str());
+        }
+
+    Napi::Value GetOpcode(NapiInfoCR info)
+        {
+        DbOpcode opcode;
+        DbResult rc = m_reader.GetOpcode(opcode);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getOpcode() failed", rc);
+        return Napi::Number::New(Env(), (int)opcode);
+        }
+
+    Napi::Value Step(NapiInfoCR info)
+        {
+        DbResult rc = m_reader.Step();
+        return Napi::Boolean::New(Env(), rc == BE_SQLITE_ROW);
+        }
+
+    Napi::Value GetValue(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_INTEGER(0, stage);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_reader.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
+        ECChangesetReader::Stage stageEnum = GetStage(info, stage);
+
+        BeJsNapiObject out(info.Env());
+        bool isECTable = false;
+        if (m_reader.IsECTable(isECTable) != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to check if EC table", BE_SQLITE_ERROR);
+        out["isECTable"] = isECTable;
+        if (!isECTable)
+            return out;
+
+        BeJsValue rowJson = out["data"];
+        if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+        if (rowJson.empty())
+            out.removeMember("data");
+
+        Utf8String instanceKey;
+        if (m_reader.GetInstanceKey(stageEnum, instanceKey) != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get instance key", BE_SQLITE_ERROR);
+        if (!instanceKey.empty())
+            out["key"] = instanceKey.c_str();
+
+        return out;
+        }
+};
+
+//=======================================================================================
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
@@ -7419,6 +7610,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
+    NativeECChangesetReader::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);

@@ -12,8 +12,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PrimitiveECSqlField::PrimitiveECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
-    : ECSqlField(stmt, ecsqlColumnInfo, false, false), m_sqliteColumnIndex(columnIndex)
+PrimitiveECSqlField::PrimitiveECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
+    : ECSqlField(ecdb, std::move(row), ecsqlColumnInfo, false, false), m_sqliteColumnIndex(columnIndex)
     {
     UpdateDateTimeMetaData();
     }
@@ -49,9 +49,9 @@ void PrimitiveECSqlField::UpdateDateTimeMetaData() {
 void const* PrimitiveECSqlField::_GetBlob(int* blobSize) const
     {
     if (blobSize != nullptr)
-        *blobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
+        *blobSize = GetRow().GetColumnBytes(m_sqliteColumnIndex);
 
-    return GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
+    return GetRow().GetValueBlob(m_sqliteColumnIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ void const* PrimitiveECSqlField::_GetBlob(int* blobSize) const
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    const double jd = GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex);
+    const double jd = GetRow().GetValueDouble(m_sqliteColumnIndex);
     metadata = m_datetimeMetadata;
     return jd;
     }
