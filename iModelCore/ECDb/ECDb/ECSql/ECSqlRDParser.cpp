@@ -1133,12 +1133,16 @@ BentleyStatus ECSqlRDParser::ParsePolymorphicConstraint(PolymorphicInfo& constra
     {
     constraint = PolymorphicInfo::NotSpecified();
 
-    // Optional disqualify marker: '+' (Plus token)
+    // Optional disqualify marker: '+' (Plus token), only when followed by ALL or ONLY
     bool disqualify = false;
     if (At(ECSqlTokenType::Plus))
         {
-        disqualify = true;
-        Advance();
+        ECSqlToken next = m_lexer->Peek1();
+        if (next.type == ECSqlTokenType::KW_ALL || next.type == ECSqlTokenType::KW_ONLY)
+            {
+            disqualify = true;
+            Advance();
+            }
         }
 
     if (At(ECSqlTokenType::KW_ALL))
@@ -1150,15 +1154,6 @@ BentleyStatus ECSqlRDParser::ParsePolymorphicConstraint(PolymorphicInfo& constra
         {
         constraint = PolymorphicInfo(PolymorphicInfo::Type::Only, disqualify);
         Advance();
-        }
-    else
-        {
-        if (disqualify)
-            {
-            ECSQLERR("Expected ALL or ONLY after '+' disqualify marker");
-            return ERROR;
-            }
-        // NotSpecified – leave constraint as-is
         }
 
     return SUCCESS;
@@ -1473,15 +1468,18 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
     if (SUCCESS != ParsePolymorphicConstraint(polymorphic))
         return ERROR;
 
-    // 3. Disqualify primary join: '!'
+    // 3. Disqualify primary join: '+'
     bool disqualifyPrimaryJoin = false;
-    if (At(ECSqlTokenType::NotEqual))
+    if (At(ECSqlTokenType::Plus))
         {
-        // '!' alone is stored as the first char of '!=' — but the lexer returns != as NotEqual
-        // The grammar uses '!' standalone to mean disqualifyPrimaryJoin.
-        // The lexer in ECSqlLexer.cpp emits '!=' as NotEqual (2 chars) if followed by '=',
-        // but should emit separate tokens for lone '!'. Let's handle both.
-        // For now, skip this edge case — disqualify via '!' is very rare.
+        disqualifyPrimaryJoin = true;
+        Advance();
+        // '+' is only valid before a table name, not a subquery
+        if (At(ECSqlTokenType::LParen))
+            {
+            ECSQLERR("'+' disqualify prefix cannot be used before a subquery");
+            return ERROR;
+            }
         }
 
     // 4. Subquery: '(' SELECT ...
