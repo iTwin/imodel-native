@@ -28,6 +28,20 @@ private:
 
     IssueDataSource const& Issues() const { return m_context->Issues(); }
 
+    //! Strip surrounding single quotes from a String token text and unescape '' → '
+    //! The ECSqlLexer returns the full token including quotes (e.g., 'hello')
+    //! but the old Flex lexer returned just the content (hello). LiteralValueExp expects unquoted content.
+    static Utf8String StripStringQuotes(Utf8StringCR raw)
+        {
+        if (raw.size() >= 2 && raw.front() == '\'' && raw.back() == '\'')
+            {
+            Utf8String inner = raw.substr(1, raw.size() - 2);
+            inner.ReplaceAll("''", "'");
+            return inner;
+            }
+        return raw;
+        }
+
     // Statement parsers
     BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&);
     BentleyStatus ParseUpdateStatementSearched(std::unique_ptr<UpdateStatementExp>&);

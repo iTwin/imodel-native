@@ -47,6 +47,9 @@ iModelJsApp.xcconfig
 # misc logs
 debug.log
 
+# cmake temp build
+**/cmake-build/
+
 # C# temporary files
 obj/
 

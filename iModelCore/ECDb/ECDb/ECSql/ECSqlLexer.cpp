@@ -198,17 +198,58 @@ void ECSqlLexer::SkipWhitespaceAndComments()
     {
     for (;;)
         {
-        // whitespace
+        // ASCII whitespace
         while (m_cur < m_end && (*m_cur == ' ' || *m_cur == '\t' || *m_cur == '\r' || *m_cur == '\n'))
             Consume();
 
-        // line comment  -- ... \n
+        // Unicode invisible/whitespace characters treated as whitespace:
+        //   U+00A0  No-Break Space          (0xC2 0xA0)
+        //   U+200B..U+200F Zero-Width/BOM   (0xE2 0x80 0x8B..0x8F)
+        //   U+2002..U+200A various spaces   (0xE2 0x80 0x82..0x8A)
+        //   U+202F  Narrow No-Break Space   (0xE2 0x80 0xAF)
+        //   U+2060  Word Joiner             (0xE2 0x81 0xA0)
+        //   U+FEFF  Zero Width No-Break     (0xEF 0xBB 0xBF)
+        {
+        unsigned char c0 = (m_cur < m_end) ? (unsigned char)m_cur[0] : 0;
+        unsigned char c1 = (m_cur + 1 < m_end) ? (unsigned char)m_cur[1] : 0;
+        unsigned char c2 = (m_cur + 2 < m_end) ? (unsigned char)m_cur[2] : 0;
+        if (c0 == 0xC2 && c1 == 0xA0)                                          // U+00A0
+            { Consume(); Consume(); continue; }
+        if (c0 == 0xE2 && c1 == 0x80 && c2 >= 0x82 && c2 <= 0xAF)            // U+2002..U+202F
+            { Consume(); Consume(); Consume(); continue; }
+        if (c0 == 0xE2 && c1 == 0x81 && c2 == 0xA0)                           // U+2060
+            { Consume(); Consume(); Consume(); continue; }
+        if (c0 == 0xEF && c1 == 0xBB && c2 == 0xBF)                           // U+FEFF
+            { Consume(); Consume(); Consume(); continue; }
+        }
+
+        // line comment: -- ... \n
         if (m_cur + 1 < m_end && m_cur[0] == '-' && m_cur[1] == '-')
             {
             while (m_cur < m_end && *m_cur != '\n')
                 Consume();
             continue;
             }
+
+        // C++ line comment: // ... \n
+        if (m_cur + 1 < m_end && m_cur[0] == '/' && m_cur[1] == '/')
+            {
+            while (m_cur < m_end && *m_cur != '\n')
+                Consume();
+            continue;
+            }
+
+        // Block comment: /* ... */ (possibly multiline)
+        if (m_cur + 1 < m_end && m_cur[0] == '/' && m_cur[1] == '*')
+            {
+            Consume(); Consume(); // consume '/'  '*'
+            while (m_cur + 1 < m_end && !(m_cur[0] == '*' && m_cur[1] == '/'))
+                Consume();
+            if (m_cur + 1 < m_end)
+                { Consume(); Consume(); } // consume '*' '/'
+            continue;
+            }
+
         break;
         }
     }
@@ -276,7 +317,9 @@ ECSqlToken ECSqlLexer::ScanIdentifierOrKeyword()
     Utf8CP start = m_cur;
     uint32_t line = m_line, col = m_col;
 
-    // An identifier starts with [A-Za-z_\x80-\xFF]
+    // An identifier consists of [A-Za-z_0-9\x80-\xFF], but we must stop at
+    // Unicode invisible/whitespace characters (U+00A0, U+2002..U+202F, U+2060, U+FEFF)
+    // so they act as token separators (e.g. "FROM<NBSP>meta").
     while (m_cur < m_end)
         {
         unsigned char c = (unsigned char)*m_cur;
@@ -284,7 +327,17 @@ ECSqlToken ECSqlLexer::ScanIdentifierOrKeyword()
         if (c >= 'A' && c <= 'Z') { Consume(); continue; }
         if (c == '_')              { Consume(); continue; }
         if (c >= '0' && c <= '9') { Consume(); continue; }
-        if (c >= 0x80)             { Consume(); continue; }  // UTF-8 continuation
+        if (c >= 0x80)
+            {
+            // Check for Unicode invisible/whitespace sequences — stop if found
+            unsigned char c1 = (m_cur + 1 < m_end) ? (unsigned char)m_cur[1] : 0;
+            unsigned char c2 = (m_cur + 2 < m_end) ? (unsigned char)m_cur[2] : 0;
+            if (c == 0xC2 && c1 == 0xA0)                           break; // U+00A0
+            if (c == 0xE2 && c1 == 0x80 && c2 >= 0x82 && c2 <= 0xAF) break; // U+2002..U+202F
+            if (c == 0xE2 && c1 == 0x81 && c2 == 0xA0)             break; // U+2060
+            if (c == 0xEF && c1 == 0xBB && c2 == 0xBF)             break; // U+FEFF
+            Consume(); continue;  // Other high bytes are part of identifier (UTF-8 multibyte)
+            }
         break;
         }
 

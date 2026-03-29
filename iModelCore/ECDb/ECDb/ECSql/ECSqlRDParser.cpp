@@ -147,8 +147,21 @@ BentleyStatus ECSqlRDParser::ParseInsertStatement(std::unique_ptr<InsertStatemen
     Advance();                            // consume INSERT
     TryConsume(ECSqlTokenType::KW_INTO);  // optional INTO
 
+    // Optional ONLY polymorphic constraint (INSERT INTO ONLY ts.A ...)
+    // NOTE: ALL is NOT valid for INSERT (only for SELECT/UPDATE/DELETE)
+    PolymorphicInfo constraint = PolymorphicInfo::Only();  // INSERT defaults to ONLY
+    if (At(ECSqlTokenType::KW_ALL))
+        {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            ECDbIssueId::ECDb_0551,
+            "ALL is not supported with INSERT statement.");
+        return ERROR;
+        }
+    else if (TryConsume(ECSqlTokenType::KW_ONLY))
+        constraint = PolymorphicInfo(PolymorphicInfo::Type::Only, false);
+
     std::unique_ptr<ClassNameExp> classNameExp;
-    if (SUCCESS != ParseTableNode(classNameExp, ECSqlType::Insert, PolymorphicInfo::Only()))
+    if (SUCCESS != ParseTableNode(classNameExp, ECSqlType::Insert, constraint))
         return ERROR;
 
     std::unique_ptr<PropertyNameListExp> insertPropertyNameListExp;
@@ -469,9 +482,68 @@ BentleyStatus ECSqlRDParser::ParseSelectStatement(std::unique_ptr<SelectStatemen
     {
     exp = nullptr;
 
-    // VALUES (...) [, (...) ...] builds a UNION ALL chain.
+    // VALUES clause: VALUES (r1), (r2) [UNION [ALL] ...]
     if (At(ECSqlTokenType::KW_VALUES))
-        return ParseValuesCommalist(exp);
+        {
+        Advance(); // consume VALUES
+
+        // Collect all comma-separated rows
+        std::vector<std::vector<std::unique_ptr<ValueExp>>> rows;
+        do
+            {
+            if (!Expect(ECSqlTokenType::LParen))
+                return ERROR;
+            std::vector<std::unique_ptr<ValueExp>> row;
+            if (SUCCESS != ParseRowValueConstructorCommalist(row))
+                return ERROR;
+            if (!Expect(ECSqlTokenType::RParen))
+                return ERROR;
+            rows.push_back(std::move(row));
+            }
+        while (TryConsume(ECSqlTokenType::Comma));
+
+        // Check for compound operator after all comma rows (VALUES (r) UNION [ALL] ...)
+        SelectStatementExp::CompoundOperator op = SelectStatementExp::CompoundOperator::None;
+        if (At(ECSqlTokenType::KW_UNION))
+            op = SelectStatementExp::CompoundOperator::Union;
+        else if (At(ECSqlTokenType::KW_INTERSECT))
+            op = SelectStatementExp::CompoundOperator::Intersect;
+        else if (At(ECSqlTokenType::KW_EXCEPT))
+            op = SelectStatementExp::CompoundOperator::Except;
+
+        // Build the compound chain right-to-left
+        // For N rows + optional compound rhs: rows[0] UNION ALL (rows[1] UNION ALL (... UNION [isAll] rhs))
+        std::unique_ptr<SelectStatementExp> chain;
+        if (op != SelectStatementExp::CompoundOperator::None)
+            {
+            Advance(); // consume UNION | INTERSECT | EXCEPT
+            bool isAll = TryConsume(ECSqlTokenType::KW_ALL);
+            std::unique_ptr<SelectStatementExp> rhs;
+            if (SUCCESS != ParseSelectStatement(rhs))
+                return ERROR;
+            // Connect the last row to the compound rhs
+            chain = std::make_unique<SelectStatementExp>(
+                std::make_unique<SingleSelectStatementExp>(rows.back()),
+                op, isAll, std::move(rhs));
+            }
+        else
+            {
+            chain = std::make_unique<SelectStatementExp>(
+                std::make_unique<SingleSelectStatementExp>(rows.back()));
+            }
+
+        // Connect remaining rows as UNION ALL (right-to-left)
+        for (int i = (int)rows.size() - 2; i >= 0; --i)
+            {
+            chain = std::make_unique<SelectStatementExp>(
+                std::make_unique<SingleSelectStatementExp>(rows[i]),
+                SelectStatementExp::CompoundOperator::Union, /*isAll=*/true,
+                std::move(chain));
+            }
+
+        exp = std::move(chain);
+        return SUCCESS;
+        }
 
     std::unique_ptr<SingleSelectStatementExp> single;
     if (SUCCESS != ParseSingleSelectStatement(single))
@@ -1987,7 +2059,7 @@ BentleyStatus ECSqlRDParser::ParseValueExpPrimary(std::unique_ptr<ValueExp>& exp
     // String literal
     if (At(ECSqlTokenType::String))
         {
-        Utf8String val = TokenText();
+        Utf8String val = StripStringQuotes(TokenText());
         Advance();
         ECSqlTypeInfo dtype = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
         return LiteralValueExp::Create(exp, *m_context, val.c_str(), dtype);
@@ -2094,7 +2166,7 @@ BentleyStatus ECSqlRDParser::ParseValueExpPrimary(std::unique_ptr<ValueExp>& exp
             ECSQLERR("Expected date/time string literal");
             return ERROR;
             }
-        Utf8String val = TokenText();
+        Utf8String val = StripStringQuotes(TokenText());
         Advance();
         return LiteralValueExp::Create(exp, *m_context, val.c_str(), ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_DateTime));
         }
@@ -2192,26 +2264,36 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
         return SUCCESS;
         }
 
-    // Read first name
+    // Read first name — also remember if it was a keyword token
     if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
         {
         ECSQLERR("Expected identifier in column reference");
         return ERROR;
         }
+    bool firstNameIsKeyword = (m_current.type != ECSqlTokenType::Name);
     Utf8String firstName = TokenText();
     Advance();
 
     // Check for function call: name(args)
     if (!forcePropertyNameExp && At(ECSqlTokenType::LParen))
         {
-        // Could be aggregate, built-in, or user function
-        if (IsAggregateFunction(firstName))
-            return ParseAggregateFct(exp, firstName);
-        if (IsWindowFunctionName(firstName))
+        // Uppercase known SQL functions (aggregate, window) for canonical column labels.
+        // Check both keyword-flag AND known function names to ensure uppercase.
+        // User-defined functions that aren't keywords keep original case.
+        Utf8String funcName = firstName;
+        Utf8String upperName = firstName;
+        upperName.ToUpper();
+        bool isKnownSqlFunction = firstNameIsKeyword || IsAggregateFunction(upperName) || IsWindowFunctionName(upperName);
+        if (isKnownSqlFunction)
+            funcName = upperName;
+        if (IsAggregateFunction(funcName) || IsAggregateFunction(upperName))
+            return ParseAggregateFct(exp, funcName.empty() ? upperName : funcName);
+        if (IsWindowFunctionName(funcName) || IsWindowFunctionName(upperName))
             {
+            Utf8StringCR canonName = isKnownSqlFunction ? funcName : firstName;
             // Parse as function call, then check for OVER
             std::unique_ptr<ValueExp> funcExp;
-            if (SUCCESS != ParseFctSpecByName(funcExp, firstName))
+            if (SUCCESS != ParseFctSpecByName(funcExp, canonName))
                 return ERROR;
             if (At(ECSqlTokenType::KW_OVER) || At(ECSqlTokenType::KW_FILTER))
                 return ParseWindowFunction(exp, std::move(funcExp));
@@ -2219,7 +2301,7 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
             return SUCCESS;
             }
         std::unique_ptr<ValueExp> funcExp;
-        if (SUCCESS != ParseFctSpecByName(funcExp, firstName))
+        if (SUCCESS != ParseFctSpecByName(funcExp, funcName))
             return ERROR;
         // Check for window function OVER clause
         if (At(ECSqlTokenType::KW_OVER) || At(ECSqlTokenType::KW_FILTER))
@@ -2419,7 +2501,7 @@ BentleyStatus ECSqlRDParser::ParseLiteral(Utf8StringR literalVal, ECSqlTypeInfo&
         }
     if (At(ECSqlTokenType::String))
         {
-        literalVal = TokenText();
+        literalVal = StripStringQuotes(TokenText());
         dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
         Advance();
         return SUCCESS;
@@ -2506,8 +2588,13 @@ BentleyStatus ECSqlRDParser::ParseFctSpecByName(std::unique_ptr<ValueExp>& exp, 
 
 BentleyStatus ECSqlRDParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp)
     {
-    // The current token is a function name
+    // The current token is a function name.
+    // Uppercase only keyword-recognized function names (SQL standard / ECSQL builtins)
+    // so they produce canonical column labels (e.g. COUNT(*), SUM([x])).
+    // User-defined functions (Name token) keep their original case.
     Utf8String funcName = TokenText();
+    if (m_current.type != ECSqlTokenType::Name)
+        funcName.ToUpper();
     Advance();
     if (IsAggregateFunction(funcName))
         return ParseAggregateFct(exp, funcName);
@@ -3030,11 +3117,9 @@ BentleyStatus ECSqlRDParser::ParseInPredicate(std::unique_ptr<BooleanExp>& exp, 
     if (next.type == ECSqlTokenType::KW_SELECT || next.type == ECSqlTokenType::KW_WITH
         || next.type == ECSqlTokenType::KW_VALUES)
         {
-        Advance(); // consume '('
+        // ParseSubquery itself consumes the surrounding '(' ... ')'
         std::unique_ptr<SubqueryExp> subExp;
         if (SUCCESS != ParseSubquery(subExp))
-            return ERROR;
-        if (!Expect(ECSqlTokenType::RParen))
             return ERROR;
         auto subValExp = std::make_unique<SubqueryValueExp>(std::move(subExp));
         exp = std::make_unique<BinaryBooleanExp>(std::move(lhs), op, std::move(subValExp));
