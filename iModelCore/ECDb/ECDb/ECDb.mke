@@ -86,6 +86,8 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/Parser/SqlBison.h \
                 $(baseDir)ECSql/Parser/SqlNode.h \
                 $(baseDir)ECSql/ECSqlParser.h \
+                $(baseDir)ECSql/ECSqlLexer.h \
+                $(baseDir)ECSql/ECSqlRDParser.h \
                 $(baseDir)ECSql/ClassRefExp.h \
                 $(baseDir)ECSql/ComputedExp.h \
                 $(baseDir)ECSql/Exp.h \
@@ -257,6 +259,10 @@ $(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/EC
 $(o)DynamicSelectClauseECClass$(oext):                        $(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParser$(oext):                                       $(baseDir)ECSql/ECSqlParser.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlLexer$(oext):                                        $(baseDir)ECSql/ECSqlLexer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlRDParser$(oext):                                     $(baseDir)ECSql/ECSqlRDParser.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlTypeInfo$(oext):                                     $(baseDir)ECSql/ECSqlTypeInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

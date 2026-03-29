@@ -20,6 +20,7 @@ struct ComputedExp : Exp
     {
 private:
     friend struct ECSqlParser;
+    friend struct ECSqlRDParser;
 
     bool m_hasParentheses;
     ECSqlTypeInfo m_typeInfo;
