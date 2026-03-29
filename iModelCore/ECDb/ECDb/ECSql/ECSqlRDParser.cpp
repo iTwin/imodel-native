@@ -8,11 +8,12 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 USING_NAMESPACE_BENTLEY_EC
 
-// Error reporting macro – expands inside any ECSqlRDParser member so Issues() is in scope.
+// Error reporting macro – wraps message with "Failed to parse ECSQL '<sql>': <detail>"
+// to match the old Bison parser's error format. Silenced during speculative parsing.
 #define ECSQLERR(fmt, ...) do { \
     if (!m_suppressErrors) \
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, \
-            ECDbIssueId::ECDb_0471, fmt, ##__VA_ARGS__); \
+            ECDbIssueId::ECDb_0471, "Failed to parse ECSQL '%s': " fmt, m_ecsql ? m_ecsql : "", ##__VA_ARGS__); \
 } while(0)
 
 //=============================================================================
@@ -72,6 +73,7 @@ std::unique_ptr<Exp> ECSqlRDParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSo
     if (Utf8String::IsNullOrEmpty(ecsql))
         return nullptr;
 
+    m_ecsql = ecsql;
     ScopedContext ctx(*this, ecdb, issues, parentParser);
     ECSqlLexer lexer(ecsql);
     m_lexer  = &lexer;
@@ -83,47 +85,53 @@ std::unique_ptr<Exp> ECSqlRDParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSo
         {
         std::unique_ptr<CommonTableExp> cteExp;
         if (SUCCESS != ParseCTE(cteExp))
-            return nullptr;
+            { m_ecsql = nullptr; return nullptr; }
         exp = std::move(cteExp);
         }
     else if (At(ECSqlTokenType::KW_SELECT) || At(ECSqlTokenType::KW_VALUES))
         {
         std::unique_ptr<SelectStatementExp> selExp;
         if (SUCCESS != ParseSelectStatement(selExp))
-            return nullptr;
+            { m_ecsql = nullptr; return nullptr; }
         exp = std::move(selExp);
         }
     else if (At(ECSqlTokenType::KW_INSERT))
         {
         std::unique_ptr<InsertStatementExp> ins;
         if (SUCCESS != ParseInsertStatement(ins))
-            return nullptr;
+            { m_ecsql = nullptr; return nullptr; }
         exp = std::move(ins);
         }
     else if (At(ECSqlTokenType::KW_UPDATE))
         {
         std::unique_ptr<UpdateStatementExp> upd;
         if (SUCCESS != ParseUpdateStatementSearched(upd))
-            return nullptr;
+            { m_ecsql = nullptr; return nullptr; }
         exp = std::move(upd);
         }
     else if (At(ECSqlTokenType::KW_DELETE))
         {
         std::unique_ptr<DeleteStatementExp> del;
         if (SUCCESS != ParseDeleteStatementSearched(del))
-            return nullptr;
+            { m_ecsql = nullptr; return nullptr; }
         exp = std::move(del);
         }
     else if (At(ECSqlTokenType::KW_PRAGMA))
         {
         std::unique_ptr<PragmaStatementExp> pragma;
         if (SUCCESS != ParsePragmaStatement(pragma))
-            return nullptr;
+            { m_ecsql = nullptr; return nullptr; }
         exp = std::move(pragma);
         }
     else
         {
-        ECSQLERR("Unexpected token '%s' at start of ECSQL statement", m_current.GetText().c_str());
+        // Empty input (comment-only) or truly unrecognised token.
+        // Use "syntax error" to match the old Bison parser's generic error.
+        if (AtEnd())
+            ECSQLERR("syntax error");
+        else
+            ECSQLERR("Unexpected token '%s' at start of ECSQL statement", m_current.GetText().c_str());
+        m_ecsql = nullptr;
         return nullptr;
         }
 
@@ -133,10 +141,12 @@ std::unique_ptr<Exp> ECSqlRDParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSo
     if (!AtEnd())
         {
         ECSQLERR("Unexpected token '%s' after end of ECSQL statement", m_current.GetText().c_str());
+        m_ecsql = nullptr;
         return nullptr;
         }
 
     m_lexer = nullptr;
+    m_ecsql = nullptr;
     if (exp == nullptr)
         return nullptr;
 
@@ -2703,6 +2713,14 @@ BentleyStatus ECSqlRDParser::ParseSetFct(std::unique_ptr<ValueExp>& exp, Utf8Str
 
     auto funcCallExp = std::make_unique<FunctionCallExp>(functionName, setQuantifier, isStandardSetFunction);
 
+    // MAX()/MIN() with 0 args is a syntax error (matching old Bison parser behavior)
+    bool isMaxOrMin = functionName.EqualsIAscii("MAX") || functionName.EqualsIAscii("MIN");
+    if (isMaxOrMin && At(ECSqlTokenType::RParen))
+        {
+        ECSQLERR("syntax error");
+        return ERROR;
+        }
+
     // COUNT(*) special case
     if (functionName.EqualsIAscii("count") && At(ECSqlTokenType::Star))
         {
@@ -2727,6 +2745,17 @@ BentleyStatus ECSqlRDParser::ParseSetFct(std::unique_ptr<ValueExp>& exp, Utf8Str
         if (SUCCESS != ParseValueExp(sepArg))
             return ERROR;
         funcCallExp->AddArgument(std::move(sepArg));
+        }
+
+    // MAX/MIN with multiple arguments: emit helpful "Use GREATEST/LEAST" error to
+    // match the old Bison parser's diagnostic instead of a cryptic "Expected ')'"
+    if (isMaxOrMin && At(ECSqlTokenType::Comma))
+        {
+        if (functionName.EqualsIAscii("MAX"))
+            ECSQLERR("Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])");
+        else
+            ECSQLERR("Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])");
+        return ERROR;
         }
 
     if (!Expect(ECSqlTokenType::RParen))

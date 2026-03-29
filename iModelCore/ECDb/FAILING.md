@@ -1,6 +1,6 @@
 # Pre-existing Test Failures
 
-These 32 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
+These 10 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
 
 Excluded from counts: `ThreadSafetyTests`, `ConcurrentQueryFixture`, `SchemaSyncTests`, `InstanceReaderFixture` (5 failures), `ECDbTestFixture.TestDropSchemasWithInstances` (segfault).
 
@@ -87,34 +87,36 @@ parenthesized value expression, so these queries now succeed.
 
 ---
 
-## Group 4 — SQL generation differences (2 failures)
+## Group 4 — SQL generation differences ✅ FIXED
 
-Tests assert exact JOIN counts or SQL structure in the generated SQLite SQL. The new
-codegen produces structurally different (often more optimal) SQL that still returns correct
-results but doesn't match hardcoded string expectations.
+Tests assert exact JOIN counts or error message text in generated SQLite SQL. The new
+codegen / RD parser produces structurally different output that still returns correct
+results.
 
-Failing tests:
-```
-ECSqlToSqlGenerationTests.OptimisedJoins
-ECDbTestFixture.TestGreatestAndLeastFunctionsWithLiterals
-ECDbTestFixture.TestGreatestAndLeastFunctionsDQLAndDML
-```
-
-Example failure:
-```
-Expected: GetFrequencyCount(sql, "JOIN") == 2
-Actual:   GetFrequencyCount(sql, "JOIN") == 0
-```
+**Fixed:**
+- `ECSqlToSqlGenerationTests.OptimisedJoins` — was already passing on `affak/refactor`
+- `ECDbTestFixture.TestGreatestAndLeastFunctionsWithLiterals` — fixed by improving RD
+  parser error messages to match the old Bison parser format:
+  - `ECSQLERR` now prefixes every message with `"Failed to parse ECSQL '<sql>': "`
+  - `MAX()`/`MIN()` with 0 args now emits `"syntax error"` instead of `"Unexpected token ')' in value expression"`
+  - `MAX(a,b,...)`/`MIN(a,b,...)` with multiple args now emits the helpful
+    `"Use GREATEST(...)"` / `"Use LEAST(...)"` diagnostic instead of a cryptic
+    `"Expected token 41, got ','"`
+  - Comment-only / empty input now emits `"syntax error"` instead of
+    `"Unexpected token '' at start of ECSQL statement"`
+- `ECDbTestFixture.TestGreatestAndLeastFunctionsDQLAndDML` — fixed by same changes above
 
 ---
 
-## Group 5 — Miscellaneous (3 failures)
+## Group 5 — Miscellaneous (2 remaining failures)
 
 ```
-ECSqlStatementTestFixture.GetParameterIndex    — named param index lookup (schema:class form)
-ECSqlStatementTestFixture.NoECClassIdFilterOption — schema:class name with colon separator
-ECSqlStatementTestFixture.WhereBitwiseOperators   — see Group 3
+ECSqlStatementTestFixture.NoECClassIdFilterOption       — schema:class name with colon separator (covered by Group 1)
+ECSqlStatementFunctionTestFixture.BuiltinFunctions      — LIKE keyword accepted as function call by new RD parser
 ```
+
+`GetParameterIndex` and `WhereBitwiseOperators` were resolved by the Group 1 and Group 3
+fixes respectively.
 
 ---
 
@@ -122,9 +124,9 @@ ECSqlStatementTestFixture.WhereBitwiseOperators   — see Group 3
 
 | Group | Root Cause | Count | Fix Complexity |
 |-------|-----------|-------|----------------|
-| 1 | `schema:ClassName` colon syntax unsupported | 20 | Medium — lexer/parser change |
+| 1 | `schema:ClassName` colon syntax unsupported | 1 | ✅ Mostly fixed; `ReservedTokens` remains |
 | 2 | Pragma SQLITE_AUTH in test environment | 7 | Low — test setup issue |
 | 3 | Test expectations wrong for new correct behavior | 0 | ✅ Fixed |
-| 4 | SQL generation structure differs | 2 | Low — update assertions |
-| 5 | Colon syntax + other | 3 | Covered by Group 1 & 3 fixes |
-| **Total** | | **32** | |
+| 4 | SQL generation / error message differences | 0 | ✅ Fixed |
+| 5 | Miscellaneous parser keyword/colon issues | 2 | Low |
+| **Total** | | **10** | |

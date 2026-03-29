@@ -18,6 +18,7 @@ private:
     ECSqlLexer* m_lexer = nullptr;  // non-owning, valid only during Parse()
     ECSqlToken m_current;           // current lookahead token
     bool m_suppressErrors = false;  // when true, ECSQLERR is silenced (speculative parsing)
+    Utf8CP m_ecsql = nullptr;       // ECSql string being parsed, for error message prefix
 
     // Token stream helpers
     ECSqlToken const& Cur() const { return m_current; }
