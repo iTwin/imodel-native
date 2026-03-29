@@ -15,9 +15,12 @@ bool PointECSqlField::_IsNull() const
     //this method uses the same semantics.
     const auto coordXValue = GetRow().GetValueDouble(m_xColumnIndex);
     const auto coordYValue = GetRow().GetValueDouble(m_yColumnIndex);
+    if (GetRow().IsColumnNull(m_xColumnIndex) || std::isinf(coordXValue) || std::isnan(coordXValue) || GetRow().IsColumnNull(m_yColumnIndex) || std::isinf(coordYValue) || std::isnan(coordYValue))
+        return true;
+    if (!IsPoint3d())
+        return false;
     const auto coordZValue = GetRow().GetValueDouble(m_zColumnIndex);
-    return (GetRow().IsColumnNull(m_xColumnIndex) || std::isinf(coordXValue) || std::isnan(coordXValue) || GetRow().IsColumnNull(m_yColumnIndex) || std::isinf(coordYValue) || std::isnan(coordYValue)
-        || (IsPoint3d() && (GetRow().IsColumnNull(m_zColumnIndex) || std::isinf(coordZValue) || std::isnan(coordZValue))));
+    return GetRow().IsColumnNull(m_zColumnIndex) || std::isinf(coordZValue) || std::isnan(coordZValue);
     }
 
 //-----------------------------------------------------------------------------------------
