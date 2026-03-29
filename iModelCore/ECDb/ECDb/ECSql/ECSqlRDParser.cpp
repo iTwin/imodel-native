@@ -1165,7 +1165,7 @@ BentleyStatus ECSqlRDParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, 
     {
     exp = nullptr;
 
-    if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+    if (!At(ECSqlTokenType::Name))
         {
         ECSQLERR("Expected class name");
         return ERROR;
@@ -1186,7 +1186,7 @@ BentleyStatus ECSqlRDParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, 
         if (!Expect(ECSqlTokenType::Dot))
             return ERROR;
 
-        if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+        if (!At(ECSqlTokenType::Name))
             {
             ECSQLERR("Expected class name component after '.'");
             return ERROR;
@@ -1200,7 +1200,7 @@ BentleyStatus ECSqlRDParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, 
         {
         // Three-part name: tableSpace.schema.ClassName
         Advance();  // consume second '.'
-        if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+        if (!At(ECSqlTokenType::Name))
             {
             ECSQLERR("Expected class name component after second '.'");
             return ERROR;
@@ -1505,7 +1505,7 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
         }
 
     // 5. Table name — could be CTE block name, TVF, or class name
-    if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+    if (!At(ECSqlTokenType::Name))
         {
         ECSQLERR("Expected table name");
         return ERROR;
@@ -1565,7 +1565,7 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
         {
         Advance(); // consume '.'
 
-        if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+        if (!At(ECSqlTokenType::Name))
             {
             ECSQLERR("Expected name after '.'");
             return ERROR;
@@ -1597,7 +1597,7 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
     if (hasMoreDots)
         {
         Advance(); // consume '.'
-        if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+        if (!At(ECSqlTokenType::Name))
             {
             ECSQLERR("Expected name after '.'");
             return ERROR;
@@ -1610,7 +1610,7 @@ BentleyStatus ECSqlRDParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, EC
         if (hasFourthDot)
             {
             Advance();
-            if (!At(ECSqlTokenType::Name) && !m_current.IsKeyword())
+            if (!At(ECSqlTokenType::Name))
                 {
                 ECSQLERR("Expected name after '.'");
                 return ERROR;
@@ -2353,6 +2353,15 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
     bool firstNameIsKeyword = (m_current.type != ECSqlTokenType::Name);
     Utf8String firstName = TokenText();
     Advance();
+
+    // Bare reserved keywords are not valid as unescaped identifiers.
+    // They are only allowed here as function names (must be followed by '(').
+    if (firstNameIsKeyword && !At(ECSqlTokenType::LParen))
+        {
+        ECSQLERR("Reserved keyword '%s' cannot be used as an unescaped identifier; use [%s]",
+                 firstName.c_str(), firstName.c_str());
+        return ERROR;
+        }
 
     // Check for function call: name(args)
     if (!forcePropertyNameExp && At(ECSqlTokenType::LParen))

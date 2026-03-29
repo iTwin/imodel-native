@@ -1,34 +1,23 @@
 # Pre-existing Test Failures
 
-These 11 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
+These 10 tests fail both **before and after** the ECSqlRDParser work on `affak/refactor`. They are not regressions — they were broken when the RD parser was first introduced and remain unaddressed.
 
 Excluded from counts: `ThreadSafetyTests`, `ConcurrentQueryFixture`, `SchemaSyncTests`, `InstanceReaderFixture` (4 failures), `IntegrityCheckerFixture.check_nav_class_ids` (pragma SQLiteError 8 + null-ptr crash; same root cause as Group 2).
 
 ---
 
-## Group 1 — `schema:ClassName` colon-separator not supported (1 remaining failure)
+## Group 1 — `schema:ClassName` colon-separator not supported ✅ FIXED
 
-The RD lexer treats `:Name` as a named parameter token, so `ecsql:PSA` is tokenized as
-`ecsql` (identifier) + `:PSA` (named param) instead of a schema-qualified class name.
-The old Bison grammar supported both `schema.ClassName` (dot) and `schema:ClassName` (colon).
-The new RD parser only supports dot notation.
+Most tests in this group were fixed by commit `338ad8e08f`. The remaining test
+(`ReservedTokens`) was fixed by tightening class-name and property-name parsing
+to reject bare reserved keywords as unescaped identifiers:
 
-Most tests in this group were fixed by commit `338ad8e08f`. One test remains because it
-exercises additional colon-separator forms not yet handled.
-
-**Fix needed:** In `ParseTableNode` / `ParseClassRef`, detect and handle the colon-as-schema-separator form, or update the lexer to emit the colon as a separator token when followed by an identifier in a class-name context.
-
-Failing tests:
-```
-ECSqlPrepareTestFixture.ReservedTokens
-```
-
-Example failure:
-```
-Expected: ECSqlStatus::Success
-Actual:   ECSqlStatus::InvalidECSql
-Query:    SELECT * FROM ONLY ecsql:PSAHasPSA
-```
+- `ParseTableNode` and `ParseTableNodeWithOptMemberCall`: no longer accept bare
+  keyword tokens as schema/class name components (only `Name` tokens accepted;
+  bracket-escaped `[SELECT]` lexes as `Name` so it still works).
+- `ParseColumnRef`: a bare keyword token is only accepted at the start of a
+  column reference when it is immediately followed by `(` (i.e. it's a function
+  name); otherwise it is rejected as an unescaped reserved identifier.
 
 ---
 
@@ -134,11 +123,11 @@ creates a "MyNavProp"-named property.
 
 | Group | Root Cause | Count | Fix Complexity |
 |-------|-----------|-------|----------------|
-| 1 | `schema:ClassName` colon syntax unsupported | 1 | Low — `ReservedTokens` remnant |
+| 1 | `schema:ClassName` colon syntax unsupported | 0 | ✅ Fixed |
 | 2 | Pragma SQLITE_AUTH in test environment | 7 | Low — test setup issue |
 | 3 | Test expectations wrong for new correct behavior | 0 | ✅ Fixed |
 | 4 | SQL generation / error message differences | 0 | ✅ Fixed |
 | 5 | Miscellaneous parser keyword/colon issues | 2 | Low |
 | 6 | Disqualifying `+` prefix on table references | 1 | Medium — parser feature gap |
 | 7 | Nav value alias not reflected in column property name | 0 | ✅ Fixed |
-| **Total** | | **11** | |
+| **Total** | | **10** | |
