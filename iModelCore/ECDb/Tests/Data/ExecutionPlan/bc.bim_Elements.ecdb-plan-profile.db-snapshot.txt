@@ -45,6 +45,7 @@ INDEX 1
 SEARCH main.ec_Schema USING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
 INDEX 2
 SEARCH main.ec_Schema USING INDEX sqlite_autoindex_ec_Schema_2 (Alias=?)
+SCAN pragma_disqualify_type_index VIRTUAL TABLE INDEX 0:
 SEARCH main.ec_ClassHasBaseClasses USING INDEX ix_ec_ClassHasBaseClasses_BaseClassId (BaseClassId=?)
 SEARCH s USING COVERING INDEX sqlite_autoindex_ec_Schema_1 (Name=?)
 SEARCH ca USING COVERING INDEX uix_ec_CustomAttribute_ContainerId_ContainerType_ClassId (ContainerId=?)
