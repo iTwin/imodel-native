@@ -11,6 +11,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+Statement& ECSqlField::GetSqliteStatement() const { return m_preparedECSqlStatement.GetSqliteStatement(); }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void ECSqlField::SetDynamicColumnInfo(ECSqlColumnInfoCR info) {
     if (!m_ecsqlColumnInfo.IsDynamic())
         return;

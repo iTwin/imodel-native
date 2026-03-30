@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/IECSqlValue.h>
-#include "IDbRow.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -15,9 +14,8 @@ struct ECSqlSelectPreparedStatement;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlField : public IECSqlValue
     {
-private:
-    ECDbCR m_ecdb;
-    std::unique_ptr<IDbRow> m_row;
+protected:
+    ECSqlSelectPreparedStatement& m_preparedECSqlStatement;
     ECSqlColumnInfo m_ecsqlColumnInfo;
     ECSqlColumnInfo m_ecsqlDynamicColumnInfo;
     bool m_requiresOnAfterStep = false;
@@ -30,16 +28,11 @@ private:
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
     virtual void _OnDynamicPropertyUpdated() {}
 protected:
-    //! Constructor — callers supply the appropriate IDbRow implementation.
-    ECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_ecdb(ecdb), m_row(std::move(row)),
-          m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+    ECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_preparedECSqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    IDbRow& GetRow() const { return *m_row; }
-    ECDbCR GetECDb() const { return m_ecdb; }
-    void SetRequiresOnAfterStep(bool req) { m_requiresOnAfterStep = req; }
-    void SetRequiresOnAfterReset(bool req) { m_requiresOnAfterReset = req; }
+    Statement& GetSqliteStatement() const;
 
 public:
     virtual ~ECSqlField() {}

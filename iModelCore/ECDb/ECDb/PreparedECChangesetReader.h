@@ -20,18 +20,15 @@ private:
     std::unique_ptr<Changes>       m_changes;
     Changes::Change                m_currentChange;
     Utf8String                     m_ddl;
-    std::map<Stage, std::vector<std::unique_ptr<ECSqlField>>> m_fields;
-    //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
-    std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
+    std::map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
 
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
     void clearFields();
-    void ValidateAndUpdateField(std::unique_ptr<ECSqlField>, Stage);
-    void ReFetchValues();
-    DbResult OnAfterStep() const;
-    Utf8String GetTableName() const { return m_currentChange.GetTableName(); };
-    DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
+    void AddField(std::unique_ptr<IECSqlValue>, Stage);
+    DbResult ReFetchValues();
+    // Utf8String GetTableName() const { return m_currentChange.GetTableName(); };
+    // DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
     bool IsOpen() const { return m_changeStream != nullptr; }
     bool IsStepped() const { return m_changes != nullptr && m_currentChange.IsValid(); }
     void FetchCurrentClassInfo();

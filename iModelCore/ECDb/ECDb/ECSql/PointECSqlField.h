@@ -40,11 +40,10 @@ private:
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 
 public:
-    PointECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(ecdb, std::move(row), colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
+    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
+        : ECSqlField(stmt, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
         {}
-    PointECSqlField(ECDbCR ecdb, std::unique_ptr<IDbRow> row, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex)
-        : PointECSqlField(ecdb, std::move(row), colInfo, xColumnIndex, yColumnIndex, -1) {}
+    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}
     };
 

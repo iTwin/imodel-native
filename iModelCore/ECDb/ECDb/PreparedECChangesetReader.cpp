@@ -102,7 +102,6 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, D
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::clearFields() {
     m_fields.clear();
-    m_fieldsRequiringOnAfterStep.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -118,19 +117,6 @@ void PreparedECChangesetReader::Close() {
     clearFields();
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::OnAfterStep() const {
-    for (ECSqlField* field : m_fieldsRequiringOnAfterStep)
-        {
-        ECSqlStatus stat = field->OnAfterStep();
-        if (!stat.IsSuccess())
-            return BE_SQLITE_ERROR;
-        }
-
-    return BE_SQLITE_OK;
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -147,43 +133,53 @@ DbResult PreparedECChangesetReader::Step() {
         if(m_currentChange.IsValid()) ++m_currentChange;
     }
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
-    ReFetchValues();
-
-    if (BE_SQLITE_ROW == stat)
-        {
-        auto stat = OnAfterStep();
-        if (stat != BE_SQLITE_OK)
-            return stat;
-        }
-
+    if(ReFetchValues() != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
     return stat;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::ReFetchValues() {
+DbResult PreparedECChangesetReader::ReFetchValues() {
     clearFields();
     if (m_currentChange.IsValid()) {
         DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
-        DbTable const* dbTable = dbSchema.FindTable(GetTableName());
+        Utf8String tableName;
+        if(GetTableName(tableName) != BE_SQLITE_OK)
+            return BE_SQLITE_ERROR;
+
+        DbTable const* dbTable = dbSchema.FindTable(tableName);
         if (dbTable == nullptr) {
-            LOG.errorv("Table '%s' not found in schema.", GetTableName().c_str());
-            return;
+            LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+            return BE_SQLITE_ERROR;
         }
+
         m_fields.try_emplace(Stage::New);
         m_fields.try_emplace(Stage::Old);
-        if(GetOpcode() != DbOpcode::Delete) {
-            for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::New)) {
-                ValidateAndUpdateField(std::move(field), Stage::New);
-            }
+
+        bool isECTable = false;
+        if(IsECTable(isECTable) != BE_SQLITE_OK)
+            return BE_SQLITE_ERROR;
+        if(!isECTable) {
+            LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
+            return BE_SQLITE_OK;
         }
-        if(GetOpcode() != DbOpcode::Insert) {
-            for (auto& field : ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::Old)) {
-                ValidateAndUpdateField(std::move(field), Stage::Old);
-            }
+
+        DbOpcode opCode;
+        if(GetOpcode(opCode) != BE_SQLITE_OK)
+            return BE_SQLITE_ERROR;
+
+        if(opCode != DbOpcode::Delete) {
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::New, m_fields.at(Stage::New)) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
+        }
+        if(opCode != DbOpcode::Insert) {
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::Old, m_fields.at(Stage::Old)) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
         }
     }
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -214,7 +210,12 @@ DbResult PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {
         LOG.errorv("Attempting to get table name from a PreparedECChangesetReader that has not been stepped.");
         return BE_SQLITE_ERROR;
         }
-    tableName = GetTableName();
+    if(!m_currentChange.IsValid())
+        {
+        LOG.errorv("Attempting to get table name from an invalid change.");
+        return BE_SQLITE_ERROR;
+        }
+    tableName = m_currentChange.GetTableName();
     return BE_SQLITE_OK;
 }
 
@@ -232,7 +233,12 @@ DbResult PreparedECChangesetReader::GetOpcode(DbOpcode& opcode) const {
         LOG.errorv("Attempting to get opcode from a PreparedECChangesetReader that has not been stepped.");
         return BE_SQLITE_ERROR;
         }
-    opcode = GetOpcode();
+    if(!m_currentChange.IsValid())
+        {
+        LOG.errorv("Attempting to get opcode from an invalid change.");
+        return BE_SQLITE_ERROR;
+        }
+    opcode = m_currentChange.GetOpcode();
     return BE_SQLITE_OK;
 }
 
@@ -252,7 +258,7 @@ IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIn
         }
     int size = GetColumnCount(stage);
     if (columnIndex < 0 || columnIndex >= size) {
-        LOG.warningv("Column index %d is out of range for table '%s'.", columnIndex, GetTableName().c_str());
+        LOG.warningv("Column index %d is out of range for table.", columnIndex);
         return NoopECSqlValue::GetSingleton();
     }
     return *m_fields.at(stage).at(columnIndex);
@@ -306,15 +312,10 @@ DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::ValidateAndUpdateField(std::unique_ptr<ECSqlField> field, Stage stage) {
+void PreparedECChangesetReader::AddField(std::unique_ptr<IECSqlValue> field, Stage stage) {
     BeAssert(field != nullptr);
     if (field != nullptr)
-        {
-        if (field->RequiresOnAfterStep())
-            m_fieldsRequiringOnAfterStep.push_back(field.get());
-
         m_fields[stage].push_back(std::move(field));
-        }
 }
 
 //---------------------------------------------------------------------------------------
@@ -331,7 +332,15 @@ DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
         LOG.errorv("Attempting to check IsECTable on a PreparedECChangesetReader that has not been stepped.");
         return BE_SQLITE_ERROR;
         }
-    Utf8String tableName = GetTableName();
+    if(!m_currentChange.IsValid())
+        {
+        LOG.errorv("Attempting to check IsECTable on an invalid change.");
+        return BE_SQLITE_ERROR;
+        }
+    
+    Utf8String tableName;
+    if(GetTableName(tableName) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
     CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT 1 FROM ec_Table WHERE Name=?");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;

@@ -143,7 +143,9 @@ ECDbAllHeaders = \
                 $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
                 $(baseDir)ClassViews.h \
+                $(baseDir)ChangesetValue.h \
                 $(baseDir)ChangesetFieldFactory.h \
+                $(baseDir)TableView.h \
                 $(baseDir)ECChangesetReaderImpl.h \
                 $(baseDir)PreparedECChangesetReader.h
 
@@ -260,6 +262,10 @@ $(o)ECChangesetReader$(oext):                                 $(baseDir)ECChange
 $(o)ECChangesetReaderImpl$(oext):                             $(baseDir)ECChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PreparedECChangesetReader$(oext):                         $(baseDir)PreparedECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetValue$(oext):                                    $(baseDir)ChangesetValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)TableView$(oext):                                         $(baseDir)TableView.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetFieldFactory$(oext):                             $(baseDir)ChangesetFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -378,7 +384,7 @@ $(o)VirtualSetBinder$(oext):                                  $(baseDir)ECSql/Vi
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlField$(oext):                                        $(baseDir)ECSql/ECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
+    
 $(o)ECSqlFieldFactory$(oext):                                 $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PrimitiveECSqlField$(oext):                               $(baseDir)ECSql/PrimitiveECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
