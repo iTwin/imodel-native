@@ -553,7 +553,7 @@ class BulkElementDeletion
     DgnDbR m_dgndb;
     DgnElementIdSet m_originalElementIds;
     DgnElementIdSet m_failedToDelete;
-    bool m_skipFkValidation = false;
+
     bool m_definitionElementsExist = false;
     bool m_subModelRootExists = false;
 
@@ -572,7 +572,7 @@ class BulkElementDeletion
     bool ExecuteDeletion();
 
 public:
-    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds, const bool skipFkValidation) : m_dgndb(dgndb), m_originalElementIds(originalElementIds), m_skipFkValidation(skipFkValidation) {}
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds) : m_dgndb(dgndb), m_originalElementIds(originalElementIds) {}
     DgnElementIdSet Execute();
     };
 
@@ -4068,20 +4068,21 @@ public:
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
     
-    /**
-     * Delete multiple DgnElements from this DgnDb, including their descendants.
-     *
-     * This method is intended for general non-definition elements.
-     * Definition elements need to be handled as per their usage which makes them a special case for element deletion.
-     * The handlers for definition elements veto deletion unless a purge operation is enabled.
-     * Hence, for bulk deletion of definition Elements, DeleteDefinitionElements API should be used instead.
-     * This method will fail to delete definition elements.
-     *
-     * @param[in] elementIds The element set to delete. Invalid Ids will be ignored.
-     * @return A DgnElementIdSet of valid element Ids that failed to delete (either vetoed or blocked by FK/code scope constraints).
-     * @note This function can only be safely invoked from the client thread.
-     */
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds, const bool skipFkValidation = false);
+    
+    //! Bulk-delete a set of elements from this DgnDb.
+    //!
+    //! This method resolves intra-set dependencies (parent-child hierarchies, code-scope relationships) before
+    //! attempting deletion, so callers may pass an entire sub-tree or a group of mutually-scoped elements
+    //! and expect them all to be removed in one call.
+    //!
+    //! @param[in] elementIds The set of element IDs to delete.  May contain IDs of any element type.
+    //!   Invalid IDs are ignored.  The set may include parent elements whose children are not
+    //!   explicitly listed; those children will be pulled in automatically.
+    //! @return The subset of elementIds whose elements could not be deleted because they
+    //!   are still referenced or are in use (definition elements) from outside the set.  An empty set means every requested element was
+    //!   deleted successfully.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

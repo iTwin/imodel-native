@@ -749,7 +749,7 @@ bool BulkElementDeletion::FindAndPruneInUseDefinitionElements()
         return false;
         }
     findDependentsStmt->BindVirtualSet(1, inUse);
-    if (const auto stat = findDependentsStmt->Step(); stat != BE_SQLITE_OK)
+    if (const auto stat = findDependentsStmt->Step(); stat != BE_SQLITE_DONE)
         {
         LOG.errorv("BulkElementDeletion: Failed to prune in-use definition elements: %s", BeSQLiteLib::GetLogError(stat).c_str());
         return false;
@@ -974,14 +974,14 @@ DgnElementIdSet BulkElementDeletion::Execute()
     if (!ExpandElementIdList())
         return m_originalElementIds;
 
-    if (!m_skipFkValidation && !FindAndPruneConstraintViolators())
+    if (!FindAndPruneConstraintViolators())
         return m_originalElementIds;
 
     // If definition elements exist in the delete set, check usage and null out any externally references type definitions
     if (!FindAndPruneInUseDefinitionElements())
         return m_originalElementIds;
 
-    if (!m_skipFkValidation && !FindAndNullTypeDefinitionReferences())
+    if (!FindAndNullTypeDefinitionReferences())
         return m_originalElementIds;
 
     // Fire the pre and post delete callbacks at once
@@ -1230,13 +1230,13 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds, const bool skipFkValidation)
+DgnElementIdSet DgnElements::DeleteElements(const DgnElementIdSet& elementIds)
     {
     DgnDb::VerifyClientThread();
     if (elementIds.empty())
         return {};
 
-    return BulkElementDeletion(m_dgndb, elementIds, skipFkValidation).Execute();
+    return BulkElementDeletion(m_dgndb, elementIds).Execute();
     }
 
 //---------------------------------------------------------------------------------------

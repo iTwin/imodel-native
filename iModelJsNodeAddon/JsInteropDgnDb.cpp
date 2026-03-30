@@ -696,8 +696,7 @@ DgnElementIdSet JsInterop::DeleteElements(DgnDbR dgndb, Napi::Array elementIds, 
         }
     }
 
-    BeJsConst deleteOptionsJson(deleteOptionsObj);
-    return dgndb.Elements().DeleteElements(elementIdSet, deleteOptionsJson.isObject() && deleteOptionsJson.Get(json_skipFkValidation()).asBool());
+    return dgndb.Elements().DeleteElements(elementIdSet);
 }
 
 /*---------------------------------------------------------------------------------**//**
