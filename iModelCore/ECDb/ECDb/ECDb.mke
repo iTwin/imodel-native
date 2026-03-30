@@ -125,7 +125,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/IdECSqlBinder.h \
                 $(baseDir)ECSql/VirtualSetBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
-                $(baseDir)ECSql/IDbRow.h \
                 $(baseDir)ECSql/ECSqlField.h \
                 $(baseDir)ECSql/PointECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \
@@ -272,8 +271,6 @@ $(o)ChangesetFieldFactory$(oext):                             $(baseDir)Changese
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ClassIdECSqlField$(oext):                                 $(baseDir)ECSql/ClassIdECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DynamicSelectClauseECClass$(oext):                        $(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
