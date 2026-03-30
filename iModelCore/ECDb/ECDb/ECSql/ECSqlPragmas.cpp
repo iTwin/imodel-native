@@ -662,10 +662,14 @@ DbResult PragmaECSqlVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, c
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult PragmaSqliteSql::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, const PragmaVal& val, const PragmaManager::OptionsMap& options) {
-    if (!val.IsString()) {
+    if (!val.IsString() || val.GetString().empty()) {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0601, "PRAGMA %s expect a ECSQL query as string argument.", GetName().c_str());
         return BE_SQLITE_ERROR;
     }
+    // Validate the ECSQL at prepare time so callers can detect invalid input from Prepare()
+    ECSqlStatement validationStmt;
+    if (ECSqlStatus::Success != validationStmt.Prepare(const_cast<ECDbR>(ecdb), val.GetString().c_str()))
+        return BE_SQLITE_ERROR;
     auto result = std::make_unique<PragmaVirtualTabResult>(ecdb);
     result->AppendProperty("sqlite_sql", PRIMITIVETYPE_String);
     result->FreezeSchemaChanges();
