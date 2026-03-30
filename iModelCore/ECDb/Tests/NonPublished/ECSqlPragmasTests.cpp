@@ -312,8 +312,11 @@ TEST_F(ECSqlPragmasTestFixture, purge_orphan_relationships)
         ECSqlStatement stmt;
         ASSERT_EQ(expectedOutput, stmt.Prepare(m_ecdb, ecsql).Get()) << "Test case " << testCaseNumber << " failed";
 
-        if (expectedOutput == ECSqlStatus::Status::Success)
+        if (expectedOutput == ECSqlStatus::Status::Success) {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Test case " << testCaseNumber << " failed";
+            ASSERT_STREQ("ok", stmt.GetValueText(0)) << "Test case " << testCaseNumber << " failed";
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed";
+            }
         }
     }
 
@@ -479,6 +482,8 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma purge_orphan_relationships options enable_experimental_features"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("ok", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
