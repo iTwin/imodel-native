@@ -739,6 +739,8 @@ TEST_F(InstanceReaderFixture, AmbiguousInstanceQuery) {
 
     // The error message should indicate ambiguous $ (instance query)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, status);
+    for (auto const& issue : listener.m_issues)
+        printf("ISSUE: [%s]\n", issue.message.c_str());
     ASSERT_TRUE(listener.HasMessage("In expression '$->COBIE', $ is ambiguous"));
 }
 
@@ -817,8 +819,14 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
     }
 
     if ("optional property must not be part of class_props filter") {
+        TestIssueListener optListener;
+        m_ecdb.AddIssueListener(optListener);
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE $->Url? = 'file:///d|/dgn/rf2.dgn'"));
+        ECSqlStatus optStatus = stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE $->Url? = 'file:///d|/dgn/rf2.dgn'");
+        for (auto const& issue : optListener.m_issues)
+            printf("OPT_ISSUE: [%s]\n", issue.message.c_str());
+        m_ecdb.RemoveIssueListener();
+        ASSERT_EQ(ECSqlStatus::Success, optStatus);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(0x21, stmt.GetValueId<ECInstanceId>(0).GetValue());
         ASSERT_EQ(0xa9, stmt.GetValueId<ECClassId>(1).GetValue());
