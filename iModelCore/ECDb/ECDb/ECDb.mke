@@ -381,7 +381,7 @@ $(o)VirtualSetBinder$(oext):                                  $(baseDir)ECSql/Vi
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlField$(oext):                                        $(baseDir)ECSql/ECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-    
+
 $(o)ECSqlFieldFactory$(oext):                                 $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PrimitiveECSqlField$(oext):                               $(baseDir)ECSql/PrimitiveECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
