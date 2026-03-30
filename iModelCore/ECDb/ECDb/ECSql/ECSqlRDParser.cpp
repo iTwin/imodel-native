@@ -2370,7 +2370,7 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
             if (SUCCESS != ParsePropertyPathInline(rhsPath))
                 return ERROR;
             bool isOptional = false;
-            if (At(ECSqlTokenType::Question)) { isOptional = true; Advance(); }
+            if (At(ECSqlTokenType::Parameter)) { isOptional = true; Advance(); }
             exp = std::make_unique<ExtractPropertyValueExp>(pp, rhsPath, isOptional);
             }
         else
@@ -2504,7 +2504,7 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
                 if (SUCCESS != ParsePropertyPathInline(rhsPath))
                     return ERROR;
                 bool isOptional = false;
-                if (At(ECSqlTokenType::Question)) { isOptional = true; Advance(); }
+                if (At(ECSqlTokenType::Parameter)) { isOptional = true; Advance(); }
                 exp = std::make_unique<ExtractPropertyValueExp>(srcPath, rhsPath, isOptional);
                 }
             else
@@ -2584,7 +2584,7 @@ BentleyStatus ECSqlRDParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, bool
             if (SUCCESS != ParsePropertyPathInline(rhsPath))
                 return ERROR;
             bool isOptional = false;
-            if (At(ECSqlTokenType::Question)) { isOptional = true; Advance(); }
+            if (At(ECSqlTokenType::Parameter)) { isOptional = true; Advance(); }
             if (!InstanceValueExp::IsInstancePath(propPath))
                 {
                 Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0609,
