@@ -57,7 +57,7 @@ struct PragmaHelpModule : BeSQLite::DbModule {
         out = new Table(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
     }
     static void Register(ECDbR ecdb, PragmaManager& mgr) {
-        (new PragmaHelpModule(ecdb, mgr))->Register();
+        (new PragmaHelpModule(ecdb, mgr))->BeSQLite::DbModule::Register();
     }
 };
 
@@ -75,7 +75,8 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
         result->AppendProperty("type", PRIMITIVETYPE_String);
         result->AppendProperty("descr", PRIMITIVETYPE_String);
         result->FreezeSchemaChanges();
-        if (BE_SQLITE_OK != result->PrepareQuery("SELECT * FROM " PragmaHelpModule::NAME "()"))
+        Utf8String sql = Utf8String("SELECT * FROM ") + PragmaHelpModule::NAME + "()";
+        if (BE_SQLITE_OK != result->PrepareQuery(sql.c_str()))
             return BE_SQLITE_ERROR;
         rowSet = std::move(result);
         return BE_SQLITE_OK;
@@ -191,9 +192,11 @@ PragmaColumnValue StaticPragmaResult::_GetCurrentValue(int col) const {
     if (v.isString())
         return PragmaColumnValue((Utf8CP)v.asCString());
     if (v.isNumeric()) {
-        if (v.isDouble())
-            return PragmaColumnValue(v.asDouble());
-        return PragmaColumnValue(v.asInt64());
+        int64_t i = v.asInt64();
+        double d = v.asDouble();
+        if (d == static_cast<double>(i))
+            return PragmaColumnValue(i);
+        return PragmaColumnValue(d);
     }
     return PragmaColumnValue();
 }

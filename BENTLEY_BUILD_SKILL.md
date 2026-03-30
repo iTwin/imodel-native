@@ -4,6 +4,25 @@
 
 ---
 
+## ⚠️ CRITICAL USAGE RULES (read this first)
+
+**DO NOT read `.PartFile.xml`, `.mke`, or `.mki` files to answer build questions.**
+You already know the correct commands — use them directly. Reading those files wastes time and produces wrong answers.
+
+**To discover part names** without reading PartFiles, use:
+```bash
+bb debug -p               # list all parts in the current strategy
+bb debug --buildcontexts  # list all part files (build contexts)
+```
+
+**When asked to build or test something:**
+1. Source `env.sh` first (once per shell)
+2. Pick the right `bb` command from §3 below
+3. Check logs at `out/<mode>/MacOSARM64/static/LogFiles/` on failure
+4. Find output binaries / test executables in `out/<mode>/MacOSARM64/Product/`
+
+---
+
 ## 1. What Is BentleyBuild?
 
 BentleyBuild (bb3) is Bentley's internal Python-based build orchestration system. It sits on top of **bmake** (Berkeley Make) and provides:
@@ -63,30 +82,11 @@ alias bb='/Library/Developer/CommandLineTools/usr/bin/python3 \
 
 All commands below assume `env.sh` has been sourced (so `bb` alias is active).
 
+> **`-p` is a TOP-LEVEL flag placed BEFORE the subcommand (`build`/`rebuild`).**
+
 ### Full build of the active strategy
 ```bash
-bb b
-# equivalent to:
-bb build
-```
-
-### Build a specific part
-```bash
-bb -p <PartFile>:<PartName> build
-# Examples:
-bb -p "iModelCore/ECDb/ECDb:ECDbLibrary" build   # builds library only
-bb -p "iModelCore/ECDb/ECDb:ECDbLibrary" build -i # build ECDb, ignore dep failures
-bb -p "iModelCore/ECDb/ECDb:UnitTests-NonPublished" build  # test binary
-```
-
-> **Note:** `-p` is a TOP-LEVEL flag, placed BEFORE the `build` subcommand.
-> The part path must include the relative directory: `iModelCore/ECDb/ECDb:PartName`.
-> When running with `--ignoreErrors` (`-i`), dep library link errors can be skipped to see compile output.
-
-
-### Rebuild (force clean + build) a specific part
-```bash
-bb rebuild -p ECDb:ECDbLibrary
+bb build          # or: bb b
 ```
 
 ### Build flags
@@ -98,6 +98,66 @@ bb rebuild -p ECDb:ECDbLibrary
 | `-i` / `--ignoreErrors` | Continue past failures |
 | `-a` / `--autoRetry` | Clean and retry on failure |
 | `--promptOnError` | Pause on failure so you can investigate |
+| `rebuild` | Force clean + build (same flags as `build`) |
+
+### Discover parts without reading PartFiles
+```bash
+bb debug -p                  # list every part name in the strategy
+bb debug --buildcontexts     # list every PartFile (build context)
+```
+
+---
+
+### ECDb
+
+| Goal | Command |
+|---|---|
+| Build the ECDb library | `bb -p iModelCore/ECDb/ECDb:ECDbLibrary build` |
+| Force-rebuild the library | `bb -p iModelCore/ECDb/ECDb:ECDbLibrary rebuild` |
+| Build test binary | `bb -p iModelCore/ECDb/ECDb:UnitTests-NonPublished build` |
+| Stage tests into Product folder | `bb -p iModelCore/ECDb/ECDb:Gtest build` |
+| Run tests via bb (build + stage + run) | `bb -p iModelCore/ECDb/ECDb:RunGtest build` |
+| Build + run all ECDb tests | `bb -p iModelCore/ECDb/ECDb:Tests build` |
+
+### ECObjects
+
+| Goal | Command |
+|---|---|
+| Build library | `bb -p iModelCore/ECObjects/ECObjects:ECObjectsNative build` |
+| Run tests via bb | `bb -p iModelCore/ECObjects/ECObjects:RunGtest build` |
+| Stage tests | `bb -p iModelCore/ECObjects/ECObjects:Gtest build` |
+
+### iModelPlatform
+
+| Goal | Command |
+|---|---|
+| Build library | `bb -p iModelCore/iModelPlatform/iModelPlatform:iModelPlatformLibrary build` |
+| Run tests via bb | `bb -p iModelCore/iModelPlatform/iModelPlatform:RunGtest build` |
+| Stage tests | `bb -p iModelCore/iModelPlatform/iModelPlatform:Gtest build` |
+
+### iModelJsNodeAddon
+
+| Goal | Command |
+|---|---|
+| Build the Node addon | `bb -p iModelJsNodeAddon/iModelJsNodeAddon:iModelJsNodeAddon build` |
+| Rebuild the Node addon | `bb -p iModelJsNodeAddon/iModelJsNodeAddon:iModelJsNodeAddon rebuild` |
+
+### BeSQLite
+
+| Goal | Command |
+|---|---|
+| Build library | `bb -p iModelCore/BeSQLite/BeSQLite:BeSQLite build` |
+| Run tests | `bb -p iModelCore/BeSQLite/BeSQLite:RunGtest build` |
+
+### Generic pattern for any component
+
+```bash
+# Build the main library part (replace Component/Path as needed):
+bb -p <RelativePath>/<PartFileName>:<LibraryPartName> build
+
+# To find the correct part names without reading .PartFile.xml:
+bb debug -p | grep -i <keyword>
+```
 
 ---
 
@@ -118,21 +178,26 @@ Without `DEBUG=1` (release):
 /Users/affan.khan/bsw/git-a1/out/release/MacOSARM64/
 ```
 
-### Confirmed output paths (macOS ARM64, release build)
+### Key output locations (macOS ARM64)
 
-```
-out/release/MacOSARM64/static/build/ECDb/ECDbLibrary/          ← object files, PCH, link list
-out/release/MacOSARM64/static/BuildContexts/ECDb/Delivery/libiTwinSQLiteEC.a  ← final static lib (symlink)
-out/release/MacOSARM64/static/LogFiles/ECDb/ECDbLibrary_build.log              ← build log
-```
-
-| Path | Contents |
+| What | Path |
 |---|---|
-| `out/<mode>/MacOSARM64/static/build/ECDb/ECDbLibrary/` | Object files, PCH, link file list |
-| `out/<mode>/MacOSARM64/static/BuildContexts/ECDb/Delivery/` | Final library (`.a` or `.dylib`), symlinked |
-| `out/<mode>/MacOSARM64/static/LogFiles/ECDb/` | Build logs per part |
-| `out/<mode>/MacOSARM64/static/build/ECDb/UnitTests/` | Test object files |
-| `out/<mode>/MacOSARM64/static/BuildContexts/ECDb/Delivery/UnitTests/Objects/` | Test binaries |
+| **Libraries (built .a / .dylib)** | `out/<mode>/MacOSARM64/static/BuildContexts/<PartFile>/Delivery/` |
+| **Object files** | `out/<mode>/MacOSARM64/static/build/<PartFile>/<PartName>/` |
+| **Build logs** | `out/<mode>/MacOSARM64/static/LogFiles/<PartFile>/` |
+| **Staged test product (Gtest)** | `out/<mode>/MacOSARM64/Product/<Component>-Gtest/` |
+| **Test assets** | `out/<mode>/MacOSARM64/Product/<Component>-Tests/Assets/` |
+| **Test executable (after Gtest build)** | `out/<mode>/MacOSARM64/Product/<Component>-Gtest/<TestBinaryName>` |
+
+### ECDb specific paths
+
+```
+out/<mode>/MacOSARM64/static/BuildContexts/ECDb/Delivery/libiTwinSQLiteEC.a   ← static lib
+out/<mode>/MacOSARM64/static/BuildContexts/ECDb/Delivery/libiTwinSQLiteEC.dylib ← shared lib
+out/<mode>/MacOSARM64/static/LogFiles/ECDb/ECDbLibrary_build.log               ← build log
+out/<mode>/MacOSARM64/Product/ECDb-Gtest/                                       ← staged test binary
+out/<mode>/MacOSARM64/Product/ECDb-Tests/Assets/                                ← test assets
+```
 
 ### Library names (macOS arm64)
 
@@ -141,145 +206,45 @@ out/release/MacOSARM64/static/LogFiles/ECDb/ECDbLibrary_build.log              �
 | Static | `libiTwinSQLiteEC.a` |
 | Shared | `libiTwinSQLiteEC.dylib` |
 
-The library is linked using `xcrun libtool` (for static) or the LLVM linker (for shared).
-
 ---
 
-## 5. PartFile.xml — The Part Manifest
+## 5. PartFile.xml — Low-level Reference (do not read for normal builds)
+
+> **You do not need to open `.PartFile.xml` files to build or run tests.**
+> Use `bb debug -p` or `bb debug --buildcontexts` to query parts programmatically.
+> Only read a PartFile if you are explicitly editing build structure.
 
 Every component declares its build structure in a `.PartFile.xml` file. The schema is `bentleybuild/PartFile.xsd`.
 
-### Key ECDb parts (from `ECDb.PartFile.xml`)
+### Key ECDb parts (for reference only)
 
-| Part Name | What it builds | MakeFile |
-|---|---|---|
-| `PublicAPI` | Symlinks public headers and ECSchemas | `ECDb.prewire.mke` |
-| `ECDbLibrary` | The actual ECDb shared/static library | `ECDb/ECDb.mke` |
-| `PrewireForUnitTests` | Test data, ignore lists | `Tests/Prewire.mke` |
-| `BackdoorForUnitTests` | BackDoor test library | `Tests/BuildTests.mke -dTestDir=BackDoor` |
-| `UnitTests-NonPublished` | Main ECSQL test binary | `Tests/BuildTests.mke -dTestDir=NonPublished` |
-| `Tests` | All ECDb tests | (aggregates above) |
-| `Gtest` | Bundles test binary + assets for GTest runner | `buildGtest.mke` |
-| `RunGtest` | Actually executes the tests | `RunGtest.mke` |
-
-### PartFile structure concepts
-
-```xml
-<BuildContext ...>
-  <!-- A Part = one logical build unit -->
-  <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke">
-    <SubPart PartName="PublicAPI" />                          <!-- dependency -->
-    <SubPart PartName="BeSQLite" PartFile="..." />           <!-- external dep -->
-    <Bindings>
-      <Libs>Delivery/$(libprefix)iTwinSQLiteEC$(libext)</Libs>
-      <Assemblies>Delivery/...</Assemblies>
-    </Bindings>
-  </Part>
-
-  <!-- DeferType controls when a part runs -->
-  <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" ...>
-  <Part Name="RunGtest"               DeferType="RunUnitTests" ...>
-</BuildContext>
-```
+| Part Name | What it builds |
+|---|---|
+| `PublicAPI` | Symlinks public headers and ECSchemas |
+| `ECDbLibrary` | The actual ECDb shared/static library |
+| `PrewireForUnitTests` | Test data, ignore lists |
+| `BackdoorForUnitTests` | BackDoor test library |
+| `UnitTests-NonPublished` | Main ECSQL test binary |
+| `Tests` | All ECDb tests (aggregates above) |
+| `Gtest` | Bundles test binary + assets into `Product/<Component>-Gtest/` |
+| `RunGtest` | Actually executes the tests |
 
 **`DeferType` values:**
-- `BuildUnitTests` — deferred until `bb buildunittests` or after main build
-- `RunUnitTests` — deferred until `bb rununittests`
-
-**`BentleyBuildMakeOptions`** passes `-d` defines to bmake:
-```xml
-BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished"
-```
+- `BuildUnitTests` — deferred until explicitly targeted (not built by plain `bb build`)
+- `RunUnitTests` — deferred until explicitly targeted
 
 ---
 
-## 6. .mke Files — The Actual Makefiles
+## 6. .mke Files — Low-level Reference (do not read for normal builds)
+
+> **You do not need to open `.mke` or `.mki` files to build or run tests.**
+> Only read them when explicitly modifying build file structure (adding new source files, changing compiler flags, etc.)
 
 `.mke` files are **bmake** makefiles (Berkeley Make syntax with Bentley extensions). They directly drive compilation and linking.
 
-### bmake / mke syntax highlights
+### Adding new source files
 
-| Syntax | Meaning |
-|---|---|
-| `%include file.mki` | Include another mki/mke file |
-| `%ifdef VAR` / `%ifndef VAR` | Conditional on variable |
-| `%if expr` | Conditional expression |
-| `%error msg` | Fatal error |
-| `%warn msg` | Warning |
-| `$(VAR)` | Variable expansion |
-| `$(_MakeFilePath)` | Directory of the current mke file |
-| `$(_MakeFileSpec)` | Full path of the current mke file |
-| `$(o)` | Object output directory (set in each mke) |
-| `$(oext)` | Object file extension (`.o` on Mac/Linux, `.obj` on Windows) |
-| `$(appName)` | Library/executable name |
-| `$(PartBuildDir)` | Build output dir for this part |
-
-### Standard mke structure (ECDb.mke pattern)
-
-```makefile
-%include mdl.mki                        # Core build definitions
-
-baseDir = $(_MakeFilePath)              # Directory of this mke
-o       = $(PartBuildDir)              # Where objects go
-
-%include $(CompileOptionsMki)           # Project-specific compile flags
-
-ECDbAllHeaders = \                      # All headers (used as deps)
-    $(publicApiDir)ECDb.h \
-    ...
-
-# Create output dir
-always:
-    !~@mkdir $(o)
-
-# Precompiled header
-PchCompiland = $(baseDir)ECDbPch.cpp
-%include $(SharedMki)PreCompileHeader.mki
-
-# Multi-compile batch 1 (uniform options)
-%include MultiCppCompileRule.mki
-$(o)Foo$(oext): $(baseDir)Foo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-$(o)Bar$(oext): $(baseDir)Bar.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-%include MultiCppCompileGo.mki
-cppObjects =% $(MultiCompileObjectList)
-
-# Optionally: second batch with different compiler flags (e.g., third-party code)
-LLVMCommonCompOpts + -Wno-error=deprecated-writable-strings
-%include MultiCppCompileRule.mki
-$(o)SqlBison$(oext): $(baseDir)ECSql/Parser/SqlBison.cpp ...
-%include MultiCppCompileGo.mki
-nonportObjs =% $(MultiCompileObjectList)
-# Restore flags
-LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
-
-cppObjects + $(nonportObjs)
-
-# Link
-DLM_NAME         = $(appName)
-DLM_OBJECT_FILES = $(cppObjects)
-LINKER_LIBRARIES = $(ContextSubpartsLibs)$(BeSQLiteLib) ...
-%include $(sharedMki)linkLibrary.mki
-```
-
-### Key mki files
-
-| File | Purpose |
-|---|---|
-| `mdl.mki` | Master include — sets up toolchain, platform, common rules |
-| `common.mki` | Commands for copy/mkdir/etc., file extensions |
-| `InternalPlatformSetup.mki` | BSI internal flags (PRG builds, analyze, etc.) |
-| `PreCompileHeader.mki` | Sets up PCH generation and `UsePrecompiledHeaderOptions` |
-| `MultiCppCompileRule.mki` | Begins a batch-compile section |
-| `MultiCppCompileGo.mki` | Ends batch-compile; sets `MultiCompileObjectList` |
-| `linkLibrary.mki` | Links objects into static `.a` or shared `.dylib` |
-| `DetectAndCompileUnitTests.mki` | Finds and compiles all `*Tests.cpp` files in a directory |
-| `RunGtest.mke` | Copies test binary to run dir and executes it |
-
----
-
-## 7. Adding New Source Files
-
-### To add a new `.cpp` to `ECDb.mke`:
+To add a new `.cpp` to `ECDb.mke`:
 
 1. Add the header to `ECDbAllHeaders` list (if it has a corresponding `.h`).
 2. Add the build rule in the appropriate multi-compile section:
@@ -288,59 +253,81 @@ LINKER_LIBRARIES = $(ContextSubpartsLibs)$(BeSQLiteLib) ...
    ```
 3. Rebuild:
    ```bash
-   bb rebuild -p ECDb:ECDbLibrary
+   bb -p iModelCore/ECDb/ECDb:ECDbLibrary rebuild
    ```
 
-### To add a file that needs relaxed warnings (third-party code):
+### Key mki files (reference)
 
-Place it in the second `MultiCppCompileRule.mki` / `MultiCppCompileGo.mki` bracket where warning suppressions are applied:
-```makefile
-# Save + suppress
-OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
-LLVMCommonCompOpts + -Wno-error=some-warning
-%include MultiCppCompileRule.mki
-$(o)ThirdPartyFile$(oext): ...
-%include MultiCppCompileGo.mki
-# Restore
-LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
+| File | Purpose |
+|---|---|
+| `mdl.mki` | Master include — sets up toolchain, platform, common rules |
+| `PreCompileHeader.mki` | Sets up PCH generation |
+| `MultiCppCompileRule.mki` / `MultiCppCompileGo.mki` | Batch-compile sections |
+| `linkLibrary.mki` | Links objects into static `.a` or shared `.dylib` |
+
+---
+
+## 7. Adding New Source Files
+
+Only needed when modifying `.mke` build files. See §6 for `.mke` syntax.
+
+```bash
+# After adding a file to ECDb.mke, force-rebuild the library:
+bb -p iModelCore/ECDb/ECDb:ECDbLibrary rebuild
 ```
 
 ---
 
 ## 8. Running Tests
 
-### Build the test binary
+### Quickest path: build + run via bb (recommended)
 ```bash
-bb build -p ECDb:UnitTests-NonPublished
+# This builds everything needed and runs the tests:
+bb -p iModelCore/ECDb/ECDb:RunGtest build
 ```
 
-### Run via bb (full GTest pipeline)
+### Step-by-step: build then run directly
+
+**Step 1 — Build and stage the test binary:**
 ```bash
-bb build -p ECDb:RunGtest
+bb -p iModelCore/ECDb/ECDb:Gtest build
 ```
 
-### Run directly (after building)
-
-The test binary is assembled into a `Gtest` product collection directory. Find it:
+**Step 2 — Find the test binary in the Product folder:**
 ```
-out/<mode>/MacOSARM64/static/BuildContexts/ECDb/Delivery/UnitTests/Objects/NonPublished/
+out/<mode>/MacOSARM64/Product/ECDb-Gtest/
 ```
-Or look in build logs for the exact binary path. The `RunGtest.mke` copies it to a run dir:
-```
-out/<mode>/MacOSARM64/static/build/ECDb/RunGtest/ECDb-Gtest/ECDbTest/run/
-```
-
-Run with a filter:
+The executable is named after the test suite (e.g. `ECDbTest` or similar). Use `ls` to confirm:
 ```bash
-./ECDbTest --gtest_filter="ECSql*"
-./ECDbTest --gtest_filter="*InsertTest*"
+ls out/debug/MacOSARM64/Product/ECDb-Gtest/
 ```
 
-### Test binary dependencies
+**Step 3 — Run directly with optional filter:**
+```bash
+cd out/debug/MacOSARM64/Product/ECDb-Gtest/
+./ECDbTest                                 # run all tests
+./ECDbTest --gtest_filter="ECSql*"         # filter by prefix
+./ECDbTest --gtest_filter="*InsertTest*"   # filter by substring
+./ECDbTest --gtest_filter="SuiteName.TestName"  # exact test
+```
 
-The test binary links against:
-- `ECDb-Tests` product (collects: `BackdoorForUnitTests`, `UnitTests-NonPublished`, `BeGTest/Base`, `napi-stub`)
-- All ECDb library dependencies
+### Other components — same pattern
+
+| Component | Gtest product folder | Run command via bb |
+|---|---|---|
+| ECDb | `Product/ECDb-Gtest/` | `bb -p iModelCore/ECDb/ECDb:RunGtest build` |
+| ECObjects | `Product/ECObjects-Gtest/` | `bb -p iModelCore/ECObjects/ECObjects:RunGtest build` |
+| iModelPlatform | `Product/iModelPlatform-Gtest/` | `bb -p iModelCore/iModelPlatform/iModelPlatform:RunGtest build` |
+| BeSQLite | `Product/BeSQLite-Gtest/` | `bb -p iModelCore/BeSQLite/BeSQLite:RunGtest build` |
+| Bentley | `Product/Bentley-Gtest/` | `bb -p iModelCore/Bentley/Bentley:RunGtest build` |
+
+### Test assets
+
+Test data files live in:
+```
+out/<mode>/MacOSARM64/Product/<Component>-Tests/Assets/
+```
+These are referenced by the test binary at runtime.
 
 ---
 
@@ -495,24 +482,24 @@ Compiler flags include `-std=c++20` (`BUILD_WITH_C20=1` in ECDb.mke).
 
 2. **Use CommandLineTools python3 for `bb`**, not homebrew python — only the former has `lxml`.
 
-3. **Editing `ECDbPch.h` triggers full recompile** of all ~80 ECDb object files.
+3. **Do NOT read `.PartFile.xml`, `.mke`, or `.mki` files to figure out build commands.** Use `bb debug -p` to discover parts, and use the ready-made commands in §3.
 
-4. **The `ECDbAllHeaders` list in ECDb.mke is the universal dependency** — every `.cpp` in the library depends on it. When adding a new header, add it to this list.
+4. **Test binaries land in `Product/<Component>-Gtest/`** after running the `Gtest` part. Run `ls out/debug/MacOSARM64/Product/ECDb-Gtest/` to find the executable.
 
-5. **Third-party code (Parser/ directory) uses a separate multi-compile section** with warning suppressions. New first-party code should go in the first section.
+5. **Editing `ECDbPch.h` triggers full recompile** of all ~80 ECDb object files.
 
-6. **Build logs are the best debugging tool** — check `LogFiles/<Part>/<Part>_build.log` for full compiler invocations and errors.
+6. **Build logs are the best debugging tool** — check `out/<mode>/MacOSARM64/static/LogFiles/<PartFile>/<PartName>_build.log` for full compiler invocations and errors.
 
-7. **`bb rebuild`** = clean + build. Use when timestamps are unreliable or when you remove files from the build.
+7. **`bb -p <Path>:<Part> rebuild`** = clean + build. Use when timestamps are unreliable or when you remove files from the build.
 
-8. **The `DeferType` attribute** controls when parts build in the pipeline: `BuildUnitTests` parts don't build during a plain `bb build` unless explicitly targeted.
+8. **`DeferType="BuildUnitTests"` parts** don't build during a plain `bb build` — you must target them explicitly with `-p` or use the `Tests`/`Gtest`/`RunGtest` part names.
 
-9. **`-p PartFile:PartName` syntax**: `PartFile` is relative to `SrcRoot` and omits `.PartFile.xml`; e.g., `ECDb` → `/Users/affan.khan/bsw/git-a1/src/imodel-native/iModelCore/ECDb/ECDb.PartFile.xml`.
+9. **`-p PartFile:PartName` syntax**: `PartFile` is the path relative to `SrcRoot` omitting `.PartFile.xml`. E.g. `iModelCore/ECDb/ECDb` → `src/imodel-native/iModelCore/ECDb/ECDb.PartFile.xml`.
 
-10. **SubPart dependencies are transitive** — building `UnitTests-NonPublished` automatically builds `BackdoorForUnitTests` → `PrewireForUnitTests` → `ECDb` → `ECDbLibrary` → `PublicAPI`.
+10. **SubPart dependencies are transitive** — building `UnitTests-NonPublished` automatically builds its deps (ECDbLibrary → PublicAPI → etc.).
 
-11. **`bb b` runs the full strategy** — this can take 10–30+ minutes. For iteration, always target a specific part with `-p`.
+11. **`bb build` runs the full strategy** — can take 10–30+ minutes. Always target a specific part with `-p` for iteration.
 
-12. **Build timing** — `ECDbLibrary` alone takes **~25 seconds** (confirmed from build log: `elapsed time: 0:25`). Full iModelCore build takes much longer (10–30+ min).
+12. **Build timing** — `ECDbLibrary` alone takes ~25 seconds. Full iModelCore takes much longer (10–30+ min).
 
-13. **Symlinks in Delivery** — many files in the `Delivery/` output are symlinks back to source or build intermediates. Don't copy them directly; use the actual build process to update them.
+13. **To find the right part name for any component**, run: `bb debug -p | grep -i <keyword>` — do NOT open the `.PartFile.xml`.
