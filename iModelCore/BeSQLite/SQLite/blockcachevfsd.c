@@ -1242,7 +1242,7 @@ static void bdListen(DaemonCtx *p){
 #endif
 
   for(i=0; i<nAttempt; i++){
-    int iPort = p->cmd.iPort ? p->cmd.iPort : 22002+i;
+    int iPort = p->cmd.iPort ? p->cmd.iPort : 22003+i; // BENTLEY CHANGE
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     if( p->cmd.zAddr ){
@@ -1266,7 +1266,7 @@ static void bdListen(DaemonCtx *p){
   }
 
   fatal_error("failed to bind to localhost port - tried %d to %d", 
-      22002, 22002+nAttempt-1
+      22003, 22003+nAttempt-1 // BENTLEY CHANGE
   );
 }
 
