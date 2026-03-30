@@ -12,6 +12,55 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//=======================================================================================
+//! Tagged union representing a single column value returned by a pragma result row.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaColumnValue final {
+    enum class Type { Null, Int64, Double, String, Bool };
+
+private:
+    Type m_type;
+    int64_t m_int64 = 0;
+    double m_double = 0.0;
+    Utf8String m_string;
+    bool m_bool = false;
+
+public:
+    PragmaColumnValue() : m_type(Type::Null) {}
+    explicit PragmaColumnValue(int64_t v) : m_type(Type::Int64), m_int64(v) {}
+    explicit PragmaColumnValue(double v) : m_type(Type::Double), m_double(v) {}
+    explicit PragmaColumnValue(Utf8CP v) : m_type(Type::String), m_string(v != nullptr ? v : "") {}
+    explicit PragmaColumnValue(Utf8StringCR v) : m_type(Type::String), m_string(v) {}
+    explicit PragmaColumnValue(bool v) : m_type(Type::Bool), m_bool(v) {}
+
+    bool IsNull() const { return m_type == Type::Null; }
+    Type GetType() const { return m_type; }
+
+    int64_t AsInt64() const {
+        if (m_type == Type::Int64) return m_int64;
+        if (m_type == Type::Bool)  return m_bool ? 1 : 0;
+        if (m_type == Type::Double) return (int64_t)m_double;
+        return 0;
+    }
+    double AsDouble() const {
+        if (m_type == Type::Double) return m_double;
+        if (m_type == Type::Int64)  return (double)m_int64;
+        if (m_type == Type::Bool)   return m_bool ? 1.0 : 0.0;
+        return 0.0;
+    }
+    Utf8CP AsCString() const {
+        if (m_type == Type::String) return m_string.c_str();
+        return nullptr;
+    }
+    bool AsBool() const {
+        if (m_type == Type::Bool)   return m_bool;
+        if (m_type == Type::Int64)  return m_int64 != 0;
+        if (m_type == Type::Double) return m_double != 0.0;
+        return false;
+    }
+};
+
 struct PragmaManager;
 //=======================================================================================
 // @bsiclass
@@ -49,7 +98,7 @@ struct PragmaResult : NonCopyableClass{
         virtual DbResult _Step() = 0;
         virtual DbResult _Reset() = 0;
         virtual DbResult _Init() = 0;
-        virtual BeJsValue* _CurrentRow() = 0;
+        virtual PragmaColumnValue _GetCurrentValue(int col) const = 0;
 
         ECDbCR m_ecdb;
         mutable BeMutex m_mutex;
@@ -176,7 +225,18 @@ public:
     BentleyStatus Register(std::unique_ptr<Handler>);
     DbResult Prepare(RowSet&, PragmaStatementExp const& exp) const;
     ECDbCR GetECDb() const { return m_ecdb; }
+    //! Iterate every registered handler. Fn receives a const Handler&.
+    template<typename Fn>
+    void ForEachHandler(Fn&& fn) const {
+        for (auto& typeMap : m_handlers)
+            for (auto& entry : typeMap.second)
+                fn(*entry.second);
+    }
 };
+
+//! Registers the pragma_help vtab module on the given ECDb connection.
+//! Declared here so ECDbImpl.cpp can call it; defined in PragmaECSqlPreparedStatement.cpp.
+void RegisterPragmaHelpModule(ECDbR ecdb, PragmaManager& mgr);
 
 //=======================================================================================
 // @bsiclass
@@ -189,7 +249,8 @@ struct StaticPragmaResult final : public PragmaResult {
         DbResult _Step()  override;
         DbResult _Reset() override;
         DbResult _Init() override;
-        BeJsValue* _CurrentRow() override;
+        BeJsValue* _CurrentRowJson();
+        PragmaColumnValue _GetCurrentValue(int col) const override;
 
     public:
         explicit StaticPragmaResult(ECDbCR ecdb): PragmaResult(ecdb),m_curRow(-1) {}
