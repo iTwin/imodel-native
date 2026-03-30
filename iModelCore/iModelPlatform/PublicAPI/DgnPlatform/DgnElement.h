@@ -556,9 +556,10 @@ class BulkElementDeletion
 
     bool m_definitionElementsExist = false;
     bool m_subModelRootExists = false;
+    bool m_tempTableExists = false;
 
     // Create temporary tables for bulk deletion
-    bool CreateTempTables() const;
+    bool CreateTempTables();
     bool ExpandElementIdList() const;
 
     // Find and prune constraint violators

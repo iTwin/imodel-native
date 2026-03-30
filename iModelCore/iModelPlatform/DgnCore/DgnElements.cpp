@@ -470,37 +470,54 @@ DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BulkElementDeletion::CreateTempTables() const
+bool BulkElementDeletion::CreateTempTables()
     {
     // Create a temp table to hold the entries for the elements to be deleted
-    auto stat = m_dgndb.CreateTableIfNotExists(TEMP_TABLE(TEMP_ELEMENT_DELETION), 
-    R"sql(
-        ElementId       INTEGER PRIMARY KEY,
-        LogicalParentId INTEGER,
-        IsSubModelRoot  INTEGER NOT NULL DEFAULT 0,
-        Depth           INTEGER NOT NULL DEFAULT 0,
-        IsViolator      INTEGER NOT NULL DEFAULT 0
-    )sql");
-    if (stat != BE_SQLITE_OK)
+    if (!m_tempTableExists)
         {
-        LOG.errorv("Error creating temp table %s: %s", TEMP_TABLE(TEMP_ELEMENT_DELETION), BeSQLiteLib::GetLogError(stat).c_str());
-        return false;
+        auto stat = m_dgndb.CreateTableIfNotExists(TEMP_TABLE(TEMP_ELEMENT_DELETION), 
+        R"sql(
+            ElementId       INTEGER PRIMARY KEY,
+            LogicalParentId INTEGER,
+            IsSubModelRoot  INTEGER NOT NULL DEFAULT 0,
+            Depth           INTEGER NOT NULL DEFAULT 0,
+            IsViolator      INTEGER NOT NULL DEFAULT 0
+        )sql");
+        if (stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("Error prepping elements for bulk deletion: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+
+        if (stat = m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_logicalParent ON " TEMP_ELEMENT_DELETION " (LogicalParentId)"); stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("Error prepping elements for bulk deletion: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+
+        // Partial index to accelerate IsViolator=1 scans (PruneViolators, deleteAllViolators).
+        if (stat = m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_violator ON " TEMP_ELEMENT_DELETION " (IsViolator) WHERE IsViolator = 1"); stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("Error prepping elements for bulk deletion: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+
+        // Partial index to accelerate IsSubModelRoot=1 scans (DeleteLinkTableRelationships, ExecuteDeletion).
+        if (stat = m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_submodelroot ON " TEMP_ELEMENT_DELETION " (IsSubModelRoot) WHERE IsSubModelRoot = 1"); stat != BE_SQLITE_OK)
+            {
+            LOG.errorv("Error prepping elements for bulk deletion: %s", BeSQLiteLib::GetLogError(stat).c_str());
+            return false;
+            }
+
+        m_tempTableExists = true;
         }
 
-    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_logicalParent ON " TEMP_ELEMENT_DELETION " (LogicalParentId)"))
-        return false;
-
-    // Partial index to accelerate IsViolator=1 scans (PruneViolators, deleteAllViolators).
-    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_violator ON " TEMP_ELEMENT_DELETION " (IsViolator) WHERE IsViolator = 1"))
-        return false;
-
-    // Partial index to accelerate IsSubModelRoot=1 scans (DeleteLinkTableRelationships, ExecuteDeletion).
-    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("CREATE INDEX IF NOT EXISTS idx_etd_submodelroot ON " TEMP_ELEMENT_DELETION " (IsSubModelRoot) WHERE IsSubModelRoot = 1"))
-        return false;
-
     // Clear out table to avoid stale entries
-    if (BE_SQLITE_OK != m_dgndb.TryExecuteSql("DELETE FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION)))
+    if (const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION)); stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("Error prepping elements for bulk deletion: %s", BeSQLiteLib::GetLogError(stat).c_str());
         return false;
+        }
 
     return true;
     }
@@ -554,7 +571,8 @@ bool BulkElementDeletion::ExpandElementIdList() const
         return false;
         }
 
-    m_dgndb.TryExecuteSql("ANALYZE " TEMP_TABLE(TEMP_ELEMENT_DELETION));
+    if (m_originalElementIds.size() >= 100)
+        m_dgndb.TryExecuteSql("ANALYZE " TEMP_TABLE(TEMP_ELEMENT_DELETION));
 
     return true;
     }
@@ -600,17 +618,24 @@ bool BulkElementDeletion::FindAndPruneConstraintViolators()
     {
     // Optimization guard: Don't run the expensive search queries if no violators exist
     constexpr auto guardSql = 
-        "SELECT 1 FROM bis_Element e "
-        "WHERE e.CodeScopeId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
-            "AND e.Id NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+        "SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+        "INNER JOIN bis_Element e ON e.CodeScopeId = t.ElementId "
+        "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = e.Id "
+        "WHERE td.ElementId IS NULL "
+
         "UNION ALL "
-        "SELECT 1 FROM bis_GeometricElement3d g "
-        "WHERE g.CategoryId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
-            "AND g.ElementId NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+
+        "SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+        "INNER JOIN bis_GeometricElement3d g ON g.CategoryId = t.ElementId "
+        "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g.ElementId "
+        "WHERE td.ElementId IS NULL "
+
         "UNION ALL "
-        "SELECT 1 FROM bis_GeometricElement2d g "
-        "WHERE g.CategoryId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
-            "AND g.ElementId NOT IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ") "
+
+        "SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t "
+        "INNER JOIN bis_GeometricElement2d g ON g.CategoryId = t.ElementId "
+        "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g.ElementId "
+        "WHERE td.ElementId IS NULL "
         "LIMIT 1";
     auto guardStmt = m_dgndb.GetCachedStatement(guardSql);
     if (guardStmt.IsNull())
@@ -870,9 +895,10 @@ bool BulkElementDeletion::FireAllCallbacks()
             {
             element->_OnDelete();
 
-            if (const auto parentId = element->m_parent.m_id; parentId.IsValid())
+            if (const auto parentId = element->m_parent.m_id; parentId.IsValid() && !m_originalElementIds.Contains(parentId))
                 {
-                if (const auto parentElement = m_dgndb.Elements().GetElement(parentId); parentElement.IsValid())
+                const auto parentElement = m_dgndb.Elements().GetElement(parentId);
+                if (parentElement.IsValid())
                     {
                     parentElement->_OnChildDelete(*element);
                     parentElement->_OnChildDeleted(*element);
