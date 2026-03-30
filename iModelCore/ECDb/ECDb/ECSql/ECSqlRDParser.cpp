@@ -878,6 +878,27 @@ BentleyStatus ECSqlRDParser::ParseOrderByClause(std::unique_ptr<OrderByExp>& exp
                 return ERROR;
             sortExp = std::make_unique<BinaryBooleanExp>(std::move(valExp), op, std::move(rhs));
             }
+        else if (At(ECSqlTokenType::KW_IS))
+            {
+            // Allow IS [NOT] NULL in ORDER BY (e.g. ORDER BY expr IS NULL)
+            Advance(); // consume IS
+            bool isNot = TryConsume(ECSqlTokenType::KW_NOT);
+            if (!At(ECSqlTokenType::KW_NULL) && !At(ECSqlTokenType::KW_TRUE)
+                && !At(ECSqlTokenType::KW_FALSE) && !At(ECSqlTokenType::KW_UNKNOWN))
+                {
+                ECSQLERR("Expected NULL, TRUE, FALSE, or UNKNOWN after IS in ORDER BY");
+                return ERROR;
+                }
+            Utf8String lit;
+            ECSqlTypeInfo dtype;
+            if (SUCCESS != ParseLiteral(lit, dtype))
+                return ERROR;
+            std::unique_ptr<ValueExp> rhsVal;
+            if (SUCCESS != LiteralValueExp::Create(rhsVal, *m_context, lit.c_str(), dtype))
+                return ERROR;
+            sortExp = std::make_unique<BinaryBooleanExp>(std::move(valExp),
+                isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is, std::move(rhsVal));
+            }
         else
             {
             sortExp = std::move(valExp);
@@ -2692,7 +2713,14 @@ BentleyStatus ECSqlRDParser::ParseFctSpecByName(std::unique_ptr<ValueExp>& exp, 
     if (!Expect(ECSqlTokenType::LParen))
         return ERROR;
 
-    auto funcExp = std::make_unique<FunctionCallExp>(functionName);
+    // Allow DISTINCT/ALL quantifier for user-defined aggregate functions (e.g. JsonConcat(DISTINCT ...))
+    SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified;
+    if (TryConsume(ECSqlTokenType::KW_ALL))
+        setQuantifier = SqlSetQuantifier::All;
+    else if (TryConsume(ECSqlTokenType::KW_DISTINCT))
+        setQuantifier = SqlSetQuantifier::Distinct;
+
+    auto funcExp = std::make_unique<FunctionCallExp>(functionName, setQuantifier, false);
 
     if (!At(ECSqlTokenType::RParen))
         {

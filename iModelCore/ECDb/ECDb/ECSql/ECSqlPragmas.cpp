@@ -168,7 +168,7 @@ DbResult PragmaSqliteSqlModule::VTab::Cursor::Filter(int, const char*, int argc,
 	m_eof = true;
 	if (argc == 0) return BE_SQLITE_ERROR;
 	Utf8CP ecsql = argv[0].GetValueText();
-	if (ecsql == nullptr) return BE_SQLITE_ERROR;
+	if (ecsql == nullptr || ecsql[0] == '\0') return BE_SQLITE_ERROR;
 	ECSqlStatement stmt;
 	if (ECSqlStatus::Success != stmt.Prepare(GetECDb(), ecsql)) return BE_SQLITE_ERROR;
 	SetColumnText(0, stmt.GetNativeSql());

@@ -267,6 +267,7 @@ TEST_F(ECSqlPragmasTestFixture, view_generator_must_use_escaped_class_name_when_
     if ("escaped GROUP keyword as class name should set disqualify_type_index correctly") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA disqualify_type_index=TRUE FOR Generic:[Group]"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
 
     if ("escaped GROUP keyword as class name should prepare query fine and should not disqualified (+) at view generator as there is no other class accessed in query") {
@@ -467,12 +468,12 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
             {12, relB_B1, "TestSchema:RelB_B", "TargetECInstanceId", classB2, "TestSchema:ClassB" },  // B1 -> B2 (missing)
         })
         {
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step())                                           << "Test case " << testCaseNumber << " failed";
-        EXPECT_STREQ(stmt.GetValueText(1), id.GetInstanceId().ToHexStr().c_str())       << "Test case " << testCaseNumber << " failed";
-        EXPECT_STREQ(stmt.GetValueText(2), relationshipName)                            << "Test case " << testCaseNumber << " failed";
-        EXPECT_STREQ(stmt.GetValueText(3), property)                                    << "Test case " << testCaseNumber << " failed";
-        EXPECT_STREQ(stmt.GetValueText(4), keyId.GetInstanceId().ToHexStr().c_str())    << "Test case " << testCaseNumber << " failed";
-        EXPECT_STREQ(stmt.GetValueText(5), primaryClass)                                << "Test case " << testCaseNumber << " failed";
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step())                                            << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(10), id.GetInstanceId().ToHexStr().c_str())       << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(11), relationshipName)                            << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(12), property)                                    << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(16), keyId.GetInstanceId().ToHexStr().c_str())    << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(15), primaryClass)                                << "Test case " << testCaseNumber << " failed";
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());

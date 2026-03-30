@@ -636,10 +636,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 %if defined(iTwinNativeThirdParty)
   LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext) \
-                                $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+                                $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext) 
 %else
   LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinOpenSSL$(libext) \
-                                $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+                                $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext) 
 %endif
 
 %if $(TARGET_PLATFORM) == "Windows"

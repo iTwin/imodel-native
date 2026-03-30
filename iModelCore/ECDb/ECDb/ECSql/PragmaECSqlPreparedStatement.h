@@ -72,6 +72,7 @@ struct PragmaResult : NonCopyableClass{
                 ECSqlColumnInfo m_ecsqlColumnInfo;
                 PragmaResult& m_result;
                 int m_columnIndex;
+                mutable Utf8String m_textCache;
                 ECSqlColumnInfoCR _GetColumnInfo() const override { return m_ecsqlColumnInfo; }
                 bool _IsNull() const override;
                 bool _GetBoolean() const override;

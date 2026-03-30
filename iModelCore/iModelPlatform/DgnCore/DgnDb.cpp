@@ -212,6 +212,11 @@ DbResult DgnDb::DisqualifyTypeIndexForBisCoreExternalSourceAspect()
             LOG.error("Failed to execute 'PRAGMA disqualify_type_index=TRUE FOR BisCore.ExternalSourceAspect'.");
             return BE_SQLITE_ERROR;
             }
+        if (BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.error("Failed to step 'PRAGMA disqualify_type_index=TRUE FOR BisCore.ExternalSourceAspect'.");
+            return BE_SQLITE_ERROR;
+            }
         }
         return BE_SQLITE_OK;
     }

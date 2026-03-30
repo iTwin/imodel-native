@@ -612,7 +612,10 @@ int64_t PragmaResult::Field::_GetInt64() const {
 Utf8CP PragmaResult::Field::_GetText() const {
     BeMutexHolder lock(m_result.GetMutex());
     auto val = m_result._GetCurrentValue(m_columnIndex);
-    return val.IsNull() ? NoopECSqlValue::GetSingleton().GetText() : val.AsCString();
+    if (val.IsNull())
+        return NoopECSqlValue::GetSingleton().GetText();
+    m_textCache = val.AsCString() != nullptr ? val.AsCString() : "";
+    return m_textCache.c_str();
 }
 
 // unsupported value type
