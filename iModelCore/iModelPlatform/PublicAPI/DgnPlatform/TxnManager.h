@@ -464,9 +464,9 @@ private:
 
     BeSQLite::DbResult PropagateChanges() {return DoPropagateChanges(*this);}
     BeSQLite::DbResult DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
-    void ReverseTxnRange(TxnRange const& txnRange);
+    DgnDbStatus ReverseTxnRange(TxnRange const& txnRange);
     DgnDbStatus ReverseActions(TxnRange const& txnRange);
-    void ReinstateTxn(TxnRange const&);
+    DgnDbStatus ReinstateTxn(TxnRange const&);
     DgnDbStatus ReinstateActions(TxnRange const& revTxn);
 
     void ClearSavedChangesetValues();
