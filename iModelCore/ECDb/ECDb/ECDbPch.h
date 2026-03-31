@@ -65,7 +65,6 @@
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
-#include "TableView.h"
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
 #include "BuiltInVTabs.h"
