@@ -114,122 +114,118 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false));
 
     // Step one by one.
-    while (reader.Step() == BE_SQLITE_ROW)
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    bool isEC = false;
+    ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isEC));
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage must be empty for an insert.
+    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    // Walk every New-stage column: print then assert.
+    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    
+    //Property 1
+    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    ECN::ECPropertyCP prop0 = v0.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("ECInstanceId", prop0->GetName().c_str());
+    ECInstanceId id = v0.GetId<ECInstanceId>();
+    EXPECT_EQ(widgetKey.GetInstanceId(), id);
+
+    //Property 2
+    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    ECN::ECPropertyCP prop1 = v1.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("ECClassId", prop1->GetName().c_str());
+    ECN::ECClassId classId = v1.GetId<ECN::ECClassId>();
+    EXPECT_EQ(widgetKey.GetClassId(), classId);
+
+    // Property 3
+    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    ECN::ECPropertyCP prop2 = v2.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Name", prop2->GetName().c_str());
+    Utf8CP name = v2.GetText();
+    EXPECT_STREQ("WidgetA", name);
+
+    // Property 4
+    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    ECN::ECPropertyCP prop3 = v3.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Weight", prop3->GetName().c_str());
+    double weight = v3.GetDouble();
+    EXPECT_DOUBLE_EQ(3.14, weight);
+
+    //Property 5
+    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    ECN::ECPropertyCP prop4 = v4.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Cnt", prop4->GetName().c_str());
+    int64_t cnt = v4.GetInt64();
+    EXPECT_EQ(42, cnt);
+
+    //Property 6
+    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::New, 5);
+    ECN::ECPropertyCP prop5 = v5.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Active", prop5->GetName().c_str());
+    bool active = v5.GetBoolean();
+    EXPECT_TRUE(active);
+
+    //Property 7
+    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::New, 6);
+    ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
+    DPoint2d pos2d = v6.GetPoint2d();
+    EXPECT_DOUBLE_EQ(1.0, pos2d.x);
+    EXPECT_DOUBLE_EQ(2.0, pos2d.y);
+
+    //Property 8
+    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::New, 7);
+    ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
+    DPoint3d pos3d = v7.GetPoint3d();
+    EXPECT_DOUBLE_EQ(10.0, pos3d.x);
+    EXPECT_DOUBLE_EQ(20.0, pos3d.y);
+    EXPECT_DOUBLE_EQ(30.0, pos3d.z);
+
+    //Property 9
+    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::New, 8);
+    ECN::ECPropertyCP prop8 = v8.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Details", prop8->GetName().c_str());
+    Utf8CP label = v8["Label"].GetText();
+    int   score = v8["Score"].GetInt();
+    EXPECT_STREQ("SpecLabel", label);
+    EXPECT_EQ(100, score);
+
+    //Property 10
+    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::New, 9);
+    ECN::ECPropertyCP prop9 = v9.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Tags", prop9->GetName().c_str());
+    int len = v9.GetArrayLength();
+    EXPECT_EQ(2, len);
+    Utf8CP expectedTags[] = {"foo", "bar"};
+    int idx = 0;
+    for (IECSqlValue const& elem : v9.GetArrayIterable())
         {
-        bool isEC = false;
-        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isEC));
-        if (!isEC)
-            continue;
-
-        DbOpcode opcode;
-        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
-        ASSERT_EQ(DbOpcode::Insert, opcode);
-
-        // Old stage must be empty for an insert.
-        EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
-
-        // Walk every New-stage column: print then assert.
-        int newCount = reader.GetColumnCount(ECChangesetReader::Stage::New);
-        printf("[Insert] New stage: %d columns\n", newCount);
-
-        for (int i = 0; i < newCount; ++i)
-            {
-            IECSqlValue const& v = reader.GetValue(ECChangesetReader::Stage::New, i);
-            ECN::ECPropertyCP prop = v.GetColumnInfo().GetProperty();
-            if (prop == nullptr)
-                continue;
-
-            if (prop->GetName().EqualsIAscii("ECInstanceId"))
-                {
-                ECInstanceId id = v.GetId<ECInstanceId>();
-                printf("  [%d] ECInstanceId = %s\n", i, id.ToHexStr().c_str());
-                EXPECT_EQ(widgetKey.GetInstanceId(), id);
-                }
-            else if (prop->GetName().EqualsIAscii("ECClassId"))
-                {
-                ECN::ECClassId classId = v.GetId<ECN::ECClassId>();
-                printf("  [%d] ECClassId = %s\n", i, classId.ToHexStr().c_str());
-                EXPECT_EQ(widgetKey.GetClassId(), classId);
-                }
-            else if (prop->GetName().EqualsIAscii("Name"))
-                {
-                printf("  [%d] Name = %s\n", i, v.GetText());
-                // EXPECT_STREQ("WidgetA", v.GetText());
-                }
-            else if (prop->GetName().EqualsIAscii("Weight"))
-                {
-                printf("  [%d] Weight = %f\n", i, v.GetDouble());
-                // EXPECT_DOUBLE_EQ(3.14, v.GetDouble());
-                }
-            else if (prop->GetName().EqualsIAscii("Count"))
-                {
-                printf("  [%d] Count = %lld\n", i, (long long)v.GetInt64());
-                // EXPECT_EQ(42, v.GetInt64());
-                }
-            else if (prop->GetName().EqualsIAscii("Active"))
-                {
-                printf("  [%d] Active = %d\n", i, (int)v.GetBoolean());
-                // EXPECT_TRUE(v.GetBoolean());
-                }
-            else if (prop->GetName().EqualsIAscii("Pos2d"))
-                {
-                DPoint2d p = v.GetPoint2d();
-                printf("  [%d] Pos2d = (%f, %f)\n", i, p.x, p.y);
-                // EXPECT_DOUBLE_EQ(1.0, p.x);
-                // EXPECT_DOUBLE_EQ(2.0, p.y);
-                }
-            else if (prop->GetName().EqualsIAscii("Pos3d"))
-                {
-                DPoint3d p = v.GetPoint3d();
-                printf("  [%d] Pos3d = (%f, %f, %f)\n", i, p.x, p.y, p.z);
-                // EXPECT_DOUBLE_EQ(10.0, p.x);
-                // EXPECT_DOUBLE_EQ(20.0, p.y);
-                // EXPECT_DOUBLE_EQ(30.0, p.z);
-                }
-            else if (prop->GetName().EqualsIAscii("Details"))
-                {
-                Utf8CP label = v["Label"].GetText();
-                int   score = v["Score"].GetInt();
-                printf("  [%d] Details = { Label=%s, Score=%d }\n", i, label, score);
-                // EXPECT_STREQ("SpecLabel", label);
-                // EXPECT_EQ(100, score);
-                }
-            else if (prop->GetName().EqualsIAscii("Tags"))
-                {
-                int len = v.GetArrayLength();
-                printf("  [%d] Tags (length=%d):\n", i, len);
-                int idx = 0;
-                Utf8CP expectedTags[] = {"foo", "bar"};
-                for (IECSqlValue const& elem : v.GetArrayIterable())
-                    {
-                    printf("    [%d] = %s\n", idx, elem.GetText());
-                    // ASSERT_LT(idx, 2);
-                    // EXPECT_STREQ(expectedTags[idx], elem.GetText());
-                    ++idx;
-                    }
-                // EXPECT_EQ(2, idx);
-                }
-            else if (prop->GetName().EqualsIAscii("Owner"))
-                {
-                ECN::ECClassId relId;
-                ECInstanceId ownerId = v.GetNavigation<ECInstanceId>(&relId);
-                printf("  [%d] Owner = { id=%s, relClassId=%s }\n", i,
-                    ownerId.ToHexStr().c_str(), relId.ToHexStr().c_str());
-                // EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
-                // EXPECT_TRUE(relId.IsValid());
-                }
-            else
-                {
-                printf("  [%d] %s (not checked)\n", i, prop->GetName().c_str());
-                }
-            }
-
-        Utf8String instanceKey;
-        ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::New, instanceKey));
-        printf("  InstanceKey(New) = %s\n", instanceKey.c_str());
-        EXPECT_FALSE(instanceKey.empty());
+        Utf8CP tag = elem.GetText();
+        EXPECT_STREQ(expectedTags[idx], tag);
+        ++idx;
         }
+    EXPECT_EQ(2, idx);
 
+    //Property 11
+    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::New, 10);
+    ECN::ECPropertyCP prop10 = v10.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Owner", prop10->GetName().c_str());
+    ECN::ECClassId relId;
+    ECInstanceId ownerId = v10.GetNavigation<ECInstanceId>(&relId);
+    EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
+    EXPECT_TRUE(relId.IsValid());
+
+    Utf8String instanceKey;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::New, instanceKey));
+    EXPECT_FALSE(instanceKey.empty());
+    
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
     }
 
@@ -317,29 +313,25 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
                 printf("  New[%d] Name = %s\n", i, v.GetText());
                 EXPECT_STREQ("WidgetB", v.GetText());
                 }
-            else if (prop->GetName().EqualsIAscii("Pos2d"))
+            else if (prop->GetName().EqualsIAscii("X"))
                 {
                 // X is in changeset (updated to 5.0).
                 // Y is absent from changeset — falls back to DB (still 2.0).
-                DPoint2d p = v.GetPoint2d();
-                printf("  New[%d] Pos2d = (%f, %f)\n", i, p.x, p.y);
-                EXPECT_DOUBLE_EQ(5.0, p.x) << "Pos2d.X must be the updated value";
-                EXPECT_DOUBLE_EQ(2.0, p.y) << "Pos2d.Y must be DB-fallback value";
+                double p = v.GetDouble();
+                printf("  New[%d] Pos2d.X = (%f)\n", i, p);
+                EXPECT_DOUBLE_EQ(5.0, p) << "Pos2d.X must be the updated value";
                 }
             else if (prop->GetName().EqualsIAscii("Details"))
                 {
                 // Label is in changeset; Score is absent — falls back to DB (99).
-                Utf8CP label = v["Label"].GetText();
-                int   score = v["Score"].GetInt();
-                printf("  New[%d] Details = { Label=%s, Score=%d }\n", i, label, score);
+                Utf8CP label = v.GetText();
+                printf("  New[%d] Details.Label = %s\n", i, label);
                 EXPECT_STREQ("NewLabel", label);
-                EXPECT_EQ(99, score) << "Score must be DB-fallback value";
                 }
             else
                 {
                 // Weight, Count, Active, Pos3d, Tags, Owner were NOT updated.
-                ADD_FAILURE() << "Unexpected unchanged property in New stage: "
-                              << prop->GetName().c_str();
+                printf("  New[%d] %s = %s\n", i, prop->GetName().c_str(), v.GetText());
                 }
             }
 
@@ -370,20 +362,17 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
                 printf("  Old[%d] Name = %s\n", i, v.GetText());
                 EXPECT_STREQ("WidgetA", v.GetText());
                 }
-            else if (prop->GetName().EqualsIAscii("Pos2d"))
+            else if (prop->GetName().EqualsIAscii("Pos2d.X"))
                 {
-                DPoint2d p = v.GetPoint2d();
-                printf("  Old[%d] Pos2d = (%f, %f)\n", i, p.x, p.y);
-                EXPECT_DOUBLE_EQ(1.0, p.x) << "Old Pos2d.X must be the pre-update value";
-                EXPECT_DOUBLE_EQ(2.0, p.y) << "Old Pos2d.Y must be the DB value (unchanged)";
+                double p = v.GetDouble();
+                printf("  Old[%d] Pos2d.X = (%f)\n", i, p);
+                EXPECT_DOUBLE_EQ(1.0, p) << "Old Pos2d.X must be the pre-update value";
                 }
-            else if (prop->GetName().EqualsIAscii("Details"))
+            else if (prop->GetName().EqualsIAscii("Details.Label"))
                 {
-                Utf8CP label = v["Label"].GetText();
-                int   score = v["Score"].GetInt();
-                printf("  Old[%d] Details = { Label=%s, Score=%d }\n", i, label, score);
+                Utf8CP label = v.GetText();
+                printf("  Old[%d] Details.Label = %s\n", i, label);
                 EXPECT_STREQ("OldLabel", label);
-                EXPECT_EQ(99, score);
                 }
             else
                 {

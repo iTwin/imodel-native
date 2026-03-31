@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <iostream>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -171,15 +172,77 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             return BE_SQLITE_ERROR;
 
         if(opCode != DbOpcode::Delete) {
-            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::New, m_fields.at(Stage::New)) != BE_SQLITE_OK)
+            ColumnValueMap newValues;
+            if (GetColumnValues(Stage::New, newValues) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
+            DumpColumnValues(newValues);
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New)) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
         if(opCode != DbOpcode::Insert) {
-            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, m_currentChange, Stage::Old, m_fields.at(Stage::Old)) != BE_SQLITE_OK)
+            ColumnValueMap oldValues;
+            if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
+            DumpColumnValues(oldValues);
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old)) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
     }
     return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap& outMap) const {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to get column values from a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+    }
+    if (!IsStepped()) {
+        LOG.errorv("Attempting to get column values from a PreparedECChangesetReader that has not been stepped.");
+        return BE_SQLITE_ERROR;
+    }
+    if(!m_currentChange.IsValid()) {
+        LOG.errorv("Attempting to get column values from an invalid change.");
+        return BE_SQLITE_ERROR;
+    }
+    Utf8String tableName;
+    if (GetTableName(tableName) != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
+    DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
+    DbTable const* dbTable = dbSchema.FindTable(tableName);
+    if (dbTable == nullptr) {
+        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    outMap.clear();
+    int colIdx = 0;
+    for (DbColumn const* col : dbTable->GetColumns()) {
+        if (col->IsVirtual())
+            continue;  // virtual columns are absent from the changeset
+        DbValue val = m_currentChange.GetValue(colIdx, stage);
+        if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(colIdx)) {
+            // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
+            // Mirror the TS SqliteChangesetReader behaviour (includePrimaryKeyInUpdateNew):
+            // always include the PK value regardless of which stage is being built.
+            val = m_currentChange.GetOldValue(colIdx);
+        }
+        if (val.IsValid())
+            outMap.emplace(col->GetName(), val);
+        ++colIdx;
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PreparedECChangesetReader::DumpColumnValues(ColumnValueMap const& map) {
+    for (auto const& [key, val] : map)
+        std::cout << key.c_str() << " = " << (val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)")) << std::endl;
 }
 
 //---------------------------------------------------------------------------------------

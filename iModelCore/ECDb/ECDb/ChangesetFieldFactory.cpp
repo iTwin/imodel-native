@@ -102,57 +102,44 @@ TableView const* ChangesetFieldFactory::GetTableView(DbTable const& propTable,
 }
 
 //=============================================================================
-// Changeset value accessors
+// ColumnValueMap accessors
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
-// Returns true when @p colIdx is within the changeset's column range and the changeset
-// carries an explicit (non-absent) value for it at the given stage.
+// Returns true when @p colName is present in @p columnValues with a valid DbValue.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::IsInChangeset(int colIdx, Changes::Change const& change, Stage stage) {
-    return colIdx >= 0 && colIdx < change.GetColumnCount() && change.GetValue(colIdx, stage).IsValid();
+bool ChangesetFieldFactory::IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
+    auto it = columnValues.find(colName);
+    return it != columnValues.end() && it->second.IsValid();
 }
 
 //---------------------------------------------------------------------------------------
-// Reads @p colIdx from the changeset.  Must only be called after IsInChangeset() has
-// returned true — asserts in debug if the value turns out to be absent.
+// Reads @p colName from @p columnValues.  Must only be called after IsInMap() has
+// returned true — asserts in debug if the key is absent.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbValue ChangesetFieldFactory::GetChangesetValue(int colIdx, Changes::Change const& change, Stage stage) {
-    DbValue v = change.GetValue(colIdx, stage);
-    BeAssert(v.IsValid() && "GetChangesetValue called but column absent from changeset");
-    return v;
+DbValue ChangesetFieldFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
+    auto it = columnValues.find(colName);
+    BeAssert(it != columnValues.end() && "GetFromMap called but column absent from map");
+    return it != columnValues.end() ? it->second : DbValue(nullptr);
 }
 
 //---------------------------------------------------------------------------------------
 // Returns a DbValue for a single column.
-//   • Fast path: column present in the changeset — return it directly.
+//   • Fast path: column present in columnValues — return it directly.
 //   • Slow path: column absent — seek the live database row via @p tableView and return
 //     the persisted value.
 // This fallback is ONLY for partial-update compound properties (Point2d/3d, Nav) where
 // one sub-column may be modified while the other is not.
-// Callers must ensure colIdx >= 0.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbValue ChangesetFieldFactory::GetValueWithDbFallback(int colIdx, Changes::Change const& change,
-                                                       Stage stage, TableView const& tableView,
-                                                       ECInstanceId instanceId) {
-    DbValue v = change.GetValue(colIdx, stage);
-    if (v.IsValid())
-        return v;
-
-    // Column absent from changeset — read from the live database via the TableView.
-    tableView.Seek(instanceId);
-    return tableView.GetSqliteStmt().GetColumnValue(colIdx);
-}
-
 //---------------------------------------------------------------------------------------
-// Returns true when at least one SQLite column backing @p propertyMap is present in the
-// changeset for @p stage.
+// Returns true when at least one SQLite column backing @p propertyMap is present in
+// @p columnValues.
 //
 // Rules per property kind:
-//   System  — checks the specific class-id or data column.
+//   System  — checks the specific data column.
 //   Primitive — single column; Point2d/3d require at least one coordinate column.
 //   Navigation — at least one of: id column, relClassId column (if physical).
 //   Struct  — at least one member satisfies this predicate recursively.
@@ -160,71 +147,58 @@ DbValue ChangesetFieldFactory::GetValueWithDbFallback(int colIdx, Changes::Chang
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetFieldFactory::PropertyHasChangesetData(PropertyMap const& propertyMap,
-                                                     TableView const& tbl,
-                                                     Changes::Change const& change, Stage stage) {
+                                                     ColumnValueMap const& columnValues) {
     const auto& prop = propertyMap.GetProperty();
 
     if (propertyMap.IsSystem()) {
         const auto prim = prop.GetAsPrimitiveProperty();
         if (prim == nullptr)
             return false;
-        const auto extType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-        if (extType == ExtendedTypeHelper::ExtendedType::ClassId)
-            return IsInChangeset(tbl.GetClassIdCol(), change, stage);
-        if (extType == ExtendedTypeHelper::ExtendedType::SourceClassId)
-            return IsInChangeset(tbl.GetSourceClassIdCol(), change, stage);
-        if (extType == ExtendedTypeHelper::ExtendedType::TargetClassId)
-            return IsInChangeset(tbl.GetTargetClassIdCol(), change, stage);
-
         const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
         const auto dataMap = sysMap.GetDataPropertyMaps().front();
         if (dataMap->GetColumn().IsVirtual())
             return false;
-        return IsInChangeset(tbl.GetColumnIndexOf(dataMap->GetColumn()), change, stage);
+        return IsInMap(dataMap->GetColumn().GetName(), columnValues);
     }
 
     if (prop.GetIsPrimitive()) {
         const auto prim = prop.GetAsPrimitiveProperty();
         if (prim->GetType() == PRIMITIVETYPE_Point2d) {
             const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
-            // At least one coordinate changed — absent coordinate filled via GetValueWithDbFallback.
-            return IsInChangeset(tbl.GetColumnIndexOf(pt2dMap.GetX().GetColumn()), change, stage) ||
-                   IsInChangeset(tbl.GetColumnIndexOf(pt2dMap.GetY().GetColumn()), change, stage);
+            return IsInMap(pt2dMap.GetX().GetColumn().GetName(), columnValues) ||
+                   IsInMap(pt2dMap.GetY().GetColumn().GetName(), columnValues);
         }
         if (prim->GetType() == PRIMITIVETYPE_Point3d) {
             const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
-            // At least one coordinate changed — absent coordinates filled via GetValueWithDbFallback.
-            return IsInChangeset(tbl.GetColumnIndexOf(pt3dMap.GetX().GetColumn()), change, stage) ||
-                   IsInChangeset(tbl.GetColumnIndexOf(pt3dMap.GetY().GetColumn()), change, stage) ||
-                   IsInChangeset(tbl.GetColumnIndexOf(pt3dMap.GetZ().GetColumn()), change, stage);
+            return IsInMap(pt3dMap.GetX().GetColumn().GetName(), columnValues) ||
+                   IsInMap(pt3dMap.GetY().GetColumn().GetName(), columnValues) ||
+                   IsInMap(pt3dMap.GetZ().GetColumn().GetName(), columnValues);
         }
         const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-        return IsInChangeset(tbl.GetColumnIndexOf(primMap.GetColumn()), change, stage);
+        return IsInMap(primMap.GetColumn().GetName(), columnValues);
     }
 
     if (prop.GetIsNavigation()) {
         const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
-        // At least one of: id or relClassId (if physical) is in the changeset.
-        if (PropertyHasChangesetData(navMap.GetIdPropertyMap(), tbl, change, stage))
+        if (PropertyHasChangesetData(navMap.GetIdPropertyMap(), columnValues))
             return true;
         const auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
         if (relClassIdMap.GetColumn().IsVirtual())
             return false;
-        return IsInChangeset(tbl.GetColumnIndexOf(relClassIdMap.GetColumn()), change, stage);
+        return IsInMap(relClassIdMap.GetColumn().GetName(), columnValues);
     }
 
     if (prop.GetIsStruct()) {
-        // Struct is "changed" when at least one of its member columns is in the changeset.
         const auto& structMap = propertyMap.GetAs<StructPropertyMap>();
         for (const auto& memberMap : structMap)
-            if (PropertyHasChangesetData(*memberMap, tbl, change, stage))
+            if (PropertyHasChangesetData(*memberMap, columnValues))
                 return true;
         return false;
     }
 
     if (prop.GetIsArray()) {
         const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-        return IsInChangeset(tbl.GetColumnIndexOf(primMap.GetColumn()), change, stage);
+        return IsInMap(primMap.GetColumn().GetName(), columnValues);
     }
 
     return false;
@@ -321,59 +295,67 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeArrayColumnInfo(PropertyMap const& pr
 // Creates an IECSqlValue for a single-column primitive property.
 //
 // Scalar types (bool, int, string, etc.):
-//   Read directly from the changeset.  Caller must have verified IsInChangeset().
+//   Read directly from the column values map.
 //
 // Point2d / Point3d (compound types):
-//   Use GetValueWithDbFallback for each coordinate — one coordinate may be absent from
-//   the changeset when only the other changed; the live DB fills the missing value.
+//   All coordinates present  → returns a full compound value.
+//   Only some coordinates present → returns a ChangesetPrimitiveValue (Double) for the
+//   first present coordinate.  No DB fallback is performed.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePrimitive(
-    ECDbCR conn, PropertyMap const& propertyMap, TableView const& tbl,
-    Changes::Change const& change, Stage stage, ECInstanceId instanceId) {
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
 
     if (prim->GetType() == ECN::PRIMITIVETYPE_Point2d) {
-        // Partial-update: if only one coordinate changed the other is absent from the
-        // changeset.  GetValueWithDbFallback fetches absent coordinates from the live DB.
         const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
-        const int xCol = tbl.GetColumnIndexOf(pt2dMap.GetX().GetColumn());
-        const int yCol = tbl.GetColumnIndexOf(pt2dMap.GetY().GetColumn());
-        const DbValue xVal = GetValueWithDbFallback(xCol, change, stage, tbl, instanceId);
-        const DbValue yVal = GetValueWithDbFallback(yCol, change, stage, tbl, instanceId);
-        if (!xVal.IsValid() || !yVal.IsValid()) {
-            LOG.errorv("Failed to read Point2d coordinate from live DB for property '%s'.",
-                       propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+        const bool hasX = IsInMap(pt2dMap.GetX().GetColumn().GetName(), columnValues);
+        const bool hasY = IsInMap(pt2dMap.GetY().GetColumn().GetName(), columnValues);
+        if (hasX && hasY)
+            return std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap),
+                GetFromMap(pt2dMap.GetX().GetColumn().GetName(), columnValues),
+                GetFromMap(pt2dMap.GetY().GetColumn().GetName(), columnValues));
+        // Partial — emit the present coordinate as a raw double value.
+        if(hasX)
+        {
+            return std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(pt2dMap.GetX()), GetFromMap(pt2dMap.GetX().GetColumn().GetName(), columnValues), GetDateTimeInfo(pt2dMap.GetX()));
         }
-        return std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), xVal, yVal);
+        if(hasY)
+        {
+            return std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(pt2dMap.GetY()), GetFromMap(pt2dMap.GetY().GetColumn().GetName(), columnValues), GetDateTimeInfo(pt2dMap.GetY()));
+        }
     }
 
     if (prim->GetType() == PRIMITIVETYPE_Point3d) {
-        // Same partial-update handling as Point2d — absent coordinates are filled from DB.
         const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
-        const int xCol = tbl.GetColumnIndexOf(pt3dMap.GetX().GetColumn());
-        const int yCol = tbl.GetColumnIndexOf(pt3dMap.GetY().GetColumn());
-        const int zCol = tbl.GetColumnIndexOf(pt3dMap.GetZ().GetColumn());
-        const DbValue xVal = GetValueWithDbFallback(xCol, change, stage, tbl, instanceId);
-        const DbValue yVal = GetValueWithDbFallback(yCol, change, stage, tbl, instanceId);
-        const DbValue zVal = GetValueWithDbFallback(zCol, change, stage, tbl, instanceId);
-        if (!xVal.IsValid() || !yVal.IsValid() || !zVal.IsValid()) {
-            LOG.errorv("Failed to read Point3d coordinate from live DB for property '%s'.",
-                       propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+        const bool hasX = IsInMap(pt3dMap.GetX().GetColumn().GetName(), columnValues);
+        const bool hasY = IsInMap(pt3dMap.GetY().GetColumn().GetName(), columnValues);
+        const bool hasZ = IsInMap(pt3dMap.GetZ().GetColumn().GetName(), columnValues);
+        if (hasX && hasY && hasZ)
+            return std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap),
+                GetFromMap(pt3dMap.GetX().GetColumn().GetName(), columnValues),
+                GetFromMap(pt3dMap.GetY().GetColumn().GetName(), columnValues),
+                GetFromMap(pt3dMap.GetZ().GetColumn().GetName(), columnValues));
+        // Partial — emit the first present coordinate as a raw double value.
+        if(hasX)
+        {
+            return std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(pt3dMap.GetX()), GetFromMap(pt3dMap.GetX().GetColumn().GetName(), columnValues), GetDateTimeInfo(pt3dMap.GetX()));
         }
-        return std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), xVal, yVal, zVal);
+        if(hasY)
+        {
+            return std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(pt3dMap.GetY()), GetFromMap(pt3dMap.GetY().GetColumn().GetName(), columnValues), GetDateTimeInfo(pt3dMap.GetY()));
+        }
+        if(hasZ)
+        {
+            return std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(pt3dMap.GetZ()), GetFromMap(pt3dMap.GetZ().GetColumn().GetName(), columnValues), GetDateTimeInfo(pt3dMap.GetZ()));
+        }
     }
 
-    // Scalar primitive — the column is guaranteed present (caller verified IsInChangeset).
-    // No DB fallback: if it was not in the changeset the property would have been skipped.
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    const int nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
     return std::make_unique<ChangesetPrimitiveValue>(
         MakePrimitiveColumnInfo(propertyMap),
-        GetChangesetValue(nCol, change, stage),
+        GetFromMap(primMap.GetColumn().GetName(), columnValues),
         GetDateTimeInfo(propertyMap));
 }
 
@@ -384,8 +366,8 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePrimitive(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateSystem(
-    ECDbCR conn, PropertyMap const& propertyMap, TableView const& tbl,
-    Changes::Change const& change, Stage stage) {
+    ECDbCR conn, PropertyMap const& propertyMap,
+    ColumnValueMap const& columnValues) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
@@ -399,26 +381,6 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateSystem(
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    const auto extType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-
-    // Dispatch to the dedicated class-id column exposed by TableView.
-    if (extType == ExtendedTypeHelper::ExtendedType::ClassId && tbl.GetClassIdCol() >= 0) {
-        return std::make_unique<ChangesetPrimitiveValue>(
-            columnInfo,
-            GetChangesetValue(tbl.GetClassIdCol(), change, stage));
-    }
-    if (extType == ExtendedTypeHelper::ExtendedType::SourceClassId && tbl.GetSourceClassIdCol() >= 0) {
-        return std::make_unique<ChangesetPrimitiveValue>(
-            columnInfo,
-            GetChangesetValue(tbl.GetSourceClassIdCol(), change, stage));
-    }
-    if (extType == ExtendedTypeHelper::ExtendedType::TargetClassId && tbl.GetTargetClassIdCol() >= 0) {
-        return std::make_unique<ChangesetPrimitiveValue>(
-            columnInfo,
-            GetChangesetValue(tbl.GetTargetClassIdCol(), change, stage));
-    }
-
-    // General system property — single physical column, always present in the changeset.
     const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
     const auto dataMap = sysMap.GetDataPropertyMaps().front();
     if (dataMap->GetColumn().IsVirtual()) {
@@ -426,10 +388,13 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateSystem(
                    propertyMap.GetProperty().GetName().c_str());
         return nullptr;
     }
-    const int nCol = tbl.GetColumnIndexOf(dataMap->GetColumn());
-    return std::make_unique<ChangesetPrimitiveValue>(
-        columnInfo,
-        GetChangesetValue(nCol, change, stage));
+    Utf8StringCR colName = dataMap->GetColumn().GetName();
+    auto it = columnValues.find(colName);
+    if (it == columnValues.end()) {
+        LOG.errorv("System property column '%s' not found in column values map.", colName.c_str());
+        return nullptr;
+    }
+    return std::make_unique<ChangesetPrimitiveValue>(columnInfo, it->second);
 }
 
 //---------------------------------------------------------------------------------------
@@ -458,58 +423,47 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateFixedClassId(
 //---------------------------------------------------------------------------------------
 // Creates an IECSqlValue for a navigation property.
 //
-// Navigation properties are compound: [id, relClassId].  Each sub-component may be
-// absent from the changeset in a partial update:
-//   • id     — uses GetValueWithDbFallback directly (scalar; CreatePrimitive would only
-//              fall back to DB for Point2d/3d, not for scalar ids).
-//   • relClassId (physical) — uses GetValueWithDbFallback.
-//   • relClassId (virtual) — emitted as a fixed value; no DB read needed.
+// All values are read exclusively from the map — no DB fallback.
+//   • Both id and relClassId resolvable (physical+in-map or virtual) → ChangesetNavValue.
+//   • Only id available → ChangesetPrimitiveValue for id.
+//   • Only relClassId physical available → ChangesetPrimitiveValue for relClassId.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateNav(
-    ECDbCR conn, PropertyMap const& propertyMap, TableView const& tbl,
-    Changes::Change const& change, Stage stage, ECInstanceId instanceId) {
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues) {
 
     const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
 
-    // Id sub-component — the id column may be absent from the changeset when only the
-    // relClassId was updated.  Use GetValueWithDbFallback so the live DB is consulted
-    // when the column is absent.  (CreatePrimitive only falls back to DB for Point2d/3d,
-    // not for scalar ids.)
+    // Id sub-component — read from map only.
     const auto& idPropMap = navMap.GetIdPropertyMap();
-    const auto& primMap = idPropMap.GetAs<SingleColumnDataPropertyMap>();
-    const int nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
-    const DbValue idDbVal = GetValueWithDbFallback(nCol, change, stage, tbl, instanceId);
-    if (!idDbVal.IsValid()) {
-        LOG.errorv("Failed to read navigation Id from live DB for property '%s'.",
-                   propertyMap.GetProperty().GetName().c_str());
-        return nullptr;
-    }
-    auto idVal = std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(idPropMap), idDbVal);
+    const auto& idColName = idPropMap.GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
+    const bool hasId = IsInMap(idColName, columnValues);
 
-    // RelClassId sub-component.
-    std::unique_ptr<IECSqlValue> relClassIdVal;
+    // RelClassId sub-component — virtual (fixed) or physical (from map).
     const auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
+    std::unique_ptr<IECSqlValue> relClassIdVal = nullptr;
     if (relClassIdMap.GetColumn().IsVirtual()) {
-        // Single-class relationship — the class-id is fixed at mapping time.
         const auto navProp = propertyMap.GetProperty().GetAsNavigationProperty();
         relClassIdVal = CreateFixedClassId(conn, relClassIdMap, navProp->GetRelationshipClass()->GetId());
-    } else {
-        // Physical column — may be absent from the changeset in a partial update.
-        const int relCol = tbl.GetColumnIndexOf(relClassIdMap.GetColumn());
-        const DbValue relVal = GetValueWithDbFallback(relCol, change, stage, tbl, instanceId);
-        if (!relVal.IsValid()) {
-            LOG.errorv("Failed to read navigation RelECClassId from live DB for property '%s'.",
-                       propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
-        }
-        relClassIdVal = std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(relClassIdMap), relVal);
+    } else if (IsInMap(relClassIdMap.GetColumn().GetName(), columnValues)) {
+        relClassIdVal = std::make_unique<ChangesetPrimitiveValue>(
+            MakePrimitiveColumnInfo(relClassIdMap),
+            GetFromMap(relClassIdMap.GetColumn().GetName(), columnValues));
     }
 
-    return std::make_unique<ChangesetNavValue>(
-        MakeNavColumnInfo(propertyMap),
-        std::move(idVal),
-        std::move(relClassIdVal));
+    if (hasId && relClassIdVal != nullptr) {
+        return std::make_unique<ChangesetNavValue>(
+            MakeNavColumnInfo(propertyMap),
+            std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(idPropMap),
+                                                     GetFromMap(idColName, columnValues)),
+            std::move(relClassIdVal));
+    }
+
+    // Partial — emit whichever sub-component is available as a plain primitive.
+    if (hasId)
+        return std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(idPropMap),
+                                                        GetFromMap(idColName, columnValues));
+    return relClassIdVal;  // may be nullptr if neither sub-component is in the map
 }
 
 //---------------------------------------------------------------------------------------
@@ -519,15 +473,14 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateNav(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateArray(
-    ECDbCR conn, PropertyMap const& propertyMap, TableView const& tbl,
-    Changes::Change const& change, Stage stage) {
+    ECDbCR conn, PropertyMap const& propertyMap,
+    ColumnValueMap const& columnValues) {
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    const int nCol = tbl.GetColumnIndexOf(primMap.GetColumn());
     // Column is guaranteed present: caller verified PropertyHasChangesetData().
     return std::make_unique<ChangesetArrayValue>(
         MakeArrayColumnInfo(propertyMap),
-        GetChangesetValue(nCol, change, stage),
+        GetFromMap(primMap.GetColumn().GetName(), columnValues),
         conn);
 }
 
@@ -538,18 +491,17 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateArray(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateStruct(
-    ECDbCR conn, PropertyMap const& propertyMap, TableView const& tbl,
-    Changes::Change const& change, Stage stage, ECInstanceId instanceId) {
+    ECDbCR conn, PropertyMap const& propertyMap,
+    ColumnValueMap const& columnValues) {
 
     auto structVal = std::make_unique<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
-        // Omit unchanged members — only include what is actually in the changeset.
-        if (!PropertyHasChangesetData(*memberMap, tbl, change, stage))
+        if (!PropertyHasChangesetData(*memberMap, columnValues))
             continue;
 
-        auto memberVal = CreateValueInternal(conn, *memberMap, tbl, change, stage, instanceId);
+        auto memberVal = CreateValueInternal(conn, *memberMap, columnValues);
         if (memberVal == nullptr)
-            return nullptr;  // Propagate DB-read failure from member.
+            return nullptr;
         structVal->AppendMember(memberMap->GetProperty().GetName(), std::move(memberVal));
     }
     return structVal;
@@ -561,20 +513,20 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateStruct(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateValueInternal(
-    ECDbCR conn, PropertyMap const& propertyMap, TableView const& tbl,
-    Changes::Change const& change, Stage stage, ECInstanceId instanceId) {
+    ECDbCR conn, PropertyMap const& propertyMap,
+    ColumnValueMap const& columnValues) {
 
     const auto& prop = propertyMap.GetProperty();
     if (propertyMap.IsSystem())
-        return CreateSystem(conn, propertyMap, tbl, change, stage);
+        return CreateSystem(conn, propertyMap, columnValues);
     if (prop.GetIsPrimitive())
-        return CreatePrimitive(conn, propertyMap, tbl, change, stage, instanceId);
+        return CreatePrimitive(conn, propertyMap, columnValues);
     if (prop.GetIsStruct())
-        return CreateStruct(conn, propertyMap, tbl, change, stage, instanceId);
+        return CreateStruct(conn, propertyMap, columnValues);
     if (prop.GetIsNavigation())
-        return CreateNav(conn, propertyMap, tbl, change, stage, instanceId);
+        return CreateNav(conn, propertyMap, columnValues);
     if (prop.GetIsArray())
-        return CreateArray(conn, propertyMap, tbl, change, stage);
+        return CreateArray(conn, propertyMap, columnValues);
 
     BeAssert(false && "Unknown property type in ChangesetFieldFactory::CreateValueInternal");
     return nullptr;
@@ -593,18 +545,18 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateValueInternal(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetFieldFactory::TryResolveClassMapFromChangeset(
-    TableView const& tbl, Changes::Change const& change, Stage stage,
+    DbTable const& dbTable, ColumnValueMap const& columnValues,
     ECDbCR conn, const ClassMap*& classMapOut, ECClassId& classIdOut) {
 
-    const int classIdColIdx = tbl.GetClassIdCol();
-    if (classIdColIdx < 0)
+    DbColumn const& classIdCol = dbTable.GetECClassIdColumn();
+    if (classIdCol.IsVirtual())
         return false;
 
-    DbValue classIdVal = change.GetValue(classIdColIdx, stage);
-    if (!classIdVal.IsValid() || classIdVal.IsNull())
+    auto it = columnValues.find(classIdCol.GetName());
+    if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull())
         return false;
 
-    ECClassId candidate(classIdVal.GetValueUInt64());
+    ECClassId candidate(it->second.GetValueUInt64());
     if (!candidate.IsValid())
         return false;
 
@@ -633,29 +585,25 @@ bool ChangesetFieldFactory::TryResolveClassMapFromChangeset(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetFieldFactory::TryResolveClassMapFromDbSeek(
-    TableView const& tbl, Changes::Change const& change, Stage stage,
+    TableView const& tbl, DbTable const& dbTable,
+    ColumnValueMap const& columnValues,
     ECDbCR conn, const ClassMap*& classMapOut, ECClassId& classIdOut) {
 
     // The DB seek is only meaningful when the TableView exposes a class-id column.
     if (tbl.GetClassIdCol() < 0)
         return false;
 
-    // Find the first primary-key column and read its value from the changeset.
-    int pkCol = -1;
-    for (int i = 0; i < change.GetColumnCount(); ++i) {
-        if (change.IsPrimaryKeyColumn(i)) {
-            pkCol = i;
-            break;
-        }
-    }
-    if (pkCol < 0)
+    // Find the first primary-key column via the schema and read its value from the map.
+    PrimaryKeyDbConstraint const* pkConstraint = dbTable.GetPrimaryKeyConstraint();
+    if (pkConstraint == nullptr || pkConstraint->GetColumns().empty())
         return false;
 
-    DbValue pkVal = change.GetValue(pkCol, stage);
-    if (!pkVal.IsValid() || pkVal.IsNull())
+    DbColumn const& firstPkCol = *pkConstraint->GetColumns().front();
+    auto it = columnValues.find(firstPkCol.GetName());
+    if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull())
         return false;
 
-    ECInstanceId instanceId(pkVal.GetValueUInt64());
+    ECInstanceId instanceId(it->second.GetValueUInt64());
     if (!instanceId.IsValid())
         return false;
 
@@ -693,8 +641,8 @@ bool ChangesetFieldFactory::TryResolveClassMapFromDbSeek(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetFieldFactory::ResolveInstanceId(
-    ClassMap const& classMap, TableView const& primaryTbl,
-    Changes::Change const& change, Stage stage,
+    ClassMap const& classMap,
+    ColumnValueMap const& columnValues,
     ECDbCR conn, DbTable const& primaryDbTable,
     ECInstanceId& instanceIdOut, std::unique_ptr<IECSqlValue>& fieldOut) {
 
@@ -711,18 +659,16 @@ bool ChangesetFieldFactory::ResolveInstanceId(
             continue;
 
         // ECInstanceId is the primary key — it must always be present in the changeset.
-        // Always look up the index in primaryTbl: the changeset column indices belong
-        // exclusively to the table that was passed to Create().
         const auto& sysMap = propertyMap->GetAs<SystemPropertyMap>();
-        const int colIdx   = primaryTbl.GetColumnIndexOf(sysMap.GetDataPropertyMaps().front()->GetColumn());
-        DbValue rawId      = change.GetValue(colIdx, stage);
-        if (!rawId.IsValid() || rawId.IsNull()) {
+        Utf8StringCR colName = sysMap.GetDataPropertyMaps().front()->GetColumn().GetName();
+        auto it = columnValues.find(colName);
+        if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull()) {
             LOG.errorv("ECInstanceId is absent or null in changeset for table '%s'.",
                        primaryDbTable.GetName().c_str());
             return false;
         }
 
-        ECInstanceId instanceId(rawId.GetValueUInt64());
+        ECInstanceId instanceId(it->second.GetValueUInt64());
         if (!instanceId.IsValid()) {
             LOG.errorv("ECInstanceId resolved to an invalid (zero) id for table '%s'.",
                        primaryDbTable.GetName().c_str());
@@ -730,7 +676,7 @@ bool ChangesetFieldFactory::ResolveInstanceId(
         }
 
         instanceIdOut = instanceId;
-        fieldOut      = CreateSystem(conn, *propertyMap, primaryTbl, change, stage);
+        fieldOut      = CreateSystem(conn, *propertyMap, columnValues);
         LOG.debugv("Table '%s': resolved ECInstanceId %" PRIu64 " from changeset.",
                    primaryDbTable.GetName().c_str(), instanceId.GetValueUnchecked());
         return true;
@@ -776,23 +722,22 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::ResolveClassIdField(
 
 //---------------------------------------------------------------------------------------
 // Iterates all properties in @p classMap and appends an IECSqlValue to @p fieldsOut for
-// each property that has at least one column present in the changeset.
+// each property that has at least one column present in the map.
 //
 // ECInstanceId and ECClassId are always skipped here — they are emitted separately by
 // the caller as slots [0] and [1].
 //
-// For compound properties (Point2d/3d, Nav): absent sub-columns are filled from the
-// live DB via GetValueWithDbFallback (inside CreatePrimitive / CreateNav).
-// For scalar, array, and struct properties: changeset-only reads are used.
+// For compound properties (Point2d/3d, Nav): all sub-columns read exclusively from the
+// map — no DB fallback.  Partial compound values are emitted as primitives.
+// For scalar, array, and struct properties: read directly from the map.
 //
-// Returns true on success.  Returns false (with a logged error) only if a TableView
-// cannot be obtained for a property's physical table.
+// Returns true on success.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetFieldFactory::BuildPropertyFields(
-    ClassMap const& classMap, TableView const& primaryTbl,
-    Changes::Change const& change, Stage stage,
-    ECInstanceId instanceId, ECDbCR conn,
+    ClassMap const& classMap,
+    ColumnValueMap const& columnValues,
+    ECDbCR conn,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
@@ -812,14 +757,10 @@ bool ChangesetFieldFactory::BuildPropertyFields(
             }
         }
 
-        // Always use primaryTbl for all changeset index lookups — the changeset column
-        // indices belong exclusively to the one table that was passed to Create().
-        // Properties that live in a different physical table (e.g. overflow) will not
-        // appear in this changeset entry and will be skipped by PropertyHasChangesetData.
-        if (!PropertyHasChangesetData(*propertyMap, primaryTbl, change, stage))
+        if (!PropertyHasChangesetData(*propertyMap, columnValues))
             continue;
 
-        auto val = CreateValueInternal(conn, *propertyMap, primaryTbl, change, stage, instanceId);
+        auto val = CreateValueInternal(conn, *propertyMap, columnValues);
         if (val == nullptr)
             return false;
         fieldsOut.emplace_back(std::move(val));
@@ -851,12 +792,12 @@ bool ChangesetFieldFactory::BuildPropertyFields(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::Create(
-    ECDbCR conn, DbTable const& tbl, Changes::Change const& change, Stage const& stage,
+    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fields) {
 
     // -----------------------------------------------------------------------
-    // Step 1: Create a TableView so we can map DbColumn objects to changeset
-    // column indices and seek live DB rows for partial-update fallback reads.
+    // Step 1: Create a TableView so we can seek live DB rows for partial-update
+    // fallback reads (Point2d/3d, Nav properties).
     // -----------------------------------------------------------------------
     auto tableViewOwner = CreateTableView(conn, tbl);
     if (tableViewOwner == nullptr) {
@@ -870,10 +811,10 @@ DbResult ChangesetFieldFactory::Create(
     // -----------------------------------------------------------------------
     const ClassMap*  classMap          = nullptr;
     ECClassId        resolvedClassId;
-    if (TryResolveClassMapFromChangeset(tableView, change, stage, conn, classMap, resolvedClassId)) {
+    if (TryResolveClassMapFromChangeset(tbl, columnValues, conn, classMap, resolvedClassId)) {
         LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " from changeset.",
                    tbl.GetName().c_str(), resolvedClassId.GetValueUnchecked());
-    } else if (TryResolveClassMapFromDbSeek(tableView, change, stage, conn, classMap, resolvedClassId)) {
+    } else if (TryResolveClassMapFromDbSeek(tableView, tbl, columnValues, conn, classMap, resolvedClassId)) {
         LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " via DB seek.",
                    tbl.GetName().c_str(), resolvedClassId.GetValueUnchecked());
     } else {
@@ -895,7 +836,7 @@ DbResult ChangesetFieldFactory::Create(
     // -----------------------------------------------------------------------
     ECInstanceId instanceId;
     std::unique_ptr<IECSqlValue>     instanceIdField;
-    if (!ResolveInstanceId(*classMap, tableView, change, stage, conn, tbl, instanceId, instanceIdField))
+    if (!ResolveInstanceId(*classMap, columnValues, conn, tbl, instanceId, instanceIdField))
         return BE_SQLITE_ERROR;
 
     // -----------------------------------------------------------------------
@@ -911,7 +852,7 @@ DbResult ChangesetFieldFactory::Create(
     fields.emplace_back(std::move(instanceIdField));
     fields.emplace_back(std::move(classIdField));
 
-    if (!BuildPropertyFields(*classMap, tableView, change, stage, instanceId, conn, fields)) {
+    if (!BuildPropertyFields(*classMap, columnValues, conn, fields)) {
         fields.clear();
         return BE_SQLITE_ERROR;
     }

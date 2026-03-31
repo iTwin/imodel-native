@@ -8,18 +8,20 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//! A map from SQLite column name to its DbValue for a single changeset row at one stage.
+//! Only columns that are actually present (non-absent) in the changeset are included.
+using ColumnValueMap = std::map<Utf8String, DbValue>;
 
 //=======================================================================================
 //! Creates IECSqlValue objects for each property of a changeset row.
-//! For columns absent from the changeset (e.g. partial Point2d/3d updates), values are
-//! read from the live database using the ECInstanceId primary key.
+//! All values are read exclusively from the supplied ColumnValueMap.
+//! Properties whose backing columns are absent from the map are silently skipped.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetFieldFactory final {
 public:
     static DbResult Create(ECDbCR conn, DbTable const& tbl,
-                            Changes::Change const& change,
-                            Changes::Change::Stage const& stage,
+                            ColumnValueMap const& columnValues,
                             std::vector<std::unique_ptr<IECSqlValue>>& fields);
 
 private:
@@ -55,30 +57,22 @@ private:
                                          ECDbCR conn);
 
     // ------------------------------------------------------------------
-    // Changeset value accessors
+    // ColumnValueMap accessors
     // ------------------------------------------------------------------
 
-    //! Returns true when colIdx is valid and the changeset carries an explicit
-    //! (non-absent) value for it at the given stage.
-    static bool IsInChangeset(int colIdx, Changes::Change const& change, Stage stage);
+    //! Returns true when @p colName is present in @p columnValues with a valid DbValue.
+    static bool IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
 
     //! Returns true when at least one SQLite column backing @p propertyMap is
-    //! present in the changeset for @p stage.
+    //! present in @p columnValues.
     //! For compound properties (Point2d/3d, Nav, Struct) only one component
     //! column needs to be present.
     static bool PropertyHasChangesetData(PropertyMap const& propertyMap,
-                                         TableView const& tbl,
-                                         Changes::Change const& change, Stage stage);
+                                         ColumnValueMap const& columnValues);
 
-    //! Reads colIdx from the changeset.  Asserts that the value is present.
-    //! Use only when the caller has already verified IsInChangeset().
-    static DbValue GetChangesetValue(int colIdx, Changes::Change const& change, Stage stage);
-
-    //! Reads colIdx from the changeset when present, falling back to the live
-    //! database via @p tableView otherwise.
-    //! Use only for partial-update compound properties (Point2d/3d, Nav).
-    static DbValue GetValueWithDbFallback(int colIdx, Changes::Change const& change, Stage stage,
-                                          TableView const& tableView, ECInstanceId instanceId);
+    //! Reads @p colName from @p columnValues.  Asserts that the key is present.
+    //! Use only when the caller has already verified IsInMap().
+    static DbValue GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
 
     // ------------------------------------------------------------------
     // ECSqlColumnInfo construction
@@ -100,34 +94,30 @@ private:
     // Per-kind field constructors
     // ------------------------------------------------------------------
 
-    //! Creates an IECSqlValue for a single-column primitive property.
-    //! For Point2d/3d, any coordinate absent from the changeset is filled from
-    //! the live DB so the full coordinate is always returned.
+    //! Creates an IECSqlValue for a primitive property.
+    //! Point2d/3d: if all coordinates are in the map a compound value is returned;
+    //! otherwise a ChangesetPrimitiveValue is returned for the first present coordinate.
     static std::unique_ptr<IECSqlValue> CreatePrimitive(ECDbCR conn, PropertyMap const&,
-                                    TableView const&, Changes::Change const&,
-                                    Stage, ECInstanceId);
+                                    ColumnValueMap const&);
 
     //! Creates an IECSqlValue for a system property (ECInstanceId, ECClassId, etc.).
     static std::unique_ptr<IECSqlValue> CreateSystem(ECDbCR conn, PropertyMap const&,
-                                 TableView const&, Changes::Change const&,
-                                 Stage);
+                                 ColumnValueMap const&);
 
     //! Creates an IECSqlValue for a struct property.
-    //! Only members whose backing column(s) appear in the changeset are included.
+    //! Only members whose backing column(s) appear in the map are included.
     static std::unique_ptr<IECSqlValue> CreateStruct(ECDbCR conn, PropertyMap const&,
-                                  TableView const&, Changes::Change const&,
-                                  Stage, ECInstanceId);
+                                  ColumnValueMap const&);
 
     //! Creates an IECSqlValue for a navigation property.
-    //! Either sub-component absent from the changeset is filled from the live DB.
+    //! If both id and relClassId are available a full nav value is returned;
+    //! otherwise a ChangesetPrimitiveValue is returned for the available sub-component.
     static std::unique_ptr<IECSqlValue> CreateNav(ECDbCR conn, PropertyMap const&,
-                               TableView const&, Changes::Change const&,
-                               Stage, ECInstanceId);
+                               ColumnValueMap const&);
 
     //! Creates an IECSqlValue for a primitive-array or struct-array property.
     static std::unique_ptr<IECSqlValue> CreateArray(ECDbCR conn, PropertyMap const&,
-                                 TableView const&, Changes::Change const&,
-                                 Stage);
+                                 ColumnValueMap const&);
 
     //! Creates a fixed-value IECSqlValue for a class-id property whose value is
     //! known statically at mapping time (e.g. virtual RelECClassId).
@@ -136,37 +126,36 @@ private:
     //! Dispatches to the appropriate typed Create* without a changeset-data guard.
     //! Used internally by CreateStruct after per-member filtering.
     static std::unique_ptr<IECSqlValue> CreateValueInternal(ECDbCR conn, PropertyMap const&,
-                                         TableView const&, Changes::Change const&,
-                                         Stage, ECInstanceId);
+                                         ColumnValueMap const&);
 
     // ------------------------------------------------------------------
     // High-level resolution helpers used by Create()
     // ------------------------------------------------------------------
 
-    //! Tries to resolve classMap + classId from the changeset's class-id column.
+    //! Tries to resolve classMap + classId from the column values map's class-id entry.
     //! Returns true and populates @p outClassMap / @p outClassId on success.
-    static bool TryResolveClassMapFromChangeset(TableView const& tableView,
-                                                Changes::Change const& change, Stage stage,
+    static bool TryResolveClassMapFromChangeset(DbTable const& dbTable,
+                                                ColumnValueMap const& columnValues,
                                                 ECDbCR conn,
                                                 const ClassMap*& outClassMap,
                                                 ECClassId& outClassId);
 
     //! Tries to resolve classMap + classId by reading the first primary-key value from
-    //! the changeset, seeking the live database row via @p tableView, and reading the
-    //! ECClassId column.  Used when the class-id column is absent from the changeset
+    //! @p columnValues, seeking the live database row via @p tableView, and reading the
+    //! ECClassId column.  Used when the class-id column is absent from the column values
     //! (e.g. entity tables where ECClassId is virtual and not stored in the changeset).
     //! Returns true and populates @p outClassMap / @p outClassId on success.
     static bool TryResolveClassMapFromDbSeek(TableView const& tableView,
-                                             Changes::Change const& change, Stage stage,
+                                             DbTable const& dbTable,
+                                             ColumnValueMap const& columnValues,
                                              ECDbCR conn,
                                              const ClassMap*& outClassMap,
                                              ECClassId& outClassId);
 
-    //! Reads ECInstanceId from the changeset, validates it, and creates the
+    //! Reads ECInstanceId from @p columnValues, validates it, and creates the
     //! ECInstanceId field.  Returns false and logs on any failure.
     static bool ResolveInstanceId(ClassMap const& classMap,
-                                  TableView const& tableView,
-                                  Changes::Change const& change, Stage stage,
+                                  ColumnValueMap const& columnValues,
                                   ECDbCR conn, DbTable const& tbl,
                                   ECInstanceId& outInstanceId,
                                   std::unique_ptr<IECSqlValue>& outInstanceIdField);
@@ -179,9 +168,7 @@ private:
     //! Iterates all remaining properties of @p classMap (excluding ECInstanceId and
     //! ECClassId) and appends each changed property's field to @p fields.
     static bool BuildPropertyFields(ClassMap const& classMap,
-                                    TableView const& tableView,
-                                    Changes::Change const& change, Stage stage,
-                                    ECInstanceId instanceId,
+                                    ColumnValueMap const& columnValues,
                                     ECDbCR conn,
                                     std::vector<std::unique_ptr<IECSqlValue>>& fields);
 };

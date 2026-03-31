@@ -31,7 +31,12 @@ private:
     // DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
     bool IsOpen() const { return m_changeStream != nullptr; }
     bool IsStepped() const { return m_changes != nullptr && m_currentChange.IsValid(); }
+    //! Builds a map from SQLite column name to DbValue for the current change at @p stage.
+    //! Only columns that are present (non-absent) in the changeset are included in the map.
+    //! The map can be passed directly to ChangesetFieldFactory::Create.
+    DbResult GetColumnValues(Stage stage, ColumnValueMap& outMap) const;
     void FetchCurrentClassInfo();
+    static void DumpColumnValues(ColumnValueMap const& map);
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
 
