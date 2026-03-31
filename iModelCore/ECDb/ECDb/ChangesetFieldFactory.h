@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "TableView.h"
 #include "ChangesetValue.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -25,8 +24,6 @@ public:
                             std::vector<std::unique_ptr<IECSqlValue>>& fields);
 
 private:
-    using Stage = Changes::Change::Stage;
-
     // ------------------------------------------------------------------
     // Schema / mapping helpers
     // ------------------------------------------------------------------
@@ -41,20 +38,6 @@ private:
     //! Returns DateTime::Info for DateTime primitive/array properties;
     //! returns a default Unspecified DateTime::Info for all other kinds.
     static DateTime::Info GetDateTimeInfo(PropertyMap const& propertyMap);
-
-    // ------------------------------------------------------------------
-    // TableView helpers
-    // ------------------------------------------------------------------
-
-    //! Creates a fresh TableView for @p tbl (no caching).
-    static std::unique_ptr<TableView> CreateTableView(ECDbCR conn, DbTable const& tbl);
-
-    //! Returns @p cachedView when it covers @p propTable; otherwise creates a new
-    //! TableView stored in @p ownerStorage and returns a pointer to it.
-    static TableView const* GetTableView(DbTable const& propTable,
-                                         TableView const& cachedView,
-                                         std::unique_ptr<TableView>& ownerStorage,
-                                         ECDbCR conn);
 
     // ------------------------------------------------------------------
     // ColumnValueMap accessors
@@ -73,6 +56,18 @@ private:
     //! Reads @p colName from @p columnValues.  Asserts that the key is present.
     //! Use only when the caller has already verified IsInMap().
     static DbValue GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
+
+    //! Fetches a single real column value from the live DB for the row identified by
+    //! the table's primary-key column in @p columnValues.
+    //! Returns true and sets @p outVal on success; false on any failure.
+    static bool TryFetchDoubleFromDb(double& outVal, ECDbCR conn, DbColumn const& col,
+                                     ColumnValueMap const& columnValues);
+
+    //! Fetches a single integer column value from the live DB for the row identified by
+    //! the table's primary-key column in @p columnValues.
+    //! Returns true and sets @p outVal on success; false on any failure.
+    static bool TryFetchInt64FromDb(int64_t& outVal, ECDbCR conn, DbColumn const& col,
+                                    ColumnValueMap const& columnValues);
 
     // ------------------------------------------------------------------
     // ECSqlColumnInfo construction
@@ -94,11 +89,18 @@ private:
     // Per-kind field constructors
     // ------------------------------------------------------------------
 
-    //! Creates an IECSqlValue for a primitive property.
-    //! Point2d/3d: if all coordinates are in the map a compound value is returned;
-    //! otherwise a ChangesetPrimitiveValue is returned for the first present coordinate.
+    //! Creates an IECSqlValue for a scalar primitive property.
+    //! Delegates Point2d to CreatePoint2d() and Point3d to CreatePoint3d().
     static std::unique_ptr<IECSqlValue> CreatePrimitive(ECDbCR conn, PropertyMap const&,
                                     ColumnValueMap const&);
+
+    //! Creates a full ChangesetPoint2dValue. Missing coordinates are fetched from the live DB.
+    static std::unique_ptr<IECSqlValue> CreatePoint2d(ECDbCR conn, PropertyMap const&,
+                                   ColumnValueMap const&);
+
+    //! Creates a full ChangesetPoint3dValue. Missing coordinates are fetched from the live DB.
+    static std::unique_ptr<IECSqlValue> CreatePoint3d(ECDbCR conn, PropertyMap const&,
+                                   ColumnValueMap const&);
 
     //! Creates an IECSqlValue for a system property (ECInstanceId, ECClassId, etc.).
     static std::unique_ptr<IECSqlValue> CreateSystem(ECDbCR conn, PropertyMap const&,
@@ -109,9 +111,9 @@ private:
     static std::unique_ptr<IECSqlValue> CreateStruct(ECDbCR conn, PropertyMap const&,
                                   ColumnValueMap const&);
 
-    //! Creates an IECSqlValue for a navigation property.
-    //! If both id and relClassId are available a full nav value is returned;
-    //! otherwise a ChangesetPrimitiveValue is returned for the available sub-component.
+    //! Creates a full ChangesetNavValue for a navigation property.
+    //! Both id and relClassId are resolved: from the changeset if present, otherwise
+    //! fetched from the live DB. Returns nullptr if either component cannot be resolved.
     static std::unique_ptr<IECSqlValue> CreateNav(ECDbCR conn, PropertyMap const&,
                                ColumnValueMap const&);
 
@@ -119,9 +121,10 @@ private:
     static std::unique_ptr<IECSqlValue> CreateArray(ECDbCR conn, PropertyMap const&,
                                  ColumnValueMap const&);
 
-    //! Creates a fixed-value IECSqlValue for a class-id property whose value is
-    //! known statically at mapping time (e.g. virtual RelECClassId).
-    static std::unique_ptr<IECSqlValue> CreateFixedClassId(ECDbCR conn, PropertyMap const&, ECN::ECClassId);
+    //! Creates a fixed-value IECSqlValue whose integer value is known statically or
+    //! fetched from the live DB (e.g. virtual RelECClassId, or a DB-fetched id).
+    //! @p id may be any BeInt64Id-derived type (ECClassId, ECInstanceId, …).
+    static std::unique_ptr<IECSqlValue> CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id);
 
     //! Dispatches to the appropriate typed Create* without a changeset-data guard.
     //! Used internally by CreateStruct after per-member filtering.
@@ -141,12 +144,12 @@ private:
                                                 ECClassId& outClassId);
 
     //! Tries to resolve classMap + classId by reading the first primary-key value from
-    //! @p columnValues, seeking the live database row via @p tableView, and reading the
+    //! @p columnValues and firing a direct SQL query on the live DB to fetch the physical
     //! ECClassId column.  Used when the class-id column is absent from the column values
-    //! (e.g. entity tables where ECClassId is virtual and not stored in the changeset).
+    //! (e.g. entity tables where ECClassId is not captured in the changeset).
+    //! Returns false immediately when the ECClassId column is virtual (no physical row to read).
     //! Returns true and populates @p outClassMap / @p outClassId on success.
-    static bool TryResolveClassMapFromDbSeek(TableView const& tableView,
-                                             DbTable const& dbTable,
+    static bool TryResolveClassMapFromDbSeek(DbTable const& dbTable,
                                              ColumnValueMap const& columnValues,
                                              ECDbCR conn,
                                              const ClassMap*& outClassMap,

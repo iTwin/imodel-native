@@ -80,15 +80,16 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ChangesetFixedInt64Value final : ChangesetValueBase {
 private:
-    ECN::ECClassId     m_classId;
+    BeInt64Id          m_id;
     mutable Utf8String m_idStr;
 
-    bool    _IsNull()  const override { return !m_classId.IsValid(); }
-    int64_t _GetInt64() const override { return (int64_t)m_classId.GetValueUnchecked(); }
+    bool    _IsNull()  const override { return !m_id.IsValid(); }
+    int64_t _GetInt64() const override { return (int64_t)m_id.GetValueUnchecked(); }
     Utf8CP  _GetText() const override;
 
 public:
-    ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, ECN::ECClassId classId);
+    //! @p id may be any BeInt64Id-derived type (ECClassId, ECInstanceId, …).
+    ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, BeInt64Id id);
     ~ChangesetFixedInt64Value() {}
 };
 
@@ -108,6 +109,8 @@ private:
 public:
     //! Extracts x and y immediately; the DbValues need not survive beyond this call.
     ChangesetPoint2dValue(ECSqlColumnInfo colInfo, DbValue const& x, DbValue const& y);
+    //! Constructs from raw coordinate values; used when coordinates are fetched from the live DB.
+    ChangesetPoint2dValue(ECSqlColumnInfo colInfo, double x, double y);
     ~ChangesetPoint2dValue() {}
 };
 
@@ -127,6 +130,8 @@ private:
 public:
     //! Extracts x, y and z immediately; the DbValues need not survive beyond this call.
     ChangesetPoint3dValue(ECSqlColumnInfo colInfo, DbValue const& x, DbValue const& y, DbValue const& z);
+    //! Constructs from raw coordinate values; used when coordinates are fetched from the live DB.
+    ChangesetPoint3dValue(ECSqlColumnInfo colInfo, double x, double y, double z);
     ~ChangesetPoint3dValue() {}
 };
 

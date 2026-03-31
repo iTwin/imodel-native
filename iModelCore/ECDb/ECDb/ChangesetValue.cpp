@@ -223,8 +223,8 @@ IGeometryPtr ChangesetPrimitiveValue::_GetGeometry() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetFixedInt64Value::ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, ECN::ECClassId classId)
-    : ChangesetValueBase(std::move(colInfo)), m_classId(classId)
+ChangesetFixedInt64Value::ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, BeInt64Id id)
+    : ChangesetValueBase(std::move(colInfo)), m_id(id)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ ChangesetFixedInt64Value::ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, ECN:
 Utf8CP ChangesetFixedInt64Value::_GetText() const
     {
     if (m_idStr.empty())
-        m_idStr = m_classId.ToHexStr();
+        m_idStr = m_id.ToHexStr();
     return m_idStr.c_str();
     }
 
@@ -259,6 +259,19 @@ ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo colInfo, DbValue co
         m_point = DPoint2d::From(x.GetValueDouble(), y.GetValueDouble());
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo colInfo, double x, double y)
+    : ChangesetValueBase(std::move(colInfo))
+    {
+    m_isNull = std::isinf(x) || std::isnan(x) || std::isinf(y) || std::isnan(y);
+    if (m_isNull)
+        m_point = NoopECSqlValue::GetSingleton().GetPoint2d();
+    else
+        m_point = DPoint2d::From(x, y);
+    }
+
 
 //**** ChangesetPoint3dValue ****
 
@@ -279,6 +292,19 @@ ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo colInfo, DbValue co
         m_point = NoopECSqlValue::GetSingleton().GetPoint3d();
     else
         m_point = DPoint3d::From(x.GetValueDouble(), y.GetValueDouble(), z.GetValueDouble());
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo colInfo, double x, double y, double z)
+    : ChangesetValueBase(std::move(colInfo))
+    {
+    m_isNull = std::isinf(x) || std::isnan(x) || std::isinf(y) || std::isnan(y) || std::isinf(z) || std::isnan(z);
+    if (m_isNull)
+        m_point = NoopECSqlValue::GetSingleton().GetPoint3d();
+    else
+        m_point = DPoint3d::From(x, y, z);
     }
 
 
