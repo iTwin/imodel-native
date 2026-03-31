@@ -706,8 +706,8 @@ GEOMAPI_VIRTUAL uint32_t                     _GetNumPerFace () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetNumPerRow () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetMeshStyle () const = 0;
 GEOMAPI_VIRTUAL PolyfaceEdgeChainCP          _GetEdgeChainCP () const = 0;
-GEOMAPI_VIRTUAL PolyfaceAuxDataCPtr          _GetAuxDataCP() const;
-GEOMAPI_VIRTUAL PolyfaceVectors *            _AsPolyfaceVectorsP() const;
+GEOMAPI_VIRTUAL PolyfaceAuxDataCPtr          _GetAuxDataCP() const {return nullptr;}
+GEOMAPI_VIRTUAL PolyfaceVectors *            _AsPolyfaceVectorsP() const {return nullptr;}
 GEOMAPI_VIRTUAL uint32_t                     _GetExpectedClosure() const = 0;
 GEOMAPI_VIRTUAL TaggedNumericData const *_GetNumericTagsCP() const = 0;
 GEOMAPI_VIRTUAL void _SetNumericTags(TaggedNumericData const & source) = 0;

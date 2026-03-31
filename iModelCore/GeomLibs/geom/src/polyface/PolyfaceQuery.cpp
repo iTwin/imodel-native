@@ -27,8 +27,7 @@ ImplementNullArgPolyfaceQueryDispatcher (uint32_t const*,GetIntColor)
 ImplementNullArgPolyfaceQueryDispatcher (int32_t const*,GetPointIndex)
 
 
-PolyfaceVectors* PolyfaceQuery::_AsPolyfaceVectorsP () const { return nullptr;}
-PolyfaceAuxDataCPtr PolyfaceQuery::_GetAuxDataCP() const { return nullptr; }
+// _AsPolyfaceVectorsP and _GetAuxDataCP are now inline in Polyface.h to avoid cross-DLL vtable link errors with lld-link.
 
 
 //! Select an index pointer -- e.g. normal, param, color -- with optional fallback to point index.

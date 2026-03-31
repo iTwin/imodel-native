@@ -10,7 +10,7 @@
   #endif
 #endif
 
-#if defined (__GNUC__) || defined (__clang__)
+#if (defined (__GNUC__) || defined (__clang__)) && !defined (_WIN32)
     //////////////////////////// GNUC /////////////////////////////////////////////
     #include <stddef.h>     // for size_t
 
@@ -388,19 +388,23 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define POP_CLANG_IGNORE\
         CLANG_DIAG_PRAGMA(pop)
 
+    // On Windows (clang-cl) these are already defined with proper MSVC behaviour
+    // in the _WIN32 section above.  Only define the no-op versions for non-Windows clang.
+    #if !defined(_WIN32)
     #define PUSH_DISABLE_DEPRECATION_WARNINGS
     #define POP_DISABLE_DEPRECATION_WARNINGS
     #define PUSH_STATIC_ANALYSIS_WARNING(CODE)
     #define POP_STATIC_ANALYSIS_WARNING
     #define PUSH_REVIEWED_STATIC_ANALYSIS_WARNING(CODE)
     #define POP_REVIEWED_STATIC_ANALYSIS_WARNING
+    #endif
 
 #else
     #define PUSH_CLANG_IGNORE(x)
     #define POP_CLANG_IGNORE
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
     #define PUSH_DISABLE_DEPRECATION_WARNINGS
     #define POP_DISABLE_DEPRECATION_WARNINGS
     #define PUSH_STATIC_ANALYSIS_WARNING(CODE)
