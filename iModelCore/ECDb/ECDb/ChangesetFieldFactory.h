@@ -46,13 +46,6 @@ private:
     //! Returns true when @p colName is present in @p columnValues with a valid DbValue.
     static bool IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
 
-    //! Returns true when at least one SQLite column backing @p propertyMap is
-    //! present in @p columnValues.
-    //! For compound properties (Point2d/3d, Nav, Struct) only one component
-    //! column needs to be present.
-    static bool PropertyHasChangesetData(PropertyMap const& propertyMap,
-                                         ColumnValueMap const& columnValues);
-
     //! Reads @p colName from @p columnValues.  Asserts that the key is present.
     //! Use only when the caller has already verified IsInMap().
     static DbValue GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
@@ -87,49 +80,53 @@ private:
 
     // ------------------------------------------------------------------
     // Per-kind field constructors
+    //
+    // Convention: every Create* returns BE_SQLITE_OK and populates @p out on success.
+    //   BE_SQLITE_OK with out==nullptr  → no changeset data for this property; skip it.
+    //   Any other DbResult             → hard error; caller must propagate immediately.
     // ------------------------------------------------------------------
 
-    //! Creates an IECSqlValue for a scalar primitive property.
-    //! Delegates Point2d to CreatePoint2d() and Point3d to CreatePoint3d().
-    static std::unique_ptr<IECSqlValue> CreatePrimitive(ECDbCR conn, PropertyMap const&,
-                                    ColumnValueMap const&);
+    //! Single-pass dispatch: checks presence and creates the value in one step.
+    static DbResult CreateValueForProperty(ECDbCR conn, PropertyMap const&,
+                                           ColumnValueMap const&,
+                                           std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates a full ChangesetPoint2dValue. Missing coordinates are fetched from the live DB.
-    static std::unique_ptr<IECSqlValue> CreatePoint2d(ECDbCR conn, PropertyMap const&,
-                                   ColumnValueMap const&);
+    //! Returns BE_SQLITE_OK/out==nullptr when neither coordinate is in the changeset.
+    //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
+    static DbResult CreatePoint2d(ECDbCR conn, PropertyMap const&,
+                                  ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates a full ChangesetPoint3dValue. Missing coordinates are fetched from the live DB.
-    static std::unique_ptr<IECSqlValue> CreatePoint3d(ECDbCR conn, PropertyMap const&,
-                                   ColumnValueMap const&);
+    //! Returns BE_SQLITE_OK/out==nullptr when no coordinate is in the changeset.
+    //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
+    static DbResult CreatePoint3d(ECDbCR conn, PropertyMap const&,
+                                  ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates an IECSqlValue for a system property (ECInstanceId, ECClassId, etc.).
-    static std::unique_ptr<IECSqlValue> CreateSystem(ECDbCR conn, PropertyMap const&,
-                                 ColumnValueMap const&);
+    //! Returns BE_SQLITE_OK/out==nullptr when the backing column is absent from the changeset.
+    static DbResult CreatePrimitive(ECDbCR conn, PropertyMap const&,
+                                    ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates an IECSqlValue for a struct property.
-    //! Only members whose backing column(s) appear in the map are included.
-    static std::unique_ptr<IECSqlValue> CreateStruct(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&);
+    //! Returns BE_SQLITE_OK/out==nullptr when the backing column is absent or virtual.
+    //! Returns BE_SQLITE_ERROR on internal mapping failures.
+    static DbResult CreateSystem(ECDbCR conn, PropertyMap const&,
+                                 ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates a full ChangesetNavValue for a navigation property.
-    //! Both id and relClassId are resolved: from the changeset if present, otherwise
-    //! fetched from the live DB. Returns nullptr if either component cannot be resolved.
-    static std::unique_ptr<IECSqlValue> CreateNav(ECDbCR conn, PropertyMap const&,
-                               ColumnValueMap const&);
+    //! Returns BE_SQLITE_OK/out==nullptr when neither physical component is in the changeset.
+    //! Returns BE_SQLITE_ERROR when a component is partly present but the DB fetch fails.
+    static DbResult CreateNav(ECDbCR conn, PropertyMap const&,
+                              ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates an IECSqlValue for a primitive-array or struct-array property.
-    static std::unique_ptr<IECSqlValue> CreateArray(ECDbCR conn, PropertyMap const&,
-                                 ColumnValueMap const&);
+    //! Returns BE_SQLITE_OK/out==nullptr when the column is absent from the changeset.
+    static DbResult CreateArray(ECDbCR conn, PropertyMap const&,
+                                ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Creates a fixed-value IECSqlValue whose integer value is known statically or
-    //! fetched from the live DB (e.g. virtual RelECClassId, or a DB-fetched id).
-    //! @p id may be any BeInt64Id-derived type (ECClassId, ECInstanceId, …).
-    static std::unique_ptr<IECSqlValue> CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id);
+    //! Returns BE_SQLITE_OK/out==nullptr when no member has changeset data.
+    //! Returns BE_SQLITE_ERROR if any member value fails to be created.
+    static DbResult CreateStruct(ECDbCR conn, PropertyMap const&,
+                                 ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
 
-    //! Dispatches to the appropriate typed Create* without a changeset-data guard.
-    //! Used internally by CreateStruct after per-member filtering.
-    static std::unique_ptr<IECSqlValue> CreateValueInternal(ECDbCR conn, PropertyMap const&,
-                                         ColumnValueMap const&);
+    //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
+    static DbResult CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
+                                  std::unique_ptr<IECSqlValue>& out);
 
     // ------------------------------------------------------------------
     // High-level resolution helpers used by Create()
@@ -143,11 +140,8 @@ private:
                                                 const ClassMap*& outClassMap,
                                                 ECClassId& outClassId);
 
-    //! Tries to resolve classMap + classId by reading the first primary-key value from
-    //! @p columnValues and firing a direct SQL query on the live DB to fetch the physical
-    //! ECClassId column.  Used when the class-id column is absent from the column values
-    //! (e.g. entity tables where ECClassId is not captured in the changeset).
-    //! Returns false immediately when the ECClassId column is virtual (no physical row to read).
+    //! Tries to resolve classMap + classId via a live DB seek on the first PK column.
+    //! Returns false immediately when the ECClassId column is virtual.
     //! Returns true and populates @p outClassMap / @p outClassId on success.
     static bool TryResolveClassMapFromDbSeek(DbTable const& dbTable,
                                              ColumnValueMap const& columnValues,
@@ -155,25 +149,28 @@ private:
                                              const ClassMap*& outClassMap,
                                              ECClassId& outClassId);
 
-    //! Reads ECInstanceId from @p columnValues, validates it, and creates the
-    //! ECInstanceId field.  Returns false and logs on any failure.
-    static bool ResolveInstanceId(ClassMap const& classMap,
-                                  ColumnValueMap const& columnValues,
-                                  ECDbCR conn, DbTable const& tbl,
-                                  ECInstanceId& outInstanceId,
-                                  std::unique_ptr<IECSqlValue>& outInstanceIdField);
+    //! Reads ECInstanceId from @p columnValues, validates it, creates the field.
+    //! Returns BE_SQLITE_OK and populates outputs on success; BE_SQLITE_ERROR otherwise.
+    static DbResult ResolveInstanceId(ClassMap const& classMap,
+                                      ColumnValueMap const& columnValues,
+                                      ECDbCR conn, DbTable const& tbl,
+                                      ECInstanceId& outInstanceId,
+                                      std::unique_ptr<IECSqlValue>& outInstanceIdField);
 
     //! Creates the ECClassId field as a fixed value from the already-resolved @p resolvedClassId.
-    static std::unique_ptr<IECSqlValue> ResolveClassIdField(ClassMap const& classMap,
+    //! Returns BE_SQLITE_OK and populates @p out on success; BE_SQLITE_ERROR otherwise.
+    static DbResult ResolveClassIdField(ClassMap const& classMap,
                                         ECClassId resolvedClassId,
-                                        ECDbCR conn, DbTable const& tbl);
+                                        ECDbCR conn, DbTable const& tbl,
+                                        std::unique_ptr<IECSqlValue>& out);
 
-    //! Iterates all remaining properties of @p classMap (excluding ECInstanceId and
-    //! ECClassId) and appends each changed property's field to @p fields.
-    static bool BuildPropertyFields(ClassMap const& classMap,
-                                    ColumnValueMap const& columnValues,
-                                    ECDbCR conn,
-                                    std::vector<std::unique_ptr<IECSqlValue>>& fields);
+    //! Iterates all remaining properties (excluding ECInstanceId and ECClassId),
+    //! performing a single-pass check+create via CreateValueForProperty.
+    //! Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
+    static DbResult BuildPropertyFields(ClassMap const& classMap,
+                                        ColumnValueMap const& columnValues,
+                                        ECDbCR conn,
+                                        std::vector<std::unique_ptr<IECSqlValue>>& fields);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

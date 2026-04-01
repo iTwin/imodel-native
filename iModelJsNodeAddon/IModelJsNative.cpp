@@ -5238,6 +5238,8 @@ public:
     Napi::Value Step(NapiInfoCR info)
         {
         DbResult rc = m_reader.Step();
+        if(rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "step() failed", rc);
         return Napi::Boolean::New(Env(), rc == BE_SQLITE_ROW);
         }
 

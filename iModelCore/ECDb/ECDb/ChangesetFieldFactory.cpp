@@ -158,82 +158,11 @@ bool ChangesetFieldFactory::TryFetchInt64FromDb(int64_t& outVal, ECDbCR conn,
     return true;
 }
 
-//---------------------------------------------------------------------------------------
-// Returns true when at least one SQLite column backing @p propertyMap is present in
-// @p columnValues.
-//
-// Rules per property kind:
-//   System  — checks the specific data column.
-//   Primitive — single column; Point2d/3d require at least one coordinate column.
-//   Navigation — at least one of: id column, relClassId column (if physical).
-//   Struct  — at least one member satisfies this predicate recursively.
-//   Array   — the single JSON blob column.
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::PropertyHasChangesetData(PropertyMap const& propertyMap,
-                                                     ColumnValueMap const& columnValues) {
-    const auto& prop = propertyMap.GetProperty();
-
-    if (propertyMap.IsSystem()) {
-        const auto prim = prop.GetAsPrimitiveProperty();
-        if (prim == nullptr)
-            return false;
-        const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
-        const auto dataMap = sysMap.GetDataPropertyMaps().front();
-        if (dataMap->GetColumn().IsVirtual())
-            return false;
-        return IsInMap(dataMap->GetColumn().GetName(), columnValues);
-    }
-
-    if (prop.GetIsPrimitive()) {
-        const auto prim = prop.GetAsPrimitiveProperty();
-        if (prim->GetType() == PRIMITIVETYPE_Point2d) {
-            const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
-            return IsInMap(pt2dMap.GetX().GetColumn().GetName(), columnValues) ||
-                   IsInMap(pt2dMap.GetY().GetColumn().GetName(), columnValues);
-        }
-        if (prim->GetType() == PRIMITIVETYPE_Point3d) {
-            const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
-            return IsInMap(pt3dMap.GetX().GetColumn().GetName(), columnValues) ||
-                   IsInMap(pt3dMap.GetY().GetColumn().GetName(), columnValues) ||
-                   IsInMap(pt3dMap.GetZ().GetColumn().GetName(), columnValues);
-        }
-        const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-        return IsInMap(primMap.GetColumn().GetName(), columnValues);
-    }
-
-    if (prop.GetIsNavigation()) {
-        const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
-        if (PropertyHasChangesetData(navMap.GetIdPropertyMap(), columnValues))
-            return true;
-        const auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
-        if (relClassIdMap.GetColumn().IsVirtual())
-            return false;
-        return IsInMap(relClassIdMap.GetColumn().GetName(), columnValues);
-    }
-
-    if (prop.GetIsStruct()) {
-        const auto& structMap = propertyMap.GetAs<StructPropertyMap>();
-        for (const auto& memberMap : structMap)
-            if (PropertyHasChangesetData(*memberMap, columnValues))
-                return true;
-        return false;
-    }
-
-    if (prop.GetIsArray()) {
-        const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-        return IsInMap(primMap.GetColumn().GetName(), columnValues);
-    }
-
-    return false;
-}
-
 //=============================================================================
 // ColumnInfo factory helpers
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
-// Builds the ECSqlColumnInfo for a primitive (or Point2d/3d) property.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlColumnInfo ChangesetFieldFactory::MakePrimitiveColumnInfo(PropertyMap const& propertyMap) {
@@ -251,7 +180,6 @@ ECSqlColumnInfo ChangesetFieldFactory::MakePrimitiveColumnInfo(PropertyMap const
 }
 
 //---------------------------------------------------------------------------------------
-// Builds the ECSqlColumnInfo for a struct property.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlColumnInfo ChangesetFieldFactory::MakeStructColumnInfo(PropertyMap const& propertyMap) {
@@ -269,7 +197,6 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeStructColumnInfo(PropertyMap const& p
 }
 
 //---------------------------------------------------------------------------------------
-// Builds the ECSqlColumnInfo for a navigation property.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlColumnInfo ChangesetFieldFactory::MakeNavColumnInfo(PropertyMap const& propertyMap) {
@@ -287,7 +214,6 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeNavColumnInfo(PropertyMap const& prop
 }
 
 //---------------------------------------------------------------------------------------
-// Builds the ECSqlColumnInfo for an array (primitive-array or struct-array) property.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlColumnInfo ChangesetFieldFactory::MakeArrayColumnInfo(PropertyMap const& propertyMap) {
@@ -313,16 +239,22 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeArrayColumnInfo(PropertyMap const& pr
 
 //=============================================================================
 // Typed IECSqlValue factory methods
+//
+// Convention: every Create* returns BE_SQLITE_OK and populates @p out on success.
+//   BE_SQLITE_OK with out == nullptr means "no changeset data for this property — skip it".
+//   Any other DbResult is a hard error; the caller must propagate it immediately.
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
 // Creates an IECSqlValue for a Point2d property.
-// If neither coordinate is in the changeset the property is skipped.
-// A missing coordinate is fetched from the live DB only when the other IS in the changeset.
+// Returns BE_SQLITE_OK with out==nullptr when neither coordinate is in the changeset.
+// Returns BE_SQLITE_ERROR when one coordinate is present but the other cannot be fetched
+// from the live DB.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePoint2d(
-    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreatePoint2d(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
     const DbColumn& xCol = pt2dMap.GetX().GetColumn();
@@ -331,45 +263,45 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePoint2d(
     const bool xInChangeset = IsInMap(xCol.GetName(), columnValues);
     const bool yInChangeset = IsInMap(yCol.GetName(), columnValues);
 
-    // Neither coordinate in changeset — skip entirely, no DB lookup.
     if (!xInChangeset && !yInChangeset)
-        return nullptr;
+        return BE_SQLITE_OK; // nothing in changeset — skip
 
     double x = 0.0, y = 0.0;
 
     if (xInChangeset) {
         x = GetFromMap(xCol.GetName(), columnValues).GetValueDouble();
     } else {
-        // Y is in changeset; fetch X from DB to complete the point.
         if (!TryFetchDoubleFromDb(x, conn, xCol, columnValues)) {
-            LOG.warningv("Point2d property '%s': X coordinate absent and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Point2d property '%s': X coordinate absent and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
     }
 
     if (yInChangeset) {
         y = GetFromMap(yCol.GetName(), columnValues).GetValueDouble();
     } else {
-        // X is in changeset; fetch Y from DB to complete the point.
         if (!TryFetchDoubleFromDb(y, conn, yCol, columnValues)) {
-            LOG.warningv("Point2d property '%s': Y coordinate absent and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Point2d property '%s': Y coordinate absent and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
     }
 
-    return std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y);
+    out = std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // Creates an IECSqlValue for a Point3d property.
-// If no coordinates are in the changeset the property is skipped.
-// A missing coordinate is fetched from the live DB only when at least one other IS in the changeset.
+// Returns BE_SQLITE_OK with out==nullptr when no coordinate is in the changeset.
+// Returns BE_SQLITE_ERROR when at least one coordinate is present but another cannot be
+// fetched from the live DB.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePoint3d(
-    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreatePoint3d(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
     const DbColumn& xCol = pt3dMap.GetX().GetColumn();
@@ -380,81 +312,83 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePoint3d(
     const bool yInChangeset = IsInMap(yCol.GetName(), columnValues);
     const bool zInChangeset = IsInMap(zCol.GetName(), columnValues);
 
-    // No coordinates in changeset — skip entirely, no DB lookup.
     if (!xInChangeset && !yInChangeset && !zInChangeset)
-        return nullptr;
+        return BE_SQLITE_OK; // nothing in changeset — skip
 
     double x = 0.0, y = 0.0, z = 0.0;
 
     if (xInChangeset) {
         x = GetFromMap(xCol.GetName(), columnValues).GetValueDouble();
     } else {
-        // At least one other coordinate is in changeset; fetch X from DB.
         if (!TryFetchDoubleFromDb(x, conn, xCol, columnValues)) {
-            LOG.warningv("Point3d property '%s': X coordinate absent and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Point3d property '%s': X coordinate absent and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
     }
 
     if (yInChangeset) {
         y = GetFromMap(yCol.GetName(), columnValues).GetValueDouble();
     } else {
-        // At least one other coordinate is in changeset; fetch Y from DB.
         if (!TryFetchDoubleFromDb(y, conn, yCol, columnValues)) {
-            LOG.warningv("Point3d property '%s': Y coordinate absent and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Point3d property '%s': Y coordinate absent and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
     }
 
     if (zInChangeset) {
         z = GetFromMap(zCol.GetName(), columnValues).GetValueDouble();
     } else {
-        // At least one other coordinate is in changeset; fetch Z from DB.
         if (!TryFetchDoubleFromDb(z, conn, zCol, columnValues)) {
-            LOG.warningv("Point3d property '%s': Z coordinate absent and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Point3d property '%s': Z coordinate absent and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
     }
 
-    return std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z);
+    out = std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // Creates an IECSqlValue for a scalar primitive property.
-// Delegates Point2d to CreatePoint2d() and Point3d to CreatePoint3d().
-// All other types are read directly from the changeset column values map.
+// Returns BE_SQLITE_OK with out==nullptr when the column is absent from the changeset.
+// Delegates Point2d/3d to CreatePoint2d/3d().
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreatePrimitive(
-    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreatePrimitive(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
 
     if (prim->GetType() == PRIMITIVETYPE_Point2d)
-        return CreatePoint2d(conn, propertyMap, columnValues);
+        return CreatePoint2d(conn, propertyMap, columnValues, out);
 
     if (prim->GetType() == PRIMITIVETYPE_Point3d)
-        return CreatePoint3d(conn, propertyMap, columnValues);
+        return CreatePoint3d(conn, propertyMap, columnValues, out);
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    return std::make_unique<ChangesetPrimitiveValue>(
+    if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
+        return BE_SQLITE_OK; // not in changeset — skip
+
+    out = std::make_unique<ChangesetPrimitiveValue>(
         MakePrimitiveColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName(), columnValues),
         GetDateTimeInfo(propertyMap));
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // Creates an IECSqlValue for a system property (ECInstanceId, ECClassId, etc.).
-// All system property columns must be present in the changeset — no DB fallback is used.
-// Virtual class-id columns must NOT be passed here; use CreateFixedId() instead.
+// Returns BE_SQLITE_OK with out==nullptr when the column is absent or virtual.
+// Returns BE_SQLITE_ERROR on internal mapping failures.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateSystem(
-    ECDbCR conn, PropertyMap const& propertyMap,
-    ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreateSystem(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
@@ -469,28 +403,33 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateSystem(
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
     const auto& sysMap = propertyMap.GetAs<SystemPropertyMap>();
-    const auto dataMap = sysMap.GetDataPropertyMaps().front();
-    if (dataMap->GetColumn().IsVirtual()) {
-        LOG.errorv("Virtual system property '%s' passed to CreateSystem — cannot read from changeset.",
+    const auto* dataMap = sysMap.FindDataPropertyMap(propertyMap.GetClassMap());
+    BeAssert(dataMap != nullptr && "SystemPropertyMap has no data property map for the given ClassMap");
+    if (dataMap == nullptr) {
+        LOG.errorv("No data property map found for system property '%s'.",
                    propertyMap.GetProperty().GetName().c_str());
-        return nullptr;
+        return BE_SQLITE_ERROR;
     }
-    Utf8StringCR colName = dataMap->GetColumn().GetName();
-    auto it = columnValues.find(colName);
-    if (it == columnValues.end()) {
-        LOG.errorv("System property column '%s' not found in column values map.", colName.c_str());
-        return nullptr;
-    }
-    return std::make_unique<ChangesetPrimitiveValue>(columnInfo, it->second);
+
+    if (dataMap->GetColumn().IsVirtual())
+        return BE_SQLITE_OK; // virtual — nothing to read from changeset, skip
+
+    auto it = columnValues.find(dataMap->GetColumn().GetName());
+    if (it == columnValues.end() || !it->second.IsValid())
+        return BE_SQLITE_OK; // not in changeset — skip
+
+    out = std::make_unique<ChangesetPrimitiveValue>(columnInfo, it->second);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
-// Creates a fixed-value IECSqlValue whose integer value is known statically or
-// has been fetched from the live DB.  @p id may be any BeInt64Id-derived type.
+// Creates a fixed-value IECSqlValue whose integer value is statically known.
+// Always succeeds — never skipped and never consults the changeset.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateFixedId(
-    ECDbCR conn, PropertyMap const& propertyMap, BeInt64Id id) {
+DbResult ChangesetFieldFactory::CreateFixedId(
+    ECDbCR conn, PropertyMap const& propertyMap, BeInt64Id id,
+    std::unique_ptr<IECSqlValue>& out) {
 
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
@@ -503,23 +442,19 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateFixedId(
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    return std::make_unique<ChangesetFixedInt64Value>(columnInfo, id);
+    out = std::make_unique<ChangesetFixedInt64Value>(columnInfo, id);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // Creates a full ChangesetNavValue for a navigation property.
-//
-// Skip rules (no DB query fired):
-//   • Neither id nor physical relClassId is in the changeset → return nullptr.
-//
-// DB-fallback rules (only when one side IS in the changeset):
-//   • id absent, physical relClassId present → fetch id from DB.
-//   • physical relClassId absent, id present → fetch relClassId from DB.
-//   • virtual relClassId → always resolved from schema (no changeset / DB needed).
+// Returns BE_SQLITE_OK with out==nullptr when neither physical component is in the changeset.
+// Returns BE_SQLITE_ERROR when a component is partially present but the DB fetch fails.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateNav(
-    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreateNav(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
     const auto& idPropMap = navMap.GetIdPropertyMap();
@@ -531,9 +466,8 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateNav(
     const bool hasPhysicalRelClassIdInChangeset =
         !relClassIdIsVirtual && IsInMap(relClassIdMap.GetColumn().GetName(), columnValues);
 
-    // Skip if neither physical component is in the changeset.
     if (!hasIdInChangeset && !hasPhysicalRelClassIdInChangeset)
-        return nullptr;
+        return BE_SQLITE_OK; // nothing in changeset — skip
 
     // --- Resolve id sub-component ---
     std::unique_ptr<IECSqlValue> idVal;
@@ -541,12 +475,11 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateNav(
         idVal = std::make_unique<ChangesetPrimitiveValue>(MakePrimitiveColumnInfo(idPropMap),
                                                          GetFromMap(idCol.GetName(), columnValues));
     } else {
-        // Physical relClassId is in changeset; fetch id from DB.
         int64_t fetchedId;
         if (!TryFetchInt64FromDb(fetchedId, conn, idCol, columnValues)) {
-            LOG.warningv("Nav property '%s': id absent from changeset and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Nav property '%s': id absent from changeset and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
         idVal = std::make_unique<ChangesetFixedInt64Value>(MakePrimitiveColumnInfo(idPropMap),
                                                            BeInt64Id(static_cast<uint64_t>(fetchedId)));
@@ -556,92 +489,107 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateNav(
     std::unique_ptr<IECSqlValue> relClassIdVal;
     if (relClassIdIsVirtual) {
         const auto navProp = propertyMap.GetProperty().GetAsNavigationProperty();
-        relClassIdVal = CreateFixedId(conn, relClassIdMap, navProp->GetRelationshipClass()->GetId());
+        relClassIdVal = std::make_unique<ChangesetFixedInt64Value>(
+            MakePrimitiveColumnInfo(relClassIdMap), navProp->GetRelationshipClass()->GetId());
     } else if (hasPhysicalRelClassIdInChangeset) {
         relClassIdVal = std::make_unique<ChangesetPrimitiveValue>(
             MakePrimitiveColumnInfo(relClassIdMap),
             GetFromMap(relClassIdMap.GetColumn().GetName(), columnValues));
     } else {
-        // Id is in changeset; fetch relClassId from DB.
         int64_t fetchedRelClassId;
         if (!TryFetchInt64FromDb(fetchedRelClassId, conn, relClassIdMap.GetColumn(), columnValues)) {
-            LOG.warningv("Nav property '%s': relClassId absent from changeset and could not be fetched from DB.",
-                         propertyMap.GetProperty().GetName().c_str());
-            return nullptr;
+            LOG.errorv("Nav property '%s': relClassId absent from changeset and could not be fetched from DB.",
+                       propertyMap.GetProperty().GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
         relClassIdVal = std::make_unique<ChangesetFixedInt64Value>(
             MakePrimitiveColumnInfo(relClassIdMap),
             ECN::ECClassId(static_cast<uint64_t>(fetchedRelClassId)));
     }
 
-    return std::make_unique<ChangesetNavValue>(MakeNavColumnInfo(propertyMap),
-                                               std::move(idVal), std::move(relClassIdVal));
+    out = std::make_unique<ChangesetNavValue>(MakeNavColumnInfo(propertyMap),
+                                              std::move(idVal), std::move(relClassIdVal));
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for an array (primitive-array or struct-array) property.
-// Arrays are stored as a single JSON blob column — read directly from the changeset.
-// No DB fallback: if the column is not in the changeset the property is skipped upstream.
+// Creates an IECSqlValue for an array property.
+// Returns BE_SQLITE_OK with out==nullptr when the column is absent from the changeset.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateArray(
-    ECDbCR conn, PropertyMap const& propertyMap,
-    ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreateArray(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    // Column is guaranteed present: caller verified PropertyHasChangesetData().
-    return std::make_unique<ChangesetArrayValue>(
+    if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
+        return BE_SQLITE_OK; // not in changeset — skip
+
+    out = std::make_unique<ChangesetArrayValue>(
         MakeArrayColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName(), columnValues),
         conn);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // Creates an IECSqlValue for a struct property.
-// Only struct members whose backing column(s) are present in the changeset are included;
-// unchanged members are omitted entirely (partial struct update semantics).
+// Only members whose backing column(s) are in the changeset are included.
+// Returns BE_SQLITE_OK with out==nullptr when no member has changeset data.
+// Returns BE_SQLITE_ERROR if any member fails to be created.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateStruct(
-    ECDbCR conn, PropertyMap const& propertyMap,
-    ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreateStruct(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     auto structVal = std::make_unique<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
+    bool anyMember = false;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
-        if (!PropertyHasChangesetData(*memberMap, columnValues))
-            continue;
-
-        auto memberVal = CreateValueInternal(conn, *memberMap, columnValues);
+        std::unique_ptr<IECSqlValue> memberVal;
+        DbResult status = CreateValueForProperty(conn, *memberMap, columnValues, memberVal);
+        if (status != BE_SQLITE_OK)
+            return status;
         if (memberVal == nullptr)
-            return nullptr;
+            continue; // not in changeset
+        anyMember = true;
         structVal->AppendMember(memberMap->GetProperty().GetName(), std::move(memberVal));
     }
-    return structVal;
+
+    if (anyMember)
+        out = std::move(structVal);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
-// Dispatches to the appropriate typed Create* method.  Does NOT check for changeset
-// presence — callers are responsible for calling PropertyHasChangesetData() first.
+// Single-pass dispatch: checks changeset presence and constructs the value in one step.
+// Returns BE_SQLITE_OK with out==nullptr when the property has no changeset data.
+// Returns BE_SQLITE_ERROR on a hard failure (e.g. live DB fetch fails).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::CreateValueInternal(
-    ECDbCR conn, PropertyMap const& propertyMap,
-    ColumnValueMap const& columnValues) {
+DbResult ChangesetFieldFactory::CreateValueForProperty(
+    ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
+    std::unique_ptr<IECSqlValue>& out) {
 
     const auto& prop = propertyMap.GetProperty();
-    if (propertyMap.IsSystem())
-        return CreateSystem(conn, propertyMap, columnValues);
-    if (prop.GetIsPrimitive())
-        return CreatePrimitive(conn, propertyMap, columnValues);
-    if (prop.GetIsStruct())
-        return CreateStruct(conn, propertyMap, columnValues);
-    if (prop.GetIsNavigation())
-        return CreateNav(conn, propertyMap, columnValues);
-    if (prop.GetIsArray())
-        return CreateArray(conn, propertyMap, columnValues);
 
-    BeAssert(false && "Unknown property type in ChangesetFieldFactory::CreateValueInternal");
-    return nullptr;
+    if (propertyMap.IsSystem())
+        return CreateSystem(conn, propertyMap, columnValues, out);
+
+    if (prop.GetIsPrimitive())
+        return CreatePrimitive(conn, propertyMap, columnValues, out);
+
+    if (prop.GetIsNavigation())
+        return CreateNav(conn, propertyMap, columnValues, out);
+
+    if (prop.GetIsStruct())
+        return CreateStruct(conn, propertyMap, columnValues, out);
+
+    if (prop.GetIsArray())
+        return CreateArray(conn, propertyMap, columnValues, out);
+
+    BeAssert(false && "Unknown property type in ChangesetFieldFactory::CreateValueForProperty");
+    return BE_SQLITE_ERROR;
 }
 
 //=============================================================================
@@ -746,14 +694,13 @@ bool ChangesetFieldFactory::TryResolveClassMapFromDbSeek(
 }
 
 //---------------------------------------------------------------------------------------
-// Finds the ECInstanceId property in @p classMap, reads its value exclusively from the
-// changeset, validates it, and emits the corresponding IECSqlValue field.
-//
-// Returns true on success; @p instanceIdOut and @p fieldOut are populated.
-// Returns false and logs an error on any failure.
+// Finds the ECInstanceId property in @p classMap, reads its value from the changeset,
+// validates it, and emits the IECSqlValue field.
+// Returns BE_SQLITE_OK and populates @p instanceIdOut / @p fieldOut on success.
+// Returns BE_SQLITE_ERROR on any failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::ResolveInstanceId(
+DbResult ChangesetFieldFactory::ResolveInstanceId(
     ClassMap const& classMap,
     ColumnValueMap const& columnValues,
     ECDbCR conn, DbTable const& primaryDbTable,
@@ -771,47 +718,62 @@ bool ChangesetFieldFactory::ResolveInstanceId(
         if (!propertyMap->GetProperty().GetName().EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
             continue;
 
-        // ECInstanceId is the primary key — it must always be present in the changeset.
         const auto& sysMap = propertyMap->GetAs<SystemPropertyMap>();
-        Utf8StringCR colName = sysMap.GetDataPropertyMaps().front()->GetColumn().GetName();
+        const auto* dataMap = sysMap.FindDataPropertyMap(primaryDbTable);
+        BeAssert(dataMap != nullptr && "ECInstanceId SystemPropertyMap has no data property map for the given table");
+        if (dataMap == nullptr) {
+            LOG.errorv("No ECInstanceId data property map found for table '%s'.",
+                       primaryDbTable.GetName().c_str());
+            return BE_SQLITE_ERROR;
+        }
+        Utf8StringCR colName = dataMap->GetColumn().GetName();
         auto it = columnValues.find(colName);
         if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull()) {
             LOG.errorv("ECInstanceId is absent or null in changeset for table '%s'.",
                        primaryDbTable.GetName().c_str());
-            return false;
+            return BE_SQLITE_ERROR;
         }
 
         ECInstanceId instanceId(it->second.GetValueUInt64());
         if (!instanceId.IsValid()) {
             LOG.errorv("ECInstanceId resolved to an invalid (zero) id for table '%s'.",
                        primaryDbTable.GetName().c_str());
-            return false;
+            return BE_SQLITE_ERROR;
+        }
+
+        std::unique_ptr<IECSqlValue> sysVal;
+        DbResult status = CreateSystem(conn, *propertyMap, columnValues, sysVal);
+        if (status != BE_SQLITE_OK)
+            return status;
+        if (sysVal == nullptr) {
+            LOG.errorv("ECInstanceId field could not be created for table '%s'.",
+                       primaryDbTable.GetName().c_str());
+            return BE_SQLITE_ERROR;
         }
 
         instanceIdOut = instanceId;
-        fieldOut      = CreateSystem(conn, *propertyMap, columnValues);
+        fieldOut      = std::move(sysVal);
         LOG.debugv("Table '%s': resolved ECInstanceId %" PRIu64 " from changeset.",
                    primaryDbTable.GetName().c_str(), instanceId.GetValueUnchecked());
-        return true;
+        return BE_SQLITE_OK;
     }
 
     LOG.errorv("ECInstanceId property not found in ClassMap for table '%s'.",
                primaryDbTable.GetName().c_str());
-    return false;
+    return BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------
-// Builds the ECClassId field for the result set as a fixed value from the already-resolved
-// @p resolvedClassId.  The class-id is always known before this function is called
-// (resolved in step 2 of Create), so there is no need to re-read it from the changeset.
-//
-// Returns nullptr and logs an error when the ECClassId property is not found.
+// Creates the ECClassId field as a fixed value from the already-resolved @p resolvedClassId.
+// Returns BE_SQLITE_OK and populates @p out on success.
+// Returns BE_SQLITE_ERROR when the ECClassId property is not found in the ClassMap.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<IECSqlValue> ChangesetFieldFactory::ResolveClassIdField(
+DbResult ChangesetFieldFactory::ResolveClassIdField(
     ClassMap const& classMap,
     ECClassId resolvedClassId,
-    ECDbCR conn, DbTable const& primaryDbTable) {
+    ECDbCR conn, DbTable const& primaryDbTable,
+    std::unique_ptr<IECSqlValue>& out) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         if (!propertyMap->IsSystem())
@@ -825,12 +787,12 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::ResolveClassIdField(
         if (!propertyMap->GetProperty().GetName().EqualsIAscii(ECDBSYS_PROP_ECClassId))
             continue;
 
-        return CreateFixedId(conn, *propertyMap, resolvedClassId);
+        return CreateFixedId(conn, *propertyMap, resolvedClassId, out);
     }
 
     LOG.errorv("ECClassId property not found in ClassMap for table '%s'.",
                primaryDbTable.GetName().c_str());
-    return nullptr;
+    return BE_SQLITE_ERROR;
 }
 
 //---------------------------------------------------------------------------------------
@@ -844,10 +806,10 @@ std::unique_ptr<IECSqlValue> ChangesetFieldFactory::ResolveClassIdField(
 // missing sub-columns are fetched from the live DB when at least one component is present.
 // For scalar, array, and struct properties: read directly from the map.
 //
-// Returns true on success.
+// Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::BuildPropertyFields(
+DbResult ChangesetFieldFactory::BuildPropertyFields(
     ClassMap const& classMap,
     ColumnValueMap const& columnValues,
     ECDbCR conn,
@@ -870,16 +832,16 @@ bool ChangesetFieldFactory::BuildPropertyFields(
             }
         }
 
-        if (!PropertyHasChangesetData(*propertyMap, columnValues))
-            continue;
-
-        auto val = CreateValueInternal(conn, *propertyMap, columnValues);
+        std::unique_ptr<IECSqlValue> val;
+        DbResult status = CreateValueForProperty(conn, *propertyMap, columnValues, val);
+        if (status != BE_SQLITE_OK)
+            return status;
         if (val == nullptr)
-            return false;
+            continue; // no changeset data — skip
         fieldsOut.emplace_back(std::move(val));
     }
 
-    return true;
+    return BE_SQLITE_OK;
 }
 
 //=============================================================================
@@ -937,16 +899,18 @@ DbResult ChangesetFieldFactory::Create(
     // Step 2: Resolve ECInstanceId (slot [0]).
     // -----------------------------------------------------------------------
     ECInstanceId instanceId;
-    std::unique_ptr<IECSqlValue>     instanceIdField;
-    if (!ResolveInstanceId(*classMap, columnValues, conn, tbl, instanceId, instanceIdField))
-        return BE_SQLITE_ERROR;
+    std::unique_ptr<IECSqlValue> instanceIdField;
+    DbResult status = ResolveInstanceId(*classMap, columnValues, conn, tbl, instanceId, instanceIdField);
+    if (status != BE_SQLITE_OK)
+        return status;
 
     // -----------------------------------------------------------------------
     // Step 3: Build ECClassId field (slot [1]).
     // -----------------------------------------------------------------------
-    std::unique_ptr<IECSqlValue> classIdField = ResolveClassIdField(*classMap, resolvedClassId, conn, tbl);
-    if (classIdField == nullptr)
-        return BE_SQLITE_ERROR;
+    std::unique_ptr<IECSqlValue> classIdField;
+    status = ResolveClassIdField(*classMap, resolvedClassId, conn, tbl, classIdField);
+    if (status != BE_SQLITE_OK)
+        return status;
 
     // -----------------------------------------------------------------------
     // Step 4: Build remaining property fields (slots [2+]).
@@ -954,9 +918,10 @@ DbResult ChangesetFieldFactory::Create(
     fields.emplace_back(std::move(instanceIdField));
     fields.emplace_back(std::move(classIdField));
 
-    if (!BuildPropertyFields(*classMap, columnValues, conn, fields)) {
+    status = BuildPropertyFields(*classMap, columnValues, conn, fields);
+    if (status != BE_SQLITE_OK) {
         fields.clear();
-        return BE_SQLITE_ERROR;
+        return status;
     }
 
     return BE_SQLITE_OK;
