@@ -545,9 +545,11 @@ selection
             $$->AddProperty(std::make_unique<DerivedPropertyExp>(
                 std::make_unique<PropertyNameExp>(pp), nullptr));
         }
-    | STAR COMMA select_item_list   { $$ = $3;
+    | STAR COMMA select_item_list   {
+            $$ = $3;
             PropertyPath pp; pp.Push(Exp::ASTERISK_TOKEN);
-            /* prepend asterisk — using Exp::Collection internals */
+            $$->PrependProperty(std::make_unique<DerivedPropertyExp>(
+                std::make_unique<PropertyNameExp>(pp), nullptr));
         }
     | select_item_list              { $$ = $1; }
     ;

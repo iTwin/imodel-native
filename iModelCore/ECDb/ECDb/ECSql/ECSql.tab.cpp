@@ -2581,7 +2581,8 @@ yyreduce:
 #line 534 "ECSql.y"
                                     { (yyval.selectClauseExp) = (yyvsp[0].selectClauseExp);
             PropertyPath pp; pp.Push(Exp::ASTERISK_TOKEN);
-            /* prepend asterisk — using Exp::Collection internals */
+            (yyval.selectClauseExp)->PrependProperty(std::make_unique<DerivedPropertyExp>(
+                std::make_unique<PropertyNameExp>(pp), nullptr));
         }
 #line 2579 "ECSql.tab.cpp"
     break;

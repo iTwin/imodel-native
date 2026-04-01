@@ -256,6 +256,7 @@ struct SelectClauseExp final : Exp
         SelectClauseExp() : Exp(Type::Selection) {}
 
         void AddProperty(std::unique_ptr<DerivedPropertyExp> propertyExp) { AddChild(std::move(propertyExp)); }
+        void PrependProperty(std::unique_ptr<DerivedPropertyExp> propertyExp) { PrependChild(std::move(propertyExp)); }
     };
 
 //=======================================================================================
