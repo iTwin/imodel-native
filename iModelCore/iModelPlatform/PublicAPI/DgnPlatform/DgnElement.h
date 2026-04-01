@@ -555,12 +555,13 @@ class BulkElementDeletion
     DgnElementIdSet m_failedToDelete;
 
     bool m_definitionElementsExist = false;
+    bool m_geometricElementsExist = false;
     bool m_subModelRootExists = false;
     bool m_tempTableExists = false;
 
     // Create temporary tables for bulk deletion
     bool CreateTempTables();
-    bool ExpandElementIdList() const;
+    bool ExpandElementIdList();
 
     // Find and prune constraint violators
     bool FindAndPruneConstraintViolators();

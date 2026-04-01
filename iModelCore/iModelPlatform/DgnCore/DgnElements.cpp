@@ -525,7 +525,7 @@ bool BulkElementDeletion::CreateTempTables()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BulkElementDeletion::ExpandElementIdList() const
+bool BulkElementDeletion::ExpandElementIdList()
     {
     constexpr auto expandSql = 
         "WITH RECURSIVE fullSet(id, logicalParentId, isSubModelRoot, depth) AS ("
@@ -573,6 +573,14 @@ bool BulkElementDeletion::ExpandElementIdList() const
 
     if (m_originalElementIds.size() >= 100)
         m_dgndb.TryExecuteSql("ANALYZE " TEMP_TABLE(TEMP_ELEMENT_DELETION));
+
+    // Check if any geometric elements are in the delete set to conditionally optimize the spatial index cleanup.
+    const auto geomCheckStmt = m_dgndb.GetCachedStatement(
+        "SELECT 1 FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " g "
+        "WHERE EXISTS (SELECT 1 FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) " t WHERE t.ElementId = g.ElementId) "
+        "LIMIT 1");
+    if (geomCheckStmt.IsValid() && geomCheckStmt->Step() == BE_SQLITE_ROW)
+        m_geometricElementsExist = true;
 
     return true;
     }
@@ -637,6 +645,7 @@ bool BulkElementDeletion::FindAndPruneConstraintViolators()
         "LEFT JOIN " TEMP_TABLE(TEMP_ELEMENT_DELETION) " td ON td.ElementId = g.ElementId "
         "WHERE td.ElementId IS NULL "
         "LIMIT 1";
+
     auto guardStmt = m_dgndb.GetCachedStatement(guardSql);
     if (guardStmt.IsNull())
         {
@@ -929,13 +938,27 @@ bool BulkElementDeletion::ExecuteDeletion()
         m_dgndb.TryExecuteSql("PRAGMA defer_foreign_keys = false");
     };
 
+    // For geometric elements, bulk delete the affected spatial indexes to avoid the deletion trigger
+    if (m_geometricElementsExist)
+        {
+        m_dgndb.TryExecuteSql("DROP TRIGGER IF EXISTS dgn_prjrange_del");
+        m_dgndb.TryExecuteSql("DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")");
+        }
+
     const auto stat = m_dgndb.TryExecuteSql("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")");
     if (stat != BE_SQLITE_OK)
         {
+        // Recreate the trigger even on failure so we don't leave the db in a bad state
+        if (m_geometricElementsExist)
+            m_dgndb.TryExecuteSql("CREATE TRIGGER IF NOT EXISTS dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
         LOG.errorv("BulkElementDeletion: Element deletion failed: %s", BeSQLiteLib::GetLogError(stat).c_str());
         reset();
         return false;
         }
+
+    // Recreate the trigger now that the bulk delete is done
+    if (m_geometricElementsExist)
+        m_dgndb.TryExecuteSql("CREATE TRIGGER IF NOT EXISTS dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
     if (m_subModelRootExists)
         {
