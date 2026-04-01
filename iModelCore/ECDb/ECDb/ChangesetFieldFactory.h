@@ -85,7 +85,7 @@ private:
 
     //! Single-pass dispatch: checks presence and creates the value in one step.
     static DbResult CreateValueForProperty(ECDbCR conn, PropertyMap const&,
-                                           ColumnValueMap const&,
+                                           ColumnValueMap const&, DbTable const& dbTable,
                                            std::unique_ptr<IECSqlValue>& out);
 
     //! Returns BE_SQLITE_OK/out==nullptr when neither coordinate is in the changeset.
@@ -105,7 +105,8 @@ private:
     //! Returns BE_SQLITE_OK/out==nullptr when the backing column is absent or virtual.
     //! Returns BE_SQLITE_ERROR on internal mapping failures.
     static DbResult CreateSystem(ECDbCR conn, PropertyMap const&,
-                                 ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                                 ColumnValueMap const&, DbTable const& dbTable,
+                                 std::unique_ptr<IECSqlValue>& out);
 
     //! Returns BE_SQLITE_OK/out==nullptr when neither physical component is in the changeset.
     //! Returns BE_SQLITE_ERROR when a component is partly present but the DB fetch fails.
@@ -119,7 +120,8 @@ private:
     //! Returns BE_SQLITE_OK/out==nullptr when no member has changeset data.
     //! Returns BE_SQLITE_ERROR if any member value fails to be created.
     static DbResult CreateStruct(ECDbCR conn, PropertyMap const&,
-                                 ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                                 ColumnValueMap const&, DbTable const& dbTable,
+                                 std::unique_ptr<IECSqlValue>& out);
 
     //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
     static DbResult CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
@@ -166,7 +168,7 @@ private:
     //! Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
     static DbResult BuildPropertyFields(ClassMap const& classMap,
                                         ColumnValueMap const& columnValues,
-                                        ECDbCR conn,
+                                        ECDbCR conn, DbTable const& dbTable,
                                         std::vector<std::unique_ptr<IECSqlValue>>& fields);
 
     //! Returns true when @p classId is BisCore::Element or any class derived from it.
