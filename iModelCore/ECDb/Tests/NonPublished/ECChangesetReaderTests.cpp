@@ -111,7 +111,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
 
     ECChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false));
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ECChangesetReader::Mode::All_Properties));
 
     // Step one by one.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -273,7 +273,7 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
 
     ECChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false));
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ECChangesetReader::Mode::All_Properties));
 
     ASSERT_EQ(reader.Step(), BE_SQLITE_ROW);
     bool isEC = false;
@@ -364,6 +364,7 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::Old, oldKey));
     EXPECT_FALSE(newKey.empty());
     EXPECT_FALSE(oldKey.empty());
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
 
     reader.Close();
     }
@@ -422,7 +423,7 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
 
     ECChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false));
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ECChangesetReader::Mode::All_Properties));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
     bool isEC = false;

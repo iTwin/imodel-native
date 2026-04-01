@@ -19,7 +19,7 @@ PreparedECChangesetReader::PreparedECChangesetReader(ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert) {
+DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert, Mode mode) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -38,13 +38,13 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
     if (!ddlChanges._IsEmpty())
         m_ddl = ddlChanges.ToString();
 
-    return Open(std::move(reader), invert);
+    return Open(std::move(reader), invert, mode);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert) {
+DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -56,6 +56,7 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
         return BE_SQLITE_ERROR;
 
     m_invert = invert;
+    m_mode   = mode;
     m_changeStream = std::move(changeStream);
     return BE_SQLITE_OK;
 }
@@ -63,7 +64,7 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert) {
+DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert, Mode mode) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -93,8 +94,9 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, D
     if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup))
         return BE_SQLITE_ERROR;
 
-    m_ddl = ddlGroup.ToString();
+    m_ddl    = ddlGroup.ToString();
     m_invert = invert;
+    m_mode   = mode;
     return BE_SQLITE_OK;
 }
 
@@ -176,7 +178,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             if (GetColumnValues(Stage::New, newValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
             DumpColumnValues(newValues);
-            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New)) != BE_SQLITE_OK)
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New), m_mode) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
         if(opCode != DbOpcode::Insert) {
@@ -184,7 +186,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
             DumpColumnValues(oldValues);
-            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old)) != BE_SQLITE_OK)
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
     }
@@ -200,11 +202,7 @@ DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap&
         return BE_SQLITE_ERROR;
     }
     if (!IsStepped()) {
-        LOG.errorv("Attempting to get column values from a PreparedECChangesetReader that has not been stepped.");
-        return BE_SQLITE_ERROR;
-    }
-    if(!m_currentChange.IsValid()) {
-        LOG.errorv("Attempting to get column values from an invalid change.");
+        LOG.errorv("Attempting to get column values from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return BE_SQLITE_ERROR;
     }
     Utf8String tableName;
@@ -270,12 +268,7 @@ DbResult PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {
         }
     if (!IsStepped())
         {
-        LOG.errorv("Attempting to get table name from a PreparedECChangesetReader that has not been stepped.");
-        return BE_SQLITE_ERROR;
-        }
-    if(!m_currentChange.IsValid())
-        {
-        LOG.errorv("Attempting to get table name from an invalid change.");
+        LOG.errorv("Attempting to get table name from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return BE_SQLITE_ERROR;
         }
     tableName = m_currentChange.GetTableName();
@@ -293,12 +286,7 @@ DbResult PreparedECChangesetReader::GetOpcode(DbOpcode& opcode) const {
         }
     if (!IsStepped())
         {
-        LOG.errorv("Attempting to get opcode from a PreparedECChangesetReader that has not been stepped.");
-        return BE_SQLITE_ERROR;
-        }
-    if(!m_currentChange.IsValid())
-        {
-        LOG.errorv("Attempting to get opcode from an invalid change.");
+        LOG.errorv("Attempting to get opcode from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return BE_SQLITE_ERROR;
         }
     opcode = m_currentChange.GetOpcode();
@@ -316,7 +304,7 @@ IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIn
         }
     if (!IsStepped())
         {
-        LOG.warningv("Attempting to get value from a PreparedECChangesetReader that has not been stepped.");
+        LOG.warningv("Attempting to get value from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return NoopECSqlValue::GetSingleton();
         }
     int size = GetColumnCount(stage);
@@ -338,7 +326,7 @@ DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key)
         }
     if (!IsStepped())
         {
-        LOG.errorv("Attempting to get instance key from a PreparedECChangesetReader that has not been stepped.");
+        LOG.errorv("Attempting to get instance key from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return BE_SQLITE_ERROR;
         }
     const int count = GetColumnCount(stage);
@@ -375,15 +363,6 @@ DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::AddField(std::unique_ptr<IECSqlValue> field, Stage stage) {
-    BeAssert(field != nullptr);
-    if (field != nullptr)
-        m_fields[stage].push_back(std::move(field));
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
     if (!IsOpen())
         {
@@ -392,12 +371,7 @@ DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
         }
     if (!IsStepped())
         {
-        LOG.errorv("Attempting to check IsECTable on a PreparedECChangesetReader that has not been stepped.");
-        return BE_SQLITE_ERROR;
-        }
-    if(!m_currentChange.IsValid())
-        {
-        LOG.errorv("Attempting to check IsECTable on an invalid change.");
+        LOG.errorv("Attempting to check IsECTable on a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return BE_SQLITE_ERROR;
         }
     

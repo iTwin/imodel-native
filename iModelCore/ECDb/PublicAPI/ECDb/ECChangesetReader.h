@@ -17,6 +17,13 @@ public:
     struct Impl;
     using Stage = Changes::Change::Stage;
 
+    //! Controls which properties are emitted per row.
+    enum class Mode {
+        All_Properties = 0, //!< Emit ECInstanceId, ECClassId, and all user/domain properties.
+        Bis_Element_Properties = 1, //!< Emit ECInstanceId, ECClassId, and BIS-schema properties only.
+        Instance_Key = 2,   //!< Emit ECInstanceId and ECClassId only (cheapest).
+    };
+
 private:
     Impl* m_pimpl = nullptr;
 
@@ -30,9 +37,9 @@ public:
     ECDB_EXPORT ~ECChangesetReader();
 
     // Lifecycle
-    ECDB_EXPORT DbResult OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert = false);
-    ECDB_EXPORT DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert = false);
-    ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert = false);
+    ECDB_EXPORT DbResult OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, Mode mode);
+    ECDB_EXPORT DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
+    ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert, Mode mode);
     ECDB_EXPORT void Close();
     ECDB_EXPORT DbResult Step();
     // Primary value accessor

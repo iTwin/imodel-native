@@ -4,12 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ChangesetValue.h"
+#include <ECDb/ECChangesetReader.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//! A map from SQLite column name to its DbValue for a single changeset row at one stage.
-//! Only columns that are actually present (non-absent) in the changeset are included.
-using ColumnValueMap = std::map<Utf8String, DbValue>;
+
 
 //=======================================================================================
 //! Creates IECSqlValue objects for each property of a changeset row.
@@ -18,12 +17,10 @@ using ColumnValueMap = std::map<Utf8String, DbValue>;
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetFieldFactory final {
-public:
-    static DbResult Create(ECDbCR conn, DbTable const& tbl,
-                            ColumnValueMap const& columnValues,
-                            std::vector<std::unique_ptr<IECSqlValue>>& fields);
-
 private:
+    //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
+    //! Only columns that are actually present (non-absent) in the changeset are included.
+    using ColumnValueMap = std::map<Utf8String, DbValue>;
     // ------------------------------------------------------------------
     // Schema / mapping helpers
     // ------------------------------------------------------------------
@@ -171,6 +168,14 @@ private:
                                         ColumnValueMap const& columnValues,
                                         ECDbCR conn,
                                         std::vector<std::unique_ptr<IECSqlValue>>& fields);
+
+    //! Returns true when @p classId is BisCore::Element or any class derived from it.
+    static bool isChildClassOfBisCore(ECClassId classId, ECDbCR conn);
+public:
+    static DbResult Create(ECDbCR conn, DbTable const& tbl,
+                            ColumnValueMap const& columnValues,
+                            std::vector<std::unique_ptr<IECSqlValue>>& fields,
+                            ECChangesetReader::Mode mode);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

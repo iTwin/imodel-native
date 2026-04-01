@@ -844,6 +844,27 @@ DbResult ChangesetFieldFactory::BuildPropertyFields(
     return BE_SQLITE_OK;
 }
 
+//---------------------------------------------------------------------------------------
+// Returns true when @p classId identifies BisCore::Element or any class derived from it.
+// Returns false when the class cannot be resolved or is not in the BisCore.Element hierarchy.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ChangesetFieldFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn) {
+    const ECClass* cls = conn.Schemas().Main().GetClass(classId);
+    if (cls == nullptr)
+        return false;
+
+    const ECClass* bisElementClass = conn.Schemas().Main().GetClass("BisCore", "Element");
+    if (bisElementClass == nullptr)
+        return false;
+
+    // If it's exactly BisCore.Element, return false because we just want children of biscore element class not the biscore elemnt class itself
+    if(ECClass::ClassesAreEqualByName(cls, bisElementClass)) 
+        return false;
+
+    return cls->Is(bisElementClass);
+}
+
 //=============================================================================
 // ChangesetFieldFactory::Create — public entry point
 //
@@ -868,7 +889,7 @@ DbResult ChangesetFieldFactory::BuildPropertyFields(
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fields) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::Mode mode) {
 
     // -----------------------------------------------------------------------
     // Step 1: Resolve ClassMap — try changeset, then DB seek, fall back to root map.
@@ -917,6 +938,12 @@ DbResult ChangesetFieldFactory::Create(
     // -----------------------------------------------------------------------
     fields.emplace_back(std::move(instanceIdField));
     fields.emplace_back(std::move(classIdField));
+
+    if (mode == ECChangesetReader::Mode::Instance_Key)
+        return BE_SQLITE_OK; // caller only needs the instance key — skip user properties
+
+    if(mode == ECChangesetReader::Mode::Bis_Element_Properties && isChildClassOfBisCore(resolvedClassId, conn))
+        return BE_SQLITE_OK; // caller only needs element properties — skip user properties)    
 
     status = BuildPropertyFields(*classMap, columnValues, conn, fields);
     if (status != BE_SQLITE_OK) {

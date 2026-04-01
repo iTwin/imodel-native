@@ -9,26 +9,24 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-using Stage = Changes::Change::Stage;
-
 //=======================================================================================
 // ECChangesetReader::Impl
 //+===============+===============+===============+===============+===============+======
 
-DbResult ECChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert) {
+DbResult ECChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, Mode mode) {
     if (!IsPrepared())
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-    return m_prepared->OpenFile(file, invert);
+    return m_prepared->OpenFile(file, invert, mode);
 }
 
-DbResult ECChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert) {
+DbResult ECChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
     m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-    return m_prepared->Open(std::move(changeStream), invert);
+    return m_prepared->Open(std::move(changeStream), invert, mode);
 }
 
-DbResult ECChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert) {
+DbResult ECChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert, Mode mode) {
     m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-    return m_prepared->OpenGroup(files, db, invert);
+    return m_prepared->OpenGroup(files, db, invert, mode);
 }
 
 void ECChangesetReader::Impl::Close() {
