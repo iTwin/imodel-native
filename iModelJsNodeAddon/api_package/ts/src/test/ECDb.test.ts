@@ -1,7 +1,8 @@
 import { expect } from "chai";
 import * as os from "os";
+import { DbResult } from "@itwin/core-bentley";
 import {
-  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, DbResult,
+  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
   ECSqlReader, IModelError, QueryBinder, QueryOptions,
 } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";

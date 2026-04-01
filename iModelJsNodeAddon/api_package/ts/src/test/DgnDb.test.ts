@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode, using } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -698,7 +698,8 @@ describe("basic tests", () => {
   });
 
   it("testSchemaImport ErrorWhenAnyXmlIsIllFormed", async () => {
-    await using(new iModelJsNative.DisableNativeAssertions(), async (_r) => {
+    const _r = new iModelJsNative.DisableNativeAssertions();
+    try {
       const writeDbFileName = copyFile("errorWhenAnyXmlIsIllFormed.bim", dbFileName);
       // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
       const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
@@ -735,7 +736,9 @@ describe("basic tests", () => {
       const validSchemaProps = db.getSchemaProps("ValidSchema");
       assert.isTrue(validSchemaProps.name === "ValidSchema");
       assert.isTrue(validSchemaProps.version === "01.00.00");
-    });
+    } finally {
+      _r.dispose();
+    }
   });
 
   it("testSchemaExport", () => {
