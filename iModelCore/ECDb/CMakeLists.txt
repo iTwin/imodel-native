@@ -175,10 +175,20 @@ target_compile_options(check-ast PRIVATE
     -stdlib=libc++
 )
 
-# ── Post-build: symlink test assets ───────────────────────────────────────────
+# ── Post-build: symlink test assets and copy test data ────────────────────────
 # Tests expect Assets/ dir next to the executable
 set(PRODUCT_ASSETS "$ENV{HOME}/bsw/git-a1/out/debug/MacOSARM64/Product/ECDb-Tests/Assets")
+set(TEST_DATA "${CMAKE_CURRENT_SOURCE_DIR}/Tests/Data")
+set(ASSETS_ECDB_DIR "${PRODUCT_ASSETS}/Documents/ECDb")
 add_custom_command(TARGET ECDb-Tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E create_symlink "${PRODUCT_ASSETS}" "$<TARGET_FILE_DIR:ECDb-Tests>/Assets"
-    COMMENT "Symlinking test assets"
+    # Copy test data files so fixtures that open test.bim, JsonTestClass.json, etc. can find them
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TEST_DATA}/test.bim"           "${ASSETS_ECDB_DIR}/test.bim"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TEST_DATA}/JsonTestClass.json" "${ASSETS_ECDB_DIR}/JsonTestClass.json"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TEST_DATA}/RuleSetInstance1.xml" "${ASSETS_ECDB_DIR}/RuleSetInstance1.xml"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TEST_DATA}/StartupCompany.json" "${ASSETS_ECDB_DIR}/StartupCompany.json"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory   "${TEST_DATA}/fileformatbenchmark" "${ASSETS_ECDB_DIR}/fileformatbenchmark"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory   "${TEST_DATA}/profileseeds"        "${ASSETS_ECDB_DIR}/profileseeds"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory   "${TEST_DATA}/ExecutionPlan"        "${ASSETS_ECDB_DIR}/ExecutionPlan"
+    COMMENT "Symlinking test assets and copying test data"
 )
