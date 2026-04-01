@@ -567,3 +567,11 @@ public:
 };
 
 END_BENTLEY_NAMESPACE
+
+// std::hash specialization for Utf8String, enabling use in std::unordered_map/set.
+namespace std {
+    template<> struct hash<BentleyApi::Utf8String>
+        {
+        size_t operator()(BentleyApi::Utf8String const& str) const noexcept { return std::hash<std::string>{}(str); }
+        };
+}
