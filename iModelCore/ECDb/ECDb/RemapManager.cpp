@@ -727,7 +727,7 @@ BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties(Sch
         LOG.infov("Updating existing instances for class %s: %" PRIuPTR " columns to remap...", remapInfos[0].m_cleanedMapping.m_className.c_str(), remapInfos.size());
 
         //Hold the remaining remap infos to sort in a map
-        std::unordered_map<Utf8String, RemappedColumnInfo*> remainingRemapsByOldColumnId;
+        std::map<Utf8String, RemappedColumnInfo*> remainingRemapsByOldColumnId;
         std::transform(remapInfos.begin(), remapInfos.end(), std::inserter(remainingRemapsByOldColumnId, remainingRemapsByOldColumnId.end()),
                [](RemappedColumnInfo &i) { return std::make_pair(i.m_cleanedMapping.m_fullOldColumnIdentifier, &i); });
         BeAssert(remapInfos.size() == remainingRemapsByOldColumnId.size());
@@ -752,7 +752,7 @@ BentleyStatus RemapManager::UpgradeExistingECInstancesWithRemappedProperties(Sch
     return SUCCESS;
     }
 
-BentleyStatus RemapManager::SortRemapInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::unordered_map<Utf8String, RemappedColumnInfo*>& remainingInfos)
+BentleyStatus RemapManager::SortRemapInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingInfos)
     {
     if(!CheckIfSortingIsNeeded(remainingInfos))
         {
@@ -779,7 +779,7 @@ BentleyStatus RemapManager::SortRemapInfos(std::vector<RemappedColumnInfo*>& sor
     return SUCCESS;
     }
 
-bool RemapManager::CheckIfSortingIsNeeded(std::unordered_map<Utf8String, RemappedColumnInfo*>& unsortedInfos)
+bool RemapManager::CheckIfSortingIsNeeded(std::map<Utf8String, RemappedColumnInfo*>& unsortedInfos)
     {
     for(auto& info : unsortedInfos)
         {
@@ -790,7 +790,7 @@ bool RemapManager::CheckIfSortingIsNeeded(std::unordered_map<Utf8String, Remappe
     return false;
     }
 
-void RemapManager::SortRemappedColumnInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::unordered_map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort)
+void RemapManager::SortRemappedColumnInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort)
     {
     bool successInLastRun = true;
     // we repeat this process until we find no more valid entries to move
@@ -814,7 +814,7 @@ void RemapManager::SortRemappedColumnInfos(std::vector<RemappedColumnInfo*>& sor
         }
     }
 
-void RemapManager::SortCircularRemappedColumnInfos(std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::unordered_map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort)
+void RemapManager::SortCircularRemappedColumnInfos(std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort)
     {
     bool successInLastRun = true;
     // we repeat this process until we find no more valid entries to move

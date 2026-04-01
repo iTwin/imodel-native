@@ -618,6 +618,3 @@ public:
 using CachedUtf8String = CachedValue<Utf8String>;
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::ECN::ECClassId)
-BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::ECN::ECPropertyId)

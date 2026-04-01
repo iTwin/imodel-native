@@ -177,19 +177,3 @@ public:
 
 END_BENTLEY_NAMESPACE
 
-// std::hash specialization for BeInt64Id, enabling use in std::unordered_map/set.
-// Subclass specializations are generated via BEINT64_ID_HASH_SPECIALIZATION.
-namespace std {
-    template<> struct hash<BentleyApi::BeInt64Id>
-        {
-        size_t operator()(BentleyApi::BeInt64Id const& id) const noexcept { return std::hash<uint64_t>{}(id.GetValueUnchecked()); }
-        };
-}
-
-//! Declares a std::hash specialization for a BeInt64Id subclass so it can be used in std::unordered_map/set.
-//! IMPORTANT: This macro must be used OUTSIDE of any namespace block (at global scope).
-#define BEINT64_ID_HASH_SPECIALIZATION(classname) \
-    namespace std { template<> struct hash<classname> { \
-        size_t operator()(classname const& id) const noexcept { return std::hash<uint64_t>{}(id.GetValueUnchecked()); } \
-    }; }
-

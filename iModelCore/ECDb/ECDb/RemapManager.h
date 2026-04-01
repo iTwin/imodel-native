@@ -5,7 +5,6 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "ECSql/NativeSqlBuilder.h"
-#include <unordered_map>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -114,7 +113,7 @@ public:
     ~RemapManager() {}
 
 private:
-    std::unordered_map<ECN::ECClassId, RemapInfosForClass> m_remapInfos;
+    std::map<ECN::ECClassId, RemapInfosForClass> m_remapInfos;
     RemapInfosForClass& GetOrAddRemapInfo(ECN::ECClassId id, Utf8StringCR className, Utf8StringCR schemaName)
         {
         auto [ insertedIt, success ] = m_remapInfos.try_emplace(id, schemaName, className, id);
@@ -127,7 +126,7 @@ public:
 
 //Clear Modified Mappings
 private:
-    std::unordered_map<ECN::ECClassId, std::vector<CleanedMappingInfo>> m_cleanedMappingInfo;
+    std::map<ECN::ECClassId, std::vector<CleanedMappingInfo>> m_cleanedMappingInfo;
     std::vector<CleanedMappingInfo>& GetOrAddCleanedMappingInfo(ECN::ECClassId id)
         {
         auto [ insertedIt, success ] = m_cleanedMappingInfo.try_emplace(id);
@@ -149,7 +148,7 @@ public:
 
 //move data
 private:
-    std::unordered_map<ECN::ECClassId, std::vector<RemappedColumnInfo>> m_remappedColumns;
+    std::map<ECN::ECClassId, std::vector<RemappedColumnInfo>> m_remappedColumns;
     std::vector<RemappedColumnInfo>& GetOrAddRemappedColumnInfo(ECN::ECClassId id)
         {
         auto [ insertedIt, success ] = m_remappedColumns.try_emplace(id);
@@ -161,10 +160,10 @@ private:
         return idStr;
         };
 
-    bool CheckIfSortingIsNeeded(std::unordered_map<Utf8String, RemappedColumnInfo*>& unsortedInfos);
-    void SortRemappedColumnInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::unordered_map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort);
-    void SortCircularRemappedColumnInfos(std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::unordered_map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort);
-    BentleyStatus SortRemapInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::unordered_map<Utf8String, RemappedColumnInfo*>& remainingInfos);
+    bool CheckIfSortingIsNeeded(std::map<Utf8String, RemappedColumnInfo*>& unsortedInfos);
+    void SortRemappedColumnInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort);
+    void SortCircularRemappedColumnInfos(std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingItemsToSort);
+    BentleyStatus SortRemapInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingInfos);
     BentleyStatus UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos, SchemaImportContext& ctx);
     bool CheckIfAllUpdatesAreWithinSameTable(std::vector<std::vector<RemappedColumnInfo*>>& infos);
     BentleyStatus UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos, SchemaImportContext& ctx);

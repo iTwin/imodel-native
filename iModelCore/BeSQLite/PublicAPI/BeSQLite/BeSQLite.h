@@ -3648,6 +3648,3 @@ namespace MetaData {
     BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop = true);
 }
 END_BENTLEY_SQLITE_NAMESPACE
-
-BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::BeSQLite::BeBriefcaseBasedId)
-BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::BeSQLite::BeServerIssuedId)
