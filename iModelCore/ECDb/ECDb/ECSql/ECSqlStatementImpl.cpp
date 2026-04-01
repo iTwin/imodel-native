@@ -72,8 +72,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
 #endif
     //Step 1: parse the ECSQL
-    ECSqlRDParser parser;
-    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, filteredScope.Source());
+    std::unique_ptr<Exp> exp = ParseECSql(ecdb, ecsql, filteredScope.Source());
     if (exp == nullptr)
         {
         Finalize();

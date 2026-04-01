@@ -13,7 +13,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateClassViews() const {
-    return ClassViews::CheckViews(m_schemaImportContext.GetECDb()) ? SUCCESS : ERROR;
+    bool result = ClassViews::CheckViews(m_schemaImportContext.GetECDb());
+    return result ? SUCCESS : ERROR;
 }
 
 BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
@@ -193,19 +194,19 @@ BentleyStatus DbMapValidator::Validate() const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Validate mappings");
     if (SUCCESS != Initialize())
-        return ERROR;
+        { return ERROR; }
 
     if (SUCCESS != ValidateDbSchema())
-        return ERROR;
+        { return ERROR; }
 
     if (SUCCESS != ValidateDbMap())
-        return ERROR;
+        { return ERROR; }
 
     if (SUCCESS != CheckDuplicateDataPropertyMap())
-        return ERROR;
+        { return ERROR; }
 
     if (SUCCESS != ValidateCustomAttributeTable())
-        return ERROR;
+        { return ERROR; }
 
     return ValidateClassViews();
     }

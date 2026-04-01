@@ -801,8 +801,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::PrepareLeafStatements(PrepareInfo& pre
         ecsql.Sprintf("INSERT INTO %s(%s) VALUES(%s)", classMap.GetClass().GetECSqlName().c_str(), propNameECSqlClause.c_str(),
                       valuesECSqlClause.c_str());
 
-        ECSqlRDParser parser;
-        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str(), prepareInfo.GetContext().Issues());
+        std::unique_ptr<Exp> parseTree = ParseECSql(m_ecdb, ecsql.c_str(), prepareInfo.GetContext().Issues());
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
 
@@ -1239,8 +1238,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PreprocessWhereClause(PrepareInfo& pre
     if (prepareInfo.HasOptionsExp())
         whereClauseSelectorECSql.append(" ").append(prepareInfo.GetOptionsExp()->ToECSql());
 
-    ECSqlRDParser parser;
-    std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, whereClauseSelectorECSql.c_str(), prepareInfo.GetContext().Issues());
+    std::unique_ptr<Exp> parseTree = ParseECSql(m_ecdb, whereClauseSelectorECSql.c_str(), prepareInfo.GetContext().Issues());
     if (parseTree == nullptr)
         return ECSqlStatus::InvalidECSql;
 
@@ -1338,8 +1336,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatements(PrepareInfo& pre
             ecsql.append(OptionsExp::NOECCLASSIDFILTER_OPTION);
             }
 
-        ECSqlRDParser parser;
-        std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str(), prepareInfo.GetContext().Issues());
+        std::unique_ptr<Exp> parseTree = ParseECSql(m_ecdb, ecsql.c_str(), prepareInfo.GetContext().Issues());
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
 

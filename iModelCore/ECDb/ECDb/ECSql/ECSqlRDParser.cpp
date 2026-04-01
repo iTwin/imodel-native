@@ -2975,7 +2975,7 @@ BentleyStatus ECSqlRDParser::ParseCaseExp(std::unique_ptr<ValueExp>& exp)
     if (!Expect(ECSqlTokenType::KW_END))
         return ERROR;
 
-    exp = std::make_unique<SearchCaseValueExp>(whenList, elseVal);
+    exp = std::make_unique<SearchCaseValueExp>(whenList, std::move(elseVal));
     return SUCCESS;
     }
 

@@ -3390,7 +3390,7 @@ BentleyStatus ECSqlParser::ParseCaseExp(std::unique_ptr<ValueExp>& valueExp, OSQ
             return ERROR;
         }
 
-    valueExp = std::make_unique<SearchCaseValueExp>(whenList, elseExp);
+    valueExp = std::make_unique<SearchCaseValueExp>(whenList, std::move(elseExp));
     return SUCCESS;
     }
 

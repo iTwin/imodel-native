@@ -76,6 +76,8 @@
 #include "ECSql/Parser/SqlParse.h"
 #include "ECSql/ECSqlParser.h"
 #include "ECSql/ECSqlRDParser.h"
+#include "ECSql/ECSqlBisonParser.h"
+#include "ECSql/ECSqlParseHelper.h"
 #include "ECSql/ClassRefExp.h"
 #include "ECSql/ComputedExp.h"
 #include "ECSql/Exp.h"

@@ -531,8 +531,7 @@ bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecd
     Utf8String dummyECSql;
     dummyECSql.Sprintf("SELECT NULL FROM ONLY %s ECSQLOPTIONS %s", ecClass.GetECSqlName().c_str(), ecsqlOptions);
     
-    ECSqlRDParser parser;
-    std::unique_ptr<Exp> parseTree = parser.Parse(ecdb, dummyECSql.c_str(), ecdb.GetImpl().Issues());
+    std::unique_ptr<Exp> parseTree = ParseECSql(ecdb, dummyECSql.c_str(), ecdb.GetImpl().Issues());
     if (parseTree == nullptr)
         return false;
 
