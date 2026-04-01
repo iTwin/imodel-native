@@ -10,6 +10,7 @@
 #include <DgnPlatform/CodeSpec.h>
 #include <Napi/napi.h>
 #include <map>
+#include <unordered_map>
 #include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
@@ -49,13 +50,12 @@ struct DgnRemapTables
 {
     friend struct DgnImportContext;
 protected:
-    // *** NEEDS WORK: We may have to move these remappings into temp tables
-    bmap<DgnElementId, DgnElementId> m_elementId;
-    bmap<DgnClassId, DgnClassId> m_classId;
-    bmap<CodeSpecId, CodeSpecId> m_codeSpecId;
-    bmap<FontId, FontId> m_fontId;
+    std::unordered_map<DgnElementId, DgnElementId> m_elementId;
+    std::unordered_map<DgnClassId, DgnClassId> m_classId;
+    std::unordered_map<CodeSpecId, CodeSpecId> m_codeSpecId;
+    std::unordered_map<FontId, FontId> m_fontId;
 
-    template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
+    template<typename T> T Find(std::unordered_map<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
 
 public:

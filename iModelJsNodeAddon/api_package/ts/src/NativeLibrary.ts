@@ -1540,11 +1540,19 @@ export declare namespace IModelJsNative {
     public addClass(sourceClassFullName: string, targetClassFullName: string): BentleyStatus;
     public addCodeSpecId(sourceId: Id64String, targetId: Id64String): BentleyStatus;
     public addElementId(sourceId: Id64String, targetId: Id64String): BentleyStatus;
+    /** Bulk-insert element ID mappings. Each entry is a [sourceId, targetId] pair. */
+    public addElementIds(mappings: Array<[Id64String, Id64String]>): BentleyStatus;
     public removeElementId(sourceId: Id64String): BentleyStatus;
     public findCodeSpecId(sourceId: Id64String): Id64String;
     public findElementId(sourceId: Id64String): Id64String;
+    /** Bulk lookup of element ID mappings. Returns an object mapping sourceId to targetId for all found mappings. */
+    public findElementIds(sourceIds: Id64String[]): { [sourceId: string]: Id64String };
     public cloneElement(sourceId: Id64String, cloneOptions?: CloneElementOptions): ElementProps;
+    /** Bulk clone elements in a single native call. Returns an array of ElementProps (undefined entries for failed clones). */
+    public cloneElements(sourceIds: Id64String[], cloneOptions?: CloneElementOptions): Array<ElementProps | undefined>;
     public importCodeSpec(sourceId: Id64String): Id64String;
+    /** Bulk import CodeSpecs. Returns an object mapping sourceId to targetId. */
+    public importCodeSpecs(sourceIds: Id64String[]): { [sourceId: string]: Id64String };
     public importFont(sourceId: number): number;
     public hasSubCategoryFilter(): boolean;
     public isSubCategoryFiltered(sourceId: Id64String): boolean;

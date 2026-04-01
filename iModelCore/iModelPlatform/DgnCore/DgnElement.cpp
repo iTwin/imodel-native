@@ -3405,9 +3405,9 @@ static DbResult BulkReadMappingsFromDb(const Db& db, const char* tableName, MapT
         return BE_SQLITE_ERROR;
     while (BE_SQLITE_ROW == (result = stmt->Step()))
         {
-        auto&& key = stmt->GetValueId<typename MapType::key_type>(0);
-        auto&& val = stmt->GetValueId<typename MapType::data_type>(1);
-        NativeMap.Insert(key, val);
+        auto key = stmt->GetValueId<typename MapType::key_type>(0);
+        auto val = stmt->GetValueId<typename MapType::mapped_type>(1);
+        NativeMap[key] = val;
         }
     if (result == BE_SQLITE_DONE)
         result = BE_SQLITE_OK;

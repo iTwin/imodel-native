@@ -6662,14 +6662,18 @@ public:
             InstanceMethod("addClass", &NativeImportContext::AddClass),
             InstanceMethod("addCodeSpecId", &NativeImportContext::AddCodeSpecId),
             InstanceMethod("addElementId", &NativeImportContext::AddElementId),
+            InstanceMethod("addElementIds", &NativeImportContext::AddElementIds),
             InstanceMethod("cloneElement", &NativeImportContext::CloneElement),
+            InstanceMethod("cloneElements", &NativeImportContext::CloneElements),
             InstanceMethod("dispose", &NativeImportContext::Dispose),
             InstanceMethod("dump", &NativeImportContext::Dump),
             InstanceMethod("filterSubCategoryId", &NativeImportContext::FilterSubCategoryId),
             InstanceMethod("findCodeSpecId", &NativeImportContext::FindCodeSpecId),
             InstanceMethod("findElementId", &NativeImportContext::FindElementId),
+            InstanceMethod("findElementIds", &NativeImportContext::FindElementIds),
             InstanceMethod("hasSubCategoryFilter", &NativeImportContext::HasSubCategoryFilter),
             InstanceMethod("importCodeSpec", &NativeImportContext::ImportCodeSpec),
+            InstanceMethod("importCodeSpecs", &NativeImportContext::ImportCodeSpecs),
             InstanceMethod("importFont", &NativeImportContext::ImportFont),
             InstanceMethod("isSubCategoryFiltered", &NativeImportContext::IsSubCategoryFiltered),
             InstanceMethod("loadStateFromDb", &NativeImportContext::LoadStateFromDb),
@@ -6936,6 +6940,182 @@ public:
         if (result != DbResult::BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to load the state", result);
         return Env().Undefined();
+        }
+
+    // ---- Batch methods for reduced N-API boundary crossings ----
+
+    //! Bulk lookup of element ID mappings. Accepts an array of source Id64Strings, returns an object { sourceId: targetId } for all found mappings.
+    Napi::Value FindElementIds(NapiInfoCR info)
+        {
+        if (nullptr == m_importContext)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
+
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of Id64Strings")
+
+        Napi::Array sourceIds = info[0].As<Napi::Array>();
+        Napi::Object resultObj = Napi::Object::New(Env());
+        uint32_t len = sourceIds.Length();
+        for (uint32_t i = 0; i < len; ++i)
+            {
+            Napi::Value item = sourceIds[i];
+            if (!item.IsString())
+                continue;
+            Utf8String sourceIdStr = item.As<Napi::String>().Utf8Value();
+            DgnElementId sourceId(BeInt64Id::FromString(sourceIdStr.c_str()).GetValue());
+            DgnElementId targetId = m_importContext->FindElementId(sourceId);
+            if (targetId.IsValid())
+                resultObj.Set(sourceIdStr, toJsString(Env(), targetId));
+            }
+        return resultObj;
+        }
+
+    //! Bulk-insert element ID mappings. Accepts an array of [sourceId, targetId] pairs.
+    Napi::Value AddElementIds(NapiInfoCR info)
+        {
+        if (nullptr == m_importContext)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
+
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of [sourceId, targetId] pairs")
+
+        Napi::Array mappings = info[0].As<Napi::Array>();
+        uint32_t len = mappings.Length();
+        for (uint32_t i = 0; i < len; ++i)
+            {
+            Napi::Value item = mappings[i];
+            if (!item.IsArray())
+                continue;
+            Napi::Array pair = item.As<Napi::Array>();
+            if (pair.Length() < 2)
+                continue;
+            Napi::Value srcVal = pair[static_cast<uint32_t>(0)];
+            Napi::Value tgtVal = pair[static_cast<uint32_t>(1)];
+            if (!srcVal.IsString() || !tgtVal.IsString())
+                continue;
+            DgnElementId sourceId(BeInt64Id::FromString(srcVal.As<Napi::String>().Utf8Value().c_str()).GetValue());
+            DgnElementId targetId(BeInt64Id::FromString(tgtVal.As<Napi::String>().Utf8Value().c_str()).GetValue());
+            m_importContext->AddElementId(sourceId, targetId);
+            }
+        return Napi::Number::New(Env(), (int) BentleyStatus::SUCCESS);
+        }
+
+    //! Bulk clone elements. Accepts an array of source Id64Strings and optional CloneElementOptions, returns an array of ElementProps.
+    Napi::Value CloneElements(NapiInfoCR info)
+        {
+        if (nullptr == m_importContext)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
+
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of Id64Strings")
+
+        bool binaryGeometry = false;
+        if (!ARGUMENT_IS_EMPTY(1))
+            {
+            Napi::Object cloneOptions = info[1].As<Napi::Object>();
+            binaryGeometry = cloneOptions.Get("binaryGeometry").ToBoolean();
+            }
+
+        BeJsDocument toJsonOptions;
+        if (!binaryGeometry)
+            {
+            toJsonOptions["wantGeometry"] = true;
+            toJsonOptions["wantBRepData"] = true;
+            }
+
+        Napi::Array sourceIds = info[0].As<Napi::Array>();
+        uint32_t len = sourceIds.Length();
+        Napi::Array results = Napi::Array::New(Env(), len);
+        for (uint32_t i = 0; i < len; ++i)
+            {
+            Napi::Value item = sourceIds[i];
+            if (!item.IsString())
+                {
+                results[i] = Env().Undefined();
+                continue;
+                }
+            DgnElementId sourceElementId(BeInt64Id::FromString(item.As<Napi::String>().Utf8Value().c_str()).GetValue());
+
+            DgnElementCPtr sourceElement = m_importContext->GetSourceDb().Elements().GetElement(sourceElementId);
+            if (!sourceElement.IsValid())
+                {
+                results[i] = Env().Undefined();
+                continue;
+                }
+
+            DgnModelId targetModelId;
+            if (sourceElement->GetModelId() == DgnModel::RepositoryModelId())
+                targetModelId = DgnModel::RepositoryModelId();
+            else
+                targetModelId = m_importContext->FindModelId(sourceElement->GetModelId());
+
+            DgnModelPtr targetModel = m_importContext->GetDestinationDb().Models().GetModel(targetModelId);
+            if (!targetModel.IsValid())
+                {
+                results[i] = Env().Undefined();
+                continue;
+                }
+
+            DgnDbStatus cloneStatus;
+            DgnElementPtr targetElement = sourceElement->CloneForImport(&cloneStatus, *targetModel, *m_importContext);
+            if (cloneStatus != DgnDbStatus::Success || !targetElement.IsValid())
+                {
+                results[i] = Env().Undefined();
+                continue;
+                }
+
+            GeometryStreamCP geometryStream = nullptr;
+            GeometrySourceCP geometrySource = targetElement->ToGeometrySource();
+            if (nullptr != geometrySource)
+                {
+                if (geometrySource->GetGeometryStream().HasGeometry())
+                    geometryStream = &geometrySource->GetGeometryStream();
+                }
+            else
+                {
+                DgnGeometryPartCP geometryPart = targetElement->ToGeometryPart();
+                if ((nullptr != geometryPart) && (geometryPart->GetGeometryStream().HasGeometry()))
+                    geometryStream = &geometryPart->GetGeometryStream();
+                }
+
+            BeJsNapiObject val(Env());
+            if ((nullptr != geometryStream) && !binaryGeometry)
+                targetElement->ToJson(val, toJsonOptions);
+            else
+                targetElement->ToJson(val, BeJsDocument());
+
+            if ((nullptr != geometryStream) && binaryGeometry)
+                val["geomBinary"].SetBinary(geometryStream->GetData(), geometryStream->GetSize());
+
+            results[i] = val;
+            }
+        return results;
+        }
+
+    //! Bulk import CodeSpecs. Accepts an array of source CodeSpec Id64Strings, returns an object { sourceId: targetId }.
+    Napi::Value ImportCodeSpecs(NapiInfoCR info)
+        {
+        if (nullptr == m_importContext)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
+
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of Id64Strings")
+
+        Napi::Array sourceIds = info[0].As<Napi::Array>();
+        Napi::Object resultObj = Napi::Object::New(Env());
+        uint32_t len = sourceIds.Length();
+        for (uint32_t i = 0; i < len; ++i)
+            {
+            Napi::Value item = sourceIds[i];
+            if (!item.IsString())
+                continue;
+            Utf8String sourceIdStr = item.As<Napi::String>().Utf8Value();
+            CodeSpecId sourceId(BeInt64Id::FromString(sourceIdStr.c_str()).GetValue());
+            CodeSpecId targetId = m_importContext->RemapCodeSpecId(sourceId);
+            if (targetId.IsValid())
+                resultObj.Set(sourceIdStr, toJsString(Env(), targetId));
+            }
+        return resultObj;
         }
 };
 

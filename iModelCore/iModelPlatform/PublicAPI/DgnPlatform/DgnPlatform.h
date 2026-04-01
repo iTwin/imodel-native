@@ -728,3 +728,14 @@ public:
 enum class CompareResult : uint8_t { Less, Equal, Greater };
 
 END_BENTLEY_DGN_NAMESPACE
+
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnElementId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnModelId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnGeometryPartId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnTextureId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnStyleId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnCategoryId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::DgnSubCategoryId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::RenderMaterialId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::CodeSpecId)
+BEINT64_ID_HASH_SPECIALIZATION(BentleyApi::Dgn::FontId)
