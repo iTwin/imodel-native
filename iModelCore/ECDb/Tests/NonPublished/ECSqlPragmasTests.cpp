@@ -529,4 +529,116 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("runtime_schemas.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    { // basic pragma returns one row with expected columns
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+        // Column 0: format (string)
+        ASSERT_STREQ("binary", stmt.GetValueText(0));
+        // Column 1: formatVersion (integer)
+        ASSERT_EQ(1, stmt.GetValueInt(1));
+        // Column 2: data (base64-encoded binary, stored as string with "encoding=base64;" prefix)
+        Utf8CP dataText = stmt.GetValueText(2);
+        ASSERT_NE(nullptr, dataText);
+        static constexpr Utf8CP base64Prefix = "encoding=base64;";
+        static constexpr size_t base64PrefixLen = 16;
+        ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
+        ByteStream decoded;
+        Utf8CP b64 = dataText + base64PrefixLen;
+        Base64Utilities::Decode(decoded, b64, strlen(b64));
+        ASSERT_GT((int)decoded.GetSize(), 9); // at least header size: magic(4) + version(1) + stringTableOffset(4)
+
+        // Verify magic bytes "CSCH" = 0x43534348
+        auto bytes = decoded.GetData();
+        uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+        ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
+        // Verify format version in blob header matches
+        ASSERT_EQ(1, bytes[4]);
+
+        // Column 3: schemaToken (string, non-empty SHA hash)
+        Utf8CP token = stmt.GetValueText(3);
+        ASSERT_NE(nullptr, token);
+        ASSERT_GT(strlen(token), 0u);
+
+        // Should be exactly one row
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("runtime_schemas_ver.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Bar' modifier='None'>"
+        "    <ECProperty propertyName='Value' typeName='int' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    { // explicit version 1 should succeed
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(1)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion column
+        Utf8CP dataText = stmt.GetValueText(2);
+        ASSERT_NE(nullptr, dataText);
+        static constexpr Utf8CP base64Prefix = "encoding=base64;";
+        static constexpr size_t base64PrefixLen = 16;
+        ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
+        ByteStream decoded;
+        Utf8CP b64 = dataText + base64PrefixLen;
+        Base64Utilities::Decode(decoded, b64, strlen(b64));
+        ASSERT_GT((int)decoded.GetSize(), 9);
+        // Verify blob header format version matches requested version
+        auto bytes = decoded.GetData();
+        ASSERT_EQ(1, bytes[4]);
+    }
+
+    { // unsupported high version should fail
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(99)"));
+    }
+
+    { // version 0 should fail
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(0)"));
+    }
+
+    { // negative version should fail to parse
+        ECSqlStatement stmt;
+        // -1 is not a valid pragma_value (no unary minus in grammar), so this fails at parse
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(-1)"));
+    }
+
+    { // string argument should fail
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas('2')"));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, runtime_schemas_is_readonly) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("runtime_schemas_ro.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas=2"));
+}
+
 END_ECDBUNITTESTS_NAMESPACE

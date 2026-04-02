@@ -53,3 +53,6 @@ obj/
 # LastCoverageResults.log(opencppcoverage.exe)
 # LastCoverageResults.log can be generated when we run opencppcoverage.exe so gitignoring them
 LastCoverageResults.log
+.vscode/browse.vc.db
+.vscode/browse.vc.db-shm
+.vscode/browse.vc.db-wal
