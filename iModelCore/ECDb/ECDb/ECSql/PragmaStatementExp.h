@@ -21,6 +21,7 @@ private:
         Empty,
     };
     Type m_type;
+    bool m_writeOp = false; /* true when value was supplied via = (write), false for () (read) */
 
     std::string m_str;
     union {
@@ -47,6 +48,8 @@ public:
     bool IsEmpty() const { return m_type == Type::Empty; }
     bool IsNull() const { return m_type == Type::Null; }
     bool IsNumeric() const { return IsInteger() || IsDouble(); }
+    bool IsWriteOp() const { return m_writeOp; }
+    void SetWriteOp(bool v) { m_writeOp = v; }
     int64_t GetInteger() const;
     double GetDouble() const;
     bool GetBool() const;

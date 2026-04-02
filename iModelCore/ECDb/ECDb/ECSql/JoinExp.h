@@ -53,10 +53,11 @@ struct JoinExp : ClassRefExp
     {
     private:
         ECSqlJoinType  m_joinType;
+
+    protected:
         size_t m_nFromClassRefIndex;
         size_t m_nToClassRefIndex;
 
-    protected:
         JoinExp(Type type, ECSqlJoinType joinType, std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
             : ClassRefExp(type), m_joinType(joinType)
             {
@@ -64,8 +65,23 @@ struct JoinExp : ClassRefExp
             m_nToClassRefIndex = AddChild(std::move(to));
             }
 
+        //! Called after InsertLHSClassRef prepends the LHS; subclasses override to adjust indices.
+        virtual void _OnLHSInserted() {}
+
     public:
         virtual ~JoinExp() {}
+
+        //! Inserts the LHS class-ref as child 0 (prepend) and fixes all child indices.
+        //! Called by the Bison grammar when the LHS is known after JoinExp construction.
+        void InsertLHSClassRef(std::unique_ptr<ClassRefExp> lhs)
+            {
+            BeAssert(lhs != nullptr);
+            PrependChild(std::move(lhs));
+            // After prepend all existing indices shift by 1
+            m_nFromClassRefIndex = 0;
+            m_nToClassRefIndex++;
+            _OnLHSInserted();
+            }
 
         ECSqlJoinType GetJoinType() const { return m_joinType; }
         ClassRefExp const& GetFromClassRef() const { return *GetChild<ClassRefExp>(m_nFromClassRefIndex); }
@@ -131,6 +147,7 @@ struct QualifiedJoinExp final : JoinExp
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "QualifiedJoin"; }
+        void _OnLHSInserted() override { m_nJoinSpecIndex++; }
 
     public:
         QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp);
@@ -196,6 +213,8 @@ struct QualifiedJoinExp final : JoinExp
             {
             m_relationshipClassNameExpIndex = AddChild(std::move(relationship));
             }
+
+        void _OnLHSInserted() override { m_relationshipClassNameExpIndex++; }
 
         ClassNameExp const& GetRelationshipClassNameExp() const { return *GetChild<ClassNameExp>(m_relationshipClassNameExpIndex); }
 

@@ -3390,7 +3390,7 @@ BentleyStatus ECSqlParser::ParseCaseExp(std::unique_ptr<ValueExp>& valueExp, OSQ
             return ERROR;
         }
 
-    valueExp = std::make_unique<SearchCaseValueExp>(whenList, elseExp);
+    valueExp = std::make_unique<SearchCaseValueExp>(whenList, std::move(elseExp));
     return SUCCESS;
     }
 
@@ -4691,4 +4691,46 @@ Utf8String ECSqlParseContext::GenerateAlias()
     alias.Sprintf("K%d", m_aliasCount++);
     return alias;
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP tableSpaceName, Utf8StringCR schemaNameOrAlias,
+    Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp, bool isInsideTypePredicate)
+    {
+    BeAssert(!schemaNameOrAlias.empty());
+    ClassMap const* classMap = m_ecdb.Schemas().GetDispatcher().GetClassMap(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect, tableSpaceName);
+    if (classMap == nullptr)
+        {
+        if (Utf8String::IsNullOrEmpty(tableSpaceName))
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0494,
+                "ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+        else
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0495,
+                "ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
+        return ERROR;
+        }
+    Utf8String fullyQualifiedClassName;
+    fullyQualifiedClassName.Sprintf("%s.%s", tableSpaceName, classMap->GetClass().GetFullName());
+    auto it = m_classNameExpInfoList.find(fullyQualifiedClassName);
+    if (it != m_classNameExpInfoList.end())
+        {
+        classNameExpInfo = it->second;
+        return SUCCESS;
+        }
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
+    if (!policy.IsSupported())
+        {
+        if (isInsideTypePredicate && classMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped && classMap->GetClass().IsCustomAttributeClass())
+            {
+            classNameExpInfo = ClassNameExp::Info::Create(*classMap);
+            return SUCCESS;
+            }
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0496, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ERROR;
+        }
+    classNameExpInfo = ClassNameExp::Info::Create(*classMap);
+    m_classNameExpInfoList[fullyQualifiedClassName] = classNameExpInfo;
+    return SUCCESS;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

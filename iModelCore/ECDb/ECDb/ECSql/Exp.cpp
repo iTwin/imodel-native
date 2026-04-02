@@ -105,11 +105,24 @@ bool Exp::ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& r
 //+---------------+---------------+---------------+---------------+---------------+--------
 size_t Exp::AddChild(std::unique_ptr<Exp> child)
     {
-    BeAssert(child != nullptr);
+    if (child == nullptr)
+        return m_children.size();
     child->m_parent = this;
     m_children.m_collection.push_back(std::move(child));
     //return index of added child
     return m_children.size() - 1;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void Exp::PrependChild(std::unique_ptr<Exp> child)
+    {
+    BeAssert(child != nullptr);
+    if (child == nullptr)
+        return;
+    child->m_parent = this;
+    m_children.m_collection.insert(m_children.m_collection.begin(), std::move(child));
     }
 
 //-----------------------------------------------------------------------------------------

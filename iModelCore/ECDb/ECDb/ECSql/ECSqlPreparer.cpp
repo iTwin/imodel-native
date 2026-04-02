@@ -2747,7 +2747,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
     NativeSqlBuilder::List idNativeSql;
     NativeSqlBuilder::List relECClassIdNativeSql;
     if (ctx.GetCurrentScope().IsRootScope() && ctx.GetCreateField())
-        ECSqlFieldFactory::CreateField(ctx, exp.GetColumnRefExp(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
+        ECSqlFieldFactory::CreateField(ctx, &exp.GetParent()->GetAs<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
 
     auto stat = PrepareValueExp(idNativeSql, ctx, *exp.GetIdArgExp());
     if (!stat.IsSuccess())

@@ -144,15 +144,19 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
                 IssueType::ECDbIssue, ECDbIssueId::ECDb_0703, "Invalid view class '%s'. 'QueryView' cannot be derived from another class", viewClassName);
         return false;
     }
-    if (!conn.Schemas().GetDerivedClasses(viewClass).empty()) {
-        conn.GetImpl().Issues().ReportV(
-                IssueSeverity::Error,
-                IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0704, "Invalid view class '%s'. View class definition cannot have derived classes.", viewClassName);
-        return false;
+    {
+        auto derived = conn.Schemas().GetDerivedClasses(viewClass);
+        if (!derived.empty()) {
+            conn.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue, ECDbIssueId::ECDb_0704, "Invalid view class '%s'. View class definition cannot have derived classes.", viewClassName);
+            return false;
+        }
     }
     Utf8String ecsql;
-    if (!TryGetQuery(ecsql, viewClass)) {
+    bool hasQuery = TryGetQuery(ecsql, viewClass);
+    if (!hasQuery) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
@@ -160,7 +164,8 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         return false;
     }
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(conn, ecsql.c_str())){
+    ECSqlStatus prepStatus = stmt.Prepare(conn, ecsql.c_str());
+    if (ECSqlStatus::Success != prepStatus){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,

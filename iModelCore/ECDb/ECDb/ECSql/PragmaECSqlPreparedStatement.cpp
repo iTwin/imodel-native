@@ -5,6 +5,62 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//================================================================================
+// @bsiclass PragmaHelpModule — vtab for PRAGMA help
+//================================================================================
+struct PragmaHelpModule : BeSQLite::DbModule {
+    constexpr static Utf8CP NAME = "pragma_help";
+    PragmaManager& m_mgr;
+
+    struct Table : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            std::vector<std::vector<PragmaColumnValue>> m_rows;
+            size_t m_rowIndex = 0;
+            explicit Cursor(Table& t) : PragmaVirtualTabCursor(t) {}
+
+            DbResult Filter(int, const char*, int, BeSQLite::DbValue*) override {
+                m_rows.clear();
+                m_rowIndex = 0;
+                PragmaManager& mgr = static_cast<PragmaHelpModule&>(GetTable().GetModule()).m_mgr;
+                mgr.ForEachHandler([&](PragmaManager::Handler& h) {
+                    m_rows.push_back({
+                        PragmaColumnValue(h.GetName().c_str()),
+                        PragmaColumnValue(h.GetTypeString()),
+                        PragmaColumnValue(h.GetDescription().c_str())
+                    });
+                });
+                if (m_rows.empty()) { m_eof = true; return BE_SQLITE_OK; }
+                m_eof = false;
+                m_rowId = 1;
+                m_currentRow = m_rows[0];
+                return BE_SQLITE_OK;
+            }
+
+            DbResult Next() override {
+                ++m_rowIndex;
+                if (m_rowIndex >= m_rows.size()) { m_eof = true; return BE_SQLITE_OK; }
+                m_rowId = (int64_t)(m_rowIndex + 1);
+                m_currentRow = m_rows[m_rowIndex];
+                return BE_SQLITE_OK;
+            }
+        };
+        explicit Table(PragmaHelpModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override { info.SetEstimatedRows(20); return BE_SQLITE_OK; }
+    };
+
+    PragmaHelpModule(BeSQLite::DbR db, PragmaManager& mgr)
+        : BeSQLite::DbModule(db, NAME, "CREATE TABLE x(pragma,type,descr)"), m_mgr(mgr) {}
+
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new Table(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+    static void Register(ECDbR ecdb, PragmaManager& mgr) {
+        (new PragmaHelpModule(ecdb, mgr))->BeSQLite::DbModule::Register();
+    }
+};
+
 //================================================================================
 // @bsiclass PragmaHelp
 //================================================================================
@@ -13,22 +69,17 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
     PragmaHelp(PragmaManager& mgr):GlobalHandler("help","return list of pragma supported"),m_mgr(mgr){}
     ~PragmaHelp(){}
 
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&)  override {
-            auto result = std::make_unique<StaticPragmaResult>(ecdb);
-            result->AppendProperty("pragma", PRIMITIVETYPE_String);
-            result->AppendProperty("type", PRIMITIVETYPE_String);
-            result->AppendProperty("descr", PRIMITIVETYPE_String);
-            result->FreezeSchemaChanges();
-            for(auto& handlerType: m_mgr.m_handlers) {
-                for (auto& handler : handlerType.second) {
-                    auto row = result->AppendRow();
-                    row.appendValue() = handler.second->GetName();
-                    row.appendValue() = handler.second->GetTypeString();
-                    row.appendValue() = handler.second->GetDescription();
-                }
-            }
-            rowSet = std::move(result);
-            return BE_SQLITE_OK;
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) override {
+        auto result = std::make_unique<PragmaVirtualTabResult>(ecdb);
+        result->AppendProperty("pragma", PRIMITIVETYPE_String);
+        result->AppendProperty("type", PRIMITIVETYPE_String);
+        result->AppendProperty("descr", PRIMITIVETYPE_String);
+        result->FreezeSchemaChanges();
+        Utf8String sql = Utf8String("SELECT * FROM ") + PragmaHelpModule::NAME + "()";
+        if (BE_SQLITE_OK != result->PrepareQuery(sql.c_str()))
+            return BE_SQLITE_ERROR;
+        rowSet = std::move(result);
+        return BE_SQLITE_OK;
     }
 
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) override {
@@ -39,6 +90,13 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
     }
     static std::unique_ptr<PragmaManager::Handler> Create (PragmaManager& mgr) { return std::make_unique<PragmaHelp>(mgr); }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RegisterPragmaHelpModule(ECDbR ecdb, PragmaManager& mgr) {
+    PragmaHelpModule::Register(ecdb, mgr);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -115,8 +173,32 @@ DbResult StaticPragmaResult::_Init() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BeJsValue* StaticPragmaResult::_CurrentRow() {
+BeJsValue* StaticPragmaResult::_CurrentRowJson() {
     return m_row.get();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+PragmaColumnValue StaticPragmaResult::_GetCurrentValue(int col) const {
+    auto* row = const_cast<StaticPragmaResult*>(this)->_CurrentRowJson();
+    if (row == nullptr)
+        return PragmaColumnValue();
+    BeJsValue v = row->operator[](col);
+    if (v.isNull())
+        return PragmaColumnValue();
+    if (v.isBool())
+        return PragmaColumnValue(v.asBool());
+    if (v.isString())
+        return PragmaColumnValue((Utf8CP)v.asCString());
+    if (v.isNumeric()) {
+        int64_t i = v.asInt64();
+        double d = v.asDouble();
+        if (d == static_cast<double>(i))
+            return PragmaColumnValue(i);
+        return PragmaColumnValue(d);
+    }
+    return PragmaColumnValue();
 }
 
 //================================================================================
@@ -485,8 +567,7 @@ PragmaResult::PragmaResult(ECDbCR ecdb): m_ecdb(ecdb), m_init(false),m_allowSche
 //---------------------------------------------------------------------------------------
 bool PragmaResult::Field::_IsNull() const {
     BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    return row == nullptr ? NoopECSqlValue::GetSingleton().IsNull() : row->operator[](m_columnIndex).isNull();
+    return m_result._GetCurrentValue(m_columnIndex).IsNull();
 }
 
 //---------------------------------------------------------------------------------------
@@ -494,8 +575,8 @@ bool PragmaResult::Field::_IsNull() const {
 //---------------------------------------------------------------------------------------
 bool PragmaResult::Field::_GetBoolean() const {
     BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    return row == nullptr ? NoopECSqlValue::GetSingleton().GetBoolean() : row->operator[](m_columnIndex).asBool();
+    auto val = m_result._GetCurrentValue(m_columnIndex);
+    return val.IsNull() ? NoopECSqlValue::GetSingleton().GetBoolean() : val.AsBool();
 }
 
 //---------------------------------------------------------------------------------------
@@ -503,8 +584,8 @@ bool PragmaResult::Field::_GetBoolean() const {
 //---------------------------------------------------------------------------------------
 double PragmaResult::Field::_GetDouble() const {
     BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    return row == nullptr ? NoopECSqlValue::GetSingleton().GetDouble() : row->operator[](m_columnIndex).asDouble();
+    auto val = m_result._GetCurrentValue(m_columnIndex);
+    return val.IsNull() ? NoopECSqlValue::GetSingleton().GetDouble() : val.AsDouble();
 }
 
 //---------------------------------------------------------------------------------------
@@ -512,8 +593,8 @@ double PragmaResult::Field::_GetDouble() const {
 //---------------------------------------------------------------------------------------
 int PragmaResult::Field::_GetInt() const {
     BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    return row == nullptr ? NoopECSqlValue::GetSingleton().GetInt() : row->operator[](m_columnIndex).asInt();
+    auto val = m_result._GetCurrentValue(m_columnIndex);
+    return val.IsNull() ? NoopECSqlValue::GetSingleton().GetInt() : (int)val.AsInt64();
 }
 
 //---------------------------------------------------------------------------------------
@@ -521,8 +602,8 @@ int PragmaResult::Field::_GetInt() const {
 //---------------------------------------------------------------------------------------
 int64_t PragmaResult::Field::_GetInt64() const {
     BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    return row == nullptr ? NoopECSqlValue::GetSingleton().GetInt64() : row->operator[](m_columnIndex).asInt64();
+    auto val = m_result._GetCurrentValue(m_columnIndex);
+    return val.IsNull() ? NoopECSqlValue::GetSingleton().GetInt64() : val.AsInt64();
 }
 
 //---------------------------------------------------------------------------------------
@@ -530,8 +611,11 @@ int64_t PragmaResult::Field::_GetInt64() const {
 //---------------------------------------------------------------------------------------
 Utf8CP PragmaResult::Field::_GetText() const {
     BeMutexHolder lock(m_result.GetMutex());
-    auto row = m_result._CurrentRow();
-    return row == nullptr ? NoopECSqlValue::GetSingleton().GetText() : row->operator[](m_columnIndex).asCString();
+    auto val = m_result._GetCurrentValue(m_columnIndex);
+    if (val.IsNull())
+        return NoopECSqlValue::GetSingleton().GetText();
+    m_textCache = val.AsCString() != nullptr ? val.AsCString() : "";
+    return m_textCache.c_str();
 }
 
 // unsupported value type
