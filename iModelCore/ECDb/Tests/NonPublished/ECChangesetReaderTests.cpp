@@ -263,15 +263,17 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
-    EXPECT_FALSE(hasName("Pos2d.X"));
-    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_FALSE(hasName("Pos2d<->X"));
+    EXPECT_FALSE(hasName("Pos2d<->Y"));
     EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
-    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_FALSE(hasName("Pos3d<->X"));
+    EXPECT_FALSE(hasName("Pos3d<->Y"));
+    EXPECT_FALSE(hasName("Pos3d<->Z"));
     EXPECT_TRUE(hasName("Details->Label"));
     EXPECT_TRUE(hasName("Details->Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -418,11 +420,11 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
     // Changed: Name (scalar), Pos2d.X (partial Point2d), Details.Label (partial struct).
     EXPECT_TRUE(hasName("Name"));
-    EXPECT_TRUE(hasName("Pos2d.X"));
+    EXPECT_TRUE(hasName("Pos2d<->X"));
     EXPECT_TRUE(hasName("Details.Label"));
     // Unchanged or partial components must not appear.
     EXPECT_FALSE(hasName("Pos2d"));          // not both coords changed
-    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_FALSE(hasName("Pos2d<->Y"));
     EXPECT_FALSE(hasName("Details->Score"));  // Score not changed
     EXPECT_FALSE(hasName("Weight"));
     EXPECT_FALSE(hasName("Cnt"));
@@ -593,7 +595,7 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_TRUE(hasName("Details->Score"));
     EXPECT_FALSE(hasName("Details"));
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -1396,15 +1398,17 @@ TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
-    EXPECT_FALSE(hasName("Pos2d.X"));
-    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_FALSE(hasName("Pos2d<->X"));
+    EXPECT_FALSE(hasName("Pos2d<->Y"));
     EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
-    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_FALSE(hasName("Pos3d<->X"));
+    EXPECT_FALSE(hasName("Pos3d<->Y"));
+    EXPECT_FALSE(hasName("Pos3d<->Z"));
     EXPECT_TRUE(hasName("Details->Label"));
     EXPECT_TRUE(hasName("Details->Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -1536,15 +1540,17 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
-    EXPECT_FALSE(hasName("Pos2d.X"));
-    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_FALSE(hasName("Pos2d<->X"));
+    EXPECT_FALSE(hasName("Pos2d<->Y"));
     EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
-    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_FALSE(hasName("Pos3d<->X"));
+    EXPECT_FALSE(hasName("Pos3d<->Y"));
+    EXPECT_FALSE(hasName("Pos3d<->Z"));
     EXPECT_TRUE(hasName("Details->Label"));
     EXPECT_TRUE(hasName("Details->Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
