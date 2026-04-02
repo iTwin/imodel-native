@@ -179,7 +179,6 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             ColumnValueMap newValues;
             if (GetColumnValues(Stage::New, newValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
-            DumpColumnValues(newValues);
             if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New), m_mode,
                                               includeInstanceId, m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
@@ -188,7 +187,6 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             ColumnValueMap oldValues;
             if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
-            DumpColumnValues(oldValues);
             if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode,
                                               includeInstanceId, m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
@@ -382,7 +380,7 @@ DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
     Utf8String tableName;
     if(GetTableName(tableName) != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT 1 FROM ec_Table WHERE Name=?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
     stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
@@ -396,7 +394,7 @@ DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const {
+DbResult PreparedECChangesetReader::GetChangedPropertyNames(std::vector<Utf8String>& out) const {
     if(!IsOpen())
         {
         LOG.errorv("Attempting to get changed property names from a closed PreparedECChangesetReader.");
@@ -407,7 +405,6 @@ DbResult PreparedECChangesetReader::GetChangedPropertyNames(std::unordered_set<U
         LOG.errorv("Attempting to get changed property names from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return BE_SQLITE_ERROR;
         }
-    out.clear();
     out = m_changedProps;
     return BE_SQLITE_OK;
 }

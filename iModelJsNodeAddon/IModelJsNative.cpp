@@ -5284,7 +5284,7 @@ public:
 
     Napi::Value GetChangedPropertyNames(NapiInfoCR info)
         {
-        std::unordered_set<Utf8String> names;
+        std::vector<Utf8String> names;
         if (m_reader.GetChangedPropertyNames(names) != BE_SQLITE_OK)
             return Napi::Array::New(info.Env(), 0);
         Napi::Array arr = Napi::Array::New(info.Env(), names.size());

@@ -269,7 +269,7 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeArrayColumnInfo(PropertyMap const& pr
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::CreatePoint2d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
     const DbColumn& xCol = pt2dMap.GetX().GetColumn();
@@ -306,10 +306,10 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
     const Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInChangeset && yInChangeset) {
-        changedProps.insert(propName);
+        changedProps.emplace_back(propName);
     } else {
-        if (xInChangeset) { Utf8String s; s.Sprintf("%s.X", propName.c_str()); changedProps.insert(s); }
-        if (yInChangeset) { Utf8String s; s.Sprintf("%s.Y", propName.c_str()); changedProps.insert(s); }
+        if (xInChangeset) { Utf8String s; s.Sprintf("%s.X", propName.c_str()); changedProps.emplace_back(std::move(s)); }
+        if (yInChangeset) { Utf8String s; s.Sprintf("%s.Y", propName.c_str()); changedProps.emplace_back(std::move(s)); }
     }
     return BE_SQLITE_OK;
 }
@@ -323,7 +323,7 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::CreatePoint3d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
     const DbColumn& xCol = pt3dMap.GetX().GetColumn();
@@ -372,11 +372,11 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
     const Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInChangeset && yInChangeset && zInChangeset) {
-        changedProps.insert(propName);
+        changedProps.emplace_back(propName);
     } else {
-        if (xInChangeset) { Utf8String s; s.Sprintf("%s.X", propName.c_str()); changedProps.insert(s); }
-        if (yInChangeset) { Utf8String s; s.Sprintf("%s.Y", propName.c_str()); changedProps.insert(s); }
-        if (zInChangeset) { Utf8String s; s.Sprintf("%s.Z", propName.c_str()); changedProps.insert(s); }
+        if (xInChangeset) { Utf8String s; s.Sprintf("%s.X", propName.c_str()); changedProps.emplace_back(std::move(s)); }
+        if (yInChangeset) { Utf8String s; s.Sprintf("%s.Y", propName.c_str()); changedProps.emplace_back(std::move(s)); }
+        if (zInChangeset) { Utf8String s; s.Sprintf("%s.Z", propName.c_str()); changedProps.emplace_back(std::move(s)); }
     }
     return BE_SQLITE_OK;
 }
@@ -389,7 +389,7 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::CreatePrimitive(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
 
@@ -407,7 +407,7 @@ DbResult ChangesetFieldFactory::CreatePrimitive(
         MakePrimitiveColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName(), columnValues),
         GetDateTimeInfo(propertyMap)));
-    changedProps.insert(propertyMap.GetProperty().GetName());
+    changedProps.emplace_back(propertyMap.GetProperty().GetName());
     return BE_SQLITE_OK;
 }
 
@@ -424,7 +424,7 @@ DbResult ChangesetFieldFactory::CreatePrimitive(
 DbResult ChangesetFieldFactory::CreateSystem(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
@@ -450,7 +450,7 @@ DbResult ChangesetFieldFactory::CreateSystem(
         return BE_SQLITE_OK; // not in changeset — skip
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPrimitiveValue>(columnInfo, GetFromMap(dataMap->GetColumn().GetName(), columnValues)));
-    changedProps.insert(propertyMap.GetProperty().GetName());
+    changedProps.emplace_back(propertyMap.GetProperty().GetName());
     return BE_SQLITE_OK;
 }
 
@@ -486,7 +486,7 @@ DbResult ChangesetFieldFactory::CreateFixedId(
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::CreateNav(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
     const auto& idPropMap = navMap.GetIdPropertyMap();
@@ -556,11 +556,11 @@ DbResult ChangesetFieldFactory::CreateNav(
                                                                std::move(idVal), std::move(relClassIdVal)));
     const Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (hasIdInChangeset &&  hasPhysicalRelClassIdInChangeset) {
-        changedProps.insert(propName);
+        changedProps.emplace_back(propName);
     } else if (hasIdInChangeset) {
-        Utf8String s; s.Sprintf("%s.Id", propName.c_str()); changedProps.insert(s);
+        Utf8String s; s.Sprintf("%s.Id", propName.c_str()); changedProps.emplace_back(std::move(s));
     } else if (hasPhysicalRelClassIdInChangeset) {
-        Utf8String s; s.Sprintf("%s.RelECClassId", propName.c_str()); changedProps.insert(s);
+        Utf8String s; s.Sprintf("%s.RelECClassId", propName.c_str()); changedProps.emplace_back(std::move(s));
     }
     return BE_SQLITE_OK;
 }
@@ -572,7 +572,7 @@ DbResult ChangesetFieldFactory::CreateNav(
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::CreateArray(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
     if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
@@ -582,7 +582,7 @@ DbResult ChangesetFieldFactory::CreateArray(
         MakeArrayColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName(), columnValues),
         conn));
-    changedProps.insert(propertyMap.GetProperty().GetName());
+    changedProps.emplace_back(propertyMap.GetProperty().GetName());
     return BE_SQLITE_OK;
 }
 
@@ -596,14 +596,14 @@ DbResult ChangesetFieldFactory::CreateArray(
 DbResult ChangesetFieldFactory::CreateStruct(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     auto structVal = std::make_unique<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
     const Utf8StringCR structName = propertyMap.GetProperty().GetName();
     bool anyMember = false;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
         std::vector<std::unique_ptr<IECSqlValue>> memberTemp;
-        std::unordered_set<Utf8String> memberChangedProps;
+        std::vector<Utf8String> memberChangedProps;
         DbResult status = CreateValueForProperty(conn, *memberMap, columnValues, dbTable, memberTemp, memberChangedProps);
         if (status != BE_SQLITE_OK)
             return status;
@@ -614,7 +614,7 @@ DbResult ChangesetFieldFactory::CreateStruct(
         for (auto& name : memberChangedProps) {
             Utf8String path;
             path.Sprintf("%s.%s", structName.c_str(), name.c_str());
-            changedProps.insert(std::move(path));
+            changedProps.emplace_back(std::move(path));
         }
     }
 
@@ -634,7 +634,7 @@ DbResult ChangesetFieldFactory::CreateStruct(
 DbResult ChangesetFieldFactory::CreateValueForProperty(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::unordered_set<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& prop = propertyMap.GetProperty();
 
@@ -859,7 +859,7 @@ DbResult ChangesetFieldFactory::BuildPropertyFields(
     ECDbCR conn,
     DbTable const& dbTable,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-    std::unordered_set<Utf8String>& changedProps) {
+    std::vector<Utf8String>& changedProps) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         // ECInstanceId and ECClassId are emitted as fixed slots [0] and [1] by the caller.
@@ -929,7 +929,7 @@ bool ChangesetFieldFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn
 DbResult ChangesetFieldFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::Mode mode,
-    bool includeInstanceId, std::unordered_set<Utf8String>& changedProps) {
+    bool includeInstanceId, std::vector<Utf8String>& changedProps) {
 
     // -----------------------------------------------------------------------
     // Step 1: Resolve ClassMap — try changeset, then DB seek, fall back to root map.
@@ -961,9 +961,9 @@ DbResult ChangesetFieldFactory::Create(
     // ECInstanceId and ECClassId name collection — handled here since they are
     // emitted as fixed slots and skipped by the BuildPropertyFields loop.
     if (includeInstanceId)
-        changedProps.insert(ECDBSYS_PROP_ECInstanceId);
+        changedProps.emplace_back(ECDBSYS_PROP_ECInstanceId);
     if (classIdFromChangeset)
-        changedProps.insert(ECDBSYS_PROP_ECClassId);
+        changedProps.emplace_back(ECDBSYS_PROP_ECClassId);
 
     // -----------------------------------------------------------------------
     // Step 2: Resolve ECInstanceId (slot [0]).

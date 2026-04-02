@@ -37,7 +37,7 @@ public:
     int GetColumnCount(Stage stage) const;
     DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
     DbResult IsECTable(bool& isECTable) const;
-    DbResult GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const;
+    DbResult GetChangedPropertyNames(std::vector<Utf8String>& out) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

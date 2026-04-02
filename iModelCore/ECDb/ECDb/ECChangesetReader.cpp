@@ -62,7 +62,7 @@ DbResult ECChangesetReader::IsECTable(bool& isECTable) const {
     return m_pimpl->IsECTable(isECTable);
 }
 
-DbResult ECChangesetReader::GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const {
+DbResult ECChangesetReader::GetChangedPropertyNames(std::vector<Utf8String>& out) const {
     return m_pimpl->GetChangedPropertyNames(out);
 }
 

@@ -21,7 +21,7 @@ struct ChangesetFieldFactory final {
 private:
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.
-    using ColumnValueMap = std::map<Utf8String, DbValue>;
+    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
     // ------------------------------------------------------------------
     // Schema / mapping helpers
     // ------------------------------------------------------------------
@@ -95,54 +95,54 @@ private:
     static DbResult CreateValueForProperty(ECDbCR conn, PropertyMap const&,
                                            ColumnValueMap const&, DbTable const& dbTable,
                                            std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                           std::unordered_set<Utf8String>& changedProps);
+                                           std::vector<Utf8String>& changedProps);
 
     //! Skips when neither coordinate is in the changeset.
     //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
     static DbResult CreatePoint2d(ECDbCR conn, PropertyMap const&,
                                   ColumnValueMap const&,
                                   std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                  std::unordered_set<Utf8String>& changedProps);
+                                  std::vector<Utf8String>& changedProps);
 
     //! Skips when no coordinate is in the changeset.
     //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
     static DbResult CreatePoint3d(ECDbCR conn, PropertyMap const&,
                                   ColumnValueMap const&,
                                   std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                  std::unordered_set<Utf8String>& changedProps);
+                                  std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent from the changeset.
     static DbResult CreatePrimitive(ECDbCR conn, PropertyMap const&,
                                     ColumnValueMap const&,
                                     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                    std::unordered_set<Utf8String>& changedProps);
+                                    std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent or virtual.
     //! Returns BE_SQLITE_ERROR on internal mapping failures.
     static DbResult CreateSystem(ECDbCR conn, PropertyMap const&,
                                  ColumnValueMap const&, DbTable const& dbTable,
                                  std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                 std::unordered_set<Utf8String>& changedProps);
+                                 std::vector<Utf8String>& changedProps);
 
     //! Skips when neither physical component is in the changeset.
     //! Returns BE_SQLITE_ERROR when a component is partly present but the DB fetch fails.
     static DbResult CreateNav(ECDbCR conn, PropertyMap const&,
                               ColumnValueMap const&,
                               std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                              std::unordered_set<Utf8String>& changedProps);
+                              std::vector<Utf8String>& changedProps);
 
     //! Skips when the column is absent from the changeset.
     static DbResult CreateArray(ECDbCR conn, PropertyMap const&,
                                 ColumnValueMap const&,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                std::unordered_set<Utf8String>& changedProps);
+                                std::vector<Utf8String>& changedProps);
 
     //! Skips when no member has changeset data.
     //! Returns BE_SQLITE_ERROR if any member value fails to be created.
     static DbResult CreateStruct(ECDbCR conn, PropertyMap const&,
                                  ColumnValueMap const&, DbTable const& dbTable,
                                  std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                 std::unordered_set<Utf8String>& changedProps);
+                                 std::vector<Utf8String>& changedProps);
 
     //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
     static DbResult CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
@@ -191,7 +191,7 @@ private:
                                         ColumnValueMap const& columnValues,
                                         ECDbCR conn, DbTable const& dbTable,
                                         std::vector<std::unique_ptr<IECSqlValue>>& fields,
-                                        std::unordered_set<Utf8String>& changedProps);
+                                        std::vector<Utf8String>& changedProps);
 
     //! Returns true when @p classId is BisCore::Element or any class derived from it.
     static bool isChildClassOfBisCore(ECClassId classId, ECDbCR conn);
@@ -209,7 +209,7 @@ public:
                             std::vector<std::unique_ptr<IECSqlValue>>& fields,
                             ECChangesetReader::Mode mode,
                             bool includeInstanceId,
-                            std::unordered_set<Utf8String>& changedProps);
+                            std::vector<Utf8String>& changedProps);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

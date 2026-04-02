@@ -89,7 +89,7 @@ DbResult ECChangesetReader::Impl::IsECTable(bool& isECTable) const {
     return m_prepared->IsECTable(isECTable);
 }
 
-DbResult ECChangesetReader::Impl::GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const {
+DbResult ECChangesetReader::Impl::GetChangedPropertyNames(std::vector<Utf8String>& out) const {
     if (!IsPrepared()) {
         return BE_SQLITE_OK;
     }
