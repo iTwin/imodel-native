@@ -224,7 +224,26 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     Utf8String instanceKey;
     ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
-    
+
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("ECInstanceId")); // INSERT — always present
+    EXPECT_NE(changedProps.end(), changedProps.find("Name"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Weight"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Cnt"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Active"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Pos2d"));        // both coords set → full name
+    EXPECT_EQ(changedProps.end(), changedProps.find("Pos2d.X"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Pos2d.Y"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Pos3d"));        // all three coords set → full name
+    EXPECT_EQ(changedProps.end(), changedProps.find("Pos3d.X"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Details.Label"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Details.Score"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Details"));      // bare struct name never present
+    EXPECT_NE(changedProps.end(), changedProps.find("Tags"));
+    bool hasOwner = changedProps.count("Owner") > 0 || changedProps.count("Owner.Id") > 0;
+    EXPECT_TRUE(hasOwner) << "Expected 'Owner' or 'Owner.Id' in changed property names";
+
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
     }
@@ -364,6 +383,22 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::Old, oldKey));
     EXPECT_FALSE(newKey.empty());
     EXPECT_FALSE(oldKey.empty());
+
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    // Changed: Name (scalar), Pos2d.X (partial Point2d), Details.Label (partial struct).
+    EXPECT_NE(changedProps.end(), changedProps.find("Name"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Pos2d.X"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Details.Label"));
+    // Unchanged or partial components must not appear.
+    EXPECT_EQ(changedProps.end(), changedProps.find("Pos2d"));          // not both coords changed
+    EXPECT_EQ(changedProps.end(), changedProps.find("Pos2d.Y"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Details.Score"));  // Score not changed
+    EXPECT_EQ(changedProps.end(), changedProps.find("Weight"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Cnt"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Pos3d"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId"));   // UPDATE — never present
+
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
 
     reader.Close();
@@ -513,6 +548,285 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     Utf8String instanceKey;
     ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::Old, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
+
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("ECInstanceId")); // DELETE — always present
+    EXPECT_NE(changedProps.end(), changedProps.find("Name"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Weight"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Cnt"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Active"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Pos2d"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Pos3d"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Details.Label"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Details.Score"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Details"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Tags"));
+    bool hasOwner = changedProps.count("Owner") > 0 || changedProps.count("Owner.Id") > 0;
+    EXPECT_TRUE(hasOwner) << "Expected 'Owner' or 'Owner.Id' in changed property names";
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Widget with only two scalar properties (Name + Weight) — all other properties
+// left unset (NULL).  Verifies that the changeset reader emits exactly those properties
+// that were explicitly provided and that GetChangedPropertyNames is consistent.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Insert_PartialProperties)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_partial_insert.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert only Name and Weight — all other properties left unset (NULL).
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Weight) VALUES('Sparse', 2.5)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage empty for insert.
+    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    // New stage: ECInstanceId, ECClassId, name + weight at minimum.
+    int newCount = reader.GetColumnCount(ECChangesetReader::Stage::New);
+    EXPECT_GE(newCount, 4);
+
+    // Slots 0 and 1 must always be ECInstanceId and ECClassId.
+    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    // Find Name and Weight anywhere in the new-stage field list.
+    bool foundName = false, foundWeight = false;
+    for (int i = 2; i < newCount; ++i)
+        {
+        IECSqlValue const& v = reader.GetValue(ECChangesetReader::Stage::New, i);
+        auto* prop = v.GetColumnInfo().GetProperty();
+        if (!prop) continue;
+        if (Utf8String(prop->GetName()).EqualsIAscii("Name"))
+            {
+            EXPECT_STREQ("Sparse", v.GetText());
+            foundName = true;
+            }
+        else if (Utf8String(prop->GetName()).EqualsIAscii("Weight"))
+            {
+            EXPECT_DOUBLE_EQ(2.5, v.GetDouble());
+            foundWeight = true;
+            }
+        }
+    EXPECT_TRUE(foundName)   << "Name must appear in the partial-insert changeset";
+    EXPECT_TRUE(foundWeight) << "Weight must appear in the partial-insert changeset";
+
+    // GetChangedPropertyNames must always include the explicitly set properties.
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("ECInstanceId")); // INSERT — always present
+    EXPECT_NE(changedProps.end(), changedProps.find("Name"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Weight"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Widget with Tags outside tracker, then UPDATE Tags with a completely new set.
+// For UPDATE: only Tags changes — New and Old stages each carry exactly 3 fields
+// (ECInstanceId, ECClassId, Tags).
+// Verifies array values in both stages and GetChangedPropertyNames = {"Tags"}.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Update_ArrayProperty)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_update_array.ecdb", SchemaItem(GetSchema())));
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Tags) VALUES(?)"));
+    IECSqlBinder& b = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, b.AddArrayElement().BindText("old1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, b.AddArrayElement().BindText("old2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Update Tags to a different set of values.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE ts.Widget SET Tags=? WHERE ECInstanceId=?"));
+    IECSqlBinder& b = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, b.AddArrayElement().BindText("new1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, b.AddArrayElement().BindText("new2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, b.AddArrayElement().BindText("new3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Update, opcode);
+
+    // Only Tags changed: ECInstanceId, ECClassId, Tags.
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    // New stage — Tags has 3 elements.
+    IECSqlValue const& newTags = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Tags", newTags.GetColumnInfo().GetProperty()->GetName().c_str());
+    ASSERT_EQ(3, newTags.GetArrayLength());
+    Utf8CP expectedNew[] = {"new1", "new2", "new3"};
+    int idx = 0;
+    for (IECSqlValue const& elem : newTags.GetArrayIterable())
+        {
+        EXPECT_STREQ(expectedNew[idx], elem.GetText());
+        ++idx;
+        }
+    EXPECT_EQ(3, idx);
+
+    // Old stage — Tags had 2 elements.
+    IECSqlValue const& oldTags = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    EXPECT_STREQ("Tags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
+    ASSERT_EQ(2, oldTags.GetArrayLength());
+    Utf8CP expectedOld[] = {"old1", "old2"};
+    idx = 0;
+    for (IECSqlValue const& elem : oldTags.GetArrayIterable())
+        {
+        EXPECT_STREQ(expectedOld[idx], elem.GetText());
+        ++idx;
+        }
+    EXPECT_EQ(2, idx);
+
+    // changedProps for UPDATE contains only "Tags" (no ECInstanceId).
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("Tags"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Name"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Weight"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Widget with multiple scalars outside the tracker, then UPDATE only two of
+// them (Weight and Cnt).  Verifies that the New and Old stages contain exactly those two
+// scalars (plus ECInstanceId/ECClassId) and that GetChangedPropertyNames is limited to
+// those two names.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Update_TwoScalars)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_update_scalars.ecdb", SchemaItem(GetSchema())));
+
+    // Full insert outside tracking.
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Weight, Cnt, Active) VALUES('ScalarWidget', 1.0, 10, TRUE)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Update only Weight and Cnt.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE ts.Widget SET Weight=9.9, Cnt=99 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Update, opcode);
+
+    // ECInstanceId, ECClassId, Weight, Cnt — nothing else.
+    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    // New stage.
+    IECSqlValue const& new_v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", new_v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), new_v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& new_v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Weight", new_v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(9.9, new_v2.GetDouble());
+
+    IECSqlValue const& new_v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    EXPECT_STREQ("Cnt", new_v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(99, new_v3.GetInt64());
+
+    // Old stage.
+    IECSqlValue const& old_v2 = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    EXPECT_STREQ("Weight", old_v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(1.0, old_v2.GetDouble());
+
+    IECSqlValue const& old_v3 = reader.GetValue(ECChangesetReader::Stage::Old, 3);
+    EXPECT_STREQ("Cnt", old_v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(10, old_v3.GetInt64());
+
+    // changedProps: only Weight and Cnt; Name and Active were not touched.
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("Weight"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Cnt"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Name"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Active"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId")); // UPDATE — never present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
