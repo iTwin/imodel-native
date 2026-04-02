@@ -284,8 +284,7 @@ double      relTol
         }
     MTGARRAY_END_SET_LOOP (currNodeId, (jmdlMTGFacets_getGraph (pFacetHeader)))
 
-    qsort (dotArray.data (), nodeCount, sizeof (MTG_SortKey),
-                            compareDist);
+    BeStringUtilities::Qsort (dotArray.data (), nodeCount, sizeof (MTG_SortKey), BSIBaseGeom::QSortAdaptor, (void*)compareDist);
 
     for (int pivotIndex = 0; pivotIndex < nodeCount; pivotIndex++)
         {
@@ -726,7 +725,7 @@ MTGFacets * pFacetHeader
         }
     MTGARRAY_END_SET_LOOP (currNodeId, (jmdlMTGFacets_getGraph (pFacetHeader)))
 
-    qsort (sortArray.data (), (int)count, sizeof (MTG_LexicalSortKey), compareId);
+    BeStringUtilities::Qsort (sortArray.data (), (int)count, sizeof (MTG_LexicalSortKey), BSIBaseGeom::QSortAdaptor, (void*)compareId);
 
     // Compute face normals for each face loop
     bvector <DVec3d> vertexNormalArray;
@@ -789,7 +788,7 @@ MTGFacets * pFacetHeader
         if (n > 1)
             {
             // Sort by angle around the common edge ...
-            qsort ((void*)pItem0, (int)n, sizeof (MTG_LexicalSortKey), compareAngle);
+            BeStringUtilities::Qsort ((void*)pItem0, (int)n, sizeof (MTG_LexicalSortKey), BSIBaseGeom::QSortAdaptor, (void*)compareAngle);
             size_t j;
             // And splice them all together.
             // REMARK: This assumes the edges were all dangling in the first place.

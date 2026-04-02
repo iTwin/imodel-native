@@ -1871,8 +1871,8 @@ int                     order    /* => order of output curve */
         Pw[n] = R[r];
 
     pOut->Allocate (numPoles, order, false, false);
-    memcpy (pOut->poles, &Pw[0], numPoles*sizeof(DPoint3d));
-    memcpy (pOut->knots, &knots[0], (mknt+1)*sizeof(double));
+    BeStringUtilities::Memcpy (pOut->poles, numPoles * sizeof(DPoint3d), &Pw[0], numPoles*sizeof(DPoint3d));
+    BeStringUtilities::Memcpy (pOut->knots, (mknt + 1) * sizeof(double), &knots[0], (mknt+1)*sizeof(double));
     return MSB_SUCCESS;
     }
 END_BENTLEY_GEOMETRY_NAMESPACE
@@ -2019,8 +2019,8 @@ int                     order       /* => order of output curve */
         Pw[i] = R[i-1];
 
     pOut->Allocate (numPoles, order, false, false);
-    memcpy (pOut->poles, &Pw[0], numPoles*sizeof(DPoint3d));
-    memcpy (pOut->knots, &knots[0], (mk+1)*sizeof(double));
+    BeStringUtilities::Memcpy (pOut->poles, numPoles * sizeof(DPoint3d) , &Pw[0], numPoles*sizeof(DPoint3d));
+    BeStringUtilities::Memcpy (pOut->knots, (mk + 1) * sizeof(double), &knots[0], (mk+1)*sizeof(double));
 
     return MSB_SUCCESS;
     }
@@ -3908,7 +3908,7 @@ int             numPnts
         approximation points; i.e. normalized cumulative length */
     if (uValues)
         {
-        memcpy (u, uValues, numPnts * sizeof (double));
+        BeStringUtilities::Memcpy (u, numPnts * sizeof(double), uValues, numPnts * sizeof (double));
         if (params.closed)
             u[numPoints-1] = 1.0;
         }
