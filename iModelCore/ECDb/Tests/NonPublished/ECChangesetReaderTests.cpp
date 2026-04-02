@@ -271,8 +271,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_TRUE(hasName("Details.Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    bool hasOwner = hasName("Owner") || hasName("Owner.Id");
-    EXPECT_TRUE(hasOwner) << "Expected 'Owner' or 'Owner.Id' in changed property names";
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -594,8 +593,7 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_TRUE(hasName("Details.Score"));
     EXPECT_FALSE(hasName("Details"));
     EXPECT_TRUE(hasName("Tags"));
-    bool hasOwner = hasName("Owner") || hasName("Owner.Id");
-    EXPECT_TRUE(hasOwner) << "Expected 'Owner' or 'Owner.Id' in changed property names";
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -1275,6 +1273,283 @@ TEST_F(ECChangesetReaderTests, Update_StructArray)
     EXPECT_TRUE(hasName("MetaTags"));
     EXPECT_FALSE(hasName("Title"));       // not changed
     EXPECT_FALSE(hasName("ECInstanceId")); // UPDATE — never present
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Widget with only partial Point2d (X only) and partial Point3d (Y and Z only)
+// — all other fields left unset.
+// Verifies:
+//   - changedProps contains "Pos2d.X" but NOT "Pos2d" (full collapse) or "Pos2d.Y" (Y absent).
+//   - changedProps contains "Pos3d.Y" and "Pos3d.Z" but NOT "Pos3d" (full collapse) or "Pos3d.X" (X absent).
+//   - The Pos2d field is emitted with X=3.0 and Y=0.0 (absent component defaults to zero).
+//   - The Pos3d field is emitted with X=0.0, Y=7.0, Z=8.0.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_partial_pts.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert Widget with Pos2d.X only (Y absent) and Pos3d.Y+Z only (X absent).
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Pos2d.X, Pos3d.Y, Pos3d.Z) VALUES(?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(1, 3.0));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, 7.0));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(3, 8.0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::New));
+
+    // Property 1
+    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+    
+    // Property 2
+    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECClassId>());
+    
+    // Property 3
+    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_TRUE(v2.IsNull());
+
+    // Property 4
+    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    ECN::ECPropertyCP prop3 = v3.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Weight", prop3->GetName().c_str());
+    EXPECT_TRUE(v3.IsNull());
+
+    //Property 5
+    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    ECN::ECPropertyCP prop4 = v4.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Cnt", prop4->GetName().c_str());
+    EXPECT_TRUE(v4.IsNull());
+
+    //Property 6
+    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::New, 5);
+    ECN::ECPropertyCP prop5 = v5.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Active", prop5->GetName().c_str());
+    EXPECT_TRUE(v5.IsNull());
+
+    //Property 7
+    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::New, 6);
+    ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
+    DPoint2d pos2d = v6.GetPoint2d();
+    EXPECT_DOUBLE_EQ(3.0, pos2d.x);
+    EXPECT_DOUBLE_EQ(0.0, pos2d.y);
+
+    //Property 8
+    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::New, 7);
+    ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
+    DPoint3d pos3d = v7.GetPoint3d();
+    EXPECT_DOUBLE_EQ(0.0, pos3d.x);
+    EXPECT_DOUBLE_EQ(7.0, pos3d.y);
+    EXPECT_DOUBLE_EQ(8.0, pos3d.z);
+
+    //Property 9
+    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::New, 8);
+    ECN::ECPropertyCP prop8 = v8.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Details", prop8->GetName().c_str());
+    EXPECT_TRUE(v8.IsNull());
+
+    //Property 10
+    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::New, 9);
+    ECN::ECPropertyCP prop9 = v9.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Tags", prop9->GetName().c_str());
+    EXPECT_TRUE(v9.IsNull());
+
+    //Property 11
+    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::New, 10);
+    ECN::ECPropertyCP prop10 = v10.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Owner", prop10->GetName().c_str());
+    EXPECT_TRUE(v10.IsNull());
+
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
+    EXPECT_TRUE(hasName("Name"));
+    EXPECT_TRUE(hasName("Weight"));
+    EXPECT_TRUE(hasName("Cnt"));
+    EXPECT_TRUE(hasName("Active"));
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
+    EXPECT_FALSE(hasName("Pos2d.X"));
+    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
+    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
+    EXPECT_FALSE(hasName("Details"));      // bare struct name never present
+    EXPECT_TRUE(hasName("Tags"));
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Widget with only a navigation property set — all other fields left unset.
+// Verifies:
+//   - The Owner field is emitted with the correct ECInstanceId target.
+//   - changedProps contains "Owner.Id" but not "Name", "Weight", etc.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Insert_NavProperty)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nav_insert.ecdb", SchemaItem(GetSchema())));
+
+    // Container inserted BEFORE tracking — provides the nav prop target.
+    ECInstanceKey containerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Box')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert Widget with only Owner set.
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Owner.Id) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, containerKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::New));
+
+    // Property 1
+    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+    
+    // Property 2
+    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECClassId>());
+    
+    // Property 3
+    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_TRUE(v2.IsNull());
+
+    // Property 4
+    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    ECN::ECPropertyCP prop3 = v3.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Weight", prop3->GetName().c_str());
+    EXPECT_TRUE(v3.IsNull());
+
+    //Property 5
+    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    ECN::ECPropertyCP prop4 = v4.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Cnt", prop4->GetName().c_str());
+    EXPECT_TRUE(v4.IsNull());
+
+    //Property 6
+    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::New, 5);
+    ECN::ECPropertyCP prop5 = v5.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Active", prop5->GetName().c_str());
+    EXPECT_TRUE(v5.IsNull());
+
+    //Property 7
+    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::New, 6);
+    ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
+    DPoint2d pos2d = v6.GetPoint2d();
+    EXPECT_DOUBLE_EQ(0.0, pos2d.x);
+    EXPECT_DOUBLE_EQ(0.0, pos2d.y);
+
+    //Property 8
+    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::New, 7);
+    ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
+    DPoint3d pos3d = v7.GetPoint3d();
+    EXPECT_DOUBLE_EQ(0.0, pos3d.x);
+    EXPECT_DOUBLE_EQ(0.0, pos3d.y);
+    EXPECT_DOUBLE_EQ(0.0, pos3d.z);
+
+    //Property 9
+    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::New, 8);
+    ECN::ECPropertyCP prop8 = v8.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Details", prop8->GetName().c_str());
+    EXPECT_TRUE(v8.IsNull());
+
+    //Property 10
+    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::New, 9);
+    ECN::ECPropertyCP prop9 = v9.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Tags", prop9->GetName().c_str());
+    EXPECT_TRUE(v9.IsNull());
+
+    //Property 11
+    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::New, 10);
+    ECN::ECPropertyCP prop10 = v10.GetColumnInfo().GetProperty();
+    EXPECT_STREQ("Owner", prop10->GetName().c_str());
+    ECN::ECClassId relId;
+    ECInstanceId ownerId = v10.GetNavigation<ECInstanceId>(&relId);
+    EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
+    EXPECT_TRUE(relId.IsValid());
+
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
+    EXPECT_TRUE(hasName("Name"));
+    EXPECT_TRUE(hasName("Weight"));
+    EXPECT_TRUE(hasName("Cnt"));
+    EXPECT_TRUE(hasName("Active"));
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
+    EXPECT_FALSE(hasName("Pos2d.X"));
+    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
+    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
+    EXPECT_FALSE(hasName("Details"));      // bare struct name never present
+    EXPECT_TRUE(hasName("Tags"));
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
