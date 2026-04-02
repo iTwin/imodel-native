@@ -17,9 +17,9 @@ static double compareTol = 1.0e-12;
 static int s_echoErrorGeometry = 0;
 void messagePrefix (const char* content = nullptr)
     {
-    printf ("comparedgnjs: ");
+    printf ("%s: ", s_messagePrefix);
 	if (content)
-		printf(content);
+		printf("%s", content);
     }
 struct JsonData {
 Utf8String m_filename;

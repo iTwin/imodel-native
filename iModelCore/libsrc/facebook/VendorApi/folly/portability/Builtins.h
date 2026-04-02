@@ -16,7 +16,8 @@
 
 #pragma once
 
-#ifdef _WIN32
+// clang natively supports all __builtin_* functions below; only MSVC needs these stubs.
+#if defined(_WIN32) && !defined(__clang__)
 #include <assert.h>
 #include <intrin.h>
 #include <folly/Portability.h>
@@ -68,3 +69,4 @@ FOLLY_ALWAYS_INLINE void* __builtin_return_address(unsigned int frame) {
   return _ReturnAddress();
 }
 #endif
+

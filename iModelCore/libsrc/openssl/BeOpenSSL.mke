@@ -111,6 +111,13 @@ nameToDefine = ENGINESDIR=\"\"
     nameToDefine = BSAES_ASM
     %include cdefapnd.mki
 
+    %if $(BUILD_TOOLSET) == "WINDOWS_CLANG"
+        # GetCurrentFiber is FORCEINLINE in winnt.h; clang-cl does not inline it at -Od,
+        # causing lld-link "undefined symbol" errors. Disable async support to avoid this.
+        nameToDefine = OPENSSL_NO_ASYNC
+        %include cdefapnd.mki
+    %endif
+
 %elif $(TARGET_PLATFORM) == "Linux"
 
     nameToDefine = OPENSSL_CPUID_OBJ
@@ -2538,6 +2545,11 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
   $(DLM_OBJECT_DEST)BeOpenSSL.def : $(_MakeFilePath)BeOpenSSL.def 
       $(copyCmd) $< $@
       $(BBPYTHONCMD) $(bsiScripts)RegexReplaceInFile.py iTwinOpenSSL BeOpenSSLB02 $@
+%elif $(BUILD_TOOLSET) == "WINDOWS_CLANG"
+  # lld-link cannot auto-forward FORCEINLINE Windows API exports (GetCurrentFiber etc.)
+  # that MSVC link.exe handles implicitly.  Use a filtered DEF that omits those symbols.
+  $(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL_clang.def
+      $(LinkFirstDepToFirstTarget)
 %else
   $(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
       $(LinkFirstDepToFirstTarget)

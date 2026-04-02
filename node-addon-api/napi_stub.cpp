@@ -13,19 +13,21 @@
  * See README.md for explanation.
  */
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__clang__)
 #pragma warning(disable : 4100)
 #define ABORT_NO_BACKTRACE() raise(SIGABRT)
 #define FORWARD_EXPORT(name) __pragma(comment(linker, "/export:"##name))
-#elif defined(__clang__)
+#define FORWARD_NAPI_EXPORT(name) FORWARD_EXPORT("napi_"##name)
+#else
 #define ABORT_NO_BACKTRACE() abort()
 #define FORWARD_EXPORT(name)
+#define FORWARD_NAPI_EXPORT(name)
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma clang diagnostic ignored "-Wconstant-conversion"
 #endif
-
-#define FORWARD_NAPI_EXPORT(name) FORWARD_EXPORT("napi_"##name)
+#endif
 
 #if defined(BUILD_FOR_NODE)
 
