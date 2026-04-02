@@ -654,6 +654,7 @@ ECObjectsStatus ECClass::AddPropertyResolveConflicts(ECPropertyP& property)
 
     if(nullptr != existingProperty)
         {
+        delete property;
         property = existingProperty;
         return ECObjectsStatus::Success;
         }
@@ -706,6 +707,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         ECObjectsStatus status = CanPropertyBeOverridden(*localProperty, *pProperty, errorMsg);
         if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
             {
+            delete pProperty;
             pProperty = localProperty;
             return ECObjectsStatus::Success;
             }

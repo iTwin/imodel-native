@@ -523,7 +523,14 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnBoxDetail detail;
             if (parent.TryGetDgnBoxDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DgnBoxDetail fbDetail (
+                    detail.m_baseOrigin.x, detail.m_baseOrigin.y, detail.m_baseOrigin.z,
+                    detail.m_topOrigin.x, detail.m_topOrigin.y, detail.m_topOrigin.z,
+                    detail.m_vectorX.x, detail.m_vectorX.y, detail.m_vectorX.z,
+                    detail.m_vectorY.x, detail.m_vectorY.y, detail.m_vectorY.z,
+                    detail.m_baseX, detail.m_baseY, detail.m_topX, detail.m_topY,
+                    detail.m_capped);
+                auto fbData = BGFB::CreateDgnBox (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -537,7 +544,14 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnConeDetail detail;
             if (parent.TryGetDgnConeDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DgnConeDetail fbDetail (
+                    detail.m_centerA.x, detail.m_centerA.y, detail.m_centerA.z,
+                    detail.m_centerB.x, detail.m_centerB.y, detail.m_centerB.z,
+                    detail.m_vector0.x, detail.m_vector0.y, detail.m_vector0.z,
+                    detail.m_vector90.x, detail.m_vector90.y, detail.m_vector90.z,
+                    detail.m_radiusA, detail.m_radiusB,
+                    detail.m_capped);
+                auto fbData = BGFB::CreateDgnCone (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -551,7 +565,13 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnTorusPipeDetail detail;
             if (parent.TryGetDgnTorusPipeDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DgnTorusPipeDetail fbDetail (
+                    detail.m_center.x, detail.m_center.y, detail.m_center.z,
+                    detail.m_vectorX.x, detail.m_vectorX.y, detail.m_vectorX.z,
+                    detail.m_vectorY.x, detail.m_vectorY.y, detail.m_vectorY.z,
+                    detail.m_majorRadius, detail.m_minorRadius, detail.m_sweepAngle,
+                    detail.m_capped);
+                auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
@@ -565,7 +585,12 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
             DgnSphereDetail detail;
             if (parent.TryGetDgnSphereDetail (detail))
                 {
-                auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
+                BGFB::DTransform3d fbTransform (
+                    detail.m_localToWorld.form3d[0][0], detail.m_localToWorld.form3d[0][1], detail.m_localToWorld.form3d[0][2], detail.m_localToWorld.form3d[0][3],
+                    detail.m_localToWorld.form3d[1][0], detail.m_localToWorld.form3d[1][1], detail.m_localToWorld.form3d[1][2], detail.m_localToWorld.form3d[1][3],
+                    detail.m_localToWorld.form3d[2][0], detail.m_localToWorld.form3d[2][1], detail.m_localToWorld.form3d[2][2], detail.m_localToWorld.form3d[2][3]);
+                BGFB::DgnSphereDetail fbDetail (fbTransform, detail.m_startLatitude, detail.m_latitudeSweep, detail.m_capped);
+                auto fbData = BGFB::CreateDgnSphere (m_fbb, &fbDetail);
                 return BGFB::CreateVariantGeometry
                     (
                     m_fbb,
