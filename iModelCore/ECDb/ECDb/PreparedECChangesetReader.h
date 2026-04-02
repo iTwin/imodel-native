@@ -26,6 +26,7 @@ private:
     Changes::Change                m_currentChange;
     Utf8String                     m_ddl;
     std::map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
+    std::unordered_set<Utf8String> m_changedProps;
 
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
@@ -57,6 +58,7 @@ public:
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
     DbResult IsECTable(bool& isECTable) const;
+    DbResult GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

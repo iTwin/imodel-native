@@ -5135,6 +5135,7 @@ public:
             InstanceMethod("getTableName",        &NativeECChangesetReader::GetTableName),
             InstanceMethod("getOpcode",           &NativeECChangesetReader::GetOpcode),
             InstanceMethod("getValue",            &NativeECChangesetReader::GetValue),
+            InstanceMethod("getChangedPropertyNames", &NativeECChangesetReader::GetChangedPropertyNames),
         });
         exports.Set("ECChangesetReader", t);
         SET_CONSTRUCTOR(t);
@@ -5279,6 +5280,18 @@ public:
             out["key"] = instanceKey.c_str();
 
         return out;
+        }
+
+    Napi::Value GetChangedPropertyNames(NapiInfoCR info)
+        {
+        std::unordered_set<Utf8String> names;
+        if (m_reader.GetChangedPropertyNames(names) != BE_SQLITE_OK)
+            return Napi::Array::New(info.Env(), 0);
+        Napi::Array arr = Napi::Array::New(info.Env(), names.size());
+        uint32_t i = 0;
+        for (auto const& name : names)
+            arr[i++] = Napi::String::New(info.Env(), name.c_str());
+        return arr;
         }
 };
 

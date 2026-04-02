@@ -89,4 +89,11 @@ DbResult ECChangesetReader::Impl::IsECTable(bool& isECTable) const {
     return m_prepared->IsECTable(isECTable);
 }
 
+DbResult ECChangesetReader::Impl::GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const {
+    if (!IsPrepared()) {
+        return BE_SQLITE_OK;
+    }
+    return m_prepared->GetChangedPropertyNames(out);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

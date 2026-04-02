@@ -1546,6 +1546,7 @@ export declare namespace IModelJsNative {
     public getTableName(): string;
     public getOpcode(): DbOpcode;
     public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue;
+    public getChangedPropertyNames(): string[];
   }
 
   namespace ECChangesetReader {

@@ -5,6 +5,7 @@
 #pragma once
 #include "ChangesetValue.h"
 #include <ECDb/ECChangesetReader.h>
+#include <unordered_set>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -47,6 +48,13 @@ private:
     //! Use only when the caller has already verified IsInMap().
     static DbValue GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
 
+    //! Validates that all PK columns of @p tbl are present/valid/non-null in @p columnValues,
+    //! prepares a "SELECT [@p selectCol] FROM <table> WHERE [pk1]=? AND ..." statement,
+    //! and binds all PK values.  Returns the statement ready to Step(), or nullptr on any failure.
+    static CachedStatementPtr PreparePkStatement(ECDbCR conn, DbTable const& tbl,
+                                                 Utf8StringCR selectColName,
+                                                 ColumnValueMap const& columnValues);
+
     //! Fetches a single real column value from the live DB for the row identified by
     //! the table's primary-key column in @p columnValues.
     //! Returns true and sets @p outVal on success; false on any failure.
@@ -78,50 +86,63 @@ private:
     // ------------------------------------------------------------------
     // Per-kind field constructors
     //
-    // Convention: every Create* returns BE_SQLITE_OK and populates @p out on success.
-    //   BE_SQLITE_OK with out==nullptr  → no changeset data for this property; skip it.
-    //   Any other DbResult             → hard error; caller must propagate immediately.
+    // Convention: each Create* appends directly to @p fieldsOut and inserts to
+    //   @p changedProps when the property has changeset data; otherwise it is a no-op.
+    //   Any non-OK DbResult is a hard error; the caller must propagate immediately.
     // ------------------------------------------------------------------
 
-    //! Single-pass dispatch: checks presence and creates the value in one step.
+    //! Single-pass dispatch: checks presence and fills fieldsOut/changedProps in one step.
     static DbResult CreateValueForProperty(ECDbCR conn, PropertyMap const&,
                                            ColumnValueMap const&, DbTable const& dbTable,
-                                           std::unique_ptr<IECSqlValue>& out);
+                                           std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                           std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when neither coordinate is in the changeset.
+    //! Skips when neither coordinate is in the changeset.
     //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
     static DbResult CreatePoint2d(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                                  ColumnValueMap const&,
+                                  std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                  std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when no coordinate is in the changeset.
+    //! Skips when no coordinate is in the changeset.
     //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
     static DbResult CreatePoint3d(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                                  ColumnValueMap const&,
+                                  std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                  std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when the backing column is absent from the changeset.
+    //! Skips when the backing column is absent from the changeset.
     static DbResult CreatePrimitive(ECDbCR conn, PropertyMap const&,
-                                    ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                                    ColumnValueMap const&,
+                                    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                    std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when the backing column is absent or virtual.
+    //! Skips when the backing column is absent or virtual.
     //! Returns BE_SQLITE_ERROR on internal mapping failures.
     static DbResult CreateSystem(ECDbCR conn, PropertyMap const&,
                                  ColumnValueMap const&, DbTable const& dbTable,
-                                 std::unique_ptr<IECSqlValue>& out);
+                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                 std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when neither physical component is in the changeset.
+    //! Skips when neither physical component is in the changeset.
     //! Returns BE_SQLITE_ERROR when a component is partly present but the DB fetch fails.
     static DbResult CreateNav(ECDbCR conn, PropertyMap const&,
-                              ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                              ColumnValueMap const&,
+                              std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                              std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when the column is absent from the changeset.
+    //! Skips when the column is absent from the changeset.
     static DbResult CreateArray(ECDbCR conn, PropertyMap const&,
-                                ColumnValueMap const&, std::unique_ptr<IECSqlValue>& out);
+                                ColumnValueMap const&,
+                                std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                std::unordered_set<Utf8String>& changedProps);
 
-    //! Returns BE_SQLITE_OK/out==nullptr when no member has changeset data.
+    //! Skips when no member has changeset data.
     //! Returns BE_SQLITE_ERROR if any member value fails to be created.
     static DbResult CreateStruct(ECDbCR conn, PropertyMap const&,
                                  ColumnValueMap const&, DbTable const& dbTable,
-                                 std::unique_ptr<IECSqlValue>& out);
+                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                 std::unordered_set<Utf8String>& changedProps);
 
     //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
     static DbResult CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
@@ -163,21 +184,32 @@ private:
                                         ECDbCR conn, DbTable const& tbl,
                                         std::unique_ptr<IECSqlValue>& out);
 
-    //! Iterates all remaining properties (excluding ECInstanceId and ECClassId),
-    //! performing a single-pass check+create via CreateValueForProperty.
+    //! Iterates all remaining properties (excluding ECInstanceId and ECClassId)
+    //! and dispatches each to CreateValueForProperty.
     //! Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
     static DbResult BuildPropertyFields(ClassMap const& classMap,
                                         ColumnValueMap const& columnValues,
                                         ECDbCR conn, DbTable const& dbTable,
-                                        std::vector<std::unique_ptr<IECSqlValue>>& fields);
+                                        std::vector<std::unique_ptr<IECSqlValue>>& fields,
+                                        std::unordered_set<Utf8String>& changedProps);
 
     //! Returns true when @p classId is BisCore::Element or any class derived from it.
     static bool isChildClassOfBisCore(ECClassId classId, ECDbCR conn);
+
+    // ------------------------------------------------------------------
 public:
+    //! Builds the IECSqlValue fields for one changeset row.
+    //! If @p changedProps is non-null it is filled with the access paths of all properties
+    //! / sub-properties that have data in the changeset.
+    //! Examples: "Name", "Pos2d", "Pos2d.X", "Details.Label", "Owner", "Owner.Id".
+    //! @p includeInstanceId — when true, "ECInstanceId" is added to @p changedProps
+    //!                        (pass true for Insert and Delete opcodes).
     static DbResult Create(ECDbCR conn, DbTable const& tbl,
                             ColumnValueMap const& columnValues,
                             std::vector<std::unique_ptr<IECSqlValue>>& fields,
-                            ECChangesetReader::Mode mode);
+                            ECChangesetReader::Mode mode,
+                            bool includeInstanceId,
+                            std::unordered_set<Utf8String>& changedProps);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

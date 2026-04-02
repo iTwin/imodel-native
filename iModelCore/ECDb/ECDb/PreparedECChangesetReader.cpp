@@ -105,6 +105,7 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, D
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::clearFields() {
     m_fields.clear();
+    m_changedProps.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -173,12 +174,14 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
         if(GetOpcode(opCode) != BE_SQLITE_OK)
             return BE_SQLITE_ERROR;
 
+        const bool includeInstanceId = (opCode == DbOpcode::Insert || opCode == DbOpcode::Delete);
         if(opCode != DbOpcode::Delete) {
             ColumnValueMap newValues;
             if (GetColumnValues(Stage::New, newValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
             DumpColumnValues(newValues);
-            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New), m_mode) != BE_SQLITE_OK)
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New), m_mode,
+                                              includeInstanceId, m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
         if(opCode != DbOpcode::Insert) {
@@ -186,7 +189,8 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
             DumpColumnValues(oldValues);
-            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode) != BE_SQLITE_OK)
+            if (ChangesetFieldFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode,
+                                              includeInstanceId, m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
     }
@@ -386,6 +390,25 @@ DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
     if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE)
         return rc;
     isECTable = (rc == BE_SQLITE_ROW);
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedECChangesetReader::GetChangedPropertyNames(std::unordered_set<Utf8String>& out) const {
+    if(!IsOpen())
+        {
+        LOG.errorv("Attempting to get changed property names from a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+        }
+    if(!IsStepped())
+        {
+        LOG.errorv("Attempting to get changed property names from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
+        return BE_SQLITE_ERROR;
+        }
+    out.clear();
+    out = m_changedProps;
     return BE_SQLITE_OK;
 }
 
