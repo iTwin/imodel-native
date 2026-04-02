@@ -62,6 +62,35 @@ struct ECChangesetReaderTests : ECDbTestFixture {
                             </ECRelationshipClass>
                         </ECSchema>)xml"; 
         }
+
+        //! Extended schema: nested structs (Address.GeoCoord) + struct array (Document.MetaTags).
+        Utf8CP GetExtendedSchema() const {
+            return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                            <ECSchema schemaName="TestExtCS" alias="te" version="01.00.00"
+                                    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECStructClass typeName="GeoCoord" modifier="Sealed">
+                                <ECProperty propertyName="Lat" typeName="double"/>
+                                <ECProperty propertyName="Lon" typeName="double"/>
+                            </ECStructClass>
+                            <ECStructClass typeName="Address" modifier="Sealed">
+                                <ECProperty propertyName="Street" typeName="string"/>
+                                <ECStructProperty propertyName="Coord" typeName="GeoCoord"/>
+                            </ECStructClass>
+                            <ECStructClass typeName="Tag" modifier="Sealed">
+                                <ECProperty propertyName="Key" typeName="string"/>
+                                <ECProperty propertyName="Value" typeName="int"/>
+                            </ECStructClass>
+                            <ECEntityClass typeName="Place" modifier="Sealed">
+                                <ECProperty propertyName="Name" typeName="string"/>
+                                <ECStructProperty propertyName="Location" typeName="Address"/>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Document" modifier="Sealed">
+                                <ECProperty propertyName="Title" typeName="string"/>
+                                <ECStructArrayProperty propertyName="MetaTags" typeName="Tag" minOccurs="0" maxOccurs="unbounded"/>
+                            </ECEntityClass>
+                        </ECSchema>)xml";
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -826,6 +855,414 @@ TEST_F(ECChangesetReaderTests, Update_TwoScalars)
     EXPECT_NE(changedProps.end(), changedProps.find("Cnt"));
     EXPECT_EQ(changedProps.end(), changedProps.find("Name"));
     EXPECT_EQ(changedProps.end(), changedProps.find("Active"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId")); // UPDATE — never present
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Place with a fully-populated nested struct (Location.Street + Location.Coord.Lat/Lon).
+// Verifies:
+//   - Nested struct value is accessible via chained bracket notation.
+//   - changedProps uses fully-dotted paths ("Location.Street", "Location.Coord.Lat",
+//     "Location.Coord.Lon") and never the bare struct names ("Location", "Location.Coord").
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Insert_NestedStruct)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nested_insert.ecdb", SchemaItem(GetExtendedSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey placeKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO te.Place(Name, Location) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Paris", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& locBinder = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, locBinder["Street"].BindText("Rue de Rivoli", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, locBinder["Coord"]["Lat"].BindDouble(48.86));
+    ASSERT_EQ(ECSqlStatus::Success, locBinder["Coord"]["Lon"].BindDouble(2.34));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(placeKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    // ECInstanceId, ECClassId, Name, Location.
+    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(placeKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Paris", v2.GetText());
+
+    IECSqlValue const& locVal = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    EXPECT_STREQ("Location", locVal.GetColumnInfo().GetProperty()->GetName().c_str());
+    // Nested struct member access via chained operator[].
+    EXPECT_STREQ("Rue de Rivoli", locVal["Street"].GetText());
+    EXPECT_DOUBLE_EQ(48.86, locVal["Coord"]["Lat"].GetDouble());
+    EXPECT_DOUBLE_EQ(2.34,  locVal["Coord"]["Lon"].GetDouble());
+
+    // changedProps: fully-dotted paths for nested members.
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("ECInstanceId"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Name"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Location.Street"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Location.Coord.Lat"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Location.Coord.Lon"));
+    // Struct nesting never collapses to a bare struct name.
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location.Coord"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// Insert a fully-populated Place outside the tracker, then update ONLY Location.Street.
+// Verifies:
+//   - The Location struct is emitted but contains only the Street member (Coord absent
+//     because neither Coord column was in the changeset).
+//   - changedProps = {"Location.Street"} — Coord paths are absent.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Update_NestedStruct_StreetOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nested_upd_street.ecdb", SchemaItem(GetExtendedSchema())));
+
+    ECInstanceKey placeKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO te.Place(Name, Location) VALUES('Lyon', ?)"));
+    IECSqlBinder& lb = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, lb["Street"].BindText("Old Street", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, lb["Coord"]["Lat"].BindDouble(45.75));
+    ASSERT_EQ(ECSqlStatus::Success, lb["Coord"]["Lon"].BindDouble(4.83));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(placeKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Update only Location.Street — Coord columns are untouched.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE te.Place SET Location.Street='New Street' WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, placeKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Update, opcode);
+
+    // ECInstanceId, ECClassId, Location (Street changed) — Name not touched.
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    IECSqlValue const& newLoc = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Location", newLoc.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("New Street", newLoc["Street"].GetText());
+
+    IECSqlValue const& oldLoc = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    EXPECT_STREQ("Location", oldLoc.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Old Street", oldLoc["Street"].GetText());
+
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("Location.Street"));
+    // Coord was not touched — must not appear at all.
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location.Coord.Lat"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location.Coord.Lon"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location.Coord"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Name"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// Insert a fully-populated Place outside the tracker, then update ONLY
+// Location.Coord.Lat and Location.Coord.Lon (both nested struct leaf coords).
+// Verifies:
+//   - Location struct is emitted containing only Coord (Street absent).
+//   - changedProps = {"Location.Coord.Lat", "Location.Coord.Lon"} — struct types
+//     never collapse to a bare name even when all their members change.
+//   - "Location.Coord" is NOT in changedProps (unlike Point2d/3d which collapse).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Update_NestedStruct_CoordOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nested_upd_coord.ecdb", SchemaItem(GetExtendedSchema())));
+
+    ECInstanceKey placeKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO te.Place(Name, Location) VALUES('Marseille', ?)"));
+    IECSqlBinder& lb = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, lb["Street"].BindText("Canebiere", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, lb["Coord"]["Lat"].BindDouble(43.30));
+    ASSERT_EQ(ECSqlStatus::Success, lb["Coord"]["Lon"].BindDouble(5.37));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(placeKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Update both Coord components but leave Street unchanged.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE te.Place SET Location.Coord.Lat=44.0, Location.Coord.Lon=6.0 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, placeKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Update, opcode);
+
+    // ECInstanceId, ECClassId, Location (Coord changed) — Name + Street not touched.
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    // New stage: Location contains only Coord (Street absent because not in changeset).
+    IECSqlValue const& newLoc = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Location", newLoc.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(44.0, newLoc["Coord"]["Lat"].GetDouble());
+    EXPECT_DOUBLE_EQ(6.0,  newLoc["Coord"]["Lon"].GetDouble());
+
+    // Old stage: Location contains the pre-update Coord values.
+    IECSqlValue const& oldLoc = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    EXPECT_STREQ("Location", oldLoc.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(43.30, oldLoc["Coord"]["Lat"].GetDouble());
+    EXPECT_DOUBLE_EQ(5.37,  oldLoc["Coord"]["Lon"].GetDouble());
+
+    // Key distinction from Point2d/3d: struct nesting NEVER collapses to a bare name,
+    // so even when BOTH Lat and Lon change, changedProps has two dotted entries, not "Location.Coord".
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("Location.Coord.Lat"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Location.Coord.Lon"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location.Coord"));  // struct, not a Point — no collapse
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location.Street"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Location"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Name"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// INSERT a Document with a struct-array property (MetaTags: Tag[]).
+// Verifies:
+//   - The MetaTags field is emitted with the correct element count.
+//   - changedProps = {"ECInstanceId", "Title", "MetaTags"} — array uses the bare
+//     property name (same as primitive arrays), not per-element paths.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Insert_StructArray)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_structarr_insert.ecdb", SchemaItem(GetExtendedSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey docKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO te.Document(Title, MetaTags) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "MyDoc", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& mb = stmt.GetBinder(2);
+    {
+    IECSqlBinder& t1 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t1["Key"].BindText("author", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t1["Value"].BindInt(1));
+    }
+    {
+    IECSqlBinder& t2 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t2["Key"].BindText("version", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t2["Value"].BindInt(2));
+    }
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(docKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    // ECInstanceId, ECClassId, Title, MetaTags.
+    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::New));
+
+    IECSqlValue const& titleVal = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("Title", titleVal.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("MyDoc", titleVal.GetText());
+
+    IECSqlValue const& tagsVal = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    EXPECT_STREQ("MetaTags", tagsVal.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(2, tagsVal.GetArrayLength());
+
+    // changedProps: struct-array uses bare property name, same as primitive arrays.
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("ECInstanceId"));
+    EXPECT_NE(changedProps.end(), changedProps.find("Title"));
+    EXPECT_NE(changedProps.end(), changedProps.find("MetaTags"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("MetaTags.Key"));   // no per-element keys
+    EXPECT_EQ(changedProps.end(), changedProps.find("MetaTags.Value"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// Insert a Document with 2 MetaTags outside the tracker; update MetaTags to 3 elements
+// inside the tracker.  Only MetaTags changed — Title was not touched.
+// Verifies:
+//   - New stage MetaTags has 3 elements; Old stage has 2.
+//   - changedProps = {"MetaTags"}, Title absent.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Update_StructArray)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_structarr_update.ecdb", SchemaItem(GetExtendedSchema())));
+
+    ECInstanceKey docKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO te.Document(Title, MetaTags) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Draft", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& mb = stmt.GetBinder(2);
+    {
+    IECSqlBinder& t1 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t1["Key"].BindText("a", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t1["Value"].BindInt(1));
+    }
+    {
+    IECSqlBinder& t2 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t2["Key"].BindText("b", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t2["Value"].BindInt(2));
+    }
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(docKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Replace MetaTags with 3 elements — Title left untouched.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE te.Document SET MetaTags=? WHERE ECInstanceId=?"));
+    IECSqlBinder& mb = stmt.GetBinder(1);
+    {
+    IECSqlBinder& t1 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t1["Key"].BindText("x", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t1["Value"].BindInt(10));
+    }
+    {
+    IECSqlBinder& t2 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t2["Key"].BindText("y", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t2["Value"].BindInt(20));
+    }
+    {
+    IECSqlBinder& t3 = mb.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, t3["Key"].BindText("z", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, t3["Value"].BindInt(30));
+    }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, docKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Update, opcode);
+
+    // ECInstanceId, ECClassId, MetaTags — Title not changed.
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+
+    IECSqlValue const& newTags = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    EXPECT_STREQ("MetaTags", newTags.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(3, newTags.GetArrayLength()) << "New MetaTags must have 3 elements";
+
+    IECSqlValue const& oldTags = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    EXPECT_STREQ("MetaTags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(2, oldTags.GetArrayLength()) << "Old MetaTags must have 2 elements";
+
+    std::unordered_set<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangedPropertyNames(changedProps));
+    EXPECT_NE(changedProps.end(), changedProps.find("MetaTags"));
+    EXPECT_EQ(changedProps.end(), changedProps.find("Title"));       // not changed
     EXPECT_EQ(changedProps.end(), changedProps.find("ECInstanceId")); // UPDATE — never present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
