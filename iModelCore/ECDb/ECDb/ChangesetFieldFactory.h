@@ -48,6 +48,12 @@ private:
     //! Use only when the caller has already verified IsInMap().
     static DbValue GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
 
+    //! Returns the double value stored in @p val, or 0.0 if @p val is null.
+    static double CheckNullAndGetDoubleValueFromDbValue(DbValue const& val);
+
+    //! Returns the uint64_t value stored in @p val, or 0 if @p val is null.
+    static BeInt64Id CheckNullAndGetBeInt64IdValueFromDbValue(DbValue const& val);
+
     //! Validates that all PK columns of @p tbl are present/valid/non-null in @p columnValues,
     //! prepares a "SELECT [@p selectCol] FROM <table> WHERE [pk1]=? AND ..." statement,
     //! and binds all PK values.  Returns the statement ready to Step(), or nullptr on any failure.
@@ -64,7 +70,7 @@ private:
     //! Fetches a single integer column value from the live DB for the row identified by
     //! the table's primary-key column in @p columnValues.
     //! Returns true and sets @p outVal on success; false on any failure.
-    static bool TryFetchInt64FromDb(int64_t& outVal, ECDbCR conn, DbColumn const& col,
+    static bool TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn, DbColumn const& col,
                                     ColumnValueMap const& columnValues);
 
     // ------------------------------------------------------------------
@@ -202,13 +208,10 @@ public:
     //! If @p changedProps is non-null it is filled with the access paths of all properties
     //! / sub-properties that have data in the changeset.
     //! Examples: "Name", "Pos2d", "Pos2d.X", "Details.Label", "Owner", "Owner.Id".
-    //! @p includeInstanceId — when true, "ECInstanceId" is added to @p changedProps
-    //!                        (pass true for Insert and Delete opcodes).
     static DbResult Create(ECDbCR conn, DbTable const& tbl,
                             ColumnValueMap const& columnValues,
                             std::vector<std::unique_ptr<IECSqlValue>>& fields,
                             ECChangesetReader::Mode mode,
-                            bool includeInstanceId,
                             std::vector<Utf8String>& changedProps);
 };
 

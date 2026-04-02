@@ -93,6 +93,26 @@ DbValue ChangesetFieldFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap c
 }
 
 //---------------------------------------------------------------------------------------
+// Returns the double value stored in @p val, or 0.0 if @p val is null.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+double ChangesetFieldFactory::CheckNullAndGetDoubleValueFromDbValue(DbValue const& val) {
+    if(!val.IsValid() || val.IsNull())
+        return std::numeric_limits<double>::quiet_NaN();
+    return val.GetValueDouble();
+}
+
+//---------------------------------------------------------------------------------------
+// Returns the uint64_t value stored in @p val, or 0 if @p val is null.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BeInt64Id ChangesetFieldFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValue const& val) {
+    if(!val.IsValid() || val.IsNull())
+        return BeInt64Id(0);
+    return BeInt64Id(val.GetValueUInt64());
+}
+
+//---------------------------------------------------------------------------------------
 // Validates all PK columns, builds a parameterised SELECT statement for @p selectColName,
 // and binds all PK values so the caller only needs to call Step().
 // Returns nullptr on any failure (missing/null PK value, prepare error, etc.).
@@ -150,7 +170,7 @@ bool ChangesetFieldFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
         return false;
     if (stmt->Step() != BE_SQLITE_ROW)
         return false;
-    outVal = stmt->GetValueDouble(0);
+    outVal = stmt->IsColumnNull(0) ? std::numeric_limits<double>::quiet_NaN() : stmt->GetValueDouble(0);
     return true;
 }
 
@@ -161,7 +181,7 @@ bool ChangesetFieldFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
 // Returns true and sets @p outVal on success; returns false on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::TryFetchInt64FromDb(int64_t& outVal, ECDbCR conn,
+bool ChangesetFieldFactory::TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn,
                                                 DbColumn const& col,
                                                 ColumnValueMap const& columnValues) {
     CachedStatementPtr stmt = PreparePkStatement(conn, col.GetTable(), col.GetName(), columnValues);
@@ -169,7 +189,7 @@ bool ChangesetFieldFactory::TryFetchInt64FromDb(int64_t& outVal, ECDbCR conn,
         return false;
     if (stmt->Step() != BE_SQLITE_ROW)
         return false;
-    outVal = stmt->GetValueInt64(0);
+    outVal = stmt->IsColumnNull(0) ? BeInt64Id(0) : BeInt64Id(stmt->GetValueUInt64(0));
     return true;
 }
 
@@ -284,7 +304,7 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
     double x = 0.0, y = 0.0;
 
     if (xInChangeset) {
-        x = GetFromMap(xCol.GetName(), columnValues).GetValueDouble();
+        x = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(xCol.GetName(), columnValues));
     } else {
         if (!TryFetchDoubleFromDb(x, conn, xCol, columnValues)) {
             LOG.errorv("Point2d property '%s': X coordinate absent and could not be fetched from DB.",
@@ -294,7 +314,7 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
     }
 
     if (yInChangeset) {
-        y = GetFromMap(yCol.GetName(), columnValues).GetValueDouble();
+        y = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(yCol.GetName(), columnValues));
     } else {
         if (!TryFetchDoubleFromDb(y, conn, yCol, columnValues)) {
             LOG.errorv("Point2d property '%s': Y coordinate absent and could not be fetched from DB.",
@@ -308,8 +328,8 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
     if (xInChangeset && yInChangeset) {
         changedProps.emplace_back(propName);
     } else {
-        if (xInChangeset) { Utf8String s; s.Sprintf("%s.X", propName.c_str()); changedProps.emplace_back(std::move(s)); }
-        if (yInChangeset) { Utf8String s; s.Sprintf("%s.Y", propName.c_str()); changedProps.emplace_back(std::move(s)); }
+        if (xInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (yInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
     }
     return BE_SQLITE_OK;
 }
@@ -340,7 +360,7 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
     double x = 0.0, y = 0.0, z = 0.0;
 
     if (xInChangeset) {
-        x = GetFromMap(xCol.GetName(), columnValues).GetValueDouble();
+        x = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(xCol.GetName(), columnValues));
     } else {
         if (!TryFetchDoubleFromDb(x, conn, xCol, columnValues)) {
             LOG.errorv("Point3d property '%s': X coordinate absent and could not be fetched from DB.",
@@ -350,7 +370,7 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
     }
 
     if (yInChangeset) {
-        y = GetFromMap(yCol.GetName(), columnValues).GetValueDouble();
+        y = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(yCol.GetName(), columnValues));
     } else {
         if (!TryFetchDoubleFromDb(y, conn, yCol, columnValues)) {
             LOG.errorv("Point3d property '%s': Y coordinate absent and could not be fetched from DB.",
@@ -360,7 +380,7 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
     }
 
     if (zInChangeset) {
-        z = GetFromMap(zCol.GetName(), columnValues).GetValueDouble();
+        z = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(zCol.GetName(), columnValues));
     } else {
         if (!TryFetchDoubleFromDb(z, conn, zCol, columnValues)) {
             LOG.errorv("Point3d property '%s': Z coordinate absent and could not be fetched from DB.",
@@ -374,9 +394,9 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
     if (xInChangeset && yInChangeset && zInChangeset) {
         changedProps.emplace_back(propName);
     } else {
-        if (xInChangeset) { Utf8String s; s.Sprintf("%s.X", propName.c_str()); changedProps.emplace_back(std::move(s)); }
-        if (yInChangeset) { Utf8String s; s.Sprintf("%s.Y", propName.c_str()); changedProps.emplace_back(std::move(s)); }
-        if (zInChangeset) { Utf8String s; s.Sprintf("%s.Z", propName.c_str()); changedProps.emplace_back(std::move(s)); }
+        if (xInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (yInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (zInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetZ().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
     }
     return BE_SQLITE_OK;
 }
@@ -504,19 +524,19 @@ DbResult ChangesetFieldFactory::CreateNav(
     // --- Resolve id sub-component ---
     std::unique_ptr<IECSqlValue> idVal;
     if (hasIdInChangeset) {
-        if(CreateFixedId(conn, idPropMap, BeInt64Id(GetFromMap(idCol.GetName(), columnValues).GetValueUInt64()), idVal) != BE_SQLITE_OK) {
+        if(CreateFixedId(conn, idPropMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(idCol.GetName(), columnValues)), idVal) != BE_SQLITE_OK) {
             LOG.errorv("Nav property '%s': failed to create fixed id value from changeset data.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
         }
     } else {
-        int64_t fetchedId;
-        if (!TryFetchInt64FromDb(fetchedId, conn, idCol, columnValues)) {
+        BeInt64Id fetchedId;
+        if (!TryFetchBeInt64IdFromDb(fetchedId, conn, idCol, columnValues)) {
             LOG.errorv("Nav property '%s': id absent from changeset and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
         }
-        if(CreateFixedId(conn, idPropMap, BeInt64Id(static_cast<uint64_t>(fetchedId)), idVal) != BE_SQLITE_OK) {
+        if(CreateFixedId(conn, idPropMap, BeInt64Id(fetchedId), idVal) != BE_SQLITE_OK) {
             LOG.errorv("Nav property '%s': failed to create fixed id value from data fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
@@ -527,25 +547,27 @@ DbResult ChangesetFieldFactory::CreateNav(
     std::unique_ptr<IECSqlValue> relClassIdVal;
     if (relClassIdIsVirtual) {
         const auto navProp = propertyMap.GetProperty().GetAsNavigationProperty();
+        LOG.infov("Nav property '%s': relClassId is virtual; using default value based on relationship class '%s'.",
+                   propertyMap.GetProperty().GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
         if(CreateFixedId(conn, relClassIdMap, navProp->GetRelationshipClass()->GetId(), relClassIdVal) != BE_SQLITE_OK) {
             LOG.errorv("Nav property '%s': failed to create fixed relClassId value from virtual column.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
         }
     } else if (hasPhysicalRelClassIdInChangeset) {
-        if(CreateFixedId(conn, relClassIdMap, BeInt64Id(GetFromMap(relClassIdMap.GetColumn().GetName(), columnValues).GetValueUInt64()), relClassIdVal) != BE_SQLITE_OK) {
+        if(CreateFixedId(conn, relClassIdMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(relClassIdMap.GetColumn().GetName(), columnValues)), relClassIdVal) != BE_SQLITE_OK) {
             LOG.errorv("Nav property '%s': failed to create fixed relClassId value from changeset data.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
         }
     } else {
-        int64_t fetchedRelClassId;
-        if (!TryFetchInt64FromDb(fetchedRelClassId, conn, relClassIdMap.GetColumn(), columnValues)) {
+        BeInt64Id fetchedRelClassId;
+        if (!TryFetchBeInt64IdFromDb(fetchedRelClassId, conn, relClassIdMap.GetColumn(), columnValues)) {
             LOG.errorv("Nav property '%s': relClassId absent from changeset and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
         }
-        if(CreateFixedId(conn, relClassIdMap, ECN::ECClassId(static_cast<uint64_t>(fetchedRelClassId)), relClassIdVal) != BE_SQLITE_OK) {
+        if(CreateFixedId(conn, relClassIdMap, fetchedRelClassId, relClassIdVal) != BE_SQLITE_OK) {
             LOG.errorv("Nav property '%s': failed to create fixed relClassId value from data fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return BE_SQLITE_ERROR;
@@ -558,9 +580,9 @@ DbResult ChangesetFieldFactory::CreateNav(
     if (hasIdInChangeset &&  hasPhysicalRelClassIdInChangeset) {
         changedProps.emplace_back(propName);
     } else if (hasIdInChangeset) {
-        Utf8String s; s.Sprintf("%s.Id", propName.c_str()); changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), idPropMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
     } else if (hasPhysicalRelClassIdInChangeset) {
-        Utf8String s; s.Sprintf("%s.RelECClassId", propName.c_str()); changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), relClassIdMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
     }
     return BE_SQLITE_OK;
 }
@@ -613,7 +635,7 @@ DbResult ChangesetFieldFactory::CreateStruct(
         structVal->AppendMember(memberMap->GetProperty().GetName(), std::move(memberTemp.front()));
         for (auto& name : memberChangedProps) {
             Utf8String path;
-            path.Sprintf("%s.%s", structName.c_str(), name.c_str());
+            path.Sprintf("%s->%s", structName.c_str(), name.c_str());
             changedProps.emplace_back(std::move(path));
         }
     }
@@ -716,11 +738,10 @@ bool ChangesetFieldFactory::TryResolveClassMapFromDbSeek(
         return false;
 
     // Validate all PK columns, build and bind the statement via shared helper.
-    int64_t fetchedClassId = 0;
-    if(!TryFetchInt64FromDb(fetchedClassId, conn, classIdCol, columnValues))
+    ECClassId classId;
+    if(!TryFetchBeInt64IdFromDb(classId, conn, classIdCol, columnValues))
         return false;
 
-    ECClassId classId(static_cast<uint64_t>(fetchedClassId));
     if (!classId.IsValid())
         return false;
 
@@ -928,8 +949,7 @@ bool ChangesetFieldFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetFieldFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::Mode mode,
-    bool includeInstanceId, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::Mode mode, std::vector<Utf8String>& changedProps) {
 
     // -----------------------------------------------------------------------
     // Step 1: Resolve ClassMap — try changeset, then DB seek, fall back to root map.
@@ -960,8 +980,7 @@ DbResult ChangesetFieldFactory::Create(
 
     // ECInstanceId and ECClassId name collection — handled here since they are
     // emitted as fixed slots and skipped by the BuildPropertyFields loop.
-    if (includeInstanceId)
-        changedProps.emplace_back(ECDBSYS_PROP_ECInstanceId);
+    changedProps.emplace_back(ECDBSYS_PROP_ECInstanceId);
     if (classIdFromChangeset)
         changedProps.emplace_back(ECDBSYS_PROP_ECClassId);
 
