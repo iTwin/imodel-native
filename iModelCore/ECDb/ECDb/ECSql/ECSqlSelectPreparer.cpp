@@ -114,6 +114,66 @@ ECSqlStatus ECSqlSelectPreparer::PreparePartial(NativeSqlBuilder& nativeSqlSnipp
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//-----------------------------------------------------------------------------------------
+void DetectAndDisqualifyJoinForExternalSourceAspectOnElementId(ECDbCR db, Exp const& exp) {
+    /*
+     * SELECT 1 FROM BisCore.GeometricElement g this INNER JOIN [BisCore].[ExternalSourceAspect] e ON g.ECinstanceId= e.Element.Id
+     * In above find g.ECinstanceId= e.Element.Id and replace it with g.ECinstanceId = +e.Element.Id
+     * This is to disqualify the join for ExternalSourceAspect on Element.Id
+     *
+     * Reason:
+     * For every element there is one or more ExternalSourceAspect. If element table is joined to ExternalSourceAspect then more the element
+     * more will be rows in the result set. This will cause the query to be slow.
+     *
+     */
+    auto& schemas = db.Schemas();
+    auto elMultiAspectClass = schemas.FindClass("BisCore.ExternalSourceAspect");
+    if (elMultiAspectClass == nullptr)
+        return;
+
+    auto searchFilters = exp.Find(Exp::Type::BinaryBoolean, true);
+    if (searchFilters.empty())
+        return;
+
+    for(auto searchExp : searchFilters) {
+        auto bve = const_cast<BinaryBooleanExp*>(searchExp->GetAsCP<BinaryBooleanExp>());
+        if (bve->GetOperator() != BooleanSqlOperator::EqualTo ||
+            bve->GetLeftOperand()->GetType() != Exp::Type::PropertyName ||
+            bve->GetRightOperand()->GetType() != Exp::Type::PropertyName)
+            continue;
+
+        auto lhs = bve->GetLeftOperand()->GetAsCP<PropertyNameExp>();
+        auto rhs = bve->GetRightOperand()->GetAsCP<PropertyNameExp>();
+
+        auto lhsPropertyMap = lhs->GetPropertyMap();
+        auto rhsPropertyMap = rhs->GetPropertyMap();
+        if (lhsPropertyMap == nullptr || rhsPropertyMap == nullptr)
+            continue;
+
+
+        if (schemas.IsSubClassOf(lhsPropertyMap->GetClassMap().GetClass().GetId(), elMultiAspectClass->GetId()) && lhsPropertyMap->GetAccessString().EqualsIAscii("Element.Id")){
+            const auto idx = bve->IndexOf(*lhs);
+            bve->ReplaceChild<ValueExp>(idx, [](auto valueExp) {
+                auto uve = std::make_unique<UnaryValueExp>(valueExp, UnaryValueExp::Operator::Plus);
+                uve->SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long));
+                return std::move(uve);
+            });
+            continue;
+        }
+
+        if (schemas.IsSubClassOf(rhsPropertyMap->GetClassMap().GetClass().GetId(), elMultiAspectClass->GetId()) && rhsPropertyMap->GetAccessString().EqualsIAscii("Element.Id")){
+            const auto idx = bve->IndexOf(*rhs);
+            bve->ReplaceChild<ValueExp>(idx, [](auto valueExp) {
+                auto uve = std::make_unique<UnaryValueExp>(valueExp, UnaryValueExp::Operator::Plus);
+                uve->SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long));
+                return std::move(uve);
+            });
+            continue;
+        }
+    }
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
 ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts)
@@ -167,7 +227,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
 ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuilder::ListOfLists& selectClauseSqlSnippetList, SingleSelectStatementExp const& exp, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts)
     {
     BeAssert(exp.IsComplete());
-
+    DetectAndDisqualifyJoinForExternalSourceAspectOnElementId(ctx.GetECDb(), exp);
     ctx.PushScope(exp, exp.GetOptions());
     NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilder();
     ECSqlStatus status;
