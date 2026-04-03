@@ -18,7 +18,7 @@ parameters:
 - name: defaultNativeBranch
   displayName: Default imodel-native-internal Branch Used for PR Validation
   type: string
-  default: 'main' # Change to appropriate branch name when creating new release branch
+  default: 'nam/quick-win-build' # TEMP: testing build optimizations — revert before merge
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
