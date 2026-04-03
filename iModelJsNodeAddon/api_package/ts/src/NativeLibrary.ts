@@ -1528,6 +1528,35 @@ export declare namespace IModelJsNative {
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
+  interface ECChangesetRowValue {
+    isECTable: boolean;
+    data?: any;
+    key?: string;
+  }
+
+  class ECChangesetReader {
+    constructor();
+    public openFile(db: AnyECDb, fileName: string, invert: boolean, mode: ECChangesetReader.Mode): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, mode: ECChangesetReader.Mode): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, mode: ECChangesetReader.Mode): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, mode: ECChangesetReader.Mode): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, mode: ECChangesetReader.Mode): void;
+    public close(): void;
+    public step(): boolean;
+    public getTableName(): string;
+    public getOpcode(): DbOpcode;
+    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue;
+    public getChangesetFetchedPropertyNames(): string[];
+  }
+
+  namespace ECChangesetReader {
+    export const enum Mode {
+      All_Properties = 0,
+      Bis_Element_Properties = 1,
+      Instance_Key = 2,
+    }
+  }
+
   class DisableNativeAssertions implements IDisposable {
     constructor();
     public dispose(): void;

@@ -989,6 +989,12 @@ public:
     //! @see sqlite3_column_value, sqlite3_value_dup
     BE_SQLITE_EXPORT struct DbDupValue GetDbValue(int col);
 
+    //! Get a non-owning DbValue for a column returned from Step (0-based).
+    //! @warning The returned DbValue is valid only until the next call to Step() or Reset().
+    //! @param[in] col The column of interest
+    //! @see sqlite3_column_value
+    BE_SQLITE_EXPORT DbValue GetColumnValue(int col);
+
     //! Get the index of a bound parameter by name.
     //! @param[in] name the name of the bound parameter
     //! @see sqlite3_bind_parameter_index

@@ -35,7 +35,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDbVirtualTab.h \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
-                $(publicApiDir)InstanceRepository.h
+                $(publicApiDir)InstanceRepository.h \
+                $(publicApiDir)ECChangesetReader.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -128,6 +129,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PointECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \
                 $(baseDir)ECSql/StructECSqlField.h \
+                $(baseDir)ECSql/JsonECSqlValue.h \
                 $(baseDir)ECSql/ArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
@@ -140,7 +142,12 @@ ECDbAllHeaders = \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
-                $(baseDir)ClassViews.h
+                $(baseDir)ClassViews.h \
+                $(baseDir)ChangesetValue.h \
+                $(baseDir)IECSqlValueHelper.h \
+                $(baseDir)ChangesetValueFactory.h \
+                $(baseDir)ECChangesetReaderImpl.h \
+                $(baseDir)PreparedECChangesetReader.h
 
 
 #----------------------------------------------------------------------
@@ -249,6 +256,18 @@ $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSu
 $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedIdsIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECChangesetReader$(oext):                                 $(baseDir)ECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECChangesetReaderImpl$(oext):                             $(baseDir)ECChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)PreparedECChangesetReader$(oext):                         $(baseDir)PreparedECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetValue$(oext):                                    $(baseDir)ChangesetValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)IECSqlValueHelper$(oext):                                 $(baseDir)IECSqlValueHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetValueFactory$(oext):                             $(baseDir)ChangesetValueFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -371,6 +390,8 @@ $(o)PrimitiveECSqlField$(oext):                               $(baseDir)ECSql/Pr
 $(o)PointECSqlField$(oext):                                   $(baseDir)ECSql/PointECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructECSqlField$(oext):                                  $(baseDir)ECSql/StructECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)JsonECSqlValue$(oext):                                     $(baseDir)ECSql/JsonECSqlValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ArrayECSqlField$(oext):                                   $(baseDir)ECSql/ArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

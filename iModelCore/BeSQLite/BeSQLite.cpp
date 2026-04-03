@@ -622,6 +622,14 @@ DbDupValue  Statement::GetDbValue(int col)
     return value;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbValue  Statement::GetColumnValue(int col)
+    {
+    return DbValue(sqlite3_column_value(m_stmt, col));
+    }
+
 int         Statement::GetParameterIndex(Utf8CP name) {return sqlite3_bind_parameter_index(m_stmt, name);}
 int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
 Utf8CP      Statement::GetSql() const                {return sqlite3_sql(m_stmt);}
