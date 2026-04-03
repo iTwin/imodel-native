@@ -41,7 +41,7 @@ protected:
     int                        _GetArrayLength() const override;
     IECSqlValueIterable const& _GetArrayIterable() const override;
 
-    explicit ChangesetValueBase(ECSqlColumnInfo colInfo);
+    explicit ChangesetValueBase(ECSqlColumnInfo const& colInfo);
     ~ChangesetValueBase() {}
 };
 
@@ -68,7 +68,7 @@ private:
     IGeometryPtr _GetGeometry() const override;
 
 public:
-    ChangesetPrimitiveValue(ECSqlColumnInfo colInfo, DbValue const& value, DateTime::Info const& dtInfo = DateTime::Info());
+    ChangesetPrimitiveValue(ECSqlColumnInfo const& colInfo, DbValue const& value, DateTime::Info const& dtInfo = DateTime::Info());
     ~ChangesetPrimitiveValue() {}
 };
 
@@ -89,7 +89,7 @@ private:
 
 public:
     //! @p id may be any BeInt64Id-derived type (ECClassId, ECInstanceId, …).
-    ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, BeInt64Id id);
+    ChangesetFixedInt64Value(ECSqlColumnInfo const& colInfo, BeInt64Id const& id);
     ~ChangesetFixedInt64Value() {}
 };
 
@@ -107,10 +107,8 @@ private:
     DPoint2d _GetPoint2d() const override { return m_point; }
 
 public:
-    //! Extracts x and y immediately; the DbValues need not survive beyond this call.
-    ChangesetPoint2dValue(ECSqlColumnInfo colInfo, DbValue const& x, DbValue const& y);
     //! Constructs from raw coordinate values; used when coordinates are fetched from the live DB.
-    ChangesetPoint2dValue(ECSqlColumnInfo colInfo, double x, double y);
+    ChangesetPoint2dValue(ECSqlColumnInfo const& colInfo, double x, double y);
     ~ChangesetPoint2dValue() {}
 };
 
@@ -128,10 +126,8 @@ private:
     DPoint3d _GetPoint3d() const override { return m_point; }
 
 public:
-    //! Extracts x, y and z immediately; the DbValues need not survive beyond this call.
-    ChangesetPoint3dValue(ECSqlColumnInfo colInfo, DbValue const& x, DbValue const& y, DbValue const& z);
     //! Constructs from raw coordinate values; used when coordinates are fetched from the live DB.
-    ChangesetPoint3dValue(ECSqlColumnInfo colInfo, double x, double y, double z);
+    ChangesetPoint3dValue(ECSqlColumnInfo const& colInfo, double x, double y, double z);
     ~ChangesetPoint3dValue() {}
 };
 
@@ -165,7 +161,7 @@ private:
 
 public:
     //! Parses the JSON text from @p value immediately; @p value need not survive beyond this call.
-    ChangesetArrayValue(ECSqlColumnInfo colInfo, DbValue const& value, ECDbCR ecdb);
+    ChangesetArrayValue(ECSqlColumnInfo const& colInfo, DbValue const& value, ECDbCR ecdb);
     ~ChangesetArrayValue() {}
 };
 
@@ -204,7 +200,7 @@ private:
     const_iterator             _CreateIterator()       const override { return const_iterator(std::unique_ptr<IIteratorState>(new IteratorState(*this))); }
 
 public:
-    explicit ChangesetStructValue(ECSqlColumnInfo colInfo);
+    explicit ChangesetStructValue(ECSqlColumnInfo const& colInfo);
     void AppendMember(Utf8StringCR name, std::unique_ptr<IECSqlValue> member);
     ~ChangesetStructValue() {}
 };
@@ -246,7 +242,7 @@ private:
     const_iterator             _CreateIterator()       const override { return const_iterator(std::unique_ptr<IIteratorState>(new IteratorState(*this))); }
 
 public:
-    ChangesetNavValue(ECSqlColumnInfo colInfo, std::unique_ptr<IECSqlValue> id, std::unique_ptr<IECSqlValue> relClassId);
+    ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<IECSqlValue> id, std::unique_ptr<IECSqlValue> relClassId);
     ~ChangesetNavValue() {}
 };
 

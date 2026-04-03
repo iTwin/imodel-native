@@ -152,55 +152,55 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     ASSERT_EQ(DbOpcode::Insert, opcode);
 
     // Old stage must be empty for an insert.
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     // Walk every New-stage column: print then assert.
-    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
     
     //Property 1
-    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     ECN::ECPropertyCP prop0 = v0.GetColumnInfo().GetProperty();
     EXPECT_STREQ("ECInstanceId", prop0->GetName().c_str());
     ECInstanceId id = v0.GetId<ECInstanceId>();
     EXPECT_EQ(widgetKey.GetInstanceId(), id);
 
     //Property 2
-    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
     ECN::ECPropertyCP prop1 = v1.GetColumnInfo().GetProperty();
     EXPECT_STREQ("ECClassId", prop1->GetName().c_str());
     ECN::ECClassId classId = v1.GetId<ECN::ECClassId>();
     EXPECT_EQ(widgetKey.GetClassId(), classId);
 
     // Property 3
-    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     ECN::ECPropertyCP prop2 = v2.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Name", prop2->GetName().c_str());
     Utf8CP name = v2.GetText();
     EXPECT_STREQ("WidgetA", name);
 
     // Property 4
-    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
     ECN::ECPropertyCP prop3 = v3.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Weight", prop3->GetName().c_str());
     double weight = v3.GetDouble();
     EXPECT_DOUBLE_EQ(3.14, weight);
 
     //Property 5
-    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
     ECN::ECPropertyCP prop4 = v4.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Cnt", prop4->GetName().c_str());
     int64_t cnt = v4.GetInt64();
     EXPECT_EQ(42, cnt);
 
     //Property 6
-    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::New, 5);
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::New, 5);
     ECN::ECPropertyCP prop5 = v5.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Active", prop5->GetName().c_str());
     bool active = v5.GetBoolean();
     EXPECT_TRUE(active);
 
     //Property 7
-    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::New, 6);
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
     ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
     DPoint2d pos2d = v6.GetPoint2d();
@@ -208,7 +208,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_DOUBLE_EQ(2.0, pos2d.y);
 
     //Property 8
-    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::New, 7);
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
     ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
     DPoint3d pos3d = v7.GetPoint3d();
@@ -217,7 +217,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_DOUBLE_EQ(30.0, pos3d.z);
 
     //Property 9
-    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::New, 8);
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
     ECN::ECPropertyCP prop8 = v8.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Details", prop8->GetName().c_str());
     Utf8CP label = v8["Label"].GetText();
@@ -226,7 +226,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_EQ(100, score);
 
     //Property 10
-    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::New, 9);
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::New, 9);
     ECN::ECPropertyCP prop9 = v9.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Tags", prop9->GetName().c_str());
     int len = v9.GetArrayLength();
@@ -242,7 +242,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_EQ(2, idx);
 
     //Property 11
-    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::New, 10);
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::New, 10);
     ECN::ECPropertyCP prop10 = v10.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Owner", prop10->GetName().c_str());
     ECN::ECClassId relId;
@@ -251,7 +251,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_TRUE(relId.IsValid());
 
     Utf8String instanceKey;
-    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::New, instanceKey));
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
     std::vector<Utf8String> changedProps;
@@ -332,31 +332,31 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     DbOpcode opcode;
     ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Update, opcode);
-    ASSERT_EQ(5, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(5, reader.GetColumnCount(Changes::Change::Stage::New));
 
     // Property 1
-    IECSqlValue const& new_v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& new_v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     ECN::ECPropertyCP new_prop0 = new_v0.GetColumnInfo().GetProperty();
     EXPECT_STREQ("ECInstanceId", new_prop0->GetName().c_str());
     ECInstanceId id = new_v0.GetId<ECInstanceId>();
     EXPECT_EQ(widgetKey.GetInstanceId(), id);
 
     //Property 2
-    IECSqlValue const& new_v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    IECSqlValue const& new_v1 = reader.GetValue(Changes::Change::Stage::New, 1);
     ECN::ECPropertyCP new_prop1 = new_v1.GetColumnInfo().GetProperty();
     EXPECT_STREQ("ECClassId", new_prop1->GetName().c_str());
     ECN::ECClassId classId = new_v1.GetId<ECN::ECClassId>();
     EXPECT_EQ(widgetKey.GetClassId(), classId);
 
     //Property 3
-    IECSqlValue const& new_v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& new_v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     ECN::ECPropertyCP new_prop2 = new_v2.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Name", new_prop2->GetName().c_str());
     Utf8CP name = new_v2.GetText();
     EXPECT_STREQ("WidgetB", name);
 
     //Property 4
-    IECSqlValue const& new_v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& new_v3 = reader.GetValue(Changes::Change::Stage::New, 3);
     ECN::ECPropertyCP new_prop3 = new_v3.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", new_prop3->GetName().c_str());
     DPoint2d pos2d = new_v3.GetPoint2d();
@@ -364,37 +364,37 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     EXPECT_DOUBLE_EQ(2.0, pos2d.y) << "Pos2d.Y must fall back to the pre-update value";
 
     //Property 5
-    IECSqlValue const& new_v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    IECSqlValue const& new_v4 = reader.GetValue(Changes::Change::Stage::New, 4);
     ECN::ECPropertyCP new_prop4 = new_v4.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Details", new_prop4->GetName().c_str());
     Utf8CP label = new_v4["Label"].GetText();
     EXPECT_STREQ("NewLabel", label);
 
-    ASSERT_EQ(5, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    ASSERT_EQ(5, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     //Property 1
-    IECSqlValue const& old_v0 = reader.GetValue(ECChangesetReader::Stage::Old, 0);
+    IECSqlValue const& old_v0 = reader.GetValue(Changes::Change::Stage::Old, 0);
     ECN::ECPropertyCP old_prop0 = old_v0.GetColumnInfo().GetProperty();
     EXPECT_STREQ("ECInstanceId", old_prop0->GetName().c_str());
     ECInstanceId oldId = old_v0.GetId<ECInstanceId>();
     EXPECT_EQ(widgetKey.GetInstanceId(), oldId);
 
     //Property 2
-    IECSqlValue const& old_v1 = reader.GetValue(ECChangesetReader::Stage::Old, 1);
+    IECSqlValue const& old_v1 = reader.GetValue(Changes::Change::Stage::Old, 1);
     ECN::ECPropertyCP old_prop1 = old_v1.GetColumnInfo().GetProperty();
     EXPECT_STREQ("ECClassId", old_prop1->GetName().c_str());
     ECN::ECClassId oldClassId = old_v1.GetId<ECN::ECClassId>();
     EXPECT_EQ(widgetKey.GetClassId(), oldClassId);
 
     //Property 3
-    IECSqlValue const& old_v2 = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& old_v2 = reader.GetValue(Changes::Change::Stage::Old, 2);
     ECN::ECPropertyCP old_prop2 = old_v2.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Name", old_prop2->GetName().c_str());
     Utf8CP oldName = old_v2.GetText();
     EXPECT_STREQ("WidgetA", oldName);
 
     //Property 4
-    IECSqlValue const& old_v3 = reader.GetValue(ECChangesetReader::Stage::Old, 3);
+    IECSqlValue const& old_v3 = reader.GetValue(Changes::Change::Stage::Old, 3);
     ECN::ECPropertyCP old_prop3 = old_v3.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", old_prop3->GetName().c_str());
     DPoint2d oldPos2d = old_v3.GetPoint2d();
@@ -402,7 +402,7 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     EXPECT_DOUBLE_EQ(2.0, oldPos2d.y) << "Old Pos2d.Y must fall back to the pre-update value";
 
     //Property 5
-    IECSqlValue const& old_v4 = reader.GetValue(ECChangesetReader::Stage::Old, 4);
+    IECSqlValue const& old_v4 = reader.GetValue(Changes::Change::Stage::Old, 4);
     ECN::ECPropertyCP old_prop4 = old_v4.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Details", old_prop4->GetName().c_str());
     Utf8CP oldLabel = old_v4["Label"].GetText();
@@ -410,8 +410,8 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
 
 
     Utf8String newKey, oldKey;
-    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::New, newKey));
-    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::Old, oldKey));
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(Changes::Change::Stage::New, newKey));
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(Changes::Change::Stage::Old, oldKey));
     EXPECT_FALSE(newKey.empty());
     EXPECT_FALSE(oldKey.empty());
 
@@ -501,49 +501,49 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     ASSERT_EQ(DbOpcode::Delete, opcode);
 
     // New stage must be empty for a delete.
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
 
-    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     // Property 1
-    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::Old, 0);
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::Old, 0);
     EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
 
     // Property 2
-    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::Old, 1);
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::Old, 1);
     EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECN::ECClassId>());
 
     // Property 3
-    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("Doomed", v2.GetText());
 
     // Property 4
-    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::Old, 3);
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::Old, 3);
     EXPECT_STREQ("Weight", v3.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_DOUBLE_EQ(2.71, v3.GetDouble());
 
     // Property 5
-    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::Old, 4);
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::Old, 4);
     EXPECT_STREQ("Cnt", v4.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(7, v4.GetInt64());
 
     // Property 6
-    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::Old, 5);
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::Old, 5);
     EXPECT_STREQ("Active", v5.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_FALSE(v5.GetBoolean());
 
     // Property 7
-    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::Old, 6);
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::Old, 6);
     EXPECT_STREQ("Pos2d", v6.GetColumnInfo().GetProperty()->GetName().c_str());
     DPoint2d pos2d = v6.GetPoint2d();
     EXPECT_DOUBLE_EQ(3.0, pos2d.x);
     EXPECT_DOUBLE_EQ(4.0, pos2d.y);
 
     // Property 8
-    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::Old, 7);
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::Old, 7);
     EXPECT_STREQ("Pos3d", v7.GetColumnInfo().GetProperty()->GetName().c_str());
     DPoint3d pos3d = v7.GetPoint3d();
     EXPECT_DOUBLE_EQ(1.0, pos3d.x);
@@ -551,13 +551,13 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_DOUBLE_EQ(3.0, pos3d.z);
 
     // Property 9
-    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::Old, 8);
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::Old, 8);
     EXPECT_STREQ("Details", v8.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("MyLabel", v8["Label"].GetText());
     EXPECT_EQ(55, v8["Score"].GetInt());
 
     // Property 10
-    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::Old, 9);
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::Old, 9);
     EXPECT_STREQ("Tags", v9.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(2, v9.GetArrayLength());
     Utf8CP expectedTags[] = {"alpha", "beta"};
@@ -570,7 +570,7 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_EQ(2, idx);
 
     // Property 11
-    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::Old, 10);
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::Old, 10);
     EXPECT_STREQ("Owner", v10.GetColumnInfo().GetProperty()->GetName().c_str());
     ECN::ECClassId relId;
     ECInstanceId ownerId = v10.GetNavigation<ECInstanceId>(&relId);
@@ -578,7 +578,7 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_TRUE(relId.IsValid());
 
     Utf8String instanceKey;
-    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(ECChangesetReader::Stage::Old, instanceKey));
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetInstanceKey(Changes::Change::Stage::Old, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
     std::vector<Utf8String> changedProps;
@@ -638,18 +638,18 @@ TEST_F(ECChangesetReaderTests, Insert_PartialProperties)
     ASSERT_EQ(DbOpcode::Insert, opcode);
 
     // Old stage empty for insert.
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     // New stage: ECInstanceId, ECClassId, name + weight at minimum.
-    int newCount = reader.GetColumnCount(ECChangesetReader::Stage::New);
+    int newCount = reader.GetColumnCount(Changes::Change::Stage::New);
     EXPECT_GE(newCount, 4);
 
     // Slots 0 and 1 must always be ECInstanceId and ECClassId.
-    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
 
-    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
     EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECN::ECClassId>());
 
@@ -657,7 +657,7 @@ TEST_F(ECChangesetReaderTests, Insert_PartialProperties)
     bool foundName = false, foundWeight = false;
     for (int i = 2; i < newCount; ++i)
         {
-        IECSqlValue const& v = reader.GetValue(ECChangesetReader::Stage::New, i);
+        IECSqlValue const& v = reader.GetValue(Changes::Change::Stage::New, i);
         auto* prop = v.GetColumnInfo().GetProperty();
         if (!prop) continue;
         if (Utf8String(prop->GetName()).EqualsIAscii("Name"))
@@ -739,11 +739,11 @@ TEST_F(ECChangesetReaderTests, Update_ArrayProperty)
     ASSERT_EQ(DbOpcode::Update, opcode);
 
     // Only Tags changed: ECInstanceId, ECClassId, Tags.
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     // New stage — Tags has 3 elements.
-    IECSqlValue const& newTags = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& newTags = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Tags", newTags.GetColumnInfo().GetProperty()->GetName().c_str());
     ASSERT_EQ(3, newTags.GetArrayLength());
     Utf8CP expectedNew[] = {"new1", "new2", "new3"};
@@ -756,7 +756,7 @@ TEST_F(ECChangesetReaderTests, Update_ArrayProperty)
     EXPECT_EQ(3, idx);
 
     // Old stage — Tags had 2 elements.
-    IECSqlValue const& oldTags = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& oldTags = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("Tags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
     ASSERT_EQ(2, oldTags.GetArrayLength());
     Utf8CP expectedOld[] = {"old1", "old2"};
@@ -828,28 +828,28 @@ TEST_F(ECChangesetReaderTests, Update_TwoScalars)
     ASSERT_EQ(DbOpcode::Update, opcode);
 
     // ECInstanceId, ECClassId, Weight, Cnt — nothing else.
-    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::New));
-    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     // New stage.
-    IECSqlValue const& new_v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& new_v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     EXPECT_STREQ("ECInstanceId", new_v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetInstanceId(), new_v0.GetId<ECInstanceId>());
 
-    IECSqlValue const& new_v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& new_v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Weight", new_v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_DOUBLE_EQ(9.9, new_v2.GetDouble());
 
-    IECSqlValue const& new_v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& new_v3 = reader.GetValue(Changes::Change::Stage::New, 3);
     EXPECT_STREQ("Cnt", new_v3.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(99, new_v3.GetInt64());
 
     // Old stage.
-    IECSqlValue const& old_v2 = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& old_v2 = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("Weight", old_v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_DOUBLE_EQ(1.0, old_v2.GetDouble());
 
-    IECSqlValue const& old_v3 = reader.GetValue(ECChangesetReader::Stage::Old, 3);
+    IECSqlValue const& old_v3 = reader.GetValue(Changes::Change::Stage::Old, 3);
     EXPECT_STREQ("Cnt", old_v3.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(10, old_v3.GetInt64());
 
@@ -909,19 +909,19 @@ TEST_F(ECChangesetReaderTests, Insert_NestedStruct)
     ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Insert, opcode);
 
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
     // ECInstanceId, ECClassId, Name, Location.
-    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
-    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(placeKey.GetInstanceId(), v0.GetId<ECInstanceId>());
 
-    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("Paris", v2.GetText());
 
-    IECSqlValue const& locVal = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& locVal = reader.GetValue(Changes::Change::Stage::New, 3);
     EXPECT_STREQ("Location", locVal.GetColumnInfo().GetProperty()->GetName().c_str());
     // Nested struct member access via chained operator[].
     EXPECT_STREQ("Rue de Rivoli", locVal["Street"].GetText());
@@ -996,14 +996,14 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_StreetOnly)
     ASSERT_EQ(DbOpcode::Update, opcode);
 
     // ECInstanceId, ECClassId, Location (Street changed) — Name not touched.
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
-    IECSqlValue const& newLoc = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& newLoc = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Location", newLoc.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("New Street", newLoc["Street"].GetText());
 
-    IECSqlValue const& oldLoc = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& oldLoc = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("Location", oldLoc.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("Old Street", oldLoc["Street"].GetText());
 
@@ -1076,17 +1076,17 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_CoordOnly)
     ASSERT_EQ(DbOpcode::Update, opcode);
 
     // ECInstanceId, ECClassId, Location (Coord changed) — Name + Street not touched.
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
     // New stage: Location contains only Coord (Street absent because not in changeset).
-    IECSqlValue const& newLoc = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& newLoc = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Location", newLoc.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_DOUBLE_EQ(44.0, newLoc["Coord"]["Lat"].GetDouble());
     EXPECT_DOUBLE_EQ(6.0,  newLoc["Coord"]["Lon"].GetDouble());
 
     // Old stage: Location contains the pre-update Coord values.
-    IECSqlValue const& oldLoc = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& oldLoc = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("Location", oldLoc.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_DOUBLE_EQ(43.30, oldLoc["Coord"]["Lat"].GetDouble());
     EXPECT_DOUBLE_EQ(5.37,  oldLoc["Coord"]["Lon"].GetDouble());
@@ -1157,15 +1157,15 @@ TEST_F(ECChangesetReaderTests, Insert_StructArray)
     ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Insert, opcode);
 
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
     // ECInstanceId, ECClassId, Title, MetaTags.
-    ASSERT_EQ(4, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
-    IECSqlValue const& titleVal = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& titleVal = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Title", titleVal.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("MyDoc", titleVal.GetText());
 
-    IECSqlValue const& tagsVal = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& tagsVal = reader.GetValue(Changes::Change::Stage::New, 3);
     EXPECT_STREQ("MetaTags", tagsVal.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(2, tagsVal.GetArrayLength());
 
@@ -1258,14 +1258,14 @@ TEST_F(ECChangesetReaderTests, Update_StructArray)
     ASSERT_EQ(DbOpcode::Update, opcode);
 
     // ECInstanceId, ECClassId, MetaTags — Title not changed.
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::New));
-    ASSERT_EQ(3, reader.GetColumnCount(ECChangesetReader::Stage::Old));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
-    IECSqlValue const& newTags = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& newTags = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("MetaTags", newTags.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(3, newTags.GetArrayLength()) << "New MetaTags must have 3 elements";
 
-    IECSqlValue const& oldTags = reader.GetValue(ECChangesetReader::Stage::Old, 2);
+    IECSqlValue const& oldTags = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("MetaTags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(2, oldTags.GetArrayLength()) << "Old MetaTags must have 2 elements";
 
@@ -1323,68 +1323,68 @@ TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Insert, opcode);
 
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
-    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
 
     // Property 1
-    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
     
     // Property 2
-    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
     EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECClassId>());
     
     // Property 3
-    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_TRUE(v2.IsNull());
 
     // Property 4
-    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
     ECN::ECPropertyCP prop3 = v3.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Weight", prop3->GetName().c_str());
     EXPECT_TRUE(v3.IsNull());
 
     //Property 5
-    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
     ECN::ECPropertyCP prop4 = v4.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Cnt", prop4->GetName().c_str());
     EXPECT_TRUE(v4.IsNull());
 
     //Property 6
-    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::New, 5);
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::New, 5);
     ECN::ECPropertyCP prop5 = v5.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Active", prop5->GetName().c_str());
     EXPECT_TRUE(v5.IsNull());
 
     //Property 7
-    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::New, 6);
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
     ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
     EXPECT_TRUE(v6.IsNull()); // Partial Point2d does not collapse → full Pos2d emitted but null because missing Y means entire struct is null.
 
     //Property 8
-    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::New, 7);
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
     ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
     EXPECT_TRUE(v7.IsNull()); // Partial Point3d does not collapse → full Pos3d emitted but null because missing X means entire struct is null.
 
     //Property 9
-    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::New, 8);
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
     ECN::ECPropertyCP prop8 = v8.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Details", prop8->GetName().c_str());
     EXPECT_TRUE(v8.IsNull());
 
     //Property 10
-    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::New, 9);
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::New, 9);
     ECN::ECPropertyCP prop9 = v9.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Tags", prop9->GetName().c_str());
     EXPECT_TRUE(v9.IsNull());
 
     //Property 11
-    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::New, 10);
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::New, 10);
     ECN::ECPropertyCP prop10 = v10.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Owner", prop10->GetName().c_str());
     EXPECT_TRUE(v10.IsNull());
@@ -1477,44 +1477,44 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
     ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Insert, opcode);
 
-    EXPECT_EQ(0, reader.GetColumnCount(ECChangesetReader::Stage::Old));
-    EXPECT_EQ(11, reader.GetColumnCount(ECChangesetReader::Stage::New));
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
 
     // Property 1
-    IECSqlValue const& v0 = reader.GetValue(ECChangesetReader::Stage::New, 0);
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
     
     // Property 2
-    IECSqlValue const& v1 = reader.GetValue(ECChangesetReader::Stage::New, 1);
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
     EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECClassId>());
     
     // Property 3
-    IECSqlValue const& v2 = reader.GetValue(ECChangesetReader::Stage::New, 2);
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_TRUE(v2.IsNull());
 
     // Property 4
-    IECSqlValue const& v3 = reader.GetValue(ECChangesetReader::Stage::New, 3);
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
     ECN::ECPropertyCP prop3 = v3.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Weight", prop3->GetName().c_str());
     EXPECT_TRUE(v3.IsNull());
 
     //Property 5
-    IECSqlValue const& v4 = reader.GetValue(ECChangesetReader::Stage::New, 4);
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
     ECN::ECPropertyCP prop4 = v4.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Cnt", prop4->GetName().c_str());
     EXPECT_TRUE(v4.IsNull());
 
     //Property 6
-    IECSqlValue const& v5 = reader.GetValue(ECChangesetReader::Stage::New, 5);
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::New, 5);
     ECN::ECPropertyCP prop5 = v5.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Active", prop5->GetName().c_str());
     EXPECT_TRUE(v5.IsNull());
 
     //Property 7
-    IECSqlValue const& v6 = reader.GetValue(ECChangesetReader::Stage::New, 6);
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
     ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
     DPoint2d pos2d = v6.GetPoint2d();
@@ -1522,7 +1522,7 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
     EXPECT_DOUBLE_EQ(0.0, pos2d.y);
 
     //Property 8
-    IECSqlValue const& v7 = reader.GetValue(ECChangesetReader::Stage::New, 7);
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
     ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
     DPoint3d pos3d = v7.GetPoint3d();
@@ -1531,19 +1531,19 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
     EXPECT_DOUBLE_EQ(0.0, pos3d.z);
 
     //Property 9
-    IECSqlValue const& v8 = reader.GetValue(ECChangesetReader::Stage::New, 8);
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
     ECN::ECPropertyCP prop8 = v8.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Details", prop8->GetName().c_str());
     EXPECT_TRUE(v8.IsNull());
 
     //Property 10
-    IECSqlValue const& v9 = reader.GetValue(ECChangesetReader::Stage::New, 9);
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::New, 9);
     ECN::ECPropertyCP prop9 = v9.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Tags", prop9->GetName().c_str());
     EXPECT_TRUE(v9.IsNull());
 
     //Property 11
-    IECSqlValue const& v10 = reader.GetValue(ECChangesetReader::Stage::New, 10);
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::New, 10);
     ECN::ECPropertyCP prop10 = v10.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Owner", prop10->GetName().c_str());
     ECN::ECClassId relId;

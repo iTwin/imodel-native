@@ -16,12 +16,12 @@ bool PointECSqlField::_IsNull() const
     auto& stmt = GetSqliteStatement();
     const auto coordXValue = stmt.GetValueDouble(m_xColumnIndex);
     const auto coordYValue = stmt.GetValueDouble(m_yColumnIndex);
-    if(stmt.IsColumnNull(m_xColumnIndex) || std::isinf(coordXValue) || std::isnan(coordXValue) || stmt.IsColumnNull(m_yColumnIndex) || std::isinf(coordYValue) || std::isnan(coordYValue))
+    if(stmt.IsColumnNull(m_xColumnIndex) || IECSqlValueHelper::IsNullCoord(coordXValue) || stmt.IsColumnNull(m_yColumnIndex) || IECSqlValueHelper::IsNullCoord(coordYValue))
         return true;
     if(!IsPoint3d())
         return false;
     const auto coordZValue = stmt.GetValueDouble(m_zColumnIndex);
-    if(stmt.IsColumnNull(m_zColumnIndex) || std::isinf(coordZValue) || std::isnan(coordZValue))
+    if(stmt.IsColumnNull(m_zColumnIndex) || IECSqlValueHelper::IsNullCoord(coordZValue))
         return true;
     return false;
     }

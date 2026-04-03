@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ChangesetValue.h"
-#include <GeomSerialization/GeomSerializationApi.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -13,8 +12,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetValueBase::ChangesetValueBase(ECSqlColumnInfo colInfo)
-    : IECSqlValue(), m_columnInfo(std::move(colInfo))
+ChangesetValueBase::ChangesetValueBase(ECSqlColumnInfo const& colInfo)
+    : IECSqlValue(), m_columnInfo(colInfo)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -119,8 +118,8 @@ IECSqlValueIterable const& ChangesetValueBase::_GetArrayIterable() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetPrimitiveValue::ChangesetPrimitiveValue(ECSqlColumnInfo colInfo, DbValue const& value, DateTime::Info const& dtInfo)
-    : ChangesetValueBase(std::move(colInfo)), m_value(value), m_datetimeInfo(dtInfo)
+ChangesetPrimitiveValue::ChangesetPrimitiveValue(ECSqlColumnInfo const& colInfo, DbValue const& value, DateTime::Info const& dtInfo)
+    : ChangesetValueBase(colInfo), m_value(value), m_datetimeInfo(dtInfo)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -199,22 +198,8 @@ Utf8CP ChangesetPrimitiveValue::_GetText() const
 IGeometryPtr ChangesetPrimitiveValue::_GetGeometry() const
     {
     int blobSize = -1;
-    Byte const* blob = static_cast<Byte const*>(_GetBlob(&blobSize));
-    if (blob == nullptr)
-        return nullptr;
-    BeAssert(blobSize > 0);
-    const size_t blobSizeU = (size_t)blobSize;
-    bvector<Byte> byteVec;
-    byteVec.reserve(blobSizeU);
-    byteVec.assign(blob, blob + blobSizeU);
-    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
-        {
-        LOG.error("Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
-        return nullptr;
-        }
-    IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
-    BeAssert(geom != nullptr);
-    return geom;
+    void const* blob = _GetBlob(&blobSize);
+    return IECSqlValueHelper::GeometryFromBlob(blob, blobSize);
     }
 
 
@@ -223,8 +208,8 @@ IGeometryPtr ChangesetPrimitiveValue::_GetGeometry() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetFixedInt64Value::ChangesetFixedInt64Value(ECSqlColumnInfo colInfo, BeInt64Id id)
-    : ChangesetValueBase(std::move(colInfo)), m_id(id)
+ChangesetFixedInt64Value::ChangesetFixedInt64Value(ECSqlColumnInfo const& colInfo, BeInt64Id const& id)
+    : ChangesetValueBase(colInfo), m_id(id)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -243,29 +228,10 @@ Utf8CP ChangesetFixedInt64Value::_GetText() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo colInfo, DbValue const& x, DbValue const& y)
-    : ChangesetValueBase(std::move(colInfo))
+ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo const& colInfo, double x, double y)
+    : ChangesetValueBase(colInfo)
     {
-    auto isCoordNull = [](DbValue const& v) -> bool
-        {
-        if (!v.IsValid() || v.IsNull()) return true;
-        const double d = v.GetValueDouble();
-        return std::isinf(d) || std::isnan(d);
-        };
-    m_isNull = isCoordNull(x) || isCoordNull(y);
-    if (m_isNull)
-        m_point = NoopECSqlValue::GetSingleton().GetPoint2d();
-    else
-        m_point = DPoint2d::From(x.GetValueDouble(), y.GetValueDouble());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo colInfo, double x, double y)
-    : ChangesetValueBase(std::move(colInfo))
-    {
-    m_isNull = std::isinf(x) || std::isnan(x) || std::isinf(y) || std::isnan(y);
+    m_isNull = IECSqlValueHelper::IsNullCoord(x) || IECSqlValueHelper::IsNullCoord(y);
     if (m_isNull)
         m_point = NoopECSqlValue::GetSingleton().GetPoint2d();
     else
@@ -278,29 +244,10 @@ ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo colInfo, double x, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo colInfo, DbValue const& x, DbValue const& y, DbValue const& z)
-    : ChangesetValueBase(std::move(colInfo))
+ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo const& colInfo, double x, double y, double z)
+    : ChangesetValueBase(colInfo)
     {
-    auto isCoordNull = [](DbValue const& v) -> bool
-        {
-        if (!v.IsValid() || v.IsNull()) return true;
-        const double d = v.GetValueDouble();
-        return std::isinf(d) || std::isnan(d);
-        };
-    m_isNull = isCoordNull(x) || isCoordNull(y) || isCoordNull(z);
-    if (m_isNull)
-        m_point = NoopECSqlValue::GetSingleton().GetPoint3d();
-    else
-        m_point = DPoint3d::From(x.GetValueDouble(), y.GetValueDouble(), z.GetValueDouble());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo colInfo, double x, double y, double z)
-    : ChangesetValueBase(std::move(colInfo))
-    {
-    m_isNull = std::isinf(x) || std::isnan(x) || std::isinf(y) || std::isnan(y) || std::isinf(z) || std::isnan(z);
+    m_isNull = IECSqlValueHelper::IsNullCoord(x) || IECSqlValueHelper::IsNullCoord(y) || IECSqlValueHelper::IsNullCoord(z);
     if (m_isNull)
         m_point = NoopECSqlValue::GetSingleton().GetPoint3d();
     else
@@ -313,8 +260,8 @@ ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo colInfo, double x, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetArrayValue::ChangesetArrayValue(ECSqlColumnInfo colInfo, DbValue const& value, ECDbCR ecdb)
-    : ChangesetValueBase(std::move(colInfo))
+ChangesetArrayValue::ChangesetArrayValue(ECSqlColumnInfo const& colInfo, DbValue const& value, ECDbCR ecdb)
+    : ChangesetValueBase(colInfo)
     {
     if (!value.IsValid() || value.IsNull())
         m_json.SetArray();
@@ -429,8 +376,8 @@ IECSqlValueIterable const& ChangesetArrayValue::_GetArrayIterable() const
 
 //**** ChangesetStructValue ****
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo colInfo)
-    : ChangesetValueBase(std::move(colInfo)), IECSqlValueIterable()
+ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo const& colInfo)
+    : ChangesetValueBase(colInfo), IECSqlValueIterable()
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -472,8 +419,8 @@ IECSqlValue const& ChangesetStructValue::_GetStructMemberValue(Utf8CP memberName
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo colInfo, std::unique_ptr<IECSqlValue> id, std::unique_ptr<IECSqlValue> relClassId)
-    : ChangesetValueBase(std::move(colInfo)), IECSqlValueIterable(),
+ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<IECSqlValue> id, std::unique_ptr<IECSqlValue> relClassId)
+    : ChangesetValueBase(colInfo), IECSqlValueIterable(),
       m_id(std::move(id)), m_relClassId(std::move(relClassId))
     {}
 
@@ -482,11 +429,7 @@ ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo colInfo, std::unique_ptr<IE
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& ChangesetNavValue::_GetStructMemberValue(Utf8CP memberName) const
     {
-    if (BeStringUtilities::StricmpAscii(memberName, ECDBSYS_PROP_NavPropId) == 0)
-        return m_id != nullptr ? *m_id : (IECSqlValue const&)NoopECSqlValue::GetSingleton();
-    if (BeStringUtilities::StricmpAscii(memberName, ECDBSYS_PROP_NavPropRelECClassId) == 0)
-        return m_relClassId != nullptr ? *m_relClassId : (IECSqlValue const&)NoopECSqlValue::GetSingleton();
-    return NoopECSqlValue::GetSingleton();
+    return IECSqlValueHelper::GetNavMemberValue(memberName, m_id.get(), m_relClassId.get());
     }
 
 
@@ -497,11 +440,7 @@ IECSqlValue const& ChangesetNavValue::_GetStructMemberValue(Utf8CP memberName) c
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& ChangesetNavValue::IteratorState::_GetCurrent() const
     {
-    if (m_state == State::Id)
-        return m_owner.m_id != nullptr ? *m_owner.m_id : (IECSqlValue const&)NoopECSqlValue::GetSingleton();
-    if (m_state == State::RelClassId)
-        return m_owner.m_relClassId != nullptr ? *m_owner.m_relClassId : (IECSqlValue const&)NoopECSqlValue::GetSingleton();
-    return NoopECSqlValue::GetSingleton();
+    return IECSqlValueHelper::GetNavIterCurrentByStateIndex((uint8_t) m_state, m_owner.m_id.get(), m_owner.m_relClassId.get());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

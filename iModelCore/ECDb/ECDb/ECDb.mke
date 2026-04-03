@@ -144,6 +144,7 @@ ECDbAllHeaders = \
                 $(baseDir)ClassMapColumnFactory.h \
                 $(baseDir)ClassViews.h \
                 $(baseDir)ChangesetValue.h \
+                $(baseDir)IECSqlValueHelper.h \
                 $(baseDir)ChangesetValueFactory.h \
                 $(baseDir)ECChangesetReaderImpl.h \
                 $(baseDir)PreparedECChangesetReader.h
@@ -263,6 +264,8 @@ $(o)ECChangesetReaderImpl$(oext):                             $(baseDir)ECChange
 $(o)PreparedECChangesetReader$(oext):                         $(baseDir)PreparedECChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetValue$(oext):                                    $(baseDir)ChangesetValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)IECSqlValueHelper$(oext):                                 $(baseDir)IECSqlValueHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetValueFactory$(oext):                             $(baseDir)ChangesetValueFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -115,6 +115,7 @@
 #include "ECSql/JsonECSqlValue.h"
 #include "ECSql/ArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
+#include "IECSqlValueHelper.h"
 #include "ChangesetValue.h"
 #include "ChangesetValueFactory.h"
 #include "PreparedECChangesetReader.h"
