@@ -17,6 +17,7 @@ struct InstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
 struct InstanceRepository;
+struct RelatedInstanceFinder;
 
 enum class PropertyHandlerResult {
     Continue,
@@ -127,7 +128,7 @@ struct ECSqlConfig {
         bool m_validateWriteValues;
         bool m_purgeUnusedColumns;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
-
+        bool m_ignorePolymorphicFlagOnRelationshipConstraint = true;
     public:
         ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false), m_purgeUnusedColumns(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
@@ -140,6 +141,8 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
+        bool GetIgnorePolymorphicFlagOnRelationshipConstraint() const { return m_ignorePolymorphicFlagOnRelationshipConstraint; }
+        void SetIgnorePolymorphicFlagOnRelationshipConstraint(bool v) { m_ignorePolymorphicFlagOnRelationshipConstraint = v; }
 
         bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
         void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
@@ -324,7 +327,7 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 3, 1); }
+    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 4, 0); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
@@ -537,6 +540,7 @@ public:
 
     ECDB_EXPORT InstanceRepository& GetInstanceRepository() const;
 
+    ECDB_EXPORT RelatedInstanceFinder const& GetRelatedInstanceFinder() const;
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.
     //! ECSqlStatements or ECObjects entities.
