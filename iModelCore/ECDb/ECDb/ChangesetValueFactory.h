@@ -9,8 +9,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
-
 //=======================================================================================
 //! Creates IECSqlValue objects for each property of a changeset row.
 //! All values are read exclusively from the supplied ColumnValueMap.

@@ -13,7 +13,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECChangesetReader::Impl final {
 private:
-    using Stage = Changes::Change::Stage;
     using Mode  = ECChangesetReader::Mode;
     std::unique_ptr<PreparedECChangesetReader> m_prepared;
 

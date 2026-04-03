@@ -15,7 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECChangesetReader {
 public:
     struct Impl;
-    using Stage = Changes::Change::Stage;
 
     //! Controls which properties are emitted per row.
     enum class Mode {
@@ -25,6 +24,7 @@ public:
     };
 
 private:
+    using Stage = Changes::Change::Stage;
     Impl* m_pimpl = nullptr;
 
     ECChangesetReader(ECChangesetReader const&) = delete;
@@ -61,9 +61,9 @@ public:
 struct ECChangesetRow : public IECSqlRow {
     private:
         ECChangesetReader const& m_reader;
-        ECChangesetReader::Stage m_stage;       
+        Changes::Change::Stage m_stage;       
     public:
-        ECChangesetRow(ECChangesetReader const& reader, ECChangesetReader::Stage stage) : m_reader(reader), m_stage(stage) {}
+        ECChangesetRow(ECChangesetReader const& reader, Changes::Change::Stage const& stage) : m_reader(reader), m_stage(stage) {}
         virtual int GetColumnCount() const override { return m_reader.GetColumnCount(m_stage); }
         virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_reader.GetValue(m_stage, columnIndex); }
 };

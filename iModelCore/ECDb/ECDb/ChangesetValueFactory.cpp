@@ -13,9 +13,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
-// Resolves the ClassMap for the table's root EC class.
-// For overflow tables the root class lives on the parent table; for all other tables
-// it is read directly from the table's exclusive-root mapping.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl, ECDbCR conn) {
@@ -45,8 +42,6 @@ ECSqlPropertyPath ChangesetValueFactory::GetPropertyPath(PropertyMap const& prop
 }
 
 //---------------------------------------------------------------------------------------
-// Returns DateTime::Info for DateTime primitive/array properties; returns a default
-// Unspecified DateTime::Info for all other property kinds.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DateTime::Info ChangesetValueFactory::GetDateTimeInfo(PropertyMap const& propertyMap) {
@@ -113,9 +108,6 @@ BeInt64Id ChangesetValueFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValu
 }
 
 //---------------------------------------------------------------------------------------
-// Validates all PK columns, builds a parameterised SELECT statement for @p selectColName,
-// and binds all PK values so the caller only needs to call Step().
-// Returns nullptr on any failure (missing/null PK value, prepare error, etc.).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTable const& tbl,
@@ -156,10 +148,6 @@ CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTabl
 }
 
 //---------------------------------------------------------------------------------------
-// Fetches a single real column value from the live DB for the row identified by
-// all primary-key columns (read from @p columnValues).
-// Returns false immediately if any PK column is absent, invalid, or null.
-// Returns true and sets @p outVal on success; returns false on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
@@ -175,10 +163,6 @@ bool ChangesetValueFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
 }
 
 //---------------------------------------------------------------------------------------
-// Fetches a single integer column value from the live DB for the row identified by
-// all primary-key columns (read from @p columnValues).
-// Returns false immediately if any PK column is absent, invalid, or null.
-// Returns true and sets @p outVal on success; returns false on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn,
@@ -281,10 +265,6 @@ ECSqlColumnInfo ChangesetValueFactory::MakeArrayColumnInfo(PropertyMap const& pr
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for a Point2d property.
-// Returns BE_SQLITE_OK with out==nullptr when neither coordinate is in the changeset.
-// Returns BE_SQLITE_ERROR when one coordinate is present but the other cannot be fetched
-// from the live DB.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreatePoint2d(
@@ -335,10 +315,6 @@ DbResult ChangesetValueFactory::CreatePoint2d(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for a Point3d property.
-// Returns BE_SQLITE_OK with out==nullptr when no coordinate is in the changeset.
-// Returns BE_SQLITE_ERROR when at least one coordinate is present but another cannot be
-// fetched from the live DB.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreatePoint3d(
@@ -402,9 +378,6 @@ DbResult ChangesetValueFactory::CreatePoint3d(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for a scalar primitive property.
-// Returns BE_SQLITE_OK with out==nullptr when the column is absent from the changeset.
-// Delegates Point2d/3d to CreatePoint2d/3d().
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreatePrimitive(
@@ -432,13 +405,6 @@ DbResult ChangesetValueFactory::CreatePrimitive(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for a system property (ECInstanceId, ECClassId, etc.).
-// Returns BE_SQLITE_OK with out==nullptr when the column is absent from the changeset or virtual
-// with no fixed default.
-// For ClassId / SourceClassId / TargetClassId properties with a virtual column and a known
-// default class id (single-class tables / link tables), emits a fixed value matching
-// InstanceReader behaviour.
-// Returns BE_SQLITE_ERROR on internal mapping failures.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreateSystem(
@@ -475,8 +441,6 @@ DbResult ChangesetValueFactory::CreateSystem(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates a fixed-value IECSqlValue whose integer value is statically known.
-// Always succeeds — never skipped and never consults the changeset.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreateFixedId(
@@ -499,9 +463,6 @@ DbResult ChangesetValueFactory::CreateFixedId(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates a full ChangesetNavValue for a navigation property.
-// Returns BE_SQLITE_OK with out==nullptr when neither physical component is in the changeset.
-// Returns BE_SQLITE_ERROR when a component is partially present but the DB fetch fails.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreateNav(
@@ -588,8 +549,6 @@ DbResult ChangesetValueFactory::CreateNav(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for an array property.
-// Returns BE_SQLITE_OK with out==nullptr when the column is absent from the changeset.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreateArray(
@@ -609,10 +568,6 @@ DbResult ChangesetValueFactory::CreateArray(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates an IECSqlValue for a struct property.
-// Only members whose backing column(s) are in the changeset are included.
-// Returns BE_SQLITE_OK with out==nullptr when no member has changeset data.
-// Returns BE_SQLITE_ERROR if any member fails to be created.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreateStruct(
@@ -648,9 +603,6 @@ DbResult ChangesetValueFactory::CreateStruct(
 }
 
 //---------------------------------------------------------------------------------------
-// Single-pass dispatch: checks changeset presence and constructs the value in one step.
-// Returns BE_SQLITE_OK with out==nullptr when the property has no changeset data.
-// Returns BE_SQLITE_ERROR on a hard failure (e.g. live DB fetch fails).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::CreateValueForProperty(
@@ -680,10 +632,6 @@ DbResult ChangesetValueFactory::CreateValueForProperty(
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
-// Attempts to resolve an ECClassId and its ClassMap from the changeset.
-// Returns true when a valid ClassId and ClassMap are found; @p classMapOut and
-// @p classIdOut are populated accordingly.  Returns false when the column is absent,
-// null, zero, or the class is unknown.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryResolveClassMapFromChangeset(
@@ -716,15 +664,6 @@ bool ChangesetValueFactory::TryResolveClassMapFromChangeset(
 }
 
 //---------------------------------------------------------------------------------------
-// Attempts to resolve an ECClassId and its ClassMap by:
-//   1. Checking that the ECClassId column is physical (not virtual).
-//   2. Extracting all primary-key column values from the changeset (fails immediately if any is absent/invalid/null).
-//   3. Firing a direct SQL query to read the ECClassId from the live DB row.
-// This path is taken when the class-id column is absent from the changeset (e.g. entity
-// tables where the ECClassId is a physical column but was not changed in this row).
-// Returns false immediately when the ECClassId column is virtual (no physical row to query).
-// Returns true when a valid class and ClassMap are resolved; populates @p classMapOut
-// and @p classIdOut.  Returns false silently on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryResolveClassMapFromDbSeek(
@@ -759,10 +698,6 @@ bool ChangesetValueFactory::TryResolveClassMapFromDbSeek(
 }
 
 //---------------------------------------------------------------------------------------
-// Finds the ECInstanceId property in @p classMap, reads its value from the changeset,
-// validates it, and emits the IECSqlValue field.
-// Returns BE_SQLITE_OK and populates @p instanceIdOut / @p fieldOut on success.
-// Returns BE_SQLITE_ERROR on any failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::ResolveInstanceId(
@@ -829,9 +764,6 @@ DbResult ChangesetValueFactory::ResolveInstanceId(
 }
 
 //---------------------------------------------------------------------------------------
-// Creates the ECClassId field as a fixed value from the already-resolved @p resolvedClassId.
-// Returns BE_SQLITE_OK and populates @p out on success.
-// Returns BE_SQLITE_ERROR when the ECClassId property is not found in the ClassMap.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::ResolveClassIdField(
@@ -861,17 +793,6 @@ DbResult ChangesetValueFactory::ResolveClassIdField(
 }
 
 //---------------------------------------------------------------------------------------
-// Iterates all properties in @p classMap and appends an IECSqlValue to @p fieldsOut for
-// each property that has at least one column present in the map.
-//
-// ECInstanceId and ECClassId are always skipped here — they are emitted separately by
-// the caller as slots [0] and [1].
-//
-// For compound properties (Point2d/3d, Nav): changeset data gates inclusion;
-// missing sub-columns are fetched from the live DB when at least one component is present.
-// For scalar, array, and struct properties: read directly from the map.
-//
-// Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetValueFactory::BuildPropertyFields(
@@ -905,8 +826,6 @@ DbResult ChangesetValueFactory::BuildPropertyFields(
 }
 
 //---------------------------------------------------------------------------------------
-// Returns true when @p classId identifies BisCore::Element or any class derived from it.
-// Returns false when the class cannot be resolved or is not in the BisCore.Element hierarchy.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn) {
@@ -924,25 +843,6 @@ bool ChangesetValueFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn
 
     return cls->Is(bisElementClass);
 }
-
-//=============================================================================
-// ChangesetValueFactory::Create — public entry point
-//
-// Produces an ordered list of IECSqlValue fields representing one changeset row:
-//   [0]  ECInstanceId  — always first; read exclusively from the changeset.
-//   [1]  ECClassId     — always second; preferred from the changeset, then from
-//                        a live DB seek, then from GetRootClassMap.
-//   [2+] User / system properties that have at least one column in the changeset.
-//
-// Strategy for ECClassId resolution (in priority order):
-//   1. Read from the changeset via TryResolveClassMapFromChangeset.
-//   2. Seek the live DB using the first PK column as ECInstanceId via
-//      TryResolveClassMapFromDbSeek (handles entity tables where ECClassId is a
-//      virtual column absent from the changeset).
-//   3. Fall back to GetRootClassMap when neither of the above yields a usable
-//      ClassMap (overflow tables, single-class entity tables).
-//   4. Return an error when no path yields a usable ClassMap.
-//=============================================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
