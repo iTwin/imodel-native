@@ -1010,8 +1010,8 @@ DbResult ChangesetValueFactory::Create(
     if (mode == ECChangesetReader::Mode::Instance_Key)
         return BE_SQLITE_OK; // caller only needs the instance key — skip user properties
 
-    if(mode == ECChangesetReader::Mode::Bis_Element_Properties && isChildClassOfBisCore(resolvedClassId, conn))
-        return BE_SQLITE_OK; // caller only needs element properties — skip user properties)    
+    if(mode == ECChangesetReader::Mode::Bis_Element_Properties && isChildClassOfBisCore(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
+        return BE_SQLITE_OK; // caller only needs bis_element properties — skip rest   
 
     status = BuildPropertyFields(*classMap, columnValues, conn, tbl, fields, changedProps);
 

@@ -186,7 +186,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Delete ? ignored : m_changedProps) != BE_SQLITE_OK)
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
     }
