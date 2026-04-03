@@ -263,17 +263,17 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
-    EXPECT_FALSE(hasName("Pos2d<->X"));
-    EXPECT_FALSE(hasName("Pos2d<->Y"));
+    EXPECT_FALSE(hasName("Pos2d.X"));
+    EXPECT_FALSE(hasName("Pos2d.Y"));
     EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
-    EXPECT_FALSE(hasName("Pos3d<->X"));
-    EXPECT_FALSE(hasName("Pos3d<->Y"));
-    EXPECT_FALSE(hasName("Pos3d<->Z"));
-    EXPECT_TRUE(hasName("Details->Label"));
-    EXPECT_TRUE(hasName("Details->Score"));
+    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_FALSE(hasName("Pos3d.Y"));
+    EXPECT_FALSE(hasName("Pos3d.Z"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -420,12 +420,12 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
     // Changed: Name (scalar), Pos2d.X (partial Point2d), Details.Label (partial struct).
     EXPECT_TRUE(hasName("Name"));
-    EXPECT_TRUE(hasName("Pos2d<->X"));
+    EXPECT_TRUE(hasName("Pos2d.X"));
     EXPECT_TRUE(hasName("Details.Label"));
     // Unchanged or partial components must not appear.
     EXPECT_FALSE(hasName("Pos2d"));          // not both coords changed
-    EXPECT_FALSE(hasName("Pos2d<->Y"));
-    EXPECT_FALSE(hasName("Details->Score"));  // Score not changed
+    EXPECT_FALSE(hasName("Pos2d.Y"));
+    EXPECT_FALSE(hasName("Details.Score"));  // Score not changed
     EXPECT_FALSE(hasName("Weight"));
     EXPECT_FALSE(hasName("Cnt"));
     EXPECT_FALSE(hasName("Pos3d"));
@@ -591,11 +591,11 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));
     EXPECT_TRUE(hasName("Pos3d"));
-    EXPECT_TRUE(hasName("Details->Label"));
-    EXPECT_TRUE(hasName("Details->Score"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
     EXPECT_FALSE(hasName("Details"));
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -934,12 +934,12 @@ TEST_F(ECChangesetReaderTests, Insert_NestedStruct)
     auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
-    EXPECT_TRUE(hasName("Location->Street"));
-    EXPECT_TRUE(hasName("Location->Coord->Lat"));
-    EXPECT_TRUE(hasName("Location->Coord->Lon"));
+    EXPECT_TRUE(hasName("Location.Street"));
+    EXPECT_TRUE(hasName("Location.Coord.Lat"));
+    EXPECT_TRUE(hasName("Location.Coord.Lon"));
     // Struct nesting never collapses to a bare struct name.
     EXPECT_FALSE(hasName("Location"));
-    EXPECT_FALSE(hasName("Location->Coord"));
+    EXPECT_FALSE(hasName("Location.Coord"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
@@ -1010,11 +1010,11 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_StreetOnly)
     std::vector<Utf8String> changedProps;
     ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
     auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("Location->Street"));
+    EXPECT_TRUE(hasName("Location.Street"));
     // Coord was not touched — must not appear at all.
-    EXPECT_FALSE(hasName("Location->Coord->Lat"));
-    EXPECT_FALSE(hasName("Location->Coord->Lon"));
-    EXPECT_FALSE(hasName("Location->Coord"));
+    EXPECT_FALSE(hasName("Location.Coord.Lat"));
+    EXPECT_FALSE(hasName("Location.Coord.Lon"));
+    EXPECT_FALSE(hasName("Location.Coord"));
     EXPECT_FALSE(hasName("Location"));
     EXPECT_FALSE(hasName("Name"));
     EXPECT_TRUE(hasName("ECInstanceId"));
@@ -1096,10 +1096,10 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_CoordOnly)
     std::vector<Utf8String> changedProps;
     ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
     auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("Location->Coord->Lat"));
-    EXPECT_TRUE(hasName("Location->Coord->Lon"));
-    EXPECT_FALSE(hasName("Location->Coord"));  // struct, not a Point — no collapse
-    EXPECT_FALSE(hasName("Location->Street"));
+    EXPECT_TRUE(hasName("Location.Coord.Lat"));
+    EXPECT_TRUE(hasName("Location.Coord.Lon"));
+    EXPECT_FALSE(hasName("Location.Coord"));  // struct, not a Point — no collapse
+    EXPECT_FALSE(hasName("Location.Street"));
     EXPECT_FALSE(hasName("Location"));
     EXPECT_FALSE(hasName("Name"));
     EXPECT_TRUE(hasName("ECInstanceId"));
@@ -1398,20 +1398,40 @@ TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
-    EXPECT_FALSE(hasName("Pos2d<->X"));
-    EXPECT_FALSE(hasName("Pos2d<->Y"));
+    EXPECT_FALSE(hasName("Pos2d.X"));
+    EXPECT_FALSE(hasName("Pos2d.Y"));
     EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
-    EXPECT_FALSE(hasName("Pos3d<->X"));
-    EXPECT_FALSE(hasName("Pos3d<->Y"));
-    EXPECT_FALSE(hasName("Pos3d<->Z"));
-    EXPECT_TRUE(hasName("Details->Label"));
-    EXPECT_TRUE(hasName("Details->Score"));
+    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_FALSE(hasName("Pos3d.Y"));
+    EXPECT_FALSE(hasName("Pos3d.Z"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "SELECT * FROM ts.Widget WHERE ECInstanceId=?"));
+        stmt.BindId(1, widgetKey.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(11, stmt.GetColumnCount());
+        EXPECT_EQ(widgetKey.GetInstanceId(), stmt.GetValue(0).GetId<ECInstanceId>());
+        EXPECT_EQ(widgetKey.GetClassId(), stmt.GetValue(1).GetId<ECClassId>());
+        EXPECT_EQ(true, stmt.GetValue(2).IsNull()); // Name
+        EXPECT_EQ(true, stmt.GetValue(3).IsNull()); // Weight
+        EXPECT_EQ(true, stmt.GetValue(4).IsNull()); // Cnt
+        EXPECT_EQ(true, stmt.GetValue(5).IsNull()); // Active
+        EXPECT_EQ(true, stmt.GetValue(6).IsNull()); // Pos2d
+        EXPECT_EQ(true, stmt.GetValue(7).IsNull()); // Pos3d
+        EXPECT_EQ(true, stmt.GetValue(8).IsNull()); // Details
+        EXPECT_EQ(true, stmt.GetValue(9).IsNull()); // Tags
+        EXPECT_EQ(true, stmt.GetValue(10).IsNull()); // Owner
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1540,20 +1560,42 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
     EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
-    EXPECT_FALSE(hasName("Pos2d<->X"));
-    EXPECT_FALSE(hasName("Pos2d<->Y"));
+    EXPECT_FALSE(hasName("Pos2d.X"));
+    EXPECT_FALSE(hasName("Pos2d.Y"));
     EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
-    EXPECT_FALSE(hasName("Pos3d<->X"));
-    EXPECT_FALSE(hasName("Pos3d<->Y"));
-    EXPECT_FALSE(hasName("Pos3d<->Z"));
-    EXPECT_TRUE(hasName("Details->Label"));
-    EXPECT_TRUE(hasName("Details->Score"));
+    EXPECT_FALSE(hasName("Pos3d.X"));
+    EXPECT_FALSE(hasName("Pos3d.Y"));
+    EXPECT_FALSE(hasName("Pos3d.Z"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
     EXPECT_FALSE(hasName("Details"));      // bare struct name never present
     EXPECT_TRUE(hasName("Tags"));
-    EXPECT_TRUE(hasName("Owner<->Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
+    EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "SELECT * FROM ts.Widget WHERE ECInstanceId=?"));
+        stmt.BindId(1, widgetKey.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_EQ(11, stmt.GetColumnCount());
+        EXPECT_EQ(widgetKey.GetInstanceId(), stmt.GetValue(0).GetId<ECInstanceId>());
+        EXPECT_EQ(widgetKey.GetClassId(), stmt.GetValue(1).GetId<ECClassId>());
+        EXPECT_EQ(true, stmt.GetValue(2).IsNull()); // Name
+        EXPECT_EQ(true, stmt.GetValue(3).IsNull()); // Weight
+        EXPECT_EQ(true, stmt.GetValue(4).IsNull()); // Cnt
+        EXPECT_EQ(true, stmt.GetValue(5).IsNull()); // Active
+        EXPECT_EQ(true, stmt.GetValue(6).IsNull()); // Pos2d
+        EXPECT_EQ(true, stmt.GetValue(7).IsNull()); // Pos3d
+        EXPECT_EQ(true, stmt.GetValue(8).IsNull()); // Details
+        EXPECT_EQ(true, stmt.GetValue(9).IsNull()); // Tags
+        ECN::ECClassId relId;
+        ECInstanceId ownerId = stmt.GetValue(10).GetNavigation<ECInstanceId>(&relId);
+        EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
+        EXPECT_TRUE(relId.IsValid());
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

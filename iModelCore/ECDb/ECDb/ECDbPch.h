@@ -112,6 +112,7 @@
 #include "ECSql/PrimitiveECSqlField.h"
 #include "ECSql/PointECSqlField.h"
 #include "ECSql/StructECSqlField.h"
+#include "ECSql/JsonECSqlValue.h"
 #include "ECSql/ArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
 #include "ChangesetValue.h"

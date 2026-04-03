@@ -327,7 +327,7 @@ ChangesetArrayValue::ChangesetArrayValue(ECSqlColumnInfo colInfo, DbValue const&
             m_json.SetArray();
             }
         }
-    m_jsonValue = std::make_unique<ArrayECSqlField::JsonECSqlValue>(ecdb, m_json, _GetColumnInfo());
+    m_jsonValue = std::make_unique<JsonECSqlValue>(ecdb, m_json, _GetColumnInfo());
     }
 
 //-----------------------------------------------------------------------------------------

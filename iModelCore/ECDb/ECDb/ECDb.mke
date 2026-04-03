@@ -129,6 +129,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PointECSqlField.h \
                 $(baseDir)ECSql/PrimitiveECSqlField.h \
                 $(baseDir)ECSql/StructECSqlField.h \
+                $(baseDir)ECSql/JsonECSqlValue.h \
                 $(baseDir)ECSql/ArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
@@ -386,6 +387,8 @@ $(o)PrimitiveECSqlField$(oext):                               $(baseDir)ECSql/Pr
 $(o)PointECSqlField$(oext):                                   $(baseDir)ECSql/PointECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructECSqlField$(oext):                                  $(baseDir)ECSql/StructECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)JsonECSqlValue$(oext):                                     $(baseDir)ECSql/JsonECSqlValue.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ArrayECSqlField$(oext):                                   $(baseDir)ECSql/ArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

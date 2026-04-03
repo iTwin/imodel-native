@@ -7,7 +7,7 @@
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/ECSqlColumnInfo.h>
 #include <BeSQLite/BeSQLite.h>
-#include "ECSql/ArrayECSqlField.h"
+#include "ECSql/JsonECSqlValue.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -138,13 +138,13 @@ public:
 //=======================================================================================
 //! IECSqlValue for an array (or struct-array) property.
 //! Parses the JSON stored in the SQLite column at construction and delegates all
-//! accessors to ArrayECSqlField::JsonECSqlValue, mirroring ArrayECSqlField exactly.
+//! accessors to JsonECSqlValue, mirroring ArrayECSqlField exactly.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetArrayValue final : ChangesetValueBase {
 private:
-    mutable rapidjson::Document                      m_json;
-    std::unique_ptr<ArrayECSqlField::JsonECSqlValue> m_jsonValue;
+    mutable rapidjson::Document m_json;
+    std::unique_ptr<JsonECSqlValue> m_jsonValue;
 
     bool         _IsNull() const override;
     void const*  _GetBlob(int* blobSize) const override;

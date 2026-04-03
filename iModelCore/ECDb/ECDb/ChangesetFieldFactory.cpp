@@ -328,8 +328,8 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
     if (xInChangeset && yInChangeset) {
         changedProps.emplace_back(propName);
     } else {
-        if (xInChangeset) { Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), pt2dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
-        if (yInChangeset) { Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), pt2dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (xInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (yInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
     }
     return BE_SQLITE_OK;
 }
@@ -394,9 +394,9 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
     if (xInChangeset && yInChangeset && zInChangeset) {
         changedProps.emplace_back(propName);
     } else {
-        if (xInChangeset) { Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), pt3dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
-        if (yInChangeset) { Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), pt3dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
-        if (zInChangeset) { Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), pt3dMap.GetZ().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (xInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (yInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (zInChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetZ().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
     }
     return BE_SQLITE_OK;
 }
@@ -580,9 +580,9 @@ DbResult ChangesetFieldFactory::CreateNav(
     if (hasIdInChangeset &&  hasPhysicalRelClassIdInChangeset) {
         changedProps.emplace_back(propName);
     } else if (hasIdInChangeset) {
-        Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), idPropMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), idPropMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
     } else if (hasPhysicalRelClassIdInChangeset) {
-        Utf8String s; s.Sprintf("%s<->%s", propName.c_str(), relClassIdMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), relClassIdMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
     }
     return BE_SQLITE_OK;
 }
@@ -635,7 +635,7 @@ DbResult ChangesetFieldFactory::CreateStruct(
         structVal->AppendMember(memberMap->GetProperty().GetName(), std::move(memberTemp.front()));
         for (auto& name : memberChangedProps) {
             Utf8String path;
-            path.Sprintf("%s->%s", structName.c_str(), name.c_str());
+            path.Sprintf("%s.%s", structName.c_str(), name.c_str());
             changedProps.emplace_back(std::move(path));
         }
     }
