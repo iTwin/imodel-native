@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // it is read directly from the table's exclusive-root mapping.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-const ClassMap* ChangesetFieldFactory::GetRootClassMap(DbTable const& tbl, ECDbCR conn) {
+const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl, ECDbCR conn) {
     ECClassId rootClassId;
     if (tbl.GetType() == DbTable::Type::Overflow) {
         // Overflow tables carry no class-id column; the root class is owned by the parent.
@@ -37,7 +37,7 @@ const ClassMap* ChangesetFieldFactory::GetRootClassMap(DbTable const& tbl, ECDbC
 // Builds an ECSqlPropertyPath from the property map's path segments.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPropertyPath ChangesetFieldFactory::GetPropertyPath(PropertyMap const& propertyMap) {
+ECSqlPropertyPath ChangesetValueFactory::GetPropertyPath(PropertyMap const& propertyMap) {
     ECSqlPropertyPath path;
     for (auto& part : propertyMap.GetPath())
         path.AddEntry(part->GetProperty());
@@ -49,7 +49,7 @@ ECSqlPropertyPath ChangesetFieldFactory::GetPropertyPath(PropertyMap const& prop
 // Unspecified DateTime::Info for all other property kinds.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Info ChangesetFieldFactory::GetDateTimeInfo(PropertyMap const& propertyMap) {
+DateTime::Info ChangesetValueFactory::GetDateTimeInfo(PropertyMap const& propertyMap) {
     DateTime::Info info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
     if (propertyMap.GetType() != PropertyMap::Type::PrimitiveArray &&
         propertyMap.GetType() != PropertyMap::Type::Primitive)
@@ -76,7 +76,7 @@ DateTime::Info ChangesetFieldFactory::GetDateTimeInfo(PropertyMap const& propert
 // Returns true when @p colName is present in @p columnValues with a valid DbValue.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
+bool ChangesetValueFactory::IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
     auto it = columnValues.find(colName);
     return it != columnValues.end() && it->second.IsValid();
 }
@@ -86,7 +86,7 @@ bool ChangesetFieldFactory::IsInMap(Utf8StringCR colName, ColumnValueMap const& 
 // returned true — asserts in debug if the key is absent.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbValue ChangesetFieldFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
+DbValue ChangesetValueFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
     auto it = columnValues.find(colName);
     BeAssert(it != columnValues.end() && "GetFromMap called but column absent from map");
     return it != columnValues.end() ? it->second : DbValue(nullptr);
@@ -96,7 +96,7 @@ DbValue ChangesetFieldFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap c
 // Returns the double value stored in @p val, or 0.0 if @p val is null.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-double ChangesetFieldFactory::CheckNullAndGetDoubleValueFromDbValue(DbValue const& val) {
+double ChangesetValueFactory::CheckNullAndGetDoubleValueFromDbValue(DbValue const& val) {
     if(!val.IsValid() || val.IsNull())
         return std::numeric_limits<double>::quiet_NaN();
     return val.GetValueDouble();
@@ -106,7 +106,7 @@ double ChangesetFieldFactory::CheckNullAndGetDoubleValueFromDbValue(DbValue cons
 // Returns the uint64_t value stored in @p val, or 0 if @p val is null.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeInt64Id ChangesetFieldFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValue const& val) {
+BeInt64Id ChangesetValueFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValue const& val) {
     if(!val.IsValid() || val.IsNull())
         return BeInt64Id(0);
     return BeInt64Id(val.GetValueUInt64());
@@ -118,7 +118,7 @@ BeInt64Id ChangesetFieldFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValu
 // Returns nullptr on any failure (missing/null PK value, prepare error, etc.).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-CachedStatementPtr ChangesetFieldFactory::PreparePkStatement(ECDbCR conn, DbTable const& tbl,
+CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTable const& tbl,
                                                               Utf8StringCR selectColName,
                                                               ColumnValueMap const& columnValues) {
     PrimaryKeyDbConstraint const* pk = tbl.GetPrimaryKeyConstraint();
@@ -162,7 +162,7 @@ CachedStatementPtr ChangesetFieldFactory::PreparePkStatement(ECDbCR conn, DbTabl
 // Returns true and sets @p outVal on success; returns false on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
+bool ChangesetValueFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
                                                  DbColumn const& col,
                                                  ColumnValueMap const& columnValues) {
     CachedStatementPtr stmt = PreparePkStatement(conn, col.GetTable(), col.GetName(), columnValues);
@@ -181,7 +181,7 @@ bool ChangesetFieldFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
 // Returns true and sets @p outVal on success; returns false on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn,
+bool ChangesetValueFactory::TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn,
                                                 DbColumn const& col,
                                                 ColumnValueMap const& columnValues) {
     CachedStatementPtr stmt = PreparePkStatement(conn, col.GetTable(), col.GetName(), columnValues);
@@ -200,7 +200,7 @@ bool ChangesetFieldFactory::TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo ChangesetFieldFactory::MakePrimitiveColumnInfo(PropertyMap const& propertyMap) {
+ECSqlColumnInfo ChangesetValueFactory::MakePrimitiveColumnInfo(PropertyMap const& propertyMap) {
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     return ECSqlColumnInfo(
         ECN::ECTypeDescriptor(prim->GetType()),
@@ -217,7 +217,7 @@ ECSqlColumnInfo ChangesetFieldFactory::MakePrimitiveColumnInfo(PropertyMap const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo ChangesetFieldFactory::MakeStructColumnInfo(PropertyMap const& propertyMap) {
+ECSqlColumnInfo ChangesetValueFactory::MakeStructColumnInfo(PropertyMap const& propertyMap) {
     const auto structProp = propertyMap.GetProperty().GetAsStructProperty();
     return ECSqlColumnInfo(
         ECN::ECTypeDescriptor::CreateStructTypeDescriptor(),
@@ -234,7 +234,7 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeStructColumnInfo(PropertyMap const& p
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo ChangesetFieldFactory::MakeNavColumnInfo(PropertyMap const& propertyMap) {
+ECSqlColumnInfo ChangesetValueFactory::MakeNavColumnInfo(PropertyMap const& propertyMap) {
     const auto navProp = propertyMap.GetProperty().GetAsNavigationProperty();
     return ECSqlColumnInfo(
         ECN::ECTypeDescriptor::CreateNavigationTypeDescriptor(navProp->GetType(), navProp->IsMultiple()),
@@ -251,7 +251,7 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeNavColumnInfo(PropertyMap const& prop
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo ChangesetFieldFactory::MakeArrayColumnInfo(PropertyMap const& propertyMap) {
+ECSqlColumnInfo ChangesetValueFactory::MakeArrayColumnInfo(PropertyMap const& propertyMap) {
     const auto& prop = propertyMap.GetProperty();
     ECN::ECTypeDescriptor desc;
     if (prop.GetIsStructArray())
@@ -287,7 +287,7 @@ ECSqlColumnInfo ChangesetFieldFactory::MakeArrayColumnInfo(PropertyMap const& pr
 // from the live DB.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreatePoint2d(
+DbResult ChangesetValueFactory::CreatePoint2d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
@@ -341,7 +341,7 @@ DbResult ChangesetFieldFactory::CreatePoint2d(
 // fetched from the live DB.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreatePoint3d(
+DbResult ChangesetValueFactory::CreatePoint3d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
@@ -407,7 +407,7 @@ DbResult ChangesetFieldFactory::CreatePoint3d(
 // Delegates Point2d/3d to CreatePoint2d/3d().
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreatePrimitive(
+DbResult ChangesetValueFactory::CreatePrimitive(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
@@ -441,7 +441,7 @@ DbResult ChangesetFieldFactory::CreatePrimitive(
 // Returns BE_SQLITE_ERROR on internal mapping failures.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreateSystem(
+DbResult ChangesetValueFactory::CreateSystem(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
@@ -479,7 +479,7 @@ DbResult ChangesetFieldFactory::CreateSystem(
 // Always succeeds — never skipped and never consults the changeset.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreateFixedId(
+DbResult ChangesetValueFactory::CreateFixedId(
     ECDbCR conn, PropertyMap const& propertyMap, BeInt64Id id,
     std::unique_ptr<IECSqlValue>& out) {
 
@@ -504,7 +504,7 @@ DbResult ChangesetFieldFactory::CreateFixedId(
 // Returns BE_SQLITE_ERROR when a component is partially present but the DB fetch fails.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreateNav(
+DbResult ChangesetValueFactory::CreateNav(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
@@ -592,7 +592,7 @@ DbResult ChangesetFieldFactory::CreateNav(
 // Returns BE_SQLITE_OK with out==nullptr when the column is absent from the changeset.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreateArray(
+DbResult ChangesetValueFactory::CreateArray(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
@@ -615,7 +615,7 @@ DbResult ChangesetFieldFactory::CreateArray(
 // Returns BE_SQLITE_ERROR if any member fails to be created.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreateStruct(
+DbResult ChangesetValueFactory::CreateStruct(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
@@ -653,7 +653,7 @@ DbResult ChangesetFieldFactory::CreateStruct(
 // Returns BE_SQLITE_ERROR on a hard failure (e.g. live DB fetch fails).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::CreateValueForProperty(
+DbResult ChangesetValueFactory::CreateValueForProperty(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
@@ -671,12 +671,12 @@ DbResult ChangesetFieldFactory::CreateValueForProperty(
     if (prop.GetIsArray())
         return CreateArray(conn, propertyMap, columnValues, fieldsOut, changedProps);
 
-    BeAssert(false && "Unknown property type in ChangesetFieldFactory::CreateValueForProperty");
+    BeAssert(false && "Unknown property type in ChangesetValueFactory::CreateValueForProperty");
     return BE_SQLITE_ERROR;
 }
 
 //=============================================================================
-// ChangesetFieldFactory — high-level resolution helpers
+// ChangesetValueFactory — high-level resolution helpers
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
@@ -686,7 +686,7 @@ DbResult ChangesetFieldFactory::CreateValueForProperty(
 // null, zero, or the class is unknown.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::TryResolveClassMapFromChangeset(
+bool ChangesetValueFactory::TryResolveClassMapFromChangeset(
     DbTable const& dbTable, ColumnValueMap const& columnValues,
     ECDbCR conn, const ClassMap*& classMapOut, ECClassId& classIdOut) {
 
@@ -727,7 +727,7 @@ bool ChangesetFieldFactory::TryResolveClassMapFromChangeset(
 // and @p classIdOut.  Returns false silently on any other failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::TryResolveClassMapFromDbSeek(
+bool ChangesetValueFactory::TryResolveClassMapFromDbSeek(
     DbTable const& dbTable,
     ColumnValueMap const& columnValues,
     ECDbCR conn, const ClassMap*& classMapOut, ECClassId& classIdOut) {
@@ -765,7 +765,7 @@ bool ChangesetFieldFactory::TryResolveClassMapFromDbSeek(
 // Returns BE_SQLITE_ERROR on any failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::ResolveInstanceId(
+DbResult ChangesetValueFactory::ResolveInstanceId(
     ClassMap const& classMap,
     ColumnValueMap const& columnValues,
     ECDbCR conn, DbTable const& primaryDbTable,
@@ -834,7 +834,7 @@ DbResult ChangesetFieldFactory::ResolveInstanceId(
 // Returns BE_SQLITE_ERROR when the ECClassId property is not found in the ClassMap.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::ResolveClassIdField(
+DbResult ChangesetValueFactory::ResolveClassIdField(
     ClassMap const& classMap,
     ECClassId resolvedClassId,
     ECDbCR conn, DbTable const& primaryDbTable,
@@ -874,7 +874,7 @@ DbResult ChangesetFieldFactory::ResolveClassIdField(
 // Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::BuildPropertyFields(
+DbResult ChangesetValueFactory::BuildPropertyFields(
     ClassMap const& classMap,
     ColumnValueMap const& columnValues,
     ECDbCR conn,
@@ -909,7 +909,7 @@ DbResult ChangesetFieldFactory::BuildPropertyFields(
 // Returns false when the class cannot be resolved or is not in the BisCore.Element hierarchy.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetFieldFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn) {
+bool ChangesetValueFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn) {
     const ECClass* cls = conn.Schemas().Main().GetClass(classId);
     if (cls == nullptr)
         return false;
@@ -926,7 +926,7 @@ bool ChangesetFieldFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn
 }
 
 //=============================================================================
-// ChangesetFieldFactory::Create — public entry point
+// ChangesetValueFactory::Create — public entry point
 //
 // Produces an ordered list of IECSqlValue fields representing one changeset row:
 //   [0]  ECInstanceId  — always first; read exclusively from the changeset.
@@ -947,7 +947,7 @@ bool ChangesetFieldFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetFieldFactory::Create(
+DbResult ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues,
     std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::Mode mode, std::vector<Utf8String>& changedProps) {
 

@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------------------------
+﻿/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! Properties whose backing columns are absent from the map are silently skipped.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetFieldFactory final {
+struct ChangesetValueFactory final {
 private:
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.

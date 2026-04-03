@@ -1,9 +1,9 @@
-/*---------------------------------------------------------------------------------------------
+﻿/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "ChangesetFieldFactory.h"
+#include "ChangesetValueFactory.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -38,7 +38,7 @@ private:
     bool IsStepped() const { return m_changes != nullptr && m_currentChange.IsValid(); }
     //! Builds a map from SQLite column name to DbValue for the current change at @p stage.
     //! Only columns that are present (non-absent) in the changeset are included in the map.
-    //! The map can be passed directly to ChangesetFieldFactory::Create.
+    //! The map can be passed directly to ChangesetValueFactory::Create.
     DbResult GetColumnValues(Stage stage, ColumnValueMap& outMap) const;
     static void DumpColumnValues(ColumnValueMap const& map);
 public:
