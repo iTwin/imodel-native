@@ -828,6 +828,7 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->SetStrictSchemaValidation(true); // ECDb import path enforces strict validation
     JsInterop::AddFallbackSchemaLocaters(ecdb.GetSchemaLocater(), schemaContext);
 
     ECSchemaPtr schema;
@@ -899,6 +900,8 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
+    schemaContext->SetStrictSchemaValidation(true); // ECDb import path enforces strict validation — unknown constructs are errors, not warnings
 
     SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
     JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
