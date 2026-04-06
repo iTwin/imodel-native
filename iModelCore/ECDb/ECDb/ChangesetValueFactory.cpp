@@ -304,7 +304,7 @@ DbResult ChangesetValueFactory::CreatePoint2d(
     }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
-    const Utf8StringCR propName = propertyMap.GetProperty().GetName();
+    Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInChangeset && yInChangeset) {
         changedProps.emplace_back(propName);
     } else {
@@ -366,7 +366,7 @@ DbResult ChangesetValueFactory::CreatePoint3d(
     }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
-    const Utf8StringCR propName = propertyMap.GetProperty().GetName();
+    Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInChangeset && yInChangeset && zInChangeset) {
         changedProps.emplace_back(propName);
     } else {
@@ -537,7 +537,7 @@ DbResult ChangesetValueFactory::CreateNav(
 
     fieldsOut.emplace_back(std::make_unique<ChangesetNavValue>(MakeNavColumnInfo(propertyMap),
                                                                std::move(idVal), std::move(relClassIdVal)));
-    const Utf8StringCR propName = propertyMap.GetProperty().GetName();
+    Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (hasIdInChangeset &&  hasPhysicalRelClassIdInChangeset) {
         changedProps.emplace_back(propName);
     } else if (hasIdInChangeset) {
@@ -576,7 +576,7 @@ DbResult ChangesetValueFactory::CreateStruct(
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     auto structVal = std::make_unique<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
-    const Utf8StringCR structName = propertyMap.GetProperty().GetName();
+    Utf8StringCR structName = propertyMap.GetProperty().GetName();
     bool anyMember = false;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
         std::vector<std::unique_ptr<IECSqlValue>> memberTemp;
@@ -809,7 +809,7 @@ DbResult ChangesetValueFactory::BuildPropertyFields(
             const auto prim = propertyMap->GetProperty().GetAsPrimitiveProperty();
             if (prim != nullptr) {
                 const auto extType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-                const Utf8StringCR propName = propertyMap->GetProperty().GetName();
+                Utf8StringCR propName = propertyMap->GetProperty().GetName();
                 if (extType == ExtendedTypeHelper::ExtendedType::Id &&
                     propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
                     continue;
