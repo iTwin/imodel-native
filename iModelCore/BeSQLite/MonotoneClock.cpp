@@ -228,8 +228,15 @@ BE_SQLITE_EXPORT void BeSQLiteLib::EnableMonotoneClock(bool enable)
         vfs->mxPathname = rootVfs->mxPathname;
         vfs->pAppData   = info;
 
+        if (SQLITE_OK != sqlite3_vfs_register(vfs, 1 /* makeDefault */))
+            {
+            // Registration failed; clean up and leave the default VFS unchanged.
+            delete info;
+            delete vfs;
+            return;
+            }
+
         s_monotoneVfs = vfs;
-        sqlite3_vfs_register(vfs, 1 /* makeDefault */);
         }
     else
         {
@@ -239,9 +246,12 @@ BE_SQLITE_EXPORT void BeSQLiteLib::EnableMonotoneClock(bool enable)
         auto* info = (MonotoneClockInfo*) s_monotoneVfs->pAppData;
         sqlite3_vfs* rootVfs = info->m_rootVfs;
 
-        sqlite3_vfs_unregister(s_monotoneVfs);
+        if (SQLITE_OK != sqlite3_vfs_unregister(s_monotoneVfs))
+            return;  // Unregistration failed; leave state unchanged.
+
         // Re-promote the original root VFS as the default.
-        sqlite3_vfs_register(rootVfs, 1 /* makeDefault */);
+        // Even if this fails the monotone shim is already gone, so we still clean up.
+        (void) sqlite3_vfs_register(rootVfs, 1 /* makeDefault */);
 
         delete info;
         delete s_monotoneVfs;
