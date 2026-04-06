@@ -7,6 +7,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
 #include <BeSQLite/VirtualTab.h>
+#include <thread>
 using namespace MemorySize;
 
 #define MEM_THRESHOLD (100 * MEG)
@@ -1471,3 +1472,101 @@ TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction
     SqliteMemoryTest(false, true, MEM_THRESHOLD, true);
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that the monotone-clock VFS shim always returns a strictly increasing time:
+* two consecutive calls to SQLite's time function must never return the same value.
+* The test exercises both the direct VFS API path (by evaluating `julianday('now')`
+* through an in-memory Db) and the enable/disable lifecycle.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQliteTestFixture, MonotoneClock_StrictlyIncreasing)
+    {
+    // --- Enable the shim ---
+    BeSQLiteLib::EnableMonotoneClock(true);
+
+    auto db = Create("monotone_clock_test.db");
+    ASSERT_NE(nullptr, db);
+
+    // Collect N consecutive timestamps from SQLite. julianday('now') calls the VFS
+    // xCurrentTimeInt64, which our shim intercepts.
+    constexpr int N = 50;
+    bvector<double> times;
+    times.reserve(N);
+
+    for (int i = 0; i < N; ++i)
+        {
+        auto stmt = db->GetCachedStatement("SELECT julianday('now')");
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        times.push_back(stmt->GetValueDouble(0));
+        }
+
+    // Every value must be strictly greater than the previous one.
+    for (int i = 1; i < N; ++i)
+        {
+        EXPECT_GT(times[i], times[i - 1])
+            << "monotone-clock VFS returned duplicate or decreasing time at index " << i
+            << ": times[" << i - 1 << "]=" << times[i - 1]
+            << " times[" << i << "]=" << times[i];
+        }
+
+    // --- Disable the shim and verify the original default VFS is restored ---
+    BeSQLiteLib::EnableMonotoneClock(false);
+
+    // Re-enabling and disabling a second time must be idempotent (no crash).
+    BeSQLiteLib::EnableMonotoneClock(true);
+    BeSQLiteLib::EnableMonotoneClock(true);  // double-enable is a no-op
+    BeSQLiteLib::EnableMonotoneClock(false);
+    BeSQLiteLib::EnableMonotoneClock(false); // double-disable is a no-op
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that the monotone-clock shim is thread-safe: multiple threads calling the
+* time function concurrently must all receive unique, strictly increasing values in
+* their own call sequence (no duplicates within a single thread's observed values).
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
+    {
+    BeSQLiteLib::EnableMonotoneClock(true);
+
+    constexpr int kThreads = 4;
+    constexpr int kIterationsPerThread = 25;
+
+    // Each thread stores its own sequence of timestamps.
+    bvector<bvector<double>> perThreadTimes(kThreads);
+
+    bvector<std::thread> threads;
+    for (int t = 0; t < kThreads; ++t)
+        {
+        threads.emplace_back([this, t, &perThreadTimes]()
+            {
+            auto db = Create(Utf8PrintfString("monotone_clock_mt_%d.db", t).c_str());
+            if (!db) return;
+            auto& times = perThreadTimes[t];
+            times.reserve(kIterationsPerThread);
+            for (int i = 0; i < kIterationsPerThread; ++i)
+                {
+                auto stmt = db->GetCachedStatement("SELECT julianday('now')");
+                if (stmt->Step() == BE_SQLITE_ROW)
+                    times.push_back(stmt->GetValueDouble(0));
+                }
+            });
+        }
+
+    for (auto& th : threads)
+        th.join();
+
+    // Within each thread's own sequence the timestamps must be strictly increasing.
+    for (int t = 0; t < kThreads; ++t)
+        {
+        auto const& times = perThreadTimes[t];
+        for (size_t i = 1; i < times.size(); ++i)
+            {
+            EXPECT_GT(times[i], times[i - 1])
+                << "Thread " << t << ": non-monotone at index " << i;
+            }
+        }
+
+    BeSQLiteLib::EnableMonotoneClock(false);
+    }
