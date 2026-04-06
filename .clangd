@@ -1,0 +1,22 @@
+# clangd configuration for imodel-native.
+# Include paths and -std flag live in compile_flags.txt (machine-independent).
+# This file adds editor features on top.
+
+CompileFlags:
+  Compiler: clang++
+
+Diagnostics:
+  UnusedIncludes: None
+  ClangTidy:
+    Add:
+      - bugprone-use-after-move
+      - bugprone-dangling-handle
+      - modernize-use-nullptr
+      - modernize-use-override
+      - readability-redundant-smartptr-get
+
+InlayHints:
+  Enabled: true
+  DeducedTypes: true
+  Designators: true
+  ParameterNames: true
