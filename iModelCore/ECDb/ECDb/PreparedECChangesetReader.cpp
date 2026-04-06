@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <iostream>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -241,7 +240,7 @@ DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap&
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::DumpColumnValues(ColumnValueMap const& map) {
     for (auto const& [key, val] : map)
-        std::cout << key.c_str() << " = " << (val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)")) << std::endl;
+        LOG.debugv("%s = %s", key.c_str(), val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)"));
 }
 
 //---------------------------------------------------------------------------------------
