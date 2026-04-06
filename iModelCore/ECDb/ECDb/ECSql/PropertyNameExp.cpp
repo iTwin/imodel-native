@@ -205,10 +205,10 @@ ECSqlTypeInfo PropertyNameExp::GetTypeInfoFromPropertyRef() const {
     ECSqlTypeInfo resolvedTypeInfo;
     for (auto stmtIdx = 0; stmtIdx < flatList.size(); ++stmtIdx) {
         BeAssert(flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx) != nullptr && "Programmer Error: All the select statements in the compound statement are expected to have the same number of columns in their select clause");
-        auto typeInfo = flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx)->GetExpression()->GetTypeInfo();
+        auto stmtTypeInfo = flatList[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(colIdx)->GetExpression()->GetTypeInfo();
         // try to find non-null type info
-        if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !typeInfo.IsNull()) {
-            resolvedTypeInfo = typeInfo;
+        if (resolvedTypeInfo.IsUnset() || resolvedTypeInfo.IsNull() && !stmtTypeInfo.IsNull()) {
+            resolvedTypeInfo = stmtTypeInfo;
         }
     }
     return resolvedTypeInfo;

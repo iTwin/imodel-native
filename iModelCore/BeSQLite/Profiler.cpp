@@ -541,16 +541,16 @@ BeJsDocument Profiler::Scope::GetDetailedSqlStats() const {
 
     SqlSessionStats sqlStats;
     while (stmt.Step() == BE_SQLITE_ROW) {
-        Utf8String sql(stmt.GetValueText(0));
+        Utf8String sqlStr(stmt.GetValueText(0));
         Utf8String op(stmt.GetValueText(1));
         const auto rowCount = stmt.GetValueInt(2);
         const auto scanCount = stmt.GetValueInt(4);
         const auto elapsedMs = stmt.GetValueInt(3);
 
-        processSqlAndCounts(sql, op, sqlStats, rowCount, scanCount, elapsedMs);
+        processSqlAndCounts(sqlStr, op, sqlStats, rowCount, scanCount, elapsedMs);
 
         auto stat = sqlStats.perStmtStatsArray.appendObject();
-        stat["statement"] = sql;
+        stat["statement"] = sqlStr;
         stat["op"] = op;
         stat["row_count"] = rowCount;
         stat["elapsed_ms"] = elapsedMs;

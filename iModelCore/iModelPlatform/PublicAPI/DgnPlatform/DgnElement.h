@@ -41,6 +41,7 @@ namespace ElementDependency { struct Graph; struct Edge;};
 struct ElementAutoHandledPropertiesECInstanceAdapter;
 struct LsComponent;
 struct ExternalSourceAttachment;
+class BulkElementDeletion;
 
 //=======================================================================================
 //! Holds Id remapping tables
@@ -278,6 +279,7 @@ private:
     BeSQLite::IdSet<DgnTextureId> m_textureIds;
     BeSQLite::IdSet<DgnElementId> m_otherDefinitionElementIds;
     BeSQLite::IdSet<DgnElementId> m_usedIds;
+    std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> m_excludeIds;
 
     BE_JSON_NAME(spatialCategoryIds)
     BE_JSON_NAME(drawingCategoryIds)
@@ -316,8 +318,9 @@ private:
 
 public:
     //! Generate usage information for the specified set of DefinitionElementIds
-    DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds);
+    DGNPLATFORM_EXPORT static DefinitionElementUsageInfoPtr Create(DgnDbR db, BeSQLite::IdSet<DgnElementId> const& definitionElementIds, std::shared_ptr<BeSQLite::IdSet<BeInt64Id>> excludeIds = nullptr);
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
+    DGNPLATFORM_EXPORT DgnElementIdSet const& GetUsedIds() const { return m_usedIds; }
 };
 
 //=======================================================================================
@@ -544,6 +547,37 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const;
 };
 
+#define TEMP_ELEMENT_DELETION "ElementsToDelete"
+class BulkElementDeletion
+    {
+    DgnDbR m_dgndb;
+    DgnElementIdSet m_originalElementIds;
+    DgnElementIdSet m_failedToDelete;
+
+    bool m_definitionElementsExist = false;
+    bool m_geometricElementsExist = false;
+    bool m_subModelRootExists = false;
+    bool m_tempTableExists = false;
+
+    // Create temporary tables for bulk deletion
+    bool CreateTempTables();
+    bool ExpandElementIdList();
+
+    // Find and prune constraint violators
+    bool FindAndPruneConstraintViolators();
+    bool FindAndPruneInUseDefinitionElements();
+    bool FindAndNullTypeDefinitionReferences() const;
+    bool PruneViolators();
+
+    bool FireAllCallbacks();
+    bool DeleteLinkTableRelationships();
+    bool ExecuteDeletion();
+
+public:
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds) : m_dgndb(dgndb), m_originalElementIds(originalElementIds) {}
+    DgnElementIdSet Execute();
+    };
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -710,6 +744,7 @@ public:
     friend struct GeometrySource;
     friend struct ElementECPropertyAccessor;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
+    friend class BulkElementDeletion;
 
     enum class ColumnNumbers : int32_t {
         ElementId = 0,
@@ -3855,6 +3890,7 @@ struct DgnElements : DgnDbTable
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
+    friend class BulkElementDeletion;
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
@@ -3882,6 +3918,7 @@ private:
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
     mutable std::map<uint64_t, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> m_jsonSelectAdapterCache;
+    bool m_isBulkOperation = false;
 
     void Destroy();
     void AddToPool(DgnElementCR) const;
@@ -3905,6 +3942,9 @@ private:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
+
+    void SetBulkOperation(const bool isBulk) { m_isBulkOperation = isBulk; }
+    bool IsBulkOperation() const { return m_isBulkOperation; }
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3924,6 +3964,7 @@ public:
 
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementIdSet) const; //!< @private
     DGNPLATFORM_EXPORT DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
     DGNPLATFORM_EXPORT bool ElementExists(DgnElementId);
@@ -4028,6 +4069,22 @@ public:
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
+    
+    
+    //! Bulk-delete a set of elements from this DgnDb.
+    //!
+    //! This method resolves intra-set dependencies (parent-child hierarchies, code-scope relationships) before
+    //! attempting deletion, so callers may pass an entire sub-tree or a group of mutually-scoped elements
+    //! and expect them all to be removed in one call.
+    //!
+    //! @param[in] elementIds The set of element IDs to delete.  May contain IDs of any element type.
+    //!   Invalid IDs are ignored.  The set may include parent elements whose children are not
+    //!   explicitly listed; those children will be pulled in automatically.
+    //! @return The subset of elementIds whose elements could not be deleted because they
+    //!   are still referenced or are in use (definition elements) from outside the set.  An empty set means every requested element was
+    //!   deleted successfully.
+    //! @note This function can only be safely invoked from the client thread.
+    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.

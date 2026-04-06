@@ -1545,11 +1545,11 @@ DbResult TxnManager::DiscardLocalChanges() {
                 continue;
 
             TXN_DEBUG("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
-            auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
-            if (BE_SQLITE_OK != rc) {
+            auto status = ApplyTxnChanges(curr, TxnAction::Reverse);
+            if (BE_SQLITE_OK != status) {
                 m_dgndb.AbandonChanges();
                 PurgeCaches();
-                return rc;
+                return status;
             }
         }
     }
