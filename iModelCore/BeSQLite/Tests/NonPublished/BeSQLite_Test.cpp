@@ -1474,6 +1474,13 @@ TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* RAII helper that disables the monotone-clock shim when it goes out of scope.
+* Using this in test functions prevents the global shim from remaining enabled if a
+* fatal ASSERT fires before the explicit EnableMonotoneClock(false) call.
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MonotoneClockGuard { ~MonotoneClockGuard() { BeSQLiteLib::EnableMonotoneClock(false); } };
+
+/*---------------------------------------------------------------------------------**//**
 * Verify that the monotone-clock VFS shim always returns a strictly increasing time:
 * two consecutive calls to SQLite's time function must never return the same value.
 * The test exercises both the direct VFS API path (by evaluating `julianday('now')`
@@ -1484,6 +1491,10 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_StrictlyIncreasing)
     {
     // --- Enable the shim ---
     BeSQLiteLib::EnableMonotoneClock(true);
+
+    // Scope guard ensures the shim is always disabled on test exit, even if a fatal
+    // ASSERT fires before the explicit disable calls below.
+    MonotoneClockGuard clockGuard;
 
     auto db = Create("monotone_clock_test.db");
     ASSERT_NE(nullptr, db);
@@ -1530,26 +1541,33 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
     {
     BeSQLiteLib::EnableMonotoneClock(true);
 
+    // Scope guard ensures the shim is always disabled on test exit.
+    MonotoneClockGuard clockGuard;
+
     constexpr int kThreads = 4;
     constexpr int kIterationsPerThread = 25;
 
     // Each thread stores its own sequence of timestamps.
     bvector<bvector<double>> perThreadTimes(kThreads);
 
+    // Threads signal failure via this flag so the main thread can assert it.
+    std::atomic<bool> anyWorkerFailed{false};
+
     bvector<std::thread> threads;
     for (int t = 0; t < kThreads; ++t)
         {
-        threads.emplace_back([this, t, &perThreadTimes]()
+        threads.emplace_back([this, t, &perThreadTimes, &anyWorkerFailed]()
             {
             auto db = Create(Utf8PrintfString("monotone_clock_mt_%d.db", t).c_str());
-            if (!db) return;
+            if (!db) { anyWorkerFailed.store(true, std::memory_order_relaxed); return; }
             auto& times = perThreadTimes[t];
             times.reserve(kIterationsPerThread);
             for (int i = 0; i < kIterationsPerThread; ++i)
                 {
                 auto stmt = db->GetCachedStatement("SELECT julianday('now')");
-                if (stmt->Step() == BE_SQLITE_ROW)
-                    times.push_back(stmt->GetValueDouble(0));
+                if (stmt->Step() != BE_SQLITE_ROW)
+                    { anyWorkerFailed.store(true, std::memory_order_relaxed); return; }
+                times.push_back(stmt->GetValueDouble(0));
                 }
             });
         }
@@ -1557,9 +1575,16 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
     for (auto& th : threads)
         th.join();
 
-    // Within each thread's own sequence the timestamps must be strictly increasing.
+    ASSERT_FALSE(anyWorkerFailed.load()) << "One or more worker threads failed to create a DB or execute a query";
+
+    // Within each thread's own sequence the timestamps must be strictly increasing,
+    // and each thread must have collected exactly kIterationsPerThread values.
     for (int t = 0; t < kThreads; ++t)
         {
+        ASSERT_EQ((size_t) kIterationsPerThread, perThreadTimes[t].size())
+            << "Thread " << t << " collected " << perThreadTimes[t].size()
+            << " timestamps instead of " << kIterationsPerThread;
+
         auto const& times = perThreadTimes[t];
         for (size_t i = 1; i < times.size(); ++i)
             {
@@ -1567,6 +1592,4 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
                 << "Thread " << t << ": non-monotone at index " << i;
             }
         }
-
-    BeSQLiteLib::EnableMonotoneClock(false);
     }

@@ -203,8 +203,13 @@ static sqlite3_vfs const s_monotoneVfsTemplate =
     nullptr,                     /* xNextSystemCall – not needed */
     };
 
-// The single registered instance. Null when the shim is not active.
-static sqlite3_vfs* s_monotoneVfs = nullptr;
+// The single registered instance, accessed atomically so concurrent Enable/Disable
+// calls are serialised without a static mutex (whose destruction order is unspecified
+// on Mac/Linux and can cause crashes at process exit).
+// The sentinel value (1) indicates that a transition is in progress; a second thread
+// seeing the sentinel bails out immediately without waiting.
+static sqlite3_vfs* const s_vfsTransitionSentinel = reinterpret_cast<sqlite3_vfs*>(1);
+static std::atomic<sqlite3_vfs*> s_monotoneVfs{nullptr};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -213,12 +218,21 @@ BE_SQLITE_EXPORT void BeSQLiteLib::EnableMonotoneClock(bool enable)
     {
     if (enable)
         {
-        if (s_monotoneVfs != nullptr)
-            return;  // already active
+        // Atomically claim the "not active" state by swapping in the sentinel.
+        // If the current value is anything other than null (already active or another
+        // thread is transitioning), do nothing.
+        sqlite3_vfs* expected = nullptr;
+        if (!s_monotoneVfs.compare_exchange_strong(expected, s_vfsTransitionSentinel,
+                                                   std::memory_order_acquire,
+                                                   std::memory_order_relaxed))
+            return;  // already active or being activated concurrently
 
         sqlite3_vfs* rootVfs = sqlite3_vfs_find(nullptr); // current default VFS
         if (rootVfs == nullptr)
+            {
+            s_monotoneVfs.store(nullptr, std::memory_order_release);
             return;
+            }
 
         auto* info = new MonotoneClockInfo();
         info->m_rootVfs = rootVfs;
@@ -230,32 +244,48 @@ BE_SQLITE_EXPORT void BeSQLiteLib::EnableMonotoneClock(bool enable)
 
         if (SQLITE_OK != sqlite3_vfs_register(vfs, 1 /* makeDefault */))
             {
-            // Registration failed; clean up and leave the default VFS unchanged.
+            // Registration failed; clean up and restore inactive state.
             delete info;
             delete vfs;
+            s_monotoneVfs.store(nullptr, std::memory_order_release);
             return;
             }
 
-        s_monotoneVfs = vfs;
+        s_monotoneVfs.store(vfs, std::memory_order_release);
         }
     else
         {
-        if (s_monotoneVfs == nullptr)
-            return;  // not active
+        // Atomically claim whatever valid VFS pointer is stored, replacing it with
+        // the sentinel so no other thread can race with our unregistration.
+        sqlite3_vfs* vfs = s_monotoneVfs.load(std::memory_order_acquire);
+        for (;;)
+            {
+            if (vfs == nullptr || vfs == s_vfsTransitionSentinel)
+                return;  // not active, or another thread is transitioning
+            if (s_monotoneVfs.compare_exchange_weak(vfs, s_vfsTransitionSentinel,
+                                                    std::memory_order_acquire,
+                                                    std::memory_order_relaxed))
+                break;
+            }
 
-        auto* info = (MonotoneClockInfo*) s_monotoneVfs->pAppData;
+        // We exclusively own vfs now.
+        auto* info = (MonotoneClockInfo*) vfs->pAppData;
         sqlite3_vfs* rootVfs = info->m_rootVfs;
 
-        if (SQLITE_OK != sqlite3_vfs_unregister(s_monotoneVfs))
-            return;  // Unregistration failed; leave state unchanged.
+        if (SQLITE_OK != sqlite3_vfs_unregister(vfs))
+            {
+            // Unregistration failed; restore the pointer and leave state unchanged.
+            s_monotoneVfs.store(vfs, std::memory_order_release);
+            return;
+            }
 
         // Re-promote the original root VFS as the default.
         // Even if this fails the monotone shim is already gone, so we still clean up.
         (void) sqlite3_vfs_register(rootVfs, 1 /* makeDefault */);
 
         delete info;
-        delete s_monotoneVfs;
-        s_monotoneVfs = nullptr;
+        delete vfs;
+        s_monotoneVfs.store(nullptr, std::memory_order_release);
         }
     }
 
