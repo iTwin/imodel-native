@@ -36,8 +36,8 @@ DbResult ECChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<Change
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert, Mode mode) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, db, invert, mode);
+DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, Mode mode) {
+    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, mode);
 }
 
 //---------------------------------------------------------------------------------------

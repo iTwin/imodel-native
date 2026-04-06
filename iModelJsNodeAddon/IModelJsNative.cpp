@@ -5108,13 +5108,13 @@ private:
         return ecdb;
         }
     
-    ECChangesetReader::Stage GetStage(NapiInfoCR info, int targetStage)
+    Changes::Change::Stage GetStage(NapiInfoCR info, int targetStage)
         {
         if (targetStage < 0 || targetStage > 1)
-            THROW_JS_TYPE_EXCEPTION("Invalid stage. Expected 0 (BeforeFirst) or 1");
+            THROW_JS_TYPE_EXCEPTION("Invalid stage. Expected 0 (Old) or 1 (New)");
         if(targetStage == 0)
-            return ECChangesetReader::Stage::Old;
-        return ECChangesetReader::Stage::New;
+            return Changes::Change::Stage::Old;
+        return Changes::Change::Stage::New;
         }
 
 public:
@@ -5160,7 +5160,7 @@ public:
         REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, modeInt);
-        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, *ecdb, invert, static_cast<ECChangesetReader::Mode>(modeInt));
+        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, invert, static_cast<ECChangesetReader::Mode>(modeInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
         }
@@ -5171,6 +5171,8 @@ public:
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, modeInt);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
         if (!nativeDgnDb->IsOpen())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
@@ -5187,6 +5189,8 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
         REQUIRE_ARGUMENT_INTEGER(2, modeInt);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
         if (!nativeDgnDb->IsOpen())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
@@ -5204,6 +5208,8 @@ public:
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, modeInt);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
         if (!nativeDgnDb->IsOpen())
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
@@ -5253,11 +5259,16 @@ public:
         {
         REQUIRE_ARGUMENT_INTEGER(0, stage);
         REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+
+        ECDb const* ecdb = m_reader.GetECDb();
+        if (nullptr == ecdb)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getValue() called when no ECDb is associated with the ECChangesetReader", IModelJsNativeErrorKey::BadArg);
+        
         BeJsValue opts(optObj);
-        ECSqlRowAdaptor adaptor(*m_reader.GetECDb());
+        ECSqlRowAdaptor adaptor(*ecdb);
         adaptor.GetOptions().FromJson(opts);
 
-        ECChangesetReader::Stage stageEnum = GetStage(info, stage);
+        Changes::Change::Stage stageEnum = GetStage(info, stage);
 
         BeJsNapiObject out(info.Env());
         bool isECTable = false;

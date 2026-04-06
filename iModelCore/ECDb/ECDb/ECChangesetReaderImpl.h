@@ -25,7 +25,7 @@ public:
 
     DbResult OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, Mode mode);
     DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
-    DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, Db const& db, bool invert, Mode mode);
+    DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, Mode mode);
     void Close();
     DbResult Step();
 

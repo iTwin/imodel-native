@@ -35,8 +35,9 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
     DdlChanges ddlChanges;
     bool hasSchemaChanges;
     reader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
-    if (!ddlChanges._IsEmpty())
-        m_ddl = ddlChanges.ToString();
+
+    UNUSED_VARIABLE(ddlChanges);
+    UNUSED_VARIABLE(hasSchemaChanges);
 
     return Open(std::move(reader), invert, mode);
 }
@@ -64,12 +65,12 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert, Mode mode) {
+DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, Mode mode) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    m_changeGroup = std::make_unique<ChangeGroup>(db);
+    m_changeGroup = std::make_unique<ChangeGroup>(m_ecdb);
     DdlChanges ddlGroup;
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
@@ -83,6 +84,8 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, D
         if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges))
             return BE_SQLITE_ERROR;
 
+        UNUSED_VARIABLE(containsSchemaChanges);
+
         for (auto& ddl : ddlChanges.GetDDLs()) {
             ddlGroup.AddDDL(ddl.c_str());
         }
@@ -94,7 +97,6 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, D
     if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup))
         return BE_SQLITE_ERROR;
 
-    m_ddl    = ddlGroup.ToString();
     m_invert = invert;
     m_mode   = mode;
     return BE_SQLITE_OK;
@@ -117,7 +119,6 @@ void PreparedECChangesetReader::Close() {
     m_changeStream = nullptr;
     m_changeGroup = nullptr;
     m_invert = false;
-    m_ddl.clear();
     clearFields();
 }
 

@@ -1,4 +1,4 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -88,7 +88,7 @@ DbValue ChangesetValueFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap c
 }
 
 //---------------------------------------------------------------------------------------
-// Returns the double value stored in @p val, or 0.0 if @p val is null.
+// Returns the double value stored in @p val, or quiet_NaN if @p val is null.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 double ChangesetValueFactory::CheckNullAndGetDoubleValueFromDbValue(DbValue const& val) {
@@ -98,7 +98,7 @@ double ChangesetValueFactory::CheckNullAndGetDoubleValueFromDbValue(DbValue cons
 }
 
 //---------------------------------------------------------------------------------------
-// Returns the uint64_t value stored in @p val, or 0 if @p val is null.
+// Returns an Id with the uint64_t value stored in @p val, or an Id with 0 if @p val is null.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BeInt64Id ChangesetValueFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValue const& val) {

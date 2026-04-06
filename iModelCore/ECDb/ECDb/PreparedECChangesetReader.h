@@ -24,7 +24,6 @@ private:
     std::unique_ptr<ChangeGroup>   m_changeGroup;
     std::unique_ptr<Changes>       m_changes;
     Changes::Change                m_currentChange;
-    Utf8String                     m_ddl;
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedProps;
 
@@ -46,7 +45,7 @@ public:
 
     DbResult OpenFile(Utf8StringCR changesetFile, bool invert, Mode mode);
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
-    DbResult OpenGroup(T_Utf8StringVector const& files, Db const& db, bool invert, Mode mode);
+    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, Mode mode);
     void Close();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }
