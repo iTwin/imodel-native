@@ -115,6 +115,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct dgn_TxnTable::Model;
     friend struct dgn_TxnTable::Element;
     friend struct dgn_ModelHandler::Model;
+    friend class BulkElementDeletion;
 
     enum class ColumnNumbers : int32_t {
         ECClassId = 1
@@ -370,6 +371,10 @@ protected:
     //! Called when this DgnModel is about to be deleted from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
+
+    //! Handles on deletion notifications only.
+    //! @note Do not override this method. Override _OnDelete instead.
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDeleteNotify();
 
     //! Called after this DgnModel was loaded from the DgnDb.
     //! @note If you override this method, you @em must call the T_Super implementation.
