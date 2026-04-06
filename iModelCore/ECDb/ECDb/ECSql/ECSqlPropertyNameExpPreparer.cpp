@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECSqlPropertyNameExpPreparer.h"
+#include "ECSqlPreparer.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -148,6 +149,23 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
         if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             continue;
+
+        // If the property is a nav prop RelECClassId outside the SELECT clause, only emit it if it is actually needed
+        if (ecsqlType == ECSqlType::Select &&
+            exp.FindParent(Exp::Type::Selection) == nullptr &&
+            r.GetPropertyMap().GetType() == PropertyMap::Type::NavigationRelECClassId)
+            {
+            const auto singleSelectNode = exp.FindParent(Exp::Type::SingleSelect);
+            const auto classRefExp = exp.GetClassRefExp();
+            if (singleSelectNode != nullptr && classRefExp != nullptr)
+                {
+                // Extract just the navigation property name
+                Utf8StringCR relClassIdAccessString = r.GetPropertyMap().GetAccessString();
+                Utf8StringCR navPropAccessString = relClassIdAccessString.substr(0, relClassIdAccessString.find("."));
+                if (!ECSqlExpPreparer::IsNavPropRelECClassIdNeeded(singleSelectNode->GetAs<SingleSelectStatementExp>(), *classRefExp, navPropAccessString))
+                    continue;
+                }
+            }
 
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
         }
