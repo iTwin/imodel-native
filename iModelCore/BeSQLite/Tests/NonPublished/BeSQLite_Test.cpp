@@ -1556,7 +1556,7 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
     bvector<std::thread> threads;
     for (int t = 0; t < kThreads; ++t)
         {
-        threads.emplace_back([this, t, &perThreadTimes, &anyWorkerFailed]()
+        threads.emplace_back([t, &perThreadTimes, &anyWorkerFailed]()
             {
             auto db = Create(Utf8PrintfString("monotone_clock_mt_%d.db", t).c_str());
             if (!db) { anyWorkerFailed.store(true, std::memory_order_relaxed); return; }
