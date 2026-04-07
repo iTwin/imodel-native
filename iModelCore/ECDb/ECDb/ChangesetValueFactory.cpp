@@ -278,8 +278,11 @@ DbResult ChangesetValueFactory::CreatePoint2d(
     const bool xInChangeset = IsInMap(xCol.GetName(), columnValues);
     const bool yInChangeset = IsInMap(yCol.GetName(), columnValues);
 
-    if (!xInChangeset && !yInChangeset)
-        return BE_SQLITE_OK; // nothing in changeset — skip
+    if (!xInChangeset && !yInChangeset) {
+        LOG.infov("Point2d property '%s': no data in changeset — skipping.",
+                  propertyMap.GetProperty().GetName().c_str());
+        return BE_SQLITE_OK;
+    }
 
     double x = 0.0, y = 0.0;
 
@@ -330,8 +333,11 @@ DbResult ChangesetValueFactory::CreatePoint3d(
     const bool yInChangeset = IsInMap(yCol.GetName(), columnValues);
     const bool zInChangeset = IsInMap(zCol.GetName(), columnValues);
 
-    if (!xInChangeset && !yInChangeset && !zInChangeset)
-        return BE_SQLITE_OK; // nothing in changeset — skip
+    if (!xInChangeset && !yInChangeset && !zInChangeset) {
+        LOG.infov("Point3d property '%s': no data in changeset — skipping.",
+                  propertyMap.GetProperty().GetName().c_str());
+        return BE_SQLITE_OK;
+    }
 
     double x = 0.0, y = 0.0, z = 0.0;
 
@@ -393,8 +399,11 @@ DbResult ChangesetValueFactory::CreatePrimitive(
         return CreatePoint3d(conn, propertyMap, columnValues, fieldsOut, changedProps);
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
-        return BE_SQLITE_OK; // not in changeset — skip
+    if (!IsInMap(primMap.GetColumn().GetName(), columnValues)) {
+        LOG.infov("Primitive property '%s': no data in changeset — skipping.",
+                  propertyMap.GetProperty().GetName().c_str());
+        return BE_SQLITE_OK;
+    }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPrimitiveValue>(
         MakePrimitiveColumnInfo(propertyMap),
@@ -432,8 +441,11 @@ DbResult ChangesetValueFactory::CreateSystem(
         return BE_SQLITE_OK;
     }
 
-    if (!IsInMap(dataMap->GetColumn().GetName(), columnValues))
-        return BE_SQLITE_OK; // not in changeset — skip
+    if (!IsInMap(dataMap->GetColumn().GetName(), columnValues)) {
+        LOG.infov("System property '%s': no data in changeset — skipping.",
+                  propertyMap.GetProperty().GetName().c_str());
+        return BE_SQLITE_OK;
+    }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPrimitiveValue>(columnInfo, GetFromMap(dataMap->GetColumn().GetName(), columnValues)));
     changedProps.emplace_back(propertyMap.GetProperty().GetName());
@@ -479,8 +491,11 @@ DbResult ChangesetValueFactory::CreateNav(
     const bool hasPhysicalRelClassIdInChangeset =
         !relClassIdIsVirtual && IsInMap(relClassIdMap.GetColumn().GetName(), columnValues);
 
-    if (!hasIdInChangeset && !hasPhysicalRelClassIdInChangeset)
-        return BE_SQLITE_OK; // nothing in changeset — skip
+    if (!hasIdInChangeset && !hasPhysicalRelClassIdInChangeset) {
+        LOG.infov("Nav property '%s': no data in changeset — skipping.",
+                  propertyMap.GetProperty().GetName().c_str());
+        return BE_SQLITE_OK;
+    }
 
     // --- Resolve id sub-component ---
     std::unique_ptr<IECSqlValue> idVal;
@@ -556,8 +571,11 @@ DbResult ChangesetValueFactory::CreateArray(
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    if (!IsInMap(primMap.GetColumn().GetName(), columnValues))
-        return BE_SQLITE_OK; // not in changeset — skip
+    if (!IsInMap(primMap.GetColumn().GetName(), columnValues)) {
+        LOG.infov("Array property '%s': no data in changeset — skipping.",
+                  propertyMap.GetProperty().GetName().c_str());
+        return BE_SQLITE_OK;
+    }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetArrayValue>(
         MakeArrayColumnInfo(propertyMap),
