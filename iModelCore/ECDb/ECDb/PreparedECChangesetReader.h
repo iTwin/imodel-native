@@ -58,6 +58,7 @@ public:
     DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
     DbResult IsECTable(bool& isECTable) const;
     DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    DbResult IsIndirectChange(bool& isIndirect) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

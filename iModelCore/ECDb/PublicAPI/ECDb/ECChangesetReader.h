@@ -51,6 +51,7 @@ public:
     ECDB_EXPORT DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
     ECDB_EXPORT DbResult IsECTable(bool& isECTable) const;
     ECDB_EXPORT DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    ECDB_EXPORT DbResult IsIndirectChange(bool& isIndirect) const;
 
 };
 

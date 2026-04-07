@@ -411,4 +411,22 @@ DbResult PreparedECChangesetReader::GetChangesetFetchedPropertyNames(std::vector
     return BE_SQLITE_OK;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedECChangesetReader::IsIndirectChange(bool& isIndirect) const {
+    if (!IsOpen())
+        {
+        LOG.errorv("Attempting to check IsIndirectChange on a closed PreparedECChangesetReader.");
+        return BE_SQLITE_ERROR;
+        }
+    if (!IsStepped())
+        {
+        LOG.errorv("Attempting to check IsIndirectChange on a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
+        return BE_SQLITE_ERROR;
+        }
+    isIndirect = m_currentChange.IsIndirect();
+    return BE_SQLITE_OK;
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

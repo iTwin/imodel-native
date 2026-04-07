@@ -102,4 +102,11 @@ DbResult ECChangesetReader::GetChangesetFetchedPropertyNames(std::vector<Utf8Str
     return m_pimpl->GetChangesetFetchedPropertyNames(out);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::IsIndirectChange(bool& isIndirect) const {
+    return m_pimpl->IsIndirectChange(isIndirect);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

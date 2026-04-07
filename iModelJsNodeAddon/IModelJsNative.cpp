@@ -5153,6 +5153,7 @@ public:
             InstanceMethod("getOpcode",           &NativeECChangesetReader::GetOpcode),
             InstanceMethod("getValue",            &NativeECChangesetReader::GetValue),
             InstanceMethod("getChangesetFetchedPropertyNames", &NativeECChangesetReader::GetChangesetFetchedPropertyNames),
+            InstanceMethod("isIndirectChange",      &NativeECChangesetReader::IsIndirectChange),
         });
         exports.Set("ECChangesetReader", t);
         SET_CONSTRUCTOR(t);
@@ -5321,6 +5322,15 @@ public:
             arr[i++] = Napi::String::New(info.Env(), name.c_str());
         return arr;
         }
+
+    Napi::Value IsIndirectChange(NapiInfoCR info)
+        {
+        bool isIndirect = false;
+        if (m_reader.IsIndirectChange(isIndirect) != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to check if change is indirect", BE_SQLITE_ERROR);
+        return Napi::Boolean::New(info.Env(), isIndirect);
+        }
+
 };
 
 //=======================================================================================
