@@ -198,6 +198,13 @@ export declare namespace IModelJsNative {
   function addFontWorkspace(fileName: LocalFileName, container?: CloudContainer): boolean;
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;
   function enableLocalGcsFiles(yesNo: boolean): void;
+  /** Enable or disable the monotone-clock SQLite VFS shim. When enabled, every call
+   * to SQLite's time functions returns a strictly increasing value, preventing test
+   * failures caused by the millisecond-resolution system clock returning identical
+   * timestamps for rapid successive operations. Call with `false` to restore the
+   * original default VFS. Must be called after the native library is initialized.
+   */
+  function enableMonotoneClock(enable: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
 
   interface TrueTypeFontMetadata {

@@ -7529,6 +7529,19 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Enable or disable the monotone-clock SQLite VFS shim.
+* When enabled every call to SQLite's time functions returns a strictly increasing
+* value, preventing test failures caused by the millisecond-resolution system clock
+* returning identical timestamps for rapid successive operations.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void enableMonotoneClock(NapiInfoCR info)
+    {
+    REQUIRE_ARGUMENT_BOOL(0, enable);
+    BeSQLiteLib::EnableMonotoneClock(enable);
+    }
+
 static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
     REQUIRE_ARGUMENT_STRING(0, fileName);
     auto ret = Napi::Object::New(info.Env());
@@ -7695,6 +7708,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
+        Napi::PropertyDescriptor::Function(env, exports, "enableMonotoneClock", &enableMonotoneClock),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),
