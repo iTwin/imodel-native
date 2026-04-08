@@ -1,0 +1,25 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+o = $(OutputRootDir)build/rustls/
+vendorSrc = $(_MakeFilePath)vendor/
+
+always:
+    !~@mkdir $(o)
+
+$(o)$(libprefix)proxyres$(libext) :
+    ~chdir $(vendorSrc)
+    cargo capi install --release --prefix=$(o)
+
+# Vendor API
+always:
+    ~linkdir "$(BuildContext)VendorAPI/rustls=$(o)/include"
+
+$(BuildContext)Delivery/$(stlibprefix)rustls$(stlibext) : $(o)lib/$(stlibprefix)rustls$(stlibext)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/rustls-license.txt : $(vendorSrc)LICENSE-MIT
+    $(LinkFirstDepToFirstTarget)

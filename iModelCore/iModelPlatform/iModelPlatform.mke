@@ -432,6 +432,7 @@ DLM_NO_BENTLEY_LIB      = 1
 LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinSQLite$(libext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)rustls$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinJpeg$(stlibext) \

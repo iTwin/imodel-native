@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+
+    <Part Name="rustls">
+        <SubPart PartName="LibraryStatic" />
+    </Part>
+
+    <Part Name="rustlslib" BentleyBuildMakeFile="rustls.mke">
+        <Bindings>
+            <VendorAPI Domain="rustls" />
+            <Libs>Delivery/$(stlibprefix)rustls$(stlibext)</Libs>
+            <VendorNotices>Delivery/rustls-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="LibraryStatic">
+        <SubPart PartName="rustlslib" LibType="Static"/>
+    </Part>
+
+</BuildContext>

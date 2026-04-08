@@ -109,6 +109,7 @@ $(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvhea
 objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext) $(o)bcvlog$(oext) $(o)bcvencrypt$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
