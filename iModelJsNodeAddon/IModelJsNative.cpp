@@ -352,6 +352,26 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
     }
 
+    Napi::Value ReanalyzeIfStale(NapiInfoCR info) {
+        Db& db = GetOpenedDb(info);
+        double threshold = 0.3;
+        Db::ReanalyzeMode mode = Db::ReanalyzeMode::Full;
+        if (info[0].IsObject()) {
+            auto opts = info[0].As<Napi::Object>();
+            auto threshMember = opts.Get("threshold");
+            if (threshMember.IsNumber())
+                threshold = threshMember.ToNumber().DoubleValue();
+            auto modeStr = stringMember(opts, "mode", "full");
+            if (modeStr.EqualsI("perTable"))
+                mode = Db::ReanalyzeMode::PerTable;
+        }
+        bool didAnalyze = false;
+        auto status = db.ReanalyzeIfStale(threshold, mode, &didAnalyze);
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error in reanalyzeIfStale", db.GetDbFileName(), status);
+        return Napi::Boolean::New(info.Env(), didAnalyze);
+    }
+
     void EnableWalMode(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
@@ -823,6 +843,7 @@ public:
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
             InstanceMethod("analyze", &SQLiteDb::Analyze),
+            InstanceMethod("reanalyzeIfStale", &SQLiteDb::ReanalyzeIfStale),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
@@ -3301,6 +3322,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("writeFullElementDependencyGraphToFile", &NativeDgnDb::WriteFullElementDependencyGraphToFile),
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
             InstanceMethod("analyze", &NativeDgnDb::Analyze),
+            InstanceMethod("reanalyzeIfStale", &NativeDgnDb::ReanalyzeIfStale),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("enableChangesetStatsTracking", &NativeDgnDb::EnableChangesetStatsTracking),
