@@ -1537,9 +1537,9 @@ export declare namespace IModelJsNative {
   }
 
   interface ECChangesetRowValue {
-    isECTable: boolean;
-    data?: any;
-    key?: string;
+    data: any;
+    key: string;
+    changesetFetchedProps: string[]
   }
 
   class ECChangesetReader {
@@ -1551,11 +1551,14 @@ export declare namespace IModelJsNative {
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, mode: ECChangesetReader.Mode): void;
     public close(): void;
     public step(): boolean;
-    public getTableName(): string;
-    public getOpcode(): DbOpcode;
-    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue;
-    public getChangesetFetchedPropertyNames(): string[];
-    public isIndirectChange(): boolean;
+    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue | undefined;
+    public getChangeMetadata(): { tableName: string, opCode: DbOpcode, isIndirectChange: boolean, isECTable: boolean };
+    public setTableNameFilters(tableNames: string[]): void;
+    public setOpCodeFilters(ops: string[]): void;
+    public setClassIdFilters(classIds: string[]): void;
+    public clearTableNameFilters(): void;
+    public clearOpCodeFilters(): void;
+    public clearClassIdFilters(): void;
   }
 
   namespace ECChangesetReader {

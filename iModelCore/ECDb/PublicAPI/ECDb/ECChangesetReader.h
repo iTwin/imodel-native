@@ -53,6 +53,14 @@ public:
     ECDB_EXPORT DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
     ECDB_EXPORT DbResult IsIndirectChange(bool& isIndirect) const;
 
+    // Filtering
+    ECDB_EXPORT DbResult SetTableFilters(std::vector<Utf8String> const& tableFilters);
+    ECDB_EXPORT DbResult SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
+    ECDB_EXPORT DbResult SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
+    ECDB_EXPORT DbResult ClearTableFilters();
+    ECDB_EXPORT DbResult ClearOpcodeFilters();
+    ECDB_EXPORT DbResult ClearECClassIdFilters();
+
 };
 
 

@@ -109,4 +109,46 @@ DbResult ECChangesetReader::IsIndirectChange(bool& isIndirect) const {
     return m_pimpl->IsIndirectChange(isIndirect);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
+    return m_pimpl->SetTableFilters(tableFilters);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
+    return m_pimpl->SetOpcodeFilters(opcodeFilters);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
+    return m_pimpl->SetECClassIdFilters(ecclassIdFilters);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::ClearTableFilters() {
+    return m_pimpl->ClearTableFilters();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::ClearOpcodeFilters() {
+    return m_pimpl->ClearOpcodeFilters();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECChangesetReader::ClearECClassIdFilters() {
+    return m_pimpl->ClearECClassIdFilters();
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

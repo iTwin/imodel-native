@@ -5149,11 +5149,15 @@ public:
             InstanceMethod("openTxn",             &NativeECChangesetReader::OpenTxn),
             InstanceMethod("close",               &NativeECChangesetReader::Close),
             InstanceMethod("step",                &NativeECChangesetReader::Step),
-            InstanceMethod("getTableName",        &NativeECChangesetReader::GetTableName),
-            InstanceMethod("getOpcode",           &NativeECChangesetReader::GetOpcode),
             InstanceMethod("getValue",            &NativeECChangesetReader::GetValue),
-            InstanceMethod("getChangesetFetchedPropertyNames", &NativeECChangesetReader::GetChangesetFetchedPropertyNames),
-            InstanceMethod("isIndirectChange",      &NativeECChangesetReader::IsIndirectChange),
+            InstanceMethod("getChangeMetadata",     &NativeECChangesetReader::GetChangeMetadata),
+            InstanceMethod("setTableNameFilters",   &NativeECChangesetReader::SetTableNameFilters),
+            InstanceMethod("setOpCodeFilters",      &NativeECChangesetReader::SetOpCodeFilters),
+            InstanceMethod("setClassIdFilters",     &NativeECChangesetReader::SetClassIdFilters),
+            InstanceMethod("clearTableNameFilters", &NativeECChangesetReader::ClearTableNameFilters),
+            InstanceMethod("clearOpCodeFilters",   &NativeECChangesetReader::ClearOpCodeFilters),
+            InstanceMethod("clearClassIdFilters",  &NativeECChangesetReader::ClearClassIdFilters),
+
         });
         exports.Set("ECChangesetReader", t);
         SET_CONSTRUCTOR(t);
@@ -5247,22 +5251,30 @@ public:
         m_reader.Close();
         }
 
-    Napi::Value GetTableName(NapiInfoCR info)
+    Napi::Value GetChangeMetadata(NapiInfoCR info)
         {
+        BeJsNapiObject out(info.Env());
         Utf8String tableName;
         DbResult rc = m_reader.GetTableName(tableName);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getTableName() failed", rc);
-        return Napi::String::New(Env(), tableName.c_str());
-        }
-
-    Napi::Value GetOpcode(NapiInfoCR info)
-        {
+        out["tableName"] = tableName.c_str();
         DbOpcode opcode;
-        DbResult rc = m_reader.GetOpcode(opcode);
+        rc = m_reader.GetOpcode(opcode);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getOpcode() failed", rc);
-        return Napi::Number::New(Env(), (int)opcode);
+        out["opCode"] = static_cast<int>(opcode);
+        bool isIndirectChange;
+        rc = m_reader.IsIndirectChange(isIndirectChange);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "isIndirectChange() failed", rc);
+        out["isIndirectChange"] = isIndirectChange;
+        bool isECTable;
+        rc = m_reader.IsECTable(isECTable);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "isECTable() failed", rc);
+        out["isECTable"] = isECTable;
+        return out;
         }
 
     Napi::Value Step(NapiInfoCR info)
@@ -5282,55 +5294,106 @@ public:
         if (nullptr == ecdb)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getValue() called when no ECDb is associated with the ECChangesetReader", IModelJsNativeErrorKey::BadArg);
         
-        BeJsValue opts(optObj);
-        ECSqlRowAdaptor adaptor(*ecdb);
-        adaptor.GetOptions().FromJson(opts);
 
         Changes::Change::Stage stageEnum = GetStage(info, stage);
 
+        if(m_reader.GetColumnCount(stageEnum) == 0)
+            return Env().Undefined(); //if there are no columns, return undefined instead of an empty object
+        
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*ecdb);
+        adaptor.GetOptions().FromJson(opts);
+        // filling data
         BeJsNapiObject out(info.Env());
-        bool isECTable = false;
-        if (m_reader.IsECTable(isECTable) != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to check if EC table", BE_SQLITE_ERROR);
-        out["isECTable"] = isECTable;
-        if (!isECTable)
-            return out;
-
         BeJsValue rowJson = out["data"];
         if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
-        if (rowJson.empty())
-            out.removeMember("data");
-
+        // filling instance key
         Utf8String instanceKey;
         if (m_reader.GetInstanceKey(stageEnum, instanceKey) != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get instance key", BE_SQLITE_ERROR);
-        if (!instanceKey.empty())
-            out["key"] = instanceKey.c_str();
-
-        return out;
-        }
-
-    Napi::Value GetChangesetFetchedPropertyNames(NapiInfoCR info)
-        {
+        out["key"] = instanceKey.c_str();
+        
+        // filling fetched changeset properties
         std::vector<Utf8String> names;
         if (m_reader.GetChangesetFetchedPropertyNames(names) != BE_SQLITE_OK)
-            return Napi::Array::New(info.Env(), 0);
-        Napi::Array arr = Napi::Array::New(info.Env(), names.size());
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get changeset fetched property names", BE_SQLITE_ERROR);
+        
+        BeJsValue changesetFetchedProps = out["changesetFetchedProps"];
+        changesetFetchedProps.SetEmptyArray();
         uint32_t i = 0;
-        for (auto const& name : names)
-            arr[i++] = Napi::String::New(info.Env(), name.c_str());
-        return arr;
+        for (auto const& name : names) 
+            {
+            changesetFetchedProps[i] = name;
+            i++;
+            }
+        return out;
         }
-
-    Napi::Value IsIndirectChange(NapiInfoCR info)
+    void SetTableNameFilters(NapiInfoCR info)
         {
-        bool isIndirect = false;
-        if (m_reader.IsIndirectChange(isIndirect) != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to check if change is indirect", BE_SQLITE_ERROR);
-        return Napi::Boolean::New(info.Env(), isIndirect);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, tableNames);
+        DbResult rc = m_reader.SetTableFilters(tableNames);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "setTableNameFilters() failed", rc);
         }
-
+    void SetOpCodeFilters(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, ops);
+        std::vector<DbOpcode> opCodesVec;
+        for (auto const& op : ops)
+            {
+                if(op.EqualsIAscii("Inserted"))
+                    opCodesVec.push_back(DbOpcode::Insert);
+                else if(op.EqualsIAscii("Updated"))
+                    opCodesVec.push_back(DbOpcode::Update);
+                else if(op.EqualsIAscii("Deleted"))
+                    opCodesVec.push_back(DbOpcode::Delete);
+                else {
+                    Utf8String error;
+                    error.Sprintf("Invalid opcode filter: %s. Valid values are: Inserted, Updated, Deleted.", op.c_str());
+                    THROW_JS_TYPE_EXCEPTION(error.c_str());
+                }
+            }
+        DbResult rc = m_reader.SetOpcodeFilters(opCodesVec);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "setOpCodeFilters() failed", rc);
+        }
+    void SetClassIdFilters(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, classIds);
+        std::vector<ECClassId> classIdsVec;
+        for (auto const& classIdStr : classIds)
+            {
+            ECClassId classId;
+            if (SUCCESS != ECClassId::FromString(classId, classIdStr.c_str())) {
+                Utf8String error;
+                error.Sprintf("Invalid classId filter: %s. Expected a hex string.", classIdStr.c_str());
+                THROW_JS_TYPE_EXCEPTION(error.c_str());
+            }
+            classIdsVec.push_back(ECClassId(classId.GetValueUnchecked()));
+            }
+        DbResult rc = m_reader.SetECClassIdFilters(classIdsVec);
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "setClassIdFilters() failed", rc);
+        }
+    void ClearTableNameFilters(NapiInfoCR info)
+        {
+        DbResult rc = m_reader.ClearTableFilters();
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "clearTableNameFilters() failed", rc);
+        }
+    void ClearOpCodeFilters(NapiInfoCR info)
+        {
+        DbResult rc = m_reader.ClearOpcodeFilters();
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "clearOpCodeFilters() failed", rc);
+        }
+    void ClearClassIdFilters(NapiInfoCR info)
+        {
+        DbResult rc = m_reader.ClearECClassIdFilters();
+        if (rc != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "clearClassIdFilters() failed", rc);
+        }
 };
 
 //=======================================================================================

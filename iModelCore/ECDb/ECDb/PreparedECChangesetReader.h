@@ -18,18 +18,27 @@ private:
     //! Only columns that are actually present (non-absent) in the changeset are included.
     using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
     ECDbCR                         m_ecdb;
+
+    // change mappings
     bool                           m_invert = false;
     Mode                           m_mode = Mode::All_Properties;
     std::unique_ptr<ChangeStream>  m_changeStream;
     std::unique_ptr<ChangeGroup>   m_changeGroup;
     std::unique_ptr<Changes>       m_changes;
     Changes::Change                m_currentChange;
+
+    // data fields
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedProps;
 
+    //filters
+    std::vector<Utf8String> m_tableFilters;
+    std::vector<DbOpcode> m_opcodeFilters;
+    std::vector<ECN::ECClassId> m_ecclassIdFilters;
+
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
-    void clearFields();
+    void ClearFields();
     DbResult ReFetchValues();
     // Utf8String GetTableName() const { return m_currentChange.GetTableName(); };
     // DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
@@ -39,7 +48,11 @@ private:
     //! Only columns that are present (non-absent) in the changeset are included in the map.
     //! The map can be passed directly to ChangesetValueFactory::Create.
     DbResult GetColumnValues(Stage stage, ColumnValueMap& outMap) const;
-    static void DumpColumnValues(ColumnValueMap const& map);
+    void DumpColumnValues(ColumnValueMap const& map) const;
+    bool IsTableAllowedPostFilter(Utf8StringCR tableName) const;
+    bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
+    bool IsECClassIdAllowedPostFilter(ECClassId const& classId) const;
+    Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
 
@@ -59,6 +72,13 @@ public:
     DbResult IsECTable(bool& isECTable) const;
     DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
     DbResult IsIndirectChange(bool& isIndirect) const;
+    //filtering apis
+    void SetTableFilters(std::vector<Utf8String> const& tableFilters) { m_tableFilters.clear(); m_tableFilters = tableFilters; }
+    void SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) { m_opcodeFilters.clear(); m_opcodeFilters = opcodeFilters; }
+    void SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) { m_ecclassIdFilters.clear(); m_ecclassIdFilters = ecclassIdFilters; }
+    void ClearTableFilters() { m_tableFilters.clear(); }
+    void ClearOpcodeFilters() { m_opcodeFilters.clear(); }
+    void ClearECClassIdFilters() { m_ecclassIdFilters.clear(); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

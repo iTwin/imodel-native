@@ -1598,4 +1598,292 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// Filter by table name: insert both a Container and a Widget inside the tracker.
+// With a "ts_Widget" table filter only the Widget row must be visible.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Filter_ByTableName)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_table.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey containerKey, widgetKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Box')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
+        "INSERT INTO ts.Widget(Name) VALUES('Gizmo')"));
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    reader.SetTableFilters({"ts_Widget"});
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String containerTableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(containerTableName));
+        EXPECT_STREQ("ts_Container", containerTableName.c_str());
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        bool isECTable = false;
+        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+        EXPECT_TRUE(isECTable);
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        EXPECT_TRUE(changedProps.empty()); // should be empty because the filter includes just "ts_Widget" not include "ts_Container"
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just "ts_Widget" not include "ts_Container"
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just "ts_Widget" not include "ts_Container"
+        }
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String widgetTableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(widgetTableName));
+        EXPECT_STREQ("ts_Widget", widgetTableName.c_str());
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        bool isECTable = false;
+        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+        EXPECT_TRUE(isECTable);
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        EXPECT_TRUE(!changedProps.empty());
+        
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// Filter by opcode: insert a Widget and then update it inside the tracker.
+// With a DbOpcode::Update filter only the update row must be visible.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Filter_ByOpcode)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_opcode.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
+        "INSERT INTO ts.Widget(Name) VALUES('Alpha')"));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE ts.Widget SET Name='Beta' WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    reader.SetOpcodeFilters({DbOpcode::Update});
+
+    // Only the Update row must be returned.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    Utf8String tableName;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+    EXPECT_STREQ("ts_Widget", tableName.c_str());
+    DbOpcode opcode;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    bool isECTable = false;
+    ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+    EXPECT_TRUE(isECTable);
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+    EXPECT_TRUE(changedProps.empty()); // This should be empty because the filter includes just update not include
+
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just update not include
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just update not include
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// Filter by ECClassId: insert a Container and a Widget inside the tracker.
+// With a filter on the Widget's ECClassId only the Widget row must be visible.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Filter_ByECClassId)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_classid.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey containerKey, widgetKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Box')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
+        "INSERT INTO ts.Widget(Name) VALUES('Cog')"));
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECN::ECClassId widgetClassId = m_ecdb.Schemas().GetClassId("TestReadCS", "Widget");
+    ASSERT_TRUE(widgetClassId.IsValid());
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    reader.SetECClassIdFilters({widgetClassId});
+
+    // Only the Widget row must be returned.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String containerTableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(containerTableName));
+        EXPECT_STREQ("ts_Container", containerTableName.c_str());
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        bool isECTable = false;
+        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+        EXPECT_TRUE(isECTable);
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        EXPECT_TRUE(changedProps.empty()); // should be empty because the filter includes just "widgetClassId" not include "containerClassId"
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just "widgetClassId" not include "containerClassId"
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just "widgetClassId" not include "containerClassId"
+        }
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String widgetTableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(widgetTableName));
+        EXPECT_STREQ("ts_Widget", widgetTableName.c_str());
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        bool isECTable = false;
+        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+        EXPECT_TRUE(isECTable);
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        EXPECT_TRUE(!changedProps.empty());
+        
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// ClearFilters: set a table filter that hides all rows, verify nothing is returned,
+// then clear the filter and verify all rows are visible again.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_clear.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
+        "INSERT INTO ts.Widget(Name) VALUES('Sprocket')"));
+
+        // First reader: non-matching table filter → no rows.
+        {
+        auto cs = std::make_unique<TestCSChangeSet>();
+        ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+        ECChangesetReader reader;
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+            std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+            ECChangesetReader::Mode::All_Properties));
+
+        reader.SetTableFilters({"no_such_table"});
+        ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        Utf8String widgetTableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(widgetTableName));
+        EXPECT_STREQ("ts_Widget", widgetTableName.c_str());
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        bool isECTable = false;
+        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+        EXPECT_TRUE(isECTable);
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps)); 
+        EXPECT_TRUE(changedProps.empty()); // should be empty because the filter includes just "no_such_table" not include "ts_Widget"
+        
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just "no_such_table" not include "ts_Widget"
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just "no_such_table" not include "ts_Widget"
+        ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+        reader.Close();
+        }
+
+        // Second reader: set the same filter then clear it → the Widget row must appear.
+        {
+        auto cs = std::make_unique<TestCSChangeSet>();
+        ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+        ECChangesetReader reader;
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+            std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+            ECChangesetReader::Mode::All_Properties));
+
+        reader.SetTableFilters({"no_such_table"});
+        reader.ClearTableFilters();
+
+        ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        Utf8String widgetTableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(widgetTableName));
+        EXPECT_STREQ("ts_Widget", widgetTableName.c_str());
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        bool isECTable = false;
+        ASSERT_EQ(BE_SQLITE_OK, reader.IsECTable(isECTable));
+        EXPECT_TRUE(isECTable);
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps)); 
+        EXPECT_TRUE(!changedProps.empty()); // should not be empty because the filter was cleared
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should not be empty because the filter was cleared
+        EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should not be empty because the filter was cleared
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+        reader.Close();
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

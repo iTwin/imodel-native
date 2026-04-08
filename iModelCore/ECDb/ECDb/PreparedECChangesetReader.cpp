@@ -104,7 +104,7 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::clearFields() {
+void PreparedECChangesetReader::ClearFields() {
     m_fields.clear();
     m_changedProps.clear();
 }
@@ -118,7 +118,10 @@ void PreparedECChangesetReader::Close() {
     m_changeStream = nullptr;
     m_changeGroup = nullptr;
     m_invert = false;
-    clearFields();
+    ClearFields();
+    ClearTableFilters();
+    ClearOpcodeFilters();
+    ClearECClassIdFilters();
 }
 
 
@@ -146,21 +149,34 @@ DbResult PreparedECChangesetReader::Step() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::ReFetchValues() {
-    clearFields();
+    ClearFields();
+    m_fields.try_emplace(Stage::New);
+    m_fields.try_emplace(Stage::Old);
     if (m_currentChange.IsValid()) {
-        DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
+        DbOpcode opCode;
+        if(GetOpcode(opCode) != BE_SQLITE_OK)
+            return BE_SQLITE_ERROR;
+        
+        if(!IsOpcodeAllowedPostFilter(opCode)) {
+            LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
+            return BE_SQLITE_OK;
+        }
+        
         Utf8String tableName;
         if(GetTableName(tableName) != BE_SQLITE_OK)
             return BE_SQLITE_ERROR;
+        
+        if(!IsTableAllowedPostFilter(tableName)) {
+            LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
+            return BE_SQLITE_OK;
+        }
 
+        DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
         DbTable const* dbTable = dbSchema.FindTable(tableName);
         if (dbTable == nullptr) {
             LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
             return BE_SQLITE_ERROR;
         }
-
-        m_fields.try_emplace(Stage::New);
-        m_fields.try_emplace(Stage::Old);
 
         bool isECTable = false;
         if(IsECTable(isECTable) != BE_SQLITE_OK)
@@ -170,23 +186,35 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             return BE_SQLITE_OK;
         }
 
-        DbOpcode opCode;
-        if(GetOpcode(opCode) != BE_SQLITE_OK)
-            return BE_SQLITE_ERROR;
-
         if(opCode != DbOpcode::Delete) {
             ColumnValueMap newValues;
             if (GetColumnValues(Stage::New, newValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, m_fields.at(Stage::New), m_mode, m_changedProps) != BE_SQLITE_OK)
+            ECClassId classId;
+            bool isClassIdFromChangeset = false;
+            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
+            if(!IsECClassIdAllowedPostFilter(classId)) {
+                LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
+                return BE_SQLITE_OK;
+            }
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
         if(opCode != DbOpcode::Insert) {
             ColumnValueMap oldValues;
             if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
+            ECClassId classId;
+            bool isClassIdFromChangeset = false;
+            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
+            if(!IsECClassIdAllowedPostFilter(classId)) {
+                LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
+                return BE_SQLITE_OK;
+            }
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedProps) != BE_SQLITE_OK)
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedProps) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
     }
@@ -219,8 +247,8 @@ DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap&
     outMap.clear();
     int colIdx = 0;
     for (DbColumn const* col : dbTable->GetColumns()) {
-        if (col->IsVirtual())
-            continue;  // virtual columns are absent from the changeset
+        if(col->IsVirtual())
+            continue; // Virtual columns are not stored in changesets, so skip them.
         DbValue val = m_currentChange.GetValue(colIdx, stage);
         if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(colIdx)) {
             // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
@@ -238,7 +266,7 @@ DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedECChangesetReader::DumpColumnValues(ColumnValueMap const& map) {
+void PreparedECChangesetReader::DumpColumnValues(ColumnValueMap const& map) const {
     for (auto const& [key, val] : map)
         LOG.debugv("%s = %s", key.c_str(), val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)"));
 }
@@ -427,6 +455,49 @@ DbResult PreparedECChangesetReader::IsIndirectChange(bool& isIndirect) const {
         }
     isIndirect = m_currentChange.IsIndirect();
     return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PreparedECChangesetReader::IsTableAllowedPostFilter(Utf8StringCR tableName) const {
+    if (m_tableFilters.empty())
+        return true;
+    return std::find(m_tableFilters.begin(), m_tableFilters.end(), tableName) != m_tableFilters.end();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PreparedECChangesetReader::IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const {
+    if (m_opcodeFilters.empty())
+        return true;
+    return std::find(m_opcodeFilters.begin(), m_opcodeFilters.end(), opcode) != m_opcodeFilters.end();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PreparedECChangesetReader::IsECClassIdAllowedPostFilter(ECClassId const& classId) const {
+    if (m_ecclassIdFilters.empty())
+        return true;
+    return std::find(m_ecclassIdFilters.begin(), m_ecclassIdFilters.end(), classId) != m_ecclassIdFilters.end();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String PreparedECChangesetReader::DbOpcodeToString(DbOpcode const& opcode) const {
+    switch (opcode) {
+        case DbOpcode::Insert:
+            return "Insert";
+        case DbOpcode::Update:
+            return "Update";
+        case DbOpcode::Delete:
+            return "Delete";
+        default:
+            return "Unknown";
+    }
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

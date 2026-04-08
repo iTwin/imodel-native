@@ -38,6 +38,14 @@ public:
     DbResult IsECTable(bool& isECTable) const;
     DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
     DbResult IsIndirectChange(bool& isIndirect) const;
+
+    // Filtering
+    DbResult SetTableFilters(std::vector<Utf8String> const& tableFilters);
+    DbResult SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
+    DbResult SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
+    DbResult ClearTableFilters();
+    DbResult ClearOpcodeFilters();
+    DbResult ClearECClassIdFilters();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

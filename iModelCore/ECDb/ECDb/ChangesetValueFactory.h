@@ -104,20 +104,20 @@ private:
     //! Skips when neither coordinate is in the changeset.
     //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
     static DbResult CreatePoint2d(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&,
+                                  ColumnValueMap const&, DbTable const&,
                                   std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                   std::vector<Utf8String>& changedProps);
 
     //! Skips when no coordinate is in the changeset.
     //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
     static DbResult CreatePoint3d(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&,
+                                  ColumnValueMap const&, DbTable const&,
                                   std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                   std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent from the changeset.
     static DbResult CreatePrimitive(ECDbCR conn, PropertyMap const&,
-                                    ColumnValueMap const&,
+                                    ColumnValueMap const&, DbTable const&,
                                     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                     std::vector<Utf8String>& changedProps);
 
@@ -131,13 +131,13 @@ private:
     //! Skips when neither physical component is in the changeset.
     //! Returns BE_SQLITE_ERROR when a component is partly present but the DB fetch fails.
     static DbResult CreateNav(ECDbCR conn, PropertyMap const&,
-                              ColumnValueMap const&,
+                              ColumnValueMap const&, DbTable const&,
                               std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                               std::vector<Utf8String>& changedProps);
 
     //! Skips when the column is absent from the changeset.
     static DbResult CreateArray(ECDbCR conn, PropertyMap const&,
-                                ColumnValueMap const&,
+                                ColumnValueMap const&, DbTable const&,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                 std::vector<Utf8String>& changedProps);
 
@@ -157,20 +157,18 @@ private:
     // ------------------------------------------------------------------
 
     //! Tries to resolve classMap + classId from the column values map's class-id entry.
-    //! Returns true and populates @p outClassMap / @p outClassId on success.
-    static bool TryResolveClassMapFromChangeset(DbTable const& dbTable,
+    //! Returns true and populates @p outClassId on success.
+    static bool TryResolveClassIdFromChangeset(DbTable const& dbTable,
                                                 ColumnValueMap const& columnValues,
                                                 ECDbCR conn,
-                                                const ClassMap*& outClassMap,
                                                 ECClassId& outClassId);
 
     //! Tries to resolve classMap + classId via a live DB seek on the first PK column.
     //! Returns false immediately when the ECClassId column is virtual.
-    //! Returns true and populates @p outClassMap / @p outClassId on success.
-    static bool TryResolveClassMapFromDbSeek(DbTable const& dbTable,
+    //! Returns true and populates @p outClassId on success.
+    static bool TryResolveClassIdFromDbSeek(DbTable const& dbTable,
                                              ColumnValueMap const& columnValues,
                                              ECDbCR conn,
-                                             const ClassMap*& outClassMap,
                                              ECClassId& outClassId);
 
     //! Reads ECInstanceId from @p columnValues, validates it, creates the field.
@@ -202,12 +200,22 @@ private:
 
     // ------------------------------------------------------------------
 public:
+    //! Resolves the ClassMap, ECClassId, and whether the class id came from the changeset
+    //! for a single changeset row.  Tries the changeset first, then a live DB seek,
+    //! then falls back to the table's root ClassMap.
+    //! Returns BE_SQLITE_OK and populates all three out params on success; BE_SQLITE_ERROR otherwise.
+    static DbResult ResolveClassId(ECDbCR conn, DbTable const& tbl,
+                                     ColumnValueMap const& columnValues,
+                                     ECClassId& resolvedClassIdOut,
+                                     bool& classIdFromChangesetOut);
+
     //! Builds the IECSqlValue fields for one changeset row.
     //! If @p changedProps is non-null it is filled with the access paths of all properties
     //! / sub-properties that have data in the changeset.
     //! Examples: "Name", "Pos2d", "Pos2d.X", "Details.Label", "Owner", "Owner.Id".
     static DbResult Create(ECDbCR conn, DbTable const& tbl,
                             ColumnValueMap const& columnValues,
+                            ECClassId resolvedClassId, bool classIdFromChangeset,
                             std::vector<std::unique_ptr<IECSqlValue>>& fields,
                             ECChangesetReader::Mode mode,
                             std::vector<Utf8String>& changedProps);
