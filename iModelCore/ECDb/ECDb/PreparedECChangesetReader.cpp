@@ -157,7 +157,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
         if(GetOpcode(opCode) != BE_SQLITE_OK)
             return BE_SQLITE_ERROR;
         
-        if(!IsOpcodeAllowedPostFilter(opCode)) {
+        if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
             LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
             return BE_SQLITE_OK;
         }
@@ -166,7 +166,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
         if(GetTableName(tableName) != BE_SQLITE_OK)
             return BE_SQLITE_ERROR;
         
-        if(!IsTableAllowedPostFilter(tableName)) {
+        if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
             LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
             return BE_SQLITE_OK;
         }
@@ -194,7 +194,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             bool isClassIdFromChangeset = false;
             if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
-            if(!IsECClassIdAllowedPostFilter(classId)) {
+            if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
                 return BE_SQLITE_OK;
             }
@@ -209,7 +209,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
             bool isClassIdFromChangeset = false;
             if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
-            if(!IsECClassIdAllowedPostFilter(classId)) {
+            if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter for old values
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
                 return BE_SQLITE_OK;
             }
