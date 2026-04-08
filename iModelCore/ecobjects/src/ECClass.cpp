@@ -1316,8 +1316,7 @@ ECObjectsStatus ECClass::CreatePropertyInternal(TProperty*& ecProperty, Utf8Stri
 
     if (outProperty != ecProperty)
         {
-        delete ecProperty;
-        ecProperty = nullptr;
+        // AddProperty already freed the original property when it found a compatible existing one
         ecProperty = dynamic_cast<TProperty*>(outProperty);
         if (ecProperty == nullptr)
             {
