@@ -3342,6 +3342,29 @@ public:
     //! Run ANALYZE command to gather statistics about tables and indices.
     BE_SQLITE_EXPORT DbResult Analyze();
 
+    //! Controls the scope of reanalysis when stale tables are detected.
+    enum class ReanalyzeMode
+        {
+        Full,     //!< If any table is stale, run ANALYZE on the entire database.
+        PerTable, //!< Run ANALYZE only on the individual stale tables.
+        };
+
+    //! Check if query planner statistics are stale and, if so, recompute them.
+    //! Statistics are considered stale when a table's actual row count has diverged from
+    //! its recorded count in sqlite_stat1 by more than the given threshold ratio. If the
+    //! database has never been analyzed, a full ANALYZE is always performed regardless of mode.
+    //! @note This method does NOT clear any caches. If it returns didAnalyze=true, the caller
+    //!       is responsible for clearing statement caches or any higher-level caches as needed.
+    //! @param threshold The minimum fractional change in row count to trigger reanalysis
+    //!        (e.g., 0.3 means 30% change). Must be > 0.
+    //! @param mode Controls whether stale tables are reanalyzed individually or the entire
+    //!        database is reanalyzed when any staleness is detected.
+    //! @param[out] didAnalyze If non-null, set to true if ANALYZE was actually performed,
+    //!             false otherwise. When true the caller should clear relevant caches.
+    //! @return BE_SQLITE_OK if completed successfully (whether or not ANALYZE was run),
+    //!         or an error code if ANALYZE or a staleness query failed.
+    BE_SQLITE_EXPORT DbResult ReanalyzeIfStale(double threshold = 0.3, ReanalyzeMode mode = ReanalyzeMode::Full, bool* didAnalyze = nullptr);
+
     BE_SQLITE_EXPORT DbResult RestartDefaultTxn();
 
     //! DO NOT call this under normal circumstances. It is for obscure cases where you are opening an untrusted file (i.e. NOT from the hub).
