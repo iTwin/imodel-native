@@ -1887,18 +1887,6 @@ TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
     }
 
 //---------------------------------------------------------------------------------------
-// Schema uses TablePerHierarchy + ShareColumns(MaxSharedColumnsBeforeOverflow=3) so that
-// a concrete subclass with 5 string properties A–E forces creation of an overflow table:
-//   Primary table  to_Entity          → ECInstanceId, ECClassId, ps1(A), ps2(B), ps3(C)
-//   Overflow table to_Entity_Overflow → ECInstanceId, ECClassId, os1(D), os2(E)
-//
-// Part 1 – INSERT inside tracker:
-//   The changeset contains two physical-table rows (primary + overflow), so the reader
-//   steps twice.  Each step yields only the properties whose columns live in that table.
-//
-// Part 2 – UPDATE only overflow properties (D, E) inside tracker:
-//   Only to_Entity_Overflow is written, so the reader steps once and yields only the
-//   modified overflow properties.  A, B, C (primary table) must not appear.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
@@ -2049,10 +2037,6 @@ TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
 
     // -----------------------------------------------------------------------
     // Part 2: UPDATE only D and E (overflow columns) — only to_Entity_Overflow is written.
-    //   The primary table is untouched, so its row must NOT appear in the changeset.
-    //   ECClassId is not in the UPDATE changeset (neither PK nor changed), so it is
-    //   resolved via a DB seek; classIdFromChangeset=false means it does NOT appear
-    //   in changedProps.
     // -----------------------------------------------------------------------
     {
     TestCSChangeTracker tracker2(m_ecdb);
@@ -2131,20 +2115,6 @@ TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     }
 
 //---------------------------------------------------------------------------------------
-// Schema uses TablePerHierarchy + JoinedTablePerDirectSubclass.
-// Two physical tables are created:
-//   Primary tj_JBase  → ECInstanceId, ECClassId (physical), BaseCode
-//   Joined  tj_JChild → ECInstanceId, (ECClassId virtual – not tracked by SQLite), P, Q
-//
-// An INSERT of JChild must produce exactly two changeset rows, one per table.
-//
-// Joined-table row specifics:
-//   - ECClassId column is virtual → absent from SQLite changeset → absent from columnValues
-//   - classId resolved via GetRootClassMap(tj_JChild) → JChild's class id
-//   - classIdFromChangeset=false → ECClassId absent from changedProps
-//   - FindDataPropertyMap(tj_JChild) succeeds directly on JChild's ECInstanceIdPropertyMap
-//     because JChild is the exclusive root of tj_JChild and its system prop map was
-//     populated during MapSystemColumns (no fallback to the parent table needed)
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ECChangesetReaderTests, JoinedTable_Insert)
@@ -2277,27 +2247,6 @@ TEST_F(ECChangesetReaderTests, JoinedTable_Insert)
     }
 
 //---------------------------------------------------------------------------------------
-// Schema: JBase (abstract, TablePerHierarchy + JoinedTablePerDirectSubclass +
-//         ShareColumns(ApplyToSubclassesOnly=true, MaxSharedColumnsBeforeOverflow=1))
-//         + JChild (sealed) with Name (string) and Age (int).
-//
-// Because MaxSharedColumnsBeforeOverflow=1 and the joined table already uses one shared
-// column slot for Name, Age overflows to a dedicated table:
-//   Primary  tjo_JBase           → ECInstanceId, ECClassId (physical), BaseCode
-//   Joined   tjo_JChild          → ECInstanceId, (ECClassId virtual), ps1 (Name)
-//   Overflow tjo_JChild_Overflow → ECInstanceId, ECClassId (physical!), os1 (Age)
-//
-// The ECClassId in the overflow table is PHYSICAL because CreateOrGetOverflowTable
-// copies the persistence type of the parent's ECInstanceId column (Physical) for
-// both system columns when building the overflow table — even if the parent joined
-// table's ECClassId is virtual.  Therefore classIdFromChangeset=true for the overflow
-// row but classIdFromChangeset=false for the joined-table row.
-//
-// ResolveInstanceId on the overflow row:
-//   FindDataPropertyMap(tjo_JChild_Overflow) succeeds directly on JChild's
-//   ECInstanceIdPropertyMap because SetOverflowTable registered tjo_JChild_Overflow
-//   via AppendSystemColumnFromNewlyAddedDataTable.  The parent-fallback branch is not
-//   entered.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
@@ -2386,8 +2335,6 @@ TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
         }
 
     // --- Changeset row 2: joined table (tjo_JChild) ---
-    // ECClassId is virtual in the joined table → resolved via GetRootClassMap, not changeset.
-    // The single shared slot ps1 holds Name; Age exceeded the limit and went to the overflow.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {
         Utf8String tableName;
@@ -2427,10 +2374,6 @@ TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
         }
 
     // --- Changeset row 3: overflow of joined table (tjo_JChild_Overflow) ---
-    // ECClassId in this overflow table is PHYSICAL: CreateOrGetOverflowTable uses
-    // pk->GetPersistenceType() (= Physical) for both system columns, regardless of whether
-    // the parent joined table's ECClassId was virtual.
-    // Therefore classIdFromChangeset=true here — unlike the joined-table row above.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {
         Utf8String tableName;
@@ -2465,6 +2408,168 @@ TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
         EXPECT_TRUE(hasName("Age"));
         EXPECT_FALSE(hasName("Name"));     // Name is in tjo_JChild (joined table)
         EXPECT_FALSE(hasName("BaseCode")); // BaseCode is in tjo_JBase (primary table)
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, ExistingTable_InsertAndUpdate)
+    {
+    // Step 1: create the raw SQLite table BEFORE importing the EC schema.
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("csreader_existing.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(
+        "CREATE TABLE te_Gadget(Id INTEGER PRIMARY KEY, Label TEXT, Score INTEGER)"));
+
+    Utf8CP existingSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestExisting" alias="te" version="01.00.00"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Gadget" modifier="Sealed">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>ExistingTable</MapStrategy>
+                    <TableName>te_Gadget</TableName>
+                    <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Label" typeName="string"/>
+            <ECProperty propertyName="Score" typeName="int"/>
+        </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(existingSchema)));
+
+    // -----------------------------------------------------------------------
+    // Part 1: INSERT
+    // -----------------------------------------------------------------------
+    ECInstanceId gadgetKey(BeInt64Id(1)); /* Gadget's class id will be 1 since it's the first entity class in the schema */
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(
+        "INSERT INTO te_Gadget(Id, Label, Score) VALUES(1, 'widget', 99)"));
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    // ExistingTable maps to exactly one physical table — exactly one changeset row.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("te_Gadget", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId + ECClassId (virtual → resolved via GetRootClassMap) + Label + Score
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(gadgetKey, v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        // Virtual ECClassId — resolved via GetRootClassMap(te_Gadget) → Gadget's class id.
+        EXPECT_EQ(m_ecdb.Schemas().GetClass("TestExisting","Gadget")->GetId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("Label", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("widget", v2.GetText());
+
+        IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+        EXPECT_STREQ("Score", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(99, v3.GetInt());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        // ECClassId is virtual — not in the SQLite changeset, so classIdFromChangeset=false.
+        EXPECT_FALSE(hasName("ECClassId"));
+        EXPECT_TRUE(hasName("Label"));
+        EXPECT_TRUE(hasName("Score"));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+    // -----------------------------------------------------------------------
+    // Part 2: UPDATE Label and Score.
+    // -----------------------------------------------------------------------
+    {
+    TestCSChangeTracker tracker2(m_ecdb);
+    tracker2.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(
+        "UPDATE te_Gadget SET Label='gadget', Score=42 WHERE Id=1"));
+
+    auto cs2 = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs2.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("te_Gadget", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Update, opcode);
+
+        // ECInstanceId, ECClassId (virtual), Label, Score
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+        // --- New stage ---
+        IECSqlValue const& newId = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", newId.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(gadgetKey, newId.GetId<ECInstanceId>());
+
+        IECSqlValue const& newLabel = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("Label", newLabel.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("gadget", newLabel.GetText());
+
+        IECSqlValue const& newScore = reader.GetValue(Changes::Change::Stage::New, 3);
+        EXPECT_STREQ("Score", newScore.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(42, newScore.GetInt());
+
+        // --- Old stage ---
+        IECSqlValue const& oldLabel = reader.GetValue(Changes::Change::Stage::Old, 2);
+        EXPECT_STREQ("Label", oldLabel.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("widget", oldLabel.GetText());
+
+        IECSqlValue const& oldScore = reader.GetValue(Changes::Change::Stage::Old, 3);
+        EXPECT_STREQ("Score", oldScore.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(99, oldScore.GetInt());
+
+        // ECClassId virtual → not from changeset → absent from changedProps.
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_FALSE(hasName("ECClassId")); // virtual — resolved via GetRootClassMap, not changeset
+        EXPECT_TRUE(hasName("Label"));
+        EXPECT_TRUE(hasName("Score"));
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
