@@ -3558,7 +3558,7 @@ struct JobSubjectUtils
     //! @param[in] bridgeRegSubKey the registry subkey identifier used by the bridge.
     //! @param[in] comments Optional comments
     //! @param[in] properties Optional bridge-specific properties
-    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, JsonValueCP properties = nullptr);
+    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, BeJsConst const* properties = nullptr);
 
     //! Get the job's Bridge property. This is the registry subkey value used by the bridge.
     //! @param[in] jobSubject The job subject
@@ -3642,7 +3642,7 @@ public:
     //! * DgnDbStatus::InvalidCode if `props` does not contain a valid, non-empty code.
     //! @param[in] jsonProperties Optional. If specified, these properties will be stored in the "ExternalSource" namespace of the element's JsonProperties.
     //! @return a non-persistent ExternalSource if successful or nullptr if not
-    DGNPLATFORM_EXPORT static ExternalSourcePtr Create(DgnDbStatus* status, Properties const& props, RepositoryLinkCR rlink, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsConst(Json::Value()));
+    DGNPLATFORM_EXPORT static ExternalSourcePtr Create(DgnDbStatus* status, Properties const& props, RepositoryLinkCR rlink, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsDocument());
 
     //! @name Source
     //! @{
@@ -3729,7 +3729,7 @@ public:
     //! * DgnDbStatus::InvalidCode if `props` does not contain a valid, non-empty code.
     //! @param[in] jsonProperties Optional. If specified, these properties will be stored in the "ExternalSource" namespace of the element's JsonProperties.
     //! @return a non-persistent ExternalSourceGroup if successful or nullptr if not
-    DGNPLATFORM_EXPORT static ExternalSourceGroupPtr Create(DgnDbStatus* status, DgnDbR db, Properties const& props, RepositoryLinkCP rlink = nullptr, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsConst(Json::Value()));
+    DGNPLATFORM_EXPORT static ExternalSourceGroupPtr Create(DgnDbStatus* status, DgnDbR db, Properties const& props, RepositoryLinkCP rlink = nullptr, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsDocument());
 
     DGNPLATFORM_EXPORT DgnDbStatus Add(ExternalSourceCR, int memberPriority = 0) const;
     DGNPLATFORM_EXPORT DgnDbStatus Remove(ExternalSourceCR) const;
