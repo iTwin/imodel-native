@@ -18,8 +18,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl, ECDbCR conn) {
     ECClassId rootClassId;
     if (tbl.GetType() == DbTable::Type::Overflow) {
-        // Overflow tables carry no class-id column; the root class is owned by the parent.
-        rootClassId = tbl.GetLinkNode().GetParent()->GetTable().GetExclusiveRootECClassId();
+        DbTable const& parentTbl = tbl.GetLinkNode().GetParent()->GetTable();
+        LOG.infov("Resolving root class for overflow table '%s' via parent table '%s'.", tbl.GetName().c_str(), parentTbl.GetName().c_str());       
+        rootClassId = parentTbl.GetExclusiveRootECClassId();
     } else {
         rootClassId = tbl.GetExclusiveRootECClassId();
     }
@@ -729,8 +730,13 @@ DbResult ChangesetValueFactory::ResolveInstanceId(
             continue;
 
         const auto& sysMap = propertyMap->GetAs<SystemPropertyMap>();
-        const auto* dataMap = sysMap.FindDataPropertyMap(primaryDbTable);
-        BeAssert(dataMap != nullptr && "ECInstanceId SystemPropertyMap has no data property map for the given table");
+        const SystemPropertyMap::PerTableIdPropertyMap* dataMap = sysMap.FindDataPropertyMap(primaryDbTable);
+        if(dataMap == nullptr && primaryDbTable.GetType() == DbTable::Type::Overflow) {
+            DbTable const& parentTable = primaryDbTable.GetLinkNode().GetParent()->GetTable();
+            LOG.infov("ECInstanceId property map not found for overflow table '%s'; trying parent table '%s'.",
+                      primaryDbTable.GetName().c_str(), parentTable.GetName().c_str());
+            dataMap = sysMap.FindDataPropertyMap(parentTable);
+        }
         if (dataMap == nullptr) {
             LOG.errorv("No ECInstanceId data property map found for table '%s'.",
                        primaryDbTable.GetName().c_str());

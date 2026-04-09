@@ -1886,4 +1886,590 @@ TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// Schema uses TablePerHierarchy + ShareColumns(MaxSharedColumnsBeforeOverflow=3) so that
+// a concrete subclass with 5 string properties A–E forces creation of an overflow table:
+//   Primary table  to_Entity          → ECInstanceId, ECClassId, ps1(A), ps2(B), ps3(C)
+//   Overflow table to_Entity_Overflow → ECInstanceId, ECClassId, os1(D), os2(E)
+//
+// Part 1 – INSERT inside tracker:
+//   The changeset contains two physical-table rows (primary + overflow), so the reader
+//   steps twice.  Each step yields only the properties whose columns live in that table.
+//
+// Part 2 – UPDATE only overflow properties (D, E) inside tracker:
+//   Only to_Entity_Overflow is written, so the reader steps once and yields only the
+//   modified overflow properties.  A, B, C (primary table) must not appear.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
+    {
+    Utf8CP overflowSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestOver" alias="to" version="01.00.00"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Entity" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <ApplyToSubclassesOnly>true</ApplyToSubclassesOnly>
+                    <MaxSharedColumnsBeforeOverflow>3</MaxSharedColumnsBeforeOverflow>
+                </ShareColumns>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="BigThing" modifier="Sealed">
+            <BaseClass>Entity</BaseClass>
+            <ECProperty propertyName="A" typeName="string"/>
+            <ECProperty propertyName="B" typeName="string"/>
+            <ECProperty propertyName="C" typeName="string"/>
+            <ECProperty propertyName="D" typeName="string"/>
+            <ECProperty propertyName="E" typeName="string"/>
+        </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_overflow.ecdb", SchemaItem(overflowSchema)));
+
+    // -----------------------------------------------------------------------
+    // Part 1: INSERT inside tracker → two changeset entries (primary + overflow)
+    // -----------------------------------------------------------------------
+    ECInstanceKey bigKey;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO to.BigThing(A, B, C, D, E) VALUES('alpha', 'beta', 'gamma', 'delta', 'epsilon')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bigKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    // --- Changeset row 1: primary table (to_Entity) ---
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("to_Entity", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId, ECClassId, A, B, C — D and E live in the overflow table.
+        ASSERT_EQ(5, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(bigKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(bigKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("A", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("alpha", v2.GetText());
+
+        IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+        EXPECT_STREQ("B", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("beta", v3.GetText());
+
+        IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
+        EXPECT_STREQ("C", v4.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("gamma", v4.GetText());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("ECClassId"));
+        EXPECT_TRUE(hasName("A"));
+        EXPECT_TRUE(hasName("B"));
+        EXPECT_TRUE(hasName("C"));
+        EXPECT_FALSE(hasName("D")); // D lives in overflow table — absent from this row
+        EXPECT_FALSE(hasName("E")); // E lives in overflow table — absent from this row
+        }
+
+    // --- Changeset row 2: overflow table (to_Entity_Overflow) ---
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("to_Entity_Overflow", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId, ECClassId, D, E — A, B, C live in the primary table.
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(bigKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(bigKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("D", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("delta", v2.GetText());
+
+        IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+        EXPECT_STREQ("E", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("epsilon", v3.GetText());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("ECClassId"));
+        EXPECT_TRUE(hasName("D"));
+        EXPECT_TRUE(hasName("E"));
+        EXPECT_FALSE(hasName("A")); // A lives in primary table — absent from this overflow row
+        EXPECT_FALSE(hasName("B"));
+        EXPECT_FALSE(hasName("C"));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+    // -----------------------------------------------------------------------
+    // Part 2: UPDATE only D and E (overflow columns) — only to_Entity_Overflow is written.
+    //   The primary table is untouched, so its row must NOT appear in the changeset.
+    //   ECClassId is not in the UPDATE changeset (neither PK nor changed), so it is
+    //   resolved via a DB seek; classIdFromChangeset=false means it does NOT appear
+    //   in changedProps.
+    // -----------------------------------------------------------------------
+    {
+    TestCSChangeTracker tracker2(m_ecdb);
+    tracker2.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE to.BigThing SET D='delta2', E='epsilon2' WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, bigKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs2 = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs2.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    // Only the overflow table row must appear; primary table was not written.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("to_Entity_Overflow", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Update, opcode);
+
+        // ECInstanceId, ECClassId, D, E
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+        // New stage
+        IECSqlValue const& newId = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", newId.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(bigKey.GetInstanceId(), newId.GetId<ECInstanceId>());
+
+        IECSqlValue const& newD = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("D", newD.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("delta2", newD.GetText());
+
+        IECSqlValue const& newE = reader.GetValue(Changes::Change::Stage::New, 3);
+        EXPECT_STREQ("E", newE.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("epsilon2", newE.GetText());
+
+        // Old stage
+        IECSqlValue const& oldD = reader.GetValue(Changes::Change::Stage::Old, 2);
+        EXPECT_STREQ("D", oldD.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("delta", oldD.GetText());
+
+        IECSqlValue const& oldE = reader.GetValue(Changes::Change::Stage::Old, 3);
+        EXPECT_STREQ("E", oldE.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("epsilon", oldE.GetText());
+
+        // ECClassId was not in the UPDATE changeset (neither PK nor changed column),
+        // so classIdFromChangeset=false and ECClassId does not appear in changedProps.
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("D"));
+        EXPECT_TRUE(hasName("E"));
+        EXPECT_FALSE(hasName("ECClassId")); // resolved via DB seek, not from changeset
+        EXPECT_FALSE(hasName("A")); // untouched and stored in primary table
+        EXPECT_FALSE(hasName("B"));
+        EXPECT_FALSE(hasName("C"));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// Schema uses TablePerHierarchy + JoinedTablePerDirectSubclass.
+// Two physical tables are created:
+//   Primary tj_JBase  → ECInstanceId, ECClassId (physical), BaseCode
+//   Joined  tj_JChild → ECInstanceId, (ECClassId virtual – not tracked by SQLite), P, Q
+//
+// An INSERT of JChild must produce exactly two changeset rows, one per table.
+//
+// Joined-table row specifics:
+//   - ECClassId column is virtual → absent from SQLite changeset → absent from columnValues
+//   - classId resolved via GetRootClassMap(tj_JChild) → JChild's class id
+//   - classIdFromChangeset=false → ECClassId absent from changedProps
+//   - FindDataPropertyMap(tj_JChild) succeeds directly on JChild's ECInstanceIdPropertyMap
+//     because JChild is the exclusive root of tj_JChild and its system prop map was
+//     populated during MapSystemColumns (no fallback to the parent table needed)
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, JoinedTable_Insert)
+    {
+    Utf8CP joinedSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestJoined" alias="tj" version="01.00.00"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="JBase" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="BaseCode" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="JChild" modifier="Sealed">
+            <BaseClass>JBase</BaseClass>
+            <ECProperty propertyName="P" typeName="int"/>
+            <ECProperty propertyName="Q" typeName="string"/>
+        </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_joined.ecdb", SchemaItem(joinedSchema)));
+
+    ECInstanceKey jChildKey;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tj.JChild(BaseCode, P, Q) VALUES('hello', 42, 'world')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(jChildKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    // --- Changeset row 1: primary table (tj_JBase) ---
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("tj_JBase", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId, ECClassId (physical — in changeset), BaseCode
+        ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("BaseCode", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("hello", v2.GetText());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("ECClassId")); // physical in the primary table — present in changeset
+        EXPECT_TRUE(hasName("BaseCode"));
+        EXPECT_FALSE(hasName("P")); // P lives in the joined table
+        EXPECT_FALSE(hasName("Q")); // Q lives in the joined table
+        }
+
+    // --- Changeset row 2: joined table (tj_JChild) ---
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("tj_JChild", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId, ECClassId (via GetRootClassMap — virtual col not in changeset), P, Q
+        ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        // Virtual ECClassId resolved via GetRootClassMap → JChild's class id.
+        EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("P", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(42, v2.GetInt());
+
+        IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+        EXPECT_STREQ("Q", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("world", v3.GetText());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("P"));
+        EXPECT_TRUE(hasName("Q"));
+        EXPECT_TRUE(hasName("ECClassId"));
+        // BaseCode lives in the primary table — absent from this joined-table row.
+        EXPECT_FALSE(hasName("BaseCode"));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// Schema: JBase (abstract, TablePerHierarchy + JoinedTablePerDirectSubclass +
+//         ShareColumns(ApplyToSubclassesOnly=true, MaxSharedColumnsBeforeOverflow=1))
+//         + JChild (sealed) with Name (string) and Age (int).
+//
+// Because MaxSharedColumnsBeforeOverflow=1 and the joined table already uses one shared
+// column slot for Name, Age overflows to a dedicated table:
+//   Primary  tjo_JBase           → ECInstanceId, ECClassId (physical), BaseCode
+//   Joined   tjo_JChild          → ECInstanceId, (ECClassId virtual), ps1 (Name)
+//   Overflow tjo_JChild_Overflow → ECInstanceId, ECClassId (physical!), os1 (Age)
+//
+// The ECClassId in the overflow table is PHYSICAL because CreateOrGetOverflowTable
+// copies the persistence type of the parent's ECInstanceId column (Physical) for
+// both system columns when building the overflow table — even if the parent joined
+// table's ECClassId is virtual.  Therefore classIdFromChangeset=true for the overflow
+// row but classIdFromChangeset=false for the joined-table row.
+//
+// ResolveInstanceId on the overflow row:
+//   FindDataPropertyMap(tjo_JChild_Overflow) succeeds directly on JChild's
+//   ECInstanceIdPropertyMap because SetOverflowTable registered tjo_JChild_Overflow
+//   via AppendSystemColumnFromNewlyAddedDataTable.  The parent-fallback branch is not
+//   entered.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
+    {
+    Utf8CP overflowJoinedSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestOverJoined" alias="tjo" version="01.00.00"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="JBase" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <ApplyToSubclassesOnly>true</ApplyToSubclassesOnly>
+                    <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="BaseCode" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="JChild" modifier="Sealed">
+            <BaseClass>JBase</BaseClass>
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="Age" typeName="int"/>
+        </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_overflow_joined.ecdb", SchemaItem(overflowJoinedSchema)));
+
+    ECInstanceKey jChildKey;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tjo.JChild(BaseCode, Name, Age) VALUES('hello', 'Alice', 30)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(jChildKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ECChangesetReader::Mode::All_Properties));
+
+    // --- Changeset row 1: primary table (tjo_JBase) ---
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("tjo_JBase", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId, ECClassId (physical — in changeset), BaseCode
+        ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("BaseCode", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("hello", v2.GetText());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("ECClassId"));
+        EXPECT_TRUE(hasName("BaseCode"));
+        EXPECT_FALSE(hasName("Name")); // Name is in the joined table
+        EXPECT_FALSE(hasName("Age"));  // Age is in the overflow table
+        }
+
+    // --- Changeset row 2: joined table (tjo_JChild) ---
+    // ECClassId is virtual in the joined table → resolved via GetRootClassMap, not changeset.
+    // The single shared slot ps1 holds Name; Age exceeded the limit and went to the overflow.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("tjo_JChild", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId + ECClassId (via GetRootClassMap) + Name;  Age is in the overflow table.
+        ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        // Virtual ECClassId in tjo_JChild — resolved via GetRootClassMap → JChild's class id.
+        EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_STREQ("Alice", v2.GetText());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("Name"));
+        EXPECT_TRUE(hasName("ECClassId"));
+        // Age overflowed; BaseCode is in the primary table — both absent from this row.
+        EXPECT_FALSE(hasName("Age"));
+        EXPECT_FALSE(hasName("BaseCode"));
+        }
+
+    // --- Changeset row 3: overflow of joined table (tjo_JChild_Overflow) ---
+    // ECClassId in this overflow table is PHYSICAL: CreateOrGetOverflowTable uses
+    // pk->GetPersistenceType() (= Physical) for both system columns, regardless of whether
+    // the parent joined table's ECClassId was virtual.
+    // Therefore classIdFromChangeset=true here — unlike the joined-table row above.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+        {
+        Utf8String tableName;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetTableName(tableName));
+        EXPECT_STREQ("tjo_JChild_Overflow", tableName.c_str());
+
+        DbOpcode opcode;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetOpcode(opcode));
+        ASSERT_EQ(DbOpcode::Insert, opcode);
+
+        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+        // ECInstanceId, ECClassId (physical — in changeset), Age (os1)
+        ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+        IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+        EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+        IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+        EXPECT_STREQ("Age", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_EQ(30, v2.GetInt());
+
+        std::vector<Utf8String> changedProps;
+        ASSERT_EQ(BE_SQLITE_OK, reader.GetChangesetFetchedPropertyNames(changedProps));
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        EXPECT_TRUE(hasName("ECInstanceId"));
+        EXPECT_TRUE(hasName("ECClassId")); // physical in the overflow table — present in changeset
+        EXPECT_TRUE(hasName("Age"));
+        EXPECT_FALSE(hasName("Name"));     // Name is in tjo_JChild (joined table)
+        EXPECT_FALSE(hasName("BaseCode")); // BaseCode is in tjo_JBase (primary table)
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
