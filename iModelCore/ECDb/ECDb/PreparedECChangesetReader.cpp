@@ -237,29 +237,29 @@ DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap&
     if (GetTableName(tableName) != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
-    DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
-    DbTable const* dbTable = dbSchema.FindTable(tableName);
-    if (dbTable == nullptr) {
-        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-        return BE_SQLITE_ERROR;
-    }
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
+    stmt->Reset();
+    stmt->ClearBindings();
+    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
 
     outMap.clear();
     int colIdx = 0;
-    for (DbColumn const* col : dbTable->GetColumns()) {
-        if(col->IsVirtual())
-            continue; // Virtual columns are not stored in changesets, so skip them.
+    DbResult stat = stmt->Step();
+    while (stat == BE_SQLITE_ROW) {
+        Utf8CP colName = stmt->GetValueText(0);
         DbValue val = m_currentChange.GetValue(colIdx, stage);
         if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(colIdx)) {
             // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
-            // Mirror the TS SqliteChangesetReader behaviour (includePrimaryKeyInUpdateNew):
-            // always include the PK value regardless of which stage is being built.
             val = m_currentChange.GetOldValue(colIdx);
         }
         if (val.IsValid())
-            outMap.emplace(col->GetName(), val);
+            outMap.emplace(colName, val);
+            
         ++colIdx;
+        stat = stmt->Step();
     }
+    if(stat != BE_SQLITE_DONE)
+        return stat;
     return BE_SQLITE_OK;
 }
 
