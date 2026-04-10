@@ -2143,6 +2143,46 @@ TEST_F(UnitInstanceConversionTest, UnitConversionLoggingWithIssueReporter)
         }
     }
 
+TEST_F(UnitInstanceConversionTest, NoOldUnitWarningIsLoggedOnlyOncePerProperty)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    getUnitsInstanceTestSchema(schema, *schemaContext);
+
+    FixedStringUnitResolver unitResolver;
+    unitResolver.m_unitName = "";
+
+    auto reportedErrorCount = 0;
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity, IssueCategory, IssueType, IssueId id, Utf8CP)
+        {
+        if (Utf8String(id.m_issueId) == "EC_0002")
+            ++reportedErrorCount;
+        });
+
+    schemaContext->Issues().AddListener(testListener);
+
+    constexpr int instanceCount = 10;
+    Utf8CP specialPipeXml = R"xml(<SpecialPipe xmlns="OldUnits.01.00"><Length>50</Length></SpecialPipe>)xml";
+    Utf8CP pipeXml = R"xml(<Pipe xmlns="OldUnits.01.00"><Length>42</Length></Pipe>)xml";
+
+    for (int i = 0; i < instanceCount; ++i)
+        {
+        for (const auto& instanceXml : {specialPipeXml, pipeXml})
+            {
+            auto instanceContext = ECInstanceReadContext::CreateContextForCA(*schema, *schemaContext);
+            instanceContext->SetUnitResolver(&unitResolver);
+
+            IECInstancePtr testInstance;
+            ASSERT_EQ(InstanceReadStatus::Success, IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext));
+            }
+        }
+
+    // Make sure a single error gets reported instead of duplicates for each identical instance
+    // One error for <OldUnits:SpecialPipe.Length> and one for <OldUnits:Pipe.Length>
+    EXPECT_EQ(2, reportedErrorCount) << "Expected exactly one EC_0002 warning per unique property (2 total), but got " << reportedErrorCount << " warnings across " << instanceCount << " iterations.";
+    schemaContext->Issues().RemoveListener();
+    }
+
 TEST_F(UnitInstanceConversionTest, PrimitiveArrayWithEmptyOrNullValues)
     {
     ECSchemaPtr schema;
