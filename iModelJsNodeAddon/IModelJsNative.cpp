@@ -5255,24 +5255,24 @@ public:
         {
         BeJsNapiObject out(info.Env());
         Utf8String tableName;
-        DbResult rc = m_reader.GetTableName(tableName);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getTableName() failed", rc);
+        BentleyStatus rc = m_reader.GetTableName(tableName);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getTableName() failed", IModelJsNativeErrorKey::ChangesetError);
         out["tableName"] = tableName.c_str();
         DbOpcode opcode;
         rc = m_reader.GetOpcode(opcode);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "getOpcode() failed", rc);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
         out["opCode"] = static_cast<int>(opcode);
         bool isIndirectChange;
         rc = m_reader.IsIndirectChange(isIndirectChange);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "isIndirectChange() failed", rc);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "isIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
         out["isIndirectChange"] = isIndirectChange;
         bool isECTable;
         rc = m_reader.IsECTable(isECTable);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "isECTable() failed", rc);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "isECTable() failed", IModelJsNativeErrorKey::ChangesetError);
         out["isECTable"] = isECTable;
         return out;
         }
@@ -5307,17 +5307,17 @@ public:
         BeJsNapiObject out(info.Env());
         BeJsValue rowJson = out["data"];
         if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
         // filling instance key
         Utf8String instanceKey;
-        if (m_reader.GetInstanceKey(stageEnum, instanceKey) != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get instance key", BE_SQLITE_ERROR);
+        if (m_reader.GetInstanceKey(stageEnum, instanceKey) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
         out["key"] = instanceKey.c_str();
         
         // filling fetched changeset properties
         std::vector<Utf8String> names;
-        if (m_reader.GetChangeFetchedPropertyNames(names) != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get change fetched property names", BE_SQLITE_ERROR);
+        if (m_reader.GetChangeFetchedPropertyNames(names) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
         
         BeJsValue changeFetchedPropNames = out["changeFetchedPropNames"];
         changeFetchedPropNames.SetEmptyArray();
@@ -5332,9 +5332,9 @@ public:
     void SetTableNameFilters(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, tableNames);
-        DbResult rc = m_reader.SetTableFilters(tableNames);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "setTableNameFilters() failed", rc);
+        BentleyStatus rc = m_reader.SetTableFilters(tableNames);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setTableNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
     void SetOpCodeFilters(NapiInfoCR info)
         {
@@ -5354,9 +5354,9 @@ public:
                     THROW_JS_TYPE_EXCEPTION(error.c_str());
                 }
             }
-        DbResult rc = m_reader.SetOpcodeFilters(opCodesVec);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "setOpCodeFilters() failed", rc);
+        BentleyStatus rc = m_reader.SetOpcodeFilters(opCodesVec);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setOpCodeFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
     void SetClassIdFilters(NapiInfoCR info)
         {
@@ -5372,27 +5372,27 @@ public:
             }
             classIdsVec.push_back(ECClassId(classId.GetValueUnchecked()));
             }
-        DbResult rc = m_reader.SetECClassIdFilters(classIdsVec);
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "setClassIdFilters() failed", rc);
+        BentleyStatus rc = m_reader.SetECClassIdFilters(classIdsVec);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setClassIdFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
     void ClearTableNameFilters(NapiInfoCR info)
         {
-        DbResult rc = m_reader.ClearTableFilters();
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "clearTableNameFilters() failed", rc);
+        BentleyStatus rc = m_reader.ClearTableFilters();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearTableNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
     void ClearOpCodeFilters(NapiInfoCR info)
         {
-        DbResult rc = m_reader.ClearOpcodeFilters();
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "clearOpCodeFilters() failed", rc);
+        BentleyStatus rc = m_reader.ClearOpcodeFilters();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearOpCodeFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
     void ClearClassIdFilters(NapiInfoCR info)
         {
-        DbResult rc = m_reader.ClearECClassIdFilters();
-        if (rc != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "clearClassIdFilters() failed", rc);
+        BentleyStatus rc = m_reader.ClearECClassIdFilters();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearClassIdFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
 };
 

@@ -21,7 +21,7 @@ private:
     bool IsPrepared() const { return m_prepared != nullptr; }
 public:
     Impl() {}
-    ~Impl() {}
+    ~Impl() {Close();}
 
     DbResult OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, Mode mode);
     DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
@@ -29,23 +29,23 @@ public:
     void Close();
     DbResult Step();
 
-    DbResult GetTableName(Utf8StringR tableName) const;
-    DbResult GetOpcode(DbOpcode& opcode) const;
+    BentleyStatus GetTableName(Utf8StringR tableName) const;
+    BentleyStatus GetOpcode(DbOpcode& opcode) const;
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     ECDb const* GetECDb() const;
     int GetColumnCount(Stage stage) const;
-    DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
-    DbResult IsECTable(bool& isECTable) const;
-    DbResult GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
-    DbResult IsIndirectChange(bool& isIndirect) const;
+    BentleyStatus GetInstanceKey(Stage stage, Utf8StringR key) const;
+    BentleyStatus IsECTable(bool& isECTable) const;
+    BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    BentleyStatus IsIndirectChange(bool& isIndirect) const;
 
     // Filtering
-    DbResult SetTableFilters(std::vector<Utf8String> const& tableFilters);
-    DbResult SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
-    DbResult SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
-    DbResult ClearTableFilters();
-    DbResult ClearOpcodeFilters();
-    DbResult ClearECClassIdFilters();
+    BentleyStatus SetTableFilters(std::vector<Utf8String> const& tableFilters);
+    BentleyStatus SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
+    BentleyStatus SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
+    BentleyStatus ClearTableFilters();
+    BentleyStatus ClearOpcodeFilters();
+    BentleyStatus ClearECClassIdFilters();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

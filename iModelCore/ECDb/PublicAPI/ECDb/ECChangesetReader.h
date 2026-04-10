@@ -82,13 +82,13 @@ public:
 
     //! Gets the name of the underlying SQLite table for the current change row.
     //! @param[out] tableName Receives the table name.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not positioned on a valid row.
-    ECDB_EXPORT DbResult GetTableName(Utf8StringR tableName) const;
+    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
+    ECDB_EXPORT BentleyStatus GetTableName(Utf8StringR tableName) const;
 
     //! Gets the DML opcode (Insert, Update, or Delete) of the current change row.
     //! @param[out] opcode Receives the opcode for the current row.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not positioned on a valid row.
-    ECDB_EXPORT DbResult GetOpcode(DbOpcode& opcode) const;
+    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
+    ECDB_EXPORT BentleyStatus GetOpcode(DbOpcode& opcode) const;
 
     //! Gets the EC-typed value of a specific column for the given change stage.
     //! @param[in] stage The change stage (Old/New) to query. @see Changes::Change::Stage
@@ -99,13 +99,13 @@ public:
     //! Gets a JSON string representing the ECInstanceId and ECClassId (the instance key) for the current change row.
     //! @param[in] stage The change stage (Old/New) to query. @see Changes::Change::Stage
     //! @param[out] key Receives the JSON-encoded instance key string.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not positioned on a valid row.
-    ECDB_EXPORT DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
+    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
+    ECDB_EXPORT BentleyStatus GetInstanceKey(Stage stage, Utf8StringR key) const;
 
     //! Determines whether the current change row belongs to an EC table.
     //! @param[out] isECTable Set to true if the current table is an EC table, false otherwise.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not positioned on a valid row.
-    ECDB_EXPORT DbResult IsECTable(bool& isECTable) const;
+    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
+    ECDB_EXPORT BentleyStatus IsECTable(bool& isECTable) const;
 
     //! Gets the names of properties that were fetched from the current row of change.
     //! @remarks For compound data properties like point2d, point3d or navigation properties,
@@ -116,43 +116,43 @@ public:
     //! So if only X changed for a point2d property named "Myp2d" inide a struct "CustomStruct", the returned property name will be "CustomStruct.Myp2d.X".
     //! Similaly if both X and Y changed for the same point2d property, the returned property name will be "CustomStruct.Myp2d".
     //! @param[out] out Receives the list of property names.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not positioned on a valid row.
-    ECDB_EXPORT DbResult GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
+    ECDB_EXPORT BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
 
     //! Determines whether the current change row is an indirect change.
     //! @param[out] isIndirect Set to true if the current change is indirect, false otherwise.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not positioned on a valid row.
-    ECDB_EXPORT DbResult IsIndirectChange(bool& isIndirect) const;
+    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
+    ECDB_EXPORT BentleyStatus IsIndirectChange(bool& isIndirect) const;
 
     //! Sets a list of SQLite table-name filters. Only rows whose table name matches one of the entries will be returned by Step().
     //! @remarks Filters are applied on the next call to Step(). Pass an empty vector to match all tables.
     //! @param[in] tableFilters List of table names to include.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not open.
-    ECDB_EXPORT DbResult SetTableFilters(std::vector<Utf8String> const& tableFilters);
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus SetTableFilters(std::vector<Utf8String> const& tableFilters);
 
     //! Sets a list of opcode filters. Only rows whose opcode matches one of the entries will be returned by Step().
     //! @remarks Filters are applied on the next call to Step(). Pass an empty vector to match all opcodes.
     //! @param[in] opcodeFilters List of DbOpcode values (Insert, Update, Delete) to include.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not open.
-    ECDB_EXPORT DbResult SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
 
     //! Sets a list of ECClassId filters. Only rows whose ECClassId matches one of the entries will be returned by Step().
     //! @remarks Filters are applied on the next call to Step(). Pass an empty vector to match all ECClasses.
     //! @param[in] ecclassIdFilters List of ECClassIds to include.
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not open.
-    ECDB_EXPORT DbResult SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
 
     //! Clears all table-name filters previously set with SetTableFilters().
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not open.
-    ECDB_EXPORT DbResult ClearTableFilters();
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus ClearTableFilters();
 
     //! Clears all opcode filters previously set with SetOpcodeFilters().
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not open.
-    ECDB_EXPORT DbResult ClearOpcodeFilters();
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus ClearOpcodeFilters();
 
     //! Clears all ECClassId filters previously set with SetECClassIdFilters().
-    //! @return BE_SQLITE_OK on success, or an error code if the reader is not open.
-    ECDB_EXPORT DbResult ClearECClassIdFilters();
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus ClearECClassIdFilters();
 
 };
 

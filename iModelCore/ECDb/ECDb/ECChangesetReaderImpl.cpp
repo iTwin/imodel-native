@@ -46,18 +46,18 @@ void ECChangesetReader::Impl::Close() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::GetTableName(Utf8StringR tableName) const {
+BentleyStatus ECChangesetReader::Impl::GetTableName(Utf8StringR tableName) const {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     return m_prepared->GetTableName(tableName);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::GetOpcode(DbOpcode& opcode) const {
+BentleyStatus ECChangesetReader::Impl::GetOpcode(DbOpcode& opcode) const {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     return m_prepared->GetOpcode(opcode);
 }
 
@@ -106,27 +106,27 @@ int ECChangesetReader::Impl::GetColumnCount(Stage stage) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::GetInstanceKey(Stage stage, Utf8StringR key) const {
+BentleyStatus ECChangesetReader::Impl::GetInstanceKey(Stage stage, Utf8StringR key) const {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     return m_prepared->GetInstanceKey(stage, key);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::IsECTable(bool& isECTable) const {
+BentleyStatus ECChangesetReader::Impl::IsECTable(bool& isECTable) const {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     return m_prepared->IsECTable(isECTable);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+BentleyStatus ECChangesetReader::Impl::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
     if (!IsPrepared()) {
-        return BE_SQLITE_ERROR;
+        return ERROR;
     }
     return m_prepared->GetChangeFetchedPropertyNames(out);
 }
@@ -134,9 +134,9 @@ DbResult ECChangesetReader::Impl::GetChangeFetchedPropertyNames(std::vector<Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::IsIndirectChange(bool& isIndirect) const {
+BentleyStatus ECChangesetReader::Impl::IsIndirectChange(bool& isIndirect) const {
     if (!IsPrepared()) {
-        return BE_SQLITE_ERROR;
+        return ERROR;
     }
     return m_prepared->IsIndirectChange(isIndirect);
 }
@@ -144,61 +144,61 @@ DbResult ECChangesetReader::Impl::IsIndirectChange(bool& isIndirect) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
+BentleyStatus ECChangesetReader::Impl::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     m_prepared->SetTableFilters(tableFilters);
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
+BentleyStatus ECChangesetReader::Impl::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     m_prepared->SetOpcodeFilters(opcodeFilters);
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
+BentleyStatus ECChangesetReader::Impl::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     m_prepared->SetECClassIdFilters(ecclassIdFilters);
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::ClearTableFilters() {
+BentleyStatus ECChangesetReader::Impl::ClearTableFilters() {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     m_prepared->ClearTableFilters();
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::ClearOpcodeFilters() {
+BentleyStatus ECChangesetReader::Impl::ClearOpcodeFilters() {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     m_prepared->ClearOpcodeFilters();
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::ClearECClassIdFilters() {
+BentleyStatus ECChangesetReader::Impl::ClearECClassIdFilters() {
     if (!IsPrepared())
-        return BE_SQLITE_ERROR;
+        return ERROR;
     m_prepared->ClearECClassIdFilters();
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

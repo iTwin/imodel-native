@@ -39,7 +39,7 @@ private:
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
     void ClearFields();
-    DbResult ReFetchValues();
+    BentleyStatus ReFetchValues();
     // Utf8String GetTableName() const { return m_currentChange.GetTableName(); };
     // DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
     bool IsOpen() const { return m_changeStream != nullptr; }
@@ -47,7 +47,7 @@ private:
     //! Builds a map from SQLite column name to DbValue for the current change at @p stage.
     //! Only columns that are present (non-absent) in the changeset are included in the map.
     //! The map can be passed directly to ChangesetValueFactory::Create.
-    DbResult GetColumnValues(Stage stage, ColumnValueMap& outMap) const;
+    BentleyStatus GetColumnValues(Stage stage, ColumnValueMap& outMap) const;
     void DumpColumnValues(ColumnValueMap const& map) const;
     bool IsTableAllowedPostFilter(Utf8StringCR tableName) const;
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
@@ -63,15 +63,15 @@ public:
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }
 
-    DbResult GetTableName(Utf8StringR tableName) const;
-    DbResult GetOpcode(DbOpcode& opcode) const;
+    BentleyStatus GetTableName(Utf8StringR tableName) const;
+    BentleyStatus GetOpcode(DbOpcode& opcode) const;
     int GetColumnCount(Stage stage) const;
 
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
-    DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
-    DbResult IsECTable(bool& isECTable) const;
-    DbResult GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
-    DbResult IsIndirectChange(bool& isIndirect) const;
+    BentleyStatus GetInstanceKey(Stage stage, Utf8StringR key) const;
+    BentleyStatus IsECTable(bool& isECTable) const;
+    BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    BentleyStatus IsIndirectChange(bool& isIndirect) const;
     //filtering apis
     void SetTableFilters(std::vector<Utf8String> const& tableFilters) { m_tableFilters.clear(); m_tableFilters = tableFilters; }
     void SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) { m_opcodeFilters.clear(); m_opcodeFilters = opcodeFilters; }

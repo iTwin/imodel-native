@@ -140,7 +140,7 @@ DbResult PreparedECChangesetReader::Step() {
         if(m_currentChange.IsValid()) ++m_currentChange;
     }
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
-    if(ReFetchValues() != BE_SQLITE_OK)
+    if(ReFetchValues() != SUCCESS)
         return BE_SQLITE_ERROR;
     return stat;
 }
@@ -148,98 +148,102 @@ DbResult PreparedECChangesetReader::Step() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::ReFetchValues() {
+BentleyStatus PreparedECChangesetReader::ReFetchValues() {
     ClearFields();
     m_fields.try_emplace(Stage::New);
     m_fields.try_emplace(Stage::Old);
     if (m_currentChange.IsValid()) {
         DbOpcode opCode;
-        if(GetOpcode(opCode) != BE_SQLITE_OK)
-            return BE_SQLITE_ERROR;
+        if(GetOpcode(opCode) != SUCCESS)
+            return ERROR;
         
         if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
             LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
-            return BE_SQLITE_OK;
+            return SUCCESS;
         }
         
         Utf8String tableName;
-        if(GetTableName(tableName) != BE_SQLITE_OK)
-            return BE_SQLITE_ERROR;
+        if(GetTableName(tableName) != SUCCESS)
+            return ERROR;
         
         if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
             LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
-            return BE_SQLITE_OK;
+            return SUCCESS;
         }
 
         DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
         DbTable const* dbTable = dbSchema.FindTable(tableName);
         if (dbTable == nullptr) {
             LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-            return BE_SQLITE_ERROR;
+            return ERROR;
         }
 
         bool isECTable = false;
-        if(IsECTable(isECTable) != BE_SQLITE_OK)
-            return BE_SQLITE_ERROR;
+        if(IsECTable(isECTable) != SUCCESS)
+            return ERROR;
         if(!isECTable) {
             LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
-            return BE_SQLITE_OK;
+            return SUCCESS;
         }
 
         if(opCode != DbOpcode::Delete) {
             ColumnValueMap newValues;
-            if (GetColumnValues(Stage::New, newValues) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
+            if (GetColumnValues(Stage::New, newValues) != SUCCESS)
+                return ERROR;
             ECClassId classId;
             bool isClassIdFromChangeset = false;
-            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
+            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != SUCCESS)
+                return ERROR;
             if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
-                return BE_SQLITE_OK;
+                return SUCCESS;
             }
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedPropNames) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedPropNames) != SUCCESS)
+                return ERROR;
         }
         if(opCode != DbOpcode::Insert) {
             ColumnValueMap oldValues;
-            if (GetColumnValues(Stage::Old, oldValues) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
+            if (GetColumnValues(Stage::Old, oldValues) != SUCCESS)
+                return ERROR;
             ECClassId classId;
             bool isClassIdFromChangeset = false;
-            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
+            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != SUCCESS)
+                return ERROR;
             if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter for old values
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
-                return BE_SQLITE_OK;
+                return SUCCESS;
             }
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedPropNames) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedPropNames) != SUCCESS)
+                return ERROR;
         }
     }
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap& outMap) const {
+BentleyStatus PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap& outMap) const {
     if (!IsOpen()) {
         LOG.errorv("Attempting to get column values from a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
     }
     if (!IsStepped()) {
         LOG.errorv("Attempting to get column values from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
     }
     Utf8String tableName;
-    if (GetTableName(tableName) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR;
+    if (GetTableName(tableName) != SUCCESS)
+        return ERROR;
 
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
-    stmt->Reset();
-    stmt->ClearBindings();
+    if(stmt == nullptr) {
+        LOG.errorv("Failed to prepare statement to get column names for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    stmt->Reset(); // reset before each use to ensure statement is in a clean state
+    stmt->ClearBindings(); // clear bindings to remove any previous parameters
     stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
 
     outMap.clear();
@@ -258,9 +262,13 @@ DbResult PreparedECChangesetReader::GetColumnValues(Stage stage, ColumnValueMap&
         ++colIdx;
         stat = stmt->Step();
     }
-    if(stat != BE_SQLITE_DONE)
-        return stat;
-    return BE_SQLITE_OK;
+    stmt->Reset(); // reset after stepping to prepare for next use
+    stmt->ClearBindings(); // clear bindings after stepping to remove parameters for next use
+    if(stat != BE_SQLITE_DONE) {
+        LOG.errorv("Failed to step through column names for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -291,37 +299,37 @@ int PreparedECChangesetReader::GetColumnCount(Stage stage) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {
+BentleyStatus PreparedECChangesetReader::GetTableName(Utf8StringR tableName) const {
     if (!IsOpen())
         {
         LOG.errorv("Attempting to get table name from a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     if (!IsStepped())
         {
         LOG.errorv("Attempting to get table name from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     tableName = m_currentChange.GetTableName();
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetOpcode(DbOpcode& opcode) const {
+BentleyStatus PreparedECChangesetReader::GetOpcode(DbOpcode& opcode) const {
     if (!IsOpen())
         {
         LOG.errorv("Attempting to get opcode from a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     if (!IsStepped())
         {
         LOG.errorv("Attempting to get opcode from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     opcode = m_currentChange.GetOpcode();
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -349,16 +357,16 @@ IECSqlValue const& PreparedECChangesetReader::GetValue(Stage stage, int columnIn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
+BentleyStatus PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
     if (!IsOpen())
         {
         LOG.errorv("Attempting to get instance key from a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     if (!IsStepped())
         {
         LOG.errorv("Attempting to get instance key from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     const int count = GetColumnCount(stage);
     Utf8String instanceId;
@@ -385,76 +393,84 @@ DbResult PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key)
         {
         LOG.warningv("Could not find both ECInstanceId and ECClassId for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
         key.clear();
-        return BE_SQLITE_OK;
+        return SUCCESS;
         }
     key.Sprintf("%s-%s", instanceId.c_str(), classId.c_str());
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
+BentleyStatus PreparedECChangesetReader::IsECTable(bool& isECTable) const {
     if (!IsOpen())
         {
         LOG.errorv("Attempting to check IsECTable on a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     if (!IsStepped())
         {
         LOG.errorv("Attempting to check IsECTable on a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     
     Utf8String tableName;
-    if(GetTableName(tableName) != BE_SQLITE_OK)
-        return BE_SQLITE_ERROR;
+    if(GetTableName(tableName) != SUCCESS)
+        return ERROR;
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
-    if (stmt == nullptr)
-        return BE_SQLITE_ERROR;
+    if (stmt == nullptr) {
+        LOG.errorv("Failed to prepare statement to check if table '%s' is an EC table.", tableName.c_str());
+        return ERROR;
+    }
+    stmt->Reset(); // reset before each use to ensure statement is in a clean state
+    stmt->ClearBindings(); // clear bindings to remove any previous parameters
     stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
     DbResult rc = stmt->Step();
-    if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE)
-        return rc;
+    stmt->Reset(); // reset after stepping to prepare for next use
+    stmt->ClearBindings(); // clear bindings after stepping to remove parameters for next use
+    if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE) {
+        LOG.errorv("Failed to step statement to check if table '%s' is an EC table.", tableName.c_str());
+        return ERROR;
+    }
     isECTable = (rc == BE_SQLITE_ROW);
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+BentleyStatus PreparedECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
     if(!IsOpen())
         {
         LOG.errorv("Attempting to get changed property names from a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     if(!IsStepped())
         {
         LOG.errorv("Attempting to get changed property names from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     out.clear();
     out = m_changedPropNames;
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::IsIndirectChange(bool& isIndirect) const {
+BentleyStatus PreparedECChangesetReader::IsIndirectChange(bool& isIndirect) const {
     if (!IsOpen())
         {
         LOG.errorv("Attempting to check IsIndirectChange on a closed PreparedECChangesetReader.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     if (!IsStepped())
         {
         LOG.errorv("Attempting to check IsIndirectChange on a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
     isIndirect = m_currentChange.IsIndirect();
-    return BE_SQLITE_OK;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------

@@ -49,14 +49,14 @@ DbResult ECChangesetReader::Step() { return m_pimpl->Step(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::GetTableName(Utf8StringR tableName) const {
+BentleyStatus ECChangesetReader::GetTableName(Utf8StringR tableName) const {
     return m_pimpl->GetTableName(tableName);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::GetOpcode(DbOpcode& opcode) const {
+BentleyStatus ECChangesetReader::GetOpcode(DbOpcode& opcode) const {
     return m_pimpl->GetOpcode(opcode);
 }
 
@@ -84,70 +84,70 @@ int ECChangesetReader::GetColumnCount(Stage stage) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
+BentleyStatus ECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
     return m_pimpl->GetInstanceKey(stage, key);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::IsECTable(bool& isECTable) const {
+BentleyStatus ECChangesetReader::IsECTable(bool& isECTable) const {
     return m_pimpl->IsECTable(isECTable);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+BentleyStatus ECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
     return m_pimpl->GetChangeFetchedPropertyNames(out);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::IsIndirectChange(bool& isIndirect) const {
+BentleyStatus ECChangesetReader::IsIndirectChange(bool& isIndirect) const {
     return m_pimpl->IsIndirectChange(isIndirect);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
+BentleyStatus ECChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
     return m_pimpl->SetTableFilters(tableFilters);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
+BentleyStatus ECChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
     return m_pimpl->SetOpcodeFilters(opcodeFilters);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
+BentleyStatus ECChangesetReader::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
     return m_pimpl->SetECClassIdFilters(ecclassIdFilters);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::ClearTableFilters() {
+BentleyStatus ECChangesetReader::ClearTableFilters() {
     return m_pimpl->ClearTableFilters();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::ClearOpcodeFilters() {
+BentleyStatus ECChangesetReader::ClearOpcodeFilters() {
     return m_pimpl->ClearOpcodeFilters();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::ClearECClassIdFilters() {
+BentleyStatus ECChangesetReader::ClearECClassIdFilters() {
     return m_pimpl->ClearECClassIdFilters();
 }
 

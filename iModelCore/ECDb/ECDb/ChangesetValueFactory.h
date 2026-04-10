@@ -59,6 +59,9 @@ private:
                                                  Utf8StringCR selectColName,
                                                  ColumnValueMap const& columnValues);
 
+    //! Resets and clears bindings on @p stmt if not null.  Call after each use of a statement prepared by PreparePkStatement() to ensure it is ready for next use.
+    static void ClearStatement(CachedStatementPtr stmt);
+
     //! Fetches a single real column value from the live DB for the row identified by
     //! the table's primary-key column in @p columnValues.
     //! Returns true and sets @p outVal on success; false on any failure.
@@ -96,61 +99,64 @@ private:
     // ------------------------------------------------------------------
 
     //! Single-pass dispatch: checks presence and fills fieldsOut/changedProps in one step.
-    static DbResult CreateValueForProperty(ECDbCR conn, PropertyMap const&,
-                                           ColumnValueMap const&, DbTable const& dbTable,
-                                           std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                           std::vector<Utf8String>& changedProps);
+    //! Returns SUCCESS or ERROR.
+    static BentleyStatus CreateValueForProperty(ECDbCR conn, PropertyMap const&,
+                                                ColumnValueMap const&, DbTable const& dbTable,
+                                                std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                                std::vector<Utf8String>& changedProps);
 
     //! Skips when neither coordinate is in the changeset.
-    //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
-    static DbResult CreatePoint2d(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&, DbTable const&,
-                                  std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                  std::vector<Utf8String>& changedProps);
+    //! Returns ERROR when a coordinate cannot be fetched from the live DB.
+    static BentleyStatus CreatePoint2d(ECDbCR conn, PropertyMap const&,
+                                       ColumnValueMap const&, DbTable const&,
+                                       std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                       std::vector<Utf8String>& changedProps);
 
     //! Skips when no coordinate is in the changeset.
-    //! Returns BE_SQLITE_ERROR when a coordinate cannot be fetched from the live DB.
-    static DbResult CreatePoint3d(ECDbCR conn, PropertyMap const&,
-                                  ColumnValueMap const&, DbTable const&,
-                                  std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                  std::vector<Utf8String>& changedProps);
+    //! Returns ERROR when a coordinate cannot be fetched from the live DB.
+    static BentleyStatus CreatePoint3d(ECDbCR conn, PropertyMap const&,
+                                       ColumnValueMap const&, DbTable const&,
+                                       std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                       std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent from the changeset.
-    static DbResult CreatePrimitive(ECDbCR conn, PropertyMap const&,
-                                    ColumnValueMap const&, DbTable const&,
-                                    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                    std::vector<Utf8String>& changedProps);
+    //! Returns SUCCESS or ERROR.
+    static BentleyStatus CreatePrimitive(ECDbCR conn, PropertyMap const&,
+                                         ColumnValueMap const&, DbTable const&,
+                                         std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                         std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent or virtual.
-    //! Returns BE_SQLITE_ERROR on internal mapping failures.
-    static DbResult CreateSystem(ECDbCR conn, PropertyMap const&,
-                                 ColumnValueMap const&, DbTable const& dbTable,
-                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                 std::vector<Utf8String>& changedProps);
+    //! Returns ERROR on internal mapping failures.
+    static BentleyStatus CreateSystem(ECDbCR conn, PropertyMap const&,
+                                      ColumnValueMap const&, DbTable const& dbTable,
+                                      std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                      std::vector<Utf8String>& changedProps);
 
     //! Skips when neither physical component is in the changeset.
-    //! Returns BE_SQLITE_ERROR when a component is partly present but the DB fetch fails.
-    static DbResult CreateNav(ECDbCR conn, PropertyMap const&,
-                              ColumnValueMap const&, DbTable const&,
-                              std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                              std::vector<Utf8String>& changedProps);
+    //! Returns ERROR when a component is partly present but the DB fetch fails.
+    static BentleyStatus CreateNav(ECDbCR conn, PropertyMap const&,
+                                   ColumnValueMap const&, DbTable const&,
+                                   std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                   std::vector<Utf8String>& changedProps);
 
     //! Skips when the column is absent from the changeset.
-    static DbResult CreateArray(ECDbCR conn, PropertyMap const&,
-                                ColumnValueMap const&, DbTable const&,
-                                std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                std::vector<Utf8String>& changedProps);
+    //! Returns SUCCESS or ERROR.
+    static BentleyStatus CreateArray(ECDbCR conn, PropertyMap const&,
+                                     ColumnValueMap const&, DbTable const&,
+                                     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                     std::vector<Utf8String>& changedProps);
 
     //! Skips when no member has changeset data.
-    //! Returns BE_SQLITE_ERROR if any member value fails to be created.
-    static DbResult CreateStruct(ECDbCR conn, PropertyMap const&,
-                                 ColumnValueMap const&, DbTable const& dbTable,
-                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-                                 std::vector<Utf8String>& changedProps);
+    //! Returns ERROR if any member value fails to be created.
+    static BentleyStatus CreateStruct(ECDbCR conn, PropertyMap const&,
+                                      ColumnValueMap const&, DbTable const& dbTable,
+                                      std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+                                      std::vector<Utf8String>& changedProps);
 
     //! Creates a fixed-value IECSqlValue from a statically known id.  Always succeeds.
-    static DbResult CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
-                                  std::unique_ptr<IECSqlValue>& out);
+    static void CreateFixedId(ECDbCR conn, PropertyMap const&, BeInt64Id,
+                              std::unique_ptr<IECSqlValue>& out);
 
     // ------------------------------------------------------------------
     // High-level resolution helpers used by Create()
@@ -172,28 +178,28 @@ private:
                                              ECClassId& outClassId);
 
     //! Reads ECInstanceId from @p columnValues, validates it, creates the field.
-    //! Returns BE_SQLITE_OK and populates outputs on success; BE_SQLITE_ERROR otherwise.
-    static DbResult ResolveInstanceId(ClassMap const& classMap,
-                                      ColumnValueMap const& columnValues,
-                                      ECDbCR conn, DbTable const& tbl,
-                                      ECInstanceId& outInstanceId,
-                                      std::unique_ptr<IECSqlValue>& outInstanceIdField);
+    //! Returns SUCCESS and populates outputs on success; ERROR otherwise.
+    static BentleyStatus ResolveInstanceId(ClassMap const& classMap,
+                                           ColumnValueMap const& columnValues,
+                                           ECDbCR conn, DbTable const& tbl,
+                                           ECInstanceId& outInstanceId,
+                                           std::unique_ptr<IECSqlValue>& outInstanceIdField);
 
     //! Creates the ECClassId field as a fixed value from the already-resolved @p resolvedClassId.
-    //! Returns BE_SQLITE_OK and populates @p out on success; BE_SQLITE_ERROR otherwise.
-    static DbResult ResolveClassIdField(ClassMap const& classMap,
-                                        ECClassId resolvedClassId,
-                                        ECDbCR conn, DbTable const& tbl,
-                                        std::unique_ptr<IECSqlValue>& out);
+    //! Returns SUCCESS and populates @p out on success; ERROR otherwise.
+    static BentleyStatus ResolveClassIdField(ClassMap const& classMap,
+                                             ECClassId resolvedClassId,
+                                             ECDbCR conn, DbTable const& tbl,
+                                             std::unique_ptr<IECSqlValue>& out);
 
     //! Iterates all remaining properties (excluding ECInstanceId and ECClassId)
     //! and dispatches each to CreateValueForProperty.
-    //! Returns BE_SQLITE_OK on success; BE_SQLITE_ERROR immediately on any failure.
-    static DbResult BuildPropertyFields(ClassMap const& classMap,
-                                        ColumnValueMap const& columnValues,
-                                        ECDbCR conn, DbTable const& dbTable,
-                                        std::vector<std::unique_ptr<IECSqlValue>>& fields,
-                                        std::vector<Utf8String>& changedProps);
+    //! Returns SUCCESS on success; ERROR immediately on any failure.
+    static BentleyStatus BuildPropertyFields(ClassMap const& classMap,
+                                             ColumnValueMap const& columnValues,
+                                             ECDbCR conn, DbTable const& dbTable,
+                                             std::vector<std::unique_ptr<IECSqlValue>>& fields,
+                                             std::vector<Utf8String>& changedProps);
 
     //! Returns true when @p classId is BisCore::Element or any class derived from it.
     static bool isChildClassOfBisCore(ECClassId classId, ECDbCR conn);
@@ -203,22 +209,23 @@ public:
     //! Resolves the ClassMap, ECClassId, and whether the class id came from the changeset
     //! for a single changeset row.  Tries the changeset first, then a live DB seek,
     //! then falls back to the table's root ClassMap.
-    //! Returns BE_SQLITE_OK and populates all three out params on success; BE_SQLITE_ERROR otherwise.
-    static DbResult ResolveClassId(ECDbCR conn, DbTable const& tbl,
-                                     ColumnValueMap const& columnValues,
-                                     ECClassId& resolvedClassIdOut,
-                                     bool& classIdFromChangesetOut);
+    //! Returns SUCCESS and populates all three out params on success; ERROR otherwise.
+    static BentleyStatus ResolveClassId(ECDbCR conn, DbTable const& tbl,
+                                        ColumnValueMap const& columnValues,
+                                        ECClassId& resolvedClassIdOut,
+                                        bool& classIdFromChangesetOut);
 
     //! Builds the IECSqlValue fields for one changeset row.
     //! If @p changedProps is non-null it is filled with the access paths of all properties
     //! / sub-properties that have data in the changeset.
-    //! Examples: "Name", "Pos2d", "Pos2d.X", "Details.Label", "Owner", "Owner.Id".
-    static DbResult Create(ECDbCR conn, DbTable const& tbl,
-                            ColumnValueMap const& columnValues,
-                            ECClassId resolvedClassId, bool classIdFromChangeset,
-                            std::vector<std::unique_ptr<IECSqlValue>>& fields,
-                            ECChangesetReader::Mode mode,
-                            std::vector<Utf8String>& changedProps);
+    //! Returns SUCCESS on success; ERROR otherwise.
+    //! Examples of entries written to @p changedProps: "Name", "Pos2d", "Pos2d.X", "Details.Label", "Owner", "Owner.Id".
+    static BentleyStatus Create(ECDbCR conn, DbTable const& tbl,
+                                ColumnValueMap const& columnValues,
+                                ECClassId resolvedClassId, bool classIdFromChangeset,
+                                std::vector<std::unique_ptr<IECSqlValue>>& fields,
+                                ECChangesetReader::Mode mode,
+                                std::vector<Utf8String>& changedProps);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
