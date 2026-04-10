@@ -36,7 +36,7 @@ public:
     int GetColumnCount(Stage stage) const;
     DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
     DbResult IsECTable(bool& isECTable) const;
-    DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    DbResult GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
     DbResult IsIndirectChange(bool& isIndirect) const;
 
     // Filtering

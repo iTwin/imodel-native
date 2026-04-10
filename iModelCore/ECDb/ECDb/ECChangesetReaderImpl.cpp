@@ -124,11 +124,11 @@ DbResult ECChangesetReader::Impl::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const {
+DbResult ECChangesetReader::Impl::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
     if (!IsPrepared()) {
         return BE_SQLITE_ERROR;
     }
-    return m_prepared->GetChangesetFetchedPropertyNames(out);
+    return m_prepared->GetChangeFetchedPropertyNames(out);
 }
 
 //---------------------------------------------------------------------------------------

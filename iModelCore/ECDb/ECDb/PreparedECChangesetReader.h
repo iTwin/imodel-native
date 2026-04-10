@@ -29,7 +29,7 @@ private:
 
     // data fields
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
-    std::vector<Utf8String> m_changedProps;
+    std::vector<Utf8String> m_changedPropNames;
 
     //filters
     std::vector<Utf8String> m_tableFilters;
@@ -70,7 +70,7 @@ public:
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     DbResult GetInstanceKey(Stage stage, Utf8StringR key) const;
     DbResult IsECTable(bool& isECTable) const;
-    DbResult GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    DbResult GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
     DbResult IsIndirectChange(bool& isIndirect) const;
     //filtering apis
     void SetTableFilters(std::vector<Utf8String> const& tableFilters) { m_tableFilters.clear(); m_tableFilters = tableFilters; }

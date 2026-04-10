@@ -98,8 +98,8 @@ DbResult ECChangesetReader::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const {
-    return m_pimpl->GetChangesetFetchedPropertyNames(out);
+DbResult ECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+    return m_pimpl->GetChangeFetchedPropertyNames(out);
 }
 
 //---------------------------------------------------------------------------------------

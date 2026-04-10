@@ -1539,7 +1539,7 @@ export declare namespace IModelJsNative {
   interface ECChangesetRowValue {
     data: any;
     key: string;
-    changesetFetchedProps: string[]
+    changeFetchedPropNames: string[]
   }
 
   class ECChangesetReader {

@@ -5316,15 +5316,15 @@ public:
         
         // filling fetched changeset properties
         std::vector<Utf8String> names;
-        if (m_reader.GetChangesetFetchedPropertyNames(names) != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get changeset fetched property names", BE_SQLITE_ERROR);
+        if (m_reader.GetChangeFetchedPropertyNames(names) != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to get change fetched property names", BE_SQLITE_ERROR);
         
-        BeJsValue changesetFetchedProps = out["changesetFetchedProps"];
-        changesetFetchedProps.SetEmptyArray();
+        BeJsValue changeFetchedPropNames = out["changeFetchedPropNames"];
+        changeFetchedPropNames.SetEmptyArray();
         uint32_t i = 0;
         for (auto const& name : names) 
             {
-            changesetFetchedProps[i] = name;
+            changeFetchedPropNames[i] = name;
             i++;
             }
         return out;

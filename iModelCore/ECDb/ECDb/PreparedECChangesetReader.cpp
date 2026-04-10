@@ -106,7 +106,7 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedECChangesetReader::ClearFields() {
     m_fields.clear();
-    m_changedProps.clear();
+    m_changedPropNames.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
                 return BE_SQLITE_OK;
             }
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedProps) != BE_SQLITE_OK)
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedPropNames) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
         if(opCode != DbOpcode::Insert) {
@@ -214,7 +214,7 @@ DbResult PreparedECChangesetReader::ReFetchValues() {
                 return BE_SQLITE_OK;
             }
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedProps) != BE_SQLITE_OK)
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedPropNames) != BE_SQLITE_OK)
                 return BE_SQLITE_ERROR;
         }
     }
@@ -423,7 +423,7 @@ DbResult PreparedECChangesetReader::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::GetChangesetFetchedPropertyNames(std::vector<Utf8String>& out) const {
+DbResult PreparedECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
     if(!IsOpen())
         {
         LOG.errorv("Attempting to get changed property names from a closed PreparedECChangesetReader.");
@@ -435,7 +435,7 @@ DbResult PreparedECChangesetReader::GetChangesetFetchedPropertyNames(std::vector
         return BE_SQLITE_ERROR;
         }
     out.clear();
-    out = m_changedProps;
+    out = m_changedPropNames;
     return BE_SQLITE_OK;
 }
 
