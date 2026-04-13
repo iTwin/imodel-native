@@ -22,7 +22,8 @@ DbResult ECChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
-    m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
+    if(!IsPrepared())
+        m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
     return m_prepared->Open(std::move(changeStream), invert, mode);
 }
 
@@ -30,7 +31,8 @@ DbResult ECChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, Mode mode) {
-    m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
+    if(!IsPrepared())
+        m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
     return m_prepared->OpenGroup(files, invert, mode);
 }
 

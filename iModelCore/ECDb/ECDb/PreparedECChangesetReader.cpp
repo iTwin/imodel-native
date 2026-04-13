@@ -31,12 +31,6 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
 
     bvector<BeFileName> files{input};
     auto reader = std::make_unique<ChangesetFileReaderBase>(files);
-    DdlChanges ddlChanges;
-    bool hasSchemaChanges;
-    reader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
-
-    UNUSED_VARIABLE(ddlChanges);
-    UNUSED_VARIABLE(hasSchemaChanges);
 
     return Open(std::move(reader), invert, mode);
 }
@@ -70,7 +64,6 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
         return BE_SQLITE_ERROR;
     }
     m_changeGroup = std::make_unique<ChangeGroup>(m_ecdb);
-    DdlChanges ddlGroup;
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist())
@@ -78,16 +71,7 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
 
         bvector<BeFileName> fileVec{inputFile};
         ChangesetFileReaderBase reader(fileVec);
-        bool containsSchemaChanges;
-        DdlChanges ddlChanges;
-        if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges))
-            return BE_SQLITE_ERROR;
-
-        UNUSED_VARIABLE(containsSchemaChanges);
-
-        for (auto& ddl : ddlChanges.GetDDLs()) {
-            ddlGroup.AddDDL(ddl.c_str());
-        }
+        
         if (BE_SQLITE_OK != reader.AddToChangeGroup(*m_changeGroup))
             return BE_SQLITE_ERROR;
     }
@@ -134,10 +118,14 @@ DbResult PreparedECChangesetReader::Step() {
         return BE_SQLITE_ERROR;
     }
     if (m_changes == nullptr) {
+        ClearFields();
         m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
         m_currentChange = m_changes->begin();
     } else {
-        if(m_currentChange.IsValid()) ++m_currentChange;
+        if(m_currentChange.IsValid()) {
+            ClearFields();
+            ++m_currentChange;
+        }
     }
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
     if(ReFetchValues() != SUCCESS)
@@ -147,9 +135,11 @@ DbResult PreparedECChangesetReader::Step() {
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+// In case the current row doesnot fit the filters, we will not create fields for it. When users call GetColumnValue, the number of rows returned will be 0. 
+// As the current API we step row  by row. And after we step onto a row we come to know whether the row is filtered out or not.
+// So if the row is filtered out, we will not create fields for it(as that is the most expensive part of the operation).
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedECChangesetReader::ReFetchValues() {
-    ClearFields();
     m_fields.try_emplace(Stage::New);
     m_fields.try_emplace(Stage::Old);
     if (m_currentChange.IsValid()) {
@@ -391,9 +381,9 @@ BentleyStatus PreparedECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR
         }
     if(instanceId.empty() || classId.empty())
         {
-        LOG.warningv("Could not find both ECInstanceId and ECClassId for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
+        LOG.warningv("Could not find either ECInstanceId or ECClassId or both for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
         key.clear();
-        return SUCCESS;
+        return ERROR;
         }
     key.Sprintf("%s-%s", instanceId.c_str(), classId.c_str());
     return SUCCESS;

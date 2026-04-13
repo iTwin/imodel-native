@@ -202,7 +202,7 @@ private:
                                              std::vector<Utf8String>& changedProps);
 
     //! Returns true when @p classId is BisCore::Element or any class derived from it.
-    static bool isChildClassOfBisCore(ECClassId classId, ECDbCR conn);
+    static bool IsDerivedFromBisElement(ECClassId classId, ECDbCR conn);
 
     // ------------------------------------------------------------------
 public:

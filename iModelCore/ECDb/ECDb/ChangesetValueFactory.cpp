@@ -839,7 +839,7 @@ BentleyStatus ChangesetValueFactory::BuildPropertyFields(
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueFactory::isChildClassOfBisCore(ECClassId classId, ECDbCR conn) {
+bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId, ECDbCR conn) {
     const ECClass* cls = conn.Schemas().Main().GetClass(classId);
     if (cls == nullptr)
         return false;
@@ -938,7 +938,7 @@ BentleyStatus ChangesetValueFactory::Create(
     if (mode == ECChangesetReader::Mode::Instance_Key)
         return SUCCESS; // caller only needs the instance key — skip user properties
 
-    if(mode == ECChangesetReader::Mode::Bis_Element_Properties && isChildClassOfBisCore(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
+    if(mode == ECChangesetReader::Mode::Bis_Element_Properties && IsDerivedFromBisElement(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
         return SUCCESS; // caller only needs bis_element properties — skip rest   
 
     status = BuildPropertyFields(*classMap, columnValues, conn, tbl, fields, changedProps);
