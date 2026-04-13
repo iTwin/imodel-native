@@ -473,7 +473,9 @@ TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_NeverAnalyzed)
     // sqlite_stat1 exists (created during CreateNewDb) but is empty
     ASSERT_EQ(0, GetRowCount(*db, "sqlite_stat1"));
 
-    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3));
+    bool didAnalyze = false;
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::Full, &didAnalyze));
+    ASSERT_TRUE(didAnalyze) << "didAnalyze should be true when DB had never been analyzed";
 
     // After ReanalyzeIfStale, sqlite_stat1 should have rows
     ASSERT_NE(0, GetRowCount(*db, "sqlite_stat1"));
@@ -507,9 +509,10 @@ TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_NotStale)
         ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
     db->SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3));
-
     // Stats should remain unchanged since 5% change < 30% threshold
+    bool didAnalyze = true; // start true to confirm it gets set false
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::Full, &didAnalyze));
+    ASSERT_FALSE(didAnalyze) << "didAnalyze should be false when stats are not stale";
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String statAfter = stmt.GetValueText(0);
@@ -548,7 +551,9 @@ TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_Stale)
         ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
     db->SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3));
+    bool didAnalyze = false;
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::Full, &didAnalyze));
+    ASSERT_TRUE(didAnalyze) << "didAnalyze should be true when stats are stale";
 
     // Stats should have been updated
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' LIMIT 1"));
@@ -598,7 +603,9 @@ TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_PerTable)
         ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
     db->SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::PerTable));
+    bool didAnalyze = false;
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::PerTable, &didAnalyze));
+    ASSERT_TRUE(didAnalyze) << "didAnalyze should be true when stats are stale";
 
     // t1 stats should have been updated
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' AND idx='idx_t1_a'"));

@@ -6806,11 +6806,15 @@ DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAna
 
         Statement countStmt;
         auto countRc = countStmt.TryPrepare(*this, SqlPrintfString("SELECT count(*) FROM %w", tableName));
-        if (countRc != BE_SQLITE_OK)
-            continue; // table may have been dropped since last ANALYZE
+        if (countRc != BE_SQLITE_OK) {
+            if (!TableExists(tableName))
+                continue; // table was dropped since last ANALYZE — skip it
+            return countRc;
+        }
 
-        if (countStmt.Step() != BE_SQLITE_ROW)
-            continue;
+        auto stepRc = countStmt.Step();
+        if (stepRc != BE_SQLITE_ROW)
+            return (stepRc == BE_SQLITE_DONE) ? BE_SQLITE_ERROR : stepRc;
 
         int64_t actualCount = countStmt.GetValueInt64(0);
 
@@ -6847,7 +6851,10 @@ DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAna
             rc = TryExecuteSql(SqlPrintfString("ANALYZE %w", table.c_str()));
             if (rc != BE_SQLITE_OK)
                 return rc;
+            if (didAnalyze)
+                *didAnalyze = true;
         }
+        return BE_SQLITE_OK;
     }
 
     if (didAnalyze)

@@ -3359,7 +3359,8 @@ public:
     //!        (e.g., 0.3 means 30% change). Must be finite and > 0; returns BE_SQLITE_ERROR otherwise.
     //! @param mode Controls whether stale tables are reanalyzed individually or the entire
     //!        database is reanalyzed when any staleness is detected.
-    //! @param[out] didAnalyze If non-null, set to true if ANALYZE was actually performed,
+    //! @param[out] didAnalyze If non-null, set to true if at least one ANALYZE was performed
+    //!             (in PerTable mode, may be true even if a later table's ANALYZE fails),
     //!             false otherwise. When true the caller should clear relevant caches.
     //! @return BE_SQLITE_OK if completed successfully (whether or not ANALYZE was run),
     //!         or an error code if ANALYZE or a staleness query failed.
