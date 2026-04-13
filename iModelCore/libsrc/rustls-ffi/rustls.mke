@@ -10,9 +10,18 @@ vendorSrc = $(_MakeFilePath)vendor/
 always:
     !~@mkdir $(o)
 
+# Rust installation commands:
+#   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+#   cargo install cargo-c
+#   rustup target add aarch64-apple-ios
+
+%if $(TARGET_PLATFORM)=="iOS"
+    rust_target=--target aarch64-apple-ios
+%endif
+
 $(o)$(libprefix)proxyres$(libext) :
     ~chdir $(vendorSrc)
-    cargo capi install --release --prefix=$(o)
+    IPHONEOS_DEPLOYMENT_TARGET=$(IOS_DEPLOYMENT_TARGET) cargo capi install $(rust_target) --release --prefix=$(o)
 
 # Vendor API
 always:
