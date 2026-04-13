@@ -18,6 +18,7 @@
 #include "presentation/UpdateRecordsHandler.h"
 #include <BeSQLite/Profiler.h>
 #include <folly/BeFolly.h>
+#include <cmath>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
 
@@ -359,8 +360,11 @@ template<typename T_Db> struct SQLiteOps {
         if (info[0].IsObject()) {
             auto opts = info[0].As<Napi::Object>();
             auto threshMember = opts.Get("threshold");
-            if (threshMember.IsNumber())
+            if (threshMember.IsNumber()) {
                 threshold = threshMember.ToNumber().DoubleValue();
+                if (!std::isfinite(threshold) || threshold <= 0.0)
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "threshold must be finite and > 0", IModelJsNativeErrorKey::BadArg);
+            }
             auto modeStr = stringMember(opts, "mode", "full");
             if (modeStr.EqualsI("perTable"))
                 mode = Db::ReanalyzeMode::PerTable;

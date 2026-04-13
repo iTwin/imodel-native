@@ -3356,7 +3356,7 @@ public:
     //! @note This method does NOT clear any caches. If it returns didAnalyze=true, the caller
     //!       is responsible for clearing statement caches or any higher-level caches as needed.
     //! @param threshold The minimum fractional change in row count to trigger reanalysis
-    //!        (e.g., 0.3 means 30% change). Must be > 0.
+    //!        (e.g., 0.3 means 30% change). Must be finite and > 0; returns BE_SQLITE_ERROR otherwise.
     //! @param mode Controls whether stale tables are reanalyzed individually or the entire
     //!        database is reanalyzed when any staleness is detected.
     //! @param[out] didAnalyze If non-null, set to true if ANALYZE was actually performed,

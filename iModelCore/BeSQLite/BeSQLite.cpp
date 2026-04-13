@@ -20,6 +20,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <string>
+#include <cmath>
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
 #include <unordered_map>
@@ -6756,8 +6757,8 @@ DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAna
     if (didAnalyze)
         *didAnalyze = false;
 
-    if (threshold <= 0.0)
-        threshold = 0.3;
+    if (!std::isfinite(threshold) || threshold <= 0.0)
+        return BE_SQLITE_ERROR;
 
     // If sqlite_stat1 doesn't exist or is empty, the database has never been meaningfully analyzed.
     if (!TableExists("sqlite_stat1")) {
@@ -6804,7 +6805,7 @@ DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAna
         int64_t recordedCount = statStmt.GetValueInt64(1);
 
         Statement countStmt;
-        auto countRc = countStmt.TryPrepare(*this, SqlPrintfString("SELECT count(*) FROM \"%w\"", tableName));
+        auto countRc = countStmt.TryPrepare(*this, SqlPrintfString("SELECT count(*) FROM %w", tableName));
         if (countRc != BE_SQLITE_OK)
             continue; // table may have been dropped since last ANALYZE
 
@@ -6842,9 +6843,8 @@ DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAna
         if (rc != BE_SQLITE_OK)
             return rc;
     } else {
-            rc = TryExecuteSql(SqlPrintfString("ANALYZE %w", table.c_str()));
         for (auto const& table : staleTables) {
-            rc = TryExecuteSql(SqlPrintfString("ANALYZE \"%w\"", table.c_str()));
+            rc = TryExecuteSql(SqlPrintfString("ANALYZE %w", table.c_str()));
             if (rc != BE_SQLITE_OK)
                 return rc;
         }
