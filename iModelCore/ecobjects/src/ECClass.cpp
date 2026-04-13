@@ -647,6 +647,10 @@ Utf8String ECClass::FindAvailablePropertyName(ECPropertyCP property, ECPropertyP
         }
     }
 
+// Ownership contract: This method deletes the incoming property ONLY when returning Success
+// with a replacement. On error paths, the caller is responsible for cleanup.
+// This invariant is relied upon by CreatePropertyInternal, _ReadPropertyFromXmlAndAddToClass,
+// CopyProperty, and RenameConflictProperty.
 ECObjectsStatus ECClass::AddPropertyResolveConflicts(ECPropertyP& property)
     {
     ECPropertyP existingProperty;
@@ -654,6 +658,7 @@ ECObjectsStatus ECClass::AddPropertyResolveConflicts(ECPropertyP& property)
 
     if(nullptr != existingProperty)
         {
+        delete property; // Caller's pointer is updated via reference - no leak, no double-free
         property = existingProperty;
         return ECObjectsStatus::Success;
         }
@@ -706,6 +711,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         ECObjectsStatus status = CanPropertyBeOverridden(*localProperty, *pProperty, errorMsg);
         if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
             {
+            delete pProperty; // Caller's pointer is updated via reference - see ownership contract on AddPropertyResolveConflicts
             pProperty = localProperty;
             return ECObjectsStatus::Success;
             }
@@ -1314,8 +1320,7 @@ ECObjectsStatus ECClass::CreatePropertyInternal(TProperty*& ecProperty, Utf8Stri
 
     if (outProperty != ecProperty)
         {
-        delete ecProperty;
-        ecProperty = nullptr;
+        // AddProperty already freed the original property when it found a compatible existing one
         ecProperty = dynamic_cast<TProperty*>(outProperty);
         if (ecProperty == nullptr)
             {
