@@ -4,7 +4,7 @@
     xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
     >
 
-    <Part Name="rustls">
+    <Part Name="rustls" OnlyPlatforms="iOS*,MacOS*">
         <SubPart PartName="LibraryStatic" />
     </Part>
 

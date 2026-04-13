@@ -109,7 +109,6 @@ $(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvhea
 objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext) $(o)bcvlog$(oext) $(o)bcvencrypt$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
-BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
@@ -118,6 +117,10 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibex
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
+
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
+%endif
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)

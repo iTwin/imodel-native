@@ -65,12 +65,12 @@ EXE_LOPT1           = -entry:mainCRTStartup -NODEFAULTLIB:msvcrtd.lib
 %endif
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
     LINKER_LIBRARIES + -framework CFNetwork
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 LINKER_LIBRARIES + $(CLibs)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)

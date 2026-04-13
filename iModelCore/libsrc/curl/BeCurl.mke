@@ -61,8 +61,12 @@ dirToSearch = $(AresLibDir)
 dirToSearch = $(AresLibDir)include
 %include cincapnd.mki
 
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+
 dirToSearch = ${BuildContext}/VendorAPI/rustls
 %include cincapnd.mki
+
+%endif
 
 dirToSearch = ${BuildContext}/VendorAPI/zlib
 %include cincapnd.mki
@@ -639,12 +643,14 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 %if defined(iTwinNativeThirdParty)
   LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext) \
-                                $(ContextSubPartsStaticLibs)$(libprefix)rustls$(libext) \
                                 $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
 %else
   LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinOpenSSL$(libext) \
-                                $(ContextSubPartsStaticLibs)$(libprefix)rustls$(libext) \
                                 $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+%endif
+
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES        + $(ContextSubPartsStaticLibs)$(libprefix)rustls$(libext)
 %endif
 
 %if $(TARGET_PLATFORM) == "Windows"
