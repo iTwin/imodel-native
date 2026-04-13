@@ -6786,11 +6786,12 @@ DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAna
     }
     emptyCheck.Finalize();
 
-    // For each table in sqlite_stat1, compare its recorded row count with the actual count.
-    // The stat column format is "N d1 d2 ..." where N is the total row count;
-    // CAST(stat AS INTEGER) extracts N.
-    Statement statStmt;
-    rc = statStmt.TryPrepare(*this, "SELECT tbl, CAST(stat AS INTEGER) FROM sqlite_stat1 GROUP BY tbl");
+    // For each table-level row in sqlite_stat1, compare its recorded row count with the actual count.
+    // The stat column format is "N d1 d2 ..." where N is the total row count;
+    // CAST(stat AS INTEGER) extracts N. Restrict to idx IS NULL so we read the table row,
+    // not an arbitrary index row for the table.
+    Statement statStmt;
+    rc = statStmt.TryPrepare(*this, "SELECT tbl, CAST(stat AS INTEGER) FROM sqlite_stat1 WHERE idx IS NULL");
     if (rc != BE_SQLITE_OK)
         return rc;
 
