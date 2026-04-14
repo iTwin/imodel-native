@@ -484,7 +484,8 @@ DbResult RuntimeSchemaWriter::WriteKoqTable(DbCR db)
         PutSRef(Safe(stmt.GetValueText(3)));       // description
         PutSRef(Safe(stmt.GetValueText(4)));       // persistenceUnit
         PutF64(stmt.GetValueDouble(5));             // relativeError
-        PutSRef(Safe(stmt.GetValueText(6)));       // presentationUnits
+        // EC XML serializes this as "presentationUnits"; we use "presentationFormats" to align with the TS API (KindOfQuantity.presentationFormats in ecschema-metadata).
+        PutSRef(Safe(stmt.GetValueText(6)));       // presentationFormats
         PutU32(SafeU32Id(stmt.GetValueInt64(0)));  // ecInstanceId
         count++;
         }
