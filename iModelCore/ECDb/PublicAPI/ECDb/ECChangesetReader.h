@@ -69,6 +69,7 @@ public:
     //! Advances the reader to the next change row.
     //! @return BE_SQLITE_ROW if a new row is available, BE_SQLITE_DONE when there are no more rows,
     //!         or an error code on failure.
+    //! In case the row is filtered out by the currently set filters, the reader will automatically advance to the next unfiltered row.
     ECDB_EXPORT DbResult Step();
 
     //! Gets the ECDb connection associated with this reader.

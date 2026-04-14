@@ -40,7 +40,7 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
     if(IsOpen()) {
-        LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
+        LOG.errorv("Attempting to open on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
     }
     if (m_changeStream != nullptr)
@@ -60,10 +60,10 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, Mode mode) {
     if(IsOpen()) {
-        LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
+        LOG.errorv("Attempting to open a group on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    m_changeGroup = std::make_unique<ChangeGroup>(m_ecdb);
+    auto changeGroup = std::make_unique<ChangeGroup>(m_ecdb);
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist())
@@ -72,12 +72,12 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
         bvector<BeFileName> fileVec{inputFile};
         ChangesetFileReaderBase reader(fileVec);
         
-        if (BE_SQLITE_OK != reader.AddToChangeGroup(*m_changeGroup))
+        if (BE_SQLITE_OK != reader.AddToChangeGroup(*changeGroup))
             return BE_SQLITE_ERROR;
     }
 
     m_changeStream = std::make_unique<ChangeSet>();
-    if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup))
+    if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*changeGroup))
         return BE_SQLITE_ERROR;
 
     m_invert = invert;
@@ -100,7 +100,6 @@ void PreparedECChangesetReader::Close() {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
     m_changeStream = nullptr;
-    m_changeGroup = nullptr;
     m_invert = false;
     ClearFields();
     ClearTableFilters();
@@ -128,8 +127,14 @@ DbResult PreparedECChangesetReader::Step() {
         }
     }
     auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
-    if(ReFetchValues() != SUCCESS)
+    bool isCurrentRowFilteredOut = false;
+    if(ReFetchValues(isCurrentRowFilteredOut) != SUCCESS)
         return BE_SQLITE_ERROR;
+
+    if(isCurrentRowFilteredOut) {
+        LOG.infov("Current change is filtered out. Stepping to the next change.");
+        return Step();
+    }
     return stat;
 }
 
@@ -139,7 +144,8 @@ DbResult PreparedECChangesetReader::Step() {
 // As the current API we step row  by row. And after we step onto a row we come to know whether the row is filtered out or not.
 // So if the row is filtered out, we will not create fields for it(as that is the most expensive part of the operation).
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PreparedECChangesetReader::ReFetchValues() {
+BentleyStatus PreparedECChangesetReader::ReFetchValues(bool& isCurrentRowFilteredOut) {
+    isCurrentRowFilteredOut = false;
     m_fields.try_emplace(Stage::New);
     m_fields.try_emplace(Stage::Old);
     if (m_currentChange.IsValid()) {
@@ -149,6 +155,7 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues() {
         
         if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
             LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
+            isCurrentRowFilteredOut = true;
             return SUCCESS;
         }
         
@@ -158,6 +165,7 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues() {
         
         if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
             LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
+            isCurrentRowFilteredOut = true;
             return SUCCESS;
         }
 
@@ -186,6 +194,7 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues() {
                 return ERROR;
             if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
+                isCurrentRowFilteredOut = true;
                 return SUCCESS;
             }
             if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedPropNames) != SUCCESS)
@@ -201,6 +210,7 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues() {
                 return ERROR;
             if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter for old values
                 LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
+                isCurrentRowFilteredOut = true;
                 return SUCCESS;
             }
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call

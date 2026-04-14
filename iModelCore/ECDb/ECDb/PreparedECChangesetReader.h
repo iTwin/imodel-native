@@ -23,7 +23,6 @@ private:
     bool                           m_invert = false;
     Mode                           m_mode = Mode::All_Properties;
     std::unique_ptr<ChangeStream>  m_changeStream;
-    std::unique_ptr<ChangeGroup>   m_changeGroup;
     std::unique_ptr<Changes>       m_changes;
     Changes::Change                m_currentChange;
 
@@ -39,7 +38,7 @@ private:
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
     void ClearFields();
-    BentleyStatus ReFetchValues();
+    BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
     // Utf8String GetTableName() const { return m_currentChange.GetTableName(); };
     // DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
     bool IsOpen() const { return m_changeStream != nullptr; }
