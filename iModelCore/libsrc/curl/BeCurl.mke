@@ -650,6 +650,8 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 %endif
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES        + -framework Security
+    LINKER_LIBRARIES        + -framework Foundation
     LINKER_LIBRARIES        + $(ContextSubPartsStaticLibs)$(libprefix)rustls$(libext)
 %endif
 

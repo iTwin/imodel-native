@@ -449,6 +449,8 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework Foundation
     LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 

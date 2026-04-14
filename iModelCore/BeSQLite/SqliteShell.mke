@@ -68,6 +68,8 @@ EXE_LOPT1           = -entry:mainCRTStartup
         BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
 %endif
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework Foundation
     LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)

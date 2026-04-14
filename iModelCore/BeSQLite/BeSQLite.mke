@@ -119,6 +119,8 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    BeSQLiteRequiredLibs + -framework Security
+    BeSQLiteRequiredLibs + -framework Foundation
     BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 
