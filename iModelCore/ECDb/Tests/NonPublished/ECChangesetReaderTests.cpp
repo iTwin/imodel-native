@@ -1796,22 +1796,7 @@ TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
             ECChangesetReader::Mode::All_Properties));
 
         reader.SetTableFilters({"no_such_table"});
-        ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
-        Utf8String widgetTableName;
-        ASSERT_EQ(SUCCESS, reader.GetTableName(widgetTableName));
-        EXPECT_STREQ("ts_Widget", widgetTableName.c_str());
-        DbOpcode opcode;
-        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
-        EXPECT_EQ(DbOpcode::Insert, opcode);
-        bool isECTable = false;
-        ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
-        EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps)); 
-        EXPECT_TRUE(changedProps.empty()); // should be empty because the filter includes just "no_such_table" not include "ts_Widget"
-        
-        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just "no_such_table" not include "ts_Widget"
-        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just "no_such_table" not include "ts_Widget"
+        // should not include the Widget row because of the filter
         ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
         reader.Close();
         }
