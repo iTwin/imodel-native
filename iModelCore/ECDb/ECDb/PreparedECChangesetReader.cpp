@@ -290,7 +290,7 @@ int PreparedECChangesetReader::GetColumnCount(Stage stage) const {
     }
     if(!IsStepped())
     {
-        LOG.warningv("Attempting to get column count from a PreparedECChangesetReader that has not been stepped.");
+        LOG.warningv("Attempting to get column count from a PreparedECChangesetReader that has not been stepped or is on an invalid change.");
         return 0;
     }
     return m_fields.find(stage) != m_fields.end() ? static_cast<int>(m_fields.at(stage).size()) : 0;

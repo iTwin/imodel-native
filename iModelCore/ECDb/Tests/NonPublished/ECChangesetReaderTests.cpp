@@ -1628,24 +1628,6 @@ TEST_F(ECChangesetReaderTests, Filter_ByTableName)
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {
-        Utf8String containerTableName;
-        ASSERT_EQ(SUCCESS, reader.GetTableName(containerTableName));
-        EXPECT_STREQ("ts_Container", containerTableName.c_str());
-        DbOpcode opcode;
-        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
-        EXPECT_EQ(DbOpcode::Insert, opcode);
-        bool isECTable = false;
-        ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
-        EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        EXPECT_TRUE(changedProps.empty()); // should be empty because the filter includes just "ts_Widget" not include "ts_Container"
-        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just "ts_Widget" not include "ts_Container"
-        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just "ts_Widget" not include "ts_Container"
-        }
-
-    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
-        {
         Utf8String widgetTableName;
         ASSERT_EQ(SUCCESS, reader.GetTableName(widgetTableName));
         EXPECT_STREQ("ts_Widget", widgetTableName.c_str());
@@ -1703,25 +1685,29 @@ TEST_F(ECChangesetReaderTests, Filter_ByOpcode)
 
     reader.SetOpcodeFilters({DbOpcode::Update});
 
-    // Only the Update row must be returned.
-    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
-    Utf8String tableName;
-    ASSERT_EQ(SUCCESS, reader.GetTableName(tableName));
-    EXPECT_STREQ("ts_Widget", tableName.c_str());
-    DbOpcode opcode;
-    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
-    EXPECT_EQ(DbOpcode::Insert, opcode);
-
+    // Insert and Update gets squashed into INSERT so nothing is returned after filtering.
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     bool isECTable = false;
-    ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
-    EXPECT_TRUE(isECTable);
+    ASSERT_EQ(ERROR, reader.IsECTable(isECTable));
+    DbOpcode opcode;
+    ASSERT_EQ(ERROR, reader.GetOpcode(opcode));
+    Utf8String tableName;
+    ASSERT_EQ(ERROR, reader.GetTableName(tableName));
+    Utf8String instanceKey;
+    ASSERT_EQ(ERROR, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
+    ASSERT_EQ(ERROR, reader.GetInstanceKey(Changes::Change::Stage::Old, instanceKey));
+    bool isIndirect = false;
+    ASSERT_EQ(ERROR, reader.IsIndirectChange(isIndirect));
     std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    EXPECT_TRUE(changedProps.empty()); // This should be empty because the filter includes just update not include
+    ASSERT_EQ(ERROR, reader.GetChangeFetchedPropertyNames(changedProps));
+    ASSERT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
+    ASSERT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+    EXPECT_TRUE(reader.GetValue(Changes::Change::Stage::New, 0).IsNull());
+    EXPECT_TRUE(reader.GetValue(Changes::Change::Stage::Old, 0).IsNull());
 
-    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just update not include
-    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just update not include
-
+    // Even if we step multiple times we should get BE_SQLITE_DONE because we have reached the end.
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
     }
@@ -1758,24 +1744,6 @@ TEST_F(ECChangesetReaderTests, Filter_ByECClassId)
     reader.SetECClassIdFilters({widgetClassId});
 
     // Only the Widget row must be returned.
-    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
-        {
-        Utf8String containerTableName;
-        ASSERT_EQ(SUCCESS, reader.GetTableName(containerTableName));
-        EXPECT_STREQ("ts_Container", containerTableName.c_str());
-        DbOpcode opcode;
-        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
-        EXPECT_EQ(DbOpcode::Insert, opcode);
-        bool isECTable = false;
-        ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
-        EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        EXPECT_TRUE(changedProps.empty()); // should be empty because the filter includes just "widgetClassId" not include "containerClassId"
-        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should be empty because the filter includes just "widgetClassId" not include "containerClassId"
-        EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should be empty because the filter includes just "widgetClassId" not include "containerClassId"
-        }
-
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {
         Utf8String widgetTableName;
