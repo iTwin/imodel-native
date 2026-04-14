@@ -1544,11 +1544,11 @@ export declare namespace IModelJsNative {
 
   class ECChangesetReader {
     constructor();
-    public openFile(db: AnyECDb, fileName: string, invert: boolean, mode: ECChangesetReader.Mode): void;
-    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, mode: ECChangesetReader.Mode): void;
-    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, mode: ECChangesetReader.Mode): void;
-    public openInMemoryChanges(db: DgnDb, invert: boolean, mode: ECChangesetReader.Mode): void;
-    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, mode: ECChangesetReader.Mode): void;
+    public openFile(db: AnyECDb, fileName: string, invert: boolean, mode: number): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, mode: number): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, mode: number): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, mode: number): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, mode: number): void;
     public close(): void;
     public step(): boolean;
     public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue | undefined;
@@ -1559,14 +1559,6 @@ export declare namespace IModelJsNative {
     public clearTableNameFilters(): void;
     public clearOpCodeFilters(): void;
     public clearClassIdFilters(): void;
-  }
-
-  namespace ECChangesetReader {
-    export const enum Mode {
-      All_Properties = 0,
-      Bis_Element_Properties = 1,
-      Instance_Key = 2,
-    }
   }
 
   class DisableNativeAssertions implements IDisposable {

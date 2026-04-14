@@ -26,7 +26,7 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
     BeFileName input;
     input.AppendUtf8(changesetFile.c_str());
 
-    if (!input.DoesPathExist())
+    if (!input.DoesPathExist() || input.IsDirectory())
         return BE_SQLITE_CANTOPEN;
 
     bvector<BeFileName> files{input};
@@ -43,8 +43,6 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
         LOG.errorv("Attempting to open on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    if (m_changeStream != nullptr)
-        return BE_SQLITE_ERROR;
 
     if (changeStream == nullptr)
         return BE_SQLITE_ERROR;
@@ -66,7 +64,7 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
     auto changeGroup = std::make_unique<ChangeGroup>(m_ecdb);
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
-        if (!inputFile.DoesPathExist())
+        if (!inputFile.DoesPathExist() || inputFile.IsDirectory())
             return BE_SQLITE_CANTOPEN;
 
         bvector<BeFileName> fileVec{inputFile};
