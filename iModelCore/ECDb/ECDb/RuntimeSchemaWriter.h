@@ -100,19 +100,27 @@ private:
     std::unordered_map<PropertyDefRecord, uint32_t, PropertyDefRecordHash> m_propDefIndex;
     std::unordered_map<int64_t, bvector<PropertyRefRecord>> m_classPropRefs;
     std::optional<int64_t> m_hiddenPropertyCAClassId;
+    std::optional<int64_t> m_hiddenSchemaCAClassId;
+    std::optional<int64_t> m_hiddenClassCAClassId;
     std::optional<int64_t> m_queryViewCAClassId;
     std::unordered_set<int64_t> m_excludedSchemaIds;
     std::unordered_set<int64_t> m_mixinClassIds;
     std::unordered_set<int64_t> m_queryViewClassIds;
+    std::unordered_set<int64_t> m_hiddenSchemaIds;
+    std::unordered_set<int64_t> m_hiddenClassIds;
 
     // Pre-pass: collect metadata needed before writing
     DbResult CollectExcludedSchemaIds(DbCR db);
     DbResult ResolveHiddenPropertyCAClassId(DbCR db);
+    DbResult ResolveHiddenSchemaCAClassId(DbCR db);
+    DbResult ResolveHiddenClassCAClassId(DbCR db);
     DbResult ResolveQueryViewCAClassId(DbCR db);
     static bool IsHiddenFromInstanceXml(Utf8CP instanceXml);
     DbResult CollectPropertyDefsAndRefs(DbCR db);
     DbResult CollectMixinClassIds(DbCR db);
     DbResult CollectQueryViewClassIds(DbCR db);
+    DbResult CollectHiddenSchemaIds(DbCR db);
+    DbResult CollectHiddenClassIds(DbCR db);
     uint32_t InternPropertyDef(PropertyDefRecord const& def);
 
     // Per-table writers (v2 flat format)

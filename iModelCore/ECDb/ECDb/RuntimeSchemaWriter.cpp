@@ -339,6 +339,100 @@ DbResult RuntimeSchemaWriter::CollectQueryViewClassIds(DbCR db)
     }
 
 //---------------------------------------------------------------------------------------
+// Resolve the ec_Class.Id of CoreCustomAttributes:HiddenSchema.
+//---------------------------------------------------------------------------------------
+DbResult RuntimeSchemaWriter::ResolveHiddenSchemaCAClassId(DbCR db)
+    {
+    m_hiddenSchemaCAClassId.reset();
+
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db,
+        "SELECT c.Id FROM ec_Class c "
+        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "WHERE s.Name='CoreCustomAttributes' AND c.Name='HiddenSchema'");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    if (stmt.Step() == BE_SQLITE_ROW)
+        m_hiddenSchemaCAClassId = stmt.GetValueInt64(0);
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// Resolve the ec_Class.Id of CoreCustomAttributes:HiddenClass.
+//---------------------------------------------------------------------------------------
+DbResult RuntimeSchemaWriter::ResolveHiddenClassCAClassId(DbCR db)
+    {
+    m_hiddenClassCAClassId.reset();
+
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db,
+        "SELECT c.Id FROM ec_Class c "
+        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "WHERE s.Name='CoreCustomAttributes' AND c.Name='HiddenClass'");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    if (stmt.Step() == BE_SQLITE_ROW)
+        m_hiddenClassCAClassId = stmt.GetValueInt64(0);
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// Pre-collect IDs of schemas with the HiddenSchema CA.
+// HiddenSchema has a ShowClasses boolean - we only track the schema-level hidden flag here.
+// Like HiddenProperty, the CA being present means hidden unless Show(Classes) is true.
+//---------------------------------------------------------------------------------------
+DbResult RuntimeSchemaWriter::CollectHiddenSchemaIds(DbCR db)
+    {
+    m_hiddenSchemaIds.clear();
+    if (!m_hiddenSchemaCAClassId.has_value())
+        return BE_SQLITE_OK;
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
+        "SELECT ContainerId, Instance FROM ec_CustomAttribute "
+        "WHERE ContainerType & %d <> 0 AND ClassId=%" PRIi64,
+        (int)ECN::CustomAttributeContainerType::Schema,
+        m_hiddenSchemaCAClassId.value()).c_str());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        // HiddenSchema CA present -> schema is hidden (IsHiddenFromInstanceXml checks for Show element)
+        // Note: HiddenSchema uses ShowClasses, not Show, but for the schema-level hidden flag
+        // the CA being present is sufficient - there is no Show property on HiddenSchema itself.
+        m_hiddenSchemaIds.insert(stmt.GetValueInt64(0));
+        }
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// Pre-collect IDs of classes with the HiddenClass CA.
+// HiddenClass has a Show boolean (default false) - same semantics as HiddenProperty.
+//---------------------------------------------------------------------------------------
+DbResult RuntimeSchemaWriter::CollectHiddenClassIds(DbCR db)
+    {
+    m_hiddenClassIds.clear();
+    if (!m_hiddenClassCAClassId.has_value())
+        return BE_SQLITE_OK;
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
+        "SELECT ContainerId, Instance FROM ec_CustomAttribute "
+        "WHERE ContainerType & %d <> 0 AND ClassId=%" PRIi64,
+        (int)ECN::CustomAttributeContainerType::AnyClass,
+        m_hiddenClassCAClassId.value()).c_str());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP instanceXml = stmt.GetValueText(1);
+        if (IsHiddenFromInstanceXml(instanceXml))
+            m_hiddenClassIds.insert(stmt.GetValueInt64(0));
+        }
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
 // Helper: append WHERE <col> NOT IN (...) for excluded schemas.
 //---------------------------------------------------------------------------------------
 static void AppendExcludedSchemaFilter(Utf8StringR sql, Utf8CP column, std::unordered_set<int64_t> const& ids)
@@ -415,6 +509,7 @@ DbResult RuntimeSchemaWriter::WriteSchemaTable(DbCR db)
         PutSRef(Safe(stmt.GetValueText(2))); // label
         PutSRef(Safe(stmt.GetValueText(3))); // description
         PutU32(SafeU32Id(stmt.GetValueInt64(0))); // ecInstanceId
+        PutU8(m_hiddenSchemaIds.count(stmt.GetValueInt64(0)) ? 1 : 0); // isHidden
         count++;
         }
     PatchU32(countPos, count);
@@ -599,6 +694,7 @@ DbResult RuntimeSchemaWriter::WriteClassTable(DbCR db)
             PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
             }
         PutU32(SafeU32Id(classId));                   // ecInstanceId
+        PutU8(m_hiddenClassIds.count(classId) ? 1 : 0); // isHidden
 
         // Base classes (count-prefixed)
         baseStmt.Reset(); baseStmt.ClearBindings();
@@ -712,10 +808,14 @@ DbResult RuntimeSchemaWriter::WriteAllSchemas(DbCR db)
     DbResult rc;
     if ((rc = CollectExcludedSchemaIds(db)) != BE_SQLITE_OK) return rc;
     if ((rc = ResolveHiddenPropertyCAClassId(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = ResolveHiddenSchemaCAClassId(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = ResolveHiddenClassCAClassId(db)) != BE_SQLITE_OK) return rc;
     if ((rc = ResolveQueryViewCAClassId(db)) != BE_SQLITE_OK) return rc;
     if ((rc = CollectPropertyDefsAndRefs(db)) != BE_SQLITE_OK) return rc;
     if ((rc = CollectMixinClassIds(db)) != BE_SQLITE_OK) return rc;
     if ((rc = CollectQueryViewClassIds(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = CollectHiddenSchemaIds(db)) != BE_SQLITE_OK) return rc;
+    if ((rc = CollectHiddenClassIds(db)) != BE_SQLITE_OK) return rc;
 
     // Header: magic(4) + version(1) + stringTableOffset placeholder(4)
     PutU32(MAGIC);
