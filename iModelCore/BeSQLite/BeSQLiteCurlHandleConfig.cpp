@@ -75,51 +75,6 @@ void logError(const char* /*fmt*/, ...) {
 
 #endif // !ITWIN_DAEMON
 
-#ifdef __APPLE__
-
-static std::string s_certsPath;
-static sqlite3_mutex *s_appleMutex = nullptr;
-
-static const void initAppleMutex() {
-    s_appleMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-}
-
-static std::string &getCACertPath() {
-    try {
-        SQLiteMutexLock lock(s_appleMutex);
-        if (s_certsPath.empty()) {
-            uint32_t size = 0;
-            _NSGetExecutablePath(nullptr, &size); // get the size needed
-            if (size == 0) {
-                return s_empty;
-            }
-            std::string executablePath;
-            executablePath.resize(size);
-            if (_NSGetExecutablePath(&executablePath[0], &size) != 0) {
-                return s_empty;
-            }
-            const std::string suffix = "/Assets/cacert.pem";
-            size_t lastSlashIndex = executablePath.rfind('/');
-            if (lastSlashIndex != std::string::npos) {
-                s_certsPath = executablePath.substr(0, lastSlashIndex) + suffix;
-            } else {
-                // If there aren't any slashes in the executable path, just use the current directory.
-                s_certsPath = std::string(".") + suffix;
-            }
-        }
-        return s_certsPath;
-    } catch (...) {
-        logError("getCACertPath: s_appleMutex not initialized.");
-        return s_empty;
-    }
-}
-
-void besqlite_bcv_set_cacert_path(const std::string& caFilename) {
-    s_certsPath = caFilename;
-}
-
-#endif // __APPLE__
-
 #ifdef ENABLE_PROXYRES
 
 static sqlite3_mutex *s_envMutex = nullptr;
@@ -251,9 +206,6 @@ int besqlite_bcv_custom_init() {
 #ifdef ENABLE_PROXYRES
     initProxyResMutexes();
 #endif // ENABLE_PROXYRES
-#ifdef __APPLE__
-    initAppleMutex();
-#endif // __APPLE__
     return SQLITE_OK;
 }
 
@@ -263,11 +215,7 @@ int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * 
 #endif // ENABLE_PROXYRES
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
 #ifdef __APPLE__
-    const std::string& certsPath = getCACertPath();
-    if (certsPath.empty()) {
-        return SQLITE_ERROR;
-    }
-    curl_easy_setopt(pCurl, CURLOPT_CAINFO, certsPath.c_str());
+    curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
 #endif // __APPLE__
     return SQLITE_OK;
 }
