@@ -685,8 +685,11 @@ public:
     }
 };
 
-/** Add the container to the openParms, if the argument is a container object */
-static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenParams& params, Napi::Value arg) {
+/** Add the container to the openParms, if the argument is a container object.
+ * @param skipWriteLockCheck If true, bypasses the write lock requirement for opening in ReadWrite mode.
+ *        This is used for cloud briefcases that make local-only writes (no upload) against a read-only container.
+ */
+static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenParams& params, Napi::Value arg, bool skipWriteLockCheck = false) {
     auto jsContainer = getJsCloudContainer(arg);
     if (!jsContainer.IsObject()) { // did they supply a container argument?
         db.Set(JSON_NAME(cloudContainer), db.Env().Undefined());
@@ -696,7 +699,7 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
     db.Set(JSON_NAME(cloudContainer), jsContainer);
 
     auto container = getCloudContainer(jsContainer);
-    if (!params.IsReadonly() && !container->m_writeLockHeld)
+    if (!skipWriteLockCheck && !params.IsReadonly() && !container->m_writeLockHeld)
         THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open for database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
 
     dbName = params.SetFromContainer(dbName.c_str(), container);
@@ -1189,13 +1192,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
 
         BeJsConst props(info[3]);
+        bool skipWriteLockCheck = false;
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
             if (tempFileBase.isString())
                 openParams.m_tempfileBase = tempFileBase.asString();
+            skipWriteLockCheck = props[JSON_NAME(skipWriteLockCheck)].asBool(false);
         }
 
-        addContainerParams(Value(), dbName, openParams, info[4]);
+        addContainerParams(Value(), dbName, openParams, info[4], skipWriteLockCheck);
 
         if (!openParams.IsReadonly()) {
             // 20 sec to retain previous behaviour.
