@@ -126,8 +126,8 @@ BentleyStatus ECChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& o
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
-    return m_pimpl->SetECClassIdFilters(ecclassIdFilters);
+BentleyStatus ECChangesetReader::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
+    return m_pimpl->SetECClassNameFilters(ecclassNameFilters);
 }
 
 //---------------------------------------------------------------------------------------
@@ -147,8 +147,8 @@ BentleyStatus ECChangesetReader::ClearOpcodeFilters() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::ClearECClassIdFilters() {
-    return m_pimpl->ClearECClassIdFilters();
+BentleyStatus ECChangesetReader::ClearECClassNameFilters() {
+    return m_pimpl->ClearECClassNameFilters();
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

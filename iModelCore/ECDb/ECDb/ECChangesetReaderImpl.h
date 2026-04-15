@@ -42,10 +42,10 @@ public:
     // Filtering
     BentleyStatus SetTableFilters(std::vector<Utf8String> const& tableFilters);
     BentleyStatus SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
-    BentleyStatus SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
+    BentleyStatus SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters);
     BentleyStatus ClearTableFilters();
     BentleyStatus ClearOpcodeFilters();
-    BentleyStatus ClearECClassIdFilters();
+    BentleyStatus ClearECClassNameFilters();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

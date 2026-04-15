@@ -166,10 +166,10 @@ BentleyStatus ECChangesetReader::Impl::SetOpcodeFilters(std::vector<DbOpcode> co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::Impl::SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) {
+BentleyStatus ECChangesetReader::Impl::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
     if (!IsPrepared())
         return ERROR;
-    m_prepared->SetECClassIdFilters(ecclassIdFilters);
+    m_prepared->SetECClassNameFilters(ecclassNameFilters);
     return SUCCESS;
 }
 
@@ -196,10 +196,10 @@ BentleyStatus ECChangesetReader::Impl::ClearOpcodeFilters() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::Impl::ClearECClassIdFilters() {
+BentleyStatus ECChangesetReader::Impl::ClearECClassNameFilters() {
     if (!IsPrepared())
         return ERROR;
-    m_prepared->ClearECClassIdFilters();
+    m_prepared->ClearECClassNameFilters();
     return SUCCESS;
 }
 

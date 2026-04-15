@@ -137,11 +137,11 @@ public:
     //! @return SUCCESS on success, or ERROR if the reader is not open.
     ECDB_EXPORT BentleyStatus SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
 
-    //! Sets a list of ECClassId filters. Only rows whose ECClassId matches one of the entries will be returned by Step().
+    //! Sets a list of EC class name filters. Only rows whose EC class full name ("SchemaName:ClassName") matches one of the entries will be returned by Step().
     //! @remarks Filters are applied on the next call to Step(). Pass an empty vector to match all ECClasses.
-    //! @param[in] ecclassIdFilters List of ECClassIds to include.
+    //! @param[in] ecclassNameFilters List of EC class full names ("SchemaName:ClassName") to include.
     //! @return SUCCESS on success, or ERROR if the reader is not open.
-    ECDB_EXPORT BentleyStatus SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters);
+    ECDB_EXPORT BentleyStatus SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters);
 
     //! Clears all table-name filters previously set with SetTableFilters().
     //! @return SUCCESS on success, or ERROR if the reader is not open.
@@ -151,9 +151,9 @@ public:
     //! @return SUCCESS on success, or ERROR if the reader is not open.
     ECDB_EXPORT BentleyStatus ClearOpcodeFilters();
 
-    //! Clears all ECClassId filters previously set with SetECClassIdFilters().
+    //! Clears all EC class name filters previously set with SetECClassNameFilters().
     //! @return SUCCESS on success, or ERROR if the reader is not open.
-    ECDB_EXPORT BentleyStatus ClearECClassIdFilters();
+    ECDB_EXPORT BentleyStatus ClearECClassNameFilters();
 
 };
 

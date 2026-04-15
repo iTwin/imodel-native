@@ -102,7 +102,7 @@ void PreparedECChangesetReader::Close() {
     ClearFields();
     ClearTableFilters();
     ClearOpcodeFilters();
-    ClearECClassIdFilters();
+    ClearECClassNameFilters();
 }
 
 
@@ -190,8 +190,14 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues(bool& isCurrentRowFiltere
             bool isClassIdFromChangeset = false;
             if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != SUCCESS)
                 return ERROR;
-            if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter
-                LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
+            ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
+            if (ecClass == nullptr) {
+                LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
+                return ERROR;
+            }
+            Utf8String fullClassName = ecClass->GetFullName();
+            if(!IsECClassNameAllowedPostFilter(fullClassName)) { // Third is ECClassName filter for old values
+                LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", fullClassName.c_str());
                 isCurrentRowFilteredOut = true;
                 return SUCCESS;
             }
@@ -206,8 +212,14 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues(bool& isCurrentRowFiltere
             bool isClassIdFromChangeset = false;
             if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != SUCCESS)
                 return ERROR;
-            if(!IsECClassIdAllowedPostFilter(classId)) { // Third is ECClassId filter for old values
-                LOG.infov("ECClassId '%s' is not allowed by filters. Skipping creating fields", classId.ToString().c_str());
+            ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
+            if (ecClass == nullptr) {
+                LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
+                return ERROR;
+            }
+            Utf8String classFullName = ecClass->GetFullName();
+            if(!IsECClassNameAllowedPostFilter(classFullName)) { // Third is ECClassName filter for old values
+                LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", classFullName.c_str());
                 isCurrentRowFilteredOut = true;
                 return SUCCESS;
             }
@@ -492,10 +504,10 @@ bool PreparedECChangesetReader::IsOpcodeAllowedPostFilter(DbOpcode const& opcode
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PreparedECChangesetReader::IsECClassIdAllowedPostFilter(ECClassId const& classId) const {
-    if (m_ecclassIdFilters.empty())
+bool PreparedECChangesetReader::IsECClassNameAllowedPostFilter(Utf8StringCR classFullName) const {
+    if (m_ecclassNameFilters.empty())
         return true;
-    return std::find(m_ecclassIdFilters.begin(), m_ecclassIdFilters.end(), classId) != m_ecclassIdFilters.end();
+    return std::find(m_ecclassNameFilters.begin(), m_ecclassNameFilters.end(), classFullName) != m_ecclassNameFilters.end();
 }
 
 //---------------------------------------------------------------------------------------

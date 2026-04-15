@@ -1555,10 +1555,10 @@ export declare namespace IModelJsNative {
     public getChangeMetadata(): { tableName: string, opCode: DbOpcode, isIndirectChange: boolean, isECTable: boolean };
     public setTableNameFilters(tableNames: string[]): void;
     public setOpCodeFilters(ops: string[]): void;
-    public setClassIdFilters(classIds: string[]): void;
+    public setClassNameFilters(classNames: string[]): void;
     public clearTableNameFilters(): void;
     public clearOpCodeFilters(): void;
-    public clearClassIdFilters(): void;
+    public clearClassNameFilters(): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

@@ -1741,7 +1741,7 @@ TEST_F(ECChangesetReaderTests, Filter_ByECClassId)
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
         ECChangesetReader::Mode::All_Properties));
 
-    reader.SetECClassIdFilters({widgetClassId});
+    reader.SetECClassNameFilters({"TestReadCS:Widget"});
 
     // Only the Widget row must be returned.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());

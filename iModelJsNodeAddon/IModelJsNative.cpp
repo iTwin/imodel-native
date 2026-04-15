@@ -5160,10 +5160,10 @@ public:
             InstanceMethod("getChangeMetadata",     &NativeECChangesetReader::GetChangeMetadata),
             InstanceMethod("setTableNameFilters",   &NativeECChangesetReader::SetTableNameFilters),
             InstanceMethod("setOpCodeFilters",      &NativeECChangesetReader::SetOpCodeFilters),
-            InstanceMethod("setClassIdFilters",     &NativeECChangesetReader::SetClassIdFilters),
+            InstanceMethod("setClassNameFilters",   &NativeECChangesetReader::SetClassNameFilters),
             InstanceMethod("clearTableNameFilters", &NativeECChangesetReader::ClearTableNameFilters),
             InstanceMethod("clearOpCodeFilters",   &NativeECChangesetReader::ClearOpCodeFilters),
-            InstanceMethod("clearClassIdFilters",  &NativeECChangesetReader::ClearClassIdFilters),
+            InstanceMethod("clearClassNameFilters", &NativeECChangesetReader::ClearClassNameFilters),
 
         });
         exports.Set("ECChangesetReader", t);
@@ -5365,23 +5365,12 @@ public:
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setOpCodeFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
-    void SetClassIdFilters(NapiInfoCR info)
+    void SetClassNameFilters(NapiInfoCR info)
         {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, classIds);
-        std::vector<ECClassId> classIdsVec;
-        for (auto const& classIdStr : classIds)
-            {
-            ECClassId classId;
-            if (SUCCESS != ECClassId::FromString(classId, classIdStr.c_str())) {
-                Utf8String error;
-                error.Sprintf("Invalid classId filter: %s. Expected a hex string.", classIdStr.c_str());
-                THROW_JS_TYPE_EXCEPTION(error.c_str());
-            }
-            classIdsVec.push_back(ECClassId(classId.GetValueUnchecked()));
-            }
-        BentleyStatus rc = m_reader.SetECClassIdFilters(classIdsVec);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, classNames);
+        BentleyStatus rc = m_reader.SetECClassNameFilters(classNames);
         if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setClassIdFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setClassNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
     void ClearTableNameFilters(NapiInfoCR info)
         {
@@ -5395,11 +5384,11 @@ public:
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearOpCodeFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
-    void ClearClassIdFilters(NapiInfoCR info)
+    void ClearClassNameFilters(NapiInfoCR info)
         {
-        BentleyStatus rc = m_reader.ClearECClassIdFilters();
+        BentleyStatus rc = m_reader.ClearECClassNameFilters();
         if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearClassIdFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearClassNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
 };
 

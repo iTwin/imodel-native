@@ -33,7 +33,7 @@ private:
     //filters
     std::vector<Utf8String> m_tableFilters;
     std::vector<DbOpcode> m_opcodeFilters;
-    std::vector<ECN::ECClassId> m_ecclassIdFilters;
+    std::vector<Utf8String> m_ecclassNameFilters;
 
     PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
@@ -50,7 +50,7 @@ private:
     void DumpColumnValues(ColumnValueMap const& map) const;
     bool IsTableAllowedPostFilter(Utf8StringCR tableName) const;
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
-    bool IsECClassIdAllowedPostFilter(ECClassId const& classId) const;
+    bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
@@ -74,10 +74,10 @@ public:
     //filtering apis
     void SetTableFilters(std::vector<Utf8String> const& tableFilters) { m_tableFilters.clear(); m_tableFilters = tableFilters; }
     void SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) { m_opcodeFilters.clear(); m_opcodeFilters = opcodeFilters; }
-    void SetECClassIdFilters(std::vector<ECN::ECClassId> const& ecclassIdFilters) { m_ecclassIdFilters.clear(); m_ecclassIdFilters = ecclassIdFilters; }
+    void SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) { m_ecclassNameFilters.clear(); m_ecclassNameFilters = ecclassNameFilters; }
     void ClearTableFilters() { m_tableFilters.clear(); }
     void ClearOpcodeFilters() { m_opcodeFilters.clear(); }
-    void ClearECClassIdFilters() { m_ecclassIdFilters.clear(); }
+    void ClearECClassNameFilters() { m_ecclassNameFilters.clear(); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
