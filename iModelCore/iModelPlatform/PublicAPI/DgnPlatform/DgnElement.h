@@ -3558,7 +3558,7 @@ struct JobSubjectUtils
     //! @param[in] bridgeRegSubKey the registry subkey identifier used by the bridge.
     //! @param[in] comments Optional comments
     //! @param[in] properties Optional bridge-specific properties
-    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, BeJsConst const* properties = nullptr);
+    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, BeJsConst properties = BeJsDocument::Null());
 
     //! Get the job's Bridge property. This is the registry subkey value used by the bridge.
     //! @param[in] jobSubject The job subject
