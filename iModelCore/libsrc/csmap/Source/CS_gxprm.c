@@ -318,13 +318,11 @@ struct cs_GxXform_ EXP_LVL5 *CS_gxloc1DefOnly (Const struct cs_GeodeticTransform
 	extern char csErrnam [];
 	extern struct cs_XfrmTab_ cs_XfrmTab [];
 
-	int status;
 	int errorCount;
 
 	struct cs_GxXform_ *xfrmPtr;
 	struct cs_Datum_ *srcDtPtr;
 	struct cs_Datum_ *trgDtPtr;
-	struct cs_XfrmTab_* xfrmTabPtr;
 
 	int err_list [4];
 

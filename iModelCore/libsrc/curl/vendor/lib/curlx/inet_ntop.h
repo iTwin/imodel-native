@@ -23,8 +23,7 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
-#include "../curl_setup.h"
+#include "curl_setup.h"
 
 #ifdef HAVE_INET_NTOP
 #ifdef HAVE_NETINET_IN_H
@@ -37,11 +36,11 @@
 #include <arpa/inet.h>
 #endif
 #ifdef __AMIGA__
-#define curlx_inet_ntop(af,addr,buf,size)                               \
-  (char *)inet_ntop(af, CURL_UNCONST(addr), (unsigned char *)buf,       \
+#define curlx_inet_ntop(af, addr, buf, size)                            \
+  (char *)inet_ntop(af, CURL_UNCONST(addr), (unsigned char *)(buf),     \
                     (curl_socklen_t)(size))
 #else
-#define curlx_inet_ntop(af,addr,buf,size)                \
+#define curlx_inet_ntop(af, addr, buf, size)                            \
   inet_ntop(af, addr, buf, (curl_socklen_t)(size))
 #endif
 #else

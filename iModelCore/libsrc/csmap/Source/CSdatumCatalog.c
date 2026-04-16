@@ -921,7 +921,16 @@ struct csDatumCatalogEntry_* CSgetDatumCatalogEntry (struct csDatumCatalog_ *__T
 /******************************************************************************
 	Datum catalog 'Entry' constructor.
 */
+#ifdef GEOCOORD_ENHANCEMENT
 struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density)
+{
+	return CSnewDatumCatalogEntry2(path, relative, bufferSize, flags, density, verticalDatumGridFormatUnknown);
+}
+
+struct csDatumCatalogEntry_* CSnewDatumCatalogEntry2 (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density,enum VerticalDatumGridFormat gridFormat)
+#else
+struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density)
+#endif
 {
 	extern char cs_DirsepC;
 	extern char cs_ExtsepC;
@@ -967,6 +976,9 @@ struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short rela
 	__This->flags = flags;
 	__This->density = density;
 	__This->relative = relative;
+#ifdef GEOCOORD_ENHANCEMENT
+	__This->gridFormat = gridFormat;
+#endif
 	return __This;
 
 error:

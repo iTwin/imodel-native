@@ -195,6 +195,7 @@ private:
     BentleyStatus ParseGroupByClause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>&, connectivity::OSQLParseNode const*, bool const&) const;
+    BentleyStatus ParseCTEBlockBody(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseCTE(std::unique_ptr<CommonTableExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseCommonTableBlockName(std::unique_ptr<CommonTableBlockNameExp> &exp, connectivity::OSQLParseNode const &tableNode) const;
 

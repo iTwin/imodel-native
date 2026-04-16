@@ -3394,7 +3394,7 @@ void verifyShown(ECPropertyCP ecProperty)
     EXPECT_EQ(ECObjectsStatus::Success, hiddenPropertyCA->GetValue(value, "Show"))
         << "Failed to get the 'Show' value for " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
 
-    EXPECT_TRUE(!value.IsNull() || value.GetBoolean()) <<
+    EXPECT_TRUE(!value.IsNull() && value.GetBoolean()) <<
         "Expected 'HiddenProperty.Show' CA value on " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
         " to be set to true to be considered shown";
     }
@@ -3434,7 +3434,7 @@ TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
             <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
                 <ECClass typeName="A" isDomainClass="true">
-                    <ECProperty propertyName="A1" typeName="string" description="Hide">
+                    <ECProperty propertyName="A1" typeName="string" description="Show">
                         <ECCustomAttributes>
                             <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                         </ECCustomAttributes>
@@ -3447,7 +3447,7 @@ TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
                             </HideProperty>
                         </ECCustomAttributes>
                     </ECProperty>
-                    <ECProperty propertyName="A3" typeName="string" description="Hide">
+                    <ECProperty propertyName="A3" typeName="string" description="Show">
                         <ECCustomAttributes>
                             <HideProperty xmlns="EditorCustomAttributes.01.03">
                                 <If2D>true</If2D>
@@ -3463,7 +3463,7 @@ TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
                             </HideProperty>
                         </ECCustomAttributes>
                     </ECProperty>
-                    <ECProperty propertyName="A5" typeName="string" description="Hide">
+                    <ECProperty propertyName="A5" typeName="string" description="Show">
                         <ECCustomAttributes>
                             <HideProperty xmlns="EditorCustomAttributes.01.03">
                                 <If>some expression</If>
@@ -3503,7 +3503,7 @@ TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
                             </HideProperty>
                         </ECCustomAttributes>
                     </ECProperty>
-                    <ECProperty propertyName="A6" typeName="string" description="Hide">
+                    <ECProperty propertyName="A6" typeName="string" description="Show">
                         <ECCustomAttributes>
                             <HideProperty xmlns="EditorCustomAttributes.01.03">
                                 <If2D>true</If2D>
@@ -3518,12 +3518,116 @@ TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
                     <Target cardinality="(1,1)" polymorphic="true">
                         <Class class="B"/>
                     </Target>
-                    <ECProperty propertyName="AB1" typeName="string" description="Hide">
+                    <ECProperty propertyName="AB1" typeName="string" description="Show">
                         <ECCustomAttributes>
                             <HideProperty xmlns="EDitorCustomAttributes.01.03"/>
                         </ECCustomAttributes>
                     </ECProperty>
                 </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, *context));
+
+    verifyHiddenPropertyAppliedCorrectly(schema.get());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, HidePropertyOption2_If3DOnlyDeterminesVisibility)
+    {
+    // Tests the Option 2 decision for HideProperty conversion (issue #8402):
+    // Only If3D determines visibility. If2D is completely ignored.
+    // BIS doesn't distinguish 2D/3D at the schema level, so we use If3D as the sole
+    // indicator since 3D is the dominant use case.
+    //
+    // | If2D  | If3D  | Expected |
+    // | true  | true  | Hide     |
+    // | true  | false | Show     |
+    // | false | true  | Hide     |
+    // | false | false | Show     |
+    // | true  | null  | Show     |
+    // | null  | true  | Hide     |
+    // | false | null  | Show     |
+    // | null  | false | Show     |
+    // | null  | null  | Show     |
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="TestClass" isDomainClass="true">
+                    <ECProperty propertyName="Case1_2dTrue_3dTrue" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case2_2dTrue_3dFalse" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case3_2dFalse_3dTrue" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case4_2dFalse_3dFalse" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case5_2dTrue_3dNull" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case6_2dNull_3dTrue" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case7_2dFalse_3dNull" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case8_2dNull_3dFalse" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="Case9_2dNull_3dNull" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
             </ECSchema>
         )xml";
 

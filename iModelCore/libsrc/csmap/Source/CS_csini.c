@@ -223,11 +223,11 @@ void EXP_LVL9 CScsiniS (struct cs_Csprm_ *csprm)
 		csprm->max_xy [XX] = -csprm->min_xy [XX];
 
 		test_ll [LNG] = csini->cent_lng * cs_Radian;
-		test_ll [LAT] = cs_K75;
+		test_ll [LAT] = csprm->max_ll[LAT];
 		CScsiniF (csini,test_xy,test_ll);
 		csprm->max_xy [YY] = test_xy [YY] - csini->y_off;
 
-		test_ll [LAT] = -cs_K75;
+		test_ll [LAT] = csprm->min_ll[LAT];
 		CScsiniF (csini,test_xy,test_ll);
 		csprm->min_xy [YY] = test_xy [YY] - csini->y_off;
 

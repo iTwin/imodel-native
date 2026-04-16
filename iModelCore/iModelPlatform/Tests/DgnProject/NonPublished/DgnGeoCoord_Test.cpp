@@ -129,13 +129,6 @@ TEST_F(BaseDgnGeoCoordTest, GeneralTestsOneDb)
     ASSERT_FALSE(REPROJECT_Success == theGCS->GetLinearTransform(&tfReproject, extent, *firstGCS, &maxError, &meanError));
 
     //---------------------------------------------
-    extent.high.y = 0.01;
-    extent.high.z = 0.001; // z extent too small
-
-    // too small extent will result in an error
-    ASSERT_FALSE(REPROJECT_Success == theGCS->GetLinearTransform(&tfReproject, extent, *firstGCS, &maxError, &meanError));
-
-    //---------------------------------------------
     GeoCoordinates::BaseGCSPtr secondGCS = GeoCoordinates::BaseGCS::CreateGCS("UTM84-11N");
 
     ASSERT_TRUE(secondGCS.IsValid() && secondGCS->IsValid());

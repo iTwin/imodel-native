@@ -125,10 +125,11 @@ struct ECSqlConfig {
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
         bool m_validateWriteValues;
+        bool m_purgeUnusedColumns;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
     public:
-        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false) {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false), m_purgeUnusedColumns(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
@@ -142,6 +143,8 @@ struct ECSqlConfig {
 
         bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
         void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
+        bool GetPurgeUnusedColumns() const { return m_purgeUnusedColumns; }
+        void SetPurgeUnusedColumns(bool v) { m_purgeUnusedColumns = v; }
 };
 
 //=======================================================================================
@@ -321,7 +324,7 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 2, 0); }
+    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 3, 1); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }

@@ -579,7 +579,7 @@ int EXP_LVL3 CS_dtDefCmp (Const struct cs_Dtdef_ *original,Const struct cs_Dtdef
 
 	if (ellipsoidUse)
 	{
-		if (!CS_stricmp (original->ell_knm,revised->ell_knm))
+		if (CS_stricmp (original->ell_knm,revised->ell_knm))
 		{
 			if (errCnt == 0)
 			{

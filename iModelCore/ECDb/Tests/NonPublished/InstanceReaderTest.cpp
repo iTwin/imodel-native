@@ -3081,4 +3081,80 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
     }, opt));
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, SupportsInstanceQueryFunction) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    // Entity classes should be supported
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT supports_instance_query('BisCore.Element')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "Entity class should support instance queries";
+    stmt.Finalize();
+
+    // Link table relationship classes should be supported
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT supports_instance_query('BisCore.CategorySelectorRefersToCategories')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "Link table relationship class should support instance queries";
+    stmt.Finalize();
+
+    // Non-existent classes should return 0
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT supports_instance_query('BisCore.DoesNotExist')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << "Non-existent class should not support instance queries";
+    stmt.Finalize();
+
+    // Link table relationship with external class ids (the original defect class) should be supported
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT supports_instance_query('BisCore.ModelSelectorRefersToModels')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "ModelSelectorRefersToModels (link table with external class ids) should support instance queries";
+    stmt.Finalize();
+
+    // Using alias format
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT supports_instance_query('bis:Element')"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "Should work with alias:class format";
+    stmt.Finalize();
+
+    // Using class id
+    ECN::ECClassId elementClassId = m_ecdb.Schemas().GetClassId("BisCore", "Element", SchemaLookupMode::AutoDetect);
+    ASSERT_TRUE(elementClassId.IsValid());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT supports_instance_query(%d)", (int)elementClassId.GetValueUnchecked())));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "Should work with integer class id";
+    stmt.Finalize();
+
+    // NULL should return 0
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT supports_instance_query(NULL)"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << "NULL should return 0";
+    stmt.Finalize();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, LinkTableInstanceQueryWithExternalClassIds) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    // ModelSelectorRefersToModels is a link table relationship where the SourceECClassId
+    // and TargetECClassId may be stored in external tables. This was previously failing
+    // with a SQLite syntax error due to bugs in CreateLinkTableView.
+    ECSqlStatement stmt;
+    auto status = stmt.Prepare(m_ecdb, "SELECT $ FROM BisCore.ModelSelectorRefersToModels");
+    ASSERT_EQ(ECSqlStatus::Success, status) << "Should be able to prepare instance query for link table relationship class";
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        ASSERT_FALSE(stmt.IsValueNull(0)) << "$ cannot be NULL";
+        BeJsDocument doc;
+        doc.Parse(stmt.GetValueText(0));
+        ASSERT_TRUE(doc.hasMember("ECInstanceId"))       << "Must have ECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("ECClassId"))          << "Must have ECClassId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECInstanceId")) << "Must have SourceECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECInstanceId")) << "Must have TargetECInstanceId Property";
+    }
+    stmt.Finalize();
+}
+
 END_ECDBUNITTESTS_NAMESPACE

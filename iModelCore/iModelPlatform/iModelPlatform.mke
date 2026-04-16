@@ -448,6 +448,15 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
 
+%if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)proxyres$(stlibext)
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + iphlpapi.lib
+    LINKER_LIBRARIES + winhttp.lib
+%endif
+
 %ifndef CREATE_STATIC_LIBRARIES
     %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
 

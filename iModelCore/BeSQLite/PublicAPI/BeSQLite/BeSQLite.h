@@ -710,6 +710,17 @@ public:
 
     BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
     BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
+
+    //! Enable or disable the monotone-clock VFS shim.
+    //! When enabled, a VFS shim named "besqlite_monotone" is registered as the default
+    //! SQLite VFS. It overrides xCurrentTime and xCurrentTimeInt64 to guarantee that
+    //! every call returns a strictly increasing value: if the system clock has not
+    //! advanced since the previous call the returned time is incremented by 1 ms.
+    //! This is useful in tests where SQLite's millisecond-resolution clock would
+    //! otherwise return identical timestamps for rapid successive operations.
+    //! Call with enable=false to unregister the shim and restore the previous default VFS.
+    //! @note Must be called after BeSQLiteLib::Initialize().
+    BE_SQLITE_EXPORT static void EnableMonotoneClock(bool enable);
 };
 
 //=======================================================================================
@@ -3327,6 +3338,9 @@ public:
     //! Vacuum a file and optionally change page_size.
     //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.
     BE_SQLITE_EXPORT DbResult Vacuum(int newPageSizeInBytes = 0);
+
+    //! Run ANALYZE command to gather statistics about tables and indices.
+    BE_SQLITE_EXPORT DbResult Analyze();
 
     BE_SQLITE_EXPORT DbResult RestartDefaultTxn();
 

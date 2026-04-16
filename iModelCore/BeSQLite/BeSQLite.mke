@@ -64,6 +64,8 @@ $(o)BeSQLiteCurlHandleConfig$(oext) : $(baseDir)BeSQLiteCurlHandleConfig.cpp ${M
 
 $(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
+$(o)MonotoneClock$(oext) : $(baseDir)MonotoneClock.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
 $(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
@@ -114,6 +116,17 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
+
+
+%if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
+    BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"
+    BeSQLiteRequiredLibs + iphlpapi.lib
+    BeSQLiteRequiredLibs + winhttp.lib
+    DLM_SPECIAL_LINKOPT = -NODEFAULTLIB:msvcrtd.lib
+%endif
 
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)

@@ -496,12 +496,12 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
                     {
                     ECSchemaPtr rightReferencedSchema = it->second;
                     ECSchemaPtr copiedSchema;
-                    auto status = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation());
-                    if (status != ECObjectsStatus::Success)
+                    auto copyStatus = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation());
+                    if (copyStatus != ECObjectsStatus::Success)
                         {
                         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                             "Schema '%s' failed to be copied.", rightReferencedSchema->GetFullSchemaName().c_str());
-                        return status;
+                        return copyStatus;
                         }
                     if (copiedSchema.IsValid())
                         {

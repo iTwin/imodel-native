@@ -95,7 +95,7 @@ PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx
             return PropertyMatchResult::NotFound();
         }
         if (!GetAlias().EqualsIAscii(propertyPath.First().GetName())) {
-            PropertyMatchResult::NotFound();
+            return PropertyMatchResult::NotFound();
         }
         auto resolvedPath = propertyPath.Skip(1);
         resolvedPath.SetPropertyDef(0, *property);

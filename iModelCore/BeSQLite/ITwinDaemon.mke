@@ -20,7 +20,11 @@ always:
     !~@mkdir $(o)
 
 CCompFpOpts=precise
-cDefs + -DCURL_STATICLIB=1 -DSQLITE_BCV_CURL_HANDLE_CONFIG=besqlite_bcv_curl_handle_config
+cDefs + -DITWIN_DAEMON -DCURL_STATICLIB=1 -DSQLITE_BCV_CURL_HANDLE_CONFIG=besqlite_bcv_curl_handle_config -DSQLITE_BCV_CUSTOM_INIT=besqlite_bcv_custom_init
+
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
+    LLVMCommonCompOpts + -Wno-implicit-function-declaration # Needed for SQLITE_BCV_CUSTOM_INIT to compile
+%endif
 
 # Third-party section of this library.
 %include $(sharedmki)PushThirdPartyIgnores.mki
@@ -53,15 +57,27 @@ $(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvhea
 EXE_DEST            = $(o)
 EXE_NAME            = $(appName)
 EXE_OBJS            = $(MultiCompileObjectList)
-EXE_LOPT1           = -entry:mainCRTStartup
+EXE_LOPT1           = -entry:mainCRTStartup -NODEFAULTLIB:msvcrtd.lib
 
 %if $(TARGET_PLATFORM)=="Windows"
         LINKER_LIBRARIES + wsock32.lib ws2_32.lib Advapi32.lib Wldap32.lib Crypt32.lib Secur32.lib
         BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
 %endif
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES + -framework CFNetwork
+%endif
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 LINKER_LIBRARIES + $(CLibs)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+
+%if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + iphlpapi.lib
+    LINKER_LIBRARIES + winhttp.lib
+%endif
 
 %include $(SharedMki)linktool.mki
