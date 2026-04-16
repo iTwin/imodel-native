@@ -75,7 +75,7 @@ void Asset::ToJson(BeJsValue out) const
     auto packages = out[JSON_Packages];
     packages.SetEmptyArray();
 
-    for (auto index = 0; index < (int)m_packages.size(); ++index)
+    for (size_t index = 0; index < m_packages.size(); ++index)
         m_packages[index].ToJson(packages[index]);
     }
 
