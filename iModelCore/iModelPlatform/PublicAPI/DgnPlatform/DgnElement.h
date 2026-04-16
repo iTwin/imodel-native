@@ -2112,6 +2112,11 @@ public:
     DGNPLATFORM_EXPORT bool IsViewIndependent() const;
     BeSQLite::EC::ECSqlStatus Write(BeSQLite::SnappyToBlob&, BeSQLite::EC::IECSqlBinder& binder) const;
     BeSQLite::EC::ECSqlStatus Read(BeSQLite::SnappyFromMemory&, DgnDbR,const BeSQLite::EC::IECSqlValue& valueReader);
+
+    //! @private Read GeomStream data from the bis_GeometryStream side table (profile >= 2.0.0.8).
+    DGNPLATFORM_EXPORT static DgnDbStatus ReadFromSideTable(BeSQLite::SnappyFromMemory& snappy, DgnDbR db, DgnElementId elemId, GeometryStreamR outStream);
+    //! @private After a normal ECSql write, mirror the GeomStream blob to the bis_GeometryStream side table.
+    DGNPLATFORM_EXPORT static DgnDbStatus MirrorToSideTable(DgnDbR db, DgnElementId elemId, Utf8CP sourceClassName);
 };
 
 //=======================================================================================

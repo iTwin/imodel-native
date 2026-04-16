@@ -1489,6 +1489,44 @@ DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStream::ReadFromSideTable(SnappyFromMemory& snappy, DgnDbR db, DgnElementId elemId, GeometryStreamR outStream)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement(
+        "SELECT " BIS_GEOMSTREAM_SIDE_COL " FROM " BIS_GEOMSTREAM_SIDE_TABLE " WHERE Id=?");
+    if (!stmt.IsValid())
+        return DgnDbStatus::ReadError;
+
+    stmt->BindId(1, elemId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::Success; // no entry means no geometry
+
+    int blobSize;
+    void const* blob = stmt->GetValueBlob(0, &blobSize);
+    return outStream.ReadGeometryStream(snappy, db, blob, blobSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStream::MirrorToSideTable(DgnDbR db, DgnElementId elemId, Utf8CP sourceClassName)
+    {
+    // Copy the GeometryStream blob from the EC class table into the side table.
+    Utf8PrintfString sql(
+        "INSERT OR REPLACE INTO " BIS_GEOMSTREAM_SIDE_TABLE " (Id,ClassId," BIS_GEOMSTREAM_SIDE_COL ")"
+        " SELECT ECInstanceId,ECClassId,GeometryStream FROM bis_%s WHERE ECInstanceId=? AND GeometryStream IS NOT NULL",
+        sourceClassName);
+    CachedStatementPtr stmt = db.GetCachedStatement(sql.c_str());
+    if (!stmt.IsValid())
+        return DgnDbStatus::WriteError;
+
+    stmt->BindId(1, elemId);
+    DbResult stat = stmt->Step();
+    return (BE_SQLITE_DONE == stat) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStream::IsViewIndependent() const
     {
     GeometryStreamIO::Collection geom(data(), size());
@@ -3630,6 +3668,13 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     m_categoryId = stmt.GetValueNavigation<DgnCategoryId>(params.GetSelectIndex(prop_Category()));
 
     // Read GeomStream
+    if (GetDgnDb().GetProfileVersion() >= DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        {
+        // New format (profile >= 2.0.0.8): read from bis_GeometryStream side table.
+        return GeometryStream::ReadFromSideTable(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), GetElementId(), m_geom);
+        }
+
+    // Old format: read from the ECSql-mapped column.
     auto geomIndex = params.GetSelectIndex(prop_GeometryStream());
     if (stmt.IsValueNull(geomIndex))
         return DgnDbStatus::Success;    // no geometry...
@@ -3789,7 +3834,15 @@ bool GeometricElement::_EqualProperty(ECN::ECPropertyValueCR expected, DgnElemen
 DgnDbStatus GeometricElement::_InsertInDb()
     {
     auto stat = T_Super::_InsertInDb();
-    return DgnDbStatus::Success == stat ? InsertGeomStream() : stat;
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    stat = InsertGeomStream();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    // Profile 2.0.0.8+: mirror the blob that was just written to the EC table into the side table.
+    if (m_geom.HasGeometry() && GetDgnDb().GetProfileVersion() >= DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        return GeometryStream::MirrorToSideTable(GetDgnDb(), GetElementId(), _GetGeometryColumnClassName());
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3798,7 +3851,15 @@ DgnDbStatus GeometricElement::_InsertInDb()
 DgnDbStatus GeometricElement::_UpdateInDb()
     {
     auto stat = T_Super::_UpdateInDb();
-    return DgnDbStatus::Success == stat ? UpdateGeomStream() : stat;
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    stat = UpdateGeomStream();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    // Profile 2.0.0.8+: keep the side table in sync with the EC table.
+    if (m_geom.HasGeometry() && GetDgnDb().GetProfileVersion() >= DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        return GeometryStream::MirrorToSideTable(GetDgnDb(), GetElementId(), _GetGeometryColumnClassName());
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

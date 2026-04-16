@@ -13,15 +13,28 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
     if (DgnDbStatus::Success != status)
         return status;
 
-    int geometryStreamIndex = params.GetSelectIndex(prop_GeometryStream());
-    if (statement.IsValueNull(geometryStreamIndex))
-        return DgnDbStatus::BadElement;
+    if (GetDgnDb().GetProfileVersion() >= DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        {
+        // New format (profile >= 2.0.0.8): read from bis_GeometryStream side table.
+        status = GeometryStream::ReadFromSideTable(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), GetElementId(), m_geometry);
+        if (DgnDbStatus::Success != status)
+            return status;
+        if (!m_geometry.HasGeometry())
+            return DgnDbStatus::BadElement; // GeometryPart must always have geometry
+        }
+    else
+        {
+        // Old format: read from the ECSql-mapped column.
+        int geometryStreamIndex = params.GetSelectIndex(prop_GeometryStream());
+        if (statement.IsValueNull(geometryStreamIndex))
+            return DgnDbStatus::BadElement;
 
-    int blobSize;
-    void const* blob = statement.GetValueBlob(geometryStreamIndex, &blobSize);
-    status = m_geometry.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
-    if (DgnDbStatus::Success != status)
-        return status;
+        int blobSize;
+        void const* blob = statement.GetValueBlob(geometryStreamIndex, &blobSize);
+        status = m_geometry.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
+        if (DgnDbStatus::Success != status)
+            return status;
+        }
 
     DPoint3d bboxLow = statement.GetValuePoint3d(params.GetSelectIndex(prop_BBoxLow()));
     DPoint3d bboxHigh = statement.GetValuePoint3d(params.GetSelectIndex(prop_BBoxHigh()));
@@ -121,8 +134,13 @@ DgnDbStatus DgnGeometryPart::_InsertInDb()
     DgnDbStatus status = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != status)
         return status;
-
-    return WriteGeometryStream();
+    status = WriteGeometryStream();
+    if (DgnDbStatus::Success != status)
+        return status;
+    // Profile 2.0.0.8+: mirror to side table.
+    if (GetDgnDb().GetProfileVersion() >= DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        return GeometryStream::MirrorToSideTable(GetDgnDb(), GetElementId(), BIS_CLASS_GeometryPart);
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,8 +151,13 @@ DgnDbStatus DgnGeometryPart::_UpdateInDb()
     DgnDbStatus status = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != status)
         return status;
-
-    return WriteGeometryStream();
+    status = WriteGeometryStream();
+    if (DgnDbStatus::Success != status)
+        return status;
+    // Profile 2.0.0.8+: keep the side table in sync.
+    if (GetDgnDb().GetProfileVersion() >= DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        return GeometryStream::MirrorToSideTable(GetDgnDb(), GetElementId(), BIS_CLASS_GeometryPart);
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

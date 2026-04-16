@@ -63,10 +63,15 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 7,
+    // 2.0.0.8: GeomStream data moved from GeometricElement3d/2d and GeometryPart columns
+    //          into a dedicated bis_GeometryStream table (Id, ClassId, GeomStream).
+    DGNDB_CURRENT_VERSION_Sub2  = 8,
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
+
+    // Profile version at which bis_GeometryStream side-table was introduced.
+    DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2 = 8,
 };
 
 //=======================================================================================
@@ -267,6 +272,7 @@ protected:
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
+    BeSQLite::DbResult CreateAndPopulateGeomStreamSideTable(); //!< @private - creates bis_GeometryStream and migrates existing data
     BeSQLite::DbResult DoOpenIModel(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
 
 public:

@@ -11,6 +11,11 @@
 #define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.ecschema.xml"
 #define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
 #define BIS_TABLE(name)         "bis_" name
+
+//! Side table that stores GeometryStream blobs separately from their EC class tables.
+//! Introduced in DgnDb profile version 2.0.0.8.
+#define BIS_GEOMSTREAM_SIDE_TABLE  "bis_GeometryStream"
+#define BIS_GEOMSTREAM_SIDE_COL    "GeomStream"
 #define BE_PROP_NAME(__val__)   static constexpr Utf8CP prop_##__val__() {return #__val__;}
 #define BE_JSON_PROP_NAMESPACE(__val__) static constexpr Utf8CP json_prop_namespace_##__val__() {return #__val__;}
 

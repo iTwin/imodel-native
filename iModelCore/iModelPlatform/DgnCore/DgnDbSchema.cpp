@@ -395,6 +395,42 @@ DbResult DgnDb::SaveDgnDbProfileVersion(DgnDbProfileVersion version)
     return  SavePropertyString(DgnProjectProperty::ProfileVersion(), m_profileVersion.ToJson());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateAndPopulateGeomStreamSideTable()
+    {
+    // Create the side table to hold GeomStream data outside the EC class tables.
+    DbResult stat = ExecuteSql(
+        "CREATE TABLE IF NOT EXISTS " BIS_GEOMSTREAM_SIDE_TABLE
+        " (Id INTEGER PRIMARY KEY, ClassId INTEGER NOT NULL, " BIS_GEOMSTREAM_SIDE_COL " BLOB NOT NULL)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    // Migrate from GeometricElement3d (only rows that have a non-null GeometryStream column)
+    stat = ExecuteSql(
+        "INSERT OR IGNORE INTO " BIS_GEOMSTREAM_SIDE_TABLE " (Id,ClassId," BIS_GEOMSTREAM_SIDE_COL ")"
+        " SELECT ECInstanceId,ECClassId,GeometryStream"
+        " FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE GeometryStream IS NOT NULL");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    // Migrate from GeometricElement2d
+    stat = ExecuteSql(
+        "INSERT OR IGNORE INTO " BIS_GEOMSTREAM_SIDE_TABLE " (Id,ClassId," BIS_GEOMSTREAM_SIDE_COL ")"
+        " SELECT ECInstanceId,ECClassId,GeometryStream"
+        " FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE GeometryStream IS NOT NULL");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    // Migrate from GeometryPart
+    stat = ExecuteSql(
+        "INSERT OR IGNORE INTO " BIS_GEOMSTREAM_SIDE_TABLE " (Id,ClassId," BIS_GEOMSTREAM_SIDE_COL ")"
+        " SELECT ECInstanceId,ECClassId,GeometryStream"
+        " FROM " BIS_TABLE(BIS_CLASS_GeometryPart) " WHERE GeometryStream IS NOT NULL");
+    return stat;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -469,6 +505,11 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params) {
     m_geoLocation.SetProjectExtents(extents);
     m_geoLocation.SetGlobalOrigin(params.m_globalOrigin);
     m_geoLocation.Save();
+
+    // Profile 2.0.0.8+: ensure the bis_GeometryStream side table exists in every new DB.
+    DbResult sideTableStat = CreateAndPopulateGeomStreamSideTable();
+    if (BE_SQLITE_OK != sideTableStat)
+        return sideTableStat;
 
     Domains().OnDbOpened();
 
@@ -599,6 +640,9 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
     if (BE_SQLITE_OK != result)
         return result;
 
+    // Save the stored version before we overwrite it, so per-version migrators can gate on it.
+    DgnDbProfileVersion const versionBeforeUpgrade = m_profileVersion;
+
 #if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
         {
@@ -612,6 +656,14 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
             }
         }
 #else
+    // Profile 2.0.0.8: move GeomStream blobs into bis_GeometryStream side table.
+    if (versionBeforeUpgrade < DgnDbProfileVersion(2, 0, 0, DGNDB_GEOMSTREAM_TABLE_VERSION_Sub2))
+        {
+        DbResult stat = CreateAndPopulateGeomStreamSideTable();
+        if (BE_SQLITE_OK != stat)
+            return stat;
+        }
+
     m_profileVersion = DgnDbProfileVersion::GetCurrent();
 #endif
 
