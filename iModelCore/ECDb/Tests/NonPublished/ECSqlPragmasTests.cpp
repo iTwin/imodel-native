@@ -532,8 +532,8 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("runtime_schemas.ecdb", SchemaItem(
+TEST_F(ECSqlPragmasTestFixture, schema_view_returns_blob) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "  <ECEntityClass typeName='Foo' modifier='None'>"
@@ -543,7 +543,7 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
 
     { // basic pragma returns one row with expected columns
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
         // Column 0: format (string)
@@ -581,8 +581,8 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_returns_blob) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("runtime_schemas_ver.ecdb", SchemaItem(
+TEST_F(ECSqlPragmasTestFixture, schema_view_explicit_version) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_ver.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "  <ECEntityClass typeName='Bar' modifier='None'>"
@@ -592,7 +592,7 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
 
     { // explicit version 1 should succeed
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(1)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view(1)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion column
         Utf8CP dataText = stmt.GetValueText(2);
@@ -611,34 +611,34 @@ TEST_F(ECSqlPragmasTestFixture, runtime_schemas_explicit_version) {
 
     { // unsupported high version should fail
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(99)"));
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view(99)"));
     }
 
     { // version 0 should fail
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(0)"));
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view(0)"));
     }
 
     { // negative version should fail to parse
         ECSqlStatement stmt;
         // -1 is not a valid pragma_value (no unary minus in grammar), so this fails at parse
-        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas(-1)"));
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view(-1)"));
     }
 
     { // string argument should fail
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas('2')"));
+        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view('2')"));
     }
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, runtime_schemas_is_readonly) {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("runtime_schemas_ro.ecdb"));
+TEST_F(ECSqlPragmasTestFixture, schema_view_is_readonly) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schema_view_ro.ecdb"));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA runtime_schemas=2"));
+    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view=2"));
 }
 
 END_ECDBUNITTESTS_NAMESPACE

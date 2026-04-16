@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "../RuntimeSchemaWriter.h"
+#include "../SchemaViewWriter.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -956,12 +956,12 @@ DbResult PragmaCheckECSqlWriteValues::Write(PragmaManager::RowSet& rowSet, ECDbC
 }
 
 //=======================================================================================
-// PragmaRuntimeSchemas
+// PragmaSchemaView
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
+DbResult PragmaSchemaView::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
 	// Resolve requested format version from optional integer argument
 	uint8_t requestedVersion = CURRENT_FORMAT_VERSION;
 	if (val.IsInteger()) {
@@ -992,7 +992,7 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 	// Build the binary blob (v1: property definition dedup).
 	// Currently only one format version exists. When adding v2+, this must route to
 	// the appropriate writer based on requestedVersion instead of always using v1.
-	RuntimeSchemaWriter writer;
+	SchemaViewWriter writer;
 	auto writeResult = writer.WriteAllSchemas(ecdb);
 	if (writeResult != BE_SQLITE_OK)
 		return writeResult;
@@ -1015,7 +1015,7 @@ DbResult PragmaRuntimeSchemas::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaRuntimeSchemas::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+DbResult PragmaSchemaView::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
 	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
 	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
 	rowSet->FreezeSchemaChanges();

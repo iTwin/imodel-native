@@ -157,19 +157,19 @@ struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
-// @bsiclass PragmaRuntimeSchemas
+// @bsiclass PragmaSchemaView
 // Returns all EC schema metadata as a single binary blob.
-// Usage: PRAGMA runtime_schemas           -- returns current format version (v1)
-//        PRAGMA runtime_schemas(1)        -- explicitly request format version 1
+// Usage: PRAGMA schema_view           -- returns current format version (v1)
+//        PRAGMA schema_view(1)        -- explicitly request format version 1
 // Result: single row with columns: format (string), formatVersion (int), data (binary), schemaToken (string)
 //+===============+===============+===============+===============+===============+======
-struct PragmaRuntimeSchemas : PragmaManager::GlobalHandler {
+struct PragmaSchemaView : PragmaManager::GlobalHandler {
     static constexpr uint8_t CURRENT_FORMAT_VERSION = 1;
-    PragmaRuntimeSchemas():GlobalHandler("runtime_schemas", "runtime_schemas [(version)] - returns all schema metadata as a binary blob. Optional integer argument selects format version (default: latest)."){}
-    ~PragmaRuntimeSchemas(){}
+    PragmaSchemaView():GlobalHandler("schema_view", "schema_view [(version)] - returns all schema metadata as a binary blob. Optional integer argument selects format version (default: latest)."){}
+    ~PragmaSchemaView(){}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaRuntimeSchemas>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaSchemaView>(); }
 };
 
 //=======================================================================================

@@ -158,7 +158,7 @@ public:
     //! KindOfQuantity persistence units and presentation formats reference Units/Formats
     //! only as strings, so consumers don't need those schemas in the context.
     //! Custom attributes are not included - they are loaded lazily via ECSQL in
-    //! RuntimeSchemaContext when needed.
+    //! SchemaView when needed.
     //! @return BE_SQLITE_OK on success, or an error code if the ec_ tables are missing/corrupt.
     DbResult WriteAllSchemas(DbCR db);
 

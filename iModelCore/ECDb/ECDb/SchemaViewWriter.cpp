@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "RuntimeSchemaWriter.h"
+#include "SchemaViewWriter.h"
 #include <pugixml/src/pugixml.hpp>
 #include <cinttypes>
 
