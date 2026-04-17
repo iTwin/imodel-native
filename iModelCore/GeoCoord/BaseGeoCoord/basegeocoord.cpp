@@ -13070,6 +13070,10 @@ static CsmapToJsonUnitEntry const s_csmapToJsonUnitMap[] =
 
 StatusInt      BaseGCS::MapUnitToJsonName (Utf8StringR jsonUnitName, Utf8CP csmapUnitName)
     {
+    jsonUnitName.clear();
+    if (Utf8String::IsNullOrEmpty(csmapUnitName))
+        return ERROR;
+
     for (auto const& entry : s_csmapToJsonUnitMap)
         {
         if (0 == BeStringUtilities::Stricmp (csmapUnitName, entry.m_csmapName))
@@ -13079,7 +13083,6 @@ StatusInt      BaseGCS::MapUnitToJsonName (Utf8StringR jsonUnitName, Utf8CP csma
             }
         }
 
-    jsonUnitName.clear();
     return ERROR;
     }
 
