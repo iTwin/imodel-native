@@ -9,7 +9,6 @@
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/SchemaManager.h>
-#include <json/json.h>
 #include <list>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE

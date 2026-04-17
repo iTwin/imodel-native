@@ -10,7 +10,6 @@
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/SchemaManager.h>
 #include <list>
-#include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -687,7 +686,7 @@ struct ECSqlParseTreeFormatter final
         //!                                   {"Exp":"<exp as string>",
         //!                                   "Children": [....]},
         //!                                   ...]}
-        ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR, Utf8CP ecsql);
+        ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(BeJsValue expTree, Utf8StringR ecsqlFromExpTree, ECDbCR, Utf8CP ecsql);
     };
 
 #endif

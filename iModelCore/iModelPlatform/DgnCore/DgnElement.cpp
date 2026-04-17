@@ -4564,7 +4564,7 @@ void JobSubjectUtils::SetTransform(SubjectR jobSubject, TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, JsonValueCP properties)
+void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, BeJsConst const* properties)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(bridgeRegSubKey.c_str()));
 

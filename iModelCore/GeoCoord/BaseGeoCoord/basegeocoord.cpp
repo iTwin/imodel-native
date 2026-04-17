@@ -8567,7 +8567,7 @@ public:
     {
         VerticalTransform::ToJson(jsonValue);
 
-        jsonValue["nullTransform"] = Json::nullValue;
+        jsonValue["nullTransform"].SetNull();
 
         return SUCCESS;
     }
@@ -9440,7 +9440,7 @@ VerticalTransformPathInfo::~VerticalTransformPathInfo()
 StatusInt VerticalTransformPathInfo::ToJson(BeJsValue jsonValue) const
 {
     jsonValue["target"] = m_target;
-    jsonValue["path"] = Json::arrayValue;
+    jsonValue["path"].SetEmptyArray();
     int numEntries = 0;
     for (const auto& path : m_paths)
         {

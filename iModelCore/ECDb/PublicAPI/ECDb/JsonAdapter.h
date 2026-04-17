@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECSqlStatement.h>
-#include <json/json.h>
 #include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
