@@ -16,6 +16,8 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
     m_lastError.clear();
     InstanceWriter::InsertOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
+    if(userOptions.isBoolMember("forceUseId") && userOptions["forceUseId"].asBool(false))
+        options.UseInstanceIdFromJs();
     ECN::ECClassId classId;
     if (!m_ecdb.GetInstanceWriter().TryGetClassId(classId, in, inFmt)) {
         m_lastError.Sprintf("Failed to get ECClassId/className/classFullName");

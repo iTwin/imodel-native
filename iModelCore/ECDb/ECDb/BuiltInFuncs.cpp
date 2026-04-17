@@ -778,4 +778,93 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     ctx.SetResultText(strVal.c_str(), len, Context::CopyData::Yes);
     }
 
+//=================================[SupportInstanceQueryFunc]=======================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<SupportInstanceQueryFunc> SupportInstanceQueryFunc::Create(ECDbCR ecdb) {
+    return std::make_unique<SupportInstanceQueryFunc>(ecdb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SupportInstanceQueryFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
+    if (nArgs != 1) {
+        ctx.SetResultError("supports_instance_query(S|I) expects exactly one argument: class name (e.g. 'BisCore.Element') or class id.");
+        return;
+    }
+
+    DbValue const& arg = args[0];
+    if (arg.IsNull()) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    ECN::ECClassCP ecClass = nullptr;
+    if (arg.GetValueType() == DbValueType::TextVal) {
+        Utf8String name = arg.GetValueText();
+        const auto delimiterPos = name.find_first_of(".:");
+        if (delimiterPos == std::string::npos) {
+            ctx.SetResultError("supports_instance_query() expects class name in format 'SchemaNameOrAlias.ClassName' or 'SchemaNameOrAlias:ClassName'.");
+            return;
+        }
+        Utf8String schemaNameOrAlias = name.substr(0, delimiterPos);
+        Utf8String className = name.substr(delimiterPos + 1U, name.length());
+        if (Utf8String::IsNullOrEmpty(schemaNameOrAlias.c_str()) || Utf8String::IsNullOrEmpty(className.c_str())) {
+            ctx.SetResultError("supports_instance_query() expects class name in format 'SchemaNameOrAlias.ClassName' or 'SchemaNameOrAlias:ClassName'.");
+            return;
+        }
+        // Look up class by schema name/alias + class name
+        auto stmt = m_ecdb.GetCachedStatement("SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE c.Name = ?1 AND (s.Name = ?2 OR s.Alias = ?2)");
+        if (stmt == nullptr) {
+            ctx.SetResultError("supports_instance_query() db is closed.");
+            return;
+        }
+        stmt->BindText(1, className, Statement::MakeCopy::No);
+        stmt->BindText(2, schemaNameOrAlias, Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_ROW) {
+            ctx.SetResultInt(0);
+            return;
+        }
+        auto classId = stmt->GetValueId<ECN::ECClassId>(0);
+        ecClass = m_ecdb.Schemas().GetClass(classId);
+    } else if (arg.GetValueType() == DbValueType::IntegerVal) {
+        ECN::ECClassId classId(arg.GetValueUInt64());
+        ecClass = m_ecdb.Schemas().GetClass(classId);
+    } else {
+        ctx.SetResultError("supports_instance_query() expects a text class name or integer class id.");
+        return;
+    }
+
+    if (ecClass == nullptr) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    if (ecClass->IsMixin()) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    auto const* classMap = m_ecdb.Schemas().Main().GetClassMap(*ecClass);
+    if (classMap == nullptr) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    auto mapType = classMap->GetType();
+    if (mapType == ClassMap::Type::NotMapped || mapType == ClassMap::Type::RelationshipEndTable) {
+        ctx.SetResultInt(0);
+        return;
+    }
+
+    if (mapType == ClassMap::Type::Class || mapType == ClassMap::Type::RelationshipLinkTable) {
+        ctx.SetResultInt(1);
+        return;
+    }
+
+    ctx.SetResultInt(0);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

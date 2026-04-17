@@ -129,6 +129,7 @@ namespace connectivity
                             {OSQLParseNode::concatenation, "concatenation"},
                             {OSQLParseNode::cross_union, "cross_union"},
                             {OSQLParseNode::cte, "cte"},
+                            {OSQLParseNode::cte_block_body, "cte_block_body"},
                             {OSQLParseNode::cte_block_list, "cte_block_list"},
                             {OSQLParseNode::cte_column_list, "cte_column_list"},
                             {OSQLParseNode::cte_table_name, "cte_table_name"},

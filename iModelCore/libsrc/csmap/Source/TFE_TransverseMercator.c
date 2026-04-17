@@ -112,6 +112,8 @@ struct cs_Csdef_ *csDef
     trmBFParams->Utmcf6         = trav4 * trav3 / 6;
     trmBFParams->Utmbta         = 0.0;
 
+    trmBFParams->unitScaleToMeter = csDef->unit_scl;
+
     /* Calculation of arc of meridian at origin Utmbta */
     orgLatRadians = csDef->org_lat * cs_Degree;
     if ( fabs (orgLatRadians) > 1.0e-12)
@@ -138,7 +140,7 @@ struct cs_Csdef_ *csDef
     /* Need to compute the maximum value of X which can be
        supported mathematically. */
 
-    test_ll [LNG] = CS_adj2pi (trmBFParams->projecMercen + cs_EETest * 2 /3) * cs_Radian; // Trmer uses 90 deg but it is too much for the BF algorythms so we use 60 degrees.
+    test_ll [LNG] = CS_adj2pi (trmBFParams->projecMercen + cs_EETest * 2.0 / 3.0) * cs_Radian; // Trmer uses 90 deg but it is too much for the BF algorythms so we use 60 degrees.
     test_ll [LAT] = cs_Zero;
     TRMBF_XYFromLatLong (trmBFParams, test_ll, test_ll);
     trmBFParams->xx_max = fabs (test_ll [XX]);
@@ -392,8 +394,8 @@ Const double            ll [2]
  
 
     /*  Calculation X and Y */
-    xy[0] = trmBFParams->projecCtx + trmBFParams->projecFech * x;
-    xy[1] = trmBFParams->projecCty + beta - trmBFParams->Utmbta + trmBFParams->projecFech * y;
+    xy[0] = trmBFParams->projecCtx + trmBFParams->projecFech * x / trmBFParams->unitScaleToMeter;
+    xy[1] = trmBFParams->projecCty + (beta - trmBFParams->Utmbta + trmBFParams->projecFech * y) / trmBFParams->unitScaleToMeter;
 
     return (rtn_val);
     }
@@ -434,6 +436,8 @@ Const double            xy [2]
     x  = (xy[0] - trmBFParams->projecCtx) / trmBFParams->projecFech;
     yp = (xy[1] - trmBFParams->projecCty + trmBFParams->Utmbta) / trmBFParams->projecFech;
  
+    x = x * trmBFParams->unitScaleToMeter;
+    yp = yp * trmBFParams->unitScaleToMeter;
  	/* Deal with the limiting xx case.  */
 	if (fabs (x) > trmBFParams->xx_max)
 	{

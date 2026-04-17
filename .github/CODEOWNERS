@@ -29,6 +29,7 @@
 /iModelCore/Units/                           @calebmshafer @bbastings @rschili @RohitPtnkr1996
 /iModelCore/iModelPlatform/**/*Tile*.*       @pmconne @markschlosseratbentley
 /iModelCore/iModelPlatform/**/*Render*.*     @pmconne @markschlosseratbentley @bbastings
+/iModelCore/libsrc/                          @DanRod1999 @tcobbs-bentley @iTwin/itwinjs-core-admins
 
 /iModelJsNodeAddon/                          @pmconne @khanaffan @nick4598 @calebmshafer @bbastings
 /iModelJsNodeAddon/presentation/             @iTwin/itwinjs-core-presentation

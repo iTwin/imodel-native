@@ -1292,7 +1292,7 @@ TcsOpVariants::TcsOpVariants (const	TcsEpsgDataSetV6& epsgDB,const TcsEpsgCode& 
 			if (!deprecated)
 			{
 				ok = copTblPtr->GetAsEpsgCode (recTrgCRS,recNbr,epsgFldTargetCrsCode);
-				if (ok && recTrgCRS == TargetCrs)
+				if (ok && static_cast<unsigned long>(recTrgCRS) == TargetCrs)
 				{
 					ok = copTblPtr->GetAsEpsgCode (operationCode,recNbr,epsgFldCoordOpCode);
 					if (ok)

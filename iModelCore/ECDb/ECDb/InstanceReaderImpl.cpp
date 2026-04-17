@@ -971,28 +971,32 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
                 builder.Append(rootMap.GetClass().GetId().ToHexStr())
                     .AppendSpace()
                     .AppendEscaped(col->GetName());
+                tableView->m_ecClassIdCol = appendCount;
             } else if (col == &sourceClassIdProp->GetColumn()) {
                 builder.Append(rootMap.GetRelationshipClass().GetSource().GetConstraintClasses().front()->GetId().ToHexStr())
                     .AppendSpace()
                     .AppendEscaped(col->GetName());
+                tableView->m_ecSourceClassIdCol = appendCount;
             } else if (col == &targetClassIdProp->GetColumn()) {
                 builder.Append(rootMap.GetRelationshipClass().GetTarget().GetConstraintClasses().front()->GetId().ToHexStr())
                     .AppendSpace()
                     .AppendEscaped(col->GetName());
+                tableView->m_ecTargetClassIdCol = appendCount;
             } else {
                 continue;
             }
+            tableView->m_colIndexMap.insert(std::make_pair(col->GetId(), appendCount));
+            ++appendCount;
+            continue;
         }
 
         builder.AppendFullyQualified(tbl.GetName(), col->GetName());
         tableView->m_colIndexMap.insert(std::make_pair(col->GetId(), appendCount));
         if (col == &tbl.GetECClassIdColumn()) {
             tableView->m_ecClassIdCol = appendCount;
-        }
-        if (col == &tbl.GetECClassIdColumn()) {
+        } else if (col == &sourceClassIdProp->GetColumn()) {
             tableView->m_ecSourceClassIdCol = appendCount;
-        }
-        if (col == &tbl.GetECClassIdColumn()) {
+        } else if (col == &targetClassIdProp->GetColumn()) {
             tableView->m_ecTargetClassIdCol = appendCount;
         }
         ++appendCount;
@@ -1012,7 +1016,7 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
 
         auto& classIdTable = sourceClassIdProp->GetTable();
         sourceJoinBuilder.AppendFormatted(
-            "JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
+            " JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
             classIdTable.GetName().c_str(),
             kSourceTableAlias,
             kSourceTableAlias,
@@ -1030,8 +1034,8 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
         tableView->m_ecTargetClassIdCol = ++appendCount;
 
         auto& classIdTable = targetClassIdProp->GetTable();
-        sourceJoinBuilder.AppendFormatted(
-            "JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
+        targetJoinBuilder.AppendFormatted(
+            " JOIN [%s] [%s] ON [%s].[%s] = [%s].[%s]",
             classIdTable.GetName().c_str(),
             kTargetTableAlias,
             kTargetTableAlias,
@@ -1055,7 +1059,9 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
     tableView->m_id = tbl.GetId();
     const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
     if (rc != BE_SQLITE_OK) {
-         BeAssert(false && "Failed to prepare statement");
+        ECDbLogger::Get().errorv("InstanceReader: Failed to prepare link table SQL for class '%s': %s",
+            rootMap.GetClass().GetFullName(), builder.GetSql().c_str());
+        BeAssert(false && "Failed to prepare statement");
         return nullptr;
     }
     return tableView;
@@ -1105,7 +1111,9 @@ TableView::Ptr TableView::CreateEntityTableView(ECDbCR conn, DbTable const& tbl,
     tableView->m_id = tbl.GetId();
     const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
     if (rc != BE_SQLITE_OK) {
-         BeAssert(false && "Failed to prepare statement");
+        ECDbLogger::Get().errorv("InstanceReader: Failed to prepare entity table SQL for class '%s': %s",
+            rootMap.GetClass().GetFullName(), builder.GetSql().c_str());
+        BeAssert(false && "Failed to prepare statement");
         return nullptr;
     }
     return tableView;
@@ -1137,6 +1145,9 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     const auto rootClassMap = getRootClassMap();
     if(rootClassMap->GetClass().IsMixin() || rootClassMap->GetType() == ClassMap::Type::RelationshipEndTable) {
         //! NOT SUPPORTED
+        ECDbLogger::Get().debugv("InstanceReader: Class '%s' is not supported for instance queries (%s).",
+            rootClassMap->GetClass().GetFullName(),
+            rootClassMap->GetClass().IsMixin() ? "mixin classes are not queryable" : "RelationshipEndTable map strategy is not queryable");
         return nullptr;
     }
 
@@ -1145,6 +1156,8 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     }
 
     if (rootClassMap->GetType() == ClassMap::Type::NotMapped) {
+        ECDbLogger::Get().debugv("InstanceReader: Class '%s' is not supported for instance queries (class is not mapped).",
+            rootClassMap->GetClass().GetFullName());
         return nullptr;
     }
 
@@ -1155,6 +1168,8 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     if (rootClassMap->GetType() == ClassMap::Type::RelationshipLinkTable) {
         return CreateLinkTableView(conn, tbl, rootClassMap->GetAs<RelationshipClassLinkTableMap>());
     }
+    ECDbLogger::Get().debugv("InstanceReader: Class '%s' has unsupported ClassMap type %d for instance queries.",
+        rootClassMap->GetClass().GetFullName(), Enum::ToInt(rootClassMap->GetType()));
     return nullptr;
 }
 

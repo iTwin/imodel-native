@@ -1,25 +1,26 @@
-// Copyright 2005 and onwards Google Inc. 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are 
-// met: 
-// 
-// * Redistributions of source code must retain the above copyright 
-// notice, this list of conditions and the following disclaimer. 
-// * Redistributions in binary form must reproduce the above 
-// copyright notice, this list of conditions and the following disclaimer 
-// in the documentation and/or other materials provided with the 
-// distribution. 
-// * Neither the name of Google Inc. nor the names of its 
-// contributors may be used to endorse or promote products derived from 
-// this software without specific prior written permission. 
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+// Copyright 2005 and onwards Google Inc.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
@@ -35,150 +36,108 @@
 // using BMDiff and then compressing the output of BMDiff with
 // Snappy.
 
-#ifndef UTIL_SNAPPY_SNAPPY_H__
-#define UTIL_SNAPPY_SNAPPY_H__
+#ifndef THIRD_PARTY_SNAPPY_SNAPPY_H__
+#define THIRD_PARTY_SNAPPY_SNAPPY_H__
 
 #include <stddef.h>
-#include <string.h>
-#include <string>
+#include <stdint.h>
 
-#if defined(_M_X64)
-#define __x86_64__ 1
-#endif
+#include <string>
 
 #include "snappy-stubs-public.h"
 
 namespace snappy {
-// A Sink is an interface that consumes a sequence of bytes.
-class Sink {
- public:
-  Sink() { }
-  virtual ~Sink() {}
+  class Source;
+  class Sink;
 
-  // Append "bytes[0,n-1]" to this.
-  virtual void Append(const char* bytes, size_t n) = 0;
+  struct CompressionOptions {
+    // Compression level.
+    // Level 1 is the fastest
+    // Level 2 is a little slower but provides better compression. Level 2 is
+    // **EXPERIMENTAL** for the time being. It might happen that we decide to
+    // fall back to level 1 in the future.
+    // Levels 3+ are currently not supported. We plan to support levels up to
+    // 9 in the future.
+    // If you played with other compression algorithms, level 1 is equivalent to
+    // fast mode (level 1) of LZ4, level 2 is equivalent to LZ4's level 2 mode
+    // and compresses somewhere around zstd:-3 and zstd:-2 but generally with
+    // faster decompression speeds than snappy:1 and zstd:-3.
+    int level = DefaultCompressionLevel();
 
-  // Returns a writable buffer of the specified length for appending.
-  // May return a pointer to the caller-owned scratch buffer which
-  // must have at least the indicated length.  The returned buffer is
-  // only valid until the next operation on this Sink.
-  //
-  // After writing at most "length" bytes, call Append() with the
-  // pointer returned from this function and the number of bytes
-  // written.  Many Append() implementations will avoid copying
-  // bytes if this function returned an internal buffer.
-  //
-  // If a non-scratch buffer is returned, the caller may only pass a
-  // prefix of it to Append().  That is, it is not correct to pass an
-  // interior pointer of the returned array to Append().
-  //
-  // The default implementation always returns the scratch buffer.
-  virtual char* GetAppendBuffer(size_t length, char* scratch) {return scratch;}
-
- private:
-  // No copying
-  Sink(const Sink&);
-  void operator=(const Sink&);
-};
-
-// A Source is an interface that yields a sequence of bytes
-class Source {
- public:
-  Source() { }
-  virtual ~Source() {}
-
-  // Return the number of bytes left to read from the source
-  virtual size_t Available() const = 0;
-
-  // Peek at the next flat region of the source.  Does not reposition
-  // the source.  The returned region is empty iff Available()==0.
-  //
-  // Returns a pointer to the beginning of the region and store its
-  // length in *len.
-  //
-  // The returned region is valid until the next call to Skip() or
-  // until this object is destroyed, whichever occurs first.
-  //
-  // The returned region may be larger than Available() (for example
-  // if this ByteSource is a view on a substring of a larger source).
-  // The caller is responsible for ensuring that it only reads the
-  // Available() bytes.
-  virtual const char* Peek(size_t* len) = 0;
-
-  // Skip the next n bytes.  Invalidates any buffer returned by
-  // a previous call to Peek().
-  // REQUIRES: Available() >= n
-  virtual void Skip(size_t n) = 0;
-
- private:
-  // No copying
-  Source(const Source&);
-  void operator=(const Source&);
-};
-
-// A Source implementation that yields the contents of a flat array
-class ByteArraySource : public Source {
- public:
-  ByteArraySource(const char* p, size_t n) : ptr_(p), left_(n) { }
-  virtual ~ByteArraySource() {}
-  virtual size_t Available() const { return left_; }
-  virtual const char* Peek(size_t* len) {  *len = left_;  return ptr_;}
-  virtual void Skip(size_t n) {  left_ -= n;  ptr_ += n;}
- private:
-  const char* ptr_;
-  size_t left_;
-};
-
-// A Sink implementation that writes to a flat array without any bound checks.
-class UncheckedByteArraySink : public Sink {
- public:
-  explicit UncheckedByteArraySink(char* dest) : dest_(dest) { }
-  virtual ~UncheckedByteArraySink(){}
-  virtual void Append(const char* data, size_t n){  // Do no copying if the caller filled in the result of GetAppendBuffer()
-    if (data != dest_) {
-        memcpy(dest_, data, n);
-    }
-    dest_ += n;
-  }
-  virtual char* GetAppendBuffer(size_t len, char* scratch) {return dest_;}
-
-  // Return the current output pointer so that a caller can see how
-  // many bytes were produced.
-  // Note: this is not a Sink method.
-  char* CurrentDestination() const { return dest_; }
- private:
-  char* dest_;
-};
+    constexpr CompressionOptions() = default;
+    constexpr CompressionOptions(int compression_level)
+        : level(compression_level) {}
+    static constexpr int MinCompressionLevel() { return 1; }
+    static constexpr int MaxCompressionLevel() { return 2; }
+    static constexpr int DefaultCompressionLevel() { return 1; }
+  };
 
   // ------------------------------------------------------------------------
   // Generic compression/decompression routines.
   // ------------------------------------------------------------------------
 
-  // Compress the bytes read from "*source" and append to "*sink". Return the
+  // Compress the bytes read from "*reader" and append to "*writer". Return the
   // number of bytes written.
-  size_t Compress(Source* source, Sink* sink);
+  // First version is to preserve ABI.
+  size_t Compress(Source* reader, Sink* writer);
+  size_t Compress(Source* reader, Sink* writer,
+                  CompressionOptions options);
 
-  bool GetUncompressedLength(Source* source, uint32* result);
+  // Find the uncompressed length of the given stream, as given by the header.
+  // Note that the true length could deviate from this; the stream could e.g.
+  // be truncated.
+  //
+  // Also note that this leaves "*source" in a state that is unsuitable for
+  // further operations, such as RawUncompress(). You will need to rewind
+  // or recreate the source yourself before attempting any further calls.
+  bool GetUncompressedLength(Source* source, uint32_t* result);
 
   // ------------------------------------------------------------------------
   // Higher-level string based routines (should be sufficient for most users)
   // ------------------------------------------------------------------------
 
-  // Sets "*output" to the compressed version of "input[0,input_length-1]".
-  // Original contents of *output are lost.
+  // Sets "*compressed" to the compressed version of "input[0..input_length-1]".
+  // Original contents of *compressed are lost.
   //
-  // REQUIRES: "input[]" is not an alias of "*output".
-  size_t Compress(const char* input, size_t input_length, string* output);
+  // REQUIRES: "input[]" is not an alias of "*compressed".
+  // First version is to preserve ABI.
+  size_t Compress(const char* input, size_t input_length,
+                  std::string* compressed);
+  size_t Compress(const char* input, size_t input_length,
+                  std::string* compressed, CompressionOptions options);
 
-  // Decompresses "compressed[0,compressed_length-1]" to "*uncompressed".
+  // Same as `Compress` above but taking an `iovec` array as input. Note that
+  // this function preprocesses the inputs to compute the sum of
+  // `iov[0..iov_cnt-1].iov_len` before reading. To avoid this, use
+  // `RawCompressFromIOVec` below.
+  // First version is to preserve ABI.
+  size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                           std::string* compressed);
+  size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                           std::string* compressed,
+                           CompressionOptions options);
+
+  // Decompresses "compressed[0..compressed_length-1]" to "*uncompressed".
   // Original contents of "*uncompressed" are lost.
   //
   // REQUIRES: "compressed[]" is not an alias of "*uncompressed".
   //
   // returns false if the message is corrupted and could not be decompressed
   bool Uncompress(const char* compressed, size_t compressed_length,
-                  string* uncompressed);
+                  std::string* uncompressed);
 
+  // Decompresses "compressed" to "*uncompressed".
+  //
+  // returns false if the message is corrupted and could not be decompressed
+  bool Uncompress(Source* compressed, Sink* uncompressed);
+
+  // This routine uncompresses as much of the "compressed" as possible
+  // into sink.  It returns the number of valid bytes added to sink
+  // (extra invalid bytes may have been added due to errors; the caller
+  // should ignore those). The emitted data typically has length
+  // GetUncompressedLength(), but may be shorter if an error is
+  // encountered.
+  size_t UncompressAsMuchAsPossible(Source* compressed, Sink* uncompressed);
 
   // ------------------------------------------------------------------------
   // Lower-level character array based routines.  May be useful for
@@ -199,10 +158,19 @@ class UncheckedByteArraySink : public Sink {
   //    RawCompress(input, input_length, output, &output_length);
   //    ... Process(output, output_length) ...
   //    delete [] output;
-  void RawCompress(const char* input,
-                   size_t input_length,
-                   char* compressed,
-                   unsigned int* compressed_length);
+  void RawCompress(const char* input, size_t input_length, char* compressed,
+                   size_t* compressed_length);
+  void RawCompress(const char* input, size_t input_length, char* compressed,
+                   size_t* compressed_length, CompressionOptions options);
+
+  // Same as `RawCompress` above but taking an `iovec` array as input. Note that
+  // `uncompressed_length` is the total number of bytes to be read from the
+  // elements of `iov` (_not_ the number of elements in `iov`).
+  void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                            char* compressed, size_t* compressed_length);
+  void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                            char* compressed, size_t* compressed_length,
+                            CompressionOptions options);
 
   // Given data in "compressed[0..compressed_length-1]" generated by
   // calling the Snappy::Compress routine, this routine
@@ -218,6 +186,28 @@ class UncheckedByteArraySink : public Sink {
   //    uncompressed[0..GetUncompressedLength(compressed,compressed_length)-1]
   // returns false if the message is corrupted and could not be decrypted
   bool RawUncompress(Source* compressed, char* uncompressed);
+
+  // Given data in "compressed[0..compressed_length-1]" generated by
+  // calling the Snappy::Compress routine, this routine
+  // stores the uncompressed data to the iovec "iov". The number of physical
+  // buffers in "iov" is given by iov_cnt and their cumulative size
+  // must be at least GetUncompressedLength(compressed). The individual buffers
+  // in "iov" must not overlap with each other.
+  //
+  // returns false if the message is corrupted and could not be decrypted
+  bool RawUncompressToIOVec(const char* compressed, size_t compressed_length,
+                            const struct iovec* iov, size_t iov_cnt);
+
+  // Given data from the byte source 'compressed' generated by calling
+  // the Snappy::Compress routine, this routine stores the uncompressed
+  // data to the iovec "iov". The number of physical
+  // buffers in "iov" is given by iov_cnt and their cumulative size
+  // must be at least GetUncompressedLength(compressed). The individual buffers
+  // in "iov" must not overlap with each other.
+  //
+  // returns false if the message is corrupted and could not be decrypted
+  bool RawUncompressToIOVec(Source* compressed, const struct iovec* iov,
+                            size_t iov_cnt);
 
   // Returns the maximal size of the compressed representation of
   // input data that is "source_bytes" bytes in length;
@@ -237,21 +227,31 @@ class UncheckedByteArraySink : public Sink {
   bool IsValidCompressedBuffer(const char* compressed,
                                size_t compressed_length);
 
-  // *** DO NOT CHANGE THE VALUE OF kBlockSize ***
+  // Returns true iff the contents of "compressed" can be uncompressed
+  // successfully.  Does not return the uncompressed data.  Takes
+  // time proportional to *compressed length, but is usually at least
+  // a factor of four faster than actual decompression.
+  // On success, consumes all of *compressed.  On failure, consumes an
+  // unspecified prefix of *compressed.
+  bool IsValidCompressed(Source* compressed);
+
+  // The size of a compression block. Note that many parts of the compression
+  // code assumes that kBlockSize <= 65536; in particular, the hash table
+  // can only store 16-bit offsets, and EmitCopy() also assumes the offset
+  // is 65535 bytes or less. Note also that if you change this, it will
+  // affect the framing format (see framing_format.txt).
   //
-  // New Compression code chops up the input into blocks of at most
-  // the following size.  This ensures that back-references in the
-  // output never cross kBlockSize block boundaries.  This can be
-  // helpful in implementing blocked decompression.  However the
-  // decompression code should not rely on this guarantee since older
-  // compression code may not obey it.
-  static const int kBlockLog = 15;
-  static const int kBlockSize = 1 << kBlockLog;
+  // Note that there might be older data around that is compressed with larger
+  // block sizes, so the decompression code should not rely on the
+  // non-existence of long backreferences.
+  static constexpr int kBlockLog = 16;
+  static constexpr size_t kBlockSize = 1 << kBlockLog;
 
-  static const int kMaxHashTableBits = 14;
-  static const int kMaxHashTableSize = 1 << kMaxHashTableBits;
+  static constexpr int kMinHashTableBits = 8;
+  static constexpr size_t kMinHashTableSize = 1 << kMinHashTableBits;
 
+  static constexpr int kMaxHashTableBits = 15;
+  static constexpr size_t kMaxHashTableSize = 1 << kMaxHashTableBits;
 }  // end namespace snappy
 
-
-#endif  // UTIL_SNAPPY_SNAPPY_H__
+#endif  // THIRD_PARTY_SNAPPY_SNAPPY_H__

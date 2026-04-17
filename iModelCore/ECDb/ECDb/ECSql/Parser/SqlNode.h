@@ -154,6 +154,7 @@ namespace connectivity
                 concatenation,
                 cross_union,
                 cte,
+                cte_block_body,
                 cte_block_list,
                 cte_column_list,
                 cte_table_name,

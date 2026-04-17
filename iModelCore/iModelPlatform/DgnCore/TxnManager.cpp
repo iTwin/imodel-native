@@ -195,6 +195,77 @@ struct ModelChangesScope {
     ~ModelChangesScope() { m_mgr.ClearModelChanges(); }
 };
 
+/*----------------------------------------------------------------------------------**//**
+ * Apply schema changes in opcode-priority order to avoid constraint violations.
+ * ChangeGroup (used by FilterIfElse) scrambles operation order within tables.
+ * During reverse/invert, an INSERT can land before a necessary DELETE, violating
+ * unique constraints that the conflict handler then incorrectly skips over.
+ *
+ * Fix: separate schema changes into per-opcode ChangeGroups, then raw-concatenate
+ * them (via ReadFrom, NOT ConcatenateWith which uses ChangeGroup internally and would
+ * re-scramble) in the right order and apply as a single changeset. A single ApplyChanges
+ * call ensures SQLite's internal defer_foreign_keys covers all intermediate FK states.
+ *
+ * Within a single opcode type, order doesn't matter for constraint satisfaction.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult ApplySchemaChangesInOrder(ChangeStreamCR changeset, DbR db, ApplyChangesArgs baseArgs) {
+    const bool invert = baseArgs.GetInvert();
+
+    // Separate schema changes by original opcode into 3 groups.
+    // Iterate non-inverted to see original opcodes.
+    ChangeGroup groups[3]; // [0]=Delete, [1]=Update, [2]=Insert
+    for (auto change : Changes(changeset, false)) {
+        if (!ApplyChangesArgs::IsSchemaChange(change))
+            continue;
+        auto rc = BE_SQLITE_OK;
+        switch (change.GetOpcode()) {
+            case DbOpcode::Delete: rc = groups[0].AddChange(change); break;
+            case DbOpcode::Update: rc = groups[1].AddChange(change); break;
+            case DbOpcode::Insert: rc = groups[2].AddChange(change); break;
+            default: break;
+        }
+        if (rc != BE_SQLITE_OK)
+            return rc;
+    }
+
+    // Build a single ordered changeset: effective DELETEs first, UPDATEs second, INSERTs last.
+    // When inverting, sqlite flips opcodes during apply (INSERT<->DELETE), so the raw
+    // (original) order must be INSERT->UPDATE->DELETE to achieve the desired effective order.
+    // Use ReadFrom for raw byte concatenation — ConcatenateWith uses ChangeGroup internally
+    // which would re-scramble the carefully ordered operations.
+    const int order[] = {invert ? 2 : 0, 1, invert ? 0 : 2};
+
+    ChangeSet ordered;
+    for (int idx : order) {
+        ChangeSet part;
+        auto rc = part.FromChangeGroup(groups[idx]);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        if (part._IsEmpty())
+            continue;
+        auto reader = part._GetReader();
+        rc = ordered.ReadFrom(*reader);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+    }
+
+    if (ordered._IsEmpty())
+        return BE_SQLITE_OK;
+
+    // We're applying on a locally-built ChangeSet whose _OnConflict just aborts.
+    // Delegate conflict handling to the original stream's _OnConflict when no explicit
+    // handler was set, preserving ChangesetFileReader's custom ec_ table handling.
+    if (!baseArgs.HasConflictHandler()) {
+        auto& stream = const_cast<ChangeStream&>(changeset);
+        baseArgs.SetConflictHandler([&stream](ChangeStream::ConflictCause cause, Changes::Change change) {
+            return stream.OnConflict(cause, change);
+        });
+    }
+
+    return ordered.ApplyChanges(db, baseArgs);
+}
+
 END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -988,20 +1059,10 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         }
     }
 
-    if (!schemaChanges._IsEmpty()) {
-        rc = SaveTxn(schemaChanges, operation, TxnType::EcSchema);
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("failed to save schema Txn: %s", BeSQLiteLib::GetErrorName(rc));
-            return OnCommitStatus::Abort;
-        }
-    }
-
-    if (!dataChanges._IsEmpty()) {
-        rc = SaveTxn(dataChanges, operation, TxnType::Data);
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("failed to save data Txn: %s", BeSQLiteLib::GetErrorName(rc));
-            return OnCommitStatus::Abort;
-        }
+    rc = SaveSchemaAndDataTxns(schemaChanges, dataChanges, operation);
+    if(rc != BE_SQLITE_OK) {
+        LOG.errorv("failed to save schema and data changes: %s", BeSQLiteLib::GetErrorName(rc));
+        return OnCommitStatus::Abort;
     }
 
     // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
@@ -1012,6 +1073,35 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     }
 
     return OnCommitStatus::Commit;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation)
+{
+    DbResult rc = BE_SQLITE_OK;
+    // If schema changes are non empty(indicating only schema change or schema and data change) 
+    // put entire changes binary (including schema and data changes) into a single schema txn
+    if (!schemaChanges._IsEmpty()) {
+        rc = schemaChanges.ConcatenateWith(dataChanges);
+         if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+        rc = SaveTxn(schemaChanges, operation, TxnType::EcSchema);
+        if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+    }
+    // if schema change is empty and data changes are non empty(indicating only data change)
+    // put entire changes binary (including only data changes) into a single data txn
+    else if (!dataChanges._IsEmpty()) {
+        rc = SaveTxn(dataChanges, operation, TxnType::Data);
+        if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+    }
+    return rc;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1455,11 +1545,11 @@ DbResult TxnManager::DiscardLocalChanges() {
                 continue;
 
             TXN_DEBUG("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
-            auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
-            if (BE_SQLITE_OK != rc) {
+            auto status = ApplyTxnChanges(curr, TxnAction::Reverse);
+            if (BE_SQLITE_OK != status) {
                 m_dgndb.AbandonChanges();
                 PurgeCaches();
-                return rc;
+                return status;
             }
         }
     }
@@ -1709,7 +1799,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
-            rc = changeStream.ApplyChanges(m_dgndb, schemaApplyArgs);
+            rc = ApplySchemaChangesInOrder(changeStream, m_dgndb, schemaApplyArgs);
             if (rc != BE_SQLITE_OK) {
                 m_dgndb.AbandonChanges();
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -2114,7 +2204,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             const auto result = [&]() {
                 auto _v = pmConf.IsRebasingLocalChanges() ? nullptr : std::make_unique<DisableTracking>(*this);
                 UNUSED_VARIABLE(_v);
-                return changeset.ApplyChanges(m_dgndb, schemaApplyArgs);
+                return ApplySchemaChangesInOrder(changeset, m_dgndb, schemaApplyArgs);
             }();
             if (result != BE_SQLITE_OK) {
                 if (fastForwardEncounteredMergeConflict)
@@ -2135,7 +2225,6 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 const auto result = m_dgndb.AfterSchemaChangeSetApplied();
                 if (result != BE_SQLITE_OK) {
                     LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
-                    BeAssert(false);
                     m_dgndb.AbandonChanges();
                     scope.Stop();
                     return result;
@@ -2498,7 +2587,7 @@ void TxnManager::OnEndApplyChanges() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
+DgnDbStatus TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -2506,8 +2595,14 @@ void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
     if (HasChanges())
         m_dgndb.AbandonChanges();
 
-    for (TxnId curr = QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr = QueryPreviousTxnId(curr))
-        ApplyTxnChanges(curr, TxnAction::Reverse);
+    for (TxnId curr = QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr = QueryPreviousTxnId(curr)) {
+        auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
+        if (BE_SQLITE_OK != rc) {
+            LOG.errorv("ReverseTxnRange: ApplyTxnChanges failed for txn 0x%" PRIx64 ": %s", curr.GetValue(), BeSQLiteLib::GetErrorName(rc));
+            m_dgndb.AbandonChanges();
+            return DgnDbStatus::SQLiteError;
+        }
+    }
 
     BeAssert(!HasChanges());
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
@@ -2516,6 +2611,7 @@ void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
 
     // save in reversed Txns list
     m_reversedTxn.push_back(txnRange);
+    return DgnDbStatus::Success;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2559,7 +2655,9 @@ DgnDbStatus TxnManager::ReverseActions(TxnRange const& txnRange) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
-    ReverseTxnRange(txnRange); // do the actual undo now.
+    auto status = ReverseTxnRange(txnRange); // do the actual undo now.
+    if (DgnDbStatus::Success != status)
+        return status;
 
     while (GetCurrentTxnId() < GetMultiTxnOperationStart())
         EndMultiTxnOperation();
@@ -2648,7 +2746,7 @@ void TxnManager::ReplayExternalTxns(TxnId from) {
 * Reinstate ("redo") a range of transactions.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReinstateTxn(TxnRange const& revTxn) {
+DgnDbStatus TxnManager::ReinstateTxn(TxnRange const& revTxn) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -2660,13 +2758,20 @@ void TxnManager::ReinstateTxn(TxnRange const& revTxn) {
         m_dgndb.AbandonChanges();
 
     TxnId last = QueryPreviousTxnId(revTxn.GetLast());
-    for (TxnId curr = revTxn.GetFirst(); curr.IsValid() && curr <= last; curr = QueryNextTxnId(curr))
-        ApplyTxnChanges(curr, TxnAction::Reinstate);
+    for (TxnId curr = revTxn.GetFirst(); curr.IsValid() && curr <= last; curr = QueryNextTxnId(curr)) {
+        auto rc = ApplyTxnChanges(curr, TxnAction::Reinstate);
+        if (BE_SQLITE_OK != rc) {
+            LOG.errorv("ReinstateTxn: ApplyTxnChanges failed for txn 0x%" PRIx64 ": %s", curr.GetValue(), BeSQLiteLib::GetErrorName(rc));
+            m_dgndb.AbandonChanges();
+            return DgnDbStatus::SQLiteError;
+        }
+    }
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     m_curr = revTxn.GetLast();
     m_reversedTxn.pop_back();
+    return DgnDbStatus::Success;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -2677,7 +2782,9 @@ DgnDbStatus TxnManager::ReinstateActions(TxnRange const& revTxn) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
-    ReinstateTxn(revTxn); // do the actual redo now.
+    auto status = ReinstateTxn(revTxn); // do the actual redo now.
+    if (DgnDbStatus::Success != status)
+        return status;
 
     OnUndoRedo(TxnAction::Reinstate);
     return DgnDbStatus::Success;
@@ -2696,6 +2803,15 @@ DgnDbStatus TxnManager::ReinstateTxn() {
 
     OnBeforeUndoRedo(false);
     return ReinstateActions(m_reversedTxn.back());
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnRange TxnManager::GetNextReinstateTxnRange() const {
+    if (m_reversedTxn.empty())
+        return TxnRange(TxnId(), TxnId());
+    return m_reversedTxn.back();
 }
 
 /*---------------------------------------------------------------------------------**/ /**

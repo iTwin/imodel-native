@@ -4886,15 +4886,14 @@ ReprojectStatus       DgnGCS::GetLinearTransformToBaseGCS
         return REPROJECT_Success;
     }
 
-    const double linearTolerance = 0.01;
-    double tolerance = linearTolerance;
+    double tolerance = 0.01;
 
     if (!IsProjected())
         tolerance = 0.0000001; // Tolerance for longitude/latitude GCS in degrees
 
     // Extent must be large enough so we can effectively compute coordinate differences
     // since the geocoord engine will stop calculations when 0.001 per iteration is reached.
-    if (extent.XLength() < tolerance || extent.YLength() < tolerance || extent.ZLength() < linearTolerance) // Z allways uses linear tolerance
+    if (extent.XLength() < tolerance || extent.YLength() < tolerance)
         return REPROJECT_BadArgument;
 
     Transform   frameA, frameB, frameAInverse;
@@ -5365,9 +5364,12 @@ DgnDbR              cache,
 bool                primary
 ) const
     {
+    if (!IsValid())
+        return ERROR;
+
     CoordinateSystemDgnFormatter*   csf = CoordinateSystemDgnFormatter::GetInstance();
 
-    VertDatumCode storedVerticalDatum = m_verticalDatum;
+    VertDatumCode storedVerticalDatum = m_verticalDatumLegacyCode;
 
     // For historical reason and backward compatibility we store Ellipsoid vertical datum for non-NAD27 and non-NAD83 GCS
     // as value 0 (vdcFromDatum) even though the value is ambiguous for NAD27 and NAD83.
