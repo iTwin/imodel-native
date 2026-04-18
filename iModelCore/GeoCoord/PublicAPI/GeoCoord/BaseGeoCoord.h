@@ -15,7 +15,6 @@
 #include <BeRapidJson/BeJsValue.h>
 #include <Geom/GeomApi.h>
 #include "BaseGeoDefs.r.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include    <GeoCoord/IGeoTiffKeysList.h>
 
 typedef struct cs_Csprm_             CSParameters;
