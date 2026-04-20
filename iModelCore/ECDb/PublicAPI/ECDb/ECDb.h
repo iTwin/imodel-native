@@ -7,7 +7,6 @@
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <json/json.h>
 #include <unordered_map>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

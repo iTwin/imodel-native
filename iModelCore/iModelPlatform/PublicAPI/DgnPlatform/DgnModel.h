@@ -725,7 +725,7 @@ public:
     BeJsValue GetJsonPropertiesR(Utf8CP nameSpace) {return m_jsonProperties[nameSpace];}
 
     //! Change the value of a set of Json Properties on this element
-    void SetJsonProperties(Json::StaticString nameSpace, BeJsConst value) {m_jsonProperties[nameSpace].From(value);}
+    void SetJsonProperties(Utf8CP nameSpace, BeJsConst value) {m_jsonProperties[nameSpace].From(value);}
 
     //! Remove a set of Json Properties on this element
     void RemoveJsonProperties(Utf8CP nameSpace) {m_jsonProperties.removeMember(nameSpace);}

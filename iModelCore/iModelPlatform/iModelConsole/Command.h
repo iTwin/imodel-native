@@ -481,7 +481,7 @@ struct ParseCommand final : public Command
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
 
-        static void ExpTreeToString(Utf8StringR expTree, JsonValueCR exp, int indentLevel);
+        static void ExpTreeToString(Utf8StringR expTree, BeJsConst exp, int indentLevel);
 
     public:
         ParseCommand() : Command() {}
