@@ -5134,11 +5134,11 @@ private:
         return Changes::Change::Stage::New;
         }
 
-    ECChangesetReader::Mode GetMode(NapiInfoCR info, int modeInt)
+    ECChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
         {
         if (modeInt < 0 || modeInt > 2)
             THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), or 2 (Instance_Key)");
-        return static_cast<ECChangesetReader::Mode>(modeInt);
+        return static_cast<ECChangesetReader::PropertyFilter>(modeInt);
         }
 
 public:
@@ -5176,8 +5176,8 @@ public:
         ECDb* ecdb = ExtractECDb(info, dbObj);
         REQUIRE_ARGUMENT_STRING(1, fileName);
         REQUIRE_ARGUMENT_BOOL(2, invert);
-        REQUIRE_ARGUMENT_INTEGER(3, modeInt);
-        DbResult rc = m_reader.OpenFile(*ecdb, fileName, invert, GetMode(info, modeInt));
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        DbResult rc = m_reader.OpenFile(*ecdb, fileName, invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openFile() failed", rc);
         }
@@ -5188,8 +5188,8 @@ public:
         ECDb* ecdb = ExtractECDb(info, dbObj);
         REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
         REQUIRE_ARGUMENT_BOOL(2, invert);
-        REQUIRE_ARGUMENT_INTEGER(3, modeInt);
-        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, invert, GetMode(info, modeInt));
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
         }
@@ -5199,7 +5199,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
-        REQUIRE_ARGUMENT_INTEGER(3, modeInt);
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5208,7 +5208,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetMode(info, modeInt));
+        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openLocalChanges() failed", rc);
         }
@@ -5217,7 +5217,7 @@ public:
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
-        REQUIRE_ARGUMENT_INTEGER(2, modeInt);
+        REQUIRE_ARGUMENT_INTEGER(2, propFilterInt);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5226,7 +5226,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetMode(info, modeInt));
+        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openInMemoryChanges() failed", rc);
         }
@@ -5236,7 +5236,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
-        REQUIRE_ARGUMENT_INTEGER(3, modeInt);
+        REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5248,7 +5248,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetMode(info, modeInt));
+        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openTxn() failed", rc);
         }

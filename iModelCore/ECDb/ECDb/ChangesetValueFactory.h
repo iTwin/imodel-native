@@ -224,7 +224,7 @@ public:
                                 ColumnValueMap const& columnValues,
                                 ECClassId resolvedClassId, bool classIdFromChangeset,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fields,
-                                ECChangesetReader::Mode mode,
+                                ECChangesetReader::PropertyFilter propertyFilter,
                                 std::vector<Utf8String>& changedProps);
 };
 

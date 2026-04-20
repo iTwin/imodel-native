@@ -17,10 +17,10 @@ public:
     struct Impl;
 
     //! Controls which properties are emitted per row.
-    enum class Mode {
-        All_Properties = 0, //!< Emit ECInstanceId, ECClassId, and all user/domain properties.
-        Bis_Element_Properties = 1, //!< Emit ECInstanceId, ECClassId, and BIS-schema properties only.
-        Instance_Key = 2,   //!< Emit ECInstanceId and ECClassId only (cheapest).
+    enum class PropertyFilter {
+        All = 0, //!< Emit ECInstanceId, ECClassId, and all user/domain properties.
+        BisCoreElement = 1, //!< Emit ECInstanceId, ECClassId, and all BisCore Element properties if the class is derived from BisCore::Element, For classes not derived from BisCore::Element, all properties are returned.
+        InstanceKey = 2,   //!< Emit ECInstanceId and ECClassId only (cheapest).
     };
 
 private:
@@ -42,25 +42,25 @@ public:
     //! @param[in] ecdb ECDb connection used to resolve EC schema information.
     //! @param[in] changesetFile Path to the changeset file to open.
     //! @param[in] invert If true, the changeset is read as an inverted (undo) changeset.
-    //! @param[in] mode Controls which properties are emitted per row. @see Mode
+    //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
     //! @return BE_SQLITE_OK on success, or an error code if the file cannot be opened.
-    ECDB_EXPORT DbResult OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, Mode mode);
+    ECDB_EXPORT DbResult OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
 
     //! Opens a ChangeStream for reading.
     //! @param[in] ecdb ECDb connection used to resolve EC schema information.
     //! @param[in] changeStream The change stream to read from. Ownership is transferred.
     //! @param[in] invert If true, the changeset is read as an inverted (undo) changeset.
-    //! @param[in] mode Controls which properties are emitted per row. @see Mode
+    //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
     //! @return BE_SQLITE_OK on success, or an error code if the stream could not be opened.
-    ECDB_EXPORT DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
+    ECDB_EXPORT DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
 
     //! Opens a group of changeset files for reading as a single logical sequence.
     //! @param[in] ecdb ECDb connection used to resolve EC schema information.
     //! @param[in] changesetFiles Ordered list of paths to the changeset files to open.
     //! @param[in] invert If true, the changesets are read as inverted (undo) changesets, iterated in reverse order.
-    //! @param[in] mode Controls which properties are emitted per row. @see Mode
+    //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
     //! @return BE_SQLITE_OK on success, or an error code if the group could not be opened.
-    ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, Mode mode);
+    ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter);
 
     //! Closes the reader and releases all associated resources.
     //! @remarks Safe to call on a reader that was never opened or that has already been closed.

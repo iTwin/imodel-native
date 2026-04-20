@@ -1544,11 +1544,11 @@ export declare namespace IModelJsNative {
 
   class ECChangesetReader {
     constructor();
-    public openFile(db: AnyECDb, fileName: string, invert: boolean, mode: number): void;
-    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, mode: number): void;
-    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, mode: number): void;
-    public openInMemoryChanges(db: DgnDb, invert: boolean, mode: number): void;
-    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, mode: number): void;
+    public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number): void;
     public close(): void;
     public step(): boolean;
     public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue | undefined;

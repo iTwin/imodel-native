@@ -13,18 +13,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PreparedECChangesetReader final {
 private:
     using Stage = Changes::Change::Stage;
-    using Mode  = ECChangesetReader::Mode;
+    using PropertyFilter  = ECChangesetReader::PropertyFilter;
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.
     using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
     ECDbCR                         m_ecdb;
 
     // change mappings
-    bool                           m_invert = false;
-    Mode                           m_mode = Mode::All_Properties;
-    std::unique_ptr<ChangeStream>  m_changeStream;
-    std::unique_ptr<Changes>       m_changes;
-    Changes::Change                m_currentChange;
+    bool                            m_invert = false;
+    PropertyFilter                  m_propertyFilter = PropertyFilter::All;
+    std::unique_ptr<ChangeStream>   m_changeStream;
+    std::unique_ptr<Changes>        m_changes;
+    Changes::Change                 m_currentChange;
 
     // data fields
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
@@ -39,8 +39,6 @@ private:
     PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
     void ClearFields();
     BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
-    // Utf8String GetTableName() const { return m_currentChange.GetTableName(); };
-    // DbOpcode GetOpcode() const { return m_currentChange.GetOpcode(); };
     bool IsOpen() const { return m_changeStream != nullptr; }
     bool IsStepped() const { return m_changes != nullptr && m_currentChange.IsValid(); }
     //! Builds a map from SQLite column name to DbValue for the current change at @p stage.
@@ -55,9 +53,9 @@ private:
 public:
     explicit PreparedECChangesetReader(ECDbCR ecdb);
 
-    DbResult OpenFile(Utf8StringCR changesetFile, bool invert, Mode mode);
-    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
-    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, Mode mode);
+    DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
+    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter);
     void Close();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }

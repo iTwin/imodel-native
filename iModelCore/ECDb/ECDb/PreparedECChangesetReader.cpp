@@ -18,7 +18,7 @@ PreparedECChangesetReader::PreparedECChangesetReader(ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert, Mode mode) {
+DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter mode) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -38,7 +38,7 @@ DbResult PreparedECChangesetReader::OpenFile(Utf8StringCR changesetFile, bool in
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
+DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -48,7 +48,7 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
         return BE_SQLITE_ERROR;
 
     m_invert = invert;
-    m_mode   = mode;
+    m_propertyFilter = propertyFilter;
     m_changeStream = std::move(changeStream);
     return BE_SQLITE_OK;
 }
@@ -56,7 +56,7 @@ DbResult PreparedECChangesetReader::Open(std::unique_ptr<ChangeStream> changeStr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, Mode mode) {
+DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a group on an already open PreparedECChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -79,7 +79,7 @@ DbResult PreparedECChangesetReader::OpenGroup(T_Utf8StringVector const& files, b
         return BE_SQLITE_ERROR;
 
     m_invert = invert;
-    m_mode   = mode;
+    m_propertyFilter = propertyFilter;
     return BE_SQLITE_OK;
 }
 
@@ -201,7 +201,7 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues(bool& isCurrentRowFiltere
                 isCurrentRowFilteredOut = true;
                 return SUCCESS;
             }
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_mode, m_changedPropNames) != SUCCESS)
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_propertyFilter, m_changedPropNames) != SUCCESS)
                 return ERROR;
         }
         if(opCode != DbOpcode::Insert) {
@@ -224,7 +224,7 @@ BentleyStatus PreparedECChangesetReader::ReFetchValues(bool& isCurrentRowFiltere
                 return SUCCESS;
             }
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_mode, opCode == DbOpcode::Update ? ignored : m_changedPropNames) != SUCCESS)
+            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_propertyFilter, opCode == DbOpcode::Update ? ignored : m_changedPropNames) != SUCCESS)
                 return ERROR;
         }
     }

@@ -12,28 +12,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, Mode mode) {
+DbResult ECChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter) {
     if (!IsPrepared())
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-    return m_prepared->OpenFile(file, invert, mode);
+    return m_prepared->OpenFile(file, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
+DbResult ECChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
     if(!IsPrepared())
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-    return m_prepared->Open(std::move(changeStream), invert, mode);
+    return m_prepared->Open(std::move(changeStream), invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, Mode mode) {
+DbResult ECChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter) {
     if(!IsPrepared())
         m_prepared = std::make_unique<PreparedECChangesetReader>(ecdb);
-    return m_prepared->OpenGroup(files, invert, mode);
+    return m_prepared->OpenGroup(files, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------

@@ -892,7 +892,7 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
-    std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::Mode mode, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fields, ECChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
 
     const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
@@ -935,10 +935,10 @@ BentleyStatus ChangesetValueFactory::Create(
     fields.emplace_back(std::move(instanceIdField));
     fields.emplace_back(std::move(classIdField));
 
-    if (mode == ECChangesetReader::Mode::Instance_Key)
+    if (propertyFilter == ECChangesetReader::PropertyFilter::InstanceKey)
         return SUCCESS; // caller only needs the instance key — skip user properties
 
-    if(mode == ECChangesetReader::Mode::Bis_Element_Properties && IsDerivedFromBisElement(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
+    if(propertyFilter == ECChangesetReader::PropertyFilter::BisCoreElement && IsDerivedFromBisElement(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
         return SUCCESS; // caller only needs bis_element properties — skip rest   
 
     status = BuildPropertyFields(*classMap, columnValues, conn, tbl, fields, changedProps);

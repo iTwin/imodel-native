@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECChangesetReader::Impl final {
 private:
-    using Mode  = ECChangesetReader::Mode;
+    using PropertyFilter = ECChangesetReader::PropertyFilter;
     std::unique_ptr<PreparedECChangesetReader> m_prepared;
 
     Impl(Impl const&) = delete;
@@ -23,9 +23,9 @@ public:
     Impl() {}
     ~Impl() {Close();}
 
-    DbResult OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, Mode mode);
-    DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode);
-    DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, Mode mode);
+    DbResult OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter);
     void Close();
     DbResult Step();
 

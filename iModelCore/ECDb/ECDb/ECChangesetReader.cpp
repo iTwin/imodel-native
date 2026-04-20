@@ -22,22 +22,22 @@ ECChangesetReader::~ECChangesetReader() { delete m_pimpl; }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, Mode mode) {
-    return m_pimpl->OpenFile(ecdb, changesetFile, invert, mode);
+DbResult ECChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
+    return m_pimpl->OpenFile(ecdb, changesetFile, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, Mode mode) {
-    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert, mode);
+DbResult ECChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
+    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, Mode mode) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, mode);
+DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter) {
+    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
