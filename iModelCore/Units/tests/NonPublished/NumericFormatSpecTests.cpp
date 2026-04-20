@@ -13,10 +13,10 @@ struct NumericFormatSpecTest : FormattingTestFixture {};
 
 struct NumericFormatSpecJsonTest : NumericFormatSpecTest
 {
-    static void ValidateJson_Type(JsonValueCR jval, PresentationType expectedType);
+    static void ValidateJson_Type(BeJsConst jval, PresentationType expectedType);
     //! Searches for and validates all common attributes between all presentation types against their expected default values.
     //! Expects all common attributes to exist
-    static void ValidateJson_DefaultCommonAttributes(JsonValueCR jval);
+    static void ValidateJson_DefaultCommonAttributes(BeJsConst jval);
 };
 
 //---------------------------------------------------------------------------------------
@@ -77,9 +77,9 @@ TEST_F(NumericFormatSpecTest, FormatTraitsSet)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-void NumericFormatSpecJsonTest::ValidateJson_Type(JsonValueCR jval, PresentationType expectedType)
+void NumericFormatSpecJsonTest::ValidateJson_Type(BeJsConst jval, PresentationType expectedType)
     {
-    EXPECT_EQ(Json::stringValue, jval.type());
+    EXPECT_TRUE(jval.isString());
     PresentationType presType;
     EXPECT_TRUE(Utils::ParsePresentationType(presType, jval.asCString()));
     EXPECT_EQ(expectedType, presType);
@@ -88,47 +88,47 @@ void NumericFormatSpecJsonTest::ValidateJson_Type(JsonValueCR jval, Presentation
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-void NumericFormatSpecJsonTest::ValidateJson_DefaultCommonAttributes(JsonValueCR jval)
+void NumericFormatSpecJsonTest::ValidateJson_DefaultCommonAttributes(BeJsConst jval)
     {
     // Sign Option
-    JsonValueCR signOptJson = jval[json_showSignOption()];
-    EXPECT_EQ(Json::stringValue, signOptJson.type());
+    auto signOptJson = jval[json_showSignOption()];
+    EXPECT_TRUE(signOptJson.isString());
     SignOption signOpt;
     EXPECT_TRUE(Utils::ParseSignOption(signOpt, signOptJson.asCString()));
     EXPECT_EQ(FormatConstant::DefaultSignOption(), signOpt);
 
     // Rounding Factor
-    JsonValueCR factor = jval[json_roundFactor()];
-    EXPECT_EQ(Json::realValue, factor.type());
+    auto factor = jval[json_roundFactor()];
+    EXPECT_TRUE(factor.isNumeric());
     EXPECT_EQ(FormatConstant::DefaultRoundingFactor(), factor.asDouble());
 
     // MinWidth
-    JsonValueCR minWidth = jval[json_minWidth()];
-    EXPECT_EQ(Json::uintValue, minWidth.type());
+    auto minWidth = jval[json_minWidth()];
+    EXPECT_TRUE(minWidth.isNumeric());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), minWidth.asInt());
 
     // Decimal Separator
-    JsonValueCR decSeparator = jval[json_decimalSeparator()];
-    EXPECT_EQ(Json::stringValue, decSeparator.type());
+    auto decSeparator = jval[json_decimalSeparator()];
+    EXPECT_TRUE(decSeparator.isString());
     Utf8String decSep = decSeparator.asString();
     EXPECT_EQ(1, decSep.length());
     EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), decSep.at(0));
 
     // Thousand Separator
-    JsonValueCR thousandSeparator = jval[json_thousandSeparator()];
-    EXPECT_EQ(Json::stringValue, thousandSeparator.type());
+    auto thousandSeparator = jval[json_thousandSeparator()];
+    EXPECT_TRUE(thousandSeparator.isString());
     Utf8String thoSep = thousandSeparator.asString();
     EXPECT_EQ(1, thoSep.length());
     EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), thoSep.at(0));
 
     // UOM Separator
-    JsonValueCR uomSeparator = jval[json_uomSeparator()];
-    EXPECT_EQ(Json::stringValue, uomSeparator.type());
+    auto uomSeparator = jval[json_uomSeparator()];
+    EXPECT_TRUE(uomSeparator.isString());
     EXPECT_STREQ(FormatConstant::DefaultUomSeparator().c_str(), uomSeparator.asCString());
 
     // Format Traits
-    JsonValueCR formatTraits = jval[json_formatTraits()];
-    EXPECT_EQ(Json::arrayValue, formatTraits.type());
+    auto formatTraits = jval[json_formatTraits()];
+    EXPECT_TRUE(formatTraits.isArray());
     // EXPECT_EQ(FormatConstant::DefaultFormatTraits())
     }
 
@@ -150,8 +150,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeStation)
         "minWidth": 50
     })json";
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -187,8 +186,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeAllFormatTraitsString)
         "minWidth": 50
     })json";
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -224,8 +222,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeAllFormatTraitsArray)
         "minWidth": 50
     })json";
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -259,8 +256,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeDecimal)
         "minWidth": 50
     })json";
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -292,8 +288,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeFractional)
         "minWidth": 50
     })json";
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -326,8 +321,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeScientific)
         "minWidth": 50
     })json";
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -352,17 +346,17 @@ TEST_F(NumericFormatSpecJsonTest, SerializeDecimalType)
     NumericFormatSpec format;
 
     {
-    Json::Value basicJson;
+    BeJsDocument basicJson;
     format.ToJson(BeJsValue(basicJson), false);
-    EXPECT_FALSE(basicJson.empty());
+    EXPECT_FALSE(basicJson.isNull());
     EXPECT_EQ(1, (uint32_t)basicJson.size()) << "Incorrect number of default Decimal attributes.";
-    JsonValueCR firstValue = basicJson[json_type()];
+    auto firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Decimal);
     }
     {
-    Json::Value verboseJson;
+    BeJsDocument verboseJson;
     format.ToJson(BeJsValue(verboseJson), true);
-    EXPECT_FALSE(verboseJson.empty());
+    EXPECT_FALSE(verboseJson.isNull());
     EXPECT_EQ(9, (uint32_t)verboseJson.size()) << "Incorrect number of Decimal attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
@@ -377,17 +371,17 @@ TEST_F(NumericFormatSpecJsonTest, SerializeScientific)
     format.SetPresentationType(PresentationType::Scientific);
 
     {
-    Json::Value basicJson;
+    BeJsDocument basicJson;
     format.ToJson(BeJsValue(basicJson), false);
-    EXPECT_FALSE(basicJson.empty());
+    EXPECT_FALSE(basicJson.isNull());
     EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Scientific attributes.";
-    JsonValueCR firstValue = basicJson[json_type()];
+    auto firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Scientific);
     }
     {
-    Json::Value verboseJson;
+    BeJsDocument verboseJson;
     format.ToJson(BeJsValue(verboseJson), true);
-    EXPECT_FALSE(verboseJson.empty());
+    EXPECT_FALSE(verboseJson.isNull());
     EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Scientific attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
@@ -402,21 +396,21 @@ TEST_F(NumericFormatSpecJsonTest, SerializeStation)
     format.SetPresentationType(PresentationType::Station);
 
     {
-    Json::Value basicJson;
+    BeJsDocument basicJson;
     format.ToJson(BeJsValue(basicJson), false);
-    EXPECT_FALSE(basicJson.empty());
+    EXPECT_FALSE(basicJson.isNull());
     EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Station attributes.";
-    JsonValueCR firstValue = basicJson[json_type()];
+    auto firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Station);
 
-    JsonValueCR offsetSize = basicJson[json_stationOffsetSize()];
-    EXPECT_EQ(Json::uintValue, offsetSize.type());
+    auto offsetSize = basicJson[json_stationOffsetSize()];
+    EXPECT_TRUE(offsetSize.isNumeric());
     EXPECT_EQ(0, offsetSize.asUInt());
     }
     {
-    Json::Value verboseJson;
+    BeJsDocument verboseJson;
     format.ToJson(BeJsValue(verboseJson), true);
-    EXPECT_FALSE(verboseJson.empty());
+    EXPECT_FALSE(verboseJson.isNull());
     EXPECT_EQ(11, (uint32_t)verboseJson.size()) << "Incorrect number of Station attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
@@ -431,15 +425,15 @@ TEST_F(NumericFormatSpecJsonTest, SerializeFractional)
     format.SetPresentationType(PresentationType::Fractional);
 
     {
-    Json::Value basicJson;
+    BeJsDocument basicJson;
     format.ToJson(BeJsValue(basicJson), false);
-    EXPECT_FALSE(basicJson.empty());
+    EXPECT_FALSE(basicJson.isNull());
     EXPECT_EQ(1, (uint32_t)basicJson.size()) << "Incorrect number of default Fractional attributes.";
     }
     {
-    Json::Value verboseJson;
+    BeJsDocument verboseJson;
     format.ToJson(BeJsValue(verboseJson), true);
-    EXPECT_FALSE(verboseJson.empty());
+    EXPECT_FALSE(verboseJson.isNull());
     EXPECT_EQ(9, (uint32_t)verboseJson.size()) << "Incorrect number of Fractional attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
@@ -478,8 +472,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeRatio)
     })json";
 
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+    BeJsDocument jval(jsonString);
 
     NumericFormatSpec testFormat;
 
@@ -494,17 +487,17 @@ TEST_F(NumericFormatSpecJsonTest, SerializeRatio)
     format.SetPresentationType(PresentationType::Ratio);
 
     {
-    Json::Value basicJson;
+    BeJsDocument basicJson;
     format.ToJson(BeJsValue(basicJson), false);
-    EXPECT_FALSE(basicJson.empty());
+    EXPECT_FALSE(basicJson.isNull());
     EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Ratio attributes.";
-    JsonValueCR firstValue = basicJson[json_type()];
+    auto firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Ratio);
     }
     {
-    Json::Value verboseJson;
+    BeJsDocument verboseJson;
     format.ToJson(BeJsValue(verboseJson), true);
-    EXPECT_FALSE(verboseJson.empty());
+    EXPECT_FALSE(verboseJson.isNull());
     EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Ratio attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }

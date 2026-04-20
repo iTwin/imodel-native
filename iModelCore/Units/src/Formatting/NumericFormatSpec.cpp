@@ -66,25 +66,23 @@ NumericFormatSpec::NumericFormatSpec()
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
+bool NumericFormatSpec::FromJson(NumericFormatSpecR out, BeJsConst jval, BEU::IUnitsContextCP context)
     {
-    if (jval.empty())
+    if (jval.isNull())
         return false;
 
-    if (Json::objectValue != jval.type())
+    if (!jval.isObject())
         return false;
 
     NumericFormatSpec spec;
     // Presentation Type needs to be read first since reading the precision depends on it.
-    JsonValueCR presType = jval[json_type()];
-    if (Json::nullValue != presType.type())
+    auto presType = jval[json_type()];
+    if (!presType.isNull())
         Utils::ParsePresentationType(spec.m_presentationType, presType.asCString());
 
     Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
+    jval.ForEachProperty([&](Utf8CP memberName, BeJsConst val) {
+        paramName = memberName;
         if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
             {
             double rf = val.asDouble();
@@ -192,7 +190,8 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval, BEU::
             if(!fullName.empty())
                 spec.SetRevolutionUnit(context->LookupUnit(fullName.c_str(), true));
             }
-        }
+        return false;
+        });
     out = spec;
     return true;
     }
@@ -413,9 +412,9 @@ bool NumericFormatSpec::SetFormatTraits(Utf8CP input)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
+bool NumericFormatSpec::SetFormatTraits(BeJsConst jval)
     {
-    if (jval.empty())
+    if (jval.isNull())
         return true;
 
     if (jval.isString())
@@ -425,9 +424,8 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
         return false;
 
     Utf8CP paramName;
-    for (Json::ValueIterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = (*iter).asCString();
+    jval.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst elem) {
+        paramName = elem.asCString();
         if (BeStringUtilities::StricmpAscii(paramName, json_trailZeroes()) == 0)
             SetKeepTrailingZeroes(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_keepSingleZero()) == 0)
@@ -448,7 +446,8 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
             SetUse1000Separator(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_exponentOnlyNegative()) == 0)
             SetExponentOnlyNegative(true);
-        }
+        return false;
+        });
 
     return true;
     }

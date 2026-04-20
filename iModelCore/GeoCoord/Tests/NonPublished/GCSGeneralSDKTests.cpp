@@ -93,12 +93,12 @@ TEST_F (GCSGeneralSDKTests, GCSTransformToFullJsonThenBack)
 
         if (currentGCS.IsValid() && currentGCS->IsValid())
             {
-            Json::Value result ;
+            BeJsDocument result;
 
             if (SUCCESS == currentGCS->ToJson(result, true))
                 {
                 // Transform to string (for debug purposes)
-                Utf8String resultString = result.toStyledString();
+                Utf8String resultString = result.Stringify(StringifyFormat::Indented);
 
                 // Make sure that domain is specified
                 EXPECT_TRUE(!result["horizontalCRS"].isNull());

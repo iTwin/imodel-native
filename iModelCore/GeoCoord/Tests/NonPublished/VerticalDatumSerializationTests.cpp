@@ -341,16 +341,16 @@ TEST_P(VerticalDatumSerializationTests, VerticalDatumSerializationTest1)
     ASSERT_TRUE(theTestParam.m_equalToDictionaryItem == testGCS1->IsEqual(*(testGCS2.get())));
 
     Utf8String gcs1String, gcs2String;
-    Json::Value valueOut(Json::objectValue);
+    BeJsDocument valueOut;
     status = testGCS1->ToJson(valueOut);
     ASSERT_TRUE(SUCCESS == status);
-    gcs1String = valueOut.toStyledString();
+    gcs1String = valueOut.Stringify(StringifyFormat::Indented);
 
-    Json::Value valueOut2(Json::objectValue);
+    BeJsDocument valueOut2;
 
     status = testGCS1->ToJson(valueOut2);
     ASSERT_TRUE(SUCCESS == status);
-    gcs2String = valueOut2.toStyledString();
+    gcs2String = valueOut2.Stringify(StringifyFormat::Indented);
 
     // boths gcs were equal so should serialize exactly the same json string
     ASSERT_TRUE(0 == gcs1String.CompareTo(gcs2String));

@@ -324,18 +324,17 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
 
 void validateSpecJson(CompositeValueSpecCP spec, Utf8StringCR expectedJson, Units::IUnitsContextCP unitsContext, bool verbose = false)
     {
-    Json::Value root;
-    Json::Reader::Parse(expectedJson, root);
-    Json::Value comp;
+    BeJsDocument root(expectedJson);
+    BeJsDocument comp;
     spec->ToJson(BeJsValue(comp), verbose);
-    EXPECT_TRUE(root.ToString() == comp.ToString()) << FormattingTestUtils::JsonComparisonString(comp, root);
+    EXPECT_TRUE(root.Stringify() == comp.Stringify()) << FormattingTestUtils::JsonComparisonString(comp, root);
 
     //FromJson
     CompositeValueSpec compSpec;
     CompositeValueSpec::FromJson(compSpec, root, unitsContext);
-    Json::Value roundTrip;
+    BeJsDocument roundTrip;
     compSpec.ToJson(BeJsValue(roundTrip), verbose);
-    EXPECT_TRUE(roundTrip.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
+    EXPECT_TRUE(roundTrip.Stringify() == root.Stringify()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
     }
 
 //---------------------------------------------------------------------------------------
@@ -344,7 +343,7 @@ void validateSpecJson(CompositeValueSpecCP spec, Utf8StringCR expectedJson, Unit
 TEST_F(CompositeValueSpecJsonTest, TestDefaultAndEmptySpacerRoundTrips)
     {
     CompositeValueSpec spec(*s_mile); // Default Spacer (is space)
-    Json::Value json;
+    BeJsDocument json;
     spec.ToJson(BeJsValue(json));
 
     auto expectedJson = R"json({
@@ -381,7 +380,7 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    Json::Value json;
+    BeJsDocument json;
     spec.ToJson(BeJsValue(json));
 
     auto expectedJson = R"json({
@@ -416,7 +415,7 @@ TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
     {
     CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetSpacer("-");
-    Json::Value json;
+    BeJsDocument json;
     spec.ToJson(BeJsValue(json));
 
     auto expectedJson = R"json({
@@ -450,8 +449,7 @@ TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecJsonTest, NullOrEmptyStringUnitLabels)
     {
-    Json::Value json;
-    Json::Reader::Parse(R"json({
+    BeJsDocument json(R"json({
         "units": [{
             "name": "MILE",
             "label": "alpha"
@@ -464,7 +462,7 @@ TEST_F(CompositeValueSpecJsonTest, NullOrEmptyStringUnitLabels)
             "name": "IN",
             "label": ""
         }]
-    })json", json);
+    })json");
     CompositeValueSpec spec;
     ASSERT_TRUE(CompositeValueSpec::FromJson(spec, json, s_unitsContext));
 

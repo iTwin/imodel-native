@@ -83,7 +83,7 @@ TEST_F(GCSGeneralDatumSDKTests, DatumTransformtoJsonThenBack)
         printf("Processing Datum: %s\n", theKeyname.c_str());
         if (currentDatum != nullptr && currentDatum->IsValid())
         {
-            Json::Value result;
+            BeJsDocument result;
 
             if (SUCCESS == currentDatum->ToJson(result, true))
             {
