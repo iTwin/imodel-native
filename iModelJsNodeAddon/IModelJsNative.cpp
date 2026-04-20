@@ -1750,6 +1750,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::DeleteElement(db, elemIdStr);
     }
 
+    Napi::Value DeleteElements(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Invalid argument given to deleteElements");
+        }
+
+        const auto deleteOptions = ARGUMENT_IS_PRESENT(1) ? info[1].As<Napi::Object>() : Env().Undefined();
+        auto elemIds = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), deleteOptions);
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(Env(), elemIds.size());
+        for (const auto& elemId : elemIds)
+            ret.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+
+        return ret;
+    }
+
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -3128,6 +3144,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
+            InstanceMethod("deleteElements", &NativeDgnDb::DeleteElements),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
@@ -7280,6 +7297,19 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Enable or disable the monotone-clock SQLite VFS shim.
+* When enabled every call to SQLite's time functions returns a strictly increasing
+* value, preventing test failures caused by the millisecond-resolution system clock
+* returning identical timestamps for rapid successive operations.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void enableMonotoneClock(NapiInfoCR info)
+    {
+    REQUIRE_ARGUMENT_BOOL(0, enable);
+    BeSQLiteLib::EnableMonotoneClock(enable);
+    }
+
 static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
     REQUIRE_ARGUMENT_STRING(0, fileName);
     auto ret = Napi::Object::New(info.Env());
@@ -7445,6 +7475,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
+        Napi::PropertyDescriptor::Function(env, exports, "enableMonotoneClock", &enableMonotoneClock),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),

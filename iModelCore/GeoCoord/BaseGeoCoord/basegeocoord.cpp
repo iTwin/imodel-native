@@ -8567,7 +8567,7 @@ public:
     {
         VerticalTransform::ToJson(jsonValue);
 
-        jsonValue["nullTransform"] = Json::nullValue;
+        jsonValue["nullTransform"].SetNull();
 
         return SUCCESS;
     }
@@ -9440,7 +9440,7 @@ VerticalTransformPathInfo::~VerticalTransformPathInfo()
 StatusInt VerticalTransformPathInfo::ToJson(BeJsValue jsonValue) const
 {
     jsonValue["target"] = m_target;
-    jsonValue["path"] = Json::arrayValue;
+    jsonValue["path"].SetEmptyArray();
     int numEntries = 0;
     for (const auto& path : m_paths)
         {
@@ -11805,6 +11805,9 @@ StatusInt BaseGCS::SetFromCSName(Utf8CP coordinateSystemKeyName) {
     AllocateClean();
     SetModified(true);
 
+    // AllocateClean() allocated m_csParameters via CS_malc. CS_csloc returns
+    // a new allocation, so free the old one to avoid a leak.
+    CSMAP_FREE_AND_CLEAR(m_csParameters);
     if (NULL == (m_csParameters = CSMap::CS_csloc (coordinateSystemKeyName)))
         m_csError = cs_Error;
 
@@ -14681,6 +14684,9 @@ GeoCoordParseStatus       BaseGCS::InitFromWellKnownText
         CSDefinition        csDef;
         CSDatumDef          csDatumDef;
         CSEllipsoidDef      csEllipsoidDef;
+        memset (&csDef, 0, sizeof (csDef));
+        memset (&csDatumDef, 0, sizeof (csDatumDef));
+        memset (&csEllipsoidDef, 0, sizeof (csEllipsoidDef));
 
         int csmapStatus = CSMap::CS_wktToCsEx (&csDef, &csDatumDef, &csEllipsoidDef, wktFlavorAutodesk, wellKnownText);
 
