@@ -258,9 +258,10 @@ void DbModule::DbVirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite
 int DbModule::DbVirtualTable::IndexInfo::GetDistinct() const { return sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
 Utf8CP DbModule::DbVirtualTable::IndexInfo::GetCollation(int constraintIdx) const { return sqlite3_vtab_collation((sqlite3_index_info*)const_cast<IndexInfo*>(this), constraintIdx); }
 DbResult DbModule::DbVirtualTable::IndexInfo::GetRhsValue(int constraintIdx, DbValue& value) const {
+    value = DbValue(nullptr);
     sqlite3_value* pVal = nullptr;
     auto rc = (DbResult)sqlite3_vtab_rhs_value((sqlite3_index_info*)const_cast<IndexInfo*>(this), constraintIdx, &pVal);
-    if (rc == BE_SQLITE_OK)
+    if (rc == BE_SQLITE_OK && nullptr != pVal)
         value = DbValue(pVal);
     return rc;
 }
