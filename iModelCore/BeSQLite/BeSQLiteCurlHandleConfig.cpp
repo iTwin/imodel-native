@@ -215,7 +215,7 @@ int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * 
 #endif // ENABLE_PROXYRES
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
 #ifdef __APPLE__
-    curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT | CURLSSLOPT_NATIVE_CA);
 #endif // __APPLE__
     return SQLITE_OK;
 }
