@@ -255,6 +255,33 @@ DbModule::DbVirtualTable::IndexInfo::ScanFlags DbModule::DbVirtualTable::IndexIn
 void DbModule::DbVirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
 int64_t DbModule::DbVirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
 void DbModule::DbVirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
-bool DbModule::DbVirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
+int DbModule::DbVirtualTable::IndexInfo::GetDistinct() const { return sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
+Utf8CP DbModule::DbVirtualTable::IndexInfo::GetCollation(int constraintIdx) const { return sqlite3_vtab_collation((sqlite3_index_info*)const_cast<IndexInfo*>(this), constraintIdx); }
+DbResult DbModule::DbVirtualTable::IndexInfo::GetRhsValue(int constraintIdx, DbValue& value) const {
+    sqlite3_value* pVal = nullptr;
+    auto rc = (DbResult)sqlite3_vtab_rhs_value((sqlite3_index_info*)const_cast<IndexInfo*>(this), constraintIdx, &pVal);
+    if (rc == BE_SQLITE_OK)
+        value = DbValue(pVal);
+    return rc;
+}
+int DbModule::DbVirtualTable::IndexInfo::SetIn(int constraintIdx, int handle) { return sqlite3_vtab_in((sqlite3_index_info*)const_cast<IndexInfo*>(this), constraintIdx, handle); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult DbModule::InFirst(DbValue& val, DbValue& out) {
+    sqlite3_value* pOut = nullptr;
+    auto rc = (DbResult)sqlite3_vtab_in_first(val.GetSqlValueP(), &pOut);
+    if (pOut)
+        out = DbValue(pOut);
+    return rc;
+}
+DbResult DbModule::InNext(DbValue& val, DbValue& out) {
+    sqlite3_value* pOut = nullptr;
+    auto rc = (DbResult)sqlite3_vtab_in_next(val.GetSqlValueP(), &pOut);
+    if (pOut)
+        out = DbValue(pOut);
+    return rc;
+}
 
 END_BENTLEY_SQLITE_NAMESPACE

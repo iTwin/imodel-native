@@ -40,6 +40,7 @@ struct DbModule : NonCopyableClass {
                 enum class ScanFlags {
                     NONE = 0,
                     UNIQUE = 1,
+                    HEX = 2,     /* Display idxNum as hex in EXPLAIN QUERY PLAN */
                 };
                 struct IndexConstraint final {
                     BE_SQLITE_EXPORT int GetColumn() const;  /* Column constrained.  -1 for ROWID */
@@ -77,7 +78,10 @@ struct DbModule : NonCopyableClass {
                 BE_SQLITE_EXPORT void SetIdxFlags(ScanFlags); /* Mask of SQLITE_INDEX_SCAN_* flags */
                 BE_SQLITE_EXPORT int64_t GetColUsed() const;
                 BE_SQLITE_EXPORT void SetColUsed(int64_t);  /* Input: Mask of columns used by statement */
-                BE_SQLITE_EXPORT bool IsDistinct() const;   /* Determine if a virtual table query is DISTINCT sqlite3_vtab_distinct() */
+                BE_SQLITE_EXPORT int GetDistinct() const;   /* 0=normal, 1=GROUP BY, 2=DISTINCT, 3=DISTINCT+ORDER BY. see sqlite3_vtab_distinct() */
+                BE_SQLITE_EXPORT Utf8CP GetCollation(int constraintIdx) const; /* Get collation for a constraint. see sqlite3_vtab_collation() */
+                BE_SQLITE_EXPORT DbResult GetRhsValue(int constraintIdx, DbValue& value) const; /* Get RHS literal value of a constraint. see sqlite3_vtab_rhs_value() */
+                BE_SQLITE_EXPORT int SetIn(int constraintIdx, int handle);  /* Handle IN constraint all-at-once. see sqlite3_vtab_in() */
             };
 
             public:
@@ -147,11 +151,16 @@ struct DbModule : NonCopyableClass {
                 //! set index info use by query planner
                 virtual DbResult BestIndex(IndexInfo& indexInfo) = 0;
         };
+		//! Iterate all values of an IN constraint arg in xFilter. see sqlite3_vtab_in_first()/sqlite3_vtab_in_next()
+		static BE_SQLITE_EXPORT DbResult InFirst(DbValue& val, DbValue& out);
+		static BE_SQLITE_EXPORT DbResult InNext(DbValue& val, DbValue& out);
+
 	struct Config {
 		enum class Tags {
 			ConstraintSupport = 1, //! use with xUpdate()
 			Innocuous 		  = 2, //! Identify that virtual table as being safe to use from within triggers and views
 			DirectOnly 		  = 3, //! Prohibits that virtual table from being used from within triggers and views
+			UsesAllSchemas    = 4, //! Virtual table uses all schemas. see SQLITE_VTAB_USES_ALL_SCHEMAS
 		};
 		private:
 			Tags m_tag;
