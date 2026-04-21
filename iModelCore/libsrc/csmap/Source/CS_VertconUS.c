@@ -101,6 +101,69 @@ error:
 	return NULL;
 }
 
+#ifdef GEOCOORD_ENHANCEMENT
+/******************************************************************************
+Constructor
+*/
+struct csVertconUS_* CSnewVertconUSFromCatalog(struct csDatumCatalog_* catPtr)
+{
+	if (catPtr == NULL)
+		goto error;
+
+	int index;
+	struct csVertconUS_ *thisPtr;
+	struct csDatumCatalogEntry_ *catEntryPtr;
+	struct csVertconUSEntry_* vcEntryPtr;
+	struct csVertconUSEntry_* findPtr;
+
+	/* Prepare for an error. */
+	thisPtr = NULL;
+	catEntryPtr = NULL;
+	vcEntryPtr = NULL;
+
+	thisPtr = (struct csVertconUS_*) CS_malc (sizeof (struct csVertconUS_));
+	if (thisPtr == NULL)
+	{
+		CS_erpt (cs_NO_MEM);
+		goto error;
+	}
+	thisPtr->listHead = NULL;
+
+	/* For each entry in the catalog, we build an appropriate geoid height
+	grid file entry.  Right now, this is based on file names and file
+	extensions.  Not very good, but that's life. */
+
+	index = 0;
+	for (;;)
+	{
+		catEntryPtr = CSgetDatumCatalogEntry (catPtr,index++);
+		if (catEntryPtr == NULL) break;
+		vcEntryPtr = CSnewVertconUSEntry (catEntryPtr);
+		if (vcEntryPtr == NULL)
+		{
+			goto error;
+		}
+		/* Keep the list in the same order as they appear in the file. */
+		if (thisPtr->listHead == NULL)
+		{
+			thisPtr->listHead = vcEntryPtr;
+		}
+		else
+		{
+			for (findPtr = thisPtr->listHead;findPtr->next != NULL;findPtr = findPtr->next);	/*lint !e722  suspicious use of ';' */
+			findPtr->next = vcEntryPtr;
+		}
+	}
+	
+	/* OK, we ;re done. */
+	return thisPtr;
+
+error:
+	if (thisPtr != NULL) CS_free (thisPtr);
+	return NULL;
+}
+#endif
+
 /******************************************************************************
 	Destructor
 */

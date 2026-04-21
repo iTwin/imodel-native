@@ -36,6 +36,10 @@
 #include "SqlScan.h"
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 #if defined __GNUC__
 //    #pragma GCC system_header
 #elif defined __SUNPRO_CC
@@ -228,7 +232,7 @@ using namespace connectivity;
 /* non-standard */
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
-%type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
+%type <pParseNode> cte opt_cte_recursive cte_column_list cte_block_body cte_table_name cte_block_list
 %type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
 %type <pParseNode> value_creation_fct
 %%
@@ -349,8 +353,22 @@ cte_column_list:
         }
     ;
 
+cte_block_body:
+        select_statement
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }
+    |   SQL_TOKEN_VALUES values_commalist
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
+    ;
+
 cte_table_name:
-    SQL_TOKEN_NAME  '(' cte_column_list ')' SQL_TOKEN_AS '(' select_statement ')'
+    SQL_TOKEN_NAME  '(' cte_column_list ')' SQL_TOKEN_AS '(' cte_block_body ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -362,7 +380,7 @@ cte_table_name:
             $$->append($7);
             $$->append($8 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |   SQL_TOKEN_NAME SQL_TOKEN_AS '(' select_statement ')'
+    |   SQL_TOKEN_NAME SQL_TOKEN_AS '(' cte_block_body ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -3031,69 +3049,149 @@ void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     }
 //-----------------------------------------------------------------------------
 
-/** Delete all comments in a query.
-
-    See also getComment()/concatComment() implementation for
-    OQueryController::translateStatement().
+/** Preprocess SQL query: remove comments and invisible Unicode characters.
+ *  
+ *  See also getComment()/concatComment() implementation for
+ *  OQueryController::translateStatement().
  */
-static Utf8String delComment(Utf8String const& rQuery)
+static Utf8String preprocessSqlQuery(const Utf8String& rQuery)
 {
-    // First a quick search if there is any "--" or "//" or "/*", if not then the whole
-    // copying loop is pointless.
-      if (rQuery.find("--") == Utf8String::npos < 0 && rQuery.find( "//") == Utf8String::npos  &&
-          rQuery.find( "/*") == Utf8String::npos)
-        return rQuery;
+    // Invisible Unicode character patterns
+    struct InvisibleUnicodeCharacters
+    {
+        const char* bytes;
+        int length;
+    };
+    
+    static const InvisibleUnicodeCharacters invisibleChars[] = {
+        {"\xE2\x80\x8B", 3},  // U+200B Zero Width Space
+        {"\xEF\xBB\xBF", 3},  // U+FEFF Zero Width No-Break Space
+        {"\xC2\xA0", 2},      // U+00A0 No-Break Space
+        {"\xE2\x80\x8C", 3},  // U+200C Zero Width Non-Joiner
+        {"\xE2\x80\x8D", 3},  // U+200D Zero Width Joiner
+        {"\xE2\x80\x8E", 3},  // U+200E Left-to-Right Mark
+        {"\xE2\x80\x8F", 3},  // U+200F Right-to-Left Mark
+        {"\xE2\x81\xA0", 3},  // U+2060 Word Joiner
+        {"\xE2\x80\xAF", 3},  // U+202F Narrow No-Break Space
+        {"\xE2\x80\x82", 3},  // U+2002 En Space
+        {"\xE2\x80\x83", 3},  // U+2003 Em Space
+        {"\xE2\x80\x84", 3},  // U+2004 Three-per-Em Space
+        {"\xE2\x80\x85", 3},  // U+2005 Four-per-Em Space
+        {"\xE2\x80\x86", 3},  // U+2006 Six-per-Em Space
+        {"\xE2\x80\x87", 3},  // U+2007 Figure Space
+        {"\xE2\x80\x88", 3},  // U+2008 Punctuation Space
+        {"\xE2\x80\x89", 3},  // U+2009 Thin Space
+        {"\xE2\x80\x8A", 3},  // U+200A Hair Space
+    };
+    static const int invisibleCharsCount = sizeof(invisibleChars) / sizeof(invisibleChars[0]);
 
     const sal_Char* pCopy = rQuery.c_str();
-    size_t nQueryLen = rQuery.size();
-    bool bIsText1  = false;     // "text"
-    bool bIsText2  = false;     // 'text'
-    bool bComment2 = false;     // /* comment */
-    bool bComment  = false;     // -- or // comment
+    const size_t nQueryLen = rQuery.size();
+
+    bool bInDoubleQuoteString = false;  // "text"
+    bool bInSingleQuoteString = false;  // 'text'
+    bool bInMultiLineComment = false;   // /* comment */
+    bool bInSingleLineComment = false;  // -- or // comment
+
+    // Check if comments exist
+    const bool bHasComments = (rQuery.find("--") != Utf8String::npos || rQuery.find("//") != Utf8String::npos || rQuery.find("/*") != Utf8String::npos);
+    
     Utf8String aBuf;
     aBuf.reserve(nQueryLen);
-    for (sal_Int32 i=0; i < nQueryLen; ++i)
+    
+    for (sal_Int32 i = 0; i < nQueryLen; ++i)
     {
-        if (bComment2)
+        const sal_Char currentChar = pCopy[i];
+        const sal_Char nextChar = (i + 1 < nQueryLen) ? pCopy[i + 1] : '\0';
+
+        const bool bInStringLiteral = bInDoubleQuoteString || bInSingleQuoteString;
+        const bool bInComment = bInMultiLineComment || bInSingleLineComment;
+
+        if (!bInComment)
         {
-            if ((i+1) < nQueryLen)
+            if (currentChar == '\"' && !bInSingleQuoteString)
+                bInDoubleQuoteString = !bInDoubleQuoteString;
+            else if (currentChar == '\'' && !bInDoubleQuoteString)
+                bInSingleQuoteString = !bInSingleQuoteString;
+        }
+
+        if (bHasComments)
+        {
+            if (bInMultiLineComment)
             {
-                if (pCopy[i]=='*' && pCopy[i+1]=='/')
+                if (currentChar == '*' && nextChar == '/')
                 {
-                    bComment2 = false;
+                    bInMultiLineComment = false;
                     ++i;
                 }
+                continue;  // Skip all characters inside multi-line comments
             }
-            else
+            
+            // Handle single-line comment closure: newline
+            if (bInSingleLineComment)
             {
-                // comment can't close anymore, actually an error, but..
+                if (currentChar == '\n')
+                    bInSingleLineComment = false;
+                continue;  // Skip all characters inside single-line comments
             }
-            continue;
+
+            if (!bInStringLiteral)
+            {
+                if (currentChar == '-' && nextChar == '-')
+                {
+                    bInSingleLineComment = true;
+                    continue;
+                }
+                if (currentChar == '/' && nextChar == '/')
+                {
+                    bInSingleLineComment = true;
+                    continue;
+                }
+                if (currentChar == '/' && nextChar == '*')
+                {
+                    bInMultiLineComment = true;
+                    ++i;  // Skip the '*'
+                    continue;
+                }
+            }
         }
-        if (pCopy[i] == '\n')
-            bComment = false;
-        else if (!bComment)
+        
+        if (!bInComment)
         {
-            if (pCopy[i] == '\"' && !bIsText2)
-                bIsText1 = !bIsText1;
-            else if (pCopy[i] == '\'' && !bIsText1)
-                bIsText2 = !bIsText2;
-            if (!bIsText1 && !bIsText2 && (i+1) < nQueryLen)
+            // Check for invisible Unicode characters
+            if (!bInStringLiteral)
             {
-                if ((pCopy[i]=='-' && pCopy[i+1]=='-') || (pCopy[i]=='/' && pCopy[i+1]=='/'))
-                    bComment = true;
-                else if ((pCopy[i]=='/' && pCopy[i+1]=='*'))
-                    bComment2 = true;
+                bool isInvisible = false;
+                int invisibleLen = 0;
+                
+                for (int j = 0; j < invisibleCharsCount; ++j)
+                {
+                    const int len = invisibleChars[j].length;
+                    if (i + len <= nQueryLen && memcmp(&pCopy[i], invisibleChars[j].bytes, len) == 0)
+                    {
+                        isInvisible  = true;
+                        invisibleLen = len;
+                        break;
+                    }
+                }
+                
+                if (isInvisible)
+                {
+                    // Replace invisible character with a regular whitespace
+                    aBuf.append(" ", 1);
+                    i += invisibleLen - 1;  // -1 because the loop will increment as well
+                    continue;
+                }
             }
+            aBuf.append(&currentChar, 1);
         }
-        if (!bComment && !bComment2)
-            aBuf.append(&pCopy[i], 1);
     }
+    
     return aBuf;
 }
 //-----------------------------------------------------------------------------
 OSQLParseNode* OSQLParser::parseTree (Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational) {
-    Utf8String sTemp = delComment(rStatement);
+    Utf8String sTemp = preprocessSqlQuery(rStatement);
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
     m_pParseTree = nullptr;
     m_sErrorMessage.clear();

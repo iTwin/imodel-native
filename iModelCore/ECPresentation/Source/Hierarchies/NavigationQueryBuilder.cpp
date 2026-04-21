@@ -2677,7 +2677,7 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
         {
         // get related instance paths that suit the given select info
         bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = params.GetSchemaHelper().GetRelatedInstancePaths(
-            info.GetSelectClass().GetClass(), specification.GetRelatedInstances(), relationshipUseCounter);
+            info.GetSelectClass().GetClass(), specification.GetRelatedInstances(), relationshipUseCounter, params.GetCancellationToken());
 
         size_t joinsCount = CountRelatedInstanceJoins(relatedInstancePaths);
         if (RELATED_CLASS_PATH_ALIASES_THRESHOLD < joinsCount)

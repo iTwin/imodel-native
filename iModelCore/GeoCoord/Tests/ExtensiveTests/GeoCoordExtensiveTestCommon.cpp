@@ -318,7 +318,6 @@ static bvector<Utf8String> s_listOfDatumsWithAdditionalPaths = {
 "NTF-G-Grid-ClrkIGN",
 "EPSG:6272",
 "NZGD2000",
-"NZGD49",
 "RGF93",
 "SIRGAS2000",
 "Slov/JTSK-NULL",

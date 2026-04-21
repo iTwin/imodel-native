@@ -198,6 +198,13 @@ export declare namespace IModelJsNative {
   function addFontWorkspace(fileName: LocalFileName, container?: CloudContainer): boolean;
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;
   function enableLocalGcsFiles(yesNo: boolean): void;
+  /** Enable or disable the monotone-clock SQLite VFS shim. When enabled, every call
+   * to SQLite's time functions returns a strictly increasing value, preventing test
+   * failures caused by the millisecond-resolution system clock returning identical
+   * timestamps for rapid successive operations. Call with `false` to restore the
+   * original default VFS. Must be called after the native library is initialized.
+   */
+  function enableMonotoneClock(enable: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
 
   interface TrueTypeFontMetadata {
@@ -516,6 +523,7 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
@@ -608,7 +616,7 @@ export declare namespace IModelJsNative {
     public cancelElementGraphicsRequests(requestIds: string[]): void;
     public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public cancelTo(txnId: TxnIdString): IModelStatus;
-    public classIdToName(idString: string): string;
+    public classIdToName(idString: string): string | undefined;
     public classNameToId(className: string): Id64String;
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
@@ -623,6 +631,7 @@ export declare namespace IModelJsNative {
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
+    public deleteElements(elementIds: Id64Array): Id64Array;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
@@ -641,6 +650,8 @@ export declare namespace IModelJsNative {
     public executeTest(testName: string, params: string): string;
     public exportGraphics(exportProps: any/* ExportGraphicsProps */): DbResult;
     public exportPartGraphics(exportProps: any/* ExportPartGraphicsProps */): DbResult;
+    public exportGraphicsAsync(exportProps: any/* ExportGraphicsProps */): Promise<void>;
+    public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsProps */): Promise<void>;
     public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
@@ -698,6 +709,7 @@ export declare namespace IModelJsNative {
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
+    public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
@@ -738,6 +750,7 @@ export declare namespace IModelJsNative {
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
     public readFontMap(): FontMapProps;
     public reinstateTxn(): IModelStatus;
+    public getNextReinstateTxnRange(): { firstTxnId: TxnIdString, lastTxnId: TxnIdString };
     public removeEmbeddedFile(name: string): void;
     public replaceEmbeddedFile(arg: EmbedFileArg): void;
     public resetBriefcaseId(idValue: number): void;
@@ -872,6 +885,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
+    public clearECDbCache(): void;
   }
 
   class ChangedElementsECDb implements IDisposable {
@@ -903,7 +917,8 @@ export declare namespace IModelJsNative {
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
     public toRow(arg: ECSqlRowAdaptorOptions): any;
-    public getMetadata(): any;
+    public getMetadata(arg?: ECSqlRowAdaptorOptions): any;
+    public bindParams(args: object): StatusCodeWithMessage<boolean>;
   }
 
   class ECSqlBinder {

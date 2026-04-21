@@ -276,7 +276,7 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
 
     // find all paths that match each spec (associated by index)
     auto countTargets = !(context.GetContentFlagsCalculator()(0) & (int)ContentFlags::DescriptorOnly);
-    ECSchemaHelper::RelationshipPathsRequestParams params(sourceClass, pathSpecs, &contentInstanceFilteringParams, relatedInstancePaths, context.GetRelationshipUseCounts(), countTargets);
+    ECSchemaHelper::RelationshipPathsRequestParams params(sourceClass, pathSpecs, &contentInstanceFilteringParams, relatedInstancePaths, context.GetRelationshipUseCounts(), countTargets, context.GetCancellationToken());
     return context.GetSchemaHelper().GetRelationshipPaths(params);
     }
 
@@ -1084,7 +1084,7 @@ static bvector<ContentSource> CreateContentSourcesWithRelatedInstancePaths(Conte
     {
     bvector<ContentSource> sources = {source};
     bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = context.GetSchemaHelper().GetRelatedInstancePaths(
-        source.GetSelectClass().GetClass(), relatedInstanceSpecs, context.GetRelationshipUseCounts());
+        source.GetSelectClass().GetClass(), relatedInstanceSpecs, context.GetRelationshipUseCounts(), context.GetCancellationToken());
     for (auto const& relatedInstancePathEntry : relatedInstancePaths)
         {
         // note: if a single related instance specification results in more than one path, we have to

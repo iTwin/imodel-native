@@ -2204,7 +2204,7 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             case ParseMode::Exp:
             {
             Utf8String ecsqlFromExpTree;
-            Json::Value expTree;
+            BeJsDocument expTree;
             if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, *session.GetFile().GetECDbHandle(), ecsql.c_str()))
                 {
                 if (session.GetIssues().HasIssue())
@@ -2262,21 +2262,22 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-void ParseCommand::ExpTreeToString(Utf8StringR expTreeStr, JsonValueCR expTree, int indentLevel)
+void ParseCommand::ExpTreeToString(Utf8StringR expTreeStr, BeJsConst expTree, int indentLevel)
     {
     for (int i = 0; i < indentLevel; i++)
         expTreeStr.append("   ");
 
     expTreeStr.append(expTree["Exp"].asCString()).append("\r\n");
 
-    if (!expTree.isMember("Children"))
+    if (!expTree.hasMember("Children"))
         return;
 
     indentLevel++;
-    for (JsonValueCR child : expTree["Children"])
+    expTree["Children"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst child)
         {
         ExpTreeToString(expTreeStr, child, indentLevel);
-        }
+        return false;
+        });
     }
 
 //******************************* ExitCommand ******************

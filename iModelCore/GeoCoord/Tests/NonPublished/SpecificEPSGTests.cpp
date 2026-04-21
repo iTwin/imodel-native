@@ -647,6 +647,7 @@ static bvector<EPSGKeynamePair> s_ListOfCompleteEPSGTests =
     {5014, "PTRA08.UTM-25N"},
     {5015, "PTRA08.UTM-26N"},
     {5016, "PTRA08.UTM-28N"},
+    {5223, "WGS84.GabonTM_onshore"},
     {5228, "CzechJTSK/05.LL"},
     {5252, "TUREF.LL"},
     {5253, "TUREF.TM27-N"},

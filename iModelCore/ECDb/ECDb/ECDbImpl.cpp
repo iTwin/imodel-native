@@ -265,6 +265,8 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     GetPragmaManager().Register(PragmaDbList::Create());
     GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
+    GetPragmaManager().Register(PragmaECSqlVersion::Create());
+    GetPragmaManager().Register(PragmaSqliteSql::Create());
     }
 
 //--------------------------------------------------------------------------------------
@@ -532,11 +534,16 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
-    ConcurrentQueryMgr::Shutdown(m_ecdb);
+
+    auto cacheClearListeners = m_ecdbCacheClearListeners;
+    lock.unlock();
 
     // this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
-    for (auto listener : m_ecdbCacheClearListeners)
+    for (auto listener : cacheClearListeners)
         listener->_OnBeforeClearECDbCache();
+
+    lock.lock();
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
 
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
@@ -558,7 +565,9 @@ void ECDb::Impl::ClearECDbCache() const
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
     m_clearCacheCounter.Increment();
-    for (auto listener : m_ecdbCacheClearListeners)
+
+    lock.unlock();
+    for (auto listener : cacheClearListeners)
         listener->_OnAfterClearECDbCache();
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
@@ -644,6 +653,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr)
         m_ecdb.AddFunction(*m_extractPropFunc);
 
+    m_supportInstanceQueryFunc = SupportInstanceQueryFunc::Create(m_ecdb);
+    if (m_supportInstanceQueryFunc != nullptr)
+        m_ecdb.AddFunction(*m_supportInstanceQueryFunc);
+
     m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
     if (m_xmlCAToJsonFunc != nullptr)
         m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
@@ -685,6 +698,10 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_extractPropFunc);
         m_extractPropFunc = nullptr;
+    }
+    if (m_supportInstanceQueryFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_supportInstanceQueryFunc);
+        m_supportInstanceQueryFunc = nullptr;
     }
     if (m_xmlCAToJsonFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);

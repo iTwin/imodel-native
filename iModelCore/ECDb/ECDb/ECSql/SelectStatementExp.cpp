@@ -1435,6 +1435,7 @@ SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>
     {
     BeAssert(lhs != nullptr);
     m_firstSingleSelectStatementExpIndex = AddChild(std::move(lhs));
+    m_flatListOfStatements.push_back(&GetFirstStatement());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1449,6 +1450,8 @@ SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>
 
     m_firstSingleSelectStatementExpIndex = AddChild(std::move(lhs));
     m_rhsSelectStatementExpIndex = (int) AddChild(std::move(rhs));
+    m_flatListOfStatements.push_back(&GetFirstStatement());
+    m_flatListOfStatements.insert(m_flatListOfStatements.end(), GetRhsStatement()->m_flatListOfStatements.begin(), GetRhsStatement()->m_flatListOfStatements.end());
     }
 
 //-----------------------------------------------------------------------------------------

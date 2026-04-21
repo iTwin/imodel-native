@@ -1046,7 +1046,11 @@ void DgnElement::_OnDeleted() const
     CallJsPostHandler("onDeleted");
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
-    deleteLinkTableRelationships(GetDgnDb(), GetElementId());
+
+    // For a bulk delete operation, the relationship classes will be handled separately
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        deleteLinkTableRelationships(GetDgnDb(), GetElementId());
+
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnDeletedElement(m_elementId);
@@ -4560,7 +4564,7 @@ void JobSubjectUtils::SetTransform(SubjectR jobSubject, TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, JsonValueCP properties)
+void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, BeJsConst const* properties)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(bridgeRegSubKey.c_str()));
 
