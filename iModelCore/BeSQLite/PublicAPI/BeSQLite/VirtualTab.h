@@ -79,6 +79,7 @@ struct DbModule : NonCopyableClass {
                 BE_SQLITE_EXPORT int64_t GetColUsed() const;
                 BE_SQLITE_EXPORT void SetColUsed(int64_t);  /* Input: Mask of columns used by statement */
                 BE_SQLITE_EXPORT int GetDistinct() const;   /* 0=normal, 1=GROUP BY, 2=DISTINCT, 3=DISTINCT+ORDER BY. see sqlite3_vtab_distinct() */
+                bool IsDistinct() const { return GetDistinct() != 0; } /* Backward-compatible wrapper for older PublicAPI consumers */
                 BE_SQLITE_EXPORT Utf8CP GetCollation(int constraintIdx) const; /* Get collation for a constraint. see sqlite3_vtab_collation() */
                 BE_SQLITE_EXPORT DbResult GetRhsValue(int constraintIdx, DbValue& value) const; /* Get RHS literal value of a constraint. see sqlite3_vtab_rhs_value() */
                 BE_SQLITE_EXPORT int SetIn(int constraintIdx, int handle);  /* Handle IN constraint all-at-once. see sqlite3_vtab_in() */
