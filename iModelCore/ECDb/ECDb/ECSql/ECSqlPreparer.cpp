@@ -691,7 +691,7 @@ bool ECSqlExpPreparer::IsNavPropRelECClassIdNeeded(const SingleSelectStatementEx
         if (propMap->GetType() == PropertyMap::Type::NavigationRelECClassId && propMap->GetAccessString().EqualsIAscii(relClassIdAccessString.c_str()))
             return true;
 
-        // The Navigation Property is used in it's entirety (eg: comparison with another, IS NULL, etc), so RelECClassId must be present.
+        // The Navigation Property is used in its entirety, so RelECClassId must be present.
         if (propMap->GetType() == PropertyMap::Type::Navigation && propMap->GetAccessString().EqualsIAscii(navPropAccessString.c_str()))
             {
             auto parent = propNameExp->GetParent();

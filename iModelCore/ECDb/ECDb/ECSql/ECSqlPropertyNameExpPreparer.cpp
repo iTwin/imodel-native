@@ -160,10 +160,11 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
             if (singleSelectNode != nullptr && classRefExp != nullptr)
                 {
                 // Extract just the navigation property name
-                Utf8StringCR relClassIdAccessString = r.GetPropertyMap().GetAccessString();
-                Utf8StringCR navPropAccessString = relClassIdAccessString.substr(0, relClassIdAccessString.find("."));
-                if (!ECSqlExpPreparer::IsNavPropRelECClassIdNeeded(singleSelectNode->GetAs<SingleSelectStatementExp>(), *classRefExp, navPropAccessString))
-                    continue;
+                if (const auto navPropMap = r.GetPropertyMap().GetParent(); navPropMap != nullptr)
+                    {
+                    if (!ECSqlExpPreparer::IsNavPropRelECClassIdNeeded(singleSelectNode->GetAs<SingleSelectStatementExp>(), *classRefExp, navPropMap->GetAccessString()))
+                        continue;
+                    }
                 }
             }
 
