@@ -273,15 +273,13 @@ int DbModule::DbVirtualTable::IndexInfo::SetIn(int constraintIdx, int handle) { 
 DbResult DbModule::InFirst(DbValue& val, DbValue& out) {
     sqlite3_value* pOut = nullptr;
     auto rc = (DbResult)sqlite3_vtab_in_first(val.GetSqlValueP(), &pOut);
-    if (pOut)
-        out = DbValue(pOut);
+    out = DbValue(pOut);
     return rc;
 }
 DbResult DbModule::InNext(DbValue& val, DbValue& out) {
     sqlite3_value* pOut = nullptr;
     auto rc = (DbResult)sqlite3_vtab_in_next(val.GetSqlValueP(), &pOut);
-    if (pOut)
-        out = DbValue(pOut);
+    out = DbValue(pOut);
     return rc;
 }
 
