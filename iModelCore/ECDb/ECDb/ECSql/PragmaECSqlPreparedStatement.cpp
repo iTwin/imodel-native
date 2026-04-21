@@ -461,7 +461,7 @@ ECN::ECPropertyCP PragmaResult::AppendProperty(Utf8StringCR name, ECN::Primitive
         if (m_class->CreatePrimitiveProperty(property, name, type) != ECObjectsStatus::Success)
             return nullptr;
     } else {
-        BeAssert(false && "unsupported type. Only bool, double, integer, long, and string are supported");
+        BeAssert(false && "unsupported type. Only bool, double, integer, long and string are supported type");
         return nullptr;
     }
     DateTime::Info dateTimeInfo;
@@ -539,6 +539,7 @@ Utf8CP PragmaResult::Field::_GetText() const {
     return row == nullptr ? NoopECSqlValue::GetSingleton().GetText() : row->operator[](m_columnIndex).asCString();
 }
 
+// unsupported value type
 void const* PragmaResult::Field::_GetBlob(int* blobSize) const { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
 uint64_t PragmaResult::Field::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const{ return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
 double PragmaResult::Field::_GetDateTimeJulianDays(DateTime::Info& metadata) const { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }

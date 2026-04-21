@@ -641,4 +641,92 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_is_readonly) {
     ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view=2"));
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_token_determinism_and_checksum_match) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_token.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    // Get schemaToken from schema_view pragma (two calls to verify determinism)
+    Utf8String token1, token2;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        token1 = stmt.GetValueText(3);
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        token2 = stmt.GetValueText(3);
+    }
+    ASSERT_STREQ(token1.c_str(), token2.c_str()) << "schema_view token must be deterministic across calls";
+
+    // Get checksum from PRAGMA checksum(ecdb_schema) - must match schema_view's schemaToken
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        Utf8CP checksumVal = stmt.GetValueText(0);
+        ASSERT_STREQ(token1.c_str(), checksumVal) << "schema_view schemaToken must match checksum(ecdb_schema)";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_token_change.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    // Capture token before schema change
+    Utf8String tokenBefore;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        tokenBefore = stmt.GetValueText(3);
+    }
+
+    // Import an updated schema (adds a new property)
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "    <ECProperty propertyName='Description' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    // Token after schema change must differ
+    Utf8String tokenAfter;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        tokenAfter = stmt.GetValueText(3);
+    }
+    ASSERT_STRNE(tokenBefore.c_str(), tokenAfter.c_str()) << "schema_view token must change after schema import";
+
+    // checksum(ecdb_schema) must still match the new schema_view token
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "checksum(ecdb_schema) must match schema_view token after import";
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

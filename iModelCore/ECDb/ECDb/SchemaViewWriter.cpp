@@ -32,17 +32,17 @@ static DbResult PrepareStmt(Statement& stmt, DbCR db, Utf8CP sql)
     }
 
 // Schemas excluded from the runtime binary blob. These fall into three categories:
-// 1. Units/Formats: empty schemas whose items (Unit, Format, Phenomenon, UnitSystem)
-//    are only referenced as strings from KindOfQuantity. Including them would add
-//    zero useful classes/properties but bloat the string table.
+// 1. Units/Formats: schemas whose items (Unit, Format, Phenomenon, UnitSystem)
+//    are only referenced as strings from KindOfQuantity. Consumers who need
+//    this info will pull it separately.
 // 2. ECDb-internal: ECDbSystem, ECDbMap, ECDbFileInfo, ECDbSchemaPolicies
-//    describe the EC storage layer. No runtime consumer needs these.
+//    describe the EC storage layer. Runtime consumers should not need these.
 //    Note: ECDbMeta is NOT excluded - consumers use it for metadata queries.
 // 3. Pure CA schemas: CoreCustomAttributes, ECv3ConversionAttributes,
 //    EditorCustomAttributes, BisCustomAttributes, SchemaLocalizationCustomAttributes,
 //    SchemaUpgradeCustomAttributes. Their classes are only CustomAttribute and Struct
 //    types used for decoration. Since the blob doesn't include CA instances, including
-//    these schema definitions provides no value.
+//    these schema definitions provides little value.
 // The list is checked case-insensitively via BeStringUtilities::StricmpAscii.
 static bool IsExcludedSchema(Utf8CP name)
     {
@@ -86,7 +86,7 @@ DbResult SchemaViewWriter::CollectExcludedSchemaIds(DbCR db)
     }
 
 // Binary record tags - must stay in sync with Tag enum in RuntimeSchemaBinaryReader.ts
-// v2 flat format: each tag marks a table header (count-prefixed), not individual records.
+// flat format: each tag marks a table header (count-prefixed), not individual records.
 namespace Tag
     {
     constexpr uint8_t PropertyDefTable = 0x0A;
@@ -136,12 +136,13 @@ DbResult SchemaViewWriter::ResolveHiddenPropertyCAClassId(DbCR db)
     }
 
 //---------------------------------------------------------------------------------------
-// Parse the Instance XML of a HiddenProperty CA to determine if the property is hidden.
-// The HiddenProperty CA has an optional `Show` boolean (default false).
-// If Show is explicitly set to true, the property is NOT hidden.
-// Returns true if the property should be marked as hidden.
+// Parse the Instance XML of a HiddenXXX CA to determine if the item is hidden.
+// HiddenProperty and HiddenClass use a `Show` boolean (default false).
+// HiddenSchema uses `ShowClasses` (default false) to control class-level propagation.
+// If the show property is explicitly set to true, the item is NOT hidden.
+// Returns true if the item should be marked as hidden.
 //---------------------------------------------------------------------------------------
-bool SchemaViewWriter::IsHiddenFromInstanceXml(Utf8CP instanceXml)
+bool SchemaViewWriter::IsHiddenFromInstanceXml(Utf8CP instanceXml, Utf8CP showPropName)
     {
     if (!instanceXml || *instanceXml == '\0')
         return true; // CA present with no instance data -> hidden
@@ -151,11 +152,10 @@ bool SchemaViewWriter::IsHiddenFromInstanceXml(Utf8CP instanceXml)
     if (!parseResult)
         return true; // unparsable -> treat as hidden (CA was present)
 
-    // Look for <Show>true</Show> (case-insensitive) under the root element
     auto root = doc.first_child();
-    auto showNode = root.child("Show");
+    auto showNode = root.child(showPropName);
     if (!showNode)
-        return true; // no Show element -> hidden
+        return true; // no show element -> hidden
 
     Utf8CP showText = showNode.child_value();
     return 0 != BeStringUtilities::StricmpAscii(showText, "true");
@@ -380,12 +380,15 @@ DbResult SchemaViewWriter::ResolveHiddenClassCAClassId(DbCR db)
 
 //---------------------------------------------------------------------------------------
 // Pre-collect IDs of schemas with the HiddenSchema CA.
-// HiddenSchema has a ShowClasses boolean - we only track the schema-level hidden flag here.
-// Like HiddenProperty, the CA being present means hidden unless Show(Classes) is true.
+// The schema itself is always hidden when the CA is present (there is no Show override).
+// HiddenSchema.ShowClasses (default false) controls whether classes inherit the hidden
+// flag. When ShowClasses != true, the schema's classes are also hidden unless
+// individually overridden by HiddenClass(Show=true).
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
     {
     m_hiddenSchemaIds.clear();
+    m_schemasWithHiddenClasses.clear();
     if (!m_hiddenSchemaCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -398,10 +401,11 @@ DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
         return rc;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        // HiddenSchema CA present -> schema is hidden (IsHiddenFromInstanceXml checks for Show element)
-        // Note: HiddenSchema uses ShowClasses, not Show, but for the schema-level hidden flag
-        // the CA being present is sufficient - there is no Show property on HiddenSchema itself.
-        m_hiddenSchemaIds.insert(stmt.GetValueInt64(0));
+        int64_t schemaId = stmt.GetValueInt64(0);
+        m_hiddenSchemaIds.insert(schemaId);
+        // ShowClasses defaults to false - when not true, all classes in this schema are hidden
+        if (IsHiddenFromInstanceXml(stmt.GetValueText(1), "ShowClasses"))
+            m_schemasWithHiddenClasses.insert(schemaId);
         }
     return BE_SQLITE_OK;
     }
@@ -409,10 +413,13 @@ DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
 //---------------------------------------------------------------------------------------
 // Pre-collect IDs of classes with the HiddenClass CA.
 // HiddenClass has a Show boolean (default false) - same semantics as HiddenProperty.
+// Classes with Show=true are tracked separately so they can override schema-level
+// propagation from HiddenSchema(ShowClasses=false).
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
     {
     m_hiddenClassIds.clear();
+    m_explicitlyShownClassIds.clear();
     if (!m_hiddenClassCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -425,9 +432,11 @@ DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
         return rc;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP instanceXml = stmt.GetValueText(1);
-        if (IsHiddenFromInstanceXml(instanceXml))
-            m_hiddenClassIds.insert(stmt.GetValueInt64(0));
+        int64_t classId = stmt.GetValueInt64(0);
+        if (IsHiddenFromInstanceXml(stmt.GetValueText(1)))
+            m_hiddenClassIds.insert(classId);
+        else
+            m_explicitlyShownClassIds.insert(classId);
         }
     return BE_SQLITE_OK;
     }
@@ -694,7 +703,12 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
             PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
             }
         PutU32(SafeU32Id(classId));                   // ecInstanceId
-        PutU8(m_hiddenClassIds.count(classId) ? 1 : 0); // isHidden
+        // Class is hidden if: (1) HiddenClass CA with Show != true, or
+        // (2) schema has HiddenSchema(ShowClasses != true) unless overridden by HiddenClass(Show=true)
+        bool classIsHidden = m_hiddenClassIds.count(classId) > 0;
+        if (!classIsHidden && !m_explicitlyShownClassIds.count(classId) && m_schemasWithHiddenClasses.count(schemaId))
+            classIsHidden = true;
+        PutU8(classIsHidden ? 1 : 0); // isHidden
 
         // Base classes (count-prefixed)
         baseStmt.Reset(); baseStmt.ClearBindings();

@@ -107,7 +107,9 @@ private:
     std::unordered_set<int64_t> m_mixinClassIds;
     std::unordered_set<int64_t> m_queryViewClassIds;
     std::unordered_set<int64_t> m_hiddenSchemaIds;
+    std::unordered_set<int64_t> m_schemasWithHiddenClasses; // HiddenSchema with ShowClasses != true
     std::unordered_set<int64_t> m_hiddenClassIds;
+    std::unordered_set<int64_t> m_explicitlyShownClassIds; // HiddenClass with Show = true
 
     // Pre-pass: collect metadata needed before writing
     DbResult CollectExcludedSchemaIds(DbCR db);
@@ -115,7 +117,7 @@ private:
     DbResult ResolveHiddenSchemaCAClassId(DbCR db);
     DbResult ResolveHiddenClassCAClassId(DbCR db);
     DbResult ResolveQueryViewCAClassId(DbCR db);
-    static bool IsHiddenFromInstanceXml(Utf8CP instanceXml);
+    static bool IsHiddenFromInstanceXml(Utf8CP instanceXml, Utf8CP showPropName = "Show");
     DbResult CollectPropertyDefsAndRefs(DbCR db);
     DbResult CollectMixinClassIds(DbCR db);
     DbResult CollectQueryViewClassIds(DbCR db);
@@ -123,7 +125,7 @@ private:
     DbResult CollectHiddenClassIds(DbCR db);
     uint32_t InternPropertyDef(PropertyDefRecord const& def);
 
-    // Per-table writers (v2 flat format)
+    // Per-table writers
     DbResult WritePropertyDefTable();
     DbResult WriteSchemaTable(DbCR db);
     DbResult WriteEnumTable(DbCR db);
@@ -132,12 +134,12 @@ private:
     DbResult WriteClassTable(DbCR db);
     void WriteStringTable(size_t stOffsetPos);
 
-    // Binary encoding helpers
+    // Binary encoding helpers (all little-endian, matching the TS DataView reader)
     void PutU8(uint8_t v) { m_output.push_back(v); }
     void PutU16(uint16_t v) { m_output.push_back((Byte)(v & 0xFF)); m_output.push_back((Byte)(v >> 8)); }
     void PutU32(uint32_t v) { for (int i = 0; i < 4; i++) { m_output.push_back((Byte)(v & 0xFF)); v >>= 8; } }
     void PutI32(int32_t v) { PutU32((uint32_t)v); }
-    void PutF64(double v) { auto p = reinterpret_cast<Byte const*>(&v); m_output.insert(m_output.end(), p, p + 8); }
+    void PutF64(double v) { uint64_t bits; memcpy(&bits, &v, 8); for (int i = 0; i < 8; i++) { m_output.push_back((Byte)(bits & 0xFF)); bits >>= 8; } }
     void PatchU32(size_t pos, uint32_t val) { m_output[pos]=(Byte)(val&0xFF); m_output[pos+1]=(Byte)((val>>8)&0xFF); m_output[pos+2]=(Byte)((val>>16)&0xFF); m_output[pos+3]=(Byte)((val>>24)&0xFF); }
     void PatchU16(size_t pos, uint16_t val) { m_output[pos]=(Byte)(val&0xFF); m_output[pos+1]=(Byte)(val>>8); }
 
