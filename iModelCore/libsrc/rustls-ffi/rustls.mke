@@ -20,7 +20,7 @@ always:
 
 %endif
 
-$(o)$(libprefix)proxyres$(libext) :
+$(o)$(stlibprefix)rustls$(stlibext) :
     ~chdir $(vendorSrc)
     $(_MakeFilePath)cargo.sh capi install $(rust_target) --release --prefix=$(o)
 
