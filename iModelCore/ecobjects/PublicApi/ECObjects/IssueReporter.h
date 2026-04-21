@@ -8,6 +8,7 @@
 #include <Bentley/BeThread.h>
 #include <Bentley/Logging.h>
 #include <utility>
+#include <set>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -204,6 +205,7 @@ struct IssueReporter : public IIssueReporter
 private:
     mutable BeMutex m_mutex;
     IIssueListener const* m_issueListener = nullptr;
+    mutable std::set<Utf8String> m_reportOnceKeys;
 
 protected:
     ECOBJECTS_EXPORT void _Report(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const override;
@@ -216,6 +218,21 @@ public:
 
     ECOBJECTS_EXPORT BentleyStatus AddListener(IIssueListener const&);
     ECOBJECTS_EXPORT void RemoveListener();
+
+    //! Like ReportV, but only reports the issue once for a given (id, deduplicationKey) pair.
+    //! Should be used where repeated warnings/errors are likely to avoid repeated logging.
+    //! @param[in] deduplicationKey  A user-defined string that identifies the subject of the issue (e.g. "ClassName.PropertyName").
+    template<typename ...FmtArgs>
+    void ReportOnceV(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8StringCR deduplicationKey, Utf8CP message, FmtArgs&& ...fmtArgs) const
+        {
+        {
+        Utf8String key = Utf8String(id.m_issueId) + "-" + deduplicationKey;
+        BeMutexHolder lock(m_mutex);
+        if (!m_reportOnceKeys.insert(key).second)
+            return;
+        }
+        ReportV(severity, category, type, id, message, std::forward<FmtArgs>(fmtArgs)...);
+        }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
