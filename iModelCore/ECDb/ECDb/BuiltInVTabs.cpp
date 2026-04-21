@@ -157,15 +157,39 @@ DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc,
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
-    ++m_index;
+    if (m_pointLookup) {
+        m_lookupFound = false;
+    } else {
+        ++m_index;
+    }
     return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool IdSetModule::IdSetTable::IdSetCursor::Eof() {
+    if (m_pointLookup)
+        return !m_lookupFound;
+    return m_index >= m_ids.size();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void IdSetModule::IdSetTable::IdSetCursor::SortAndDedupe() {
+    std::sort(m_ids.begin(), m_ids.end());
+    m_ids.erase(std::unique(m_ids.begin(), m_ids.end()), m_ids.end());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
-    rowId = (int64_t)(*m_index);
+    if (m_pointLookup)
+        rowId = (int64_t)m_lookupId;
+    else
+        rowId = (int64_t)m_ids[m_index];
     return BE_SQLITE_OK;
 }
 
@@ -175,8 +199,13 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
     if ((Columns)i == Columns::Json_array_ids) {
         ctx.SetResultText(m_text.c_str(), (int)m_text.size(), Context::CopyData::No);
-    } else if ((Columns)i == Columns::Id && m_index != m_idSet.end()) {
-        ctx.SetResultInt64((int64_t)(*m_index));
+    } else if ((Columns)i == Columns::Id) {
+        if (m_pointLookup) {
+            if (m_lookupFound)
+                ctx.SetResultInt64((int64_t)m_lookupId);
+        } else if (m_index < m_ids.size()) {
+            ctx.SetResultInt64((int64_t)m_ids[m_index]);
+        }
     }
     return BE_SQLITE_OK;
 }
@@ -213,7 +242,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
         uint64_t id = val.GetUInt64();
         if(id == 0)
             return BE_SQLITE_ERROR;
-        m_idSet.insert(id);
+        m_ids.push_back(id);
     }
     else if(val.isString()) {
         uint64_t id;
@@ -222,7 +251,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
             return BE_SQLITE_ERROR;
         if(id == 0)
             return BE_SQLITE_ERROR;
-        m_idSet.insert(id);
+        m_ids.push_back(id);
     }
     else
         return BE_SQLITE_ERROR;
@@ -233,32 +262,52 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
-    int recompute = false;
-    if( idxNum & 1 ){
-        if(argv[0].GetValueType() == DbValueType::TextVal) {
-            Utf8String valueGiven = argv[0].GetValueText();
-            if(!valueGiven.EqualsIAscii(m_text)) {
+    m_pointLookup = false;
+    m_lookupFound = false;
+
+    // idxNum bit 1: json_array_ids constraint provided
+    // idxNum bit 2: id EQ constraint provided
+    int argIdx = 0;
+    bool recompute = false;
+    if (idxNum & 1) {
+        if (argv[argIdx].GetValueType() == DbValueType::TextVal) {
+            auto valueGiven = argv[argIdx].GetValueText();
+            if (!m_text.EqualsIAscii(valueGiven)) {
                 m_text = valueGiven;
                 recompute = true;
             }
         } else {
             Reset();
+            recompute = true;
         }
+        argIdx++;
     } else {
         Reset();
+        recompute = true;
     }
-    if(recompute) {
-        m_idSet.clear();
+
+    if (recompute) {
+        m_ids.clear();
         BeJsDocument doc;
         doc.Parse(m_text.c_str());
-        
-        if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
+
+        if (FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
             Reset();
-            m_index = m_idSet.begin();
+            m_index = 0;
             return BE_SQLITE_ERROR;
         }
+        SortAndDedupe();
     }
-    m_index = m_idSet.begin();
+
+    // Handle point lookup: id = ?
+    if (idxNum & 2) {
+        m_pointLookup = true;
+        m_lookupId = (uint64_t)argv[argIdx].GetValueInt64();
+        m_lookupFound = std::binary_search(m_ids.begin(), m_ids.end(), m_lookupId);
+    } else {
+        m_index = 0;
+    }
+
     return BE_SQLITE_OK;
 }
 
@@ -267,52 +316,65 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 //---------------------------------------------------------------------------------------
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
     m_text = "[]";
-    m_idSet.clear();
+    m_ids.clear();
+    m_pointLookup = false;
+    m_lookupFound = false;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
-    int i, j;              /* Loop over constraints */
-    int idxNum = 0;        /* The query plan bitmask */
-    int unusableMask = 0;  /* Mask of unusable constraints */
-    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-    int aIdx[2];           /* Constraints on start, stop, and step */
-    const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
-    aIdx[0] = aIdx[1] = -1;
+    // idxNum bitmask: bit 0 = json_array_ids EQ, bit 1 = id EQ
+    int idxNum = 0;
+    int nArg = 0;
+    int jsonIdx = -1;
+    int idEqIdx = -1;
     int nConstraint = indexInfo.GetConstraintCount();
 
-    for(i=0; i<nConstraint; i++) {
+    for (int i = 0; i < nConstraint; i++) {
         auto pConstraint = indexInfo.GetConstraint(i);
-        int iCol;    /* 0 for start, 1 for stop, 2 for step */
-        int iMask;   /* bitmask for those column */
-        if( pConstraint->GetColumn()< (int)IdSetCursor::Columns::Json_array_ids) continue;
-        iCol = pConstraint->GetColumn() - (int)IdSetCursor::Columns::Json_array_ids;
-        iMask = 1 << iCol;
-        if (!pConstraint->IsUsable()){
-            unusableMask |=  iMask;
-            continue;
-        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
-            idxNum |= iMask;
-            aIdx[iCol] = i;
-        }
-    }
-    for( i = 0; i < 1; i++) {
-        if( (j = aIdx[i]) >= 0 ) {
-            indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
-            indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+        int col = pConstraint->GetColumn();
+
+        if (col == (int)IdSetCursor::Columns::Json_array_ids) {
+            if (!pConstraint->IsUsable())
+                continue;
+            if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
+                idxNum |= 1;
+                jsonIdx = i;
+            }
+        } else if (col == (int)IdSetCursor::Columns::Id) {
+            if (!pConstraint->IsUsable())
+                continue;
+            if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
+                idxNum |= 2;
+                idEqIdx = i;
+            }
         }
     }
 
-    if ((unusableMask & ~idxNum)!=0 ) {
-        return BE_SQLITE_CONSTRAINT;
+    // json_array_ids argument always comes first
+    if (jsonIdx >= 0) {
+        indexInfo.GetConstraintUsage(jsonIdx)->SetArgvIndex(++nArg);
+        indexInfo.GetConstraintUsage(jsonIdx)->SetOmit(true);
+    }
+    // id EQ argument comes second
+    if (idEqIdx >= 0) {
+        indexInfo.GetConstraintUsage(idEqIdx)->SetArgvIndex(++nArg);
+        indexInfo.GetConstraintUsage(idEqIdx)->SetOmit(true);
     }
 
-    indexInfo.SetEstimatedCost(0);
-    indexInfo.SetEstimatedRows(100);
+    if (idxNum & 2) {
+        // Point lookup via binary search — very cheap
+        indexInfo.SetEstimatedCost(1);
+        indexInfo.SetEstimatedRows(1);
+    } else {
+        // Full scan of the id set
+        indexInfo.SetEstimatedCost(100);
+        indexInfo.SetEstimatedRows(100);
+    }
+
     indexInfo.SetIdxNum(idxNum);
     return BE_SQLITE_OK;
-
 }
 
 //---------------------------------------------------------------------------------------

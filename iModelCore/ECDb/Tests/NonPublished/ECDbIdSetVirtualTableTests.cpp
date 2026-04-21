@@ -326,14 +326,17 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
-        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
-        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SEARCH main.ec_Class USING INTEGER PRIMARY KEY (rowid=?)"));
+        // With id=? optimization, the planner probes IdSet per row rather than scanning it
+        auto explainResult1 = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_EQ(true, explainResult1.Contains("SEARCH IdSet VIRTUAL TABLE INDEX 3"));
+        ASSERT_EQ(true, explainResult1.Contains("SCAN main.ec_Class"));
         }
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECClassId = id group by ECClassId"));
-        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
-        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN main.ec_Class USING COVERING INDEX ix_ec_Class_Name"));
+        auto explainResult2 = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_EQ(true, explainResult2.Contains("SEARCH IdSet VIRTUAL TABLE INDEX 3"));
+        ASSERT_EQ(true, explainResult2.Contains("SCAN main.ec_Class"));
         }
         {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
