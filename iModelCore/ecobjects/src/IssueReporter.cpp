@@ -100,6 +100,7 @@ ECOBJECTS_EXPORT BentleyStatus IssueReporter::AddListener(IIssueListener const& 
         return ERROR;
 
     m_issueListener = &issueListener;
+    m_reportOnceKeys.clear();
     return SUCCESS;
     }
 
@@ -110,6 +111,7 @@ ECOBJECTS_EXPORT void IssueReporter::RemoveListener()
     {
     BeMutexHolder lock(m_mutex);
     m_issueListener = nullptr;
+    m_reportOnceKeys.clear();
     }
 
 //---------------------------------------------------------------------------------------
