@@ -703,12 +703,19 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
             PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
             }
         PutU32(SafeU32Id(classId));                   // ecInstanceId
-        // Class is hidden if: (1) HiddenClass CA with Show != true, or
-        // (2) schema has HiddenSchema(ShowClasses != true) unless overridden by HiddenClass(Show=true)
-        bool classIsHidden = m_hiddenClassIds.count(classId) > 0;
-        if (!classIsHidden && !m_explicitlyShownClassIds.count(classId) && m_schemasWithHiddenClasses.count(schemaId))
-            classIsHidden = true;
-        PutU8(classIsHidden ? 1 : 0); // isHidden
+        // Class hidden flag (tri-state):
+        //   0 = Unset:  no HiddenClass CA and schema does not hide classes
+        //   1 = Hidden: HiddenClass(Show!=true) or schema has HiddenSchema(ShowClasses!=true) and no override
+        //   2 = Shown:  HiddenClass(Show=true) - explicitly overrides schema-level hiding and breaks
+        //               the inheritance chain for isEffectivelyHidden on derived classes
+        uint8_t hiddenFlag = 0; // Unset
+        if (m_hiddenClassIds.count(classId) > 0)
+            hiddenFlag = 1; // Hidden (direct CA)
+        else if (m_explicitlyShownClassIds.count(classId) > 0)
+            hiddenFlag = 2; // Shown (explicit override)
+        else if (m_schemasWithHiddenClasses.count(schemaId))
+            hiddenFlag = 1; // Hidden (inherited from schema)
+        PutU8(hiddenFlag);
 
         // Base classes (count-prefixed)
         baseStmt.Reset(); baseStmt.ClearBindings();
