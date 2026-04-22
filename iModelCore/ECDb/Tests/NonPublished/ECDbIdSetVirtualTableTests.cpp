@@ -17,6 +17,8 @@ struct ECDbIdSetVirtualTableTestFixture : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    m_ecdb.Analyze();
+    ReopenECDb();
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
@@ -1104,5 +1106,302 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithUnionAndCte) {
         }
 }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, PointLookupOptimization) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("idset_point_lookup.ecdb"));
+    m_ecdb.Analyze();
+    ReopenECDb();
+
+    // Point lookup: id found in set
+    if ("point lookup - id found")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') WHERE id = 3"));
+        int count = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(3, stmt.GetValueInt64(0));
+            count++;
+            }
+        ASSERT_EQ(1, count);
+        }
+
+    // Point lookup: id NOT in set — expect 0 rows
+    if ("point lookup - id not found")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') WHERE id = 999"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // Point lookup: first element in set
+    if ("point lookup - first element")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[10,20,30]') WHERE id = 10"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(10, stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // Point lookup: last element in set
+    if ("point lookup - last element")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[10,20,30]') WHERE id = 30"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(30, stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // Point lookup: single-element set, found
+    if ("point lookup - single element found")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[42]') WHERE id = 42"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(42, stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // Point lookup: single-element set, not found
+    if ("point lookup - single element not found")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[42]') WHERE id = 99"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // Point lookup: verify query plan uses SEARCH (index 3 = both json + id EQ)
+    if ("point lookup - verify query plan")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') WHERE id = 3"));
+        auto explain = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_TRUE(explain.Contains("SEARCH IdSet VIRTUAL TABLE INDEX 3"));
+        }
+
+    // Full scan: verify query plan uses SCAN (index 1 = only json)
+    if ("full scan - verify query plan")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]')"));
+        auto explain = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_TRUE(explain.Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
+        }
+
+    // Point lookup with duplicates in set — should still return one row
+    if ("point lookup - duplicates in set")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[5,5,5,5,5]') WHERE id = 5"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(5, stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // Point lookup with unsorted input — binary search should still work after SortAndDedupe
+    if ("point lookup - unsorted input")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[50,10,30,20,40]') WHERE id = 30"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(30, stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, PointLookupWithJoin) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("idset_point_lookup_join.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='Element' >
+            <ECProperty propertyName="label" typeName="string" />
+        </ECEntityClass>
+        </ECSchema>)xml")));
+
+    // Insert 20 rows
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Element(label) VALUES(?)"));
+    std::vector<BeInt64Id> allIds;
+    for (int i = 1; i <= 20; i++)
+        {
+        Utf8PrintfString label("elem_%d", i);
+        insertStmt.BindText(1, label.c_str(), IECSqlBinder::MakeCopy::Yes);
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key));
+        allIds.push_back((BeInt64Id)key.GetInstanceId());
+        insertStmt.ClearBindings();
+        insertStmt.Reset();
+        }
+    ASSERT_EQ(20u, allIds.size());
+    m_ecdb.SaveChanges();
+
+    // JOIN with IdSet — should use point lookup optimization (scan real table, probe IdSet)
+    if ("JOIN uses point lookup")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT e.label FROM ts.Element e JOIN IdSet(?) v ON e.ECInstanceId = v.id"));
+        IECSqlBinder& binder = stmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(allIds[2]));
+        ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(allIds[9]));
+        ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(allIds[14]));
+
+        std::vector<Utf8String> results;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            results.push_back(stmt.GetValueText(0));
+
+        ASSERT_EQ(3u, results.size());
+        ASSERT_STREQ("elem_3", results[0].c_str());
+        ASSERT_STREQ("elem_10", results[1].c_str());
+        ASSERT_STREQ("elem_15", results[2].c_str());
+        }
+
+    // JOIN with IdSet containing IDs not in the table — should return only matching rows
+    if ("JOIN with non-existent IDs")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT e.label FROM ts.Element e JOIN IdSet('[999,1000,1001]') v ON e.ECInstanceId = v.id"));
+
+        int count = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            count++;
+        ASSERT_EQ(0, count);
+        }
+
+    // Cross-join with WHERE id = col — same as implicit join, point lookup should kick in
+    if ("cross join with WHERE clause")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT e.label FROM ts.Element e, IdSet(?) v WHERE e.ECInstanceId = v.id"));
+        IECSqlBinder& binder = stmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(allIds[0]));
+        ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindId(allIds[19]));
+
+        std::vector<Utf8String> results;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            results.push_back(stmt.GetValueText(0));
+
+        ASSERT_EQ(2u, results.size());
+        ASSERT_STREQ("elem_1", results[0].c_str());
+        ASSERT_STREQ("elem_20", results[1].c_str());
+        }
+
+    // IdSet used in IN subquery — should work correctly
+    if ("IdSet in IN subquery")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT label FROM ts.Element WHERE ECInstanceId IN (SELECT id FROM IdSet('[1,2,3]'))"));
+
+        int count = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            count++;
+        // Expect up to 3 rows (depends on actual ECInstanceId values assigned)
+        ASSERT_TRUE(count > 0 && count <= 3);
+        }
+
+    // Reuse prepared statement with different bindings — verify caching works
+    if ("reuse with different bindings")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT e.label FROM ts.Element e JOIN IdSet(?) v ON e.ECInstanceId = v.id"));
+
+        // First execution with 2 IDs
+        IECSqlBinder& binder1 = stmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success, binder1.AddArrayElement().BindId(allIds[0]));
+        ASSERT_EQ(ECSqlStatus::Success, binder1.AddArrayElement().BindId(allIds[1]));
+
+        int count1 = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            count1++;
+        ASSERT_EQ(2, count1);
+
+        // Reset and rebind with different IDs
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+
+        IECSqlBinder& binder2 = stmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success, binder2.AddArrayElement().BindId(allIds[5]));
+        ASSERT_EQ(ECSqlStatus::Success, binder2.AddArrayElement().BindId(allIds[10]));
+        ASSERT_EQ(ECSqlStatus::Success, binder2.AddArrayElement().BindId(allIds[15]));
+
+        int count2 = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            count2++;
+        ASSERT_EQ(3, count2);
+        }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, SortedDeduplication) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("idset_sorted_dedup.ecdb"));
+
+    // Full scan should return sorted, deduplicated IDs
+    if ("unsorted input returns sorted output")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[5,3,1,4,2]')"));
+
+        std::vector<int64_t> results;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            results.push_back(stmt.GetValueInt64(0));
+
+        ASSERT_EQ(5u, results.size());
+        for (size_t i = 0; i < results.size(); i++)
+            ASSERT_EQ((int64_t)(i + 1), results[i]) << "Results should be sorted";
+        }
+
+    // Duplicates are removed
+    if ("duplicates removed")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[3,1,2,3,1,2,3]')"));
+
+        std::vector<int64_t> results;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            results.push_back(stmt.GetValueInt64(0));
+
+        ASSERT_EQ(3u, results.size());
+        ASSERT_EQ(1, results[0]);
+        ASSERT_EQ(2, results[1]);
+        ASSERT_EQ(3, results[2]);
+        }
+
+    // Large set with duplicates
+    if ("large set deduplication")
+        {
+        // Build a JSON array with 100 IDs where many are duplicates
+        Utf8String json = "[";
+        for (int i = 0; i < 100; i++)
+            {
+            if (i > 0) json.append(",");
+            Utf8PrintfString val("%d", (i % 20) + 1);
+            json.append(val);
+            }
+        json.append("]");
+
+        Utf8PrintfString ecsql("SELECT id FROM IdSet('%s')", json.c_str());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
+
+        int count = 0;
+        int64_t prev = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            int64_t val = stmt.GetValueInt64(0);
+            ASSERT_GT(val, prev) << "Results should be strictly increasing (sorted and deduped)";
+            prev = val;
+            count++;
+            }
+        ASSERT_EQ(20, count) << "Should have exactly 20 unique IDs";
+        }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

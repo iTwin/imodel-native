@@ -188,7 +188,7 @@ void IdSetModule::IdSetTable::IdSetCursor::SortAndDedupe() {
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
     if (m_pointLookup)
         rowId = (int64_t)m_lookupId;
-    else
+    else if (m_index < m_ids.size())
         rowId = (int64_t)m_ids[m_index];
     return BE_SQLITE_OK;
 }
@@ -291,7 +291,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         BeJsDocument doc;
         doc.Parse(m_text.c_str());
 
-        if (FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
+        if (doc.hasParseError() || FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
             Reset();
             m_index = 0;
             return BE_SQLITE_ERROR;
@@ -302,8 +302,14 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
     // Handle point lookup: id = ?
     if (idxNum & 2) {
         m_pointLookup = true;
-        m_lookupId = (uint64_t)argv[argIdx].GetValueInt64();
-        m_lookupFound = std::binary_search(m_ids.begin(), m_ids.end(), m_lookupId);
+        int64_t rawId = argv[argIdx].GetValueInt64();
+        if (rawId <= 0) {
+            m_lookupId = 0;
+            m_lookupFound = false;
+        } else {
+            m_lookupId = (uint64_t)rawId;
+            m_lookupFound = std::binary_search(m_ids.begin(), m_ids.end(), m_lookupId);
+        }
     } else {
         m_index = 0;
     }

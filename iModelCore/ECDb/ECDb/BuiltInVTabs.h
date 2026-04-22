@@ -5,7 +5,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <BeSQLite/VirtualTab.h>
-#include <set>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
