@@ -22,7 +22,7 @@ always:
 
 $(o)$(stlibprefix)rustls$(stlibext) :
     ~chdir $(vendorSrc)
-    $(_MakeFilePath)cargo.sh capi install $(rust_target) --release --prefix=$(o)
+    CARGO_TARGET_DIR=$(o)/target $(_MakeFilePath)cargo.sh capi install $(rust_target) --release --prefix=$(o)
 
 # Vendor API
 always:
