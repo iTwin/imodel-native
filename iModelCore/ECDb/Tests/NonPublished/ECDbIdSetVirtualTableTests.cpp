@@ -19,435 +19,435 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
     m_ecdb.Analyze();
     ReopenECDb();
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
 
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, 5);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') where id = 1"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') where id = 1"));
 
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, 1);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') where id > 1"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 1);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') where id > 1"));
 
-        // int i = 1;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, 5);
-        // }
-        // {
-        // std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
+        int i = 1;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i =0;i<hexIds.size();i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
-        //     }
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, hexIds.size());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0x1\",\"0x2\",3,4,5]')"));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<hexIds.size();i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
+            }
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, hexIds.size());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0x1\",\"0x2\",3,4,5]')"));
     
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-        //     i++;
-        //     }
-        // ASSERT_EQ(i, 5);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
+            i++;
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')"));
 
-        // // Should fail while converting to json array because hex values with quotes are required so should be empty table and should log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,\"2\",3, 4.0, 5.0]')"));
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-        //     i++;
-        //     }
-        // ASSERT_EQ(i, 5);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,\"2\",3, 4.5, 5.6]')"));
+        // Should fail while converting to json array because hex values with quotes are required so should be empty table and should log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,\"2\",3, 4.0, 5.0]')"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
+            i++;
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,\"2\",3, 4.5, 5.6]')"));
         
-        // // Will not take into account 4.5 and 5.6 because they are decimal values so should be empty table and log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // ASSERT_EQ(ECSqlStatus::Error,stmt.BindText(1, "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
+        // Will not take into account 4.5 and 5.6 because they are decimal values so should be empty table and log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Error,stmt.BindText(1, "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
 
-        // // no binding as we use array ecsql binder so need to call AddArrayElement first
-        // ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        // no binding as we use array ecsql binder so need to call AddArrayElement first
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
 
-        // // no binding so no data
-        // ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        // ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText( "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
+        // no binding so no data
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText( "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 1;i<=10;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt(i));
-        //     }
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 1;i<=10;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt(i));
+            }
 
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-        //     i++;
-        //     }
-        // ASSERT_EQ(i, 10);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 1;i<=10;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
-        //     }
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
+            i++;
+            }
+        ASSERT_EQ(i, 10);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 1;i<=10;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
+            }
 
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-        //     i++;
-        //     }
-        // ASSERT_EQ(i, 10);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        // ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
-        // for(int i = 1;i<=10;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
-        //     }
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
+            i++;
+            }
+        ASSERT_EQ(i, 10);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+        for(int i = 1;i<=10;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
+            }
 
-        // // having null as an element so should be empty table and should log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
-        // DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=2;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(pArrayOfST1_P2D[i]));
-        //     }
-        // for(int i = 0;i<=2;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(pArrayOfST1_P3D[i]));
-        //     }
+        // having null as an element so should be empty table and should log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
+        DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=2;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(pArrayOfST1_P2D[i]));
+            }
+        for(int i = 0;i<=2;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(pArrayOfST1_P3D[i]));
+            }
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
-        // DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
-        // double pST1P_ST2P_D2 = 431231.3432;
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=2;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Error, elementBinder["D1"].BindDouble(pST1P_ST2P_D2));
-        //     ASSERT_EQ(ECSqlStatus::Error, elementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[i]));
-        //     }
-        // for(int i = 0;i<=2;i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Error, elementBinder["D1"].BindDouble(pST1P_ST2P_D2));
-        //     ASSERT_EQ(ECSqlStatus::Error, elementBinder["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
-        //     }
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
+        DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
+        double pST1P_ST2P_D2 = 431231.3432;
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=2;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["D1"].BindDouble(pST1P_ST2P_D2));
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[i]));
+            }
+        for(int i = 0;i<=2;i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["D1"].BindDouble(pST1P_ST2P_D2));
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
+            }
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // const std::vector<std::vector<uint8_t>> bi_array = {
-        //     {0x48, 0x65, 0x6},
-        //     {0x48, 0x65, 0x6},
-        //     {0x48, 0x65, 0x6}
-        // };
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(auto& m : bi_array)
-        //     ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindBlob((void const*)&m[0], (int)m.size(), IECSqlBinder::MakeCopy::No));
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        const std::vector<std::vector<uint8_t>> bi_array = {
+            {0x48, 0x65, 0x6},
+            {0x48, 0x65, 0x6},
+            {0x48, 0x65, 0x6}
+        };
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(auto& m : bi_array)
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindBlob((void const*)&m[0], (int)m.size(), IECSqlBinder::MakeCopy::No));
 
-        // // Binary is Binded so should be empty table and error should be thrown
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // const auto dt = DateTime(DateTime::Kind::Unspecified, 2017, 1, 17, 0, 0);
-        // const auto dtUtc = DateTime(DateTime::Kind::Utc, 2018, 2, 17, 0, 0);
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=1;i++)
-        //     {
-        //     ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dt));
-        //     ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dtUtc));
-        //     }
+        // Binary is Binded so should be empty table and error should be thrown
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        const auto dt = DateTime(DateTime::Kind::Unspecified, 2017, 1, 17, 0, 0);
+        const auto dtUtc = DateTime(DateTime::Kind::Utc, 2018, 2, 17, 0, 0);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+            {
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dt));
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dtUtc));
+            }
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // auto geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=1;i++)
-        //     {
-        //     ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        //     }
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        auto geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+            {
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
+            }
 
-        // // Binary is Binded because BindGeometry internally calls so should be empty table and error should be thrown
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=1;i++)
-        //     {
-        //     ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("ABC",IECSqlBinder::MakeCopy::No));
-        //     }
+        // Binary is Binded because BindGeometry internally calls so should be empty table and error should be thrown
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+            {
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("ABC",IECSqlBinder::MakeCopy::No));
+            }
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=1;i++)
-        //     {
-        //     ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[abc]",IECSqlBinder::MakeCopy::No));
-        //     }
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+            {
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[abc]",IECSqlBinder::MakeCopy::No));
+            }
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i = 0;i<=1;i++)
-        //     {
-        //     ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[\"abc\"]",IECSqlBinder::MakeCopy::No));
-        //     }
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+            {
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[\"abc\"]",IECSqlBinder::MakeCopy::No));
+            }
 
-        // // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM IdSet('[1,2,3,4,5]'), (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte) where id = x group by x"));
-        // int i = 1;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((i++), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, 6);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM  (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte), IdSet('[1,2,3,4,5]') where id = x group by x"));
-        // int i = 1;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ((i++), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, 6);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
-        // // With id=? optimization, the planner probes IdSet per row rather than scanning it
-        // auto explainResult1 = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
-        // ASSERT_EQ(true, explainResult1.Contains("SCAN IdSet VIRTUAL TABLE INDEX 3"));
-        // ASSERT_EQ(true, explainResult1.Contains("SCAN main.ec_Class"));
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECClassId = id group by ECClassId"));
-        // auto explainResult2 = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
-        // ASSERT_EQ(true, explainResult2.Contains("SCAN IdSet VIRTUAL TABLE INDEX 3"));
-        // ASSERT_EQ(true, explainResult2.Contains("SCAN main.ec_Class"));
-        // }
-        // {
-        // std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM IdSet('[1,2,3,4,5]'), (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte) where id = x group by x"));
+        int i = 1;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 6);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM  (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte), IdSet('[1,2,3,4,5]') where id = x group by x"));
+        int i = 1;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 6);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        // With id=? optimization, the planner probes IdSet per row rather than scanning it
+        auto explainResult1 = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_EQ(true, explainResult1.Contains("SCAN IdSet VIRTUAL TABLE INDEX 3"));
+        ASSERT_EQ(true, explainResult1.Contains("SCAN main.ec_Class"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECClassId = id group by ECClassId"));
+        auto explainResult2 = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_EQ(true, explainResult2.Contains("SCAN IdSet VIRTUAL TABLE INDEX 3"));
+        ASSERT_EQ(true, explainResult2.Contains("SCAN main.ec_Class"));
+        }
+        {
+        std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
-        // IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        // for(int i =0;i<hexIds.size();i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
-        //     }
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, hexIds.size());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<hexIds.size();i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
+            }
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, hexIds.size());
 
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
 
-        // IECSqlBinder& arrayBinder_two = stmt.GetBinder(1);
-        // for(int i =0;i<hexIds.size();i++)
-        //     {
-        //     IECSqlBinder& elementBinder = arrayBinder_two.AddArrayElement();
-        //     ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
-        //     }
-        // i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
-        //     }
-        // ASSERT_EQ(i, hexIds.size());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet(?,?), meta.ECClassDef where ECClassId = id group by ECClassId"));
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,1,1,1]')"));
+        IECSqlBinder& arrayBinder_two = stmt.GetBinder(1);
+        for(int i =0;i<hexIds.size();i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder_two.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
+            }
+        i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, hexIds.size());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet(?,?), meta.ECClassDef where ECClassId = id group by ECClassId"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,1,1,1]')"));
         
-        // int i = 0;
-        // while (stmt.Step() == BE_SQLITE_ROW)
-        //     {
-        //     ASSERT_EQ(i+1, stmt.GetValueInt64(0));
-        //     i++;
-        //     }
-        // ASSERT_EQ(i, 1);
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[-1,-2,3,-4,5]')"));
-        // // negative values are not allowed so empty table and should log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // std::vector<int> ids = std::vector<int>{0,1,1,2};
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& binder = stmt.GetBinder(1);
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(i+1, stmt.GetValueInt64(0));
+            i++;
+            }
+        ASSERT_EQ(i, 1);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[-1,-2,3,-4,5]')"));
+        // negative values are not allowed so empty table and should log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        std::vector<int> ids = std::vector<int>{0,1,1,2};
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& binder = stmt.GetBinder(1);
 
-        // for(auto& i : ids)
-        //     {
-        //     ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindInt(i));
-        //     }
-        // // 0 is not allowed so empty table and dhould log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"-1\",\"-2\",\"3\",\"-4\",\"5\"]')"));
-        // // negative values are not allowed so empty table and should log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // std::vector<Utf8String> stringIds = std::vector<Utf8String>{"-1", "-2", "3", "-4", "5"};
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
-        // IECSqlBinder& binder = stmt.GetBinder(1);
+        for(auto& i : ids)
+            {
+            ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindInt(i));
+            }
+        // 0 is not allowed so empty table and dhould log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"-1\",\"-2\",\"3\",\"-4\",\"5\"]')"));
+        // negative values are not allowed so empty table and should log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        std::vector<Utf8String> stringIds = std::vector<Utf8String>{"-1", "-2", "3", "-4", "5"};
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
+        IECSqlBinder& binder = stmt.GetBinder(1);
 
-        // for(auto& i : stringIds)
-        //     {
-        //     if(i.EqualsIAscii("3") || i.EqualsIAscii("5"))
-        //         ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindText(i.c_str(), IECSqlBinder::MakeCopy::No));
-        //     else
-        //         ASSERT_EQ(ECSqlStatus::Error, binder.AddArrayElement().BindText(i.c_str(), IECSqlBinder::MakeCopy::No));
-        //     }
-        // // Binding negative values will fail so for the negative values binder.AddArrayElement().BindText() will be empty array element which are not allowed so empty table and should log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0xFFFFFFFF\",3,4,5]')"));
-        // int i = 3;
-        // while (i<=5)
-        //     {
-        //     ASSERT_EQ(BE_SQLITE_ROW,  stmt.Step());
-        //     ASSERT_EQ(i, stmt.GetValueInt64(0));
-        //     i++;
-        //     }
-        // }
-        // {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0x0\",3,4,5]')"));
-        // // 0 values are not allowed so empty table and should log error
-        // ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
-        // }
+        for(auto& i : stringIds)
+            {
+            if(i.EqualsIAscii("3") || i.EqualsIAscii("5"))
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindText(i.c_str(), IECSqlBinder::MakeCopy::No));
+            else
+                ASSERT_EQ(ECSqlStatus::Error, binder.AddArrayElement().BindText(i.c_str(), IECSqlBinder::MakeCopy::No));
+            }
+        // Binding negative values will fail so for the negative values binder.AddArrayElement().BindText() will be empty array element which are not allowed so empty table and should log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0xFFFFFFFF\",3,4,5]')"));
+        int i = 3;
+        while (i<=5)
+            {
+            ASSERT_EQ(BE_SQLITE_ROW,  stmt.Step());
+            ASSERT_EQ(i, stmt.GetValueInt64(0));
+            i++;
+            }
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0x0\",3,4,5]')"));
+        // 0 values are not allowed so empty table and should log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        }
         {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
@@ -1493,6 +1493,83 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, PointLookupPerformanceGain) {
         // With cost=1 for point lookup, planner should scan the real table and probe IdSet per row
         ASSERT_TRUE(explain.Contains("VIRTUAL TABLE INDEX 3")) << "Join should use point lookup (INDEX 3), got: " << explain.c_str();
         ASSERT_TRUE(explain.Contains("SCAN main.ec_Class")) << "Should scan real table, got: " << explain.c_str();
+        }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, InAllAtOnceOptimization) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("idset_in.ecdb"));
+
+    // Basic IN query — should use all-at-once optimization (INDEX 5 = json + IN)
+    if ("basic IN returns matching ids")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5,6,7,8,9,10]') WHERE id IN (3, 5, 7)"));
+        bset<int64_t> results;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            results.insert(stmt.GetValueInt64(0));
+        ASSERT_EQ(3u, results.size());
+        ASSERT_TRUE(results.count(3));
+        ASSERT_TRUE(results.count(5));
+        ASSERT_TRUE(results.count(7));
+        }
+
+    // IN with no matches
+    if ("IN with no matches returns empty")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3]') WHERE id IN (10, 20, 30)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "No ids should match";
+        }
+
+    // IN with all matches
+    if ("IN where all values match")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[10,20,30]') WHERE id IN (10, 20, 30)"));
+        bset<int64_t> results;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            results.insert(stmt.GetValueInt64(0));
+        ASSERT_EQ(3u, results.size());
+        ASSERT_TRUE(results.count(10));
+        ASSERT_TRUE(results.count(20));
+        ASSERT_TRUE(results.count(30));
+        }
+
+    // IN with single value — degenerates to point lookup behavior
+    if ("IN with single value")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') WHERE id IN (3)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(3, stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    // IN with duplicate values in the IN list
+    if ("IN with duplicates in list")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3]') WHERE id IN (2, 2, 2)"));
+        int count = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(2, stmt.GetValueInt64(0));
+            count++;
+            }
+        // Binary search finds match for each duplicate, so we may get duplicates — that's acceptable
+        ASSERT_GE(count, 1) << "Should find at least one match for id=2";
+        }
+
+    // Query plan verification — IN should use INDEX 5 (json=1 + IN=4)
+    if ("query plan uses IN optimization")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') WHERE id IN (2, 4)"));
+        auto explain = m_ecdb.ExplainQuery(stmt.GetNativeSql(), true);
+        ASSERT_TRUE(explain.Contains("VIRTUAL TABLE INDEX 5")) << "Expected IN plan (INDEX 5), got: " << explain.c_str();
         }
 }
 

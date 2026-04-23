@@ -157,7 +157,9 @@ DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc,
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
-    if (m_pointLookup) {
+    if (m_inMode) {
+        ++m_matchedIndex;
+    } else if (m_pointLookup) {
         m_lookupFound = false;
     } else {
         ++m_index;
@@ -169,6 +171,8 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool IdSetModule::IdSetTable::IdSetCursor::Eof() {
+    if (m_inMode)
+        return m_matchedIndex >= m_matchedIds.size();
     if (m_pointLookup)
         return !m_lookupFound;
     return m_index >= m_ids.size();
@@ -186,10 +190,14 @@ void IdSetModule::IdSetTable::IdSetCursor::SortAndDedupe() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
-    if (m_pointLookup)
+    if (m_inMode) {
+        if (m_matchedIndex < m_matchedIds.size())
+            rowId = (int64_t)m_matchedIds[m_matchedIndex];
+    } else if (m_pointLookup) {
         rowId = (int64_t)m_lookupId;
-    else if (m_index < m_ids.size())
+    } else if (m_index < m_ids.size()) {
         rowId = (int64_t)m_ids[m_index];
+    }
     return BE_SQLITE_OK;
 }
 
@@ -200,7 +208,10 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
     if ((Columns)i == Columns::Json_array_ids) {
         ctx.SetResultText(m_text.c_str(), (int)m_text.size(), Context::CopyData::No);
     } else if ((Columns)i == Columns::Id) {
-        if (m_pointLookup) {
+        if (m_inMode) {
+            if (m_matchedIndex < m_matchedIds.size())
+                ctx.SetResultInt64((int64_t)m_matchedIds[m_matchedIndex]);
+        } else if (m_pointLookup) {
             if (m_lookupFound)
                 ctx.SetResultInt64((int64_t)m_lookupId);
         } else if (m_index < m_ids.size()) {
@@ -264,9 +275,14 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
 DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
     m_pointLookup = false;
     m_lookupFound = false;
+    m_inMode = false;
+    m_matchedIds.clear();
+    m_matchedIndex = 0;
 
-    // idxNum bit 1: json_array_ids constraint provided
-    // idxNum bit 2: id EQ constraint provided
+    // idxNum bitmask:
+    //   bit 0 (1): json_array_ids EQ constraint
+    //   bit 1 (2): id EQ constraint (single point lookup)
+    //   bit 2 (4): id IN constraint (all-at-once)
     int argIdx = 0;
     bool recompute = false;
     if (idxNum & 1) {
@@ -276,6 +292,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
                 m_text = valueGiven;
                 recompute = true;
             }
+        }
         argIdx++;
     }
 
@@ -292,8 +309,24 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         SortAndDedupe();
     }
 
-    // Handle point lookup: id = ?
-    if (idxNum & 2) {
+    // Handle IN all-at-once: id IN (...)
+    if (idxNum & 4) {
+        m_inMode = true;
+        DbValue inVal = argv[argIdx];
+        DbValue current(nullptr);
+        DbModule::InFirst(inVal, current);
+        while(current.IsValid()){
+            int64_t rawId = current.GetValueInt64();
+            if (rawId > 0) {
+                uint64_t id = (uint64_t)rawId;
+                if (std::binary_search(m_ids.begin(), m_ids.end(), id))
+                    m_matchedIds.push_back(id);
+            }
+            DbModule::InNext(inVal, current);
+        }
+    }
+    // Handle single point lookup: id = ?
+    else if (idxNum & 2) {
         m_pointLookup = true;
         int64_t rawId = argv[argIdx].GetValueInt64();
         if (rawId <= 0) {
@@ -314,16 +347,22 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
-    m_text = "[]"; 
+    m_text = "[]";
     m_ids.clear();
     m_pointLookup = false;
     m_lookupFound = false;
+    m_inMode = false;
+    m_matchedIds.clear();
+    m_matchedIndex = 0;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
-    // idxNum bitmask: bit 0 = json_array_ids EQ, bit 1 = id EQ
+    // idxNum bitmask:
+    //   bit 0 (1): json_array_ids EQ constraint
+    //   bit 1 (2): id EQ constraint (single point lookup)
+    //   bit 2 (4): id IN constraint (all-at-once)
     int idxNum = 0;
     int nArg = 0;
     int jsonIdx = -1;
@@ -345,7 +384,13 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
             if (!pConstraint->IsUsable())
                 continue;
             if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
-                idxNum |= 2;
+                // Check if this is an IN constraint and opt-in to all-at-once handling
+                if (indexInfo.SetIn(i, -1)) {
+                    indexInfo.SetIn(i, 1);
+                    idxNum |= 4;
+                } else {
+                    idxNum |= 2;
+                }
                 idEqIdx = i;
             }
         }
@@ -356,14 +401,18 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
         indexInfo.GetConstraintUsage(jsonIdx)->SetArgvIndex(++nArg);
         indexInfo.GetConstraintUsage(jsonIdx)->SetOmit(true);
     }
-    // id EQ argument comes second
+    // id EQ/IN argument comes second
     if (idEqIdx >= 0) {
         indexInfo.GetConstraintUsage(idEqIdx)->SetArgvIndex(++nArg);
         indexInfo.GetConstraintUsage(idEqIdx)->SetOmit(true);
     }
 
-    if (idxNum & 2) {
-        // Point lookup via binary search — very cheap
+    if (idxNum & 4) {
+        // IN all-at-once: multiple binary searches in one Filter call
+        indexInfo.SetEstimatedCost(10);
+        indexInfo.SetEstimatedRows(10);
+    } else if (idxNum & 2) {
+        // Single point lookup via binary search
         indexInfo.SetEstimatedCost(1);
         indexInfo.SetEstimatedRows(1);
     } else {
@@ -387,9 +436,11 @@ DbResult IdSetModule::Connect(DbVirtualTable*& out, Config& conf, int argc, cons
 
 DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     DbResult rc = (new ClassPropsModule(ecdb))->Register();
-    DbResult rcIdSet = (new IdSetModule(ecdb))->Register();
-    if(rc != BE_SQLITE_OK || rcIdSet != BE_SQLITE_OK)
+    if(rc != BE_SQLITE_OK)
         return rc;
+    DbResult rcIdSet = (new IdSetModule(ecdb))->Register();
+    if(rcIdSet != BE_SQLITE_OK)
+        return rcIdSet;
     return BE_SQLITE_OK;
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE
