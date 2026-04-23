@@ -276,14 +276,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
                 m_text = valueGiven;
                 recompute = true;
             }
-        } else {
-            Reset();
-            recompute = true;
-        }
         argIdx++;
-    } else {
-        Reset();
-        recompute = true;
     }
 
     if (recompute) {
@@ -321,7 +314,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
-    m_text = "[]";
+    m_text = "[]"; 
     m_ids.clear();
     m_pointLookup = false;
     m_lookupFound = false;
