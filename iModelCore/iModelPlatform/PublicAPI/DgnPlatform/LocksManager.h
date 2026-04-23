@@ -64,8 +64,8 @@ public:
     //! Compare two LockableIds for inequality
     bool operator!=(LockableId const& rhs) const { return !(*this == rhs); }
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 };
 
 //! A set of identifiers for lockable objects
@@ -141,8 +141,8 @@ public:
         bool operator()(DgnLockCR lhs, DgnLockCR rhs) const { return lhs.GetLockableId() < rhs.GetLockableId(); }
     };
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 };
 
 //! A set of locks compared by identity, ignoring lock level
@@ -187,8 +187,8 @@ public:
 
     void Reset() { m_exclusiveOwner.Invalidate(); m_sharedOwners.clear(); } //!< Resets to no ownership
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 };
 
 //=======================================================================================
@@ -221,8 +221,8 @@ public:
     void SetRevisionId(Utf8StringCR revId) { m_revisionId=revId; } //!< Set the revision ID associated with the lock
     void Reset() { Init(false); } //!< Reset to default (untracked) state
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 };
 
 //=======================================================================================
@@ -242,8 +242,8 @@ public:
     //! Compare based on IDs
     bool operator<(DgnLockInfo const& rhs) const { return GetLockableId() < rhs.GetLockableId(); }
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnLockInfo> DgnLockInfoSet;
@@ -332,10 +332,10 @@ public:
     //! @param[in]      id
     DGNPLATFORM_EXPORT void Remove(LockableId id);
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 
-    void ExtractLockSet(DgnLockSet& locks); //!< @private
+    void ExtractLockSet(DgnLockSet& locks);//!< @private
     DGNPLATFORM_EXPORT void InsertLock(LockableId id, LockLevel level);  //!< @private
 };
 
