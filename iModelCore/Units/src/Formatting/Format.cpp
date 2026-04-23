@@ -95,8 +95,8 @@ Format::Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
 // static
 bool Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
-    BeJsDocument jval(jsonString);
-    if (jval.hasParseError())
+    Json::Value jval (Json::objectValue);
+    if (!Json::Reader::Parse(jsonString, jval))
         return false;
     return FromJson(out, jval, context);
     }
@@ -105,7 +105,7 @@ bool Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP conte
 // @bsimethod
 //----------------------------------------------------------------------------------------
 // static
-bool Format::FromJson(FormatR out, BeJsConst jval, BEU::IUnitsContextCP context)
+bool Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context)
     {
     Format f = Format();
     f.m_problem = FormatProblemCode::NoProblems;
@@ -117,21 +117,19 @@ bool Format::FromJson(FormatR out, BeJsConst jval, BEU::IUnitsContextCP context)
 
     if (!NumericFormatSpec::FromJson(f.m_numericSpec, jval, context))
         return false;
-    bool parseError = false;
     Utf8CP paramName;
-    jval.ForEachProperty([&](Utf8CP memberName, BeJsConst val) {
-        paramName = memberName;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_composite()) == 0)
             {
             CompositeValueSpec spec;
             if (!CompositeValueSpec::FromJson(spec, val, context))
-                { parseError = true; return true; }
+                return false;
             f.SetCompositeSpec(spec);
             }
-        return false;
-        });
-    if (parseError)
-        return false;
+        }
     out = f;
     return true;
     }

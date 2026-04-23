@@ -181,9 +181,9 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
 //----------------------------------------------------------------------------------------
 void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     {
-    BeJsDocument jval;
+    Json::Value jval;
     EXPECT_TRUE(nfs.ToJson(BeJsValue(jval), true));
-    Utf8String str = jval.Stringify();
+    Utf8String str = jval.ToString();
     NumericFormatSpec nfs1;
     NumericFormatSpec::FromJson(nfs1, jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
@@ -203,12 +203,12 @@ Utf8String FormattingTestUtils::JsonComparisonString(BeJsDocument const& created
            "Test Data (pretty):\n"  + test.Stringify(Indented);
     }
 // DMR - overloaded func
-Utf8String FormattingTestUtils::JsonComparisonString(BeJsConst created, BeJsConst test)
+Utf8String FormattingTestUtils::JsonComparisonString(Json::Value const& created, Json::Value const& test)
     {
-    return "Created   (minified): " + created.Stringify() + '\n' +
-           "Test Data (minified): " + test.Stringify() + '\n' +
-           "Created   (pretty):\n"  + created.Stringify(Indented) + '\n' +
-           "Test Data (pretty):\n"  + test.Stringify(Indented);
+    return "Created   (minified): " + created.ToString() + '\n' +
+           "Test Data (minified): " + test.ToString() + '\n' +
+           "Created   (pretty):\n"  + created.toStyledString() + '\n' +
+           "Test Data (pretty):\n"  + test.toStyledString();
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

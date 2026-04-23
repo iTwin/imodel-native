@@ -153,7 +153,7 @@ public:
 
     //! Update this with the values from the provided JSON.
     //! @return Success if this NumericFormatSpec is successfully updated. Otherwise, false.
-    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, BeJsConst jval, BEU::IUnitsContextCP context = nullptr);
+    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context = nullptr);
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
@@ -193,7 +193,7 @@ public:
     UNITS_EXPORT Utf8String GetFormatTraitsString() const;
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
     UNITS_EXPORT bool SetFormatTraits(Utf8CP input);
-    UNITS_EXPORT bool SetFormatTraits(BeJsConst jval);
+    UNITS_EXPORT bool SetFormatTraits(JsonValueCR jval);
     UNITS_EXPORT void FormatTraitsToJson(BeJsValue) const;
 
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
@@ -372,7 +372,7 @@ private:
             m_unitLabel = other.m_unitLabel.c_str();
             }
 
-        bool FromJson(BeJsConst jval, BEU::IUnitsContextCP context);
+        bool FromJson(Json::Value const& jval, BEU::IUnitsContextCP context);
         bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
         Utf8StringCR GetLabel() const { return m_unitLabel; }
         bool HasLabel() const {return m_explicitlyDefinedLabel;}
@@ -470,8 +470,8 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT bool ToJson(BeJsValue out, bool verbose = false, bool excludeUnits = false) const;
-    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, BeJsConst jval, BEU::IUnitsContextCP context);
-    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, BeJsConst jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 
@@ -577,8 +577,8 @@ public:
     //! @param[in]  jval        Json objects representing a format
     //! @param[in]  context     Context to resolve units in the composite spec of the format if there is one
     //! @return                 False if jval is empty or there are issues looking up units or the json is not valid.
-    UNITS_EXPORT static bool FromJson(FormatR out, BeJsConst jval, BEU::IUnitsContextCP context = nullptr);
-    //! Creates a JSON value representing this.
+    UNITS_EXPORT static bool FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context = nullptr);
+    //! Creates a Json::Value representing this.
     virtual bool ToJson(BeJsValue out, bool verbose) const {return _ToJson(out, verbose);}
 
     FormatSpecType GetSpecType() const { return m_specType; }

@@ -484,7 +484,7 @@ TEST_F(FormatJsonTest, FormatDecimal)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    BeJsDocument json;
+    Json::Value json;
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
@@ -520,18 +520,19 @@ TEST_F(FormatJsonTest, FormatDecimal)
                                     ]
                                  }
                              })json";
-    BeJsDocument root(expectedJson);
-    BeJsDocument jval;
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    Json::Value jval;
     f.ToJson(BeJsValue(jval), true);
-    EXPECT_TRUE(root.Stringify() == jval.Stringify()) << FormattingTestUtils::JsonComparisonString(jval, root);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-    BeJsDocument newJval;
+    Json::Value newJval;
     newF.ToJson(BeJsValue(newJval), true);
 
-    EXPECT_TRUE(newJval.Stringify() == root.Stringify()) << FormattingTestUtils::JsonComparisonString(newJval, root);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 //--------------------------------------------------------------------------------------
@@ -548,7 +549,7 @@ TEST_F(FormatJsonTest, FormatFractional)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    BeJsDocument json;
+    Json::Value json;
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
@@ -584,17 +585,18 @@ TEST_F(FormatJsonTest, FormatFractional)
                                     ]
                                  }
                              })json";
-    BeJsDocument root(expectedJson);
-    BeJsDocument jval;
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    Json::Value jval;
     f.ToJson(BeJsValue(jval), true);
-    EXPECT_TRUE(root.Stringify() == jval.Stringify()) << FormattingTestUtils::JsonComparisonString(jval, root);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-    BeJsDocument newJval;
+    Json::Value newJval;
     newF.ToJson(BeJsValue(newJval), true);
-    EXPECT_TRUE(newJval.Stringify() == root.Stringify()) << FormattingTestUtils::JsonComparisonString(newJval, root);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 //--------------------------------------------------------------------------------------
@@ -611,7 +613,7 @@ TEST_F(FormatJsonTest, FormatScientific)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    BeJsDocument json;
+    Json::Value json;
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
@@ -648,17 +650,18 @@ TEST_F(FormatJsonTest, FormatScientific)
                                     ]
                                  }
                              })json";
-    BeJsDocument root(expectedJson);
-    BeJsDocument jval;
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    Json::Value jval;
     f.ToJson(BeJsValue(jval), true);
-    EXPECT_TRUE(root.Stringify() == jval.Stringify()) << FormattingTestUtils::JsonComparisonString(jval, root);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-    BeJsDocument newJval;
+    Json::Value newJval;
     newF.ToJson(BeJsValue(newJval), true);
-    EXPECT_TRUE(newJval.Stringify() == root.Stringify()) << FormattingTestUtils::JsonComparisonString(newJval, root);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 //--------------------------------------------------------------------------------------
@@ -676,7 +679,7 @@ TEST_F(FormatJsonTest, FormatStation)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    BeJsDocument json;
+    Json::Value json;
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
@@ -714,17 +717,18 @@ TEST_F(FormatJsonTest, FormatStation)
                                     ]
                                  }
                              })json";
-    BeJsDocument root(expectedJson);
-    BeJsDocument jval;
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    Json::Value jval;
     f.ToJson(BeJsValue(jval), true);
-    EXPECT_TRUE(root.Stringify() == jval.Stringify()) << FormattingTestUtils::JsonComparisonString(jval, root);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-    BeJsDocument newJval;
+    Json::Value newJval;
     newF.ToJson(BeJsValue(newJval), true);
-    EXPECT_TRUE(newJval.Stringify() == root.Stringify()) << FormattingTestUtils::JsonComparisonString(newJval, root);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 
@@ -769,7 +773,7 @@ TEST_F(FormatJsonTest, AzimuthRoundtrip)
     ASSERT_TRUE(azimuthBaseUnit != nullptr);
     EXPECT_STREQ("ARC_DEG", azimuthBaseUnit->GetName().c_str());
     
-    BeJsDocument jsonAfterRoundtrip;
+    Json::Value jsonAfterRoundtrip;
     EXPECT_TRUE(format.ToJson(BeJsValue(jsonAfterRoundtrip), false));
     
     Format formatAfterRoundtrip;
@@ -821,7 +825,7 @@ TEST_F(FormatJsonTest, BearingRoundtrip)
     EXPECT_TRUE(revolutionUnit != nullptr);
     EXPECT_STREQ("REVOLUTION", revolutionUnit->GetName().c_str());
     
-    BeJsDocument jsonAfterRoundtrip;
+    Json::Value jsonAfterRoundtrip;
     EXPECT_TRUE(format.ToJson(BeJsValue(jsonAfterRoundtrip), false));
     
     Format formatAfterRoundtrip;
