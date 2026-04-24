@@ -24,3 +24,6 @@ $(VendorApiContextDir)pugiconfig.hpp : $(SrcDir)pugiconfig.hpp
 
 $(VendorApiContextDir)BePugiXmlHelper.h : $(SrcDir)BePugiXmlHelper.h
     $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir)BePugiXml.h : $(SrcDir)BePugiXml.h
+    $(LinkFirstDepToFirstTarget)
