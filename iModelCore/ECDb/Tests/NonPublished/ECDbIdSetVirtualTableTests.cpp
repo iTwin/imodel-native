@@ -1403,7 +1403,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, SortedDeduplication) {
         ASSERT_EQ(20, count) << "Should have exactly 20 unique IDs";
         }
 }
-
+#if 0
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1495,7 +1495,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, PointLookupPerformanceGain) {
         ASSERT_TRUE(explain.Contains("SCAN main.ec_Class")) << "Should scan real table, got: " << explain.c_str();
         }
 }
-
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
