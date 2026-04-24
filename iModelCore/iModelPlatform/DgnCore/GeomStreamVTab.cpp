@@ -9,6 +9,9 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+// Process-wide limit; default 50 MB
+size_t GeomStreamModule::s_maxGeomStreamVTabBytes = 50 * 1024 * 1024;
+
 // Geometry blob header — matches the format written by GeometryStream::WriteGeometryStream
 static constexpr uint32_t GEOM_BLOB_SIGNATURE = 0x0600;
 
@@ -364,12 +367,11 @@ DbResult GeomStreamModule::GeomStreamVirtualTable::GeomStreamCursor::Filter(int 
             return BE_SQLITE_OK;
             }
 
-        // Enforce the per-DgnDb size limit before decompressing
-        DgnDbP dgndb = GetDgnDb();
-        if (nullptr != dgndb && header.m_size > dgndb->GetMaxGeomStreamVTabBytes())
+        // Silently skip blobs that exceed the process-wide size limit
+        if (header.m_size > GeomStreamModule::GetMaxGeomStreamVTabBytes())
             {
             m_eof = true;
-            return BE_SQLITE_TOOBIG;
+            return BE_SQLITE_OK;
             }
 
         // Decompress the opcode data

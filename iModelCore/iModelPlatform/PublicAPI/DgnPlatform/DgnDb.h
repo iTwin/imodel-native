@@ -210,7 +210,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheCle
 private:
     BeSQLite::BeBriefcaseBasedIdSequence m_elementIdSequence;
     int m_purgeOperation = 0;
-    size_t m_maxGeomStreamVTabBytes = 50 * 1024 * 1024; // 50 MB default
+
 
     void Destroy();
     SchemaStatus PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
@@ -301,14 +301,6 @@ public:
 
     //! Get the profile version of an opened DgnDb.
     DGNPLATFORM_EXPORT DgnDbProfileVersion GetProfileVersion();
-
-    //! Get the maximum uncompressed GeometryStream size (in bytes) that the dgn_geom_stream virtual table will process.
-    //! Blobs larger than this limit are silently skipped (zero rows returned). Default is 50 MB.
-    size_t GetMaxGeomStreamVTabBytes() const { return m_maxGeomStreamVTabBytes; }
-
-    //! Set the maximum uncompressed GeometryStream size (in bytes) accessible via the dgn_geom_stream virtual table.
-    //! @param[in] bytes The new limit. Values below 4096 (4 KB) are clamped to 4096.
-    void SetMaxGeomStreamVTabBytes(size_t bytes) { m_maxGeomStreamVTabBytes = std::max(bytes, static_cast<size_t>(4096)); }
 
     //! Open an existing DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully opened, error code otherwise. May be NULL.
