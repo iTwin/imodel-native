@@ -3677,8 +3677,10 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonSpecific)
 
         GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-        BeJsDocument result(theJson);
-        EXPECT_FALSE(result.hasParseError());
+        // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
+        // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
+        Json::Value result;
+        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errMessage;
         EXPECT_EQ(SUCCESS, currentGCS->FromHorizontalJson(result, errMessage)) << errMessage.c_str();
@@ -3700,8 +3702,9 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonError1)
 
     GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-    BeJsDocument result(theJson);
-    EXPECT_FALSE(result.hasParseError());
+    // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
+    Json::Value result;
+    EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
     // Sabotage the id to make sure we do not use pre-defined
     result["id"] = "XYZ";
@@ -3743,11 +3746,12 @@ TEST_F(GCSUnitTests, EllipsoidTransformFromJsonSpecific)
         GeoCoordinates::Ellipsoid* currentEllipsoid1 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
         GeoCoordinates::Ellipsoid* currentEllipsoid2 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
 
-        BeJsDocument result(theJson);
-        EXPECT_FALSE(result.hasParseError());
+        // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
+        Json::Value result;
+        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentEllipsoid1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentEllipsoid1->FromJson(Json::Value::From(theJson), errorMessage)) << errorMessage.c_str();
 
         // Sabotage the id to reparse
         result["id"] = "XYZ";
@@ -3774,11 +3778,12 @@ TEST_F(GCSUnitTests, DatumTransformFromJsonSpecific)
         GeoCoordinates::Datum* currentDatum1 = GeoCoordinates::Datum::CreateDatum();
         GeoCoordinates::Datum* currentDatum2 = GeoCoordinates::Datum::CreateDatum();
 
-        BeJsDocument result(theJson);
-        EXPECT_FALSE(result.hasParseError());
+        // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
+        Json::Value result;
+        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentDatum1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentDatum1->FromJson(Json::Value::From(theJson), errorMessage)) << errorMessage.c_str();
 
         // Sabotage the id to reparse
         result["id"] = "XYZ";
@@ -3806,13 +3811,14 @@ TEST_F(GCSUnitTests, GeodeticTransformTransformFromJsonSpecific)
         GeoCoordinates::GeodeticTransform* currentTransform1 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
         GeoCoordinates::GeodeticTransform* currentTransform2 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
 
-        BeJsDocument result(theJson);
-        EXPECT_FALSE(result.hasParseError());
+        // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
+        Json::Value result;
+        EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentTransform1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentTransform1->FromJson(Json::Value::From(theJson), errorMessage)) << errorMessage.c_str();
 
-        BeJsDocument returnedResult;
+        Json::Value returnedResult;
         EXPECT_TRUE(SUCCESS == currentTransform1->ToJson(returnedResult));
 
         EXPECT_EQ(SUCCESS, currentTransform2->FromJson(result, errorMessage)) << errorMessage.c_str();
