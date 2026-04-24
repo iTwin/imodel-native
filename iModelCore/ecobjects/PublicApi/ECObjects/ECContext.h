@@ -235,12 +235,15 @@ private:
     IUnitResolver const*            m_unitResolver;
     IECSchemaRemapperCP             m_schemaRemapper;
     IssueReporter                   m_issueReporter;
+    IssueReporter*                  m_sharedIssueReporter = nullptr;    // Use this shared reporter when issues need to be reported across instances
 
 protected:
     ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
         : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr)
         {
         }
+
+    void SetSharedIssueReporter(IssueReporter& reporter) { m_sharedIssueReporter = &reporter; }
 
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
@@ -266,7 +269,7 @@ public:
 
     ECSchemaCR GetFallBackSchema() {return m_fallBackSchema;}
 
-    IssueReporter& Issues() { return m_issueReporter; }
+    IssueReporter& Issues() { return m_sharedIssueReporter != nullptr ? *m_sharedIssueReporter : m_issueReporter; }
 public:
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);

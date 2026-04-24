@@ -67,7 +67,6 @@ EXPORTS
   ssl_srp_ctx_free_intern
   ssl_srp_ctx_init_intern
   ssl_srp_server_param_with_username_intern
-  SSL_CTX_set_client_cert_engine
   SSL_CTX_set_tmp_dh_callback
   SSL_set_tmp_dh_callback
   ssl_dh_to_pkey
@@ -79,8 +78,6 @@ EXPORTS
   ssl_hmac_old_size
   ssl_hmac_old_update
   ssl_set_tmp_ecdh_groups
-  tls_engine_finish
-  tls_engine_load_ssl_client_cert
   tls_get_cipher_from_engine
   tls_get_digest_from_engine
   tls13_alert_code
@@ -783,7 +780,6 @@ EXPORTS
   _vsprintf_l
   sprintf
   ssl3_undef_enc_method
-  ssl_bad_method
   ssl_cache_cipherlist
   ssl_check_srvr_ecc_cert_and_alg
   ssl_cipher_id_cmp
@@ -1342,7 +1338,6 @@ EXPORTS
   ossl_md5_sha1_functions
   ossl_md5_functions
   ossl_md4_functions
-  ossl_md2_functions
   ossl_digest_default_get_params
   ossl_digest_default_gettable_params
   ossl_blake2s_final
@@ -3155,9 +3150,7 @@ EXPORTS
   TS_CONF_set_accuracy
   TS_CONF_set_certs
   TS_CONF_set_clock_precision_digits
-  TS_CONF_set_crypto_device
   TS_CONF_set_def_policy
-  TS_CONF_set_default_engine
   TS_CONF_set_digests
   TS_CONF_set_ess_cert_id_chain
   TS_CONF_set_ess_cert_id_digest
@@ -3749,7 +3742,6 @@ EXPORTS
   RAND_set0_private
   RAND_set0_public
   RAND_set_DRBG_type
-  RAND_set_rand_engine
   RAND_set_rand_method
   RAND_set_seed_source_type
   RAND_status
@@ -4720,11 +4712,6 @@ EXPORTS
   MD4_Transform
   MD4_Update
   md4_block_data_order
-  MD2
-  MD2_Final
-  MD2_Init
-  MD2_Update
-  MD2_options
   OPENSSL_LH_delete
   OPENSSL_LH_doall
   OPENSSL_LH_doall_arg
@@ -5032,7 +5019,6 @@ EXPORTS
   EVP_PKEY_get0_DH
   EVP_PKEY_get0_DSA
   EVP_PKEY_get0_description
-  EVP_PKEY_get0_engine
   EVP_PKEY_get0_hmac
   EVP_PKEY_get0_poly1305
   EVP_PKEY_get0_siphash
@@ -5078,7 +5064,6 @@ EXPORTS
   EVP_PKEY_set1_DH
   EVP_PKEY_set1_DSA
   EVP_PKEY_set1_encoded_public_key
-  EVP_PKEY_set1_engine
   EVP_PKEY_set_bn_param
   EVP_PKEY_set_ex_data
   EVP_PKEY_set_int_param
@@ -5194,7 +5179,6 @@ EXPORTS
   EVP_md5_sha1
   EVP_md5
   EVP_md4
-  EVP_md2
   EVP_blake2b512
   EVP_blake2s256
   EVP_KEYMGMT_do_all_provided
@@ -5901,151 +5885,6 @@ EXPORTS
   ossl_err_get_state_int
   ossl_err_load_ERR_strings
   ossl_err_string_int
-  ENGINE_get_RSA
-  ENGINE_get_default_RSA
-  ENGINE_register_RSA
-  ENGINE_register_all_RSA
-  ENGINE_set_RSA
-  ENGINE_set_default_RSA
-  ENGINE_unregister_RSA
-  ENGINE_get_RAND
-  ENGINE_get_default_RAND
-  ENGINE_register_RAND
-  ENGINE_register_all_RAND
-  ENGINE_set_RAND
-  ENGINE_set_default_RAND
-  ENGINE_unregister_RAND
-  ENGINE_get_pkey_meth
-  ENGINE_get_pkey_meth_engine
-  ENGINE_get_pkey_meths
-  ENGINE_register_all_pkey_meths
-  ENGINE_register_pkey_meths
-  ENGINE_set_default_pkey_meths
-  ENGINE_set_pkey_meths
-  ENGINE_unregister_pkey_meths
-  engine_pkey_meths_free
-  ENGINE_get_EC
-  ENGINE_get_default_EC
-  ENGINE_register_EC
-  ENGINE_register_all_EC
-  ENGINE_set_EC
-  ENGINE_set_default_EC
-  ENGINE_unregister_EC
-  ENGINE_get_DSA
-  ENGINE_get_default_DSA
-  ENGINE_register_DSA
-  ENGINE_register_all_DSA
-  ENGINE_set_DSA
-  ENGINE_set_default_DSA
-  ENGINE_unregister_DSA
-  ENGINE_get_digest
-  ENGINE_get_digest_engine
-  ENGINE_get_digests
-  ENGINE_register_all_digests
-  ENGINE_register_digests
-  ENGINE_set_default_digests
-  ENGINE_set_digests
-  ENGINE_unregister_digests
-  ENGINE_get_DH
-  ENGINE_get_default_DH
-  ENGINE_register_DH
-  ENGINE_register_all_DH
-  ENGINE_set_DH
-  ENGINE_set_default_DH
-  ENGINE_unregister_DH
-  ENGINE_get_cipher
-  ENGINE_get_cipher_engine
-  ENGINE_get_ciphers
-  ENGINE_register_all_ciphers
-  ENGINE_register_ciphers
-  ENGINE_set_ciphers
-  ENGINE_set_default_ciphers
-  ENGINE_unregister_ciphers
-  ENGINE_get_pkey_asn1_meth
-  ENGINE_get_pkey_asn1_meth_engine
-  ENGINE_get_pkey_asn1_meth_str
-  ENGINE_get_pkey_asn1_meths
-  ENGINE_pkey_asn1_find_str
-  ENGINE_register_all_pkey_asn1_meths
-  ENGINE_register_pkey_asn1_meths
-  ENGINE_set_default_pkey_asn1_meths
-  ENGINE_set_pkey_asn1_meths
-  ENGINE_unregister_pkey_asn1_meths
-  engine_pkey_asn1_meths_free
-  ENGINE_get_table_flags
-  ENGINE_set_table_flags
-  engine_table_cleanup
-  engine_table_doall
-  engine_table_register
-  engine_table_unregister
-  ossl_engine_table_select
-  engine_load_rdrand_int
-  ENGINE_get_load_privkey_function
-  ENGINE_get_load_pubkey_function
-  ENGINE_get_ssl_client_cert_function
-  ENGINE_load_private_key
-  ENGINE_load_public_key
-  ENGINE_load_ssl_client_cert
-  ENGINE_set_load_privkey_function
-  ENGINE_set_load_pubkey_function
-  ENGINE_set_load_ssl_client_cert_function
-  engine_load_openssl_int
-  ENGINE_add
-  ENGINE_by_id
-  ENGINE_get_first
-  ENGINE_get_last
-  ENGINE_get_next
-  ENGINE_get_prev
-  ENGINE_remove
-  ENGINE_up_ref
-  engine_add_dynamic_id
-  engine_remove_dynamic_id
-  ENGINE_free
-  ENGINE_get_cmd_defns
-  ENGINE_get_ctrl_function
-  ENGINE_get_destroy_function
-  ENGINE_get_ex_data
-  ENGINE_get_finish_function
-  ENGINE_get_flags
-  ENGINE_get_id
-  ENGINE_get_init_function
-  ENGINE_get_name
-  ENGINE_get_static_state
-  ENGINE_new
-  ENGINE_set_cmd_defns
-  ENGINE_set_ctrl_function
-  ENGINE_set_destroy_function
-  ENGINE_set_ex_data
-  ENGINE_set_finish_function
-  ENGINE_set_flags
-  ENGINE_set_id
-  ENGINE_set_init_function
-  ENGINE_set_name
-  do_engine_lock_init_ossl_
-  do_engine_lock_init_ossl_ret_
-  engine_cleanup_add_first
-  engine_cleanup_add_last
-  engine_cleanup_int
-  engine_free_util
-  engine_lock_init
-  engine_set_all_null
-  global_engine_lock
-  ENGINE_finish
-  ENGINE_init
-  engine_unlocked_finish
-  engine_unlocked_init
-  ENGINE_register_all_complete
-  ENGINE_register_complete
-  ENGINE_set_default
-  ENGINE_set_default_string
-  ossl_err_load_ENGINE_strings
-  engine_load_dynamic_int
-  ENGINE_cmd_is_executable
-  ENGINE_ctrl
-  ENGINE_ctrl_cmd
-  ENGINE_ctrl_cmd_string
-  ENGINE_add_conf_module
-  ENGINE_load_builtin_engines
   OSSL_ENCODER_CTX_new_for_pkey
   OSSL_ENCODER_CTX_set_cipher
   OSSL_ENCODER_CTX_set_passphrase
