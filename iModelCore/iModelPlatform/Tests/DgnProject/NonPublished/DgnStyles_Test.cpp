@@ -60,7 +60,7 @@ TEST_F(DgnLineStyleTest, InsertReadLineStyles)
     ASSERT_TRUE(componentId0.IsValid());
     LsComponentId componentId1(LsComponentType::LineCode, 11);
     ASSERT_TRUE(componentId1.IsValid());
-    BeJsDocument     jsonValue;
+    BeJsDocument     jsonValue("{}");
     LsComponent::AddComponentAsJsonProperty(componentId0, *m_db, LsComponentType::LineCode, jsonValue);
     LsComponent::AddComponentAsJsonProperty(componentId1, *m_db, LsComponentType::LineCode, jsonValue);
 
@@ -128,7 +128,7 @@ TEST_F(DgnLineStyleTest, InsertLineStyleIntoDefinitionModel)
     // Create new component.
     LsComponentId componentId(LsComponentType::LineCode, 10);
     ASSERT_TRUE(componentId.IsValid());
-    BeJsDocument componentJson;
+    BeJsDocument componentJson("{}");
     LsComponent::AddComponentAsJsonProperty(componentId, *m_db, LsComponentType::LineCode, componentJson);
 
     // Insert LineStyle

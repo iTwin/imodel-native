@@ -121,7 +121,7 @@ TEST_F(GCSRepresentativeDatumSDKTests, DatumTransformtoJsonThenBack)
                 result["id"] = "XYZ";
 
                 // Transform to string (for debug purposes)
-                Utf8String resultString = result.toStyledString();
+                Utf8String resultString = result.Stringify();
 
                 GeoCoordinates::DatumP resultDatum = GeoCoordinates::Datum::CreateDatum();
 

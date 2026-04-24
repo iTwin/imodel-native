@@ -104,7 +104,7 @@ TEST_F (GCSGeneralSDKTests, GCSTransformToFullJsonThenBack)
                 EXPECT_TRUE(!result["horizontalCRS"].isNull());
                 EXPECT_TRUE(!result["verticalCRS"].isNull());
 
-                Utf8String resultString2 = result.toStyledString();
+                Utf8String resultString2 = result.Stringify();
 
                 // Sabotage GCS name to make sure everything is parsed
                 result["horizontalCRS"]["id"] = "XYZ";
