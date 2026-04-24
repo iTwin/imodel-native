@@ -103,6 +103,7 @@ void GeomStreamModule::GeomStreamVirtualTable::GeomStreamCursor::Reset()
     m_isHeaderEntry = false;
     m_textContent.clear();
     m_hasTextContent = false;
+    m_geometryBlob.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,6 +318,17 @@ DbResult GeomStreamModule::GeomStreamVirtualTable::GeomStreamCursor::ReadNextEnt
     m_entryIndex++;
 
     ProcessCurrentOp();
+
+    // Populate m_geometryBlob: [4 bytes opcode][flatbuffer data]
+    m_geometryBlob.clear();
+    if (nullptr != m_currentOp.m_data && m_currentOp.m_dataSize > 0)
+        {
+        uint32_t opcode = static_cast<uint32_t>(m_currentOp.m_opCode);
+        m_geometryBlob.resize(sizeof(uint32_t) + m_currentOp.m_dataSize);
+        memcpy(m_geometryBlob.data(), &opcode, sizeof(uint32_t));
+        memcpy(m_geometryBlob.data() + sizeof(uint32_t), m_currentOp.m_data, m_currentOp.m_dataSize);
+        }
+
     m_eof = false;
     return BE_SQLITE_OK;
     }
@@ -623,10 +635,10 @@ DbResult GeomStreamModule::GeomStreamVirtualTable::GeomStreamCursor::GetColumn(i
                     ctx.SetResultNull();
                 break;
 
-            // Raw geometry payload — return data for any entry that has a non-null payload
+            // GeometryBlob: [4-byte opcode][flatbuffer payload]
             case Columns::GeometryBlob:
-                if (nullptr != m_currentOp.m_data && m_currentOp.m_dataSize > 0)
-                    ctx.SetResultBlob(m_currentOp.m_data, m_currentOp.m_dataSize, Context::CopyData::No);
+                if (!m_geometryBlob.empty())
+                    ctx.SetResultBlob(m_geometryBlob.data(), (int)m_geometryBlob.size(), Context::CopyData::No);
                 else
                     ctx.SetResultNull();
                 break;

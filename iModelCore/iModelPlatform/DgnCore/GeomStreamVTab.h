@@ -12,12 +12,12 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 //! Virtual table module that decomposes a GeometryStream blob into one row per entry.
 //! Registered from iModelPlatform. Usage:
-//!   SELECT gs.* FROM BisCore.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs
+//!   SELECT gs.* FROM BisCore.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs
 // @bsiclass
 //=======================================================================================
 struct GeomStreamModule : BeSQLite::EC::ECDbModule
     {
-    constexpr static Utf8CP NAME = "dgn_geom_stream";
+    constexpr static Utf8CP NAME = "imodel_geom_stream";
 
     //=================================================================================
     struct GeomStreamVirtualTable : ECDbVirtualTable
@@ -99,6 +99,9 @@ struct GeomStreamModule : BeSQLite::EC::ECDbModule
                 Utf8String m_textContent;
                 bool       m_hasTextContent;
 
+                // GeometryBlob: [4-byte opcode][flatbuffer payload]
+                bvector<uint8_t> m_geometryBlob;
+
                 DgnDbP GetDgnDb();
                 void Reset();
                 DbResult ReadNextEntry();
@@ -146,15 +149,15 @@ struct GeomStreamModule : BeSQLite::EC::ECDbModule
         static constexpr Utf8CP ECSCHEMA_XML =
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
-                    schemaName="DgnVLib"
-                    alias="DgnVLib"
+                    schemaName="IModelVLib"
+                    alias="IModelVLib"
                     version="1.0.0"
                     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="ECDbVirtual" version="01.00.00" alias="ecdbvir" />
                 <ECCustomAttributes>
                     <VirtualSchema xmlns="ECDbVirtual.01.00.00"/>
                 </ECCustomAttributes>
-                <ECEntityClass typeName="dgn_geom_stream" modifier="Abstract">
+                <ECEntityClass typeName="imodel_geom_stream" modifier="Abstract">
                     <ECCustomAttributes>
                         <VirtualType xmlns="ECDbVirtual.01.00.00"/>
                     </ECCustomAttributes>

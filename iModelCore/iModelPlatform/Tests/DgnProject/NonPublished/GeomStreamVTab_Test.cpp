@@ -18,7 +18,7 @@ struct GeomStreamVTabTest : public DgnDbTestFixture
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Verify that dgn_geom_stream returns at least one row per element and that basic
+* Verify that imodel_geom_stream returns at least one row per element and that basic
 * columns (EntryIndex, OpCode, EntryType) are non-NULL.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -36,7 +36,7 @@ TEST_F(GeomStreamVTabTest, BasicQuery)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.EntryIndex, gs.OpCode, gs.EntryType, gs.IsGeometry "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elemId);
@@ -77,7 +77,7 @@ TEST_F(GeomStreamVTabTest, HeaderEntry)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.OpCode, gs.HeaderFlags "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ? AND gs.EntryIndex = 0"));
 
     stmt.BindId(1, elemId);
@@ -104,7 +104,7 @@ TEST_F(GeomStreamVTabTest, IsGeometryFlag)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.OpCode, gs.IsGeometry "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elemId);
@@ -146,7 +146,7 @@ TEST_F(GeomStreamVTabTest, SubCategoryId)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.SubCategoryId "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ? AND gs.IsGeometry = 1"));
 
     stmt.BindId(1, elemId);
@@ -177,7 +177,7 @@ TEST_F(GeomStreamVTabTest, MultipleElements)
     // Count total entries across all elements
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
-        "SELECT COUNT(*) FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs"));
+        "SELECT COUNT(*) FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     int totalCount = stmt.GetValueInt(0);
@@ -187,7 +187,7 @@ TEST_F(GeomStreamVTabTest, MultipleElements)
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT e.ECInstanceId, COUNT(*) "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "GROUP BY e.ECInstanceId"));
 
     int elementCount = 0;
@@ -223,7 +223,7 @@ TEST_F(GeomStreamVTabTest, GeometryBlobColumn)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.GeometryBlob, gs.OpCode "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elemId);
@@ -256,7 +256,7 @@ TEST_F(GeomStreamVTabTest, SelectStar)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
-        "SELECT * FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "SELECT * FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elemId);
@@ -279,7 +279,7 @@ TEST_F(GeomStreamVTabTest, FilterGeometryEntries)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.OpCode, gs.IsGeometry "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ? AND gs.IsGeometry = 1"));
 
     stmt.BindId(1, elemId);
@@ -315,7 +315,7 @@ TEST_F(GeomStreamVTabTest, DisplayParams)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.Color, gs.Weight "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ? AND gs.IsGeometry = 1"));
 
     stmt.BindId(1, elemId);
@@ -362,7 +362,7 @@ TEST_F(GeomStreamVTabTest, Element2d)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.EntryIndex, gs.OpCode "
-        "FROM bis.GeometricElement2d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement2d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elem2dId);
@@ -402,7 +402,7 @@ TEST_F(GeomStreamVTabTest, GeometryPartReference)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.GeometryPartId, gs.PartOriginX, gs.PartOriginY, gs.PartOriginZ, gs.PartScale, gs.OpCode "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ? AND gs.GeometryPartId IS NOT NULL"));
 
     stmt.BindId(1, elemId);
@@ -429,7 +429,7 @@ TEST_F(GeomStreamVTabTest, GeometryPartReference)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Verify that dgn_geom_stream produces no rows (not an error) when GeometryStream is NULL.
+* Verify that imodel_geom_stream produces no rows (not an error) when GeometryStream is NULL.
 * This tests resilience against elements that exist but have no geometry.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -443,7 +443,7 @@ TEST_F(GeomStreamVTabTest, NullGeometryStream)
     // If there are no null geometry streams, this test simply passes with 0 rows.
     ECSqlStatement stmt;
     auto status = stmt.Prepare(*m_db,
-        "SELECT COUNT(*) FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "SELECT COUNT(*) FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.GeometryStream IS NULL");
 
     // If the ECSQL prepares, it should return 0 rows, not an error
@@ -456,7 +456,7 @@ TEST_F(GeomStreamVTabTest, NullGeometryStream)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Verify that querying with schema-qualified name also works: DgnVLib.dgn_geom_stream
+* Verify that querying with schema-qualified name also works: IModelVLib.imodel_geom_stream
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeomStreamVTabTest, SchemaQualifiedName)
@@ -471,7 +471,7 @@ TEST_F(GeomStreamVTabTest, SchemaQualifiedName)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.EntryIndex, gs.OpCode "
-        "FROM bis.GeometricElement3d e, DgnVLib.dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, IModelVLib.imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elemId);
@@ -499,7 +499,7 @@ TEST_F(GeomStreamVTabTest, CountGeometryEntriesPerElement)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT e.ECInstanceId, SUM(gs.IsGeometry) AS geomCount "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "GROUP BY e.ECInstanceId"));
 
     int elementCount = 0;
@@ -529,7 +529,7 @@ TEST_F(GeomStreamVTabTest, EntryIndexMonotonic)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
         "SELECT gs.EntryIndex "
-        "FROM bis.GeometricElement3d e, dgn_geom_stream(e.GeometryStream) gs "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
         "WHERE e.ECInstanceId = ?"));
 
     stmt.BindId(1, elemId);
@@ -543,4 +543,94 @@ TEST_F(GeomStreamVTabTest, EntryIndexMonotonic)
         }
 
     EXPECT_GE(lastIndex, 0) << "Should have visited at least one entry";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that imodel_geom_json returns valid JSON for a geometry entry.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeomStreamVTabTest, GeomJsonScalarFunction)
+    {
+    SetupSeedProject();
+
+    auto el = InsertElement(Render::GeometryParams(m_defaultCategoryId));
+    ASSERT_TRUE(el.IsValid());
+    DgnElementId elemId = el->GetElementId();
+    SaveDb();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
+        "SELECT imodel_geom_json(gs.GeometryBlob), gs.EntryType "
+        "FROM bis.GeometricElement3d e, imodel_geom_stream(e.GeometryStream) gs "
+        "WHERE e.ECInstanceId = ? AND gs.IsGeometry = 1"));
+
+    stmt.BindId(1, elemId);
+
+    bool foundJson = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP entryType = stmt.GetValueText(1);
+        // BRepEntity returns NULL — skip
+        if (entryType != nullptr && strcmp(entryType, "BRepEntity") == 0)
+            continue;
+
+        if (!stmt.IsValueNull(0))
+            {
+            Utf8CP json = stmt.GetValueText(0);
+            EXPECT_TRUE(json != nullptr && strlen(json) > 0) << "imodel_geom_json should return non-empty JSON";
+            foundJson = true;
+            }
+        }
+
+    EXPECT_TRUE(foundJson) << "Should find at least one geometry entry with JSON";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that imodel_geom_entry_count returns the geometry entry count.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeomStreamVTabTest, GeomEntryCountFunction)
+    {
+    SetupSeedProject();
+
+    auto el = InsertElement(Render::GeometryParams(m_defaultCategoryId));
+    ASSERT_TRUE(el.IsValid());
+    DgnElementId elemId = el->GetElementId();
+    SaveDb();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
+        "SELECT imodel_geom_entry_count(e.GeometryStream) "
+        "FROM bis.GeometricElement3d e WHERE e.ECInstanceId = ?"));
+
+    stmt.BindId(1, elemId);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_FALSE(stmt.IsValueNull(0)) << "imodel_geom_entry_count should not be NULL";
+    int count = stmt.GetValueInt(0);
+    EXPECT_GT(count, 0) << "Should have at least one geometry entry";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Verify that imodel_geom_has_brep returns 0 or 1 (not NULL).
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeomStreamVTabTest, GeomHasBrepFunction)
+    {
+    SetupSeedProject();
+
+    auto el = InsertElement(Render::GeometryParams(m_defaultCategoryId));
+    ASSERT_TRUE(el.IsValid());
+    DgnElementId elemId = el->GetElementId();
+    SaveDb();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db,
+        "SELECT imodel_geom_has_brep(e.GeometryStream) "
+        "FROM bis.GeometricElement3d e WHERE e.ECInstanceId = ?"));
+
+    stmt.BindId(1, elemId);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_FALSE(stmt.IsValueNull(0)) << "imodel_geom_has_brep should return 0 or 1";
+    int val = stmt.GetValueInt(0);
+    EXPECT_TRUE(val == 0 || val == 1) << "imodel_geom_has_brep should be 0 or 1";
     }
