@@ -561,7 +561,7 @@ public:
 
     //! Create a BeJsValue that represents the GeometryStream from this GeometryCollection.
     //! @param[in] opts options for customizing the value.
-    DGNPLATFORM_EXPORT void ToJson(BeJsValue out, BeJsConst opts=Json::Value()) const;
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue out, BeJsConst opts=BeJsDocument::Null()) const;
 
 }; // GeometryCollection
 
