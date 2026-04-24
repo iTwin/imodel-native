@@ -880,7 +880,7 @@ struct iModel_geom_json : ScalarFunction
                 { ctx.SetResultNull(); return; }
 
             Utf8String jsonStr;
-            if (!BentleyGeometry::IModelJson::TryGeometryToIModelJsonString(jsonStr, *igeom))
+            if (!IModelJson::TryGeometryToIModelJsonString(jsonStr, *igeom))
                 { ctx.SetResultNull(); return; }
 
             ctx.SetResultText(jsonStr.c_str(), (int)jsonStr.size(), Context::CopyData::Yes);
