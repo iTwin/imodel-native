@@ -335,7 +335,7 @@ public:
     DGNPLATFORM_EXPORT void ToJson(BeJsValue value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(BeJsConst value); //!< Attempt to initialize from JSON representation
 
-    void ExtractLockSet(DgnLockSet& locks);//!< @private
+    void ExtractLockSet(DgnLockSet& locks); //!< @private
     DGNPLATFORM_EXPORT void InsertLock(LockableId id, LockLevel level);  //!< @private
 };
 
