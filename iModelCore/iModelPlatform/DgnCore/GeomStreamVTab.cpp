@@ -364,6 +364,14 @@ DbResult GeomStreamModule::GeomStreamVirtualTable::GeomStreamCursor::Filter(int 
             return BE_SQLITE_OK;
             }
 
+        // Enforce the per-DgnDb size limit before decompressing
+        DgnDbP dgndb = GetDgnDb();
+        if (nullptr != dgndb && header.m_size > dgndb->GetMaxGeomStreamVTabBytes())
+            {
+            m_eof = true;
+            return BE_SQLITE_TOOBIG;
+            }
+
         // Decompress the opcode data
         m_decompressed.resize(header.m_size);
         if (ZIP_SUCCESS != snappy._Read(m_decompressed.data(), header.m_size, actuallyRead)

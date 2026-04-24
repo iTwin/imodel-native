@@ -2636,6 +2636,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         GetOpenedDb(info).m_codeValueBehavior = newBehavior;
     }
 
+    Napi::Value GetMaxGeomStreamVTabBytes(NapiInfoCR info) {
+        return Napi::Number::New(info.Env(), static_cast<double>(GetOpenedDb(info).GetMaxGeomStreamVTabBytes()));
+    }
+
+    void SetMaxGeomStreamVTabBytes(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_NUMBER(0, bytes);
+        if (bytes < 1)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "maxGeomStreamVTabBytes must be a positive number", IModelJsNativeErrorKey::BadArg);
+        GetOpenedDb(info).SetMaxGeomStreamVTabBytes(static_cast<size_t>(bytes));
+    }
+
     Napi::Value ComputeProjectExtents(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_BOOL(0, wantFullExtents);
@@ -3272,6 +3283,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("saveLocalValue", &NativeDgnDb::SaveLocalValue),
             InstanceMethod("schemaToXmlString", &NativeDgnDb::SchemaToXmlString),
             InstanceMethod("setCodeValueBehavior", &NativeDgnDb::SetCodeValueBehavior),
+            InstanceMethod("getMaxGeomStreamVTabBytes", &NativeDgnDb::GetMaxGeomStreamVTabBytes),
+            InstanceMethod("setMaxGeomStreamVTabBytes", &NativeDgnDb::SetMaxGeomStreamVTabBytes),
             InstanceMethod("setGeometricModelTrackingEnabled", &NativeDgnDb::SetGeometricModelTrackingEnabled),
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),

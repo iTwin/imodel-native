@@ -771,6 +771,10 @@ export declare namespace IModelJsNative {
     public setITwinId(guid: GuidString): DbResult;
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
+    /** Get the maximum uncompressed GeometryStream size (bytes) the dgn_geom_stream virtual table will process. Default: 50 MB. */
+    public getMaxGeomStreamVTabBytes(): number;
+    /** Set the maximum uncompressed GeometryStream size (bytes) the dgn_geom_stream virtual table will process. Minimum enforced: 4096 bytes. */
+    public setMaxGeomStreamVTabBytes(bytes: number): void;
     public simplifyElementGeometry(simplifyArgs: any): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
