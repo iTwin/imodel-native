@@ -529,7 +529,7 @@ public:
     DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
-    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges(std::function<void(TxnId, TxnType)> onReverse = nullptr);
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
     DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);

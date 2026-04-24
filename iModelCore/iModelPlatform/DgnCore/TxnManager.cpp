@@ -3829,7 +3829,7 @@ struct MakeQueryOnly {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
+std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(std::function<void(TxnId, TxnType)> onReverse) {
     TXN_DEBUG("<< PullMergeReverseLocalChanges()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (conf.InProgress()) {
@@ -3858,6 +3858,9 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
             if (IsTxnReversed(curr))
                 continue;
                 
+            if (onReverse)
+                onReverse(curr, GetTxnType(curr));
+
             LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
             auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
             if (BE_SQLITE_OK != rc) {

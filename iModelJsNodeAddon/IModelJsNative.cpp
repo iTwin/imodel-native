@@ -2945,12 +2945,31 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        auto txns = db.Txns().PullMergeReverseLocalChanges();
-        auto array = Napi::Array::New(Env(), txns.size());        
+        std::function<void(TxnManager::TxnId, TxnType)> onReverse;
+        std::vector<TxnManager::TxnId> txns;
+        if (info.Length() > 0 && info[0].IsFunction()) {
+            auto cb = std::make_shared<Napi::FunctionReference>(Napi::Persistent(info[0].As<Napi::Function>()));
+            onReverse = [cb](TxnManager::TxnId txnId, TxnType txnType) {
+                Utf8CP typeStr;
+                switch (txnType) {
+                    case TxnType::Ddl:      typeStr = "Ddl";      break;
+                    case TxnType::EcSchema: typeStr = "ECSchema"; break;
+                    default:                typeStr = "Data";     break;
+                }
+                cb->Call({Napi::String::New(cb->Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str()),
+                          Napi::String::New(cb->Env(), typeStr)});
+                if (cb->Env().IsExceptionPending())
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(cb->Env(), cb->Env().GetAndClearPendingException().Message().c_str(), IModelJsNativeErrorKey::BadArg);
+            };
+            txns = db.Txns().PullMergeReverseLocalChanges(std::move(onReverse));
+        }
+        else {
+            txns = db.Txns().PullMergeReverseLocalChanges();
+        }
+        auto array = Napi::Array::New(Env(), txns.size());
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
-
         return array;
     }
 
