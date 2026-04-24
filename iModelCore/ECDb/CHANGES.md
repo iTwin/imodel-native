@@ -5,7 +5,12 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.3.1` |
+| ECSQL   | `2.0.4.0` |
+
+## ## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
+* ECSql version change `2.0.3.1` -> `2.0.4.0`.
+* Added related_instances Virtual Table in ECSQL
+* Example: `SELECT g.ECInstanceId, ec_className(g.ECClassId), ec_className(g.RelECClassId), g.Direction FROM ts.Element e, related_instances(e.ECInstanceId, e.ECClassId, 'forward') g OPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
 
 ## ## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
 * ECSql version change `2.0.3.0` -> `2.0.3.1`.

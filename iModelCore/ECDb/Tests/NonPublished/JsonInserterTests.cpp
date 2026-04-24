@@ -32,7 +32,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
     ASSERT_TRUE(inserter.IsValid()) << documentClass->GetFullName();
 
-    //----------------------------------------------------------------------------------- 
+    //-----------------------------------------------------------------------------------
     // Insert using JsonCpp
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
@@ -99,8 +99,8 @@ TEST_F(JsonInserterTests, InsertNavProps)
     ECClassId fkRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "FkRel");
     ASSERT_TRUE(fkRelClassId.IsValid());
 
-    auto validate = [] (ECDbCR ecdb, ECInstanceKey const& childKey, Utf8CP childName, ECInstanceKey const& parentKey, ECClassId relClassId, Utf8CP inputJson)
-        {
+    auto validate = [](ECDbR ecdb, ECInstanceKey const& childKey, Utf8CP childName, ECInstanceKey const& parentKey, ECClassId relClassId, Utf8CP inputJson, bool isOnlyRelClassIdIsNull) {
+        ecdb.SaveChanges();
         Utf8String ecsql("SELECT count(*) FROM ts.Child WHERE ECInstanceId=? AND Name=?");
 
         if (parentKey.IsValid())
@@ -134,10 +134,13 @@ TEST_F(JsonInserterTests, InsertNavProps)
         ASSERT_EQ(BE_SQLITE_ROW, validateFkRelStmt.Step()) << inputJson;
         if (relClassId.IsValid())
             ASSERT_EQ(1, validateFkRelStmt.GetValueInt(0)) << inputJson;
-        else 
-            ASSERT_EQ(0, validateFkRelStmt.GetValueInt(0)) << "RelClassId wasn't inserted which makes the relationship not discoverable with SELECT * FROM Rel. " << inputJson;
-        };
-
+        else {
+            if (isOnlyRelClassIdIsNull)
+                ASSERT_EQ(1, validateFkRelStmt.GetValueInt(0)) << "RelClassId wasn't inserted so we return root relationship classid " << inputJson;
+            else
+                ASSERT_EQ(0, validateFkRelStmt.GetValueInt(0)) << "RelClassId wasn't inserted which makes the relationship not discoverable with SELECT * FROM Rel. " << inputJson;
+        }
+    };
     JsonInserter inserter(m_ecdb, *childClass, nullptr);
     ASSERT_TRUE(inserter.IsValid()) << childClass->GetFullName();
 
@@ -155,10 +158,10 @@ TEST_F(JsonInserterTests, InsertNavProps)
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 1", parentKey, fkRelClassId, expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 1", parentKey, fkRelClassId, expectedJsonStr.c_str(), false);
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 1", parentKey, fkRelClassId, expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 1", parentKey, fkRelClassId, expectedJsonStr.c_str(), false);
     }
 
     {
@@ -170,10 +173,10 @@ TEST_F(JsonInserterTests, InsertNavProps)
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 2", parentKey, ECClassId(), expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 2", parentKey, ECClassId(), expectedJsonStr.c_str(), true);
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 2", parentKey, ECClassId(), expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 2", parentKey, ECClassId(), expectedJsonStr.c_str(), true);
     }
 
     {
@@ -185,10 +188,10 @@ TEST_F(JsonInserterTests, InsertNavProps)
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 3", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 3", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str(), false);
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 3", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 3", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str(), false);
     }
 
     {
@@ -200,9 +203,9 @@ TEST_F(JsonInserterTests, InsertNavProps)
     ASSERT_FALSE(expectedRapidJson.Parse<0>(expectedJsonStr.c_str()).HasParseError()) << expectedJsonStr;
 
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 4", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 4", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str(), false);
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(childKey, expectedRapidJson)) << expectedJsonStr.c_str();
-    validate(m_ecdb, childKey, "Child 4", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str());
+    validate(m_ecdb, childKey, "Child 4", ECInstanceKey(), ECClassId(), expectedJsonStr.c_str(), false);
     }
     }
 
@@ -487,8 +490,8 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
                                     {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", "sourceClassName" : "ECSqlTest.P", "targetId" : "%s" , "targetClassName" : "ECSqlTest.P" }")json",
                                                                 pKeyStr.c_str(), pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
 
-                                    {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s", 
-                                                    "sourceClassName" : "ECSqlTest.P", 
+                                    {linkTableRelClass, Utf8PrintfString(R"json({ "sourceId" : "%s",
+                                                    "sourceClassName" : "ECSqlTest.P",
                                                     "targetId" : "%s" ,
                                                     "targetClassName" : "ECSqlTest.P",
                                                     "B_Array" : [true, false, false] }")json",

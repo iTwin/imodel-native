@@ -14,6 +14,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/SchemaComparer.h>
 #include <ECDb/ECDbApi.h>
+#include <ECDb/RelatedInstanceFinder.h>
 #include <algorithm>
 #include <memory>
 

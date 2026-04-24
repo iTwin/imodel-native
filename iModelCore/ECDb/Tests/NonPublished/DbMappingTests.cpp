@@ -793,6 +793,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
+        m_ecdb.SaveChanges();
         {
         const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
@@ -1407,19 +1408,27 @@ TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(2, stmt.GetValueInt64(0));                  //ECInstanceId
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));   //ECClassId
-    ASSERT_EQ(1, stmt.GetValueInt64(2));                  //SourceECInstanceId
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));   //SourceECClassId
-    ASSERT_EQ(2, stmt.GetValueInt64(4));                  //TargetECInstanceId
-    ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
+    ASSERT_EQ(2, stmt.GetValueInt64(0));                    //ECInstanceId
+    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));     //ECClassId
+    ASSERT_EQ(1, stmt.GetValueInt64(2));                    //SourceECInstanceId
+    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));     //SourceECClassId
+    ASSERT_EQ(2, stmt.GetValueInt64(4));                    //TargetECInstanceId
+    ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));  //TargetECClassId
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(5, stmt.GetValueInt64(0)); //ECInstanceId
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1)); //ECClassId
-    ASSERT_EQ(1, stmt.GetValueInt64(2));//SourceECInstanceId
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));//SourceECClassId
-    ASSERT_EQ(5, stmt.GetValueInt64(4));//TargetECInstanceId
+    ASSERT_EQ(2, stmt.GetValueInt64(0));                    //ECInstanceId
+    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));     //ECClassId
+    ASSERT_EQ(0x7d0, stmt.GetValueInt64(2));                //SourceECInstanceId
+    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));     //SourceECClassId
+    ASSERT_EQ(2, stmt.GetValueInt64(4));                    //TargetECInstanceId
+    ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));  //TargetECClassId
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(5, stmt.GetValueInt64(0));                    //ECInstanceId
+    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));     //ECClassId
+    ASSERT_EQ(1, stmt.GetValueInt64(2));                    //SourceECInstanceId
+    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));     //SourceECClassId
+    ASSERT_EQ(5, stmt.GetValueInt64(4));                    //TargetECInstanceId
     ASSERT_EQ(sterringId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -11502,7 +11511,7 @@ TEST_F(DbMappingTestFixture, Only2kColumnsAreAllowedPerTable)
     m_ecdb.SaveChanges();
 
     innerXml = "";
-    for (size_t i = 1; i <= 2000; i++) 
+    for (size_t i = 1; i <= 2000; i++)
         {
         Utf8PrintfString propName("PropElement%zu", i);
         innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
