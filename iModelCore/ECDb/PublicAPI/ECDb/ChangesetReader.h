@@ -8,11 +8,12 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! ECChangesetReader provides EC-typed value access for iterating over changesets.
+//! ChangesetReader provides EC-typed value access while iterating over changesets.
+//! It iterates over the changeset and exposes a higher-level API that returns EC-typed values and abstracts away the underlying SQLite tables and columns.
 //! It follows the same PIMPL pattern as ECSqlStatement.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECChangesetReader {
+struct ChangesetReader {
 public:
     struct Impl;
 
@@ -27,16 +28,16 @@ private:
     using Stage = Changes::Change::Stage;
     Impl* m_pimpl = nullptr;
 
-    ECChangesetReader(ECChangesetReader const&) = delete;
-    ECChangesetReader& operator=(ECChangesetReader const&) = delete;
-    ECChangesetReader(ECChangesetReader&& rhs) = delete;
-    ECChangesetReader& operator=(ECChangesetReader&& rhs) = delete;
+    ChangesetReader(ChangesetReader const&) = delete;
+    ChangesetReader& operator=(ChangesetReader const&) = delete;
+    ChangesetReader(ChangesetReader&& rhs) = delete;
+    ChangesetReader& operator=(ChangesetReader&& rhs) = delete;
 
 public:
-    //! Constructs a new ECChangesetReader instance. Call one of the Open methods before using it.
-    ECDB_EXPORT ECChangesetReader();
+    //! Constructs a new ChangesetReader instance. Call one of the Open methods before using it.
+    ECDB_EXPORT ChangesetReader();
     //! Destructor. Closes the reader if it is still open.
-    ECDB_EXPORT ~ECChangesetReader();
+    ECDB_EXPORT ~ChangesetReader();
 
     //! Opens a changeset file for reading.
     //! @param[in] ecdb ECDb connection used to resolve EC schema information.
@@ -161,12 +162,12 @@ public:
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct ECChangesetRow : public IECSqlRow {
+struct ChangesetRow : public IECSqlRow {
     private:
-        ECChangesetReader const& m_reader;
+        ChangesetReader const& m_reader;
         Changes::Change::Stage m_stage;       
     public:
-        ECChangesetRow(ECChangesetReader const& reader, Changes::Change::Stage const& stage) : m_reader(reader), m_stage(stage) {}
+        ChangesetRow(ChangesetReader const& reader, Changes::Change::Stage const& stage) : m_reader(reader), m_stage(stage) {}
         virtual int GetColumnCount() const override { return m_reader.GetColumnCount(m_stage); }
         virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_reader.GetValue(m_stage, columnIndex); }
 };

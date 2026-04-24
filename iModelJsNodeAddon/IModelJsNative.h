@@ -650,7 +650,7 @@ struct GeoServicesInterop
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NativeChangeset {
+struct SqliteChangesetReader {
     private:
 
         bool m_invert;
@@ -675,7 +675,7 @@ struct NativeChangeset {
         bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
 
     public:
-        NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
+        SqliteChangesetReader():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
         void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);

@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ChangesetValue.h"
-#include <ECDb/ECChangesetReader.h>
+#include <ECDb/ChangesetReader.h>
 #include <unordered_set>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -224,7 +224,7 @@ public:
                                 ColumnValueMap const& columnValues,
                                 ECClassId resolvedClassId, bool classIdFromChangeset,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fields,
-                                ECChangesetReader::PropertyFilter propertyFilter,
+                                ChangesetReader::PropertyFilter propertyFilter,
                                 std::vector<Utf8String>& changedProps);
 };
 

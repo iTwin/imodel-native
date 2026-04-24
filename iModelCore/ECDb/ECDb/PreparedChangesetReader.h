@@ -10,10 +10,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct PreparedECChangesetReader final {
+struct PreparedChangesetReader final {
 private:
     using Stage = Changes::Change::Stage;
-    using PropertyFilter  = ECChangesetReader::PropertyFilter;
+    using PropertyFilter  = ChangesetReader::PropertyFilter;
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.
     using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
@@ -35,8 +35,8 @@ private:
     std::vector<DbOpcode> m_opcodeFilters;
     std::vector<Utf8String> m_ecclassNameFilters;
 
-    PreparedECChangesetReader(PreparedECChangesetReader const&) = delete;
-    PreparedECChangesetReader& operator=(PreparedECChangesetReader const&) = delete;
+    PreparedChangesetReader(PreparedChangesetReader const&) = delete;
+    PreparedChangesetReader& operator=(PreparedChangesetReader const&) = delete;
     void ClearFields();
     BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
     bool IsOpen() const { return m_changeStream != nullptr; }
@@ -51,7 +51,7 @@ private:
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
 public:
-    explicit PreparedECChangesetReader(ECDbCR ecdb);
+    explicit PreparedChangesetReader(ECDbCR ecdb);
 
     DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);

@@ -27,7 +27,7 @@ struct TestCSChangeTracker : BeSQLite::ChangeTracker
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ECChangesetReaderTests : ECDbTestFixture {
+struct ChangesetReaderTests : ECDbTestFixture {
     public: 
         Utf8CP GetSchema() const { 
             return R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -99,7 +99,7 @@ struct ECChangesetReaderTests : ECDbTestFixture {
 // then assert the expected values.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
+TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     {
     NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     
@@ -138,9 +138,9 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ECChangesetReader::PropertyFilter::All));
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ChangesetReader::PropertyFilter::All));
 
     // Step one by one.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -288,7 +288,7 @@ TEST_F(ECChangesetReaderTests, Insert_AllPropertyTypes)
 // Step through the changeset, print every New-stage and Old-stage column, then assert.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
+TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_update.ecdb", SchemaItem(GetSchema())));
 
@@ -321,9 +321,9 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ECChangesetReader::PropertyFilter::All));
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(reader.Step(), BE_SQLITE_ROW);
     bool isEC = false;
@@ -442,7 +442,7 @@ TEST_F(ECChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
 // Stage::Old must carry every originally-inserted property.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
+TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_delete.ecdb", SchemaItem(GetSchema())));
 
@@ -488,9 +488,9 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ECChangesetReader::PropertyFilter::All));
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
     bool isEC = false;
@@ -607,7 +607,7 @@ TEST_F(ECChangesetReaderTests, Delete_OldStageContainsAllValues)
 // that were explicitly provided and that GetChangeFetchedPropertyNames is consistent.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Insert_PartialProperties)
+TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_partial_insert.ecdb", SchemaItem(GetSchema())));
 
@@ -626,10 +626,10 @@ TEST_F(ECChangesetReaderTests, Insert_PartialProperties)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -693,7 +693,7 @@ TEST_F(ECChangesetReaderTests, Insert_PartialProperties)
 // Verifies array values in both stages and GetChangeFetchedPropertyNames = {"Tags"}.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Update_ArrayProperty)
+TEST_F(ChangesetReaderTests, Update_ArrayProperty)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_update_array.ecdb", SchemaItem(GetSchema())));
 
@@ -727,10 +727,10 @@ TEST_F(ECChangesetReaderTests, Update_ArrayProperty)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -788,7 +788,7 @@ TEST_F(ECChangesetReaderTests, Update_ArrayProperty)
 // those two names.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Update_TwoScalars)
+TEST_F(ChangesetReaderTests, Update_TwoScalars)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_update_scalars.ecdb", SchemaItem(GetSchema())));
 
@@ -816,10 +816,10 @@ TEST_F(ECChangesetReaderTests, Update_TwoScalars)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -875,7 +875,7 @@ TEST_F(ECChangesetReaderTests, Update_TwoScalars)
 //     "Location.Coord.Lon") and never the bare struct names ("Location", "Location.Coord").
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Insert_NestedStruct)
+TEST_F(ChangesetReaderTests, Insert_NestedStruct)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nested_insert.ecdb", SchemaItem(GetExtendedSchema())));
 
@@ -898,10 +898,10 @@ TEST_F(ECChangesetReaderTests, Insert_NestedStruct)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -953,7 +953,7 @@ TEST_F(ECChangesetReaderTests, Insert_NestedStruct)
 //   - changedProps = {"Location.Street"} — Coord paths are absent.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Update_NestedStruct_StreetOnly)
+TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nested_upd_street.ecdb", SchemaItem(GetExtendedSchema())));
 
@@ -984,10 +984,10 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_StreetOnly)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1033,7 +1033,7 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_StreetOnly)
 //   - "Location.Coord" is NOT in changedProps (unlike Point2d/3d which collapse).
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Update_NestedStruct_CoordOnly)
+TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nested_upd_coord.ecdb", SchemaItem(GetExtendedSchema())));
 
@@ -1064,10 +1064,10 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_CoordOnly)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1116,7 +1116,7 @@ TEST_F(ECChangesetReaderTests, Update_NestedStruct_CoordOnly)
 //     property name (same as primitive arrays), not per-element paths.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Insert_StructArray)
+TEST_F(ChangesetReaderTests, Insert_StructArray)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_structarr_insert.ecdb", SchemaItem(GetExtendedSchema())));
 
@@ -1146,10 +1146,10 @@ TEST_F(ECChangesetReaderTests, Insert_StructArray)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1191,7 +1191,7 @@ TEST_F(ECChangesetReaderTests, Insert_StructArray)
 //   - changedProps = {"MetaTags"}, Title absent.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Update_StructArray)
+TEST_F(ChangesetReaderTests, Update_StructArray)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_structarr_update.ecdb", SchemaItem(GetExtendedSchema())));
 
@@ -1246,10 +1246,10 @@ TEST_F(ECChangesetReaderTests, Update_StructArray)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1290,7 +1290,7 @@ TEST_F(ECChangesetReaderTests, Update_StructArray)
 //   - The Pos3d field is emitted with X=0.0, Y=7.0, Z=8.0.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
+TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_partial_pts.ecdb", SchemaItem(GetSchema())));
 
@@ -1312,10 +1312,10 @@ TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1441,7 +1441,7 @@ TEST_F(ECChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
 //   - changedProps contains "Owner.Id" but not "Name", "Weight", etc.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Insert_NavProperty)
+TEST_F(ChangesetReaderTests, Insert_NavProperty)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nav_insert.ecdb", SchemaItem(GetSchema())));
 
@@ -1466,10 +1466,10 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1603,7 +1603,7 @@ TEST_F(ECChangesetReaderTests, Insert_NavProperty)
 // With a "ts_Widget" table filter only the Widget row must be visible.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Filter_ByTableName)
+TEST_F(ChangesetReaderTests, Filter_ByTableName)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_table.ecdb", SchemaItem(GetSchema())));
 
@@ -1619,10 +1619,10 @@ TEST_F(ECChangesetReaderTests, Filter_ByTableName)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     reader.SetTableFilters({"ts_Widget"});
 
@@ -1656,7 +1656,7 @@ TEST_F(ECChangesetReaderTests, Filter_ByTableName)
 // With a DbOpcode::Update filter only the update row must be visible.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Filter_ByOpcode)
+TEST_F(ChangesetReaderTests, Filter_ByOpcode)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_opcode.ecdb", SchemaItem(GetSchema())));
 
@@ -1678,10 +1678,10 @@ TEST_F(ECChangesetReaderTests, Filter_ByOpcode)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     reader.SetOpcodeFilters({DbOpcode::Update});
 
@@ -1717,7 +1717,7 @@ TEST_F(ECChangesetReaderTests, Filter_ByOpcode)
 // With a filter on the Widget's ECClassId only the Widget row must be visible.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Filter_ByECClassId)
+TEST_F(ChangesetReaderTests, Filter_ByECClassId)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_classid.ecdb", SchemaItem(GetSchema())));
 
@@ -1736,10 +1736,10 @@ TEST_F(ECChangesetReaderTests, Filter_ByECClassId)
     ECN::ECClassId widgetClassId = m_ecdb.Schemas().GetClassId("TestReadCS", "Widget");
     ASSERT_TRUE(widgetClassId.IsValid());
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     reader.SetECClassNameFilters({"TestReadCS:Widget"});
 
@@ -1774,7 +1774,7 @@ TEST_F(ECChangesetReaderTests, Filter_ByECClassId)
 // then clear the filter and verify all rows are visible again.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
+TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_filter_clear.ecdb", SchemaItem(GetSchema())));
 
@@ -1790,10 +1790,10 @@ TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
         auto cs = std::make_unique<TestCSChangeSet>();
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-        ECChangesetReader reader;
+        ChangesetReader reader;
         ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
             std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-            ECChangesetReader::PropertyFilter::All));
+            ChangesetReader::PropertyFilter::All));
 
         reader.SetTableFilters({"no_such_table"});
         // should not include the Widget row because of the filter
@@ -1806,10 +1806,10 @@ TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
         auto cs = std::make_unique<TestCSChangeSet>();
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-        ECChangesetReader reader;
+        ChangesetReader reader;
         ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
             std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-            ECChangesetReader::PropertyFilter::All));
+            ChangesetReader::PropertyFilter::All));
 
         reader.SetTableFilters({"no_such_table"});
         reader.ClearTableFilters();
@@ -1842,7 +1842,7 @@ TEST_F(ECChangesetReaderTests, Filter_ClearTableFilter)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
+TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     {
     Utf8CP overflowSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestOver" alias="to" version="01.00.00"
@@ -1889,10 +1889,10 @@ TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     // --- Changeset row 1: primary table (to_Entity) ---
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2006,10 +2006,10 @@ TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     auto cs2 = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs2.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     // Only the overflow table row must appear; primary table was not written.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2070,7 +2070,7 @@ TEST_F(ECChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, JoinedTable_Insert)
+TEST_F(ChangesetReaderTests, JoinedTable_Insert)
     {
     Utf8CP joinedSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestJoined" alias="tj" version="01.00.00"
@@ -2109,10 +2109,10 @@ TEST_F(ECChangesetReaderTests, JoinedTable_Insert)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     // --- Changeset row 1: primary table (tj_JBase) ---
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2202,7 +2202,7 @@ TEST_F(ECChangesetReaderTests, JoinedTable_Insert)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
+TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
     {
     Utf8CP overflowJoinedSchema = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestOverJoined" alias="tjo" version="01.00.00"
@@ -2245,10 +2245,10 @@ TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     // --- Changeset row 1: primary table (tjo_JBase) ---
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2371,7 +2371,7 @@ TEST_F(ECChangesetReaderTests, OverflowOfJoinedTable_Insert)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangesetReaderTests, ExistingTable_InsertAndUpdate)
+TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     {
     // Step 1: create the raw SQLite table BEFORE importing the EC schema.
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("csreader_existing.ecdb"));
@@ -2411,10 +2411,10 @@ TEST_F(ECChangesetReaderTests, ExistingTable_InsertAndUpdate)
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     // ExistingTable maps to exactly one physical table — exactly one changeset row.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2474,10 +2474,10 @@ TEST_F(ECChangesetReaderTests, ExistingTable_InsertAndUpdate)
     auto cs2 = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
 
-    ECChangesetReader reader;
+    ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
         std::unique_ptr<BeSQLite::ChangeStream>(cs2.release()), false,
-        ECChangesetReader::PropertyFilter::All));
+        ChangesetReader::PropertyFilter::All));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {

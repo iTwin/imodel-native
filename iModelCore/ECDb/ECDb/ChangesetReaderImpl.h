@@ -3,18 +3,18 @@
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "PreparedECChangesetReader.h"
+#include "PreparedChangesetReader.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-// ECChangesetReader::Impl — thin wrapper owning a PreparedECChangesetReader
+// ChangesetReader::Impl — thin wrapper owning a PreparedChangesetReader
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECChangesetReader::Impl final {
+struct ChangesetReader::Impl final {
 private:
-    using PropertyFilter = ECChangesetReader::PropertyFilter;
-    std::unique_ptr<PreparedECChangesetReader> m_prepared;
+    using PropertyFilter = ChangesetReader::PropertyFilter;
+    std::unique_ptr<PreparedChangesetReader> m_prepared;
 
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;

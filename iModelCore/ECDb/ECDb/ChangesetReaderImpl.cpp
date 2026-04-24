@@ -12,143 +12,195 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECChangesetReader::ECChangesetReader() : m_pimpl(new Impl()) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-ECChangesetReader::~ECChangesetReader() { delete m_pimpl; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenFile(ecdb, changesetFile, invert, propertyFilter);
+DbResult ChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter) {
+    if (!IsPrepared())
+        m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_prepared->OpenFile(file, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert, propertyFilter);
+DbResult ChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
+    if(!IsPrepared())
+        m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_prepared->Open(std::move(changeStream), invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter);
+DbResult ChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter) {
+    if(!IsPrepared())
+        m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_prepared->OpenGroup(files, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECChangesetReader::Close() { m_pimpl->Close(); }
-DbResult ECChangesetReader::Step() { return m_pimpl->Step(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::GetTableName(Utf8StringR tableName) const {
-    return m_pimpl->GetTableName(tableName);
+void ChangesetReader::Impl::Close() {
+    if (IsPrepared())
+        m_prepared->Close();
+    m_prepared = nullptr;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::GetOpcode(DbOpcode& opcode) const {
-    return m_pimpl->GetOpcode(opcode);
+BentleyStatus ChangesetReader::Impl::GetTableName(Utf8StringR tableName) const {
+    if (!IsPrepared())
+        return ERROR;
+    return m_prepared->GetTableName(tableName);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue const& ECChangesetReader::GetValue(Stage stage, int columnIndex) const {
-    return m_pimpl->GetValue(stage, columnIndex);
+BentleyStatus ChangesetReader::Impl::GetOpcode(DbOpcode& opcode) const {
+    if (!IsPrepared())
+        return ERROR;
+    return m_prepared->GetOpcode(opcode);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDb const* ECChangesetReader::GetECDb() const {
-    return  m_pimpl->GetECDb();
+DbResult ChangesetReader::Impl::Step() {
+    if (!IsPrepared())
+        return BE_SQLITE_ERROR;
+    return m_prepared->Step();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECChangesetReader::GetColumnCount(Stage stage) const {
-    return m_pimpl->GetColumnCount(stage);
+IECSqlValue const& ChangesetReader::Impl::GetValue(Stage stage, int columnIndex) const {
+    if (!IsPrepared()) {
+        LOG.error("A file or a txn or in memory changes must be opened before accessing values.");
+        return NoopECSqlValue::GetSingleton();
+    }
+    return m_prepared->GetValue(stage, columnIndex);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
-    return m_pimpl->GetInstanceKey(stage, key);
+ECDb const* ChangesetReader::Impl::GetECDb() const {
+    if (!IsPrepared()) {
+        LOG.error("A file or a txn or in memory changes must be opened before accessing values.");
+        return nullptr;
+    }
+    return &m_prepared->GetECDb();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::IsECTable(bool& isECTable) const {
-    return m_pimpl->IsECTable(isECTable);
+int ChangesetReader::Impl::GetColumnCount(Stage stage) const {
+    if (!IsPrepared()) {
+        LOG.error("A file or a txn or in memory changes must be opened before accessing values.");
+        return 0;
+    }
+    return m_prepared->GetColumnCount(stage);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
-    return m_pimpl->GetChangeFetchedPropertyNames(out);
+BentleyStatus ChangesetReader::Impl::GetInstanceKey(Stage stage, Utf8StringR key) const {
+    if (!IsPrepared())
+        return ERROR;
+    return m_prepared->GetInstanceKey(stage, key);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::IsIndirectChange(bool& isIndirect) const {
-    return m_pimpl->IsIndirectChange(isIndirect);
+BentleyStatus ChangesetReader::Impl::IsECTable(bool& isECTable) const {
+    if (!IsPrepared())
+        return ERROR;
+    return m_prepared->IsECTable(isECTable);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
-    return m_pimpl->SetTableFilters(tableFilters);
+BentleyStatus ChangesetReader::Impl::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+    if (!IsPrepared()) {
+        return ERROR;
+    }
+    return m_prepared->GetChangeFetchedPropertyNames(out);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
-    return m_pimpl->SetOpcodeFilters(opcodeFilters);
+BentleyStatus ChangesetReader::Impl::IsIndirectChange(bool& isIndirect) const {
+    if (!IsPrepared()) {
+        return ERROR;
+    }
+    return m_prepared->IsIndirectChange(isIndirect);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
-    return m_pimpl->SetECClassNameFilters(ecclassNameFilters);
+BentleyStatus ChangesetReader::Impl::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->SetTableFilters(tableFilters);
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::ClearTableFilters() {
-    return m_pimpl->ClearTableFilters();
+BentleyStatus ChangesetReader::Impl::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->SetOpcodeFilters(opcodeFilters);
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::ClearOpcodeFilters() {
-    return m_pimpl->ClearOpcodeFilters();
+BentleyStatus ChangesetReader::Impl::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->SetECClassNameFilters(ecclassNameFilters);
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECChangesetReader::ClearECClassNameFilters() {
-    return m_pimpl->ClearECClassNameFilters();
+BentleyStatus ChangesetReader::Impl::ClearTableFilters() {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->ClearTableFilters();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::Impl::ClearOpcodeFilters() {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->ClearOpcodeFilters();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::Impl::ClearECClassNameFilters() {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->ClearECClassNameFilters();
+    return SUCCESS;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

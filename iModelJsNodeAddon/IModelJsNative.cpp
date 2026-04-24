@@ -4869,50 +4869,50 @@ Napi::Value NativeECSqlValue::GetArrayIterator(NapiInfoCR info)
 // Projects the changeset reader into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeChangesetReader : BeObjectWrap<NativeChangesetReader>
+struct NativeSqliteChangesetReader : BeObjectWrap<NativeSqliteChangesetReader>
 {
 private:
     DEFINE_CONSTRUCTOR;
-    NativeChangeset m_changeset;
+    SqliteChangesetReader m_changeset;
 
 
 public:
-    NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info){}
-    ~NativeChangesetReader() {SetInDestructor();}
+    NativeSqliteChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeSqliteChangesetReader>(info){}
+    ~NativeSqliteChangesetReader() {SetInDestructor();}
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)       {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "ChangesetReader", {
-          InstanceMethod("close", &NativeChangesetReader::Close),
-          InstanceMethod("getColumnCount", &NativeChangesetReader::GetColumnCount),
-          InstanceMethod("getColumnValue", &NativeChangesetReader::GetColumnValue),
-          InstanceMethod("getColumnValueBinary", &NativeChangesetReader::GetColumnValueBinary),
-          InstanceMethod("getColumnValueDouble", &NativeChangesetReader::GetColumnValueDouble),
-          InstanceMethod("getColumnValueId", &NativeChangesetReader::GetColumnValueId),
-          InstanceMethod("getColumnValueInteger", &NativeChangesetReader::GetColumnValueInteger),
-          InstanceMethod("getColumnValueText", &NativeChangesetReader::GetColumnValueText),
-          InstanceMethod("getColumnValueType", &NativeChangesetReader::GetColumnValueType),
-          InstanceMethod("getDdlChanges", &NativeChangesetReader::GetDdlChanges),
-          InstanceMethod("getOpCode", &NativeChangesetReader::GetOpCode),
-          InstanceMethod("getPrimaryKeys", &NativeChangesetReader::GetPrimaryKeys),
-          InstanceMethod("getRow", &NativeChangesetReader::GetRow),
-          InstanceMethod("getTableName", &NativeChangesetReader::GetTableName),
-          InstanceMethod("hasRow", &NativeChangesetReader::HasRow),
-          InstanceMethod("isColumnValueNull", &NativeChangesetReader::IsColumnValueNull),
-          InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
-          InstanceMethod("getPrimaryKeyColumnIndexes", &NativeChangesetReader::GetPrimaryKeyColumnIndexes),
-          InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
-          InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
-          InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
-          InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
-          InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
-          InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
-          InstanceMethod("reset", &NativeChangesetReader::Reset),
-          InstanceMethod("step", &NativeChangesetReader::Step),
+        Napi::Function t = DefineClass(env, "SqliteChangesetReader", {
+          InstanceMethod("close", &NativeSqliteChangesetReader::Close),
+          InstanceMethod("getColumnCount", &NativeSqliteChangesetReader::GetColumnCount),
+          InstanceMethod("getColumnValue", &NativeSqliteChangesetReader::GetColumnValue),
+          InstanceMethod("getColumnValueBinary", &NativeSqliteChangesetReader::GetColumnValueBinary),
+          InstanceMethod("getColumnValueDouble", &NativeSqliteChangesetReader::GetColumnValueDouble),
+          InstanceMethod("getColumnValueId", &NativeSqliteChangesetReader::GetColumnValueId),
+          InstanceMethod("getColumnValueInteger", &NativeSqliteChangesetReader::GetColumnValueInteger),
+          InstanceMethod("getColumnValueText", &NativeSqliteChangesetReader::GetColumnValueText),
+          InstanceMethod("getColumnValueType", &NativeSqliteChangesetReader::GetColumnValueType),
+          InstanceMethod("getDdlChanges", &NativeSqliteChangesetReader::GetDdlChanges),
+          InstanceMethod("getOpCode", &NativeSqliteChangesetReader::GetOpCode),
+          InstanceMethod("getPrimaryKeys", &NativeSqliteChangesetReader::GetPrimaryKeys),
+          InstanceMethod("getRow", &NativeSqliteChangesetReader::GetRow),
+          InstanceMethod("getTableName", &NativeSqliteChangesetReader::GetTableName),
+          InstanceMethod("hasRow", &NativeSqliteChangesetReader::HasRow),
+          InstanceMethod("isColumnValueNull", &NativeSqliteChangesetReader::IsColumnValueNull),
+          InstanceMethod("isIndirectChange", &NativeSqliteChangesetReader::IsIndirectChange),
+          InstanceMethod("getPrimaryKeyColumnIndexes", &NativeSqliteChangesetReader::GetPrimaryKeyColumnIndexes),
+          InstanceMethod("openFile", &NativeSqliteChangesetReader::OpenFile),
+          InstanceMethod("openGroup", &NativeSqliteChangesetReader::OpenGroup),
+          InstanceMethod("writeToFile", &NativeSqliteChangesetReader::WriteToFile),
+          InstanceMethod("openLocalChanges", &NativeSqliteChangesetReader::OpenLocalChanges),
+          InstanceMethod("openInMemoryChanges", &NativeSqliteChangesetReader::OpenInMemoryChanges),
+          InstanceMethod("openTxn", &NativeSqliteChangesetReader::OpenTxn),
+          InstanceMethod("reset", &NativeSqliteChangesetReader::Reset),
+          InstanceMethod("step", &NativeSqliteChangesetReader::Step),
         });
 
-        exports.Set("ChangesetReader", t);
+        exports.Set("SqliteChangesetReader", t);
         SET_CONSTRUCTOR(t);
         }
     Napi::Value GetPrimaryKeyColumnIndexes(NapiInfoCR info)
@@ -5102,14 +5102,14 @@ public:
 };
 
 //=======================================================================================
-// Projects the ECChangesetReader class into JS.
+// Projects the ChangesetReader class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECChangesetReader : BeObjectWrap<NativeECChangesetReader>
+struct NativeChangesetReader : BeObjectWrap<NativeChangesetReader>
 {
 private:
     DEFINE_CONSTRUCTOR;
-    ECChangesetReader m_reader;
+    ChangesetReader m_reader;
 
     ECDb* ExtractECDb(NapiInfoCR info, Napi::Object dbObj)
         {
@@ -5134,39 +5134,39 @@ private:
         return Changes::Change::Stage::New;
         }
 
-    ECChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
+    ChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
         {
         if (modeInt < 0 || modeInt > 2)
             THROW_JS_TYPE_EXCEPTION("Invalid mode. Expected 0 (All_Properties), 1 (Bis_Element_Properties), or 2 (Instance_Key)");
-        return static_cast<ECChangesetReader::PropertyFilter>(modeInt);
+        return static_cast<ChangesetReader::PropertyFilter>(modeInt);
         }
 
 public:
-    NativeECChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeECChangesetReader>(info) {}
-    ~NativeECChangesetReader() { SetInDestructor(); }
+    NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
+    ~NativeChangesetReader() { SetInDestructor(); }
 
     static void Init(Napi::Env& env, Napi::Object exports)
         {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "ECChangesetReader", {
-            InstanceMethod("openFile",            &NativeECChangesetReader::OpenFile),
-            InstanceMethod("openGroup",           &NativeECChangesetReader::OpenGroup),
-            InstanceMethod("openLocalChanges",    &NativeECChangesetReader::OpenLocalChanges),
-            InstanceMethod("openInMemoryChanges", &NativeECChangesetReader::OpenInMemoryChanges),
-            InstanceMethod("openTxn",             &NativeECChangesetReader::OpenTxn),
-            InstanceMethod("close",               &NativeECChangesetReader::Close),
-            InstanceMethod("step",                &NativeECChangesetReader::Step),
-            InstanceMethod("getValue",            &NativeECChangesetReader::GetValue),
-            InstanceMethod("getChangeMetadata",     &NativeECChangesetReader::GetChangeMetadata),
-            InstanceMethod("setTableNameFilters",   &NativeECChangesetReader::SetTableNameFilters),
-            InstanceMethod("setOpCodeFilters",      &NativeECChangesetReader::SetOpCodeFilters),
-            InstanceMethod("setClassNameFilters",   &NativeECChangesetReader::SetClassNameFilters),
-            InstanceMethod("clearTableNameFilters", &NativeECChangesetReader::ClearTableNameFilters),
-            InstanceMethod("clearOpCodeFilters",   &NativeECChangesetReader::ClearOpCodeFilters),
-            InstanceMethod("clearClassNameFilters", &NativeECChangesetReader::ClearClassNameFilters),
+        Napi::Function t = DefineClass(env, "ChangesetReader", {
+            InstanceMethod("openFile",            &NativeChangesetReader::OpenFile),
+            InstanceMethod("openGroup",           &NativeChangesetReader::OpenGroup),
+            InstanceMethod("openLocalChanges",    &NativeChangesetReader::OpenLocalChanges),
+            InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
+            InstanceMethod("openTxn",             &NativeChangesetReader::OpenTxn),
+            InstanceMethod("close",               &NativeChangesetReader::Close),
+            InstanceMethod("step",                &NativeChangesetReader::Step),
+            InstanceMethod("getValue",            &NativeChangesetReader::GetValue),
+            InstanceMethod("getChangeMetadata",     &NativeChangesetReader::GetChangeMetadata),
+            InstanceMethod("setTableNameFilters",   &NativeChangesetReader::SetTableNameFilters),
+            InstanceMethod("setOpCodeFilters",      &NativeChangesetReader::SetOpCodeFilters),
+            InstanceMethod("setClassNameFilters",   &NativeChangesetReader::SetClassNameFilters),
+            InstanceMethod("clearTableNameFilters", &NativeChangesetReader::ClearTableNameFilters),
+            InstanceMethod("clearOpCodeFilters",   &NativeChangesetReader::ClearOpCodeFilters),
+            InstanceMethod("clearClassNameFilters", &NativeChangesetReader::ClearClassNameFilters),
 
         });
-        exports.Set("ECChangesetReader", t);
+        exports.Set("ChangesetReader", t);
         SET_CONSTRUCTOR(t);
         }
 
@@ -5313,7 +5313,7 @@ public:
         // filling data
         BeJsNapiObject out(info.Env());
         BeJsValue rowJson = out["data"];
-        if (adaptor.RenderRowAsObject(rowJson, ECChangesetRow(m_reader, stageEnum)) != SUCCESS)
+        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stageEnum)) != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
         // filling instance key
         Utf8String instanceKey;
@@ -7739,8 +7739,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeRevisionUtility::Init(env, exports);
     NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
+    NativeSqliteChangesetReader::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
-    NativeECChangesetReader::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);
     NativeECSqlBinder::Init(env, exports);

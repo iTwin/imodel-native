@@ -1507,7 +1507,7 @@ export declare namespace IModelJsNative {
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
 
-  class ChangesetReader {
+  class SqliteChangesetReader {
     public close(): void;
     public getColumnCount(): number;
     public getColumnValue(col: number, stage: number): Uint8Array | number | string | null | undefined;
@@ -1536,13 +1536,13 @@ export declare namespace IModelJsNative {
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
-  interface ECChangesetRowValue {
+  interface ChangesetRowValue {
     data: any;
     key: string;
     changeFetchedPropNames: string[]
   }
 
-  class ECChangesetReader {
+  class ChangesetReader {
     constructor();
     public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
     public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number): void;
@@ -1551,7 +1551,7 @@ export declare namespace IModelJsNative {
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number): void;
     public close(): void;
     public step(): boolean;
-    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ECChangesetRowValue | undefined;
+    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ChangesetRowValue | undefined;
     public getChangeMetadata(): { tableName: string, opCode: DbOpcode, isIndirectChange: boolean, isECTable: boolean };
     public setTableNameFilters(tableNames: string[]): void;
     public setOpCodeFilters(ops: string[]): void;
