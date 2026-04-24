@@ -802,7 +802,7 @@ export declare namespace IModelJsNative {
     public pullMergeRebaseAbortTxn(): void
     public pullMergeRebaseBegin(): TxnIdString[];
     public pullMergeRebaseEnd(): void;
-    public pullMergeReverseLocalChanges(onReverse?: (txnId: TxnIdString, txnType: TxnProps["type"]) => void): TxnIdString[];
+    public pullMergeReverseLocalChanges(onReverse?: (txnId: TxnIdString, txnType: string) => void): TxnIdString[];
     public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
     public stashRestore(stashFile: string): void;
     public getPendingTxnsHash(includeReversedTxns: boolean): string;
