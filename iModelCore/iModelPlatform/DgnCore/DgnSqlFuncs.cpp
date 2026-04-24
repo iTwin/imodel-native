@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include "GeomStreamVTab.h"
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -849,6 +850,9 @@ void BisCoreDomain::_OnDgnDbOpened(DgnDbR db) const
 
     for (RTreeMatchFunction* func : s_matchFuncs)
         db.AddRTreeMatchFunction(*func);
+
+    // Register GeometryStream virtual table module
+    (new GeomStreamModule(db))->Register();
     }
 
 #ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup iModelSqlFunctions @{  at the top of the file
