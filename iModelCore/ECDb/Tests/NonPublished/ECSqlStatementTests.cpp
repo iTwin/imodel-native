@@ -11218,6 +11218,24 @@ TEST_F(ECSqlStatementTestFixture, CrossJoinTest)
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person CROSS JOIN ts.Identifier"));
         }
+    if ("CROSS JOIN with ON clause filtering by matching PersonalID = PersonId")
+        {
+        auto expected = JsonValue(R"json([
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A1","PersonalID":"A1","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x4"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A2","PersonalID":"A2","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x5"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A3","PersonalID":"A3","Primary":"A3Primary","Random":123,"Secondary":"A3Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x6"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person p CROSS JOIN ts.Identifier i ON p.PersonalID = i.PersonId"));
+        }
+    if ("CROSS JOIN with ON clause filtering by numeric condition")
+        {
+        auto expected = JsonValue(R"json([
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A1","PersonalID":"A1","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x4"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A1","PersonalID":"A2","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x4"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A1","PersonalID":"A3","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x4"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person p CROSS JOIN ts.Identifier i ON i.Random > 700"));
+        }
     }
 
 //---------------------------------------------------------------------------------------

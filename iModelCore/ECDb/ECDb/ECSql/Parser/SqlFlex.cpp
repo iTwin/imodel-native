@@ -1,4 +1,4 @@
-#line 2 "ECDb\\ECSql\\parser\\SQLflex.l"
+#line 2 "/Users/affan.khan/bsw/git-main/src/imodel-native/iModelCore/ECDb/Scripts/../ECDb/ECSql/Parser/sqlflex.l"
 //------------------------------------------------------------
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -2703,7 +2703,6 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 
 
 
-    
 #ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
  * down here because we want the user's section 1 to have been scanned first.
@@ -2711,7 +2710,6 @@ static sal_Int32    parseString(yyscan_t yyscanner);
  */
 #include <unistd.h>
 #endif
-    
 
 
 
@@ -5176,10 +5174,12 @@ sal_Int32 parseString (yyscan_t yyscanner)
     Utf8String sBuffer;
     sBuffer.reserve(256);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    int s = 1;
     while (!checkeof (ch = yyinput (yyscanner)))
     {
     if (ch == delim)
         {
+        s++;
         ch = yyinput (yyscanner);
         if (checkeof (ch))
         {

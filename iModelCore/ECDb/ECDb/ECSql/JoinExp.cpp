@@ -14,6 +14,26 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+CrossJoinExp::CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<JoinConditionExp> joinCondition)
+    : JoinExp(Type::CrossJoin, ECSqlJoinType::CrossJoin, std::move(from), std::move(to))
+    {
+    if (joinCondition != nullptr)
+        m_nJoinConditionIndex = AddChild(std::move(joinCondition));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+JoinConditionExp const* CrossJoinExp::GetJoinCondition() const
+    {
+    if (m_nJoinConditionIndex == 0)
+        return nullptr;
+    return GetChild<JoinConditionExp>(m_nJoinConditionIndex);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void CrossJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: CrossJoinExp
     val.SetEmptyObject();
@@ -21,6 +41,8 @@ void CrossJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     val["type"] = ExpHelper::ToSql(ECSqlJoinType::CrossJoin);
     GetFromClassRef().ToJson(val["from"], fmt);
     GetToClassRef().ToJson(val["to"], fmt);
+    if (GetJoinCondition() != nullptr)
+        GetJoinCondition()->ToJson(val["on"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -28,6 +50,8 @@ void CrossJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
 //+---------------+---------------+---------------+---------------+---------------+--------
 void CrossJoinExp::_ToECSql(ECSqlRenderContext& ctx) const {
     ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" CROSS JOIN ").AppendToECSql(GetToClassRef());
+    if (GetJoinCondition() != nullptr)
+        ctx.AppendToECSql(" ").AppendToECSql(*GetJoinCondition());
 }
 
 //*************************** JoinExp ******************************************

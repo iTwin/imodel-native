@@ -87,6 +87,7 @@ struct JoinSpecExp : Exp
         virtual ~JoinSpecExp() {}
     };
 
+struct JoinConditionExp;
 
 //=======================================================================================
 //! @bsiclass
@@ -94,13 +95,14 @@ struct JoinSpecExp : Exp
 struct CrossJoinExp final : JoinExp
     {
     private:
+        size_t m_nJoinConditionIndex = 0;
+
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "CrossJoin"; }
     public:
-        CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
-            :JoinExp(Type::CrossJoin, ECSqlJoinType::CrossJoin, std::move(from), std::move(to))
-            {}
+        CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<JoinConditionExp> joinCondition = nullptr);
+        JoinConditionExp const* GetJoinCondition() const;
     };
 
 //=======================================================================================
