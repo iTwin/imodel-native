@@ -154,6 +154,32 @@ struct AsciiCaseInsensitiveCompare {
     ECDB_EXPORT bool operator()(Utf8CP lhs, Utf8CP rhs) const;
 };
 
+struct ECDb; // forward declare for SecondaryConnection
+
+//=======================================================================================
+//! Abstract wrapper for a secondary database connection.
+//! Subclasses hold the concrete db type (ECDb, DgnDb, etc.) and manage its lifetime.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SecondaryConnection {
+    virtual ~SecondaryConnection() = default;
+    virtual ECDb& GetDb() = 0;
+    virtual ECDb const& GetDb() const = 0;
+};
+
+//=======================================================================================
+//! Template wrapper that holds a secondary connection as a value member of the specified type.
+//! For ECDb: TypedSecondaryConnection<ECDb>.
+//! For DgnDb: TypedSecondaryConnection<DgnDb> — the DgnDb open path registers all domain SQL functions.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+template<typename T>
+struct TypedSecondaryConnection : SecondaryConnection {
+    T m_db;
+    ECDb& GetDb() override { return m_db; }
+    ECDb const& GetDb() const override { return m_db; }
+};
+
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
 //!
@@ -464,6 +490,14 @@ public:
 
     //! Return all registered function
     ECDB_EXPORT bvector<DbFunction*> GetSqlFunctions() const;
+
+    //! Creates and opens a secondary connection for concurrent query workers.
+    //! The default implementation creates a TypedSecondaryConnection<ECDb>.
+    //! Subclasses override to create their own type (e.g. DgnDb creates TypedSecondaryConnection<DgnDb>).
+    //! @param[out] secondary  Receives the newly created and opened secondary connection wrapper
+    //! @param[in]  params     Open params for the secondary connection
+    //! @return DbResult indicating success or failure
+    ECDB_EXPORT virtual DbResult _CreateSecondaryConnection(std::unique_ptr<SecondaryConnection>& secondary, Db::OpenParams const& params) const;
 
     ECDB_EXPORT void AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const;
     using Db::AddAppData;

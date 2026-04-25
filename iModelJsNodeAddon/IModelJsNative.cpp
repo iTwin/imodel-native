@@ -455,9 +455,7 @@ public:
         }
     }
     void ConcurrentQueryExecute(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
-        REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(m_ecdb, info);
     }
     void ClearECDbCache(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -483,17 +481,14 @@ public:
         return JsInterop::DeleteInstance(db, info);
     }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
-        if (info.Length() > 0 && info[0].IsObject()) {
-            Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), inConf);
-        }
-        return JsInterop::ConcurrentQueryResetConfig(Env());
+        return JsInterop::ConcurrentQueryResetConfig(info);
     }
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         ConcurrentQueryMgr::Shutdown(m_ecdb);
     }
     void CloseDbIfOpen() {
         if (m_ecdb.IsDbOpen()) {
+            ConcurrentQueryMgr::Shutdown(m_ecdb);
             m_ecdb.AbandonChanges();
             m_ecdb.RemoveFunction(HexStrSqlFunction::GetSingleton());
             m_ecdb.RemoveFunction(StrSqlFunction::GetSingleton());
@@ -1150,6 +1145,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             return;
 
         DgnDbPtr dgndb = m_dgndb;
+        ConcurrentQueryMgr::Shutdown(*dgndb);
         ClearDgnDb();
         dgndb->CloseDb();
 
@@ -2882,17 +2878,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
     void ConcurrentQueryExecute(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
-        REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), info);
     }
 
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
-        if (info.Length() > 0 && info[0].IsObject()) {
-            Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), inConf);
-        }
-        return JsInterop::ConcurrentQueryResetConfig(Env());
+        return JsInterop::ConcurrentQueryResetConfig(info);
     }
 
     void ConcurrentQueryShutdown(NapiInfoCR info) {

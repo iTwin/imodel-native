@@ -328,13 +328,13 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
     struct Future final {
         struct Impl; //std::future not compitable with /clr
         private:
-            Impl* m_impl;
+            std::unique_ptr<Impl> m_impl;
             Future(Future&) = delete;
             Future& operator =( const Future&) = delete;
         public:
             ECDB_EXPORT Future(Future&&);
             ECDB_EXPORT Future& operator =(Future&&);
-            Future(Impl* imp): m_impl(imp){}
+            Future(std::unique_ptr<Impl> imp): m_impl(std::move(imp)){}
             ECDB_EXPORT ~Future();
             ECDB_EXPORT void Cancel();
             ECDB_EXPORT void Wait();

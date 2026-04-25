@@ -576,8 +576,10 @@ public:
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
+    static void ConcurrentQueryExecute(ECDbCR ecdb, NapiInfoCR info);
     static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, Napi::Object);
     static Napi::Object  ConcurrentQueryResetConfig(Napi::Env);
+    static Napi::Value   ConcurrentQueryResetConfig(NapiInfoCR info);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);
