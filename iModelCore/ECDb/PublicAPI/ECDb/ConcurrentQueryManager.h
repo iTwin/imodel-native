@@ -334,7 +334,7 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         public:
             ECDB_EXPORT Future(Future&&);
             ECDB_EXPORT Future& operator =(Future&&);
-            Future(std::unique_ptr<Impl> imp): m_impl(std::move(imp)){}
+            ECDB_EXPORT Future(std::unique_ptr<Impl> imp);
             ECDB_EXPORT ~Future();
             ECDB_EXPORT void Cancel();
             ECDB_EXPORT void Wait();
