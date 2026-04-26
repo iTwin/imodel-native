@@ -841,18 +841,15 @@ DoubleGenerator (double a = 0.0, double b = 1.0)
 
 double Next ()
     {
-    // we know that rand_s() returns full 32-bit values
     unsigned int randValue0, randValue1, randValue2;
     BeStringUtilities::Rand(&randValue0);
     BeStringUtilities::Rand(&randValue1);
     BeStringUtilities::Rand(&randValue2);
-    // Note: Original rand() naturally returned 15-bit values (RAND_MAX=32767)
-    // but as rand_s() returns full 32-bit values, hence masking is needed
-    // Mask each value to 15 bits to create a composite 45-bit random number
-    // This ensures uniform distribution over [0,1) when divided by 2^45 later
-    uint64_t u0 = randValue0 & 0x7FFF;  // Use bits 0-14 (15 bits)
-    uint64_t u1 = randValue1 & 0x7FFF;  // Use bits 15-29 after (<< 15) bits
-    uint64_t u2 = randValue2 & 0x7FFF;  // Use bits 30-44 after (<< 30) bits
+    // NOTE: Originally u0,u1,u2 were the output of rand(), which returns 15-bit values in [0, RAND_MAX=0x7fff].
+    // Now we use the first 15 bits of rand_s(), which returns 32-bit values in [0, UINT_MAX=0xffffffff].
+    uint64_t u0 = randValue0 & 0x7FFF;
+    uint64_t u1 = randValue1 & 0x7FFF;
+    uint64_t u2 = randValue2 & 0x7FFF;
     u1 = u1 << 15;
     u2 = u2 << 30;
     m_bits[0] |= u0;
