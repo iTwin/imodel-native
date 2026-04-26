@@ -211,7 +211,6 @@ private:
     BeSQLite::BeBriefcaseBasedIdSequence m_elementIdSequence;
     int m_purgeOperation = 0;
 
-
     void Destroy();
     SchemaStatus PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
     void OnBisCoreSchemaImported(CreateDgnDbParams const& params);
