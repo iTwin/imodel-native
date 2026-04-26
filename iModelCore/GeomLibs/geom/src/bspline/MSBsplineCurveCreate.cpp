@@ -305,11 +305,6 @@ MSBsplineStatus MSBsplineCurve::AllocateKnots (int count, double const * data)
     }
 
 
-
-
-
-
-
 /**
 RowMajorBandMatrix
 **/
