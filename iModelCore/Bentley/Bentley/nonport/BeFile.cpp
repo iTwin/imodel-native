@@ -103,11 +103,11 @@ void            BeFile::Swap(BeFile& f2)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int BeFile::Fscanf(FILE* stream, const char* format, ...)
-{
+    {
     va_list args;
     va_start(args, format);
     return fscanf_s(stream, format, args);
-}
+    }
 
 #if defined (__unix__)
 /*---------------------------------------------------------------------------------**//**
