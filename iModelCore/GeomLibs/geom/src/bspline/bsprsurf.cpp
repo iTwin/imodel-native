@@ -625,22 +625,25 @@ MSBsplineSurface    *surface
     spP = surface->poles + offset;
     swP = surface->weights + offset;
 
+    int numBezierPatchPolesInTail = surface->uParams.order * surface->vParams.order;
+
     if (surface->rational)
         {
         for (j=0; j < surface->vParams.order;
-             j++,
+             j++, numBezierPatchPolesInTail -= surface->uParams.order,
              spP += surface->uParams.numPoles, swP += surface->uParams.numPoles,
              pP+=surface->uParams.order, wP+=surface->uParams.order)
             {
-            BeStringUtilities::Memcpy (pP, surface->uParams.order * sizeof(DPoint3d),spP, surface->uParams.order * sizeof(DPoint3d));
-            BeStringUtilities::Memcpy (wP, surface->uParams.order * sizeof(double), swP, surface->uParams.order * sizeof(double));
+            BeStringUtilities::Memcpy (pP, numBezierPatchPolesInTail * sizeof(DPoint3d),spP, surface->uParams.order * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (wP, numBezierPatchPolesInTail * sizeof(double), swP, surface->uParams.order * sizeof(double));
             }
         }
     else
         {
         for (j=0; j < surface->vParams.order;
-             j++, spP += surface->uParams.numPoles, pP+=surface->uParams.order)
-            BeStringUtilities::Memcpy (pP, surface->uParams.order * sizeof(DPoint3d), spP, surface->uParams.order * sizeof(DPoint3d));
+             j++, numBezierPatchPolesInTail -= surface->uParams.order,
+             spP += surface->uParams.numPoles, pP+=surface->uParams.order)
+            BeStringUtilities::Memcpy (pP, numBezierPatchPolesInTail * sizeof(DPoint3d), spP, surface->uParams.order * sizeof(DPoint3d));
         }
     }
 
@@ -1293,7 +1296,7 @@ double                  processTol
 
         /* Compute the u knot vector */
         BeStringUtilities::Memcpy (surface->uKnots,
-            bspknot_numberKnots (numU, cvArray[0]->params.order, cvArray[0]->params.closed) * sizeof(double),
+            surface->GetNumUKnots() * sizeof(double),
             cvArray[0]->knots,
             bspknot_numberKnots (numU, cvArray[0]->params.order, cvArray[0]->params.closed) * sizeof(double));
 

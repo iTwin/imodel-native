@@ -1901,7 +1901,7 @@ size_t RowMajorMatrix::GetAll (double * data, size_t maxCount, bool transpose) c
         }
     else
         {
-        BeStringUtilities::Memcpy(data, sizeof(double) * myCount, &at(0), sizeof(double) * myCount);
+        BeStringUtilities::Memcpy(data, sizeof(double) * maxCount, &at(0), sizeof(double) * myCount);
         }
     return myCount;
     }

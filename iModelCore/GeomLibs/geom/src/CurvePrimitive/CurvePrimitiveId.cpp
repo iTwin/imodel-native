@@ -63,24 +63,28 @@ CurvePrimitiveId::CurvePrimitiveId (CurvePrimitiveId::Type type, CurveTopologyId
 void CurvePrimitiveId::Store (bvector<uint8_t>& data) const
     {
     size_t hdrSize = (sizeof(m_type) + sizeof(m_geomStreamIndex) + sizeof(m_partStreamIndex));
-
-    data.resize(hdrSize + m_idData.size());
+    size_t dataSize = hdrSize + m_idData.size();
+    data.resize(dataSize);
 
     uint8_t* p = &data.front();
+    size_t tailSize = dataSize;
 
-    BeStringUtilities::Memcpy(p, sizeof(m_type), &m_type, sizeof(m_type));
+    BeStringUtilities::Memcpy(p, tailSize, &m_type, sizeof(m_type));
     p += sizeof(m_type);
+    tailSize -= sizeof(m_type);
 
-    BeStringUtilities::Memcpy(p, sizeof(m_geomStreamIndex), &m_geomStreamIndex, sizeof(m_geomStreamIndex));
+    BeStringUtilities::Memcpy(p, tailSize, &m_geomStreamIndex, sizeof(m_geomStreamIndex));
     p += sizeof(m_geomStreamIndex);
+    tailSize -= sizeof(m_geomStreamIndex);
 
-    BeStringUtilities::Memcpy(p, sizeof(m_partStreamIndex), &m_partStreamIndex, sizeof(m_partStreamIndex));
+    BeStringUtilities::Memcpy(p, tailSize, &m_partStreamIndex, sizeof(m_partStreamIndex));
     p += sizeof(m_partStreamIndex);
+    tailSize -= sizeof(m_partStreamIndex);
 
     if (0 == m_idData.size())
         return;
 
-    BeStringUtilities::Memcpy(p, m_idData.size(), &m_idData.front(), m_idData.size());
+    BeStringUtilities::Memcpy(p, tailSize, &m_idData.front(), m_idData.size());
     }
 
 /*---------------------------------------------------------------------------------**//**

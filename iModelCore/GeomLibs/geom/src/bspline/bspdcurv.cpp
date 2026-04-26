@@ -310,14 +310,14 @@ int             dimension
         }
 
     /* Assign value to newPoles array */
-    BeStringUtilities::Memcpy (*newPoles, index * sizeof(DPoint3d), oldPoles, index * sizeof (DPoint3d));
-    BeStringUtilities::Memcpy (*newPoles+index, (v - l - index + 1) * sizeof(DPoint3d), xtmp, (v-l-index+1) * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (*newPoles, *newNumPoles * sizeof(DPoint3d), oldPoles, index * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (*newPoles+index, (*newNumPoles - index) * sizeof(DPoint3d), xtmp, (v-l-index+1) * sizeof (DPoint3d));
     BeStringUtilities::Memcpy (*newPoles+v-l+1, (*newNumPoles - (v - l + 1)) * sizeof(DPoint3d), oldPoles+v-l, (*newNumPoles - (v-l+1)) * sizeof (DPoint3d));
     if (dimension)
         {
         d = dimension * sizeof(double);
-        BeStringUtilities::Memcpy (*auxNewPoles, index * d, auxOldPoles, index * d);
-        BeStringUtilities::Memcpy (*auxNewPoles+index*dimension, (v - l - index + 1) * d, auxXtmp, (v-l-index+1) * d);
+        BeStringUtilities::Memcpy (*auxNewPoles, *newNumPoles * d, auxOldPoles, index * d);
+        BeStringUtilities::Memcpy (*auxNewPoles+index*dimension, (*newNumPoles - index) * d, auxXtmp, (v-l-index+1) * d);
         BeStringUtilities::Memcpy (*auxNewPoles+(v-l+1)*dimension, (*newNumPoles - (v - l + 1)) * d, auxOldPoles+(v-l)*dimension,
                                    (*newNumPoles - (v-l+1)) * d);
         }
@@ -958,7 +958,7 @@ int             dimension
     if (dimension)
         {
         allocSize = dimension * sizeof(double);
-        BeStringUtilities::Memcpy (*auxGPolesP, allocSize, auxCurvePoles, allocSize);
+        BeStringUtilities::Memcpy (*auxGPolesP, newNumPoles * allocSize, auxCurvePoles, allocSize);
         BeStringUtilities::Memcpy (*auxGPolesP + (newNumPoles-1)*dimension, allocSize,
                 auxCurvePoles + (numCurveKnots+order-1)*dimension, allocSize);
         }
@@ -1967,7 +1967,7 @@ DPoint3d *pPoint1
         }
     else
         {
-        BeStringUtilities::Memcpy (xyz, numArrayEntry * sizeof(DPoint3d), xyz0, numArrayEntry * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (xyz, sizeof xyz, xyz0, numArrayEntry * sizeof(DPoint3d));
         }
     *pPoint2   = xyz[0];
     tangent2   = xyz[1];

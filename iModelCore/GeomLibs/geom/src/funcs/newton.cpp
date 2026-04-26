@@ -853,7 +853,7 @@ int        order
         if (order > sMaxCurveOrder)
             order = sMaxCurveOrder;
         mOrder = order;
-        BeStringUtilities::Memcpy (mPoles, order * sizeof (DPoint4d), pPoles, order * sizeof (DPoint4d));
+        BeStringUtilities::Memcpy (mPoles, sizeof mPoles, pPoles, order * sizeof (DPoint4d));
         }
     double weightTol = 1.0e-15;
     mbIsUnitWeight = true;

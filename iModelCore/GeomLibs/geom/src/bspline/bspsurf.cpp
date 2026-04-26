@@ -991,11 +991,11 @@ MSBsplineSurfaceCP   in
         return ERROR;
 
     BeStringUtilities::Memcpy (tmp.uKnots,
-        bspknot_numberKnots (in->vParams.numPoles, in->vParams.order, in->vParams.closed) * sizeof(double),
+        tmp.GetNumUKnots() * sizeof(double),
         in->vKnots,
         bspknot_numberKnots (in->vParams.numPoles, in->vParams.order, in->vParams.closed) * sizeof(double));
     BeStringUtilities::Memcpy (tmp.vKnots,
-        bspknot_numberKnots (in->uParams.numPoles, in->uParams.order, in->uParams.closed) * sizeof(double),
+        tmp.GetNumVKnots() * sizeof(double),
         in->uKnots,
         bspknot_numberKnots (in->uParams.numPoles, in->uParams.order, in->uParams.closed) * sizeof(double));
 
@@ -1128,7 +1128,7 @@ int                 direction
                                         1, in->uParams.numPoles);
 
         BeStringUtilities::Memcpy (tmp.vKnots,
-            bspknot_numberKnots (in->vParams.numPoles, in->vParams.order, in->vParams.closed) * sizeof(double),
+            tmp.GetNumVKnots() * sizeof(double),
             in->vKnots,
             bspknot_numberKnots (in->vParams.numPoles, in->vParams.order, in->vParams.closed) * sizeof(double));
 
@@ -1146,7 +1146,7 @@ int                 direction
                                         in->uParams.numPoles, 1);
 
         BeStringUtilities::Memcpy (tmp.uKnots,
-            bspknot_numberKnots(in->uParams.numPoles, in->uParams.order, in->uParams.closed) * sizeof(double),
+            tmp.GetNumUKnots() * sizeof(double),
             in->uKnots,
             bspknot_numberKnots (in->uParams.numPoles, in->uParams.order, in->uParams.closed) * sizeof(double));
 
@@ -1289,15 +1289,16 @@ DPoint2dP          final
         return status;
 
     BeStringUtilities::Memcpy (curve.knots,
-        bspknot_numberKnots(curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double),
+        curve.GetNumKnots() * sizeof(double),
         surface->uKnots,
         bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
     poles   = surface->poles;
     weights = surface->weights;
+    size_t numPolesInTail = 0;
 
     for (i=0; i < surface->vParams.numPoles;
-         i++, poles += surface->uParams.numPoles, pP += tmpSurf.uParams.numPoles)
+         i++, poles += surface->uParams.numPoles, pP += tmpSurf.uParams.numPoles, numPolesInTail -= tmpSurf.uParams.numPoles)
         {
         BeStringUtilities::Memcpy (curve.poles, curve.params.numPoles * sizeof(DPoint3d), poles, curve.params.numPoles * sizeof(DPoint3d));
         if (curve.rational)
@@ -1316,20 +1317,21 @@ DPoint2dP          final
             if (SUCCESS != (status = bspsurf_allocateSurface (&tmpSurf)))
                 goto wrapup;
             BeStringUtilities::Memcpy (tmpSurf.uKnots,
-                bspknot_numberKnots (tmpSurf.uParams.numPoles, tmpSurf.uParams.order, tmpSurf.uParams.closed) * sizeof(double),
+                tmpSurf.GetNumUKnots() * sizeof(double),
                 segCurv.knots,
                 bspknot_numberKnots (tmpSurf.uParams.numPoles, tmpSurf.uParams.order, tmpSurf.uParams.closed) * sizeof(double));
             BeStringUtilities::Memcpy (tmpSurf.vKnots,
-                bspknot_numberKnots (tmpSurf.vParams.numPoles, tmpSurf.vParams.order, tmpSurf.vParams.closed) * sizeof(double),
+                tmpSurf.GetNumVKnots() * sizeof(double),
                 surface->vKnots,
                 bspknot_numberKnots (tmpSurf.vParams.numPoles, tmpSurf.vParams.order, tmpSurf.vParams.closed) * sizeof(double));
             pP = tmpSurf.poles;
             wP = tmpSurf.weights;
+            numPolesInTail = tmpSurf.GetNumPoles();
             }
-        BeStringUtilities::Memcpy (pP, tmpSurf.uParams.numPoles * sizeof(DPoint3d), segCurv.poles, tmpSurf.uParams.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (pP, numPolesInTail * sizeof(DPoint3d), segCurv.poles, tmpSurf.uParams.numPoles * sizeof(DPoint3d));
         if (tmpSurf.rational)
             {
-            BeStringUtilities::Memcpy (wP, tmpSurf.uParams.numPoles * sizeof(double), segCurv.weights, tmpSurf.uParams.numPoles * sizeof(double));
+            BeStringUtilities::Memcpy (wP, numPolesInTail * sizeof(double), segCurv.weights, tmpSurf.uParams.numPoles * sizeof(double));
             weights += surface->uParams.numPoles;
             wP += tmpSurf.uParams.numPoles;
             }
@@ -1345,7 +1347,7 @@ DPoint2dP          final
         return status;
 
     BeStringUtilities::Memcpy (curve.knots,
-        bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double),
+        curve.GetNumKnots() * sizeof(double),
         tmpSurf.vKnots,
         bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
@@ -1374,11 +1376,11 @@ DPoint2dP          final
             if (SUCCESS != (status = bspsurf_allocateSurface (&segSurf)))
                 goto wrapup;
             BeStringUtilities::Memcpy (segSurf.uKnots,
-                bspknot_numberKnots (segSurf.uParams.numPoles, segSurf.uParams.order, segSurf.uParams.closed) * sizeof(double),
+                segSurf.GetNumUKnots() * sizeof(double),
                 tmpSurf.uKnots,
                 bspknot_numberKnots (segSurf.uParams.numPoles, segSurf.uParams.order, segSurf.uParams.closed) * sizeof(double));
             BeStringUtilities::Memcpy (segSurf.vKnots,
-                bspknot_numberKnots (segSurf.vParams.numPoles, segSurf.vParams.order, segSurf.vParams.closed) * sizeof(double),
+                segSurf.GetNumVKnots() * sizeof(double),
                 segCurv.knots,
                 bspknot_numberKnots (segSurf.vParams.numPoles, segSurf.vParams.order, segSurf.vParams.closed) * sizeof(double));
             }
@@ -1461,8 +1463,6 @@ DPoint2dP          final
             status = ERROR;     // ugh... it's an empty result, not necessarily an error.  But empty surfaces make apps choke, so call it an error.
             }
         }
-
-
 
     if (segment == surface)
         bspsurf_freeSurface (segment);
@@ -3413,7 +3413,7 @@ MSBsplineCurve      *curve2
 
     /* Set the full knot vectors */
     BeStringUtilities::Memcpy (surface->uKnots,
-        bspknot_numberKnots (surface->uParams.numPoles, surface->uParams.order, surface->uParams.closed) * sizeof(double),
+        surface->GetNumUKnots() * sizeof(double),
         curve1->knots,
         bspknot_numberKnots (surface->uParams.numPoles, surface->uParams.order, surface->uParams.closed) * sizeof(double));
 

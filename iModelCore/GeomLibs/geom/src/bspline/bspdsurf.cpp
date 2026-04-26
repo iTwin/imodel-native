@@ -262,7 +262,7 @@ double              sweep           /* => Sweep angle */
 
     /* Set the knot vectors */
     BeStringUtilities::Memcpy (surface->uKnots,
-            bspknot_numberKnots(curve->params.numPoles, curve->params.order, curve->params.closed) * sizeof(double),
+            surface->GetNumUKnots() * sizeof(double),
             curve->knots,
             bspknot_numberKnots (curve->params.numPoles, curve->params.order,
                                  curve->params.closed) * sizeof (double));
@@ -315,7 +315,7 @@ DPoint3dCP          delta
         }
 
     BeStringUtilities::Memcpy (surface->uKnots,
-        bspknot_numberKnots(uPoles, surface->uParams.order, surface->uParams.closed) * sizeof(double),
+        surface->GetNumUKnots() * sizeof(double),
         curve->knots,
         bspknot_numberKnots (uPoles, surface->uParams.order, surface->uParams.closed) * sizeof(double));
     surface->vKnots[0] = surface->vKnots[1] = 0.0;
@@ -625,16 +625,16 @@ MSBsplineCurve      *curves            /* bounding B-spline curve */
         goto wrapup;
 
     /* Load knot vectors */
-    BeStringUtilities::Memcpy (surface->vKnots, (n + k) * sizeof(double), p[0].knots, (n+k) * sizeof(double));
-    BeStringUtilities::Memcpy (surface->uKnots, (m + l) * sizeof(double), q[0].knots, (m+l) * sizeof(double));
+    BeStringUtilities::Memcpy (surface->vKnots, surface->GetNumVKnots() * sizeof(double), p[0].knots, (n+k) * sizeof(double));
+    BeStringUtilities::Memcpy (surface->uKnots, surface->GetNumUKnots() * sizeof(double), q[0].knots, (m+l) * sizeof(double));
 
     if (rationalSurface)
         {
-        BeStringUtilities::Memcpy (surface->weights, n * m * sizeof(double), weights, n*m*sizeof(double));
+        BeStringUtilities::Memcpy (surface->weights, surface->GetNumPoles() * sizeof(double), weights, n*m*sizeof(double));
         bsputil_weightPoles (surface->poles, controlNet, weights, n*m);
         }
     else
-        BeStringUtilities::Memcpy (surface->poles, n* m * sizeof(DPoint3d), controlNet, n*m*sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (surface->poles, surface->GetNumPoles() * sizeof(DPoint3d), controlNet, n*m*sizeof(DPoint3d));
 
 wrapup:
     if (p0Nodes)        msbspline_free (p0Nodes);
@@ -915,16 +915,16 @@ MSBsplineCurve      *curves            /* bounding B-spline curve */
         goto wrapup;
 
     /* Load knot vectors */
-    BeStringUtilities::Memcpy (surface->vKnots, (n + k) * sizeof(double), p[0].knots, (n+k) * sizeof(double));
-    BeStringUtilities::Memcpy (surface->uKnots, (m + l) * sizeof(double), q[0].knots, (m+l) * sizeof(double));
+    BeStringUtilities::Memcpy (surface->vKnots, surface->GetNumVKnots() * sizeof(double), p[0].knots, (n+k) * sizeof(double));
+    BeStringUtilities::Memcpy (surface->uKnots, surface->GetNumUKnots() * sizeof(double), q[0].knots, (m+l) * sizeof(double));
 
     if (rationalSurface)
         {
-        BeStringUtilities::Memcpy (surface->weights, n* m * sizeof(double), weights, n*m*sizeof(double));
+        BeStringUtilities::Memcpy (surface->weights, surface->GetNumPoles() * sizeof(double), weights, n*m*sizeof(double));
         bsputil_weightPoles (surface->poles, controlNet, weights, n*m);
         }
     else
-        BeStringUtilities::Memcpy (surface->poles, n * m * sizeof(DPoint3d), controlNet, n*m*sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (surface->poles, surface->GetNumPoles() * sizeof(DPoint3d), controlNet, n*m*sizeof(DPoint3d));
 
 wrapup:
     if (p0Nodes)        msbspline_free (p0Nodes);
@@ -1459,11 +1459,11 @@ bool                rigidSweep
 
     /* Load knot vectors */
     BeStringUtilities::Memcpy (surface->vKnots,
-        bspknot_numberKnots(segment->params.numPoles, segment->params.order, segment->params.closed) * sizeof(double),
+        surface->GetNumVKnots() * sizeof(double),
         segment->knots,
         bspknot_numberKnots (segment->params.numPoles, segment->params.order, segment->params.closed) * sizeof(double));
     BeStringUtilities::Memcpy (surface->uKnots,
-        bspknot_numberKnots(curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double),
+        surface->GetNumUKnots() * sizeof(double),
         curve.knots,
         bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
@@ -1501,10 +1501,10 @@ MSBsplineCurve  *bezier
     curve.knots           = knots;
     curve.weights         = weights;
 
-    BeStringUtilities::Memcpy (curve.poles, curve.params.numPoles * sizeof(DPoint3d),
+    BeStringUtilities::Memcpy (curve.poles, sizeof poles,
                                bezier->poles, curve.params.numPoles * sizeof(DPoint3d));
     if (curve.rational)
-        BeStringUtilities::Memcpy (curve.weights, curve.params.numPoles * sizeof(double),
+        BeStringUtilities::Memcpy (curve.weights, sizeof weights,
                                    bezier->weights, curve.params.numPoles * sizeof(double));
 
     bspknot_computeKnotVector (curve.knots, &curve.params, NULL);
@@ -2052,9 +2052,9 @@ int                 checkInflectionPt
     surface->vParams.numRules = surface->uParams.numPoles;
 
     /* Load knot vectors */
-    BeStringUtilities::Memcpy (surface->vKnots, bspknot_numberKnots(n, k, trace0->params.closed) * sizeof(double),
+    BeStringUtilities::Memcpy (surface->vKnots, surface->GetNumVKnots() * sizeof(double),
         trace0->knots, bspknot_numberKnots (n, k, trace0->params.closed) * sizeof(double));
-    BeStringUtilities::Memcpy (surface->uKnots, bspknot_numberKnots(m, l, curve0.params.closed) * sizeof(double),
+    BeStringUtilities::Memcpy (surface->uKnots, surface->GetNumUKnots() * sizeof(double),
         curve0.knots, bspknot_numberKnots (m, l, curve0.params.closed) * sizeof(double));
 
     if (rationalSurface)

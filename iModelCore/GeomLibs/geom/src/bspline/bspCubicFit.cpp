@@ -1129,7 +1129,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
     /* Initialize innerKnots */
     if (inParams)
         {
-        BeStringUtilities::Memcpy (innerKnots, numPoints * sizeof(double), inParams, numPoints*sizeof(double));
+        BeStringUtilities::Memcpy (innerKnots, allocSize, inParams, numPoints*sizeof(double));
         if (SUCCESS != (status = normalizeKnots (innerKnots, numPoints)))
             goto wrapup;
         if (knots)
@@ -1152,7 +1152,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
             double tmpKnots[MAX_KNOTS];
 
             bspknot_computeKnotVector (tmpKnots, bsplineParams, NULL);
-            BeStringUtilities::Memcpy (innerKnots+1, (numPoints - 2) * sizeof(double), tmpKnots+4, (numPoints-2)*sizeof(double));
+            BeStringUtilities::Memcpy (innerKnots+1, allocSize - sizeof(double), tmpKnots+4, (numPoints-2)*sizeof(double));
             innerKnots[0] = 0.0;
             innerKnots[numPoints-1] = 1.0;
             if (knots)
@@ -1187,9 +1187,9 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
             }
 
         /* As per Farin, the second and penultimate dataPts are undetermined */
-        BeStringUtilities::Memcpy (dataPts+2, (numPoints - 2) * sizeof(DPoint3d), points+1, (numPoints-2)*sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (dataPts+2, (bsplineParams->numPoles - 2) * sizeof(DPoint3d), points+1, (numPoints-2)*sizeof(DPoint3d));
         if (outWts && weights)
-            BeStringUtilities::Memcpy (dataWts+2, (numPoints - 2) * sizeof(double), weights+1, (numPoints-2)*sizeof(double));
+            BeStringUtilities::Memcpy (dataWts+2, (bsplineParams->numPoles - 2) * sizeof(double), weights+1, (numPoints-2)*sizeof(double));
 
         /* LU decomposition */
         systemLU (triUp, triLow, alpha, beta, gamma, numIntval);

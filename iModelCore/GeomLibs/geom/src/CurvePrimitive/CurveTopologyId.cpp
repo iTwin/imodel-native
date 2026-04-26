@@ -149,22 +149,25 @@ void CurveTopologyId::Pack (bvector<Byte>& packed) const
         }
     else if (max <= 0xffff)
         {
-        packed.resize (2 + 2 * count);
+        size_t packedSize = 2 + 2 * count;
+        packed.resize (packedSize);
         packed.at(0) = (Byte) m_type;
         packed.at(1) = (Byte) IdSize_UInt16;
 
         for (size_t i=0; i<count; i++)
             {
             uint16_t    value =  (uint16_t) m_ids[i];
-            BeStringUtilities::Memcpy (&packed.at(2 + (i << 1)), sizeof(value), &value, sizeof (value));
+            size_t      offset = 2 + (i << 1);
+            BeStringUtilities::Memcpy (&packed.at(offset), packedSize - offset, &value, sizeof (value));
             }
         }
     else
         {
-        packed.resize (2 + 4 * count);
+        size_t packedSize = 2 + 4 * count;
+        packed.resize (packedSize);
         packed.at(0) = (Byte) m_type;
         packed.at(1) = (Byte) IdSize_UInt32;
-        BeStringUtilities::Memcpy ((void*) &packed.at(2), count * sizeof(uint32_t), &m_ids.front(), count * sizeof (uint32_t));
+        BeStringUtilities::Memcpy ((void*) &packed.at(2), packedSize - 2, &m_ids.front(), count * sizeof (uint32_t));
         }
     }
 

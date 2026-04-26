@@ -614,8 +614,8 @@ double              tolerance
         } // END INDENT FOR BVECTOR SCOPE
 
         /* Compute the u knot vector */
-        BeStringUtilities::Memcpy  (uKnots,
-            bspknot_numberKnots (numU, loftCurves[0]->params.order, loftCurves[0]->params.closed) * sizeof(double),
+        BeStringUtilities::Memcpy (uKnots,
+            GetNumUKnots() * sizeof(double),
             loftCurves[0]->knots,
             bspknot_numberKnots (numU, loftCurves[0]->params.order, loftCurves[0]->params.closed) * sizeof(double));
 
