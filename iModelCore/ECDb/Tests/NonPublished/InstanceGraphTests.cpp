@@ -945,4 +945,223 @@ TEST_F(InstanceGraphTests, VTable_WithAndWithoutSchemaName_SameResults)
         EXPECT_EQ(qualifiedIds[i], unqualifiedIds[i]) << "Row " << i << " should match between qualified and unqualified queries";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_ColumnRefWithAlias)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ColRefAlias.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), pipe2Key.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Use alias 'a' for Pipe and pass a.ECInstanceId, a.ECClassId to Relations()
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT r.RelatedECInstanceId, r.Direction FROM ig.Pipe a, ECVLib.Relations(a.ECInstanceId, a.ECClassId) r WHERE a.Code = 'P1'"));
+
+    bset<int64_t> foundIds;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        foundIds.insert(stmt.GetValueInt64(0));
+
+    EXPECT_TRUE(foundIds.find(catKey.GetInstanceId().GetValueUnchecked()) != foundIds.end()) << "Should find Category via a.ECInstanceId column ref";
+    EXPECT_TRUE(foundIds.find(pipe2Key.GetInstanceId().GetValueUnchecked()) != foundIds.end()) << "Should find Pipe2 via a.ECInstanceId column ref";
+    EXPECT_TRUE(foundIds.find(modelKey.GetInstanceId().GetValueUnchecked()) != foundIds.end()) << "Should find Model (backward via nav prop) with default both direction";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_ColumnRefWithoutAlias)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ColRefNoAlias.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), pipe2Key.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Use bare ECInstanceId and ECClassId without table alias
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT r.RelatedECInstanceId FROM ig.Pipe, ECVLib.Relations(ECInstanceId, ECClassId) r WHERE Code = 'P1'"));
+
+    bset<int64_t> foundIds;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        foundIds.insert(stmt.GetValueInt64(0));
+
+    EXPECT_TRUE(foundIds.find(pipe2Key.GetInstanceId().GetValueUnchecked()) != foundIds.end()) << "Should resolve bare ECInstanceId from ig.Pipe";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_DirectionOptionalWithColumnRef)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_DirOptColRef.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // 2-arg form (no direction) — should default to both
+    ECSqlStatement stmtBoth;
+    ASSERT_EQ(ECSqlStatus::Success, stmtBoth.Prepare(m_ecdb,
+        "SELECT r.RelatedECInstanceId FROM ig.Pipe a, ECVLib.Relations(a.ECInstanceId, a.ECClassId) r WHERE a.Code = 'P1'"));
+
+    bset<int64_t> bothIds;
+    while (stmtBoth.Step() == BE_SQLITE_ROW)
+        bothIds.insert(stmtBoth.GetValueInt64(0));
+
+    // 3-arg form with 'forward'
+    ECSqlStatement stmtFwd;
+    ASSERT_EQ(ECSqlStatus::Success, stmtFwd.Prepare(m_ecdb,
+        "SELECT r.RelatedECInstanceId FROM ig.Pipe a, ECVLib.Relations(a.ECInstanceId, a.ECClassId, 'forward') r WHERE a.Code = 'P1'"));
+
+    bset<int64_t> fwdIds;
+    while (stmtFwd.Step() == BE_SQLITE_ROW)
+        fwdIds.insert(stmtFwd.GetValueInt64(0));
+
+    // 3-arg form with 'backward'
+    ECSqlStatement stmtBwd;
+    ASSERT_EQ(ECSqlStatus::Success, stmtBwd.Prepare(m_ecdb,
+        "SELECT r.RelatedECInstanceId FROM ig.Pipe a, ECVLib.Relations(a.ECInstanceId, a.ECClassId, 'backward') r WHERE a.Code = 'P1'"));
+
+    bset<int64_t> bwdIds;
+    while (stmtBwd.Step() == BE_SQLITE_ROW)
+        bwdIds.insert(stmtBwd.GetValueInt64(0));
+
+    // Forward from Pipe1 should find Category1 (ElementInCategory, Pipe1 is source)
+    EXPECT_TRUE(fwdIds.find(catKey.GetInstanceId().GetValueUnchecked()) != fwdIds.end()) << "Forward should find Category";
+    // Backward from Pipe1 should find Model (ModelHasElements, Pipe1 is target)
+    EXPECT_TRUE(bwdIds.find(modelKey.GetInstanceId().GetValueUnchecked()) != bwdIds.end()) << "Backward should find Model";
+
+    // Both should be a superset of forward and backward
+    EXPECT_GE(bothIds.size(), fwdIds.size()) << "Default (both) should have >= forward results";
+    EXPECT_GE(bothIds.size(), bwdIds.size()) << "Default (both) should have >= backward results";
+    for (auto id : fwdIds)
+        EXPECT_TRUE(bothIds.find(id) != bothIds.end()) << "All forward results should be in default (both) results";
+    for (auto id : bwdIds)
+        EXPECT_TRUE(bothIds.find(id) != bothIds.end()) << "All backward results should be in default (both) results";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_TwoRelationsChained)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_TwoRelChain.ecdb", SchemaItem(s_testSchemaXml)));
+
+    // Chain: P1 →(forward) P2 →(forward) Cat1
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), pipe2Key.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe2Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Chain two Relations: first finds P2 from P1 (forward), second finds Cat1 from P2
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT r1.RelatedECInstanceId, r2.RelatedECInstanceId"
+        " FROM ig.Pipe a,"
+        "   ECVLib.Relations(a.ECInstanceId, a.ECClassId, 'forward') r1,"
+        "   ECVLib.Relations(r1.RelatedECInstanceId, r1.RelatedECClassId, 'forward') r2"
+        " WHERE a.Code = 'P1'"));
+
+    bool foundChain = false;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        int64_t hop1Id = stmt.GetValueInt64(0);
+        int64_t hop2Id = stmt.GetValueInt64(1);
+        if (hop1Id == (int64_t) pipe2Key.GetInstanceId().GetValueUnchecked() &&
+            hop2Id == (int64_t) catKey.GetInstanceId().GetValueUnchecked())
+            foundChain = true;
+        }
+    EXPECT_TRUE(foundChain) << "Should find 2-hop chain: P1 → P2 → Cat1 via chained Relations";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_TwoRelationsIndependent)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_TwoRelIndep.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Two independent Relations with different direction filters on the same source
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT fwd.RelatedECInstanceId, bwd.RelatedECInstanceId"
+        " FROM ig.Pipe a,"
+        "   ECVLib.Relations(a.ECInstanceId, a.ECClassId, 'forward') fwd,"
+        "   ECVLib.Relations(a.ECInstanceId, a.ECClassId, 'backward') bwd"
+        " WHERE a.Code = 'P1'"));
+
+    bset<int64_t> fwdIds, bwdIds;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        fwdIds.insert(stmt.GetValueInt64(0));
+        bwdIds.insert(stmt.GetValueInt64(1));
+        }
+
+    // Forward from Pipe1: Cat1 (ElementInCategory, Pipe1 is source)
+    EXPECT_TRUE(fwdIds.find(catKey.GetInstanceId().GetValueUnchecked()) != fwdIds.end()) << "Forward alias should find Category";
+    // Backward from Pipe1: Model (ModelHasElements, Pipe1 is target)
+    EXPECT_TRUE(bwdIds.find(modelKey.GetInstanceId().GetValueUnchecked()) != bwdIds.end()) << "Backward alias should find Model";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_ColumnRefWithoutSchemaPrefix)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ColRefNoSchema.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), pipe2Key.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Unqualified Relations() with alias column refs
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT r.RelatedECInstanceId FROM ig.Pipe a, Relations(a.ECInstanceId, a.ECClassId, 'forward') r WHERE a.Code = 'P1'"));
+
+    bset<int64_t> foundIds;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        foundIds.insert(stmt.GetValueInt64(0));
+
+    EXPECT_TRUE(foundIds.find(pipe2Key.GetInstanceId().GetValueUnchecked()) != foundIds.end()) << "Unqualified Relations with column refs should work";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
