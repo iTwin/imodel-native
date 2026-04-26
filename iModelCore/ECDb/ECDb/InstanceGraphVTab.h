@@ -59,8 +59,8 @@ struct RelationsModule : ECDbModule
             " ECInstanceId HIDDEN, ECClassId HIDDEN, TraversalDirection HIDDEN)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
-                    schemaName="ECVLib_Relations"
-                    alias="ECVLib_Relations"
+                    schemaName="ECVLib"
+                    alias="ECVLib"
                     version="1.0.0"
                     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="ECDbVirtual" version="01.00.00" alias="ecdbvir" />

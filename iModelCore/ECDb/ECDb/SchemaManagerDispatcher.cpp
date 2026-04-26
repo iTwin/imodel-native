@@ -81,6 +81,24 @@ BentleyStatus VirtualSchemaManager::AddAndValidateVirtualSchema(Utf8StringCR sch
             return ERROR;
         }
     }
+
+    // If a schema with the same name already exists, merge classes into it
+    auto existingIt = m_schemas.find(schema->GetName());
+    if (existingIt != m_schemas.end()) {
+        auto& existingSchema = *const_cast<ECN::ECSchemaP>(existingIt->second);
+        for (auto sourceClass : schema->GetClasses()) {
+            if (existingSchema.GetClassCP(sourceClass->GetName().c_str()) != nullptr)
+                return ERROR; // duplicate class name
+            ECN::ECClassP copiedClass = nullptr;
+            if (ECN::ECObjectsStatus::Success != existingSchema.CopyClass(copiedClass, *sourceClass, true))
+                return ERROR;
+            copiedClass->SetId(ECN::ECClassId(GetNextId()));
+            for (auto& prop : copiedClass->GetProperties(false))
+                const_cast<ECN::ECPropertyP>(prop)->SetId(ECN::ECPropertyId(GetNextId()));
+        }
+        return SUCCESS;
+    }
+
     SetVirtualTypeIds(*schema);
     // schema.SetImmutable(true);
     m_cache->AddSchema(*schema);

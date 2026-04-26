@@ -635,7 +635,7 @@ TEST_F(InstanceGraphTests, VTable_BasicQuery)
     // Query via virtual table (positional args map to hidden columns: ECInstanceId, ECClassId)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
-        SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId FROM ECVLib_Relations.Relations(%s, %s)",
+        SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId FROM ECVLib.Relations(%s, %s)",
             pipe1Key.GetInstanceId().ToString().c_str(),
             pipe1Key.GetClassId().ToString().c_str())));
 
@@ -665,7 +665,7 @@ TEST_F(InstanceGraphTests, VTable_DirectionFilter)
     // Forward only (3rd positional arg = TraversalDirection)
     ECSqlStatement stmtFwd;
     ASSERT_EQ(ECSqlStatus::Success, stmtFwd.Prepare(m_ecdb,
-        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib_Relations.Relations(%s, %s, 'forward')",
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, 'forward')",
             pipe1Key.GetInstanceId().ToString().c_str(),
             pipe1Key.GetClassId().ToString().c_str())));
 
@@ -676,7 +676,7 @@ TEST_F(InstanceGraphTests, VTable_DirectionFilter)
     // Backward only
     ECSqlStatement stmtBwd;
     ASSERT_EQ(ECSqlStatus::Success, stmtBwd.Prepare(m_ecdb,
-        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib_Relations.Relations(%s, %s, 'backward')",
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, 'backward')",
             pipe1Key.GetInstanceId().ToString().c_str(),
             pipe1Key.GetClassId().ToString().c_str())));
 
@@ -786,6 +786,163 @@ TEST_F(InstanceGraphTests, PolymorphicTraversal_MultipleSubclasses)
     EXPECT_TRUE(graph.Contains(pipeKey)) << "Should find Pipe (PhysicalElement subclass)";
     EXPECT_TRUE(graph.Contains(valveKey)) << "Should find Valve (PhysicalElement subclass)";
     EXPECT_TRUE(graph.Contains(funcKey)) << "Should find FunctionalElement";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_WithSchemaName)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_WithSchema.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Query via fully-qualified schema name: ECVLib.Relations(...)
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId FROM ECVLib.Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        ++rowCount;
+
+    EXPECT_GT(rowCount, 0) << "Schema-qualified ECVLib.Relations() should return related instances";
+
+    // Forward direction with schema name
+    ECSqlStatement stmtFwd;
+    ASSERT_EQ(ECSqlStatus::Success, stmtFwd.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, 'forward')",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    int fwdCount = 0;
+    while (stmtFwd.Step() == BE_SQLITE_ROW)
+        ++fwdCount;
+
+    EXPECT_GT(fwdCount, 0) << "Schema-qualified forward query should return results";
+
+    // Backward direction with schema name
+    ECSqlStatement stmtBwd;
+    ASSERT_EQ(ECSqlStatus::Success, stmtBwd.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, 'backward')",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    int bwdCount = 0;
+    while (stmtBwd.Step() == BE_SQLITE_ROW)
+        ++bwdCount;
+
+    EXPECT_GT(bwdCount, 0) << "Schema-qualified backward query should return results";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_WithoutSchemaName)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_NoSchema.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Query via unqualified name: Relations(...) — no schema prefix
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId FROM Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        ++rowCount;
+
+    EXPECT_GT(rowCount, 0) << "Unqualified Relations() should return related instances";
+
+    // Forward direction without schema name
+    ECSqlStatement stmtFwd;
+    ASSERT_EQ(ECSqlStatus::Success, stmtFwd.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM Relations(%s, %s, 'forward')",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    int fwdCount = 0;
+    while (stmtFwd.Step() == BE_SQLITE_ROW)
+        ++fwdCount;
+
+    EXPECT_GT(fwdCount, 0) << "Unqualified forward query should return results";
+
+    // Backward direction without schema name
+    ECSqlStatement stmtBwd;
+    ASSERT_EQ(ECSqlStatus::Success, stmtBwd.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM Relations(%s, %s, 'backward')",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    int bwdCount = 0;
+    while (stmtBwd.Step() == BE_SQLITE_ROW)
+        ++bwdCount;
+
+    EXPECT_GT(bwdCount, 0) << "Unqualified backward query should return results";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_WithAndWithoutSchemaName_SameResults)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_Consistency.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Collect results with schema-qualified name
+    ECSqlStatement stmtQualified;
+    ASSERT_EQ(ECSqlStatus::Success, stmtQualified.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId FROM ECVLib.Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    bvector<int64_t> qualifiedIds;
+    while (stmtQualified.Step() == BE_SQLITE_ROW)
+        qualifiedIds.push_back(stmtQualified.GetValueInt64(0));
+
+    // Collect results with unqualified name
+    ECSqlStatement stmtUnqualified;
+    ASSERT_EQ(ECSqlStatus::Success, stmtUnqualified.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId, RelatedECClassId, Direction, RelationshipECClassId FROM Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    bvector<int64_t> unqualifiedIds;
+    while (stmtUnqualified.Step() == BE_SQLITE_ROW)
+        unqualifiedIds.push_back(stmtUnqualified.GetValueInt64(0));
+
+    // Both should produce the same results
+    ASSERT_EQ(qualifiedIds.size(), unqualifiedIds.size()) << "Qualified and unqualified should return the same number of rows";
+    EXPECT_GT(qualifiedIds.size(), 0u) << "Should have results to compare";
+    for (size_t i = 0; i < qualifiedIds.size(); ++i)
+        EXPECT_EQ(qualifiedIds[i], unqualifiedIds[i]) << "Row " << i << " should match between qualified and unqualified queries";
     }
 
 END_ECDBUNITTESTS_NAMESPACE
