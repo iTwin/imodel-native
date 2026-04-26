@@ -562,6 +562,9 @@ void ECDb::Impl::ClearECDbCache() const
     const_cast<ChangeManager&>(m_changeManager).ClearCache();
     const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
+    if (m_graphStatementCache != nullptr)
+        m_graphStatementCache->Clear();
+
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
     m_clearCacheCounter.Increment();

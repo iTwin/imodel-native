@@ -5,7 +5,15 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.3.1` |
+| ECSQL   | `2.0.3.3` |
+
+## ## `04/25/2026`: Added `relations()` virtual table and InstanceGraph API
+* ECSql version change `2.0.3.2` -> `2.0.3.3`.
+* Added `relations()` virtual table for fast relationship traversal from a seed instance.
+* Example: `SELECT * FROM relations WHERE ECInstanceId = 1 AND ECClassId = 0x123`
+* Added `TraversalDirection` filter: `WHERE TraversalDirection = 'forward'` or `'backward'` or `'both'` (default).
+* Added internal `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union).
+* Bypasses ECSql entirely — generates raw SQLite from property maps for 3-10x faster traversal.
 
 ## ## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
 * ECSql version change `2.0.3.0` -> `2.0.3.1`.
