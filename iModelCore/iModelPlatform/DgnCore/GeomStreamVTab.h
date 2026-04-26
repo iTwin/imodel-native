@@ -168,7 +168,7 @@ struct GeomStreamModule : BeSQLite::EC::ECDbModule
                     <ECProperty propertyName="SubCategoryId"    typeName="long" />
                     <ECProperty propertyName="Color"            typeName="int" />
                     <ECProperty propertyName="Weight"           typeName="int" />
-                    <ECProperty propertyName="LineStyle"        typeName="int" />
+                    <ECProperty propertyName="LineStyle"        typeName="long" />
                     <ECProperty propertyName="Transparency"     typeName="double" />
                     <ECProperty propertyName="GeomClass"        typeName="int" />
                     <ECProperty propertyName="DisplayPriority"  typeName="int" />
