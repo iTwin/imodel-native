@@ -973,7 +973,8 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         {
         if (!IsRowConstructor())
             {
-            m_rangeClassRefExpCache = GetFrom()->FindRangeClassRefExpressions();
+            if (GetFrom() != nullptr)
+                m_rangeClassRefExpCache = GetFrom()->FindRangeClassRefExpressions();
 
             if (FindParent(Exp::Type::SubqueryValue) != nullptr)
                 {

@@ -22,11 +22,11 @@ struct ECSqlFuzzGenerator
 private:
     std::mt19937 m_rng;
 
-    int RandInt(int lo, int hi) { return std::uniform_int_distribution<int>(lo, hi)(m_rng); }
+    int RandInt(int lo, int hi) { if (lo > hi) return lo; return std::uniform_int_distribution<int>(lo, hi)(m_rng); }
     bool Coin(int pctTrue = 50) { return RandInt(1, 100) <= pctTrue; }
 
     template<typename T>
-    T const& Pick(std::vector<T> const& v) { return v[(size_t)RandInt(0, (int)v.size() - 1)]; }
+    T const& Pick(std::vector<T> const& v) { BeAssert(!v.empty()); return v[(size_t)RandInt(0, (int)v.size() - 1)]; }
 
     static constexpr Utf8CP s_alias = "fz";
 

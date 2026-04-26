@@ -321,7 +321,6 @@ TEST_F(ECSqlFuzzTestFixture, FuzzSchemaImport)
                 BeFileName::BeDeleteFile(tempPath);
                 }
             }
-        ASSERT_TRUE(true) << "Schema import fuzz failure at iteration " << i << " | seed=" << m_seed;
         }
     }
 
