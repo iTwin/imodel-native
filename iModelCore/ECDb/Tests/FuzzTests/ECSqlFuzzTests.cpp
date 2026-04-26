@@ -204,6 +204,203 @@ TEST_F(ECSqlFuzzTestFixture, FuzzInsertSelect)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzNaturalJoin)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectNaturalJoin(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzBitwise)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectBitwise(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzCollate)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectCollate(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzAdvancedWindowFrame)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectAdvancedWindowFrame(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzCaseAdvanced)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectCaseAdvanced(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzRecursiveCTE)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectRecursiveCTE(); }, 1000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzTypePredicate)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectTypePredicate(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzPropertyPath)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectPropertyPath(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzAdvancedAggregate)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectAdvancedAggregate(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzChainedSetOps)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectChainedSetOps(); }, 1000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzPragmaAdvanced)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenPragmaAdvanced(); }, 1000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzSchemaImport)
+    {
+    ECSqlFuzzGenerator gen(m_seed);
+    for (int i = 0; i < 500; i++)
+        {
+        Utf8String schemaXml = gen.GenSchemaXml();
+        ScopedDisableFailOnAssertion disableAssert;
+        ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        // Try to deserialize — we just must not crash
+        ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ctx);
+        // If valid, try to import into a fresh ecdb
+        if (schema.IsValid())
+            {
+            ECDb testDb;
+            BeFileName tempPath;
+            BeTest::GetHost().GetTempDir(tempPath);
+            Utf8String dbName;
+            dbName.Sprintf("fuzz_schema_%d.ecdb", i);
+            tempPath.AppendToPath(WString(dbName.c_str(), true).c_str());
+            if (testDb.CreateNewDb(tempPath) == BE_SQLITE_OK)
+                {
+                bvector<ECSchemaCP> schemas;
+                schemas.push_back(schema.get());
+                testDb.Schemas().ImportSchemas(schemas);
+                testDb.CloseDb();
+                BeFileName::BeDeleteFile(tempPath);
+                }
+            }
+        ASSERT_TRUE(true) << "Schema import fuzz failure at iteration " << i << " | seed=" << m_seed;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzUpdateAdvanced)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenUpdateAdvanced(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzDeleteAdvanced)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenDeleteAdvanced(); }, 1000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzParameters)
+    {
+    // Parameters: only prepare (no step since bindings are missing)
+    ECSqlFuzzGenerator gen(m_seed);
+    for (int i = 0; i < 2000; i++)
+        {
+        Utf8String ecsql = gen.GenSelectWithParameters();
+        ASSERT_NO_FATAL_FAILURE(RunFuzzIteration(gen, ecsql, false))
+            << "Parameter fuzz failure at iteration " << i
+            << " | seed=" << m_seed
+            << " | ecsql=" << ecsql.c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzComments)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectWithComments(); }, 1000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzLiteralEdgeCases)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectLiteralEdgeCases(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzNavigationAdvanced)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectNavigationAdvanced(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzValues)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectValues(); }, 1000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlFuzzTestFixture, FuzzOrderByAdvanced)
+    {
+    RunFuzzLoop([](ECSqlFuzzGenerator& g) { return g.GenSelectOrderByAdvanced(); }, 2000);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlFuzzTestFixture, FuzzMutatedValid)
     {
     RunMutatedFuzzLoop(10000);

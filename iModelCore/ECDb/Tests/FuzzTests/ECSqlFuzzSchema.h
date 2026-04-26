@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECDbPublishedTests.h"
+#include "../NonPublished/ECDbPublishedTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
