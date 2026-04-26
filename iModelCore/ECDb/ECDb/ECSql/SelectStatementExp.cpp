@@ -797,7 +797,8 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
             BeAssert(ctx.CurrentArg() != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
             BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClass && "Expecting range class");
             std::vector<RangeClassInfo> rangeClassRefs;
-            sel.GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Local);
+            if (sel.GetFrom() != nullptr)
+                sel.GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Local);
             if (SUCCESS != ReplaceAsteriskExpressions(ctx, rangeClassRefs))
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0574, "Asterisk replacement in select clause failed unexpectedly.");
@@ -983,7 +984,7 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
                     {
                     parent = cur->FindParent(Exp::Type::SingleSelect);
                     cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
-                    if (cur != nullptr)
+                    if (cur != nullptr && cur->GetFrom() != nullptr)
                         {
                         cur->GetFrom()->FindRangeClassRefs(m_rangeClassRefExpCache, RangeClassInfo::Scope::Inherited);
                         }
