@@ -66,7 +66,15 @@
         </Bindings>
     </Part>
 
-    <!-- Builds the ECDb tests (except performance tests) -->
+    <Part Name="UnitTests-FuzzTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=FuzzTests">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="BackDoorForUnitTests"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/FuzzTests" SourceName="Delivery/UnitTests/Objects/FuzzTests"/>
+        </Bindings>
+    </Part>
+
+    <!-- Builds the ECDb tests (except performance and fuzz tests) -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished" />
     </Part>
@@ -214,6 +222,36 @@
     <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest-Performance -dGTEST_NAME=ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECDb-Gtest-Performance" />
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Part>
+
+    <!-- Fuzz tests -->
+    <Product Name="ECDb-Tests-FuzzTests">
+        <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-FuzzTests" />
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest-FuzzTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTestFuzz -dTEST_COLLECTION_PRODUCT=ECDb-Tests-FuzzTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECDb-Tests-FuzzTests"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTestFuzz/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECDbTestFuzz/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-Gtest-FuzzTests" >
+        <SubPart PartName="Gtest-FuzzTests"/>
+        <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest-FuzzTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest-FuzzTests -dGTEST_NAME=ECDbTestFuzz" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECDb-Gtest-FuzzTests" />
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECDbTestFuzz.log</Files>
+        </Bindings>
     </Part>
 
     <ProductDirectoryList ListName="ECDbTestedDirList" >
