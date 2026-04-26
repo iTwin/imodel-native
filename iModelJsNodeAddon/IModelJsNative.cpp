@@ -7151,12 +7151,12 @@ static Napi::Value getMaxGeomStreamVTabBytes(NapiInfoCR info) {
 static void setMaxGeomStreamVTabBytes(NapiInfoCR info) {
   if (info.Length() == 1 && info[0].IsNumber()) {
     auto bytes = info[0].As<Napi::Number>().DoubleValue();
-    if (bytes >= 1) {
+    if (std::isfinite(bytes) && bytes >= 1 && bytes <= static_cast<double>(std::numeric_limits<size_t>::max())) {
       JsInterop::SetMaxGeomStreamVTabBytes(static_cast<size_t>(bytes));
       return;
     }
   }
-  JsInterop::GetNativeLogger().error("Invalid argument for setMaxGeomStreamVTabBytes: expected a positive number");
+  JsInterop::GetNativeLogger().error("Invalid argument for setMaxGeomStreamVTabBytes: expected a positive finite number");
 }
 
 static Napi::Value getLogger(NapiInfoCR info) {
