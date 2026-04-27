@@ -26,7 +26,7 @@ CrossJoinExp::CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<Cl
 //+---------------+---------------+---------------+---------------+---------------+------
 JoinConditionExp const* CrossJoinExp::GetJoinCondition() const
     {
-    if (m_nJoinConditionIndex == 0)
+    if (m_nJoinConditionIndex == UNSET_CHILDINDEX)
         return nullptr;
     return GetChild<JoinConditionExp>(m_nJoinConditionIndex);
     }

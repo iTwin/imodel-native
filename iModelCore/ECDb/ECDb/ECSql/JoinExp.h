@@ -95,7 +95,7 @@ struct JoinConditionExp;
 struct CrossJoinExp final : JoinExp
     {
     private:
-        size_t m_nJoinConditionIndex = 0;
+        size_t m_nJoinConditionIndex = UNSET_CHILDINDEX;
 
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
