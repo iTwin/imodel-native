@@ -140,8 +140,8 @@ struct GeomStreamModule : BeSQLite::EC::ECDbModule
 
         //! Process-wide maximum uncompressed GeometryStream size (bytes) the vtab will decompose.
         //! Blobs exceeding this are silently skipped (zero rows). Default: 50 MB. Minimum enforced: 4 KB.
-        static size_t GetMaxGeomStreamVTabBytes() { return s_maxGeomStreamVTabBytes; }
-        static void SetMaxGeomStreamVTabBytes(size_t bytes) { s_maxGeomStreamVTabBytes = std::max(bytes, static_cast<size_t>(4096)); }
+        DGNPLATFORM_EXPORT static size_t GetMaxGeomStreamVTabBytes();
+        DGNPLATFORM_EXPORT static void SetMaxGeomStreamVTabBytes(size_t bytes);
 
     private:
         static size_t s_maxGeomStreamVTabBytes;

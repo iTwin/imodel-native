@@ -12,6 +12,22 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 // Process-wide limit; default 50 MB
 size_t GeomStreamModule::s_maxGeomStreamVTabBytes = 50 * 1024 * 1024;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t GeomStreamModule::GetMaxGeomStreamVTabBytes()
+    {
+    return s_maxGeomStreamVTabBytes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeomStreamModule::SetMaxGeomStreamVTabBytes(size_t bytes)
+    {
+    s_maxGeomStreamVTabBytes = std::max(bytes, static_cast<size_t>(4096));
+    }
+
 // Geometry blob header — matches the format written by GeometryStream::WriteGeometryStream
 static constexpr uint32_t GEOM_BLOB_SIGNATURE = 0x0600;
 
