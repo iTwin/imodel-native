@@ -24,7 +24,7 @@ import type {
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, ModelExtentsProps, PerStatementHealthStats, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, TxnProps, UpgradeOptions
+  ModelProps, ModelExtentsProps, PerStatementHealthStats, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, TxnProps as CoreTxnProps, UpgradeOptions
 } from "@itwin/core-common";
 import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -551,7 +551,7 @@ export declare namespace IModelJsNative {
   }
 
   /** @see `TxnProps` from `@itwin/core-common` */
-
+  type TxnProps = CoreTxnProps;
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
