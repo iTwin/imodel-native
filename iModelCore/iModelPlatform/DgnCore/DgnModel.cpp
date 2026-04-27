@@ -1217,7 +1217,8 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element) {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
-    CallJsElementPostHandler(element.m_elementId, "onDeleteElement"); // javascript `model.onDeleteElement`
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsElementPostHandler(element.m_elementId, "onDeleteElement"); // javascript `model.onDeleteElement`
     return DgnDbStatus::Success;
 }
 
@@ -1240,7 +1241,8 @@ DgnDbStatus DgnModel::_OnDeleteNotify() {
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
-    CallJsPostHandler("onDelete");
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsPostHandler("onDelete");
     NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnDelete(model); });
     return DgnDbStatus::Success;
 }
@@ -1282,14 +1284,25 @@ struct DeletedCaller {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_OnDeleted() {
-    CallJsPostHandler("onDeleted");
+    const auto isBulkOp = GetDgnDb().Elements().IsBulkOperation();
+    if (!isBulkOp)
+        CallJsPostHandler("onDeleted");
+
     CallAppData(DeletedCaller());
 
-    if (!GetDgnDb().Elements().IsBulkOperation())
+    if (!isBulkOp)
         GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
 
     BeAssert(GetRefCount() > 1);
     m_dgndb.Models().DropLoadedModel(*this);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnDeletedElement(DgnElementId id) {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsElementPostHandler(id, "onDeletedElement");
 }
 
 /*---------------------------------------------------------------------------------**//**
