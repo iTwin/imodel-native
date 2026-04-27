@@ -4,7 +4,7 @@
   "description": "TypeScript API of imodeljs-native",
   "private": true,
   "engines": {
-    "node": "^20.0.0 || ^22.0.0"
+    "node": "^20.11.0 || ^22.11.0 || ^24.11.0"
   },
   "scripts": {
     "build": "tsc 1>&2",
@@ -19,23 +19,23 @@
   "devDependencies": {
     "@itwin/build-tools": "^5.0.0-dev",
     "@itwin/core-bentley": "^5.0.0-dev",
-    "@itwin/core-common": "^5.0.0-dev",
+    "@itwin/core-common": "^5.8.4",
     "@itwin/core-geometry": "^5.0.0-dev",
-    "@itwin/eslint-plugin": "^5.0.0-dev.2",
+    "@itwin/eslint-plugin": "^6.0.0",
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",
     "@types/fs-extra": "^4.0.13",
-    "@types/mocha": "^5.2.7",
+    "@types/mocha": "^10.0.6",
     "@types/node": "~20.17.0",
-    "@types/sinon": "^9.0.11",
+    "@types/sinon": "^17.0.2",
     "chai": "^4.3.10",
     "chai-as-promised": "^7.1.1",
     "cpx2": "^3.0.2",
-    "eslint": "~9.14.0",
+    "eslint": "^9.31.0",
     "fs-extra": "^8.1.0",
-    "mocha": "^10.2.0",
+    "mocha": "^11.1.0",
     "rimraf": "^2.7.1",
-    "sinon": "^9.2.4",
+    "sinon": "^17.0.2",
     "typescript": "~5.6.2"
   }
 }

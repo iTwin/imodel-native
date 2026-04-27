@@ -467,17 +467,15 @@ bool TxnManager::GetTxnProps(TxnId id, BeJsValue obj) const {
             doc.SaveTo(props);
     }
 
-    if (stmt.IsColumnNull(2))
-        obj["type"] = "Schema";
-    else {
-        const auto type = static_cast<TxnType>(stmt.GetValueInt(2));
-        if (type == TxnType::Data)
-            obj["type"] = "Data";
-        else if (type == TxnType::Ddl)
-            obj["type"] = "Ddl";
-        else if (type == TxnType::EcSchema)
-            obj["type"] = "ECSchema";
-    }
+    // When IsSchemaChange column is NULL it indicates a legacy ECSchema txn (for backwards compat, NULL means EcSchema).
+    const auto type = stmt.IsColumnNull(2) ? TxnType::EcSchema : static_cast<TxnType>(stmt.GetValueInt(2));
+    if (type == TxnType::Data)
+        obj["type"] = "Data";
+    else if (type == TxnType::Ddl)
+        obj["type"] = "Ddl";
+    else if (type == TxnType::EcSchema)
+        obj["type"] = "ECSchema";
+    
     obj["reversed"] = stmt.GetValueBoolean(3);
     obj["grouped"] = stmt.GetValueBoolean(4);
     obj["timestamp"] = stmt.GetValueText(5);

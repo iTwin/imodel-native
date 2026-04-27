@@ -24,7 +24,7 @@ import type {
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
+  ModelProps, ModelExtentsProps, PerStatementHealthStats, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, TxnProps, UpgradeOptions
 } from "@itwin/core-common";
 import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -382,13 +382,7 @@ export declare namespace IModelJsNative {
     pathname: string;
   }
 
-  interface PerStatementHealthStats {
-    sqlStatement: string;
-    dbOperation: string;
-    rowCount: number;
-    elapsedMs: number;
-    fullTableScans: number;
-  }
+  /** @see `PerStatementHealthStats` from `@itwin/core-common` */
   interface ChangesetHealthStats {
     changesetId: string;
     uncompressedSizeBytes: number;
@@ -424,12 +418,8 @@ export declare namespace IModelJsNative {
     fileExt: string;
   }
 
-  interface FontEncodingProps {
-    codePage?: number;
-    degree?: number;
-    plusMinus?: number;
-    diameter?: number;
-  }
+  /** @see `RscFontEncodingProps` from `@itwin/core-common` */
+  type FontEncodingProps = RscFontEncodingProps;
 
   interface ResolveInstanceKeyArgs {
     partialKey?: { id: Id64String, baseClassName: string };
@@ -540,19 +530,9 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
-  export interface TxnProps {
-    id: TxnIdString;
-    sessionId: number;
-    nextId?: TxnIdString;
-    prevId?: TxnIdString;
-    props: { description?: string; source?: string, appData: { [key: string]: any } };
-    type: "Data" | "ECSchema" | "Ddl";
-    reversed: boolean;
-    grouped: boolean;
-    timestamp: string; // ISO 8601 format
-  }
+  /** @see `TxnProps` from `@itwin/core-common` */
 
-  type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
+  type GeometryOutputFormat= "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
     builder?: ElementGeometryBuilderParams;
@@ -572,12 +552,8 @@ export declare namespace IModelJsNative {
 
 
 
-  // ###TODO import from core-common
-  interface ModelExtentsResponseProps {
-    id: Id64String;
-    extents: Range3dProps;
-    status: IModelStatus;
-  }
+  /** @see `ModelExtentsProps` from `@itwin/core-common` */
+  type ModelExtentsResponseProps = ModelExtentsProps;
 
   interface TextLayoutRangesProps {
     layout: Range2dProps;
