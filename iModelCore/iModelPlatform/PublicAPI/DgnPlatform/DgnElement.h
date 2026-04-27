@@ -572,7 +572,7 @@ enum class BulkDeleteElementsStatus : int
 struct BulkDeleteElementsResult
     {
     BulkDeleteElementsStatus status = BulkDeleteElementsStatus::Success;
-    BeSQLite::DbResult sqlDeleteStatus = BE_SQLITE_OK;
+    BeSQLite::DbResult sqlDeleteStatus = BeSQLite::DbResult::BE_SQLITE_OK;
     DgnElementIdSet  failedIds;
     };
 
