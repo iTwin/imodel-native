@@ -63,6 +63,30 @@ struct ChangesetReaderTests : ECDbTestFixture {
                         </ECSchema>)xml"; 
         }
 
+        //! Schema with a many-to-many (link table) relationship where source and target
+        //! constraints are non-polymorphic → SourceECClassId and TargetECClassId are virtual.
+        Utf8CP GetRelSchema() const {
+            return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                            <ECSchema schemaName="TestRelCS" alias="tr" version="01.00.00"
+                                    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Person" modifier="Sealed">
+                                <ECProperty propertyName="Name" typeName="string"/>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Project" modifier="Sealed">
+                                <ECProperty propertyName="Title" typeName="string"/>
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="PersonWorksOnProject" modifier="Sealed" strength="referencing">
+                                <Source multiplicity="(0..*)" roleLabel="works on" polymorphic="false">
+                                    <Class class="Person"/>
+                                </Source>
+                                <Target multiplicity="(0..*)" roleLabel="is worked on by" polymorphic="false">
+                                    <Class class="Project"/>
+                                </Target>
+                            </ECRelationshipClass>
+                        </ECSchema>)xml";
+        }
+
         //! Extended schema: nested structs (Address.GeoCoord) + struct array (Document.MetaTags).
         Utf8CP GetExtendedSchema() const {
             return R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2527,6 +2551,194 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     reader.Close();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// Link table relationship with non-polymorphic (polymorphic=false) source and target
+// constraints: SourceECClassId and TargetECClassId have no physical column (virtual).
+// Verify that:
+//   - ChangesetReader exposes exactly 4 columns for the INSERT row:
+//     ECInstanceId, ECClassId, SourceECInstanceId, TargetECInstanceId.
+//   - SourceECClassId and TargetECClassId produce no IECSqlValue (CreateSystem skips
+//     them because FindDataPropertyMap returns nullptr for virtual columns).
+//   - GetChangeFetchedPropertyNames contains the two physical IDs but omits ECClassId,
+//     SourceECClassId and TargetECClassId (all virtual — not in the SQLite changeset).
+//   - Rendering the row via ECSqlRowAdaptor + ChangesetRow produces JSON with
+//     classFullName, sourceId and targetId, but no sourceClassName or targetClassName
+//     (the virtual class IDs were never captured in the changeset).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetClassIds)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_rel_virtual_classids.ecdb", SchemaItem(GetRelSchema())));
+
+    // Insert Person and Project before tracking — they must not appear in the changeset.
+    ECInstanceKey personKey, projectKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(personKey,
+        "INSERT INTO tr.Person(Name) VALUES('Alice')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(projectKey,
+        "INSERT INTO tr.Project(Title) VALUES('Proj1')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey relKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tr.PersonWorksOnProject(SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, personKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, projectKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(relKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ChangesetReader::PropertyFilter::All));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    // Only 4 columns: ECInstanceId, ECClassId (virtual→resolved), SourceECInstanceId,
+    // TargetECInstanceId.  SourceECClassId and TargetECClassId are virtual
+    // (polymorphic=false on source/target constraints) so CreateSystem emits nothing.
+    ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    // Column 0: ECInstanceId — physical primary key, always present.
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(relKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    // Column 1: ECClassId — virtual for a sealed single-hierarchy link table,
+    //           resolved via GetRootClassMap, not from a physical changeset column.
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(relKey.GetClassId(), v1.GetId<ECClassId>());
+
+    // Column 2: SourceECInstanceId — physical column in the link table.
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("SourceECInstanceId", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(personKey.GetInstanceId(), v2.GetId<ECInstanceId>());
+
+    // Column 3: TargetECInstanceId — physical column in the link table.
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("TargetECInstanceId", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(projectKey.GetInstanceId(), v3.GetId<ECInstanceId>());
+
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
+    auto hasName = [&](Utf8CP n) {
+        return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end();
+    };
+
+    // Physical columns: ECInstanceId always present for INSERT; Source/TargetECInstanceId
+    // are the two physical FK columns in the link table.
+    EXPECT_TRUE(hasName("ECInstanceId"));
+    EXPECT_TRUE(hasName("SourceECInstanceId"));
+    EXPECT_TRUE(hasName("TargetECInstanceId"));
+
+    // Virtual columns: no physical SQLite column → absent from the changeset →
+    // absent from GetChangeFetchedPropertyNames.
+    EXPECT_FALSE(hasName("ECClassId"));       // virtual — resolved via GetRootClassMap
+    EXPECT_FALSE(hasName("SourceECClassId")); // virtual — polymorphic=false on source constraint
+    EXPECT_FALSE(hasName("TargetECClassId")); // virtual — polymorphic=false on target constraint
+
+    // Render the New-stage row as a JSON object via ECSqlRowAdaptor + ChangesetRow —
+    // the same path taken by GetValue() in IModelJsNative.cpp.
+    // The JSON must contain classFullName, sourceId and targetId, but sourceClassName and
+    // targetClassName must be absent because SourceECClassId / TargetECClassId are virtual
+    // and were never captured in the changeset.
+    {
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+    adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(true);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    // classFullName is present — ECClassId was resolved via GetRootClassMap even though virtual.
+    Utf8String classFullName = rowJson["classFullName"].asString();
+    EXPECT_FALSE(classFullName.empty());
+
+    // Physical source/target instance IDs are present.
+    EXPECT_FALSE(rowJson["sourceId"].asString().empty());
+    EXPECT_FALSE(rowJson["targetId"].asString().empty());
+
+    // Virtual class IDs are absent from the JSON — they were not in the changeset.
+    EXPECT_TRUE(rowJson["sourceClassName"].isNull());
+    EXPECT_TRUE(rowJson["targetClassName"].isNull());
+    }
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// Verify that InstanceRepository::Insert on a link-table relationship succeeds when
+// SourceECClassId and TargetECClassId are absent from the input JSON.
+// Because the source/target constraints are non-polymorphic (polymorphic=false), those
+// class IDs are virtual — ECDb infers them from the schema rather than reading them from
+// the row.  A JSON round-trip that captures only the physical properties
+// (classFullName + sourceId + targetId) is therefore sufficient to re-insert the
+// relationship without losing fidelity.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClassIds)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_rel_roundtrip.ecdb", SchemaItem(GetRelSchema())));
+
+    ECInstanceKey personKey, projectKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(personKey,
+        "INSERT INTO tr.Person(Name) VALUES('Bob')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(projectKey,
+        "INSERT INTO tr.Project(Title) VALUES('ProjX')"));
+
+    // Build JSON with only classFullName + physical source/target IDs.
+    // SourceECClassId and TargetECClassId are intentionally omitted — ECDb must infer
+    // them from the non-polymorphic schema without error.
+    Utf8String jsonStr;
+    jsonStr.Sprintf(
+        R"({"classFullName":"TestRelCS:PersonWorksOnProject","sourceId":"%s","targetId":"%s"})",
+        personKey.GetInstanceId().ToHexStr().c_str(),
+        projectKey.GetInstanceId().ToHexStr().c_str());
+
+    BeJsDocument doc;
+    doc.Parse(jsonStr.c_str());
+    ASSERT_FALSE(doc.hasParseError());
+
+    BeJsDocument emptyArgs;
+    ECInstanceKey relKey;
+    auto rc = m_ecdb.GetInstanceRepository().Insert(doc, emptyArgs, JsFormat::JsName, relKey);
+    EXPECT_EQ(BE_SQLITE_DONE, rc) << m_ecdb.GetInstanceRepository().GetLastError().c_str();
+    EXPECT_TRUE(relKey.GetInstanceId().IsValid());
+    EXPECT_TRUE(relKey.GetClassId().IsValid());
+
+    // Read back the inserted row and confirm all four constraint columns are correct.
+    // SourceECClassId == Person's class ID and TargetECClassId == Project's class ID are
+    // inferred by ECDb from the schema — no explicit value was needed in the JSON.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "SELECT SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId"
+        " FROM tr.PersonWorksOnProject WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, relKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    EXPECT_EQ(personKey.GetInstanceId(),  stmt.GetValue(0).GetId<ECInstanceId>());
+    EXPECT_EQ(projectKey.GetInstanceId(), stmt.GetValue(1).GetId<ECInstanceId>());
+    EXPECT_EQ(personKey.GetClassId(),     stmt.GetValue(2).GetId<ECClassId>());
+    EXPECT_EQ(projectKey.GetClassId(),    stmt.GetValue(3).GetId<ECClassId>());
     }
     }
 
