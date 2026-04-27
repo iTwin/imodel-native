@@ -34,6 +34,26 @@ import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
+/**
+ * Status codes returned by the native bulk-delete operation.
+ * @internal
+ */
+export enum BulkDeleteElementsStatus {
+  Success = 0,
+  PartialSuccess = 1,
+  DeletionFailed = 2,
+}
+
+/**
+ * Result of the bulk element deletion operation.
+ * @internal
+ */
+export interface BulkDeleteElementsResult {
+  status: BulkDeleteElementsStatus;
+  sqlDeleteStatus: DbResult;
+  failedIds: Id64Array;
+}
+
 /** Logger categories used by the native addon
  * @internal
  */
@@ -631,7 +651,7 @@ export declare namespace IModelJsNative {
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
-    public deleteElements(elementIds: Id64Array): Id64Array;
+    public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
