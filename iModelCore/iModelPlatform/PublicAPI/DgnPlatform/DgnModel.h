@@ -354,7 +354,7 @@ protected:
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnDeletedElement(DgnElementId id);
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementId id);
 
     /** @} */
 

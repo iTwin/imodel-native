@@ -1482,7 +1482,7 @@ protected:
 
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
-    virtual void _OnChildDeleted(DgnElementCR child) const;
+    DGNPLATFORM_EXPORT virtual void _OnChildDeleted(DgnElementCR child) const;
 
     //! Called after an existing element was successfully added to this parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildAdded.
