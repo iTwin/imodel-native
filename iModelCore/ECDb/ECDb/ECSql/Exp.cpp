@@ -117,6 +117,16 @@ size_t Exp::AddChild(std::unique_ptr<Exp> child)
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus Exp::FinalizeParsing(ECSqlParseContext& ctx)
     {
+    ECSqlParseContext::ScopedFinalizeDepthGuard depthGuard(ctx);
+    if (depthGuard.ExceedsLimit())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            ECDbIssueId::ECDb_0687,
+            "ECSQL expression nesting depth exceeds the maximum allowed depth of %d.",
+            ECSqlParseContext::kMaxFinalizeDepth);
+        return ERROR;
+        }
+
     //some expressions need to finalize themselves before its children and some after their children.
     //So _FinalizeParsing is called two times on each Exp.
     if (!IsComplete())

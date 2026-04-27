@@ -75,6 +75,7 @@ public:
     friend struct ClassViewPrepareStack;
 
     static constexpr int kMaxParseDepth = 500;
+    static constexpr int kMaxFinalizeDepth = 500;
 
     //=======================================================================================
     // RAII guard that increments the parse depth on construction and decrements on destruction.
@@ -92,11 +93,29 @@ public:
         };
     friend struct ScopedParseDepthGuard;
 
+    //=======================================================================================
+    // RAII guard that increments the finalize depth on construction and decrements on
+    // destruction. Prevents stack overflow when traversing deeply-nested expression trees
+    // during the FinalizeParsing tree walk.
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct ScopedFinalizeDepthGuard final
+        {
+    private:
+        ECSqlParseContext& m_ctx;
+    public:
+        explicit ScopedFinalizeDepthGuard(ECSqlParseContext& ctx) : m_ctx(ctx) { ++m_ctx.m_finalizeDepth; }
+        ~ScopedFinalizeDepthGuard() { --m_ctx.m_finalizeDepth; }
+        bool ExceedsLimit() const { return m_ctx.m_finalizeDepth > kMaxFinalizeDepth; }
+        };
+    friend struct ScopedFinalizeDepthGuard;
+
 private:
     ECDbCR m_ecdb;
     IssueDataSource const& m_issues;
     bool m_deferFinalize;
     int m_parseDepth = 0;
+    int m_finalizeDepth = 0;
     std::vector<std::unique_ptr<ParseArg>> m_finalizeParseArgs;
     bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex = 0;
