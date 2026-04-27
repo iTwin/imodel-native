@@ -74,10 +74,29 @@ public:
     };
     friend struct ClassViewPrepareStack;
 
+    static constexpr int kMaxParseDepth = 500;
+
+    //=======================================================================================
+    // RAII guard that increments the parse depth on construction and decrements on destruction.
+    // Use ExceedsLimit() to check if the depth limit was exceeded.
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct ScopedParseDepthGuard final
+        {
+    private:
+        ECSqlParseContext& m_ctx;
+    public:
+        explicit ScopedParseDepthGuard(ECSqlParseContext& ctx) : m_ctx(ctx) { ++m_ctx.m_parseDepth; }
+        ~ScopedParseDepthGuard() { --m_ctx.m_parseDepth; }
+        bool ExceedsLimit() const { return m_ctx.m_parseDepth > kMaxParseDepth; }
+        };
+    friend struct ScopedParseDepthGuard;
+
 private:
     ECDbCR m_ecdb;
     IssueDataSource const& m_issues;
     bool m_deferFinalize;
+    int m_parseDepth = 0;
     std::vector<std::unique_ptr<ParseArg>> m_finalizeParseArgs;
     bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex = 0;

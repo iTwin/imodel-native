@@ -1318,6 +1318,14 @@ BentleyStatus ECSqlParser::ParseValueExpPrimary(std::unique_ptr<ValueExp>& exp, 
         return ERROR;
         }
 
+    ECSqlParseContext::ScopedParseDepthGuard depthGuard(*m_context);
+    if (depthGuard.ExceedsLimit())
+        {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0687,
+            "ECSQL Parse error: Expression nesting depth exceeded maximum of %d", ECSqlParseContext::kMaxParseDepth);
+        return ERROR;
+        }
+
     //This rule is expected to always have parentheses
     BeAssert(parseNode->getChild(0)->getTokenValue() == "(" &&
              parseNode->getChild(2)->getTokenValue() == ")");
@@ -2446,6 +2454,13 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
         case OSQLParseNode::boolean_primary:
             {
             BeAssert(parseNode->count() == 3);
+            ECSqlParseContext::ScopedParseDepthGuard depthGuard(*m_context);
+            if (depthGuard.ExceedsLimit())
+                {
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0687,
+                    "ECSQL Parse error: Search condition nesting depth exceeded maximum of %d", ECSqlParseContext::kMaxParseDepth);
+                return ERROR;
+                }
             if (SUCCESS != ParseSearchCondition(exp, parseNode->getChild(1/*search_condition*/)))
                 return ERROR;
 

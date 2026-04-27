@@ -5,6 +5,9 @@
 #include "../NonPublished/ECDbPublishedTests.h"
 #include "ECSqlFuzzSchema.h"
 #include "ECSqlFuzzGenerator.h"
+#include <atomic>
+#include <chrono>
+#include <thread>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -41,8 +44,29 @@ struct ECSqlFuzzTestFixture : ECDbTestFixture
 
             if (status == ECSqlStatus::Success && allowStep)
                 {
-                // Step once to exercise execution path; don't care about result
+                // Watchdog: interrupt Step() if it runs >500ms (e.g. infinite recursive CTE).
+                // Use a condition variable so the watchdog exits immediately when Step() finishes
+                // normally — avoids paying 500ms overhead on every iteration.
+                std::mutex mtx;
+                std::condition_variable cv;
+                bool stepDone = false;
+
+                std::thread watchdog([&]()
+                    {
+                    std::unique_lock<std::mutex> lk(mtx);
+                    cv.wait_for(lk, std::chrono::milliseconds(500), [&]{ return stepDone; });
+                    if (!stepDone)
+                        m_ecdb.Interrupt();
+                    });
+
                 stmt.Step();
+
+                {
+                std::unique_lock<std::mutex> lk(mtx);
+                stepDone = true;
+                cv.notify_one();
+                }
+                watchdog.join();
                 stmt.Finalize();
                 }
             // Both Success and InvalidECSql are acceptable — we just must not crash

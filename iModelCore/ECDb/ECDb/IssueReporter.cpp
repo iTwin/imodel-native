@@ -695,6 +695,7 @@ IssueId ECDbIssueId::ECDb_0683 = IssueId("ECDb_0683");
 IssueId ECDbIssueId::ECDb_0684 = IssueId("ECDb_0684");
 IssueId ECDbIssueId::ECDb_0685 = IssueId("ECDb_0685");
 IssueId ECDbIssueId::ECDb_0686 = IssueId("ECDb_0686");
+IssueId ECDbIssueId::ECDb_0687 = IssueId("ECDb_0687");
 
 IssueId ECDbIssueId::ECDb_0700 = IssueId("ECDb_0700");
 IssueId ECDbIssueId::ECDb_0701 = IssueId("ECDb_0701");
