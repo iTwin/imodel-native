@@ -571,8 +571,8 @@ enum class BulkDeleteElementsStatus : int
 //=======================================================================================
 struct BulkDeleteElementsResult
     {
-    BulkDeleteElementsStatus status   = BulkDeleteElementsStatus::Success;
-    BeSQLite::DbResult sqlDeleteStatus;
+    BulkDeleteElementsStatus status = BulkDeleteElementsStatus::Success;
+    BeSQLite::DbResult sqlDeleteStatus = BE_SQLITE_OK;
     DgnElementIdSet  failedIds;
     };
 
@@ -4112,9 +4112,13 @@ public:
     //! @param[in] elementIds The set of element IDs to delete.  May contain IDs of any element type.
     //!   Invalid IDs are ignored.  The set may include parent elements whose children are not
     //!   explicitly listed; those children will be pulled in automatically.
-    //! @return The subset of elementIds whose elements could not be deleted because they
-    //!   are still referenced or are in use (definition elements) from outside the set.  An empty set means every requested element was
-    //!   deleted successfully.
+    //! @param[in] skipFKConstraintValidations If true, skips the ON DELETE NO ACTION foreign-key safety checks
+    //!   (i.e. the API does not verify that deleted elements are not still referenced as a CodeScope or Category by
+    //!   elements outside the delete set, and does not check whether deleted DefinitionElements are still in use).
+    //!   ON DELETE CASCADE and ON DELETE SET NULL actions are handled automatically regardless of this flag.
+    //!   Only set this to true when you can guarantee that none of the elements being deleted are referenced by
+    //!   elements outside the delete set via NO ACTION constraints.
+    //! @return A result object containing the status of the bulk delete operation and any element IDs that could not be deleted.
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations = false);
 

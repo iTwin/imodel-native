@@ -51,7 +51,7 @@ export enum BulkDeleteElementsStatus {
 export interface BulkDeleteElementsResult {
   status: BulkDeleteElementsStatus;
   sqlDeleteStatus: DbResult;
-  failedIds: Id64Set;
+  failedIds: Id64Array;
 }
 
 /** Logger categories used by the native addon

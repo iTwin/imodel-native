@@ -926,7 +926,7 @@ bool BulkElementDeletion::FireAllCallbacks()
 
         BeGuid federationGuid;
         if (stmt->GetColumnType(6) != DbValueType::NullVal)
-            federationGuid.FromString(stmt->GetValueText(6));
+            federationGuid = stmt->GetValueGuid(6);
 
         if (jsAvailable)
             {
@@ -1112,15 +1112,28 @@ DbResult BulkElementDeletion::ExecuteDeletion()
         fkStmt.Prepare(m_dgndb, SqlPrintfString("PRAGMA foreign_key_list(%s)", tableName));
         while (BE_SQLITE_ROW == fkStmt.Step())
             {
-            const auto onDeleteAction = fkStmt.GetValueText(6);
+            if (Utf8String(fkStmt.GetValueText(2)).CompareToIAscii(BIS_TABLE(BIS_CLASS_Element)) != 0)
+                continue;
+
+            const auto onDeleteAction = fkStmt.GetValueText(6); // on-delete action
             if (Utf8String(onDeleteAction).CompareToIAscii("CASCADE") == 0)
                 {
-                m_dgndb.TryExecuteSql(SqlPrintfString("DELETE FROM %s WHERE %s IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", tableName, fkStmt.GetValueText(3) /* columnName */));
+                const auto stat = m_dgndb.TryExecuteSql(SqlPrintfString("DELETE FROM %s WHERE %s IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", tableName, fkStmt.GetValueText(3) /* from-column */));
+                if (stat != BE_SQLITE_OK)
+                    {
+                    LOG.errorv("BulkElementDeletion: ON DELETE CASCADE emulation failed for table '%s': %s", tableName, BeSQLiteLib::GetLogError(stat).c_str());
+                    return stat;
+                    }
                 }
             else if (Utf8String(onDeleteAction).CompareToIAscii("SET NULL") == 0)
                 {
-                const auto columnName = fkStmt.GetValueText(3);
-                m_dgndb.TryExecuteSql(SqlPrintfString("UPDATE %s SET %s = NULL WHERE %s IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", tableName, columnName, columnName));
+                const auto columnName = fkStmt.GetValueText(3); // from-column
+                const auto stat = m_dgndb.TryExecuteSql(SqlPrintfString("UPDATE %s SET %s = NULL WHERE %s IN (SELECT ElementId FROM " TEMP_TABLE(TEMP_ELEMENT_DELETION) ")", tableName, columnName, columnName));
+                if (stat != BE_SQLITE_OK)
+                    {
+                    LOG.errorv("BulkElementDeletion: ON DELETE SET NULL emulation failed for table '%s': %s", tableName, BeSQLiteLib::GetLogError(stat).c_str());
+                    return stat;
+                    }
                 }
             }
         }
@@ -1241,11 +1254,22 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
 
     m_dgndb.TryExecuteSql("PRAGMA temp_store = MEMORY");
 
+    auto cleanup = [&]() {
+        m_dgndb.TryExecuteSql("PRAGMA temp_store = DEFAULT");
+        m_dgndb.Elements().SetBulkOperation(false);
+    };
+
     if (const auto stat = CreateTempTables(); stat != BE_SQLITE_OK)
+        {
+        cleanup();
         return { BulkDeleteElementsStatus::DeletionFailed, stat, m_originalElementIds };
+        }
 
     if (const auto stat = ExpandElementIdList(); stat != BE_SQLITE_OK)
+        {
+        cleanup();
         return { BulkDeleteElementsStatus::DeletionFailed, stat, m_originalElementIds };
+        }
 
     // Run ANALYZE after populating the temp table so that SQLite has up-to-date statistics
     // for the subsequent constraint-checking and deletion queries.
@@ -1255,34 +1279,52 @@ BulkDeleteElementsResult BulkElementDeletion::Execute()
     if (!m_skipFKConstraintValidations)
         {
         if (const auto stat = FindAndPruneConstraintViolators(); stat != BE_SQLITE_OK)
+            {
+            cleanup();
             return { BulkDeleteElementsStatus::DeletionFailed, stat, m_originalElementIds };
+            }
 
         // If definition elements exist in the delete set, check usage and prune any that are
         // still referenced by elements outside the delete set.
         if (const auto stat = FindAndPruneInUseDefinitionElements(); stat != BE_SQLITE_OK)
+            {
+            cleanup();
             return { BulkDeleteElementsStatus::DeletionFailed, stat, m_originalElementIds };
+            }
 
         // Early exit if constraint pruning removed every element from the delete set.
         // Returning DeletionFailed here (with BE_SQLITE_OK) signals that nothing was deleted.
         if (GetTempTableRowCount() == 0)
+            {
+            cleanup();
             return { BulkDeleteElementsStatus::DeletionFailed, BE_SQLITE_OK, m_originalElementIds };
+            }
         }
 
     // Fire the pre and post delete callbacks at once
     if (!FireAllCallbacks())
+        {
+        cleanup();
         return { BulkDeleteElementsStatus::DeletionFailed, BE_SQLITE_OK, m_originalElementIds };
+        }
 
     // Execute the actual SQL DELETE.  m_failedToDelete may already be non-empty if some
     // elements were pruned by the constraint checks above; we still attempt the deletion for
     // the remaining valid elements.
     if (const auto stat = ExecuteDeletion(); stat != BE_SQLITE_OK && m_failedToDelete.empty())
+        {
+        cleanup();
         return { BulkDeleteElementsStatus::DeletionFailed, stat, m_originalElementIds };
+        }
 
     // Clean up link-table relationships
     if (const auto stat = DeleteLinkTableRelationships(); stat != BE_SQLITE_OK)
+        { 
+        cleanup();
         return { BulkDeleteElementsStatus::DeletionFailed, stat, m_originalElementIds };
+        }
 
-    m_dgndb.Elements().SetBulkOperation(false);
+    cleanup();
 
     // Report Success only when every originally requested element was deleted;
     // PartialSuccess when at least one was blocked by a constraint.
@@ -1524,7 +1566,7 @@ BulkDeleteElementsResult DgnElements::DeleteElements(const DgnElementIdSet& elem
     {
     DgnDb::VerifyClientThread();
     if (elementIds.empty())
-        return {};
+        return { BulkDeleteElementsStatus::Success, BE_SQLITE_OK, {} };
 
     return BulkElementDeletion(m_dgndb, elementIds, skipFKConstraintValidations).Execute();
     }
