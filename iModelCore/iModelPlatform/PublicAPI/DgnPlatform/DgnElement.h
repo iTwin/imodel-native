@@ -552,8 +552,9 @@ public:
 //=======================================================================================
 //! Indicates the status of the bulk-delete operation.
 //! On Success the operation completed normally and all elements were deleted successfully.
-//! On PartialSuccess the operation completed normally but one or more element skipped
-//!     deletion due to constraint violations are reported separately in [[BulkDeleteResult]]
+//! On PartialSuccess the operation completed normally, but deletion of one or more elements
+//!     was skipped due to constraint violations; those elements are reported separately in
+//!     [[BulkDeleteElementsResult]].
 //! On DeletionFailed the operation failed internally and no elements were deleted.
 // @bsiclass
 //=======================================================================================
