@@ -552,7 +552,7 @@ export declare namespace IModelJsNative {
 
   /** @see `TxnProps` from `@itwin/core-common` */
 
-  type GeometryOutputFormat= "BinaryStream" | "GeometryStreamProps";
+  type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
     builder?: ElementGeometryBuilderParams;
