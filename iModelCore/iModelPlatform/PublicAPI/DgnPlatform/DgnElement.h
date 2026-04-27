@@ -548,34 +548,65 @@ public:
 };
 
 #define TEMP_ELEMENT_DELETION "ElementsToDelete"
+
+//=======================================================================================
+//! Indicates the status of the bulk-delete operation.
+//! On Success the operation completed normally and all elements were deleted successfully.
+//! On PartialSuccess the operation completed normally but one or more element skipped
+//!     deletion due to constraint violations are reported separately in [[BulkDeleteResult]]
+//! On DeletionFailed the operation failed internally and no elements were deleted.
+// @bsiclass
+//=======================================================================================
+enum class BulkDeleteElementsStatus : int
+    {
+    Success          = 0, //!< Operation completed successfully.
+    PartialSuccess   = 1, //!< Some elements were not deleted due to constraints violations.
+    DeletionFailed   = 2, //!< The underlying SQL DELETE or link-table cleanup failed.
+    };
+
+//=======================================================================================
+//! Result of the bulk element deletion operation.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementsResult
+    {
+    BulkDeleteElementsStatus status   = BulkDeleteElementsStatus::Success;
+    BeSQLite::DbResult sqlDeleteStatus;
+    DgnElementIdSet  failedIds;
+    };
+
 class BulkElementDeletion
     {
     DgnDbR m_dgndb;
     DgnElementIdSet m_originalElementIds;
     DgnElementIdSet m_failedToDelete;
 
-    bool m_definitionElementsExist = false;
     bool m_geometricElementsExist = false;
     bool m_subModelRootExists = false;
-    bool m_tempTableExists = false;
+    
+    bool m_skipFKConstraintValidations = false;
 
     // Create temporary tables for bulk deletion
-    bool CreateTempTables();
-    bool ExpandElementIdList();
+    BeSQLite::DbResult CreateTempTables() const;
+    BeSQLite::DbResult ExpandElementIdList();
+    int GetTempTableRowCount() const;
 
     // Find and prune constraint violators
-    bool FindAndPruneConstraintViolators();
-    bool FindAndPruneInUseDefinitionElements();
-    bool FindAndNullTypeDefinitionReferences() const;
-    bool PruneViolators();
+    BeSQLite::DbResult FindAndPruneConstraintViolators();
+    BeSQLite::DbResult FindAndPruneInUseDefinitionElements();
+    BeSQLite::DbResult PruneViolators();
 
     bool FireAllCallbacks();
-    bool DeleteLinkTableRelationships();
-    bool ExecuteDeletion();
+    BeSQLite::DbResult DeleteLinkTableRelationships() const;
+    BeSQLite::DbResult ExecuteDeletion();
 
 public:
-    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds) : m_dgndb(dgndb), m_originalElementIds(originalElementIds) {}
-    DgnElementIdSet Execute();
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds, bool skipFKConstraintValidations) 
+        :   m_dgndb(dgndb), 
+            m_originalElementIds(originalElementIds), 
+            m_skipFKConstraintValidations(skipFKConstraintValidations) {}
+
+    BulkDeleteElementsResult Execute();
     };
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
@@ -1450,7 +1481,7 @@ protected:
 
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
-    virtual void _OnChildDeleted(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildDeleted");}
+    virtual void _OnChildDeleted(DgnElementCR child) const;
 
     //! Called after an existing element was successfully added to this parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildAdded.
@@ -1490,11 +1521,11 @@ protected:
     //! @param[in] model the DgnModel being deleted
     //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDelete, forwarding its status.
-    virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDelete"); return DgnDbStatus::Success; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const;
 
     //! Called after a delete of a DgnModel modeling this element has completed.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDeleted.
-    virtual void _OnSubModelDeleted(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDeleted"); }
+    DGNPLATFORM_EXPORT virtual void _OnSubModelDeleted(DgnModelCR model) const;
 
 public:
     virtual void _OnBeforeOutputsHandled(ElementDependency::Graph const& graph, ElementDependency::Edge const& edge) const {}
@@ -4084,7 +4115,7 @@ public:
     //!   are still referenced or are in use (definition elements) from outside the set.  An empty set means every requested element was
     //!   deleted successfully.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
+    DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations = false);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
