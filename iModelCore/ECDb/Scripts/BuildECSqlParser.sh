@@ -17,8 +17,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSE_DIR="$SCRIPT_DIR/../ECDb/ECSql/Parser"
 
 # ---------------------------------------------------------------------------
+# Helper: compare two dotted version strings; succeeds if $1 >= $2
+# ---------------------------------------------------------------------------
+version_ge() {
+    # Returns 0 (success) if version $1 >= version $2, 1 otherwise.
+    local IFS=.
+    local -a v1=($1) v2=($2)
+    local i
+    for (( i=0; i<${#v2[@]}; i++ )); do
+        local a=${v1[i]:-0} b=${v2[i]:-0}
+        if (( a > b )); then return 0; fi
+        if (( a < b )); then return 1; fi
+    done
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Locate bison >= 3.8.2
 # ---------------------------------------------------------------------------
+BISON_MIN="3.8.2"
+
 if [[ -x "/opt/homebrew/opt/bison/bin/bison" ]]; then
     BISON="/opt/homebrew/opt/bison/bin/bison"
 elif command -v bison &>/dev/null; then
@@ -29,11 +47,22 @@ else
 fi
 
 BISON_VER=$("$BISON" --version | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [[ -z "$BISON_VER" ]]; then
+    echo "ERROR: could not determine bison version from '$BISON --version'" >&2
+    exit 1
+fi
+if ! version_ge "$BISON_VER" "$BISON_MIN"; then
+    echo "ERROR: bison $BISON_VER is too old; need >= $BISON_MIN." >&2
+    echo "       On macOS, install a newer version with: brew install bison" >&2
+    exit 1
+fi
 echo "Using bison $BISON_VER at $BISON"
 
 # ---------------------------------------------------------------------------
-# Locate flex
+# Locate flex >= 2.6
 # ---------------------------------------------------------------------------
+FLEX_MIN="2.6"
+
 if [[ -x "/opt/homebrew/opt/flex/bin/flex" ]]; then
     FLEX="/opt/homebrew/opt/flex/bin/flex"
 elif command -v flex &>/dev/null; then
@@ -43,7 +72,16 @@ else
     exit 1
 fi
 
-FLEX_VER=$("$FLEX" --version | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+FLEX_VER=$("$FLEX" --version | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+if [[ -z "$FLEX_VER" ]]; then
+    echo "ERROR: could not determine flex version from '$FLEX --version'" >&2
+    exit 1
+fi
+if ! version_ge "$FLEX_VER" "$FLEX_MIN"; then
+    echo "ERROR: flex $FLEX_VER is too old; need >= $FLEX_MIN." >&2
+    echo "       On macOS, install a newer version with: brew install flex" >&2
+    exit 1
+fi
 echo "Using flex  $FLEX_VER at $FLEX"
 
 # ---------------------------------------------------------------------------
