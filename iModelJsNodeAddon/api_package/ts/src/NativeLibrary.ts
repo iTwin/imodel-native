@@ -24,7 +24,7 @@ import type {
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, ModelExtentsProps, PerStatementHealthStats, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, TxnProps as CoreTxnProps, UpgradeOptions
+  ModelProps, ModelExtentsProps, PerStatementHealthStats as CorePerStatementHealthStats, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, TxnProps as CoreTxnProps, UpgradeOptions
 } from "@itwin/core-common";
 import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -403,6 +403,8 @@ export declare namespace IModelJsNative {
   }
 
   /** @see `PerStatementHealthStats` from `@itwin/core-common` */
+  type PerStatementHealthStats = CorePerStatementHealthStats;
+
   interface ChangesetHealthStats {
     changesetId: string;
     uncompressedSizeBytes: number;
@@ -412,7 +414,7 @@ export declare namespace IModelJsNative {
     deletedRows: number;
     totalElapsedMs: number;
     totalFullTableScans: number;
-    perStatementStats: [PerStatementHealthStats];
+    perStatementStats: PerStatementHealthStats[];
   }
   interface ECSqlRowAdaptorOptions {
     abbreviateBlobs?: boolean;

@@ -138,8 +138,8 @@ describe("ChangesetReader", () => {
         code: Code.createEmpty(),
       } as any);
 
-      const txnId = db.getCurrentTxnId();
       db.saveChanges("insert for txn reader");
+      const txnId = db.queryPreviousTxnId(db.getCurrentTxnId());
 
       const reader = new iModelJsNative.ChangesetReader();
       reader.openTxn(db, txnId, false, 0);
