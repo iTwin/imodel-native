@@ -255,8 +255,8 @@ describe("Transactions", () => {
   describe("getTxnDescription", () => {
     it("returns description for a txn", () => {
       insertTestElement("desc-test");
-      const txnId = db.getCurrentTxnId();
       db.saveChanges("a specific description");
+      const txnId = db.queryPreviousTxnId(db.getCurrentTxnId());
       const desc = db.getTxnDescription(txnId);
       assert.isString(desc);
       assert.equal(desc, "a specific description");
