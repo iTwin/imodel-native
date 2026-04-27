@@ -30,7 +30,7 @@ interface IChange {
   after: ChangeValueType[] ;
   isIndirect: boolean;
 }
-describe("Native changeset reader", () => {
+describe("Native sqlite changeset reader", () => {
   it("computeChangesetId", () => {
     const props = {
       id: "22e5e7652fa738cd79a77c539b6a72736f5f7de3",
@@ -41,7 +41,7 @@ describe("Native changeset reader", () => {
     expect(id).equals(props.id)
   });
   it("changeset reader", () => {
-    const reader = new iModelJsNative.ChangesetReader();
+    const reader = new iModelJsNative.SqliteChangesetReader();
     const testCsFile = path.join(getAssetsDir(), "test.cs");
     reader.openFile(testCsFile, false);
 
@@ -75,7 +75,7 @@ describe("Native changeset reader", () => {
     expect(changes.filter((x) => x.primaryKeys[0] === "0xcd00000002f5").map((x) => x.op)[0]).eq("updated");
   });
   it("getColumnValueXXXX() methods", () => {
-    const reader = new iModelJsNative.ChangesetReader();
+    const reader = new iModelJsNative.SqliteChangesetReader();
     const testCsFile = path.join(getAssetsDir(), "test.cs");
     reader.openFile(testCsFile, false);
 
@@ -108,7 +108,7 @@ describe("Native changeset reader", () => {
   });
 
   it("check exceptions", () => {
-    const reader = new iModelJsNative.ChangesetReader();
+    const reader = new iModelJsNative.SqliteChangesetReader();
     expect(() => reader.step()).throw("step(): no changeset opened.");
     expect(() => reader.getColumnCount()).throw("getColumnCount(): there is no current row.");
     expect(() => reader.getDdlChanges()).throw("getDdlChanges(): no changeset opened.");
