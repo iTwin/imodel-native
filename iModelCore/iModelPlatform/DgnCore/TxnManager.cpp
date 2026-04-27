@@ -3813,7 +3813,7 @@ void TxnManager::PullMergeResume() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeBegin() {
     TXN_DEBUG("<< PullMergeBegin()");
-    PullMergeReverseLocalChanges();
+    PullMergeReverseLocalChanges(false);
     TXN_DEBUG(">> PullMergeBegin()");
 }
 
@@ -3829,7 +3829,7 @@ struct MakeQueryOnly {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(std::function<void(TxnId, TxnType)> onReverse) {
+std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(bool captureInstanceChanges) {
     TXN_DEBUG("<< PullMergeReverseLocalChanges()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (conf.InProgress()) {
@@ -3858,8 +3858,9 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(std::fun
             if (IsTxnReversed(curr))
                 continue;
                 
-            if (onReverse)
-                onReverse(curr, GetTxnType(curr));
+            if (captureInstanceChanges) {
+                CaptureInstanceChanges(curr);
+            }
 
             LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
             auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
@@ -3886,6 +3887,18 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(std::fun
     CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeBegin(*this); });
     TXN_DEBUG(">> PullMergeReverseLocalChanges() %d txns reversed", reversedTxns.size());
     return reversedTxns;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::CaptureInstanceChanges(TxnId txnId) {
+    if (GetTxnType(txnId) != TxnType::Data)
+        return;
+
+    auto jsTxns = m_dgndb.GetJsTxns();
+    if (nullptr != jsTxns)
+        m_dgndb.CallJsFunction(jsTxns, "_captureInstanceChanges", {Napi::String::New(jsTxns.Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str())});
 }
 
 /*---------------------------------------------------------------------------------**//**
