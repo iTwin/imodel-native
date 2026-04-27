@@ -1762,11 +1762,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
 
         const auto deleteOptions = ARGUMENT_IS_PRESENT(1) ? info[1].As<Napi::Object>() : Env().Undefined();
-        auto elemIds = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), deleteOptions);
+        const auto result = JsInterop::DeleteElements(db, info[0].As<Napi::Array>(), deleteOptions);
+
+        auto ret = Napi::Object::New(Env());
+        ret.Set("status", Napi::Number::New(Env(), static_cast<int>(result.status)));
+        ret.Set("sqlDeleteStatus", Napi::Number::New(Env(), static_cast<int>(result.sqlDeleteStatus)));
+
         uint32_t index = 0;
-        auto ret = Napi::Array::New(Env(), elemIds.size());
-        for (const auto& elemId : elemIds)
-            ret.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+        auto failedArr = Napi::Array::New(Env(), result.failedIds.size());
+        for (const auto& elemId : result.failedIds)
+            failedArr.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+        ret.Set("failedIds", failedArr);
 
         return ret;
     }
