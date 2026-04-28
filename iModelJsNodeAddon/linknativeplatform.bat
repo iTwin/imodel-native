@@ -3,12 +3,11 @@ SETLOCAL
 
 if not defined OutRoot goto :badOutRoot
 
-REM link local build to itwinjs builds for testing
+REM link native build to ecsql fuzzer build for testing code coverage
 
-if not exist %itwinjsDir%\core\backend goto :badJsdir
+if not defined fuzzerDir goto :badFuzzerDir
 
-if defined coreDestDir goto :doCopy
-set coreDestDir=%itwinjsDir%\core\backend\node_modules\@bentley\imodeljs-native
+if not defined fuzzerDestDir set fuzzerDestDir=%fuzzerDir%\node_modules\@bentley\imodeljs-native
 
 :doCopy
 
@@ -25,15 +24,15 @@ copy %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-native\package.json %libDir
 
 if not exist %libDir%\devbuild.json echo {"dev-build": true} > %libDir%\devbuild.json
 
-if exist %coreDestDir% rmdir /s /q %coreDestDir%
-mklink /j %coreDestDir% %libDir% >nul
+echo Local build in %libDir% is linked now to %fuzzerDir%.
 
-echo Local build in %libDir% is linked now to %itwinjsDir%. Use "unlinknativebuild" to stop.
+if exist %fuzzerDestDir% rmdir /s /q %fuzzerDestDir%
+mklink /j %fuzzerDestDir% %libDir% >nul
 
 goto :xit
 
-:badJsDir
-echo Set the environment variable itwinjsDir that points to an iTwin.js directory.
+:badFuzzerDir
+echo Set the environment variable fuzzerDir that points to the fuzzing directory.
 goto :xit
 
 :badOutRoot
