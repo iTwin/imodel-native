@@ -9,6 +9,7 @@
 #include "ChangeManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
+#include "InstanceGraphImpl.h"
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -175,6 +176,7 @@ private:
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     mutable SnappyFromMemory m_snappyReader;
     mutable SnappyToBlob m_snappyWriter;
+    mutable std::unique_ptr<GraphStatementCache> m_graphStatementCache;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
@@ -284,6 +286,15 @@ public:
         return *m_instanceRepo;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
+    GraphStatementCache& GetGraphStatementCache() const {
+        if (m_graphStatementCache == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_graphStatementCache == nullptr) {
+                m_graphStatementCache = std::make_unique<GraphStatementCache>(m_ecdb);
+            }
+        }
+        return *m_graphStatementCache;
+    }
     ProfileVersion const& RefreshProfileVersion() const {
         m_profileManager.RefreshProfileVersion();
         return m_profileManager.GetProfileVersion();
