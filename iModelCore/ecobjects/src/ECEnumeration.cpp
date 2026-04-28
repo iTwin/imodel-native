@@ -82,7 +82,7 @@ ECObjectsStatus ECEnumeration::SetTypeName(Utf8CP typeName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECEnumeration::WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_0) //Enumerations will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;

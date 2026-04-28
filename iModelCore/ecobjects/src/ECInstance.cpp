@@ -3751,14 +3751,14 @@ ICustomAttributeDeserializerP                      CustomAttributeDeserializerMa
 struct  InstanceXmlWriter
     {
     private:
-        BeXmlWriter*     m_xmlWriter;
+        BePugiXmlWriter*     m_xmlWriter;
 
 
     public:
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        InstanceXmlWriter(BeXmlWriter *writer)
+        InstanceXmlWriter(BePugiXmlWriter *writer)
             : m_xmlWriter(writer)
             {
             writer->SetIndentation(4);
@@ -3961,7 +3961,7 @@ struct  InstanceXmlWriter
                 if (ECObjectsStatus::Success != ecInstance.GetValue(ecValue, accessString.c_str(), index))
                     break;
 
-                if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString))
+                if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(typeString))
                     return InstanceWriteStatus::XmlWriteError;
 
                 // write the primitive value
@@ -4004,7 +4004,7 @@ struct  InstanceXmlWriter
                 typeString = typeString.append(":");
                 typeString = typeString.append(SchemaParseUtils::PrimitiveTypeToString(navigationProperty.GetType()));
 
-                if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
+                if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
                     return InstanceWriteStatus::XmlWriteError;
                 char outString[512];
 
@@ -4017,7 +4017,7 @@ struct  InstanceXmlWriter
                 // Write either the relationship class name or class id
                 if (nullptr != ecValue.GetNavigationInfo().GetRelationshipClass())
                     {
-                    if (BEXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE))
+                    if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE))
                         return InstanceWriteStatus::XmlWriteError;
                     Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass()->GetSchema(), *ecValue.GetNavigationInfo().GetRelationshipClass());
                     m_xmlWriter->WriteRaw(className.c_str());
@@ -4025,7 +4025,7 @@ struct  InstanceXmlWriter
                     }
                 else if (ecValue.GetNavigationInfo().GetRelationshipClassId().IsValid())
                     {
-                    if (BEXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
+                    if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
                         return InstanceWriteStatus::XmlWriteError;
 
                     char classId[512];
@@ -4175,7 +4175,7 @@ struct  InstanceXmlWriter
 
             uint32_t nElements = ecValue.GetArrayInfo().GetCount();
 
-            if (BEXML_Success != m_xmlWriter->WriteElementStart(arrayProperty.GetName().c_str()))
+            if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(arrayProperty.GetName().c_str()))
                 return InstanceWriteStatus::XmlWriteError;
 
             if (ARRAYKIND_Primitive == arrayKind)
@@ -4348,10 +4348,10 @@ InstanceReadStatus   IECInstance::ReadFromBeXmlNode(IECInstancePtr& ecInstance, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToXmlFile(WCharCP fileName, bool writeInstanceId, bool utf16)
     {
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(fileName);
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::CreateFileWriter(fileName);
     InstanceXmlWriter   instanceWriter(xmlWriter.get());
 
-    xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    xmlWriter->WriteDocumentStart(BEPUGIXML_CHAR_ENCODING_Utf8);
     return instanceWriter.WriteInstance(*this, writeInstanceId);
     }
 
@@ -4361,10 +4361,10 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile(WCharCP fileName, bool write
 template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString(T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance, bool useLatestXml)
     {
     ecInstanceXml.clear();
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
     InstanceXmlWriter   instanceWriter(xmlWriter.get());
     if (isStandAlone)
-        xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+        xmlWriter->WriteDocumentStart(BEPUGIXML_CHAR_ENCODING_Utf8);
 
     InstanceWriteStatus status;
     if (useLatestXml)
@@ -4414,7 +4414,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlStringLatestVersion(WString & ecI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter)
+InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BePugiXmlWriterR xmlWriter)
     {
     Utf8CP className = this->GetClass().GetName().c_str();
 
@@ -4424,7 +4424,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Utf8CP className)
+InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BePugiXmlWriterR xmlWriter, Utf8CP className)
     {
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
@@ -4434,7 +4434,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BeXmlWriterR xmlWriter, Utf8CP className)
+InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BePugiXmlWriterR xmlWriter, Utf8CP className)
     {
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
@@ -4444,7 +4444,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BeXmlWriterR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus IECInstance::WriteToBeXmlDom(BeXmlWriterR xmlWriter, bool writeInstanceId)
+InstanceWriteStatus IECInstance::WriteToBeXmlDom(BePugiXmlWriterR xmlWriter, bool writeInstanceId)
     {
     InstanceXmlWriter writer(&xmlWriter);
     return writer.WriteInstance(*this, writeInstanceId);

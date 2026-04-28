@@ -500,7 +500,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes
 (
-BeXmlWriterR xmlWriter,
+BePugiXmlWriterR xmlWriter,
 ECVersion ecXmlVersion
 ) const
     {

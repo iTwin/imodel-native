@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-#include "BeXml/BeXml.h"
 #include <regex>
 
 USING_NAMESPACE_BENTLEY_EC

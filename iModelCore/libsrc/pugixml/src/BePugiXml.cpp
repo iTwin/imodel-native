@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <pugixml/src/BePugiXml.h>
+#include <Bentley/BeFile.h>
 #include <sstream>
 
 BEGIN_BENTLEY_NAMESPACE
@@ -219,6 +220,15 @@ BePugiXmlWriter::BePugiXmlWriter () :
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BePugiXmlWriter::~BePugiXmlWriter ()
+    {
+    if (m_isFileWriter)
+        flushToFile ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BePugiXmlWriterPtr BePugiXmlWriter::Create ()
     {
     return new BePugiXmlWriter ();
@@ -299,6 +309,17 @@ BePugiXmlStatus BePugiXmlWriter::WriteElementEnd ()
     {
     if (m_nodeStack.empty ())
         return BEPUGIXML_CantWrite;
+
+    // Move xmlns to last attribute position to match libxml2 attribute ordering.
+    pugi::xml_node node = m_nodeStack.back ();
+    pugi::xml_attribute xmlnsAttr = node.attribute ("xmlns");
+    if (!xmlnsAttr.empty ())
+        {
+        // Save value, remove, re-append at end.
+        Utf8String value (xmlnsAttr.value ());
+        node.remove_attribute (xmlnsAttr);
+        node.append_attribute ("xmlns").set_value (value.c_str ());
+        }
 
     m_nodeStack.pop_back ();
     return BEPUGIXML_Success;
@@ -435,14 +456,85 @@ BePugiXmlStatus BePugiXmlWriter::SetIndentation (int indent)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+static void removeSpaceBeforeSelfClose (Utf8StringR xml)
+    {
+    // pugixml with format_indent writes " />" for self-closing tags.
+    // libxml2 wrote "/>". Match libxml2 output so checksums stay stable.
+    // Track quote state so we never alter attribute values that happen to contain " />".
+    Utf8String result;
+    result.reserve (xml.size ());
+
+    bool inQuote = false;
+    char quoteChar = 0;
+    size_t len = xml.size ();
+
+    for (size_t i = 0; i < len; ++i)
+        {
+        char c = xml[i];
+        if (inQuote)
+            {
+            if (c == quoteChar)
+                inQuote = false;
+            result.push_back (c);
+            }
+        else
+            {
+            if (c == '"' || c == '\'')
+                {
+                inQuote = true;
+                quoteChar = c;
+                result.push_back (c);
+                }
+            else if (c == ' ' && i + 2 < len && xml[i + 1] == '/' && xml[i + 2] == '>')
+                {
+                // Skip the space; the '/' and '>' will be copied on subsequent iterations.
+                }
+            else
+                {
+                result.push_back (c);
+                }
+            }
+        }
+
+    xml = result;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void BePugiXmlWriter::flushToFile ()
+    {
+    if (m_filePath.empty ())
+        return;
+
+    // Serialize to string, post-process, then write to file.
+    std::ostringstream stream;
+    unsigned int flags = m_indent ? pugi::format_indent : pugi::format_raw;
+    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugi::encoding_utf8);
+
+    Utf8String content (stream.str ().c_str ());
+    removeSpaceBeforeSelfClose (content);
+
+    BeFile file;
+    if (BeFileStatus::Success == file.Create (m_filePath.c_str (), true))
+        {
+        uint32_t bytesWritten;
+        file.Write (&bytesWritten, content.c_str (), (uint32_t) content.size ());
+        file.Close ();
+        }
+
+    // Clear path so we don't write again in the destructor.
+    m_filePath.clear ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void BePugiXmlWriter::ToString (Utf8StringR buffer)
     {
     if (m_isFileWriter)
         {
-        m_doc.save_file (m_filePath.c_str (),
-            m_indent ? m_indentString.c_str () : "",
-            m_indent ? pugi::format_indent : pugi::format_raw,
-            pugi::encoding_utf8);
+        flushToFile ();
         buffer.clear ();
         return;
         }
@@ -454,6 +546,7 @@ void BePugiXmlWriter::ToString (Utf8StringR buffer)
 
     m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugi::encoding_utf8);
     buffer = stream.str ().c_str ();
+    removeSpaceBeforeSelfClose (buffer);
     }
 
 //---------------------------------------------------------------------------------------

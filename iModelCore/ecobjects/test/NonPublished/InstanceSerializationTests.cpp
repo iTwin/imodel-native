@@ -5,7 +5,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-#include "BeXml/BeXml.h"
+#include <pugixml/src/BePugiXml.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -1034,14 +1034,14 @@ TEST_F(InstanceSerializationTest, WriteECInstance)
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringProperty", ECValue("Some value")));
 
     // WriteToBeXmlNode
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
     ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlNode(*xmlWriter));
 
     Utf8String nodeInstanceString;
     xmlWriter->ToString(nodeInstanceString);
 
     // WriteToBeXmlDom
-    BeXmlWriterPtr xmlDOMWriter = BeXmlWriter::Create();
+    BePugiXmlWriterPtr xmlDOMWriter = BePugiXmlWriter::Create();
     Utf8String domInstanceString = "";
     ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlDom(*xmlDOMWriter, true));
     xmlDOMWriter->ToString(domInstanceString);
