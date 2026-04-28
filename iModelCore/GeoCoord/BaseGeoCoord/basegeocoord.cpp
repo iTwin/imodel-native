@@ -22,7 +22,7 @@
 # include <unistd.h>
 #endif
 #include <GeoCoord/BaseGeoTiffKeysList.h>
-#include    <BeXml/BeXml.h>
+#include <pugixml/src/BePugiXml.h>
 #include <algorithm>
 #include <cctype>
 
@@ -2466,7 +2466,7 @@ GeoCoordParseStatus GetDatumNameFromNameAliasOrTransform(Utf8StringR finalDatumN
 class OSGEOXMLParser: public SRSGeneralParser
 {
 private:
-    mutable BeXmlDomPtr m_xmlDom;
+    mutable BePugiXmlDomPtr m_xmlDom;
 
 public:
 
@@ -2490,7 +2490,7 @@ virtual ~OSGEOXMLParser()
 GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP source) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
-    BeXmlStatus xmlStatus;
+    BePugiXmlStatus xmlStatus;
 
     Utf8String ellipsoidAlias;
     Utf8String datumAlias;
@@ -2508,24 +2508,24 @@ GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP source) const
             tempXML = tempXML.substr(pos+2);
         }
 
-    m_xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, tempXML.c_str());
+    m_xmlDom = BePugiXmlDom::CreateAndReadFromString (xmlStatus, tempXML.c_str());
 
-    if (!m_xmlDom.IsValid() || xmlStatus != BEXML_Success)
+    if (!m_xmlDom.IsValid() || xmlStatus != BEPUGIXML_Success)
         return GeoCoordParse_ParseError;
 
-    BeXmlNodeP rootNode = m_xmlDom->GetRootElement ();
+    BePugiXmlNode rootNode = m_xmlDom->GetRootElement ();
     if (nullptr == rootNode)
         return GeoCoordParse_ParseError;
     if (Utf8String(rootNode->GetName()) != "Dictionary")
         return GeoCoordParse_NoRoot;
 
     // Get aliases and components
-    BeXmlNodeP gcsNode = nullptr;
+    BePugiXmlNode gcsNode = nullptr;
     bool gcsGeographic = false;
-    BeXmlNodeP datumNode = nullptr;
-    BeXmlNodeP ellipsoidNode = nullptr;
+    BePugiXmlNode datumNode = nullptr;
+    BePugiXmlNode ellipsoidNode = nullptr;
 
-    BeXmlNodeP child = rootNode->GetFirstChild();
+    BePugiXmlNode child = rootNode->GetFirstChild();
     if (nullptr == child)
         return GeoCoordParse_NoGCS;
 
@@ -2569,16 +2569,16 @@ GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP source) const
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetAlias(Utf8String& alias, Utf8String& type, Utf8String& referenced, BeXmlNodeP aliasNode) const
+GeoCoordParseStatus GetAlias(Utf8String& alias, Utf8String& type, Utf8String& referenced, BePugiXmlNode aliasNode) const
     {
     if (nullptr == aliasNode)
         return GeoCoordParse_Error;
 
     Utf8String idVal;
-    if (BEXML_Success != aliasNode->GetAttributeStringValue(type, "type"))
+    if (BEPUGIXML_Success != aliasNode->GetAttributeStringValue(type, "type"))
         return GeoCoordParse_BadAlias;
 
-    if (BEXML_Success != aliasNode->GetAttributeStringValue(idVal, "id"))
+    if (BEPUGIXML_Success != aliasNode->GetAttributeStringValue(idVal, "id"))
         return GeoCoordParse_BadAlias;
 
     if (GeoCoordParse_Success != GetNodeContent(referenced, aliasNode, "ObjectId"))
@@ -2604,12 +2604,12 @@ GeoCoordParseStatus GetAlias(Utf8String& alias, Utf8String& type, Utf8String& re
 *   @return the child or nullptr if not subnode of provided name is found.
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlNodeP GetNode(BeXmlNodeP parent, Utf8CP nodeName) const
+BePugiXmlNode GetNode(BePugiXmlNode parent, Utf8CP nodeName) const
     {
     if (nullptr == parent)
         return nullptr;
 
-    BeXmlNodeP child = parent->GetFirstChild();
+    BePugiXmlNode child = parent->GetFirstChild();
 
     while (nullptr != child && Utf8String(child->GetName()) != nodeName)
         child = child->GetNextSibling();
@@ -2626,14 +2626,14 @@ BeXmlNodeP GetNode(BeXmlNodeP parent, Utf8CP nodeName) const
 *           otherwise.
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetNodeContent(Utf8String& content, BeXmlNodeP parent, Utf8CP nodeName) const
+GeoCoordParseStatus GetNodeContent(Utf8String& content, BePugiXmlNode parent, Utf8CP nodeName) const
     {
-    BeXmlNodeP theNode = GetNode(parent, nodeName);
+    BePugiXmlNode theNode = GetNode(parent, nodeName);
 
     if (nullptr == theNode)
         return GeoCoordParse_NodeNotFound;
 
-    if (BEXML_Success != theNode->GetContent(content))
+    if (BEPUGIXML_Success != theNode->GetContent(content))
         return GeoCoordParse_NoContent;
 
     return GeoCoordParse_Success;
@@ -2642,18 +2642,18 @@ GeoCoordParseStatus GetNodeContent(Utf8String& content, BeXmlNodeP parent, Utf8C
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetProjectionMethod(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
+GeoCoordParseStatus GetProjectionMethod(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     {
     if (nullptr == gcsNode)
         return GeoCoordParse_Error;
 
     Utf8String projectionMethodId;
 
-    BeXmlNodeP conversionNode = GetNode(gcsNode, "Conversion");
+    BePugiXmlNode conversionNode = GetNode(gcsNode, "Conversion");
     if (nullptr == conversionNode)
         return GeoCoordParse_BadProjectionMethod;
 
-    BeXmlNodeP projectionNode = GetNode(conversionNode, "Projection");
+    BePugiXmlNode projectionNode = GetNode(conversionNode, "Projection");
     if (nullptr == projectionNode)
         return GeoCoordParse_BadProjectionMethod;
 
@@ -2674,7 +2674,7 @@ GeoCoordParseStatus GetProjectionMethod(BaseGCSR baseGCS, BeXmlNodeP gcsNode) co
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetParameter(BeXmlNodeP parameterValueNode, Utf8String& parameterName, double& numValue, Utf8String& stringValue) const
+GeoCoordParseStatus GetParameter(BePugiXmlNode parameterValueNode, Utf8String& parameterName, double& numValue, Utf8String& stringValue) const
     {
     if (nullptr == parameterValueNode)
         return GeoCoordParse_Error;
@@ -2699,7 +2699,7 @@ GeoCoordParseStatus GetParameter(BeXmlNodeP parameterValueNode, Utf8String& para
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetAllParameters(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
+GeoCoordParseStatus GetAllParameters(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
 
@@ -2708,15 +2708,15 @@ GeoCoordParseStatus GetAllParameters(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
 
     Utf8String projectionMethodId;
 
-    BeXmlNodeP conversionNode = GetNode(gcsNode, "Conversion");
+    BePugiXmlNode conversionNode = GetNode(gcsNode, "Conversion");
     if (nullptr == conversionNode)
         return GeoCoordParse_BadProjectionParamsSection;
 
-    BeXmlNodeP projectionNode = GetNode(conversionNode, "Projection");
+    BePugiXmlNode projectionNode = GetNode(conversionNode, "Projection");
     if (nullptr == projectionNode)
         return GeoCoordParse_BadProjectionParamsSection;
 
-    BeXmlNodeP theCurrentNode = projectionNode->GetFirstChild();
+    BePugiXmlNode theCurrentNode = projectionNode->GetFirstChild();
     while(nullptr != theCurrentNode)
         {
         if (Utf8String(theCurrentNode->GetName()) == "ParameterValue")
@@ -2744,7 +2744,7 @@ GeoCoordParseStatus GetAllParameters(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetProjection(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
+GeoCoordParseStatus GetProjection(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
 
@@ -2763,16 +2763,16 @@ GeoCoordParseStatus GetProjection(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetQuadrant(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
+GeoCoordParseStatus GetQuadrant(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     {
     if (nullptr == gcsNode)
         return GeoCoordParse_Error;
 
-    BeXmlNodeP infoNode = GetNode(gcsNode, "AdditionalInformation");
+    BePugiXmlNode infoNode = GetNode(gcsNode, "AdditionalInformation");
     if (nullptr == infoNode)
         return GeoCoordParse_BadQuadrant;
 
-    BeXmlNodeP theCurrentNode = infoNode->GetFirstChild();
+    BePugiXmlNode theCurrentNode = infoNode->GetFirstChild();
     while(nullptr != theCurrentNode)
         {
         if (Utf8String(theCurrentNode->GetName()) == "ParameterItem")
@@ -2782,11 +2782,11 @@ GeoCoordParseStatus GetQuadrant(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
                 {
                 if (keyValue == "CSQuadrantSimplified")
                     {
-                    BeXmlNodeP quadNode = GetNode(theCurrentNode, "IntegerValue");
+                    BePugiXmlNode quadNode = GetNode(theCurrentNode, "IntegerValue");
                     if (nullptr != quadNode)
                         {
                         uint32_t quadValue;
-                        if (BEXML_Success == quadNode->GetContentUInt32Value(quadValue))
+                        if (BEPUGIXML_Success == quadNode->GetContentUInt32Value(quadValue))
                             {
                             if (SUCCESS == baseGCS.SetQuadrant(static_cast<short>(quadValue)))
                                 return GeoCoordParse_Success;
@@ -2804,24 +2804,24 @@ GeoCoordParseStatus GetQuadrant(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BeXmlNodeP gcsNode) const
+GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     {
     if (nullptr == gcsNode)
         return GeoCoordParse_Error;
 
-    BeXmlNodeP domainNode = GetNode(gcsNode, "DomainOfValidity");
+    BePugiXmlNode domainNode = GetNode(gcsNode, "DomainOfValidity");
     if (nullptr == domainNode)
         return GeoCoordParse_BadDomain;
 
-    BeXmlNodeP extentNode = GetNode(domainNode, "Extent");
+    BePugiXmlNode extentNode = GetNode(domainNode, "Extent");
     if (nullptr == extentNode)
         return GeoCoordParse_BadDomain;
 
-    BeXmlNodeP geogElemNode = GetNode(extentNode, "GeographicElement");
+    BePugiXmlNode geogElemNode = GetNode(extentNode, "GeographicElement");
     if (nullptr == geogElemNode)
         return GeoCoordParse_BadDomain;
 
-    BeXmlNodeP geogBoxNode = GetNode(geogElemNode, "GeographicBoundingBox");
+    BePugiXmlNode geogBoxNode = GetNode(geogElemNode, "GeographicBoundingBox");
     if (nullptr == geogBoxNode)
         return GeoCoordParse_BadDomain;
 
@@ -2834,31 +2834,31 @@ GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BeXmlNodeP gcsNode) co
     double north = 0.0;
     double south = 0.0;
 
-    BeXmlNodeP theCurrentNode = geogBoxNode->GetFirstChild();
+    BePugiXmlNode theCurrentNode = geogBoxNode->GetFirstChild();
     while(nullptr != theCurrentNode)
         {
         if (Utf8String(theCurrentNode->GetName()) == "WestBoundLongitude")
             {
             westPresent = true;
-            if (BEXML_Success != theCurrentNode->GetContentDoubleValue(west))
+            if (BEPUGIXML_Success != theCurrentNode->GetContentDoubleValue(west))
                 return GeoCoordParse_BadDomain;
             }
         else if (Utf8String(theCurrentNode->GetName()) == "EastBoundLongitude")
             {
             eastPresent = true;
-            if (BEXML_Success != theCurrentNode->GetContentDoubleValue(east))
+            if (BEPUGIXML_Success != theCurrentNode->GetContentDoubleValue(east))
                 return GeoCoordParse_BadDomain;
             }
         else if (Utf8String(theCurrentNode->GetName()) == "SouthBoundLatitude")
             {
             southPresent = true;
-            if (BEXML_Success != theCurrentNode->GetContentDoubleValue(south))
+            if (BEPUGIXML_Success != theCurrentNode->GetContentDoubleValue(south))
                 return GeoCoordParse_BadDomain;
             }
         else if (Utf8String(theCurrentNode->GetName()) == "NorthBoundLatitude")
             {
             northPresent = true;
-            if (BEXML_Success != theCurrentNode->GetContentDoubleValue(north))
+            if (BEPUGIXML_Success != theCurrentNode->GetContentDoubleValue(north))
                 return GeoCoordParse_BadDomain;
             }
         theCurrentNode = theCurrentNode->GetNextSibling();
@@ -2883,7 +2883,7 @@ GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BeXmlNodeP gcsNode) co
 * gcsNode can contain the datum transformations for custom datums.
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& ellipsoidName, BeXmlNodeP ellipsoidNode, Utf8String ellipsoidAlias) const
+GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& ellipsoidName, BePugiXmlNode ellipsoidNode, Utf8String ellipsoidAlias) const
     {
     if (nullptr == ellipsoidNode)
         return GeoCoordParse_NoEllipsoid;
@@ -2897,22 +2897,22 @@ GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& elli
 
     // We will try to find a match using the equatorial and polar radiuses
     double equatorialRadius = 0.0;
-    BeXmlNodeP theNode = GetNode(ellipsoidNode, "SemiMajorAxis");
+    BePugiXmlNode theNode = GetNode(ellipsoidNode, "SemiMajorAxis");
 
     if (nullptr == theNode)
         return GeoCoordParse_BadEllipsoid;
 
-    if (BEXML_Success != theNode->GetContentDoubleValue(equatorialRadius))
+    if (BEPUGIXML_Success != theNode->GetContentDoubleValue(equatorialRadius))
         return GeoCoordParse_BadEllipsoid;
 
     double polarRadius = 0.0;
     if (nullptr == (theNode = GetNode(ellipsoidNode, "SecondDefiningParameter")))
         return GeoCoordParse_BadEllipsoid;
 
-    BeXmlNodeP paramNode;
+    BePugiXmlNode paramNode;
     if (nullptr != (paramNode = GetNode(theNode, "SemiMinorAxis")))
         {
-        if (BEXML_Success != theNode->GetContentDoubleValue(polarRadius))
+        if (BEPUGIXML_Success != theNode->GetContentDoubleValue(polarRadius))
             return GeoCoordParse_BadEllipsoid;
         }
     else
@@ -2949,7 +2949,7 @@ GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& elli
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetTransformParameter(Utf8String&nodeName, Utf8String& nodeValue, Utf8String& additionalValue, BeXmlNodeP searchNode) const
+GeoCoordParseStatus GetTransformParameter(Utf8String&nodeName, Utf8String& nodeValue, Utf8String& additionalValue, BePugiXmlNode searchNode) const
     {
     if (nullptr == searchNode)
         return GeoCoordParse_Error;
@@ -2957,11 +2957,11 @@ GeoCoordParseStatus GetTransformParameter(Utf8String&nodeName, Utf8String& nodeV
     if (GeoCoordParse_Success != GetNodeContent(nodeName, searchNode, "OperationParameterId"))
         return GeoCoordParse_BadTransformParam;
 
-    BeXmlNodeP valueNode;
+    BePugiXmlNode valueNode;
     if (nullptr == (valueNode = GetNode(searchNode, "Value")))
         return GeoCoordParse_BadTransformParam;
 
-    if (BEXML_Success != valueNode->GetContent(nodeValue))
+    if (BEPUGIXML_Success != valueNode->GetContent(nodeValue))
         return GeoCoordParse_BadTransformParam;
 
     valueNode->GetAttributeStringValue(additionalValue, "uom");
@@ -2997,12 +2997,12 @@ double GetAngularAsArcSecond(double parameterValue, const Utf8String& unitsOfMea
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetGeocentricTransformParameters(DPoint3d& delta, DPoint3d& rotation, double& scale, DPoint3d& translation, BeXmlNodeP transformNode) const
+GeoCoordParseStatus GetGeocentricTransformParameters(DPoint3d& delta, DPoint3d& rotation, double& scale, DPoint3d& translation, BePugiXmlNode transformNode) const
     {
     if (nullptr == transformNode)
         return GeoCoordParse_Error;
 
-    BeXmlNodeP searchNode;
+    BePugiXmlNode searchNode;
     if (nullptr == (searchNode = transformNode->GetFirstChild()))
         return GeoCoordParse_BadTransformParamSection;
 
@@ -3016,11 +3016,11 @@ GeoCoordParseStatus GetGeocentricTransformParameters(DPoint3d& delta, DPoint3d& 
                 return GeoCoordParse_BadTransformParamSection;
 
             double parameterValue;
-            BeXmlNodeP valueNode;
+            BePugiXmlNode valueNode;
             if (nullptr == (valueNode = GetNode(searchNode, "Value")))
                 return GeoCoordParse_BadTransformParamSection;
 
-            if (BEXML_Success == valueNode->GetContentDoubleValue(parameterValue))
+            if (BEPUGIXML_Success == valueNode->GetContentDoubleValue(parameterValue))
                 {
                 Utf8String unitsOfMeasure;
                 valueNode->GetAttributeStringValue(unitsOfMeasure, "uom");
@@ -3056,12 +3056,12 @@ GeoCoordParseStatus GetGeocentricTransformParameters(DPoint3d& delta, DPoint3d& 
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFormat format, BeXmlNodeP methodNode) const
+GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFormat format, BePugiXmlNode methodNode) const
     {
     if (nullptr == methodNode)
         return GeoCoordParse_Error;
 
-    BeXmlNodeP searchNode;
+    BePugiXmlNode searchNode;
     if (nullptr == (searchNode = methodNode->GetFirstChild()))
         return GeoCoordParse_BadGridFileDef;
 
@@ -3075,9 +3075,9 @@ GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFo
                 return GeoCoordParse_BadGridFileDef;
 
             Utf8String parameterValue;
-            if (BEXML_Success == searchNode->GetContent(parameterValue, "ValueGridFile"))
+            if (BEPUGIXML_Success == searchNode->GetContent(parameterValue, "ValueGridFile"))
                 {
-                BeXmlNodeP valueNode;
+                BePugiXmlNode valueNode;
                 if (nullptr == (valueNode = GetNode(searchNode, "ValueGridFile")))
                     return GeoCoordParse_BadGridFileDef;
 
@@ -3119,14 +3119,14 @@ GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFo
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetTransform(GeodeticTransformP& customTransform, BeXmlNodeP transformNode) const
+GeoCoordParseStatus GetTransform(GeodeticTransformP& customTransform, BePugiXmlNode transformNode) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
 
     if (nullptr == transformNode)
         return GeoCoordParse_Error;
 
-    BeXmlNodeP methodNode;
+    BePugiXmlNode methodNode;
     if (nullptr == (methodNode = GetNode(transformNode, "OperationMethodGroup")))
         {
         // No group ... try for method node
@@ -3221,12 +3221,12 @@ GeoCoordParseStatus GetTransform(GeodeticTransformP& customTransform, BeXmlNodeP
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetTransformByName(GeodeticTransformP& customTransform, BeXmlNodeP gcsNode, Utf8String& transformName) const
+GeoCoordParseStatus GetTransformByName(GeodeticTransformP& customTransform, BePugiXmlNode gcsNode, Utf8String& transformName) const
     {
     if (nullptr == gcsNode)
         return GeoCoordParse_Error;
 
-    BeXmlNodeP searchNode;
+    BePugiXmlNode searchNode;
     if (nullptr == (searchNode = gcsNode->GetFirstChild()))
         return GeoCoordParse_BadTransform;
 
@@ -3251,7 +3251,7 @@ GeoCoordParseStatus GetTransformByName(GeodeticTransformP& customTransform, BeXm
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BeXmlNodeP rootNode, Utf8StringCR datumName) const
+GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BePugiXmlNode rootNode, Utf8StringCR datumName) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
 
@@ -3259,15 +3259,15 @@ GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BeXmlN
         return GeoCoordParse_Error;
 
     // We first check if there is a TransformationPath element
-    BeXmlNodeP trfPathNode = nullptr;
+    BePugiXmlNode trfPathNode = nullptr;
     if (nullptr != (trfPathNode = GetNode(rootNode, "TransformationPath")))
         {
         // We have the transformation path.
-        BeXmlNodeP trfOpGroupNode = nullptr;
+        BePugiXmlNode trfOpGroupNode = nullptr;
         if (nullptr == (trfOpGroupNode = GetNode(trfPathNode, "TransformationPath")))
             return GeoCoordParse_BadTransformPath;
 
-        BeXmlNodeP trfOpNode = nullptr;
+        BePugiXmlNode trfOpNode = nullptr;
         if (nullptr == (trfOpNode = trfOpGroupNode->GetFirstChild()))
             return GeoCoordParse_BadTransformPath;
 
@@ -3325,7 +3325,7 @@ GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BeXmlN
     else
         {
         // If there are no path then there must be a single transformation
-        BeXmlNodeP trfNode = nullptr;
+        BePugiXmlNode trfNode = nullptr;
         if (nullptr == (trfNode = GetNode(rootNode, "Transformation")))
             return GeoCoordParse_BadTransformPath;
 
@@ -3348,7 +3348,7 @@ GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BeXmlN
 * gcsNode can contain the datum transformations for custom datums.
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8StringCR datumAlias, BeXmlNodeP datumNode, BeXmlNodeP ellipsoidNode, Utf8StringCR ellipsoidAlias, BeXmlNodeP gcsNode, BeXmlNodeP rootNode) const
+GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8StringCR datumAlias, BePugiXmlNode datumNode, BePugiXmlNode ellipsoidNode, Utf8StringCR ellipsoidAlias, BePugiXmlNode gcsNode, BePugiXmlNode rootNode) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
 
@@ -3453,7 +3453,7 @@ GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8S
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BeXmlNodeP gcsNode, bool gcsGeographic, Utf8StringCR gcsAlias, BeXmlNodeP datumNode, Utf8StringCR datumAlias, BeXmlNodeP ellipsoidNode, Utf8StringCR ellipsoidAlias, BeXmlNodeP rootNode) const
+GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BePugiXmlNode gcsNode, bool gcsGeographic, Utf8StringCR gcsAlias, BePugiXmlNode datumNode, Utf8StringCR datumAlias, BePugiXmlNode ellipsoidNode, Utf8StringCR ellipsoidAlias, BePugiXmlNode rootNode) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
 
@@ -3590,7 +3590,7 @@ GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BeXmlNodeP gcsNode, bool gcsGeog
     GetDomainOfValidity(baseGCS, gcsNode);
 
     // We extract units from the Axis clause.
-    BeXmlNodeP axisNode = nullptr;
+    BePugiXmlNode axisNode = nullptr;
     if (nullptr == (axisNode = GetNode(gcsNode, "Axis")))
         {
         if (gcsAliasSuccess)
@@ -3607,7 +3607,7 @@ GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BeXmlNodeP gcsNode, bool gcsGeog
         }
 
     Utf8String unitsOfMeasure;
-    if (BEXML_Success != axisNode->GetAttributeStringValue(unitsOfMeasure, "uom"))
+    if (BEPUGIXML_Success != axisNode->GetAttributeStringValue(unitsOfMeasure, "uom"))
         {
         if (gcsAliasSuccess)
             {

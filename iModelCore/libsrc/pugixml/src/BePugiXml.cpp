@@ -7,6 +7,204 @@
 
 BEGIN_BENTLEY_NAMESPACE
 
+//======================================================================================
+// BePugiXmlNode
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlNode BePugiXmlNode::GetFirstChild ()
+    {
+    for (pugi::xml_node child = m_node.first_child (); child; child = child.next_sibling ())
+        {
+        if (child.type () == pugi::node_element)
+            return BePugiXmlNode (child);
+        }
+    return BePugiXmlNode ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlNode BePugiXmlNode::GetNextSibling ()
+    {
+    for (pugi::xml_node sibling = m_node.next_sibling (); sibling; sibling = sibling.next_sibling ())
+        {
+        if (sibling.type () == pugi::node_element)
+            return BePugiXmlNode (sibling);
+        }
+    return BePugiXmlNode ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void BePugiXmlNode::collectText (pugi::xml_node node, Utf8StringR out)
+    {
+    for (pugi::xml_node child = node.first_child (); child; child = child.next_sibling ())
+        {
+        if (child.type () == pugi::node_pcdata || child.type () == pugi::node_cdata)
+            out.append (child.value ());
+        else if (child.type () == pugi::node_element)
+            collectText (child, out);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlStatus BePugiXmlNode::GetContent (Utf8StringR result, Utf8CP relativePath)
+    {
+    result.clear ();
+    pugi::xml_node targetNode = m_node;
+    if (nullptr != relativePath)
+        {
+        targetNode = m_node.child (relativePath);
+        if (targetNode.empty ())
+            return BEPUGIXML_NodeNotFound;
+        }
+
+    collectText (targetNode, result);
+    return BEPUGIXML_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlStatus BePugiXmlNode::GetContentDoubleValue (double& result, Utf8CP relativePath)
+    {
+    result = 0.0;
+    Utf8String content;
+    BePugiXmlStatus status = GetContent (content, relativePath);
+    if (BEPUGIXML_Success != status)
+        return status;
+
+    if (content.empty ())
+        return BEPUGIXML_ContentWrongType;
+
+    if (1 != Utf8String::Sscanf_safe (content.c_str (), "%lg", &result))
+        return BEPUGIXML_ContentWrongType;
+
+    return BEPUGIXML_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlStatus BePugiXmlNode::GetContentUInt32Value (uint32_t& result, Utf8CP relativePath)
+    {
+    result = 0;
+    Utf8String content;
+    BePugiXmlStatus status = GetContent (content, relativePath);
+    if (BEPUGIXML_Success != status)
+        return status;
+
+    if (content.empty ())
+        return BEPUGIXML_ContentWrongType;
+
+    Utf8CP str = content.c_str ();
+
+    // Check for hex prefix
+    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+        {
+        if (1 != Utf8String::Sscanf_safe (str, "%x", &result))
+            return BEPUGIXML_ContentWrongType;
+        }
+    else
+        {
+        if (1 != Utf8String::Sscanf_safe (str, "%u", &result))
+            return BEPUGIXML_ContentWrongType;
+        }
+
+    return BEPUGIXML_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlStatus BePugiXmlNode::GetContentInt32Value (int32_t& result, Utf8CP relativePath)
+    {
+    result = 0;
+    Utf8String content;
+    BePugiXmlStatus status = GetContent (content, relativePath);
+    if (BEPUGIXML_Success != status)
+        return status;
+
+    if (content.empty ())
+        return BEPUGIXML_ContentWrongType;
+
+    if (1 != Utf8String::Sscanf_safe (content.c_str (), "%d", &result))
+        return BEPUGIXML_ContentWrongType;
+
+    return BEPUGIXML_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlStatus BePugiXmlNode::GetAttributeStringValue (Utf8StringR result, Utf8CP attributeName)
+    {
+    result.clear ();
+    pugi::xml_attribute attr = m_node.attribute (attributeName);
+    if (attr.empty ())
+        return BEPUGIXML_NodeNotFound;
+
+    result = attr.value ();
+    return BEPUGIXML_Success;
+    }
+
+//======================================================================================
+// BePugiXmlDom
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlDomPtr BePugiXmlDom::CreateAndReadFromString (BePugiXmlStatus& status, Utf8CP source, size_t characterCount)
+    {
+    BePugiXmlDomP dom = new BePugiXmlDom ();
+    pugi::xml_parse_result result = dom->m_doc.load_string (source);
+    if (!result)
+        {
+        status = BEPUGIXML_ParseError;
+        return nullptr;
+        }
+
+    status = BEPUGIXML_Success;
+    return dom;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlDomPtr BePugiXmlDom::CreateAndReadFromFile (BePugiXmlStatus& status, Utf8CP fileName)
+    {
+    BePugiXmlDomP dom = new BePugiXmlDom ();
+    pugi::xml_parse_result result = dom->m_doc.load_file (fileName);
+    if (!result)
+        {
+        status = (result.status == pugi::status_file_not_found || result.status == pugi::status_io_error)
+            ? BEPUGIXML_FileNotFound : BEPUGIXML_ParseError;
+        return nullptr;
+        }
+
+    status = BEPUGIXML_Success;
+    return dom;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlNode BePugiXmlDom::GetRootElement ()
+    {
+    return BePugiXmlNode (m_doc.document_element ());
+    }
+
+//======================================================================================
+// BePugiXmlWriter
+//======================================================================================
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -266,6 +464,31 @@ void BePugiXmlWriter::ToString (WStringR buffer)
     Utf8String utf8;
     ToString (utf8);
     buffer.AssignUtf8 (utf8.c_str ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BePugiXmlStatus BePugiXmlWriter::WriteRaw (Utf8CP rawXml)
+    {
+    if (Utf8String::IsNullOrEmpty (rawXml))
+        return BEPUGIXML_ArgumentError;
+
+    if (m_nodeStack.empty ())
+        return BEPUGIXML_CantWrite;
+
+    // Parse the raw XML by wrapping in a temporary root element.
+    pugi::xml_document tempDoc;
+    Utf8String wrapped = Utf8String ("<_r>") + rawXml + "</_r>";
+    pugi::xml_parse_result result = tempDoc.load_string (wrapped.c_str ());
+    if (!result)
+        return BEPUGIXML_ArgumentError;
+
+    // Copy parsed children into the current node.
+    for (pugi::xml_node child = tempDoc.document_element ().first_child (); child; child = child.next_sibling ())
+        m_nodeStack.back ().append_copy (child);
+
+    return BEPUGIXML_Success;
     }
 
 END_BENTLEY_NAMESPACE
