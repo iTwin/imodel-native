@@ -1033,17 +1033,17 @@ TEST_F(InstanceSerializationTest, WriteECInstance)
 
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringProperty", ECValue("Some value")));
 
-    // WriteToBeXmlNode
+    // WriteToXmlNode
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
-    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlNode(*xmlWriter));
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlNode(*xmlWriter));
 
     Utf8String nodeInstanceString;
     xmlWriter->ToString(nodeInstanceString);
 
-    // WriteToBeXmlDom
+    // WriteToXmlDom
     BePugiXmlWriterPtr xmlDOMWriter = BePugiXmlWriter::Create();
     Utf8String domInstanceString = "";
-    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlDom(*xmlDOMWriter, true));
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlDom(*xmlDOMWriter, true));
     xmlDOMWriter->ToString(domInstanceString);
 
     // compare strings

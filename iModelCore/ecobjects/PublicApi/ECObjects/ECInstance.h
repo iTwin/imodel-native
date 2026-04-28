@@ -479,7 +479,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (Utf8CP propertyAccessString, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (Utf8CP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BePugiXmlWriterR xmlWriter, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus    WriteToXmlDom (BePugiXmlWriterR xmlWriter, bool writeInstanceId);
 
     // Copy any properties which are common to both IECInstances, skip the rest.
     ECOBJECTS_EXPORT ECObjectsStatus    CopyCommonValues (ECN::IECInstanceCR source);
@@ -651,14 +651,14 @@ public:
     //! @param[in] xmlNode The xml_document that contains a single serialized instance
     //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
     //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlDom  (IECInstancePtr& ecInstance, pugi::xml_document& xmlNode,  ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlDom  (IECInstancePtr& ecInstance, pugi::xml_document& xmlNode,  ECInstanceReadContextR context);
 
     //! Given a pugi::xml_node and an instance read context, deserializes and constructs an IECInstance
     //! @param[out] ecInstance  The instance constructed from deserializing the xml file
     //! @param[in] xmlNode The xml node from an xml document that contains a single serialized instance
     //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
     //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlNode (IECInstancePtr& ecInstance, pugi::xml_node xmlNode, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlNode (IECInstancePtr& ecInstance, pugi::xml_node xmlNode, ECInstanceReadContextR context);
 
     //! Serializes the instance to a file
     //! @param[in] fileName Full path to the file that will be written to.
@@ -706,20 +706,20 @@ public:
     //! Serializes the instance to an existing BePugiXmlWriter
     //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BePugiXmlWriterR xmlWriter);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlNode (BePugiXmlWriterR xmlWriter);
 
     //! Serializes the instance to an existing BePugiXmlWriter
     //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @param[in] className The overriding class name while serializing a schema
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode(BePugiXmlWriterR xmlWriter, Utf8CP className);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlNode(BePugiXmlWriterR xmlWriter, Utf8CP className);
 
     //! Serializes the instance to an existing BePugiXmlWriter. This method uses full schema names with 3 part versions instead of
     //! the legacy 2 part versions
     //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @param[in] className The overriding class name while serializing a schema
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNodeLatestVersion(BePugiXmlWriterR xmlWriter, Utf8CP className);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlNodeLatestVersion(BePugiXmlWriterR xmlWriter, Utf8CP className);
 
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML.  If the instance
     //! returns true then the instance insures the ECValue returned for a property will properly set the "IsLoaded" flag in the ECValue.

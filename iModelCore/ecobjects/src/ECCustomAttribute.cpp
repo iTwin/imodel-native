@@ -453,7 +453,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
             if (CustomAttributeDeserializerP)
                 thisStatus = CustomAttributeDeserializerP->LoadCustomAttributeFromString (customAttributeInstance, customAttributeClassNode, *context, schemaContext, *this);
             else
-                thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, customAttributeClassNode, *context);
+                thisStatus = IECInstance::ReadFromXmlNode (customAttributeInstance, customAttributeClassNode, *context);
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
@@ -523,9 +523,9 @@ ECVersion ecXmlVersion
             className = "DisplayUnitSpecification";
 
         if (ecXmlVersion == ECVersion::V2_0)
-            (*iter)->WriteToBeXmlNode(xmlWriter, className);
+            (*iter)->WriteToXmlNode(xmlWriter, className);
         else
-            (*iter)->WriteToBeXmlNodeLatestVersion(xmlWriter, className);
+            (*iter)->WriteToXmlNodeLatestVersion(xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 

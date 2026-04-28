@@ -4267,7 +4267,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile(IECInstancePtr& ecInstance, WC
         LOG.errorv("Failed to read ECInstance from XML File %ls: %s", ecInstanceFile, status.description());
         return InstanceReadStatus::XmlParseError;
         }
-    return ReadFromBeXmlDom(ecInstance, xmldoc, context);
+    return ReadFromXmlDom(ecInstance, xmldoc, context);
     }
 
 //--------------------------------------------------------------------------------------
@@ -4286,7 +4286,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString(IECInstancePtr& ecInstance, 
         LOG.errorv("Failed to read ECInstance from XML %s", status.description());
         return InstanceReadStatus::XmlParseError;
         }
-    return ReadFromBeXmlDom(ecInstance, xmldoc, context);
+    return ReadFromXmlDom(ecInstance, xmldoc, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4313,13 +4313,13 @@ InstanceReadStatus   IECInstance::ReadFromXmlString(IECInstancePtr& ecInstance, 
         return InstanceReadStatus::XmlParseError;
         }
 
-    return ReadFromBeXmlDom(ecInstance, xmldoc, context);
+    return ReadFromXmlDom(ecInstance, xmldoc, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus  IECInstance::ReadFromBeXmlDom(IECInstancePtr& ecInstance, pugi::xml_document& xmlDom, ECInstanceReadContextR context)
+InstanceReadStatus  IECInstance::ReadFromXmlDom(IECInstancePtr& ecInstance, pugi::xml_document& xmlDom, ECInstanceReadContextR context)
     {
     ecInstance = NULL;
 
@@ -4331,13 +4331,13 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom(IECInstancePtr& ecInstance, pu
         return InstanceReadStatus::BadElement;
         }
 
-    return ReadFromBeXmlNode(ecInstance, instanceNode, context);
+    return ReadFromXmlNode(ecInstance, instanceNode, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromBeXmlNode(IECInstancePtr& ecInstance, pugi::xml_node instanceNode, ECInstanceReadContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlNode(IECInstancePtr& ecInstance, pugi::xml_node instanceNode, ECInstanceReadContextR context)
     {
     InstanceXmlReader   reader(context, instanceNode);
     return reader.ReadInstance(ecInstance);
@@ -4414,17 +4414,17 @@ InstanceWriteStatus     IECInstance::WriteToXmlStringLatestVersion(WString & ecI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BePugiXmlWriterR xmlWriter)
+InstanceWriteStatus     IECInstance::WriteToXmlNode(BePugiXmlWriterR xmlWriter)
     {
     Utf8CP className = this->GetClass().GetName().c_str();
 
-    return WriteToBeXmlNode(xmlWriter, className);
+    return WriteToXmlNode(xmlWriter, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BePugiXmlWriterR xmlWriter, Utf8CP className)
+InstanceWriteStatus     IECInstance::WriteToXmlNode(BePugiXmlWriterR xmlWriter, Utf8CP className)
     {
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
@@ -4434,7 +4434,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BePugiXmlWriterR xmlWriter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BePugiXmlWriterR xmlWriter, Utf8CP className)
+InstanceWriteStatus     IECInstance::WriteToXmlNodeLatestVersion(BePugiXmlWriterR xmlWriter, Utf8CP className)
     {
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
@@ -4444,7 +4444,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BePugiXmlWrit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus IECInstance::WriteToBeXmlDom(BePugiXmlWriterR xmlWriter, bool writeInstanceId)
+InstanceWriteStatus IECInstance::WriteToXmlDom(BePugiXmlWriterR xmlWriter, bool writeInstanceId)
     {
     InstanceXmlWriter writer(&xmlWriter);
     return writer.WriteInstance(*this, writeInstanceId);
