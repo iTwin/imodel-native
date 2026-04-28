@@ -2912,7 +2912,7 @@ GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& elli
     BePugiXmlNode paramNode;
     if (nullptr != (paramNode = GetNode(theNode, "SemiMinorAxis")))
         {
-        if (BEPUGIXML_Success != theNode->GetContentDoubleValue(polarRadius))
+        if (BEPUGIXML_Success != paramNode->GetContentDoubleValue(polarRadius))
             return GeoCoordParse_BadEllipsoid;
         }
     else
