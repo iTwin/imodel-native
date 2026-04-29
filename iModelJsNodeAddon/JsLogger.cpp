@@ -99,7 +99,10 @@ void JsLogger::Cleanup()
     BeMutexHolder lock(m_mutex);
     m_loggerObj.Reset();
     if (m_processLogsOnMainThread)
+        {
         m_processLogsOnMainThread.Release();
+        m_processLogsOnMainThread = Napi::ThreadSafeFunction();
+        }
     }
 
 void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)
