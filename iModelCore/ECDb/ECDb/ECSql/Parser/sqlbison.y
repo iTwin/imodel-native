@@ -1615,6 +1615,15 @@ cross_union:
             $$->append($3);
             $$->append($4);
         }
+    |   table_ref SQL_TOKEN_CROSS SQL_TOKEN_JOIN table_ref join_condition
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
+        }
     ;
 
 qualified_join:

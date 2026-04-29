@@ -16,6 +16,12 @@ This document including important changes to syntax or file format.
 * Added internal `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union).
 * Bypasses ECSql entirely — generates raw SQLite from property maps for 3-10x faster traversal.
 
+## ## `04/24/2026`: Allow optional ON clause with CROSS JOIN
+* ECSql version change `2.0.3.1` -> `2.0.3.2`.
+* `CROSS JOIN` now accepts an optional `ON` condition, matching standard SQL and SQLite behavior.
+* This allows users to filter the join while retaining SQLite's [special CROSS JOIN optimizer behavior](https://www.sqlite.org/lang_select.html#special_handling_of_cross_join_): unlike `INNER JOIN`, `CROSS JOIN` prevents the query optimizer from reordering tables, giving applications explicit control over the join order and query plan.
+* Previously, achieving this required moving the condition to the `WHERE` clause, which loses the optimizer hint.
+* Example: `SELECT * FROM ts.Person p CROSS JOIN ts.Identifier i ON p.PersonalID = i.PersonId`
 ## ## `03/09/2026`: Added PRAGMAs `ecsql_ver` and `sqlite_sql`
 * ECSql version change `2.0.3.0` -> `2.0.3.1`.
 * Added `PRAGMA ecsql_ver` which returns the current ECSQL version. This will allow applications to check feature availability when working with ECSql.
