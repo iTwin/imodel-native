@@ -156,7 +156,7 @@ private:
     BePugiXmlWriter ();
     void flushToFile ();
 
-    BePugiXmlStatus writeAttributeImpl (Utf8CP name, Utf8CP value);
+    BEPUGIXML_EXPORT BePugiXmlStatus writeAttributeImpl (Utf8CP name, Utf8CP value);
 
 public:
     BEPUGIXML_EXPORT ~BePugiXmlWriter ();
