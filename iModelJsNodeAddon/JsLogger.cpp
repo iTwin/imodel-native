@@ -10,6 +10,9 @@ using namespace IModelJsNative;
 /** call the JavaScript logger */
 void JsLogger::logToJs(Utf8CP category, SEVERITY sev, Utf8CP msg)
     {
+    if (m_loggerObj.IsEmpty())
+        return;
+
     Utf8CP fname = (sev == LOG_TRACE) ?   "logTrace" :
                    (sev == LOG_INFO) ?    "logInfo" :
                    (sev == LOG_WARNING) ? "logWarning" :
