@@ -822,6 +822,121 @@ ChangeGroup::ChangeGroup(DbCR db, Utf8CP zDb) {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeBegin(DbOpcode opcode, Utf8CP tableName, bool indirect) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    char* errMsg = nullptr;
+    auto rc = (DbResult)sqlite3changegroup_change_begin(
+        (sqlite3_changegroup*)m_changegroup, (int)opcode, tableName, indirect ? 1 : 0, &errMsg);
+    if (errMsg != nullptr) {
+        LOG.errorv(errMsg);
+        sqlite3_free(errMsg);
+    }
+    return rc;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeValueInt64(Changes::Change::Stage stage, int colIndex, int64_t value) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    return (DbResult)sqlite3changegroup_change_int64(
+        (sqlite3_changegroup*)m_changegroup, stage == Changes::Change::Stage::New ? 1 : 0, colIndex, (sqlite3_int64)value);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeValueNull(Changes::Change::Stage stage, int colIndex) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    return (DbResult)sqlite3changegroup_change_null(
+        (sqlite3_changegroup*)m_changegroup, stage == Changes::Change::Stage::New ? 1 : 0, colIndex);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeValueDouble(Changes::Change::Stage stage, int colIndex, double value) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    return (DbResult)sqlite3changegroup_change_double(
+        (sqlite3_changegroup*)m_changegroup, stage == Changes::Change::Stage::New ? 1 : 0, colIndex, value);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeValueText(Changes::Change::Stage stage, int colIndex, Utf8CP value, int len) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    return (DbResult)sqlite3changegroup_change_text(
+        (sqlite3_changegroup*)m_changegroup, stage == Changes::Change::Stage::New ? 1 : 0, colIndex, value, len);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeValueBlob(Changes::Change::Stage stage, int colIndex, void const* data, int len) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    return (DbResult)sqlite3changegroup_change_blob(
+        (sqlite3_changegroup*)m_changegroup, stage == Changes::Change::Stage::New ? 1 : 0, colIndex, data, len);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::ChangeFinish(bool discard) {
+    if (m_changegroup == nullptr)
+        return BE_SQLITE_ERROR;
+    char* errMsg = nullptr;
+    auto rc = (DbResult)sqlite3changegroup_change_finish(
+        (sqlite3_changegroup*)m_changegroup, discard ? 1 : 0, &errMsg);
+    if (errMsg != nullptr) {
+        LOG.errorv(errMsg);
+        sqlite3_free(errMsg);
+    }
+    return rc;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeBuilder::ChangeBuilder() {}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeBuilder::ChangeBuilder(DbCR db, Utf8CP zDb) : m_group(db, zDb) {}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::AppendRow(DbOpcode opcode, Utf8CP tableName, bool indirect, std::function<void(Row&)> const& populate) {
+    DbResult rc = m_group.ChangeBegin(opcode, tableName, indirect);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    Row row(m_group);
+    populate(row);
+
+    bool discard = (row.GetStatus() != BE_SQLITE_OK);
+    rc = m_group.ChangeFinish(discard);
+    return discard ? row.GetStatus() : rc;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::AppendChange(Changes::Change const& change) {
+    return m_group.AddChange(change);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 int ChangeStream::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter) {
     return (int)((ChangeStream*)pCtx)->_OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
 }

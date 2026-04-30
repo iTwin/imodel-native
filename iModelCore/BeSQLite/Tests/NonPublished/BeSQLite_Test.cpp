@@ -1593,3 +1593,233 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
             }
         }
     }
+
+//=======================================================================================
+// @bsiclass
+// Tests for BeSQLite::ChangeBuilder
+//=======================================================================================
+struct ChangeBuilderTests : public BeSQliteTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, AppendInsert)
+    {
+    // Table: t1(id INTEGER PRIMARY KEY, name TEXT, val REAL)
+    // col 0 = id, col 1 = name, col 2 = val
+    auto db1 = Create("cb_insert_a.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, name TEXT, val REAL)"));
+    db1->SaveChanges();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("cb_insert_a.db", "cb_insert_b.db"));
+    auto db2 = OpenReadWrite("cb_insert_b.db");
+    ASSERT_NE(nullptr, db2);
+
+    // Build an INSERT change from scratch and apply it to db2
+    using Stage = BeSQLite::ChangeBuilder::Row::Stage;
+    BeSQLite::ChangeBuilder builder(*db1);
+    ASSERT_EQ(BE_SQLITE_OK, builder.AppendInsert("t1", [](BeSQLite::ChangeBuilder::Row& row)
+        {
+        row.BindInt64 (Stage::New, 0, 42);
+        row.BindText  (Stage::New, 1, "hello");
+        row.BindDouble(Stage::New, 2, 3.14);
+        }));
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeGroup(builder.GetChangeGroup()));
+    ASSERT_TRUE(cs.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(*db2));
+    db2->SaveChanges();
+
+    auto stmt = db2->GetCachedStatement("SELECT id, name, val FROM t1 WHERE id=42");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    EXPECT_EQ(42,       stmt->GetValueInt64(0));
+    EXPECT_STREQ("hello", stmt->GetValueText(1));
+    EXPECT_DOUBLE_EQ(3.14, stmt->GetValueDouble(2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, AppendDelete)
+    {
+    auto db1 = Create("cb_delete_a.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, name TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("INSERT INTO t1 VALUES(1,'row1')"));
+    db1->SaveChanges();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("cb_delete_a.db", "cb_delete_b.db"));
+    auto db2 = OpenReadWrite("cb_delete_b.db");
+    ASSERT_NE(nullptr, db2);
+    ASSERT_EQ(1, GetRowCount(*db2, "t1"));
+
+    using Stage = BeSQLite::ChangeBuilder::Row::Stage;
+    BeSQLite::ChangeBuilder builder(*db1);
+    ASSERT_EQ(BE_SQLITE_OK, builder.AppendDelete("t1", [](BeSQLite::ChangeBuilder::Row& row)
+        {
+        row.BindInt64(Stage::Old, 0, 1);
+        row.BindText (Stage::Old, 1, "row1");
+        }));
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeGroup(builder.GetChangeGroup()));
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(*db2));
+    db2->SaveChanges();
+
+    EXPECT_EQ(0, GetRowCount(*db2, "t1"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, AppendUpdate)
+    {
+    auto db1 = Create("cb_update_a.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, name TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("INSERT INTO t1 VALUES(1,'old')"));
+    db1->SaveChanges();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("cb_update_a.db", "cb_update_b.db"));
+    auto db2 = OpenReadWrite("cb_update_b.db");
+    ASSERT_NE(nullptr, db2);
+
+    using Stage = BeSQLite::ChangeBuilder::Row::Stage;
+    BeSQLite::ChangeBuilder builder(*db1);
+    ASSERT_EQ(BE_SQLITE_OK, builder.AppendUpdate("t1", [](BeSQLite::ChangeBuilder::Row& row)
+        {
+        // PK must appear in old.* only for an UPDATE
+        row.BindInt64(Stage::Old, 0, 1);
+        row.BindText (Stage::Old, 1, "old");
+        row.BindText (Stage::New, 1, "new");
+        }));
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeGroup(builder.GetChangeGroup()));
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(*db2));
+    db2->SaveChanges();
+
+    auto stmt = db2->GetCachedStatement("SELECT name FROM t1 WHERE id=1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    EXPECT_STREQ("new", stmt->GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, AppendChange_PassThrough)
+    {
+    // Capture a real changeset and copy it unchanged via AppendChange
+    auto db1 = Create("cb_passthrough_a.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, name TEXT)"));
+    db1->SaveChanges();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("cb_passthrough_a.db", "cb_passthrough_b.db"));
+    auto db2 = OpenReadWrite("cb_passthrough_b.db");
+    ASSERT_NE(nullptr, db2);
+
+    auto cs = Capture(*db1, [](DbR db, void*) {
+        return db.ExecuteSql("INSERT INTO t1 VALUES(10,'ten')") == BE_SQLITE_OK;
+        }, nullptr);
+    ASSERT_NE(nullptr, cs);
+    db1->SaveChanges();
+
+    BeSQLite::ChangeBuilder builder(*db2);
+    for (auto& change : cs->GetChanges())
+        ASSERT_EQ(BE_SQLITE_OK, builder.AppendChange(change));
+
+    TestChangeSet out;
+    ASSERT_EQ(BE_SQLITE_OK, out.FromChangeGroup(builder.GetChangeGroup()));
+    ASSERT_EQ(BE_SQLITE_OK, out.ApplyChanges(*db2));
+    db2->SaveChanges();
+
+    ASSERT_EQ(1, GetRowCount(*db2, "t1"));
+    auto stmt = db2->GetCachedStatement("SELECT name FROM t1 WHERE id=10");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    EXPECT_STREQ("ten", stmt->GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, Transform_ModifyValues)
+    {
+    // Capture two INSERTs, then use ChangeBuilder to uppercase the name column
+    auto db1 = Create("cb_transform_a.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, name TEXT)"));
+    db1->SaveChanges();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("cb_transform_a.db", "cb_transform_b.db"));
+    auto db2 = OpenReadWrite("cb_transform_b.db");
+    ASSERT_NE(nullptr, db2);
+
+    auto cs = Capture(*db1, [](DbR db, void*)
+        {
+        return db.ExecuteSql("INSERT INTO t1 VALUES(1,'alpha')") == BE_SQLITE_OK
+            && db.ExecuteSql("INSERT INTO t1 VALUES(2,'beta')")  == BE_SQLITE_OK;
+        }, nullptr);
+    ASSERT_NE(nullptr, cs);
+    db1->SaveChanges();
+
+    using Stage = BeSQLite::ChangeBuilder::Row::Stage;
+    BeSQLite::ChangeBuilder builder(*db2);
+    for (auto& change : cs->GetChanges())
+        {
+        if (change.IsInsert())
+            {
+            int64_t id = change.GetNewValue(0).GetValueInt64();
+            Utf8String name(change.GetNewValue(1).GetValueText());
+            name.ToUpper();
+            ASSERT_EQ(BE_SQLITE_OK, builder.AppendInsert(change.GetTableName().c_str(), [&](BeSQLite::ChangeBuilder::Row& row)
+                {
+                row.BindInt64(Stage::New, 0, id);
+                row.BindText (Stage::New, 1, name.c_str());
+                }));
+            }
+        else
+            {
+            ASSERT_EQ(BE_SQLITE_OK, builder.AppendChange(change));
+            }
+        }
+
+    TestChangeSet out;
+    ASSERT_EQ(BE_SQLITE_OK, out.FromChangeGroup(builder.GetChangeGroup()));
+    ASSERT_EQ(BE_SQLITE_OK, out.ApplyChanges(*db2));
+    db2->SaveChanges();
+
+    auto stmt = db2->GetCachedStatement("SELECT name FROM t1 ORDER BY id");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    EXPECT_STREQ("ALPHA", stmt->GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    EXPECT_STREQ("BETA", stmt->GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, BindError_DiscardChange)
+    {
+    auto db1 = Create("cb_error.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, name TEXT)"));
+    db1->SaveChanges();
+
+    using Stage = BeSQLite::ChangeBuilder::Row::Stage;
+    BeSQLite::ChangeBuilder builder(*db1);
+
+    // Column index 999 is out of range — the bind fails, ChangeFinish discards the change
+    DbResult rc = builder.AppendInsert("t1", [](BeSQLite::ChangeBuilder::Row& row)
+        {
+        row.BindInt64(Stage::New, 999, 1);
+        });
+    EXPECT_NE(BE_SQLITE_OK, rc);
+
+    // The output changeset must be empty since the only change was discarded
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeGroup(builder.GetChangeGroup()));
+    EXPECT_FALSE(cs.IsValid());
+    }

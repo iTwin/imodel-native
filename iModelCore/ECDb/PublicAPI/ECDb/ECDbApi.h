@@ -13,6 +13,7 @@
 #include <ECDb/ECInstanceFinder.h>
 
 #include <ECDb/ChangeSummary.h>
+#include <ECDb/ChangesetSchema.h>
 
 #include <ECDb/ECDbExpressionSymbolContext.h>
 #include <ECDb/ConcurrentQueryManager.h>

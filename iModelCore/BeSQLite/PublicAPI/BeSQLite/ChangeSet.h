@@ -8,6 +8,7 @@
 #include <functional>
 #include "BeSQLite.h"
 
+BESQLITE_TYPEDEFS(ChangeBuilder);
 BESQLITE_TYPEDEFS(ChangeGroup);
 BESQLITE_TYPEDEFS(ChangeSet);
 BESQLITE_TYPEDEFS(ChangeStream);
@@ -165,10 +166,19 @@ public:
 struct ChangeGroup : NonCopyableClass {
     friend struct ChangeSet;
     friend struct ChangeStream;
+    friend struct ChangeBuilder;
 
 private:
     void* m_changegroup;
     bool m_containsEcSchemaChanges = false;
+
+    BE_SQLITE_EXPORT DbResult ChangeBegin(DbOpcode opcode, Utf8CP tableName, bool indirect = false);
+    BE_SQLITE_EXPORT DbResult ChangeValueInt64(Changes::Change::Stage stage, int colIndex, int64_t value);
+    BE_SQLITE_EXPORT DbResult ChangeValueNull(Changes::Change::Stage stage, int colIndex);
+    BE_SQLITE_EXPORT DbResult ChangeValueDouble(Changes::Change::Stage stage, int colIndex, double value);
+    BE_SQLITE_EXPORT DbResult ChangeValueText(Changes::Change::Stage stage, int colIndex, Utf8CP value, int len = -1);
+    BE_SQLITE_EXPORT DbResult ChangeValueBlob(Changes::Change::Stage stage, int colIndex, void const* data, int len);
+    BE_SQLITE_EXPORT DbResult ChangeFinish(bool discard = false);
 
 public:
     bool ContainsEcSchemaChanges() const { return m_containsEcSchemaChanges; }
@@ -209,10 +219,103 @@ public:
     ~ChangeGroup() { Finalize(); }
 };
 
+//=======================================================================================
+//! A high-level builder for constructing changesets from scratch or by transforming
+//! an existing changeset. Each row is appended via a scoped callback that receives a
+//! Row reference — ChangeBegin/ChangeFinish are called automatically.
+//!
+//! Typical usage:
+//! @code
+//!   ChangeBuilder builder(db);
+//!
+//!   // copy a change through unchanged
+//!   builder.AppendChange(existingChange);
+//!
+//!   // construct a new INSERT row
+//!   builder.AppendInsert("MyTable", [](ChangeBuilder::Row& row) {
+//!       row.BindInt64 (Row::Stage::New, 0, 42);
+//!       row.BindText  (Row::Stage::New, 1, "hello");
+//!   });
+//!
+//!   // stream the result out
+//!   ChangeSet out;
+//!   out.FromChangeGroup(builder.GetChangeGroup());
+//! @endcode
+// @bsiclass
+//=======================================================================================
+struct ChangeBuilder : NonCopyableClass {
 
+    //! Scoped handle passed into the AppendRow / AppendInsert / ... callbacks.
+    //! Exposes typed bind methods that mirror the underlying sqlite3changegroup_change_xxx() API.
+    struct Row {
+        friend struct ChangeBuilder;
+        using Stage = Changes::Change::Stage;
+
+    private:
+        ChangeGroup& m_group;
+        DbResult m_status = BE_SQLITE_OK;
+
+        explicit Row(ChangeGroup& group) : m_group(group) {}
+        DbResult Track(DbResult rc) { if (m_status == BE_SQLITE_OK) m_status = rc; return rc; }
+
+    public:
+        DbResult BindInt64 (Stage stage, int colIndex, int64_t value)               { return Track(m_group.ChangeValueInt64 (stage, colIndex, value)); }
+        DbResult BindNull  (Stage stage, int colIndex)                               { return Track(m_group.ChangeValueNull  (stage, colIndex)); }
+        DbResult BindDouble(Stage stage, int colIndex, double value)                 { return Track(m_group.ChangeValueDouble(stage, colIndex, value)); }
+        DbResult BindText  (Stage stage, int colIndex, Utf8CP value, int len = -1)   { return Track(m_group.ChangeValueText  (stage, colIndex, value, len)); }
+        DbResult BindBlob  (Stage stage, int colIndex, void const* data, int len)    { return Track(m_group.ChangeValueBlob  (stage, colIndex, data, len)); }
+        DbResult GetStatus() const { return m_status; }
+    };
+
+private:
+    ChangeGroup m_group;
+
+public:
+    //! Construct a ChangeBuilder without a pre-loaded schema.
+    //! A schema must be available before the first AppendRow call — either by calling
+    //! AppendChange() with a change from the target table first, or by using the Db constructor.
+    BE_SQLITE_EXPORT ChangeBuilder();
+
+    //! Construct a ChangeBuilder pre-configured with the schema from @p db.
+    BE_SQLITE_EXPORT ChangeBuilder(DbCR db, Utf8CP zDb = "main");
+
+    //! Append a single row change of the specified @p opcode. The @p populate callback
+    //! receives a Row to bind old/new column values. ChangeBegin and ChangeFinish are
+    //! called automatically; the change is discarded if @p populate throws or if any
+    //! bind call returns an error.
+    //! @return The first non-OK result from ChangeBegin, any bind call, or ChangeFinish.
+    BE_SQLITE_EXPORT DbResult AppendRow(DbOpcode opcode, Utf8CP tableName, bool indirect, std::function<void(Row&)> const& populate);
+
+    //! Convenience overload that defaults @p indirect to false.
+    DbResult AppendRow(DbOpcode opcode, Utf8CP tableName, std::function<void(Row&)> const& populate) {
+        return AppendRow(opcode, tableName, false, populate);
+    }
+
+    //! Append an INSERT change.
+    DbResult AppendInsert(Utf8CP tableName, std::function<void(Row&)> const& populate, bool indirect = false) {
+        return AppendRow(DbOpcode::Insert, tableName, indirect, populate);
+    }
+
+    //! Append an UPDATE change.
+    DbResult AppendUpdate(Utf8CP tableName, std::function<void(Row&)> const& populate, bool indirect = false) {
+        return AppendRow(DbOpcode::Update, tableName, indirect, populate);
+    }
+
+    //! Append a DELETE change.
+    DbResult AppendDelete(Utf8CP tableName, std::function<void(Row&)> const& populate, bool indirect = false) {
+        return AppendRow(DbOpcode::Delete, tableName, indirect, populate);
+    }
+
+    //! Copy an existing change (from a Changes::Change iterator) directly into the builder.
+    BE_SQLITE_EXPORT DbResult AppendChange(Changes::Change const& change);
+
+    //! Access the underlying ChangeGroup to stream the output (e.g. via ChangeStream::FromChangeGroup).
+    ChangeGroup&   GetChangeGroup()       { return m_group; }
+    ChangeGroupCR  GetChangeGroup() const { return m_group; }
+};
 
 //=======================================================================================
-//! A base class for a streaming version of the ChangeSet. ChangeSets require that their
+//! A base class for a streaming version of the ChangeSet.ChangeSets require that their
 //! entire contents be stored in large memory buffers. This streaming version is meant to
 //! be used in low memory environments where it is required to handle very large Change Sets.
 // @bsiclass

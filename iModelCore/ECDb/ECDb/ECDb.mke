@@ -30,6 +30,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ChangeSummary.h \
                 $(publicApiDir)ChangedIdsIterator.h \
                 $(publicApiDir)ChangeIterator.h \
+                $(publicApiDir)ChangesetSchema.h \
                 $(publicApiDir)ConcurrentQueryManager.h \
                 $(publicApiDir)InstanceReader.h \
                 $(publicApiDir)ECDbVirtualTab.h \
@@ -256,6 +257,8 @@ $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSu
 $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedIdsIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetSchema$(oext):                                   $(baseDir)ChangesetSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetReader$(oext):                                 $(baseDir)ChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

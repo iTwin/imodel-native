@@ -7161,4 +7161,107 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, ColumnRemappingDuringSchemaImport)
+    {
+    // Scenario: CommonProp is initially defined on subclasses A and B. In B, EarlyProp is
+    // defined first, occupying the js1 shared column, pushing CommonProp to js2. After
+    // moving CommonProp to Base, Base.CommonProp gets js1. This forces B.EarlyProp to remap
+    // from js1→js2 and B.CommonProp data to move from js2→js1 (an intra-table circular swap).
+    // Class A requires no data movement since its CommonProp was already at js1.
+    SchemaItem v1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="CommonProp" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="EarlyProp" typeName="string" />
+            <ECProperty propertyName="CommonProp" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("columnRemappingDuringSchemaImport.ecdb", v1));
+
+    // Insert data before upgrade
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (CommonProp) VALUES ('aCommon')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (EarlyProp, CommonProp) VALUES ('bEarly', 'bCommon')");
+    m_ecdb.SaveChanges();
+
+    // Verify initial column assignments: A.CommonProp and B.EarlyProp each occupy ps1 (the
+    // first shared column), and B.CommonProp is pushed to ps2 by EarlyProp.
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "A", "CommonProp")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "EarlyProp")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "CommonProp")));
+
+    // Import updated schema: CommonProp moves to Base. The upgrade preserves existing column
+    // assignments: B.EarlyProp stays at ps1, Base.CommonProp is assigned the next available
+    // column ps2. A's CommonProp data migrates from ps1→ps2; B's CommonProp was already at ps2.
+    SchemaItem v2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="CommonProp" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>Base</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="EarlyProp" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // Verify post-upgrade column layout: B.EarlyProp preserved at ps1, Base.CommonProp at ps2.
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base", "CommonProp")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "EarlyProp")));
+
+    // Verify pre-existing data is intact after remapping.
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT CommonProp FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"CommonProp":"aCommon"}])json"), result);
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT EarlyProp, CommonProp FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"EarlyProp":"bEarly","CommonProp":"bCommon"}])json"), result);
+    }
+
+    // Verify new inserts work correctly after schema upgrade.
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (CommonProp) VALUES ('aCommon2')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (EarlyProp, CommonProp) VALUES ('bEarly2', 'bCommon2')");
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT CommonProp FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"CommonProp":"aCommon"},{"CommonProp":"aCommon2"}])json"), result);
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT EarlyProp, CommonProp FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"EarlyProp":"bEarly","CommonProp":"bCommon"},{"EarlyProp":"bEarly2","CommonProp":"bCommon2"}])json"), result);
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
