@@ -292,6 +292,8 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
         if (BE_SQLITE_OK != cache.GetPrimaryDb()._CreateSecondaryConnection(newConn->m_conn, openParams)) {
             return nullptr;
         }
+        for (auto* func : ConcurrentQueryMgr::Config::Get().GetFunctions())
+            newConn->m_conn->GetDb().AddFunction(*func);
     } else {
         newConn->m_conn = std::make_unique<TypedSecondaryConnection<ECDb>>();
     }

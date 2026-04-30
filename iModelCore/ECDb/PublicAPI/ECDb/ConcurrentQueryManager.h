@@ -4,10 +4,12 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/Bentley.h>
+#include <BeSQLite/BeSQLite.h>
 #include <chrono>
 #include <string>
 #include <memory>
 #include <functional>
+#include <vector>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 typedef uint32_t TaskId;
@@ -498,6 +500,7 @@ struct ConcurrentQueryMgr final {
          uint32_t m_memoryMapFileSize;
          static Config s_config;
          uint32_t m_progressOpCount;
+         std::vector<DbFunction*> m_functions;
      public:
         ECDB_EXPORT Config();
         ECDB_EXPORT bool Equals(Config const& rhs) const;
@@ -533,6 +536,8 @@ struct ConcurrentQueryMgr final {
         Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
         Config& SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds autoShutdownWhenIdleForSeconds) { m_autoShutdownWhenIdleForSeconds = autoShutdownWhenIdleForSeconds; return *this;}
         Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}
+        Config& AddFunction(DbFunction& func) { m_functions.push_back(&func); return *this; }
+        std::vector<DbFunction*> const& GetFunctions() const { return m_functions; }
 
         bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
         ECDB_EXPORT static Config const& GetDefault();
