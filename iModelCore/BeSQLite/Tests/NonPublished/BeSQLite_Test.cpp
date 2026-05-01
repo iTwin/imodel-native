@@ -1823,3 +1823,40 @@ TEST_F(ChangeBuilderTests, BindError_DiscardChange)
     ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeGroup(builder.GetChangeGroup()));
     EXPECT_FALSE(cs.IsValid());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeBuilderTests, AppendInsert_Blob)
+    {
+    // Verify that blob values survive a round-trip through ChangeBuilder.
+    auto db1 = Create("cb_blob_a.db");
+    ASSERT_NE(nullptr, db1);
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, data BLOB)"));
+    db1->SaveChanges();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("cb_blob_a.db", "cb_blob_b.db"));
+    auto db2 = OpenReadWrite("cb_blob_b.db");
+    ASSERT_NE(nullptr, db2);
+
+    uint8_t blobData[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03, 0x04 };
+    using Stage = BeSQLite::ChangeBuilder::Row::Stage;
+    BeSQLite::ChangeBuilder builder(*db1);
+    ASSERT_EQ(BE_SQLITE_OK, builder.AppendInsert("t1", [&](BeSQLite::ChangeBuilder::Row& row)
+        {
+        row.BindInt64(Stage::New, 0, 1);
+        row.BindBlob (Stage::New, 1, blobData, sizeof(blobData));
+        }));
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeGroup(builder.GetChangeGroup()));
+    ASSERT_TRUE(cs.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(*db2));
+    db2->SaveChanges();
+
+    auto stmt = db2->GetCachedStatement("SELECT data FROM t1 WHERE id=1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    int blobSize = stmt->GetColumnBytes(0);
+    ASSERT_EQ((int)sizeof(blobData), blobSize);
+    EXPECT_EQ(0, memcmp(stmt->GetValueBlob(0), blobData, sizeof(blobData)));
+    }

@@ -688,8 +688,12 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
     // ECClassId-remap kind set per class
     bmap<ECClassId, ECClassId> classIdRemap;
 
+    // sourceClassId -> ClassDiff* (for O(1) lookup in Phase 2)
+    bmap<ECClassId, ClassDiff const*> classIdToDiff;
+
     for (auto const& cd : m_classDiffs)
         {
+        classIdToDiff[cd.sourceEntry.classId] = &cd;
         for (auto const& sk : cd.sourceEntry.tableSegments)
             sourceTableToDiff[sk.second.tableName] = &cd;
         if (cd.targetClassId.IsValid() && cd.targetClassId != cd.sourceEntry.classId)
@@ -730,7 +734,10 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             return &it->second;
         TargetLayout layout;
         Statement stmt;
-        Utf8PrintfString sql("PRAGMA table_info(\"%s\")", tableName.c_str());
+        // Escape double-quotes in the table name to prevent SQL injection.
+        Utf8String escapedName(tableName);
+        escapedName.ReplaceAll("\"", "\"\"");
+        Utf8PrintfString sql("PRAGMA table_info(\"%s\")", escapedName.c_str());
         if (BE_SQLITE_OK != stmt.Prepare(targetDb, sql.c_str()))
             return nullptr;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -919,14 +926,24 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
         }
 
     // ---- Phase 2: emit transformed rows per InstanceGroup ----
+    // Caches: per-class FindClass/GetClassMap results, and per-(class,table) accessToCol maps.
+    struct ClassMapCacheEntry
+        {
+        ECClassCP       targetClass = nullptr;
+        ClassMap const* targetClassMap = nullptr;
+        };
+    bmap<ECClassId, ClassMapCacheEntry> classMapCache;
+    // Key: (sourceClassId, tableName) -> accessString -> target column name
+    struct ClassTableKey { ECClassId classId; Utf8String tableName; bool operator<(ClassTableKey const& o) const { return classId < o.classId || (classId == o.classId && tableName.CompareToI(o.tableName) < 0); } };
+    bmap<ClassTableKey, bmap<Utf8String, Utf8String>> accessToColCache;
+
     for (auto& gkv : groups)
         {
         if (rc != BE_SQLITE_OK) break;
         InstanceGroup& g = gkv.second;
-        // Find ClassDiff
-        ClassDiff const* cd = nullptr;
-        for (auto const& d : m_classDiffs)
-            if (d.sourceEntry.classId == gkv.first.classId) { cd = &d; break; }
+        // Find ClassDiff via O(1) map lookup
+        auto cdIt = classIdToDiff.find(gkv.first.classId);
+        ClassDiff const* cd = (cdIt != classIdToDiff.end()) ? cdIt->second : nullptr;
         if (cd == nullptr)
             continue; // shouldn't happen — we only added rows backed by a diff
 
@@ -1007,40 +1024,54 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
 
             // Determine opcode for THIS target row
             DbOpcode rowOp = primaryOp;
-            // Look up the target ClassMap to find each access string's column name in this target table
-            ECClassCP targetClass = targetDb.Schemas().FindClass(cd->sourceEntry.fullName);
-            ClassMap const* targetClassMap = targetClass ? targetDb.Schemas().Main().GetClassMap(*targetClass) : nullptr;
-
-            // Collect accessString -> target column name (only for cols in this target table)
-            bmap<Utf8String, Utf8String> accessToCol;
-            if (targetClassMap != nullptr)
+            // Look up the target ClassMap (cached per source classId).
+            auto cmcIt = classMapCache.find(cd->sourceEntry.classId);
+            if (cmcIt == classMapCache.end())
                 {
-                SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData, true);
-                targetClassMap->GetPropertyMaps().AcceptVisitor(visitor);
-                for (PropertyMap const* pm : visitor.Results())
-                    {
-                    auto const& sm = pm->GetAs<SingleColumnDataPropertyMap>();
-                    DbColumn const& col = sm.GetColumn();
-                    if (col.IsVirtual()) continue;
-                    if (!col.GetTable().GetName().EqualsI(targetTable)) continue;
-                    accessToCol[sm.GetAccessString()] = col.GetName();
-                    }
-                // For link-table relationships also map SourceECInstanceId / TargetECInstanceId.
-                if (cd->sourceEntry.isRelationshipClass)
-                    {
-                    auto const& relMap2 = targetClassMap->GetAs<RelationshipClassMap>();
-                    auto addConstraintInstId = [&](ConstraintECInstanceIdPropertyMap const* cpm, Utf8CP accessStr) {
-                        if (cpm == nullptr) return;
-                        auto const* perTablePm = cpm->FindDataPropertyMap(targetTable.c_str());
-                        if (perTablePm == nullptr) return;
-                        DbColumn const& col = perTablePm->GetColumn();
-                        if (!col.IsVirtual())
-                            accessToCol[accessStr] = col.GetName();
-                        };
-                    addConstraintInstId(relMap2.GetSourceECInstanceIdPropMap(), "SourceECInstanceId");
-                    addConstraintInstId(relMap2.GetTargetECInstanceIdPropMap(), "TargetECInstanceId");
-                    }
+                ClassMapCacheEntry cmc;
+                cmc.targetClass = targetDb.Schemas().FindClass(cd->sourceEntry.fullName);
+                cmc.targetClassMap = cmc.targetClass ? targetDb.Schemas().Main().GetClassMap(*cmc.targetClass) : nullptr;
+                cmcIt = classMapCache.emplace(cd->sourceEntry.classId, cmc).first;
                 }
+            ClassMap const* targetClassMap = cmcIt->second.targetClassMap;
+
+            // Collect accessString -> target column name (cached per class + table).
+            ClassTableKey ctKey{cd->sourceEntry.classId, targetTable};
+            auto a2cIt = accessToColCache.find(ctKey);
+            if (a2cIt == accessToColCache.end())
+                {
+                bmap<Utf8String, Utf8String> accessToCol;
+                if (targetClassMap != nullptr)
+                    {
+                    SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData, true);
+                    targetClassMap->GetPropertyMaps().AcceptVisitor(visitor);
+                    for (PropertyMap const* pm : visitor.Results())
+                        {
+                        auto const& sm = pm->GetAs<SingleColumnDataPropertyMap>();
+                        DbColumn const& col = sm.GetColumn();
+                        if (col.IsVirtual()) continue;
+                        if (!col.GetTable().GetName().EqualsI(targetTable)) continue;
+                        accessToCol[sm.GetAccessString()] = col.GetName();
+                        }
+                    // For link-table relationships also map SourceECInstanceId / TargetECInstanceId.
+                    if (cd->sourceEntry.isRelationshipClass)
+                        {
+                        auto const& relMap2 = targetClassMap->GetAs<RelationshipClassMap>();
+                        auto addConstraintInstId = [&](ConstraintECInstanceIdPropertyMap const* cpm, Utf8CP accessStr) {
+                            if (cpm == nullptr) return;
+                            auto const* perTablePm = cpm->FindDataPropertyMap(targetTable.c_str());
+                            if (perTablePm == nullptr) return;
+                            DbColumn const& col = perTablePm->GetColumn();
+                            if (!col.IsVirtual())
+                                accessToCol[accessStr] = col.GetName();
+                            };
+                        addConstraintInstId(relMap2.GetSourceECInstanceIdPropMap(), "SourceECInstanceId");
+                        addConstraintInstId(relMap2.GetTargetECInstanceIdPropMap(), "TargetECInstanceId");
+                        }
+                    }
+                a2cIt = accessToColCache.emplace(std::move(ctKey), std::move(accessToCol)).first;
+                }
+            auto const& accessToCol = a2cIt->second;
 
             auto const& vals = outValues[targetTable];
             bool anyDataBound = false;

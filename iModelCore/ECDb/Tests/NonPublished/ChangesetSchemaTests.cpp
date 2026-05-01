@@ -855,4 +855,429 @@ TEST_F(ChangesetSchemaTests, Transform_NavProp_RelClassIdRemap)
     ASSERT_EQ(JsonValue(R"json([{"Val":"c1"}])json"), b2h.ExecuteSelectECSql("SELECT Val FROM ts.Child"));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, ExtractFrom_Delete)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesetSchema_ExtractDelete.ecdb",
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Name" typeName="string"/>
+                    <ECProperty propertyName="Age"  typeName="int"/>
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // Insert a row first.
+    ECInstanceKey insertedKey;
+        {
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Foo(Name,Age) VALUES('toDelete',42)"));
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(insertedKey));
+        }
+    m_ecdb.SaveChanges();
+
+    // Capture a DELETE changeset.
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
+        s.BindId(1, insertedKey.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step());
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto schema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(schema.IsEmpty());
+
+    auto fooClass = m_ecdb.Schemas().FindClass("TS:Foo");
+    ASSERT_NE(nullptr, fooClass);
+    auto it = schema.GetClasses().find(fooClass->GetId());
+    ASSERT_NE(schema.GetClasses().end(), it) << "Foo class must appear in the schema extracted from a DELETE changeset";
+    EXPECT_STREQ("TS:Foo", it->second.fullName.c_str());
+    ASSERT_EQ(1u, it->second.tableSegments.size());
+    auto& seg = it->second.tableSegments.begin()->second;
+    EXPECT_GE(seg.idColumnIndex, 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, ExtractFrom_EmptyChangeset)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesetSchema_Empty.ecdb",
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Name" typeName="string"/>
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // Capture an empty changeset (no DML operations inside tracking window).
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        // No inserts/updates/deletes.
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+
+    auto schema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    EXPECT_TRUE(schema.IsEmpty()) << "Schema from empty changeset should be empty";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, ExtractFrom_MultiClass)
+    {
+    // Verify that ExtractFrom captures multiple entity classes from one changeset.
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesetSchema_MultiClass.ecdb",
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Name" typeName="string"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="Bar">
+                    <ECProperty propertyName="Value" typeName="int"/>
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s1;
+        ASSERT_EQ(ECSqlStatus::Success, s1.Prepare(m_ecdb, "INSERT INTO ts.Foo(Name) VALUES('f1')"));
+        ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
+        s1.Finalize();
+        ECSqlStatement s2;
+        ASSERT_EQ(ECSqlStatus::Success, s2.Prepare(m_ecdb, "INSERT INTO ts.Bar(Value) VALUES(99)"));
+        ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto schema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(schema.IsEmpty());
+
+    auto fooClass = m_ecdb.Schemas().FindClass("TS:Foo");
+    auto barClass = m_ecdb.Schemas().FindClass("TS:Bar");
+    ASSERT_NE(nullptr, fooClass);
+    ASSERT_NE(nullptr, barClass);
+    EXPECT_NE(schema.GetClasses().end(), schema.GetClasses().find(fooClass->GetId())) << "Foo should be captured";
+    EXPECT_NE(schema.GetClasses().end(), schema.GetClasses().find(barClass->GetId())) << "Bar should be captured";
+    EXPECT_EQ(2u, schema.GetClasses().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, JsonRoundTrip_NavProp)
+    {
+    // Verify that JSON serialization/deserialization preserves classIdRefCols from nav props.
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesetSchema_JsonNavProp.ecdb",
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Parent">
+                    <ECProperty propertyName="Val" typeName="string"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="Child">
+                    <ECProperty propertyName="Val" typeName="string"/>
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" strength="referencing" modifier="None">
+                    <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="True">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="True">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml")));
+
+    ECInstanceKey parentKey;
+        {
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Parent(Val) VALUES('p1')"));
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(parentKey));
+        }
+    m_ecdb.SaveChanges();
+
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Child(Val,Parent) VALUES('c1',?)"));
+        s.BindNavigationValue(1, parentKey.GetInstanceId());
+        ECInstanceKey childKey;
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(childKey));
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto original = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(original.IsEmpty());
+
+    BeJsDocument doc;
+    original.To(doc);
+    auto restored = ChangesetSchema::From(doc);
+    ASSERT_FALSE(restored.IsEmpty());
+    ASSERT_EQ(original.GetClasses().size(), restored.GetClasses().size());
+
+    // Find Child class and verify classIdRefCols survived the round-trip.
+    auto const* childClass = m_ecdb.Schemas().FindClass("TS:Child");
+    ASSERT_NE(nullptr, childClass);
+    auto origIt = original.GetClasses().find(childClass->GetId());
+    auto restIt = restored.GetClasses().find(childClass->GetId());
+    ASSERT_NE(original.GetClasses().end(), origIt);
+    ASSERT_NE(restored.GetClasses().end(), restIt);
+
+    for (auto const& sk : origIt->second.tableSegments)
+        {
+        auto sit = restIt->second.tableSegments.find(sk.first);
+        ASSERT_NE(restIt->second.tableSegments.end(), sit);
+        EXPECT_EQ(sk.second.classIdRefCols.size(), sit->second.classIdRefCols.size())
+            << "classIdRefCols count must survive JSON round-trip";
+        for (auto const& rk : sk.second.classIdRefCols)
+            {
+            auto rIt = sit->second.classIdRefCols.find(rk.first);
+            ASSERT_NE(sit->second.classIdRefCols.end(), rIt) << "classIdRefCol '" << rk.first.c_str() << "' missing after round-trip";
+            EXPECT_EQ(rk.second.referencedClassFullName, rIt->second.referencedClassFullName);
+            EXPECT_EQ(rk.second.referencedClassId, rIt->second.referencedClassId);
+            EXPECT_EQ(rk.second.sourceColumnIndex, rIt->second.sourceColumnIndex);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, Diff_PropertyLost_NotTransformable)
+    {
+    // When a property no longer exists in the target ECDb, the diff must be
+    // marked as not-transformable.
+    SchemaItem schemaV1(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="Name" typeName="string"/>
+                <ECProperty propertyName="Extra" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("csdiff_proplost.ecdb", schemaV1));
+
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Foo(Name,Extra) VALUES('a','e')"));
+        ECInstanceKey k;
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(k));
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto oldSchema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(oldSchema.IsEmpty());
+
+    // Upgrade: remove the Extra property.
+    SchemaItem schemaV2(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TS" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="Name" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    auto diff = ChangesetSchemaDiff::Compute(oldSchema, m_ecdb);
+    EXPECT_FALSE(diff.IsTransformable()) << "Diff should NOT be transformable when a property is lost";
+
+    bool foundPropertyLost = false;
+    for (auto const& cd : diff.GetClassDiffs())
+        for (auto const& d : cd.columnDiffs)
+            if (d.kind == ChangesetSchemaDiff::ChangeKind::PropertyLost && d.accessString == "Extra")
+                foundPropertyLost = true;
+    EXPECT_TRUE(foundPropertyLost) << "Should have a PropertyLost diff for 'Extra'";
+
+    // Transform must fail for untransformable diffs.
+    TestChangeSet transformedCs;
+    EXPECT_NE(BE_SQLITE_OK, diff.Transform(cs, transformedCs, m_ecdb));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, Diff_ClassLost_NotTransformable)
+    {
+    // When a class no longer exists in the target ECDb, the diff must be not-transformable.
+    SchemaItem schemaV1(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="Name" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Ephemeral">
+                <ECProperty propertyName="Data" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("csdiff_classlost.ecdb", schemaV1));
+
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Ephemeral(Data) VALUES('gone')"));
+        ECInstanceKey k;
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(k));
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto oldSchema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(oldSchema.IsEmpty());
+
+    // Upgrade: remove the Ephemeral class.
+    SchemaItem schemaV2(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TS" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="Name" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    auto diff = ChangesetSchemaDiff::Compute(oldSchema, m_ecdb);
+    EXPECT_FALSE(diff.IsTransformable()) << "Diff should NOT be transformable when a class is lost";
+
+    bool foundClassLost = false;
+    for (auto const& cd : diff.GetClassDiffs())
+        if (cd.classLost)
+            foundClassLost = true;
+    EXPECT_TRUE(foundClassLost) << "Should have a ClassLost diff";
+
+    TestChangeSet transformedCs;
+    EXPECT_NE(BE_SQLITE_OK, diff.Transform(cs, transformedCs, m_ecdb));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, Transform_UpdateWithColumnRemap)
+    {
+    // Verify that Transform correctly handles an UPDATE changeset where a column was
+    // actually remapped to a different shared-column slot.
+    SchemaItem schemaV1(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TS" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="A">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="PropB" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("csupdremap_b1.ecdb", schemaV1));
+
+    // Insert an A instance.
+    ECInstanceKey aKey;
+        {
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.A(PropA) VALUES('original')"));
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(aKey));
+        }
+    m_ecdb.SaveChanges();
+
+    // Clone into b2.
+    ECDb b2;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(b2, "csupdremap_b2.ecdb", BeFileName(m_ecdb.GetDbFileName())));
+    TestHelper b2h(b2);
+
+    // Capture an UPDATE changeset on b1.
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "UPDATE ts.A SET PropA='updated' WHERE ECInstanceId=?"));
+        s.BindId(1, aKey.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step());
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto oldSchema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(oldSchema.IsEmpty());
+
+    // Schema v2: add NewBase between Base and A/B.
+    SchemaItem schemaV2(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TS" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="NewBase">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="PropBase" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="A">
+                <BaseClass>NewBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <BaseClass>NewBase</BaseClass>
+                <ECProperty propertyName="PropB" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, b2h.ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    auto diff = ChangesetSchemaDiff::Compute(oldSchema, m_ecdb);
+    EXPECT_TRUE(diff.IsTransformable());
+
+    TestChangeSet transformedCs;
+    ASSERT_EQ(BE_SQLITE_OK, diff.Transform(cs, transformedCs, m_ecdb));
+
+    ASSERT_EQ(BE_SQLITE_OK, transformedCs.ApplyChanges(b2));
+    b2.SaveChanges();
+
+    ASSERT_EQ(JsonValue(R"json([{"PropA":"updated"}])json"), b2h.ExecuteSelectECSql("SELECT PropA FROM ts.A"));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

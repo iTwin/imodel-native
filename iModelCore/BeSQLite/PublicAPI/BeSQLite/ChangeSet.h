@@ -315,7 +315,7 @@ public:
 };
 
 //=======================================================================================
-//! A base class for a streaming version of the ChangeSet.ChangeSets require that their
+//! A base class for a streaming version of the ChangeSet. ChangeSets require that their
 //! entire contents be stored in large memory buffers. This streaming version is meant to
 //! be used in low memory environments where it is required to handle very large Change Sets.
 // @bsiclass
