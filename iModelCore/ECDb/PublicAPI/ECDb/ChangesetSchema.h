@@ -19,8 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! then carried alongside the changeset so that — after subsequent schema upgrades —
 //! the changeset can be diffed against the evolved ECDb and transformed if required.
 //!
-//! Only entity-class rows are captured. Relationship class rows (link tables and
-//! end-table FK columns) are not included in v1.
+//! Entity-class rows and link-table relationship rows are captured. Navigation property
+//! RelECClassId columns in entity rows are also captured as classId reference columns.
 //!
 //! Streams are consumed once per call. Callers that need both Validate and a separate
 //! consumer (e.g. Transform or ApplyChanges) must provide a fresh stream per call.
@@ -44,6 +44,24 @@ struct ChangesetSchema
         bool IsValid() const { return !accessString.empty() && !tableName.empty() && !columnName.empty(); }
         };
 
+    //! A column that holds a reference to another class's ECClassId.
+    //! Used for link-table SourceECClassId/TargetECClassId and nav-prop RelECClassId.
+    struct ClassIdRefColumn
+        {
+        Utf8String     columnName;
+        Utf8String     tableName;
+        int            sourceColumnIndex = -1;
+        //! Non-empty: specific class whose ID is stored here (e.g. nav-prop RelECClassId).
+        //!            Looked up by fullName in the evolved ECDb to detect/apply a remap.
+        //! Empty: value is a generic entity classId reference (link-table SourceECClassId /
+        //!        TargetECClassId); the general entity classIdRemap is applied at transform time.
+        Utf8String     referencedClassFullName;
+        //! ID of the referenced class at extraction time (valid only when referencedClassFullName
+        //! is non-empty). Used by Compute to detect whether the class was remapped.
+        ECN::ECClassId referencedClassId;
+        bool IsValid() const { return !columnName.empty(); }
+        };
+
     //! One physical table segment (primary, overflow, or joined partition) for a class
     //! as it appears in the changeset.
     struct TableSegment
@@ -53,6 +71,9 @@ struct ChangesetSchema
         int        classIdColumnIndex = -1;  //!< position of ECClassId column; -1 if virtual / single-class table
         int        sourceColumnCount  = 0;   //!< total column count in source table
         bmap<Utf8String /*accessString*/, PropertyColumnMap> columns;
+        //! Additional columns in this table that hold classId references (nav-prop RelECClassId,
+        //! link-table SourceECClassId / TargetECClassId). Values are remapped during Transform.
+        bmap<Utf8String /*columnName*/, ClassIdRefColumn> classIdRefCols;
         };
 
     //! Per-class snapshot. A class with overflow / joined tables produces multiple
@@ -62,6 +83,9 @@ struct ChangesetSchema
         ECN::ECClassId classId;
         Utf8String     fullName;
         bmap<Utf8String /*tableName*/, TableSegment> tableSegments;
+        //! True for link-table relationship class entries (SourceECClassId/TargetECClassId
+        //! columns are in classIdRefCols; no data property columns).
+        bool isRelationshipClass = false;
         };
 
     //! Extract the schema from a changeset, interpreted against the supplied ECDb.
@@ -121,12 +145,28 @@ struct ChangesetSchemaDiff
         ChangesetSchema::PropertyColumnMap    newMap; //!< empty when kind == PropertyLost
         };
 
+    //! Describes a remap of one classId-reference column (nav-prop RelECClassId).
+    //! At transform time, any value equal to @p oldClassId is replaced with @p newClassId.
+    struct ClassIdRefDiff
+        {
+        Utf8String     tableName;
+        Utf8String     columnName;
+        int            sourceColumnIndex = -1;
+        ECN::ECClassId oldClassId;
+        ECN::ECClassId newClassId;
+        };
+
     struct ClassDiff
         {
         ChangesetSchema::ClassEntry  sourceEntry;
         ECN::ECClassId               targetClassId;        //!< invalid when kind == ClassLost
         bool                         classLost = false;
         bvector<ColumnDiff>          columnDiffs;
+        //! Per-column remaps for nav-prop RelECClassId columns.
+        bvector<ClassIdRefDiff>      classIdRefDiffs;
+        //! True when this link-table entry has SourceECClassId/TargetECClassId constraint
+        //! columns; the general entity classIdRemap is applied to their values at transform time.
+        bool                         hasConstraintClassIdCols = false;
         ECDB_EXPORT bool             IsTransformable() const;
         };
 

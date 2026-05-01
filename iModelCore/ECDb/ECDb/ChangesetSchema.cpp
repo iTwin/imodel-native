@@ -19,6 +19,8 @@ namespace {
 // Build (or reuse) the TableSegment for (classId, tableName) by walking the live ClassMap.
 // Only includes columns that physically belong to @p tableName and aren't virtual.
 // Records the source-row indices (positions of every column) using ECDb::GetColumns.
+// NavigationRelECClassId-typed columns are added to seg.classIdRefCols (not seg.columns),
+// tagged with the fullName of the referenced relationship class.
 static void PopulateTableSegment(ChangesetSchema::TableSegment& seg, ClassMap const& classMap,
                                  Utf8StringCR tableName, ECDbCR ecdb, std::map<Utf8String, std::vector<Utf8String>>& tableColumnsCache)
     {
@@ -67,6 +69,32 @@ static void PopulateTableSegment(ChangesetSchema::TableSegment& seg, ClassMap co
         if (!col.GetTable().GetName().EqualsI(tableName))
             continue;
 
+        if (pm->GetType() == PropertyMap::Type::NavigationRelECClassId)
+            {
+            // This column holds the ID of the relationship class used for a nav prop.
+            // It must be captured as a classIdRefCol (value-remapped), not a data column.
+            Utf8String relClassFullName;
+            PropertyMap const* parentPm = pm->GetParent();
+            if (parentPm != nullptr)
+                {
+                if (auto const* navPm = dynamic_cast<NavigationPropertyMap const*>(parentPm))
+                    {
+                    if (auto const* navProp = navPm->GetProperty().GetAsNavigationProperty())
+                        if (auto const* relCls = navProp->GetRelationshipClass())
+                            relClassFullName = relCls->GetFullName();
+                    }
+                }
+            ChangesetSchema::ClassIdRefColumn refCol;
+            refCol.columnName = col.GetName();
+            refCol.tableName = tableName;
+            refCol.sourceColumnIndex = indexOf(col.GetName());
+            refCol.referencedClassFullName = relClassFullName;
+            // Store the relationship class ID at extraction time so Compute can detect remaps.
+            refCol.referencedClassId = pm->GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetDefaultClassId();
+            seg.classIdRefCols[col.GetName()] = std::move(refCol);
+            continue;
+            }
+
         ChangesetSchema::PropertyColumnMap m;
         m.accessString = sm.GetAccessString();
         m.tableName = tableName;
@@ -95,12 +123,67 @@ ChangesetSchema ChangesetSchema::ExtractFrom(ECDbCR ecdb, ChangeStream& changes)
         ECClassCP cls = row.GetPrimaryClass();
         if (cls == nullptr)
             continue;
-        // v1 scope: entity classes only (skip relationship classes)
-        if (cls->IsRelationshipClass())
+
+        Utf8StringCR tableName = row.GetTableName();
+        ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(*cls);
+        if (classMap == nullptr)
             continue;
 
+        if (cls->IsRelationshipClass())
+            {
+            // Only capture link-table relationship rows (FK end-table rows surface as entity rows).
+            if (classMap->GetType() != ClassMap::Type::RelationshipLinkTable)
+                continue;
+
+            ECClassId classId = cls->GetId();
+            auto& classEntry = result.m_classes[classId];
+            if (classEntry.fullName.empty())
+                {
+                classEntry.classId = classId;
+                classEntry.fullName = cls->GetFullName();
+                classEntry.isRelationshipClass = true;
+                }
+
+            if (classEntry.tableSegments.find(tableName) != classEntry.tableSegments.end())
+                continue;
+
+            TableSegment seg;
+            PopulateTableSegment(seg, *classMap, tableName, ecdb, tableColumnsCache);
+
+            // Capture SourceECClassId and TargetECClassId as classIdRefCols (empty referencedClassFullName
+            // means "apply general entity classIdRemap" during Transform).
+            auto const& relMap = classMap->GetAs<RelationshipClassMap>();
+            auto indexOf = [&](Utf8StringCR name) -> int {
+                auto cacheIt = tableColumnsCache.find(tableName);
+                if (cacheIt == tableColumnsCache.end()) return -1;
+                for (size_t i = 0; i < cacheIt->second.size(); ++i)
+                    if (cacheIt->second[i].EqualsI(name)) return (int)i;
+                return -1;
+                };
+            auto captureConstraintClassId = [&](ConstraintECClassIdPropertyMap const* cpm) {
+                if (cpm == nullptr)
+                    return;
+                auto const* perTablePm = cpm->FindDataPropertyMap(tableName);
+                if (perTablePm == nullptr)
+                    return;
+                DbColumn const& col = perTablePm->GetColumn();
+                if (col.IsVirtual())
+                    return;
+                ClassIdRefColumn refCol;
+                refCol.columnName = col.GetName();
+                refCol.tableName = tableName;
+                refCol.sourceColumnIndex = indexOf(col.GetName());
+                // empty referencedClassFullName = general entity classIdRemap
+                seg.classIdRefCols[col.GetName()] = std::move(refCol);
+                };
+            captureConstraintClassId(relMap.GetSourceECClassIdPropMap());
+            captureConstraintClassId(relMap.GetTargetECClassIdPropMap());
+
+            classEntry.tableSegments[tableName] = std::move(seg);
+            continue;
+            }
+
         ECClassId classId = cls->GetId();
-        Utf8StringCR tableName = row.GetTableName();
 
         auto& classEntry = result.m_classes[classId];
         if (classEntry.fullName.empty())
@@ -111,10 +194,6 @@ ChangesetSchema ChangesetSchema::ExtractFrom(ECDbCR ecdb, ChangeStream& changes)
 
         if (classEntry.tableSegments.find(tableName) != classEntry.tableSegments.end())
             continue; // already populated
-
-        ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(*cls);
-        if (classMap == nullptr)
-            continue;
 
         TableSegment seg;
         PopulateTableSegment(seg, *classMap, tableName, ecdb, tableColumnsCache);
@@ -135,6 +214,8 @@ void ChangesetSchema::To(BeJsValue value) const
         BeJsValue classObj = value.appendObject();
         classObj["classId"] = kv.second.classId.ToHexStr();
         classObj["fullName"] = kv.second.fullName;
+        if (kv.second.isRelationshipClass)
+            classObj["isRelationshipClass"] = true;
         BeJsValue segs = classObj["segments"];
         segs.SetEmptyArray();
         for (auto const& sk : kv.second.tableSegments)
@@ -152,6 +233,22 @@ void ChangesetSchema::To(BeJsValue value) const
                 colObj["accessString"] = ck.second.accessString;
                 colObj["columnName"] = ck.second.columnName;
                 colObj["sourceColumnIndex"] = ck.second.sourceColumnIndex;
+                }
+            if (!sk.second.classIdRefCols.empty())
+                {
+                BeJsValue refColsArr = segObj["classIdRefCols"];
+                refColsArr.SetEmptyArray();
+                for (auto const& rk : sk.second.classIdRefCols)
+                    {
+                    BeJsValue refObj = refColsArr.appendObject();
+                    refObj["columnName"] = rk.second.columnName;
+                    refObj["sourceColumnIndex"] = rk.second.sourceColumnIndex;
+                    if (!rk.second.referencedClassFullName.empty())
+                        {
+                        refObj["referencedClassFullName"] = rk.second.referencedClassFullName;
+                        refObj["referencedClassId"] = rk.second.referencedClassId.ToHexStr();
+                        }
+                    }
                 }
             }
         }
@@ -177,6 +274,7 @@ ChangesetSchema ChangesetSchema::From(BeJsConst value)
             return false;
         entry.classId = ECClassId(raw.GetValueUnchecked());
         entry.fullName = classObj["fullName"].asString();
+        entry.isRelationshipClass = classObj["isRelationshipClass"].asBool(false);
         BeJsConst segs = classObj["segments"];
         if (segs.isArray())
             {
@@ -200,6 +298,30 @@ ChangesetSchema ChangesetSchema::From(BeJsConst value)
                         m.columnName = colObj["columnName"].asString();
                         m.sourceColumnIndex = colObj["sourceColumnIndex"].asInt(-1);
                         seg.columns[m.accessString] = m;
+                        return false;
+                        });
+                    }
+                BeJsConst refColsArr = segObj["classIdRefCols"];
+                if (refColsArr.isArray())
+                    {
+                    refColsArr.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst refObj) {
+                        if (!refObj.isObject())
+                            return false;
+                        ClassIdRefColumn rc;
+                        rc.columnName = refObj["columnName"].asString();
+                        rc.tableName = seg.tableName;
+                        rc.sourceColumnIndex = refObj["sourceColumnIndex"].asInt(-1);
+                        rc.referencedClassFullName = refObj["referencedClassFullName"].asString("");
+                        Utf8String refCidStr = refObj["referencedClassId"].asString("");
+                        if (!refCidStr.empty())
+                            {
+                            BentleyStatus st2;
+                            BeInt64Id refRaw = BeInt64Id::FromString(refCidStr.c_str(), &st2);
+                            if (st2 == SUCCESS)
+                                rc.referencedClassId = ECClassId(refRaw.GetValueUnchecked());
+                            }
+                        if (rc.IsValid())
+                            seg.classIdRefCols[rc.columnName] = std::move(rc);
                         return false;
                         });
                     }
@@ -231,8 +353,15 @@ BentleyStatus ChangesetSchema::Validate(ECDbCR ecdb, ChangeStream& changes, bvec
         if (!row.IsMapped())
             continue;
         ECClassCP cls = row.GetPrimaryClass();
-        if (cls == nullptr || cls->IsRelationshipClass())
+        if (cls == nullptr)
             continue;
+        // Skip FK end-table relationship rows — they aren't in the schema.
+        if (cls->IsRelationshipClass())
+            {
+            ClassMap const* cm = ecdb.Schemas().Main().GetClassMap(*cls);
+            if (cm == nullptr || cm->GetType() != ClassMap::Type::RelationshipLinkTable)
+                continue;
+            }
 
         ECClassId classId = cls->GetId();
         auto cit = m_classes.find(classId);
@@ -385,8 +514,47 @@ ChangesetSchemaDiff ChangesetSchemaDiff::Compute(ChangesetSchema const& source, 
                 }
             }
 
+        // Process classIdRef columns.
+        // Link-table: flag so Transform applies entity classIdRemap to constraint classId cols.
+        // Entity with nav-prop classIdRefCols: detect if the referenced relationship class was
+        // remapped and record a ClassIdRefDiff if so.
+        if (srcEntry.isRelationshipClass)
+            {
+            for (auto const& sk : srcEntry.tableSegments)
+                if (!sk.second.classIdRefCols.empty())
+                    { cd.hasConstraintClassIdCols = true; break; }
+            }
+        else
+            {
+            for (auto const& sk : srcEntry.tableSegments)
+                {
+                for (auto const& rk : sk.second.classIdRefCols)
+                    {
+                    ChangesetSchema::ClassIdRefColumn const& refCol = rk.second;
+                    if (refCol.referencedClassFullName.empty())
+                        continue;
+                    ECClassCP refClass = current.Schemas().FindClass(refCol.referencedClassFullName.c_str());
+                    if (refClass == nullptr)
+                        continue; // class lost — no remap; leave value as-is
+                    ECClassId newRefClassId = refClass->GetId();
+                    // Use the stored source class ID (captured at extraction time).
+                    ECClassId oldRefClassId = refCol.referencedClassId;
+                    if (!oldRefClassId.IsValid() || oldRefClassId == newRefClassId)
+                        continue; // no remap needed
+                    ClassIdRefDiff rid;
+                    rid.tableName = refCol.tableName;
+                    rid.columnName = refCol.columnName;
+                    rid.sourceColumnIndex = refCol.sourceColumnIndex;
+                    rid.oldClassId = oldRefClassId;
+                    rid.newClassId = newRefClassId;
+                    cd.classIdRefDiffs.push_back(rid);
+                    }
+                }
+            }
+
         // Only retain class diffs that actually have changes
-        if (classIdChanged || !cd.columnDiffs.empty() || cd.classLost)
+        if (classIdChanged || !cd.columnDiffs.empty() || cd.classLost ||
+            !cd.classIdRefDiffs.empty() || cd.hasConstraintClassIdCols)
             result.m_classDiffs.push_back(std::move(cd));
         }
 
@@ -552,6 +720,8 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
         ECClassId   classId; // resolved
         ECInstanceId instanceId;
         bmap<Utf8String /*accessString*/, CapturedColumn> values; // by EC access string
+        // Captured classIdRef column values (nav-prop RelECClassId, link-table SourceECClassId / TargetECClassId).
+        bmap<Utf8String /*columnName*/, CapturedColumn> classIdRefColVals;
         // Captured PK + classId raw values for reuse
         CapturedValue idOld, idNew;
         CapturedValue classIdOld, classIdNew;
@@ -681,6 +851,18 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
                 srow.values[ck.second.accessString] = cc;
             }
 
+        // Capture classIdRef column values (nav-prop RelECClassId, link-table constraint classIds).
+        for (auto const& rk : seg.classIdRefCols)
+            {
+            int idx = rk.second.sourceColumnIndex;
+            if (idx < 0) continue;
+            CapturedColumn cc;
+            cc.oldVal = CapturedValue::Capture(change.GetValue(idx, oldS));
+            cc.newVal = CapturedValue::Capture(change.GetValue(idx, newS));
+            if (cc.oldVal.IsBound() || cc.newVal.IsBound())
+                srow.classIdRefColVals[rk.second.columnName] = cc;
+            }
+
         // Track primary op (use this row's opcode for now; will reconcile later)
         g.primaryOpcode = srow.opcode;
         if (srow.indirect) g.indirect = true;
@@ -771,6 +953,9 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             if (layout == nullptr || layout->columnNames.empty())
                 continue;
 
+            // Look up the source row for this table (needed for classIdRef values).
+            auto srowIt = g.rows.find(targetTable);
+
             // Determine opcode for THIS target row
             DbOpcode rowOp = primaryOp;
             // Look up the target ClassMap to find each access string's column name in this target table
@@ -853,14 +1038,93 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
                         }
                     }
 
+                // Apply classIdRef column remaps (nav-prop RelECClassId + link-table constraint classIds).
+                if (srowIt != g.rows.end())
+                    {
+                    // Helper: apply a specific old->new classId remap to one captured value.
+                    auto applySpecificRemap = [](CapturedValue const& v, ECClassId oldId, ECClassId newId) -> CapturedValue {
+                        if (v.type != CapturedValue::Type::Int) return v;
+                        if ((uint64_t)v.intVal != oldId.GetValue()) return v;
+                        CapturedValue out = v;
+                        out.intVal = (int64_t)newId.GetValue();
+                        return out;
+                        };
+                    // Helper: apply the general entity classIdRemap to one captured value.
+                    auto applyGeneralRemap = [&](CapturedValue const& v) -> CapturedValue {
+                        if (v.type != CapturedValue::Type::Int) return v;
+                        ECClassId id((uint64_t)v.intVal);
+                        auto it = classIdRemap.find(id);
+                        if (it == classIdRemap.end()) return v;
+                        CapturedValue out = v;
+                        out.intVal = (int64_t)it->second.GetValue();
+                        return out;
+                        };
+
+                    // Nav-prop RelECClassId columns: specific remap per ClassIdRefDiff.
+                    for (auto const& rid : cd->classIdRefDiffs)
+                        {
+                        if (!rid.tableName.EqualsI(targetTable)) continue;
+                        int colIdx = layout->Find(rid.columnName);
+                        if (colIdx < 0) continue;
+                        auto cit = srowIt->second.classIdRefColVals.find(rid.columnName);
+                        if (cit == srowIt->second.classIdRefColVals.end()) continue;
+                        CapturedColumn const& cc = cit->second;
+                        if (rowOp == DbOpcode::Insert)
+                            { CapturedValue nv = applySpecificRemap(cc.newVal, rid.oldClassId, rid.newClassId); if (nv.IsBound()) { nv.BindTo(row, Stage::New, colIdx); anyDataBound = true; } }
+                        else if (rowOp == DbOpcode::Delete)
+                            { CapturedValue ov = applySpecificRemap(cc.oldVal, rid.oldClassId, rid.newClassId); if (ov.IsBound()) { ov.BindTo(row, Stage::Old, colIdx); anyDataBound = true; } }
+                        else
+                            {
+                            if (cc.oldVal.IsBound()) { CapturedValue ov = applySpecificRemap(cc.oldVal, rid.oldClassId, rid.newClassId); ov.BindTo(row, Stage::Old, colIdx); anyDataBound = true; }
+                            if (cc.newVal.IsBound()) { CapturedValue nv = applySpecificRemap(cc.newVal, rid.oldClassId, rid.newClassId); nv.BindTo(row, Stage::New, colIdx); anyDataBound = true; }
+                            }
+                        }
+
+                    // Link-table constraint classId columns (SourceECClassId / TargetECClassId): general entity remap.
+                    if (cd->hasConstraintClassIdCols)
+                        {
+                        auto segIt2 = cd->sourceEntry.tableSegments.find(targetTable);
+                        if (segIt2 != cd->sourceEntry.tableSegments.end())
+                            {
+                            for (auto const& rk : segIt2->second.classIdRefCols)
+                                {
+                                ChangesetSchema::ClassIdRefColumn const& refCol = rk.second;
+                                if (!refCol.referencedClassFullName.empty()) continue; // nav-prop, already handled
+                                int colIdx = layout->Find(refCol.columnName);
+                                if (colIdx < 0) continue;
+                                auto cit = srowIt->second.classIdRefColVals.find(refCol.columnName);
+                                if (cit == srowIt->second.classIdRefColVals.end()) continue;
+                                CapturedColumn const& cc = cit->second;
+                                if (rowOp == DbOpcode::Insert)
+                                    { CapturedValue nv = applyGeneralRemap(cc.newVal); if (nv.IsBound()) { nv.BindTo(row, Stage::New, colIdx); anyDataBound = true; } }
+                                else if (rowOp == DbOpcode::Delete)
+                                    { CapturedValue ov = applyGeneralRemap(cc.oldVal); if (ov.IsBound()) { ov.BindTo(row, Stage::Old, colIdx); anyDataBound = true; } }
+                                else
+                                    {
+                                    if (cc.oldVal.IsBound()) { CapturedValue ov = applyGeneralRemap(cc.oldVal); ov.BindTo(row, Stage::Old, colIdx); anyDataBound = true; }
+                                    if (cc.newVal.IsBound()) { CapturedValue nv = applyGeneralRemap(cc.newVal); nv.BindTo(row, Stage::New, colIdx); anyDataBound = true; }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                 // For INSERT: any unbound non-null column in target needs a value.
                 // We bind NULL as a fallback (will fail for NOT NULL columns).
                 if (rowOp == DbOpcode::Insert)
                     {
+                    // Collect classIdRef column names to skip in the fallback.
+                    bset<Utf8String> classIdRefColNames;
+                    auto segIt3 = cd->sourceEntry.tableSegments.find(targetTable);
+                    if (segIt3 != cd->sourceEntry.tableSegments.end())
+                        for (auto const& rk : segIt3->second.classIdRefCols)
+                            classIdRefColNames.insert(Utf8String(rk.second.columnName));
+
                     for (size_t i = 0; i < layout->columnNames.size(); ++i)
                         {
                         if ((int)i == layout->idColIdx) continue;
                         if ((int)i == layout->classIdColIdx) continue;
+                        if (classIdRefColNames.count(layout->columnNames[i]) > 0) continue;
                         // Skip columns we already bound
                         bool bound = false;
                         for (auto const& vk : vals)
