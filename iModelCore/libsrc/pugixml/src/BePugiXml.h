@@ -136,9 +136,8 @@ public:
 //=======================================================================================
 //! A streaming-style XML writer backed by pugixml. Builds a DOM internally and serializes
 //! to string or file on demand.
-//! @note For file writers created via CreateFileWriter, the file is not written until
-//!       the writer is destroyed. Callers must not assume the file exists or is complete
-//!       while the writer is still alive.
+//! @note For file writers created via CreateFileWriter, the file is written when
+//!       ToString is called or when the writer is destroyed, whichever comes first.
 // @bsiclass
 //=======================================================================================
 struct BePugiXmlWriter : RefCountedBase, NonCopyableClass
@@ -155,6 +154,7 @@ private:
 
     BePugiXmlWriter ();
     void flushToFile ();
+    pugi::xml_encoding pugiEncoding () const { return m_encoding == BEPUGIXML_CHAR_ENCODING_Utf16LE ? pugi::encoding_utf16_le : pugi::encoding_utf8; }
 
     BEPUGIXML_EXPORT BePugiXmlStatus writeAttributeImpl (Utf8CP name, Utf8CP value);
 

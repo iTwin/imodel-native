@@ -9,6 +9,7 @@
 #include <Bentley/Nullable.h>
 #include <Formatting/FormattingApi.h>
 #include <BeRapidJson/BeJsValue.h>
+#include <pugixml/src/BePugiXml.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

@@ -165,7 +165,9 @@ BePugiXmlStatus BePugiXmlNode::GetAttributeStringValue (Utf8StringR result, Utf8
 BePugiXmlDomPtr BePugiXmlDom::CreateAndReadFromString (BePugiXmlStatus& status, Utf8CP source, size_t characterCount)
     {
     BePugiXmlDomP dom = new BePugiXmlDom ();
-    pugi::xml_parse_result result = dom->m_doc.load_string (source);
+    pugi::xml_parse_result result = (0 != characterCount)
+        ? dom->m_doc.load_buffer (source, characterCount)
+        : dom->m_doc.load_string (source);
     if (!result)
         {
         status = BEPUGIXML_ParseError;
@@ -510,7 +512,7 @@ void BePugiXmlWriter::flushToFile ()
     // Serialize to string, post-process, then write to file.
     std::ostringstream stream;
     unsigned int flags = m_indent ? pugi::format_indent : pugi::format_raw;
-    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugi::encoding_utf8);
+    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugiEncoding ());
 
     Utf8String content (stream.str ().c_str ());
     removeSpaceBeforeSelfClose (content);
@@ -544,7 +546,7 @@ void BePugiXmlWriter::ToString (Utf8StringR buffer)
     if (!m_hasDocumentDecl)
         flags |= pugi::format_no_declaration;
 
-    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugi::encoding_utf8);
+    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugiEncoding ());
     buffer = stream.str ().c_str ();
     removeSpaceBeforeSelfClose (buffer);
     }
