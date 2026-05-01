@@ -424,7 +424,7 @@ BePugiXmlStatus BePugiXmlWriter::WriteAttribute (Utf8CP name, uint32_t value)
 BePugiXmlStatus BePugiXmlWriter::WriteAttribute (Utf8CP name, uint64_t value)
     {
     char valueString[128];
-    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%llu", value);
+    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%" PRIu64, value);
     return writeAttributeImpl (name, valueString);
     }
 
