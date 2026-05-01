@@ -509,20 +509,33 @@ void BePugiXmlWriter::flushToFile ()
     if (m_filePath.empty ())
         return;
 
-    // Serialize to string, post-process, then write to file.
-    std::ostringstream stream;
     unsigned int flags = m_indent ? pugi::format_indent : pugi::format_raw;
-    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugiEncoding ());
+    auto encoding = pugiEncoding ();
 
-    Utf8String content (stream.str ().c_str ());
-    removeSpaceBeforeSelfClose (content);
-
-    BeFile file;
-    if (BeFileStatus::Success == file.Create (m_filePath.c_str (), true))
+    if (encoding != pugi::encoding_utf8)
         {
-        uint32_t bytesWritten;
-        file.Write (&bytesWritten, content.c_str (), (uint32_t) content.size ());
-        file.Close ();
+        // Non-UTF-8: write directly to file. The Utf8String intermediate cannot hold
+        // encodings like UTF-16 (embedded nulls would truncate the data).
+        // Note: removeSpaceBeforeSelfClose is skipped here; checksums are only
+        // calculated on the UTF-8 serialization path.
+        m_doc.save_file (m_filePath.c_str (), m_indent ? m_indentString.c_str () : "", flags, encoding);
+        }
+    else
+        {
+        // UTF-8: serialize to string for removeSpaceBeforeSelfClose post-processing.
+        std::ostringstream stream;
+        m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugi::encoding_utf8);
+
+        Utf8String content (stream.str ().c_str ());
+        removeSpaceBeforeSelfClose (content);
+
+        BeFile file;
+        if (BeFileStatus::Success == file.Create (m_filePath.c_str (), true))
+            {
+            uint32_t bytesWritten;
+            file.Write (&bytesWritten, content.c_str (), (uint32_t) content.size ());
+            file.Close ();
+            }
         }
 
     // Clear path so we don't write again in the destructor.
@@ -541,12 +554,13 @@ void BePugiXmlWriter::ToString (Utf8StringR buffer)
         return;
         }
 
+    // Always use UTF-8: the output is a Utf8String, so UTF-16 bytes would be truncated at embedded nulls.
     std::ostringstream stream;
     unsigned int flags = m_indent ? pugi::format_indent : pugi::format_raw;
     if (!m_hasDocumentDecl)
         flags |= pugi::format_no_declaration;
 
-    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugiEncoding ());
+    m_doc.save (stream, m_indent ? m_indentString.c_str () : "", flags, pugi::encoding_utf8);
     buffer = stream.str ().c_str ();
     removeSpaceBeforeSelfClose (buffer);
     }
