@@ -10,6 +10,7 @@ This document including important changes to syntax or file format.
 ## ## `04/25/2026`: Added `relations()` virtual table and InstanceGraph API
 * ECSql version change `2.0.3.2` -> `2.0.3.3`.
 * Added `relations()` virtual table for fast relationship traversal from a seed instance.
+* **`relations()` is an experimental feature** and is disabled by default. Enable it with `PRAGMA experimental_features_enabled=true` or per-query with `ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
 * Example: `SELECT * FROM relations WHERE ECInstanceId = 1 AND ECClassId = 0x123`
 * Added `TraversalDirection` filter: `WHERE TraversalDirection = 'forward'` or `'backward'` or `'both'` (default).
 * Added internal `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union).

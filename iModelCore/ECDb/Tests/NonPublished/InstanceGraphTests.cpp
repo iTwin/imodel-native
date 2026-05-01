@@ -622,6 +622,7 @@ TEST_F(InstanceGraphTests, SetOps_Union)
 TEST_F(InstanceGraphTests, VTable_BasicQuery)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -652,6 +653,7 @@ TEST_F(InstanceGraphTests, VTable_BasicQuery)
 TEST_F(InstanceGraphTests, VTable_DirectionFilter)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableDir.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -794,6 +796,7 @@ TEST_F(InstanceGraphTests, PolymorphicTraversal_MultipleSubclasses)
 TEST_F(InstanceGraphTests, VTable_WithSchemaName)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_WithSchema.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -850,6 +853,7 @@ TEST_F(InstanceGraphTests, VTable_WithSchemaName)
 TEST_F(InstanceGraphTests, VTable_WithoutSchemaName)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_NoSchema.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -906,6 +910,7 @@ TEST_F(InstanceGraphTests, VTable_WithoutSchemaName)
 TEST_F(InstanceGraphTests, VTable_WithAndWithoutSchemaName_SameResults)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_Consistency.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -951,6 +956,7 @@ TEST_F(InstanceGraphTests, VTable_WithAndWithoutSchemaName_SameResults)
 TEST_F(InstanceGraphTests, VTable_ColumnRefWithAlias)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ColRefAlias.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -984,6 +990,7 @@ TEST_F(InstanceGraphTests, VTable_ColumnRefWithAlias)
 TEST_F(InstanceGraphTests, VTable_ColumnRefWithoutAlias)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ColRefNoAlias.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
     auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
@@ -1010,6 +1017,7 @@ TEST_F(InstanceGraphTests, VTable_ColumnRefWithoutAlias)
 TEST_F(InstanceGraphTests, VTable_DirectionOptionalWithColumnRef)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_DirOptColRef.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -1067,6 +1075,7 @@ TEST_F(InstanceGraphTests, VTable_DirectionOptionalWithColumnRef)
 TEST_F(InstanceGraphTests, VTable_TwoRelationsChained)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_TwoRelChain.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     // Chain: P1 →(forward) P2 →(forward) Cat1
     auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
@@ -1106,6 +1115,7 @@ TEST_F(InstanceGraphTests, VTable_TwoRelationsChained)
 TEST_F(InstanceGraphTests, VTable_TwoRelationsIndependent)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_TwoRelIndep.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
     auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
@@ -1144,6 +1154,7 @@ TEST_F(InstanceGraphTests, VTable_TwoRelationsIndependent)
 TEST_F(InstanceGraphTests, VTable_ColumnRefWithoutSchemaPrefix)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ColRefNoSchema.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
 
     auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
     auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
@@ -1162,6 +1173,46 @@ TEST_F(InstanceGraphTests, VTable_ColumnRefWithoutSchemaPrefix)
         foundIds.insert(stmt.GetValueInt64(0));
 
     EXPECT_TRUE(foundIds.find(pipe2Key.GetInstanceId().GetValueUnchecked()) != foundIds.end()) << "Unqualified Relations with column refs should work";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_FailsWithoutExperimentalFeature)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTable_ExpGate.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    m_ecdb.SaveChanges();
+
+    // Should fail when experimental features are disabled (default)
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    // Should also fail for unqualified name
+    ECSqlStatement stmtUnqualified;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmtUnqualified.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    // Should succeed with per-query ECSQLOPTIONS
+    ECSqlStatement stmtOpt;
+    ASSERT_EQ(ECSqlStatus::Success, stmtOpt.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
+
+    // Should succeed after enabling via pragma
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+    ECSqlStatement stmtEnabled;
+    ASSERT_EQ(ECSqlStatus::Success, stmtEnabled.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s)",
+            pipe1Key.GetInstanceId().ToString().c_str(),
+            pipe1Key.GetClassId().ToString().c_str())));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
