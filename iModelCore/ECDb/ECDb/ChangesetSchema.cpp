@@ -496,6 +496,11 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             }
         }
 
+    // Reverse map: targetClassId -> sourceClassId (for re-identifying UPDATE rows queried from targetDb).
+    bmap<ECClassId, ECClassId> reverseClassIdRemap;
+    for (auto const& r : classIdRemap)
+        reverseClassIdRemap[r.second] = r.first;
+
     // Build target table column layouts on demand.
     struct TargetLayout
         {
@@ -617,12 +622,32 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
 
         // Resolve ECClassId for the row
         ECClassId rowClassId = cd.sourceEntry.classId;
+        bool classIdFoundInChange = false;
         if (seg.classIdColumnIndex >= 0)
             {
             DbValue cidNew = change.GetValue(seg.classIdColumnIndex, newS);
             DbValue cidOld = change.GetValue(seg.classIdColumnIndex, oldS);
-            if (cidNew.IsValid() && !cidNew.IsNull())      rowClassId = ECClassId((uint64_t)cidNew.GetValueInt64());
-            else if (cidOld.IsValid() && !cidOld.IsNull()) rowClassId = ECClassId((uint64_t)cidOld.GetValueInt64());
+            if (cidNew.IsValid() && !cidNew.IsNull())      { rowClassId = ECClassId((uint64_t)cidNew.GetValueInt64()); classIdFoundInChange = true; }
+            else if (cidOld.IsValid() && !cidOld.IsNull()) { rowClassId = ECClassId((uint64_t)cidOld.GetValueInt64()); classIdFoundInChange = true; }
+            }
+        // For UPDATE rows ECClassId is absent from the change data; query the DB for the actual class.
+        if (!classIdFoundInChange && change.GetOpcode() == DbOpcode::Update && instanceId.IsValid() && seg.classIdColumnIndex >= 0)
+            {
+            if (DbTable const* dbTable = targetDb.Schemas().Main().GetDbSchema().FindTable(tableName))
+                {
+                DbColumn const* classIdCol = dbTable->FindFirst(DbColumn::Kind::ECClassId);
+                DbColumn const* idCol      = dbTable->FindFirst(DbColumn::Kind::ECInstanceId);
+                if (classIdCol != nullptr && idCol != nullptr && classIdCol->GetPersistenceType() != PersistenceType::Virtual)
+                    {
+                    ECClassId queriedId;
+                    if (SUCCESS == DbUtilities::QueryRowClassId(queriedId, targetDb, tableName, classIdCol->GetName(), idCol->GetName(), instanceId) && queriedId.IsValid())
+                        {
+                        // Map back to source classId in case the class was remapped between source and target schemas.
+                        auto revIt = reverseClassIdRemap.find(queriedId);
+                        rowClassId = (revIt != reverseClassIdRemap.end()) ? revIt->second : queriedId;
+                        }
+                    }
+                }
             }
 
         InstanceKey ikey{rowClassId, instanceId};
@@ -713,14 +738,15 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             if (!idNew.IsBound() && rk.second.idNew.IsBound()) idNew = rk.second.idNew;
             }
 
-        // Determine ECClassId values
+        // Determine ECClassId values; track whether ECClassId was present in the source change.
         CapturedValue cidOld, cidNew;
+        bool classIdWasInSourceChange = false;
         for (auto const& rk : g.rows)
             {
-            if (!cidOld.IsBound() && rk.second.classIdOld.IsBound()) cidOld = rk.second.classIdOld;
-            if (!cidNew.IsBound() && rk.second.classIdNew.IsBound()) cidNew = rk.second.classIdNew;
+            if (!cidOld.IsBound() && rk.second.classIdOld.IsBound()) { cidOld = rk.second.classIdOld; classIdWasInSourceChange = true; }
+            if (!cidNew.IsBound() && rk.second.classIdNew.IsBound()) { cidNew = rk.second.classIdNew; classIdWasInSourceChange = true; }
             }
-        // Apply ClassIdRemapped: overwrite with target classId
+        // Apply ClassIdRemapped: overwrite with target classId (relevant for Insert/Delete).
         auto cidRemapIt = classIdRemap.find(gkv.first.classId);
         if (cidRemapIt != classIdRemap.end())
             {
@@ -789,14 +815,15 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
                         }
                     }
 
-                // Bind ECClassId if persisted
+                // Bind ECClassId if persisted.
+                // For UPDATE, ECClassId is absent from the source change and must not be synthesised.
                 if (layout->classIdColIdx >= 0)
                     {
                     if (rowOp == DbOpcode::Insert)
                         { if (cidNew.IsBound()) cidNew.BindTo(row, Stage::New, layout->classIdColIdx); }
                     else if (rowOp == DbOpcode::Delete)
                         { if (cidOld.IsBound()) cidOld.BindTo(row, Stage::Old, layout->classIdColIdx); }
-                    else
+                    else if (classIdWasInSourceChange)  // Update: only write if ECClassId was actually in the source change
                         {
                         if (cidOld.IsBound()) cidOld.BindTo(row, Stage::Old, layout->classIdColIdx);
                         if (cidNew.IsBound()) cidNew.BindTo(row, Stage::New, layout->classIdColIdx);
