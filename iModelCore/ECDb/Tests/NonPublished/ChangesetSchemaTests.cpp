@@ -1280,4 +1280,206 @@ TEST_F(ChangesetSchemaTests, Transform_UpdateWithColumnRemap)
     ASSERT_EQ(JsonValue(R"json([{"PropA":"updated"}])json"), b2h.ExecuteSelectECSql("SELECT PropA FROM ts.A"));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, ExtractFrom_JoinedTableWithOverflow)
+    {
+    // Schema: Element (abstract, TPH + JoinedTablePerDirectSubclass) ->
+    //         GeometricElement3d (abstract, ShareColumns max=1, ApplyToSubclassesOnly) ->
+    //         Building (Prop1).
+    //
+    // At v1:  Building.Prop1 -> ts_GeometricElement3d.js1 (exactly fills the one shared slot).
+    // At v2:  Building.Prop2 is added -> ts_GeometricElement3d_Overflow.js1.
+    //
+    // This test verifies that:
+    //   (a) ExtractFrom at v1 captures BOTH the primary-table and joined-table segments.
+    //   (b) After the upgrade, Compute finds no ColumnMoved (Prop1 did not move).
+    //   (c) Transform + ApplyChanges succeeds.
+    //   (d) A changeset captured at v2 (with overflow rows) has the overflow table segment too.
+
+    Utf8CP schemaV1Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("cs_joined_overflow_b1.ecdb", SchemaItem(schemaV1Xml)));
+
+    // Verify initial column assignment: Prop1 fills the single shared slot in the joined table.
+    ASSERT_EQ(ExpectedColumn("ts_GeometricElement3d", "js1"),
+              GetHelper().GetPropertyMapColumn(AccessString("ts", "Building", "Prop1")));
+
+    // Insert a Building instance.
+    ECInstanceKey buildingKey;
+        {
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Building(Prop1) VALUES('hello')"));
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(buildingKey));
+        }
+    m_ecdb.SaveChanges();
+
+    // Clone into b2 (both start from v1 with the same data).
+    ECDb b2;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(b2, "cs_joined_overflow_b2.ecdb", BeFileName(m_ecdb.GetDbFileName())));
+    TestHelper b2h(b2);
+
+    // ---- (a) Capture + ExtractFrom at v1 ----
+    TestChangeSet csV1;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Building(Prop1) VALUES('world')"));
+        ECInstanceKey k2;
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(k2));
+        ASSERT_EQ(BE_SQLITE_OK, csV1.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto schemaV1 = ChangesetSchema::ExtractFrom(m_ecdb, csV1);
+    ASSERT_FALSE(schemaV1.IsEmpty());
+
+    auto const* buildingClass = m_ecdb.Schemas().FindClass("TestSchema:Building");
+    ASSERT_NE(nullptr, buildingClass);
+    auto it = schemaV1.GetClasses().find(buildingClass->GetId());
+    ASSERT_NE(schemaV1.GetClasses().end(), it) << "Building class must be captured";
+
+    // Building rows span two physical tables: ts_Element (primary) and ts_GeometricElement3d (joined).
+    EXPECT_EQ(2u, it->second.tableSegments.size())
+        << "Building should have segments in both ts_Element and ts_GeometricElement3d";
+    EXPECT_NE(it->second.tableSegments.end(), it->second.tableSegments.find("ts_Element"))
+        << "Primary table ts_Element segment must be present";
+    EXPECT_NE(it->second.tableSegments.end(), it->second.tableSegments.find("ts_GeometricElement3d"))
+        << "Joined table ts_GeometricElement3d segment must be present";
+
+    // Prop1 must be in the joined-table segment at a valid column index.
+    auto const& joinedSeg = it->second.tableSegments.at("ts_GeometricElement3d");
+    auto prop1It = joinedSeg.columns.find("Prop1");
+    ASSERT_NE(joinedSeg.columns.end(), prop1It) << "Prop1 must be captured in the joined-table segment";
+    EXPECT_GE(prop1It->second.sourceColumnIndex, 0) << "Prop1 must have a valid sourceColumnIndex";
+
+    // ---- Upgrade to v2: add Prop2, which overflows the joined table ----
+    Utf8CP schemaV2Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, b2h.ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // Verify that Prop1 stays in the joined table and Prop2 lands in the overflow table.
+    ASSERT_EQ(ExpectedColumn("ts_GeometricElement3d",          "js1"),
+              GetHelper().GetPropertyMapColumn(AccessString("ts", "Building", "Prop1")))
+        << "Prop1 must remain in the joined table after upgrade";
+    ASSERT_EQ(ExpectedColumn("ts_GeometricElement3d_Overflow", "js1"),
+              GetHelper().GetPropertyMapColumn(AccessString("ts", "Building", "Prop2")))
+        << "Prop2 must be placed in the overflow table";
+
+    // ---- (b) Diff: Prop1 has NOT moved; diff must be transformable with no ColumnMoved ----
+    auto diff = ChangesetSchemaDiff::Compute(schemaV1, m_ecdb);
+    EXPECT_TRUE(diff.IsTransformable());
+    for (auto const& cd : diff.GetClassDiffs())
+        for (auto const& d : cd.columnDiffs)
+            EXPECT_NE(ChangesetSchemaDiff::ChangeKind::ColumnMoved, d.kind)
+                << "Prop1 must not have a ColumnMoved diff — it stayed in ts_GeometricElement3d";
+
+    // ---- (c) Transform v1 changeset and apply to b2 ----
+    TestChangeSet transformedCs;
+    ASSERT_EQ(BE_SQLITE_OK, diff.Transform(csV1, transformedCs, m_ecdb));
+    ASSERT_EQ(BE_SQLITE_OK, transformedCs.ApplyChanges(b2));
+    b2.SaveChanges();
+
+    // The transformed changeset carries Prop1='world' and no Prop2 (it wasn't in the source).
+    ASSERT_EQ(JsonValue(R"json([{"Prop1":"hello"},{"Prop1":"world"}])json"),
+              b2h.ExecuteSelectECSql("SELECT Prop1 FROM ts.Building ORDER BY ECInstanceId"));
+
+    // ---- (d) Post-upgrade INSERT captures both joined and overflow table segments ----
+    TestChangeSet csV2;
+        {
+        TestChangeTracker tracker(b2);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(b2, "INSERT INTO ts.Building(Prop1,Prop2) VALUES('p1','p2')"));
+        ECInstanceKey k3;
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(k3));
+        ASSERT_EQ(BE_SQLITE_OK, csV2.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    b2.SaveChanges();
+
+    auto schemaV2 = ChangesetSchema::ExtractFrom(b2, csV2);
+    ASSERT_FALSE(schemaV2.IsEmpty());
+
+    auto const* buildingClassInB2 = b2.Schemas().FindClass("TestSchema:Building");
+    ASSERT_NE(nullptr, buildingClassInB2);
+    auto itV2 = schemaV2.GetClasses().find(buildingClassInB2->GetId());
+    ASSERT_NE(schemaV2.GetClasses().end(), itV2);
+
+    // Must now see THREE table segments: primary, joined, and overflow.
+    EXPECT_EQ(3u, itV2->second.tableSegments.size())
+        << "Post-upgrade Building should span ts_Element, ts_GeometricElement3d, and ts_GeometricElement3d_Overflow";
+    EXPECT_NE(itV2->second.tableSegments.end(), itV2->second.tableSegments.find("ts_Element"));
+    EXPECT_NE(itV2->second.tableSegments.end(), itV2->second.tableSegments.find("ts_GeometricElement3d"));
+    EXPECT_NE(itV2->second.tableSegments.end(), itV2->second.tableSegments.find("ts_GeometricElement3d_Overflow"))
+        << "ts_GeometricElement3d_Overflow must appear after adding the second property";
+
+    // Prop1 stays in the joined table; Prop2 lives in the overflow table.
+    auto const& joinedSegV2   = itV2->second.tableSegments.at("ts_GeometricElement3d");
+    auto const& overflowSegV2 = itV2->second.tableSegments.at("ts_GeometricElement3d_Overflow");
+    EXPECT_NE(joinedSegV2.columns.end(),   joinedSegV2.columns.find("Prop1"))
+        << "Prop1 must still be in the joined table";
+    EXPECT_NE(overflowSegV2.columns.end(), overflowSegV2.columns.find("Prop2"))
+        << "Prop2 must be in the overflow table";
+    EXPECT_GE(overflowSegV2.columns.at("Prop2").sourceColumnIndex, 0)
+        << "Prop2 must have a valid sourceColumnIndex in the overflow segment";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
