@@ -1042,11 +1042,16 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
         // that future UPDATEs to overflow-mapped properties can find the row.
         // For DELETE we also emit a stub DELETE so that even when the FK ON DELETE CASCADE is
         // bypassed by changeset apply, the orphan overflow row is removed.
+        // Skip INSERT stub for overflow tables already in outTables: a ColumnMoved diff means
+        // real data is flowing into that table via the per-table loop below — emitting a stub
+        // INSERT as well would produce a duplicate primary-key conflict.
         if ((primaryOp == DbOpcode::Insert || primaryOp == DbOpcode::Delete) &&
             !cd->newOverflowTableNames.empty())
             {
             for (Utf8StringCR overflowTable : cd->newOverflowTableNames)
                 {
+                if (primaryOp == DbOpcode::Insert && outTables.count(overflowTable) > 0)
+                    continue; // ColumnMoved supplies data for this table; skip stub
                 TargetLayout const* ovLayout = getTargetLayout(overflowTable);
                 if (ovLayout == nullptr || ovLayout->columnNames.empty())
                     continue;
@@ -1066,6 +1071,8 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
                             cv.BindTo(row, (primaryOp == DbOpcode::Delete) ? Stage::Old : Stage::New, ovLayout->classIdColIdx);
                         }
                     // For INSERT, bind NULL for all remaining data columns so the row is complete.
+                    // For DELETE, bind NULL for all old data columns so the changeset builder doesn't
+                    // leave any column "undefined" (sqlite3changeset_new/old requires all columns bound).
                     if (primaryOp == DbOpcode::Insert)
                         {
                         for (size_t i = 0; i < ovLayout->columnNames.size(); ++i)
@@ -1073,6 +1080,15 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
                             if ((int)i == ovLayout->idColIdx) continue;
                             if ((int)i == ovLayout->classIdColIdx) continue;
                             row.BindNull(Stage::New, (int)i);
+                            }
+                        }
+                    else if (primaryOp == DbOpcode::Delete)
+                        {
+                        for (size_t i = 0; i < ovLayout->columnNames.size(); ++i)
+                            {
+                            if ((int)i == ovLayout->idColIdx) continue;
+                            if ((int)i == ovLayout->classIdColIdx) continue;
+                            row.BindNull(Stage::Old, (int)i);
                             }
                         }
                     });
