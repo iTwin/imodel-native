@@ -4351,7 +4351,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile(WCharCP fileName, bool write
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::CreateFileWriter(fileName);
     InstanceXmlWriter   instanceWriter(xmlWriter.get());
 
-    xmlWriter->WriteDocumentStart(BEPUGIXML_CHAR_ENCODING_Utf8);
+    xmlWriter->WriteDocumentStart(utf16 ? BEPUGIXML_CHAR_ENCODING_Utf16LE : BEPUGIXML_CHAR_ENCODING_Utf8);
     return instanceWriter.WriteInstance(*this, writeInstanceId);
     }
 

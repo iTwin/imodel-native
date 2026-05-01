@@ -987,7 +987,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+void    VerifyInstanceWriteReadFile (WCharCP outputFileName, bool utf16)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
 
@@ -1004,12 +1004,25 @@ TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
 
     VerifyTestInstance (testInstance.get(), false);
 
-    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), true, false));
+    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (outputFileName).c_str (), true, utf16));
     IECInstancePtr  readbackInstance;
-    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), *instanceContext);
+    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (outputFileName).c_str (), *instanceContext);
 
     EXPECT_EQ (InstanceReadStatus::Success, readbackStatus);
     VerifyTestInstance (readbackInstance.get(), false);
+    }
+
+TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+    {
+    VerifyInstanceWriteReadFile (L"OutputInstance.xml", false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, InstanceWriteReadFileUtf16)
+    {
+    VerifyInstanceWriteReadFile (L"OutputInstanceUtf16.xml", true);
     }
 
 //---------------------------------------------------------------------------------------
