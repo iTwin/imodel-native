@@ -163,7 +163,7 @@ ChangesetSchema ChangesetSchema::ExtractFrom(ECDbCR ecdb, ChangeStream& changes)
             auto captureConstraintClassId = [&](ConstraintECClassIdPropertyMap const* cpm) {
                 if (cpm == nullptr)
                     return;
-                auto const* perTablePm = cpm->FindDataPropertyMap(tableName);
+                auto const* perTablePm = cpm->FindDataPropertyMap(tableName.c_str());
                 if (perTablePm == nullptr)
                     return;
                 DbColumn const& col = perTablePm->GetColumn();
@@ -178,6 +178,27 @@ ChangesetSchema ChangesetSchema::ExtractFrom(ECDbCR ecdb, ChangeStream& changes)
                 };
             captureConstraintClassId(relMap.GetSourceECClassIdPropMap());
             captureConstraintClassId(relMap.GetTargetECClassIdPropMap());
+
+            // Also capture SourceECInstanceId and TargetECInstanceId as regular data columns
+            // so their values flow through the normal Transform binding path.
+            auto captureConstraintInstanceId = [&](ConstraintECInstanceIdPropertyMap const* ipm, Utf8CP accessString) {
+                if (ipm == nullptr)
+                    return;
+                auto const* perTablePm = ipm->FindDataPropertyMap(tableName.c_str());
+                if (perTablePm == nullptr)
+                    return;
+                DbColumn const& col = perTablePm->GetColumn();
+                if (col.IsVirtual())
+                    return;
+                ChangesetSchema::PropertyColumnMap m;
+                m.accessString = accessString;
+                m.tableName = tableName;
+                m.columnName = col.GetName();
+                m.sourceColumnIndex = indexOf(col.GetName());
+                seg.columns[m.accessString] = m;
+                };
+            captureConstraintInstanceId(relMap.GetSourceECInstanceIdPropMap(), "SourceECInstanceId");
+            captureConstraintInstanceId(relMap.GetTargetECInstanceIdPropMap(), "TargetECInstanceId");
 
             classEntry.tableSegments[tableName] = std::move(seg);
             continue;
@@ -469,25 +490,44 @@ ChangesetSchemaDiff ChangesetSchemaDiff::Compute(ChangesetSchema const& source, 
                     continue;
                     }
 
+                DbColumn const* mappedCol = nullptr;
                 PropertyMap const* pm = classMap->GetPropertyMaps().Find(oldMap.accessString.c_str());
-                if (pm == nullptr || !pm->IsData())
+                if (pm != nullptr && pm->IsData())
                     {
-                    diff.kind = ChangeKind::PropertyLost;
-                    cd.columnDiffs.push_back(diff);
-                    continue;
+                    // Walk to a SingleColumnData mapping
+                    SearchPropertyMapVisitor v(PropertyMap::Type::SingleColumnData, true);
+                    pm->AcceptVisitor(v);
+                    if (!v.Results().empty())
+                        {
+                        auto const& sm = v.Results().front()->GetAs<SingleColumnDataPropertyMap>();
+                        DbColumn const& col = sm.GetColumn();
+                        if (!col.IsVirtual())
+                            mappedCol = &col;
+                        }
                     }
-                // Walk to a SingleColumnData mapping
-                SearchPropertyMapVisitor v(PropertyMap::Type::SingleColumnData, true);
-                pm->AcceptVisitor(v);
-                if (v.Results().empty())
+
+                if (mappedCol == nullptr && srcEntry.isRelationshipClass && classMap->GetType() == ClassMap::Type::RelationshipLinkTable)
                     {
-                    diff.kind = ChangeKind::PropertyLost;
-                    cd.columnDiffs.push_back(diff);
-                    continue;
+                    auto const& relMap = classMap->GetAs<RelationshipClassMap>();
+                    auto findConstraintCol = [&](ConstraintECInstanceIdPropertyMap const* ipm) -> DbColumn const* {
+                        if (ipm == nullptr)
+                            return nullptr;
+                        auto const* perTablePm = ipm->FindDataPropertyMap(oldMap.tableName.c_str());
+                        if (perTablePm == nullptr)
+                            return nullptr;
+                        DbColumn const& c = perTablePm->GetColumn();
+                        if (c.IsVirtual())
+                            return nullptr;
+                        return &c;
+                        };
+
+                    if (oldMap.accessString.EqualsI("SourceECInstanceId"))
+                        mappedCol = findConstraintCol(relMap.GetSourceECInstanceIdPropMap());
+                    else if (oldMap.accessString.EqualsI("TargetECInstanceId"))
+                        mappedCol = findConstraintCol(relMap.GetTargetECInstanceIdPropMap());
                     }
-                auto const& sm = v.Results().front()->GetAs<SingleColumnDataPropertyMap>();
-                DbColumn const& col = sm.GetColumn();
-                if (col.IsVirtual())
+
+                if (mappedCol == nullptr)
                     {
                     diff.kind = ChangeKind::PropertyLost;
                     cd.columnDiffs.push_back(diff);
@@ -496,8 +536,8 @@ ChangesetSchemaDiff ChangesetSchemaDiff::Compute(ChangesetSchema const& source, 
 
                 ChangesetSchema::PropertyColumnMap newMap;
                 newMap.accessString = oldMap.accessString;
-                newMap.tableName = col.GetTable().GetName();
-                newMap.columnName = col.GetName();
+                newMap.tableName = mappedCol->GetTable().GetName();
+                newMap.columnName = mappedCol->GetName();
                 newMap.sourceColumnIndex = -1;
                 diff.newMap = newMap;
 
@@ -771,12 +811,21 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
         Changes::Change::Stage oldS = Changes::Change::Stage::Old;
         Changes::Change::Stage newS = Changes::Change::Stage::New;
 
+        // Opcode-guarded value helpers: sqlite3changeset_old asserts on INSERT rows and
+        // sqlite3changeset_new asserts on DELETE rows, so we must check the opcode first.
+        auto getOld = [&](int idx) -> DbValue {
+            return (change.GetOpcode() != DbOpcode::Insert) ? change.GetValue(idx, oldS) : DbValue(nullptr);
+            };
+        auto getNew = [&](int idx) -> DbValue {
+            return (change.GetOpcode() != DbOpcode::Delete) ? change.GetValue(idx, newS) : DbValue(nullptr);
+            };
+
         // Resolve ECInstanceId
         ECInstanceId instanceId;
         if (seg.idColumnIndex >= 0)
             {
-            DbValue idValOld = change.GetValue(seg.idColumnIndex, oldS);
-            DbValue idValNew = change.GetValue(seg.idColumnIndex, newS);
+            DbValue idValOld = getOld(seg.idColumnIndex);
+            DbValue idValNew = getNew(seg.idColumnIndex);
             uint64_t idVal = 0;
             if (idValNew.IsValid() && !idValNew.IsNull()) idVal = (uint64_t)idValNew.GetValueInt64();
             else if (idValOld.IsValid() && !idValOld.IsNull()) idVal = (uint64_t)idValOld.GetValueInt64();
@@ -795,8 +844,8 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
         bool classIdFoundInChange = false;
         if (seg.classIdColumnIndex >= 0)
             {
-            DbValue cidNew = change.GetValue(seg.classIdColumnIndex, newS);
-            DbValue cidOld = change.GetValue(seg.classIdColumnIndex, oldS);
+            DbValue cidNew = getNew(seg.classIdColumnIndex);
+            DbValue cidOld = getOld(seg.classIdColumnIndex);
             if (cidNew.IsValid() && !cidNew.IsNull())      { rowClassId = ECClassId((uint64_t)cidNew.GetValueInt64()); classIdFoundInChange = true; }
             else if (cidOld.IsValid() && !cidOld.IsNull()) { rowClassId = ECClassId((uint64_t)cidOld.GetValueInt64()); classIdFoundInChange = true; }
             }
@@ -831,13 +880,13 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
 
         if (seg.idColumnIndex >= 0)
             {
-            srow.idOld = CapturedValue::Capture(change.GetValue(seg.idColumnIndex, oldS));
-            srow.idNew = CapturedValue::Capture(change.GetValue(seg.idColumnIndex, newS));
+            srow.idOld = CapturedValue::Capture(getOld(seg.idColumnIndex));
+            srow.idNew = CapturedValue::Capture(getNew(seg.idColumnIndex));
             }
         if (seg.classIdColumnIndex >= 0)
             {
-            srow.classIdOld = CapturedValue::Capture(change.GetValue(seg.classIdColumnIndex, oldS));
-            srow.classIdNew = CapturedValue::Capture(change.GetValue(seg.classIdColumnIndex, newS));
+            srow.classIdOld = CapturedValue::Capture(getOld(seg.classIdColumnIndex));
+            srow.classIdNew = CapturedValue::Capture(getNew(seg.classIdColumnIndex));
             }
 
         for (auto const& ck : seg.columns)
@@ -845,8 +894,8 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             int idx = ck.second.sourceColumnIndex;
             if (idx < 0) continue;
             CapturedColumn cc;
-            cc.oldVal = CapturedValue::Capture(change.GetValue(idx, oldS));
-            cc.newVal = CapturedValue::Capture(change.GetValue(idx, newS));
+            cc.oldVal = CapturedValue::Capture(getOld(idx));
+            cc.newVal = CapturedValue::Capture(getNew(idx));
             if (cc.oldVal.IsBound() || cc.newVal.IsBound())
                 srow.values[ck.second.accessString] = cc;
             }
@@ -857,8 +906,8 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             int idx = rk.second.sourceColumnIndex;
             if (idx < 0) continue;
             CapturedColumn cc;
-            cc.oldVal = CapturedValue::Capture(change.GetValue(idx, oldS));
-            cc.newVal = CapturedValue::Capture(change.GetValue(idx, newS));
+            cc.oldVal = CapturedValue::Capture(getOld(idx));
+            cc.newVal = CapturedValue::Capture(getNew(idx));
             if (cc.oldVal.IsBound() || cc.newVal.IsBound())
                 srow.classIdRefColVals[rk.second.columnName] = cc;
             }
@@ -975,6 +1024,21 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
                     if (col.IsVirtual()) continue;
                     if (!col.GetTable().GetName().EqualsI(targetTable)) continue;
                     accessToCol[sm.GetAccessString()] = col.GetName();
+                    }
+                // For link-table relationships also map SourceECInstanceId / TargetECInstanceId.
+                if (cd->sourceEntry.isRelationshipClass)
+                    {
+                    auto const& relMap2 = targetClassMap->GetAs<RelationshipClassMap>();
+                    auto addConstraintInstId = [&](ConstraintECInstanceIdPropertyMap const* cpm, Utf8CP accessStr) {
+                        if (cpm == nullptr) return;
+                        auto const* perTablePm = cpm->FindDataPropertyMap(targetTable.c_str());
+                        if (perTablePm == nullptr) return;
+                        DbColumn const& col = perTablePm->GetColumn();
+                        if (!col.IsVirtual())
+                            accessToCol[accessStr] = col.GetName();
+                        };
+                    addConstraintInstId(relMap2.GetSourceECInstanceIdPropMap(), "SourceECInstanceId");
+                    addConstraintInstId(relMap2.GetTargetECInstanceIdPropMap(), "TargetECInstanceId");
                     }
                 }
 

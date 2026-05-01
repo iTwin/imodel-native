@@ -67,7 +67,7 @@ TEST_F(ChangesetSchemaTests, ExtractFrom_Basic)
     auto schema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
     ASSERT_FALSE(schema.IsEmpty());
 
-    auto fooClass = m_ecdb.Schemas().GetClass("TS", "Foo");
+    auto fooClass = m_ecdb.Schemas().FindClass("TS:Foo");
     ASSERT_NE(nullptr, fooClass);
     auto it = schema.GetClasses().find(fooClass->GetId());
     ASSERT_NE(schema.GetClasses().end(), it);
@@ -172,7 +172,7 @@ TEST_F(ChangesetSchemaTests, Validate_Match)
     ASSERT_FALSE(schema.IsEmpty());
 
     // Re-create same changeset for validation pass
-    auto fooClass = m_ecdb.Schemas().GetClass("TS", "Foo");
+    auto fooClass = m_ecdb.Schemas().FindClass("TS:Foo");
     ASSERT_NE(nullptr, fooClass);
 
     // Capture a second changeset to validate against
@@ -398,7 +398,7 @@ TEST_F(ChangesetSchemaTests, ExtractFrom_Update)
     auto schema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
     ASSERT_FALSE(schema.IsEmpty());
 
-    auto fooClass = m_ecdb.Schemas().GetClass("TS", "Foo");
+    auto fooClass = m_ecdb.Schemas().FindClass("TS:Foo");
     ASSERT_NE(nullptr, fooClass);
     auto it = schema.GetClasses().find(fooClass->GetId());
     ASSERT_NE(schema.GetClasses().end(), it) << "Foo class must appear in the schema extracted from an UPDATE changeset";
@@ -549,6 +549,12 @@ TEST_F(ChangesetSchemaTests, ExtractFrom_LinkTable)
         {
         TestChangeTracker tracker(m_ecdb);
         tracker.EnableTracking(true);
+        // Insert a new A instance within the tracking window so the entity class is captured.
+        ECSqlStatement sA;
+        ECInstanceKey aKey2;
+        ASSERT_EQ(ECSqlStatus::Success, sA.Prepare(m_ecdb, "INSERT INTO ts.A(Val) VALUES('aval2')"));
+        ASSERT_EQ(BE_SQLITE_DONE, sA.Step(aKey2));
+        sA.Finalize();
         ECSqlStatement s;
         ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.AToB(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)"));
         s.BindId(1, aKey.GetInstanceId());
@@ -563,7 +569,7 @@ TEST_F(ChangesetSchemaTests, ExtractFrom_LinkTable)
     ASSERT_FALSE(schema.IsEmpty());
 
     // Find the AToB relationship class entry.
-    auto const* relClass = m_ecdb.Schemas().GetClass("TS", "AToB");
+    auto const* relClass = m_ecdb.Schemas().FindClass("TS:AToB");
     ASSERT_NE(nullptr, relClass);
     auto it = schema.GetClasses().find(relClass->GetId());
     ASSERT_NE(schema.GetClasses().end(), it) << "AToB relationship class should be captured";
@@ -571,7 +577,7 @@ TEST_F(ChangesetSchemaTests, ExtractFrom_LinkTable)
     EXPECT_TRUE(relEntry.isRelationshipClass) << "Link-table entry should have isRelationshipClass=true";
 
     // Entity classes should also be captured.
-    auto const* aClass = m_ecdb.Schemas().GetClass("TS", "A");
+    auto const* aClass = m_ecdb.Schemas().FindClass("TS:A");
     ASSERT_NE(nullptr, aClass);
     EXPECT_NE(schema.GetClasses().end(), schema.GetClasses().find(aClass->GetId())) << "A should be captured (from separate insert)";
 
@@ -634,7 +640,7 @@ TEST_F(ChangesetSchemaTests, ExtractFrom_NavProp)
     auto schema = ChangesetSchema::ExtractFrom(m_ecdb, cs);
     ASSERT_FALSE(schema.IsEmpty());
 
-    auto const* childClass = m_ecdb.Schemas().GetClass("TS", "Child");
+    auto const* childClass = m_ecdb.Schemas().FindClass("TS:Child");
     ASSERT_NE(nullptr, childClass);
     auto it = schema.GetClasses().find(childClass->GetId());
     ASSERT_NE(schema.GetClasses().end(), it) << "Child class should be in schema";
@@ -758,7 +764,7 @@ TEST_F(ChangesetSchemaTests, Transform_LinkTable_ClassIdRemap)
     ASSERT_EQ(BE_SQLITE_OK, transformedCs.ApplyChanges(b2));
     b2.SaveChanges();
 
-    ASSERT_EQ(JsonValue(R"json([{"SourceECInstanceId":"0x1","TargetECInstanceId":"0x1"}])json"),
+    ASSERT_EQ(JsonValue(R"json([{"sourceId":"0x1","targetId":"0x2"}])json"),
               b2h.ExecuteSelectECSql("SELECT SourceECInstanceId, TargetECInstanceId FROM ts.AToB"));
     }
 
