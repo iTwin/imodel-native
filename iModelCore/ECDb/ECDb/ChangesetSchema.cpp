@@ -592,9 +592,32 @@ ChangesetSchemaDiff ChangesetSchemaDiff::Compute(ChangesetSchema const& source, 
                 }
             }
 
+        // Detect overflow tables that were synthesised by the upgrade for this class.
+        // Must happen before the filter below so classes with ONLY new overflow tables are retained.
+        if (currentClass != nullptr)
+            {
+            bset<Utf8String> sourceTables;
+            for (auto const& sk : srcEntry.tableSegments)
+                sourceTables.insert(sk.second.tableName);
+
+            for (auto const& sk : srcEntry.tableSegments)
+                {
+                DbTable const* dbTable = current.Schemas().Main().GetDbSchema().FindTable(sk.second.tableName);
+                if (dbTable == nullptr)
+                    continue;
+                DbTable::LinkNode const* overflowNode = dbTable->GetLinkNode().FindOverflowTable();
+                if (overflowNode == nullptr)
+                    continue;
+                Utf8StringCR overflowName = overflowNode->GetTable().GetName();
+                if (sourceTables.count(overflowName) == 0)
+                    cd.newOverflowTableNames.push_back(overflowName);
+                }
+            }
+
         // Only retain class diffs that actually have changes
         if (classIdChanged || !cd.columnDiffs.empty() || cd.classLost ||
-            !cd.classIdRefDiffs.empty() || cd.hasConstraintClassIdCols)
+            !cd.classIdRefDiffs.empty() || cd.hasConstraintClassIdCols ||
+            !cd.newOverflowTableNames.empty())
             result.m_classDiffs.push_back(std::move(cd));
         }
 
@@ -1010,6 +1033,52 @@ DbResult ChangesetSchemaDiff::Transform(ChangeStream& source, ChangeSet& target,
             {
             if (rk.second.opcode == DbOpcode::Insert) { primaryOp = DbOpcode::Insert; break; }
             if (rk.second.opcode == DbOpcode::Delete) { primaryOp = DbOpcode::Delete; break; }
+            }
+
+        // For INSERT and DELETE, synthesise stub rows in overflow tables that were created by
+        // the schema upgrade (and are therefore absent from the source changeset).
+        // This mirrors what UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable does
+        // for existing instances: each new overflow table needs a row with just Id+ClassId so
+        // that future UPDATEs to overflow-mapped properties can find the row.
+        // For DELETE we also emit a stub DELETE so that even when the FK ON DELETE CASCADE is
+        // bypassed by changeset apply, the orphan overflow row is removed.
+        if ((primaryOp == DbOpcode::Insert || primaryOp == DbOpcode::Delete) &&
+            !cd->newOverflowTableNames.empty())
+            {
+            for (Utf8StringCR overflowTable : cd->newOverflowTableNames)
+                {
+                TargetLayout const* ovLayout = getTargetLayout(overflowTable);
+                if (ovLayout == nullptr || ovLayout->columnNames.empty())
+                    continue;
+                DbResult r = builder.AppendRow(primaryOp, overflowTable.c_str(), g.indirect, [&](ChangeBuilder::Row& row) {
+                    using Stage = ChangeBuilder::Row::Stage;
+                    // Bind only Id and ClassId — all data columns left NULL.
+                    if (ovLayout->idColIdx >= 0)
+                        {
+                        CapturedValue const& v = (primaryOp == DbOpcode::Delete) ? idOld : idNew;
+                        if (v.IsBound())
+                            v.BindTo(row, (primaryOp == DbOpcode::Delete) ? Stage::Old : Stage::New, ovLayout->idColIdx);
+                        }
+                    if (ovLayout->classIdColIdx >= 0)
+                        {
+                        CapturedValue const& cv = (primaryOp == DbOpcode::Delete) ? cidOld : cidNew;
+                        if (cv.IsBound())
+                            cv.BindTo(row, (primaryOp == DbOpcode::Delete) ? Stage::Old : Stage::New, ovLayout->classIdColIdx);
+                        }
+                    // For INSERT, bind NULL for all remaining data columns so the row is complete.
+                    if (primaryOp == DbOpcode::Insert)
+                        {
+                        for (size_t i = 0; i < ovLayout->columnNames.size(); ++i)
+                            {
+                            if ((int)i == ovLayout->idColIdx) continue;
+                            if ((int)i == ovLayout->classIdColIdx) continue;
+                            row.BindNull(Stage::New, (int)i);
+                            }
+                        }
+                    });
+                if (r != BE_SQLITE_OK) { rc = r; break; }
+                }
+            if (rc != BE_SQLITE_OK) break;
             }
 
         // Emit one row per target table

@@ -1283,6 +1283,377 @@ TEST_F(ChangesetSchemaTests, Transform_UpdateWithColumnRemap)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, Diff_NewOverflowTable_InClassDiff)
+    {
+    // Verifies that Compute populates newOverflowTableNames on a ClassDiff when the target
+    // schema has an overflow table that was absent from the source schema's table segments.
+    //
+    // Schema: Element (abstract, TPH + JoinedTablePerDirectSubclass) ->
+    //         GeometricElement3d (abstract, ShareColumns max=1, ApplyToSubclassesOnly) ->
+    //         Building { Prop1: string }
+    //
+    // v1: Building.Prop1 -> ts_GeometricElement3d.js1  (no overflow table)
+    // v2: Building gains Prop2 -> ts_GeometricElement3d_Overflow.js1  (overflow table created)
+
+    Utf8CP schemaV1Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("cs_diff_overflow_classdiff.ecdb", SchemaItem(schemaV1Xml)));
+
+    // Capture a dummy INSERT changeset at v1 (needed to build a ChangesetSchema).
+    TestChangeSet cs;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Building(Prop1) VALUES('x')"));
+        ECInstanceKey k;
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(k));
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto schemaV1 = ChangesetSchema::ExtractFrom(m_ecdb, cs);
+    ASSERT_FALSE(schemaV1.IsEmpty());
+
+    // At v1 the overflow table does not exist yet; Compute should produce no diff.
+    auto diffV1 = ChangesetSchemaDiff::Compute(schemaV1, m_ecdb);
+    for (auto const& cd : diffV1.GetClassDiffs())
+        EXPECT_TRUE(cd.newOverflowTableNames.empty())
+            << "No overflow table at v1 — newOverflowTableNames must be empty";
+
+    // Upgrade to v2: add Prop2, triggering creation of ts_GeometricElement3d_Overflow.
+    Utf8CP schemaV2Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // After v2 upgrade, Compute must detect the new overflow table.
+    auto diffV2 = ChangesetSchemaDiff::Compute(schemaV1, m_ecdb);
+    EXPECT_TRUE(diffV2.IsTransformable())
+        << "A new overflow table is a transformable change";
+
+    bool foundOverflowDiff = false;
+    for (auto const& cd : diffV2.GetClassDiffs())
+        {
+        for (Utf8StringCR name : cd.newOverflowTableNames)
+            {
+            if (name.EqualsI("ts_GeometricElement3d_Overflow"))
+                foundOverflowDiff = true;
+            }
+        }
+    EXPECT_TRUE(foundOverflowDiff)
+        << "Compute must record ts_GeometricElement3d_Overflow in newOverflowTableNames";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, Transform_OverflowRowSynthesized_Insert)
+    {
+    // Verifies that Transform synthesises a stub INSERT row into the new overflow table
+    // when replaying a pre-upgrade INSERT changeset against an upgraded ECDb.
+    //
+    // After ApplyChanges:
+    //   - ts_GeometricElement3d must have a row for the new instance
+    //   - ts_GeometricElement3d_Overflow must also have a stub row (Id + ClassId)
+    //   - An UPDATE of Prop2 on that instance must succeed (stub row exists to UPDATE)
+
+    Utf8CP schemaV1Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("cs_overflow_insert_b1.ecdb", SchemaItem(schemaV1Xml)));
+
+    ECDb b2;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(b2, "cs_overflow_insert_b2.ecdb", BeFileName(m_ecdb.GetDbFileName())));
+    TestHelper b2h(b2);
+
+    // Capture a v1 INSERT.
+    TestChangeSet csV1;
+    ECInstanceKey insertedKey;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Building(Prop1) VALUES('hello')"));
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(insertedKey));
+        ASSERT_EQ(BE_SQLITE_OK, csV1.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto schemaV1 = ChangesetSchema::ExtractFrom(m_ecdb, csV1);
+    ASSERT_FALSE(schemaV1.IsEmpty());
+
+    // Upgrade BOTH DBs to v2 (adds Prop2, creating the overflow table).
+    Utf8CP schemaV2Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, b2h.ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // Diff and transform.
+    auto diff = ChangesetSchemaDiff::Compute(schemaV1, m_ecdb);
+    EXPECT_TRUE(diff.IsTransformable());
+
+    // Confirm the diff recorded the new overflow table.
+    bool foundOverflow = false;
+    for (auto const& cd : diff.GetClassDiffs())
+        for (Utf8StringCR n : cd.newOverflowTableNames)
+            if (n.EqualsI("ts_GeometricElement3d_Overflow")) foundOverflow = true;
+    EXPECT_TRUE(foundOverflow) << "Diff must contain ts_GeometricElement3d_Overflow";
+
+    TestChangeSet transformed;
+    ASSERT_EQ(BE_SQLITE_OK, diff.Transform(csV1, transformed, m_ecdb));
+    ASSERT_EQ(BE_SQLITE_OK, transformed.ApplyChanges(b2));
+    b2.SaveChanges();
+
+    // Prop1 must have survived.
+    ASSERT_EQ(JsonValue(R"json([{"Prop1":"hello"}])json"),
+              b2h.ExecuteSelectECSql("SELECT Prop1 FROM ts.Building"))
+        << "Prop1 must be present after transform+apply";
+
+    // Verify the stub row was created in the overflow table by updating Prop2 on the instance.
+    // If no overflow stub row existed, the UPDATE would silently update 0 rows.
+    ECSqlStatement upd;
+    ASSERT_EQ(ECSqlStatus::Success, upd.Prepare(b2,
+        "UPDATE ts.Building SET Prop2='overflow_val' WHERE Prop1='hello'"));
+    ASSERT_EQ(BE_SQLITE_DONE, upd.Step());
+    ASSERT_EQ(1, b2.GetModifiedRowCount())
+        << "UPDATE of overflow-mapped Prop2 must affect exactly 1 row — stub row must exist";
+
+    // Confirm Prop2 was stored.
+    ASSERT_EQ(JsonValue(R"json([{"Prop2":"overflow_val"}])json"),
+              b2h.ExecuteSelectECSql("SELECT Prop2 FROM ts.Building WHERE Prop1='hello'"))
+        << "Prop2 must be readable after UPDATE through the stub overflow row";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetSchemaTests, Transform_OverflowRowSynthesized_Delete)
+    {
+    // Verifies that Transform synthesises a stub DELETE row from the overflow table
+    // when replaying a pre-upgrade DELETE changeset against an upgraded ECDb.
+    //
+    // Without the fix, deleting from ts_GeometricElement3d via changeset apply bypasses
+    // the ON DELETE CASCADE FK, leaving an orphan row in ts_GeometricElement3d_Overflow.
+
+    Utf8CP schemaV1Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, SetupECDb("cs_overflow_delete_b1.ecdb", SchemaItem(schemaV1Xml)));
+
+    // Insert a row on both DBs before any upgrade (so b2 has the instance to delete).
+    ECInstanceKey toDelete;
+        {
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "INSERT INTO ts.Building(Prop1) VALUES('to_delete')"));
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step(toDelete));
+        }
+    m_ecdb.SaveChanges();
+
+    ECDb b2;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(b2, "cs_overflow_delete_b2.ecdb", BeFileName(m_ecdb.GetDbFileName())));
+    TestHelper b2h(b2);
+
+    // Capture a v1 DELETE on m_ecdb.
+    TestChangeSet csV1;
+        {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement s;
+        ASSERT_EQ(ECSqlStatus::Success, s.Prepare(m_ecdb, "DELETE FROM ts.Building WHERE ECInstanceId=?"));
+        s.BindId(1, toDelete.GetInstanceId());
+        ASSERT_EQ(BE_SQLITE_DONE, s.Step());
+        ASSERT_EQ(BE_SQLITE_OK, csV1.FromChangeTrack(tracker));
+        tracker.EnableTracking(false);
+        }
+    m_ecdb.SaveChanges();
+
+    auto schemaV1 = ChangesetSchema::ExtractFrom(m_ecdb, csV1);
+    ASSERT_FALSE(schemaV1.IsEmpty());
+
+    // Upgrade BOTH DBs to v2 (creates overflow table; b2's existing row gets an overflow stub).
+    Utf8CP schemaV2Xml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+                <BaseClass>Element</BaseClass>
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Building">
+                <BaseClass>GeometricElement3d</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, b2h.ImportSchema(SchemaItem(schemaV2Xml),
+              SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // After upgrade b2 has the 'to_delete' row in BOTH ts_GeometricElement3d and the overflow table.
+    // Verify via raw SQL.
+    Statement rawCheck;
+    ASSERT_EQ(BE_SQLITE_OK, rawCheck.Prepare(b2, "SELECT COUNT(*) FROM ts_GeometricElement3d_Overflow"));
+    ASSERT_EQ(BE_SQLITE_ROW, rawCheck.Step());
+    EXPECT_EQ(1, rawCheck.GetValueInt(0)) << "Overflow stub row must exist in b2 before apply";
+
+    // Diff and transform.
+    auto diff = ChangesetSchemaDiff::Compute(schemaV1, m_ecdb);
+    EXPECT_TRUE(diff.IsTransformable());
+
+    TestChangeSet transformed;
+    ASSERT_EQ(BE_SQLITE_OK, diff.Transform(csV1, transformed, m_ecdb));
+    ASSERT_EQ(BE_SQLITE_OK, transformed.ApplyChanges(b2));
+    b2.SaveChanges();
+
+    // The instance must be gone from the main table.
+    ASSERT_EQ(JsonValue(R"json([])json"),
+              b2h.ExecuteSelectECSql("SELECT Prop1 FROM ts.Building"))
+        << "Building instance must be deleted after transform+apply";
+
+    // The overflow row must also be gone (not an orphan).
+    Statement overflowCheck;
+    ASSERT_EQ(BE_SQLITE_OK, overflowCheck.Prepare(b2, "SELECT COUNT(*) FROM ts_GeometricElement3d_Overflow"));
+    ASSERT_EQ(BE_SQLITE_ROW, overflowCheck.Step());
+    EXPECT_EQ(0, overflowCheck.GetValueInt(0))
+        << "Overflow stub row must be removed — no orphan should remain";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(ChangesetSchemaTests, ExtractFrom_JoinedTableWithOverflow)
     {
     // Schema: Element (abstract, TPH + JoinedTablePerDirectSubclass) ->

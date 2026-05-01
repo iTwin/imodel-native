@@ -167,6 +167,12 @@ struct ChangesetSchemaDiff
         //! True when this link-table entry has SourceECClassId/TargetECClassId constraint
         //! columns; the general entity classIdRemap is applied to their values at transform time.
         bool                         hasConstraintClassIdCols = false;
+        //! Overflow tables that exist in the TARGET schema for this class but were absent
+        //! from the SOURCE schema's tableSegments (i.e. they were created by the upgrade).
+        //! Transform synthesises stub INSERT/DELETE rows in each of these tables so that
+        //! replayed INSERT changesets leave the DB in the same state as
+        //! UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable would.
+        bvector<Utf8String>          newOverflowTableNames;
         ECDB_EXPORT bool             IsTransformable() const;
         };
 
