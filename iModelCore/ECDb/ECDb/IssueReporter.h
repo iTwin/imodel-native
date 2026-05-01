@@ -761,6 +761,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0741;
     static ECN::IssueId ECDb_0742;
     static ECN::IssueId ECDb_0743;
+    static ECN::IssueId ECDb_0744;
     };
 
 //---------------------------------------------------------------------------------------
