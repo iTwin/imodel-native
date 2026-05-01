@@ -1384,4 +1384,54 @@ TEST_F(InstanceSerializationTest, BuildInstanceAndSerializeToXML)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceSerializationTest, WriteUtf16FileWriter)
+    {
+    // Verify that a file writer configured for UTF-16LE produces a valid UTF-16 file
+    // that can be read back correctly.
+    WString filePath = ECTestFixture::GetTempDataPath (L"Utf16Test.xml");
+    BePugiXmlWriterPtr writer = BePugiXmlWriter::CreateFileWriter (filePath.c_str ());
+    ASSERT_TRUE (writer.IsValid ());
+
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteDocumentStart (BEPUGIXML_CHAR_ENCODING_Utf16LE));
+    ASSERT_EQ (BEPUGIXML_Success, writer->SetIndentation (2));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementStart ("Root"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteAttribute ("name", "test"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementStart ("Child"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteText ("Hello"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementEnd ());
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementEnd ());
+
+    // Flush to file via ToString (which triggers flushToFile for file writers).
+    Utf8String dummy;
+    writer->ToString (dummy);
+    writer = nullptr;
+
+    // Read back and verify the content survived the UTF-16 round-trip.
+    Utf8String utf8Path;
+    BeStringUtilities::WCharToUtf8 (utf8Path, filePath.c_str ());
+
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr dom = BePugiXmlDom::CreateAndReadFromFile (xmlStatus, utf8Path.c_str ());
+    ASSERT_EQ (BEPUGIXML_Success, xmlStatus);
+
+    BePugiXmlNode root = dom->GetRootElement ();
+    ASSERT_NE (nullptr, root);
+    EXPECT_STREQ ("Root", root.GetName ());
+
+    Utf8String attrValue;
+    EXPECT_EQ (BEPUGIXML_Success, root.GetAttributeStringValue (attrValue, "name"));
+    EXPECT_STREQ ("test", attrValue.c_str ());
+
+    BePugiXmlNode child = root.GetFirstChild ();
+    ASSERT_NE (nullptr, child);
+    EXPECT_STREQ ("Child", child.GetName ());
+
+    Utf8String content;
+    EXPECT_EQ (BEPUGIXML_Success, child.GetContent (content));
+    EXPECT_STREQ ("Hello", content.c_str ());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

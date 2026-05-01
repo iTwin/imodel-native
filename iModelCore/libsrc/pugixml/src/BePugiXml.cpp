@@ -518,7 +518,7 @@ void BePugiXmlWriter::flushToFile ()
         // encodings like UTF-16 (embedded nulls would truncate the data).
         // Note: removeSpaceBeforeSelfClose is skipped here; checksums are only
         // calculated on the UTF-8 serialization path.
-        m_doc.save_file (m_filePath.c_str (), m_indent ? m_indentString.c_str () : "", flags, encoding);
+        m_doc.save_file (m_filePath.c_str (), m_indent ? m_indentString.c_str () : "", flags | pugi::format_write_bom, encoding);
         }
     else
         {
