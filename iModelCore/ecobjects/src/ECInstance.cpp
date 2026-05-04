@@ -2860,9 +2860,10 @@ struct  InstanceXmlReader
         ECUnitCP findOldUnit(ECClassCR ecClass, const PrimitivePropertyType primitiveProperty)
             {
             auto oldUnitName = m_context.GetOldUnitName(ecClass, *primitiveProperty);
+            Utf8String propertyKey = ecClass.GetFullName() + Utf8String(".") + primitiveProperty->GetName();
             if (Utf8String::IsNullOrEmpty(oldUnitName.c_str()))
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0002,
+                m_context.Issues().ReportOnceV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0002, propertyKey,
                     "No old unit name resolved for property '%s.%s'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -2870,7 +2871,7 @@ struct  InstanceXmlReader
             auto ecUnitName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnitName.c_str());
             if (Utf8String::IsNullOrEmpty(ecUnitName))
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0003,
+                m_context.Issues().ReportOnceV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0003, propertyKey,
                     "An ECUnit name could not be found for the old unit '%s' for property '%s.%s'.  Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -2878,7 +2879,7 @@ struct  InstanceXmlReader
             auto oldUnit = primitiveProperty->GetKindOfQuantity()->GetSchema().LookupUnit(ecUnitName, true);
             if (!oldUnit)
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0004,
+                m_context.Issues().ReportOnceV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0004, propertyKey,
                     "Failed to lookup unit '%s' for property '%s.%s'. Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }

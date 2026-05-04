@@ -5,7 +5,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <BeSQLite/VirtualTab.h>
-#include <set>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -55,12 +55,21 @@ struct IdSetModule : ECDbModule {
             
             private:
                 Utf8String m_text;
-                bset<uint64_t> m_idSet;
-                bset<uint64_t>::const_iterator m_index;
+                bvector<uint64_t> m_ids;
+                size_t m_index;
+                // For point-lookup mode (id = ? or id IN (...))
+                bool m_pointLookup;
+                uint64_t m_lookupId;
+                bool m_lookupFound;
+                // For IN all-at-once mode
+                bool m_inMode;
+                bvector<uint64_t> m_matchedIds;
+                size_t m_matchedIndex;
 
+                void SortAndDedupe();
             public:
-                IdSetCursor(IdSetTable& vt): ECDbCursor(vt), m_index(m_idSet.begin()){}
-                bool Eof() final { return m_index == m_idSet.end() ; }
+                IdSetCursor(IdSetTable& vt): ECDbCursor(vt), m_index(0), m_pointLookup(false), m_lookupId(0), m_lookupFound(false), m_inMode(false), m_matchedIndex(0){}
+                bool Eof() final;
                 DbResult Next() final;
                 DbResult GetColumn(int i, Context& ctx) final;
                 DbResult GetRowId(int64_t& rowId) final;

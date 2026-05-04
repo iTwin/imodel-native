@@ -548,34 +548,66 @@ public:
 };
 
 #define TEMP_ELEMENT_DELETION "ElementsToDelete"
+
+//=======================================================================================
+//! Indicates the status of the bulk-delete operation.
+//! On Success the operation completed normally and all elements were deleted successfully.
+//! On PartialSuccess the operation completed normally, but deletion of one or more elements
+//!     was skipped due to constraint violations; those elements are reported separately in
+//!     [[BulkDeleteElementsResult]].
+//! On DeletionFailed the operation failed internally and no elements were deleted.
+// @bsiclass
+//=======================================================================================
+enum class BulkDeleteElementsStatus : int
+    {
+    Success          = 0, //!< Operation completed successfully.
+    PartialSuccess   = 1, //!< Some elements were not deleted due to constraints violations.
+    DeletionFailed   = 2, //!< The underlying SQL DELETE or link-table cleanup failed.
+    };
+
+//=======================================================================================
+//! Result of the bulk element deletion operation.
+// @bsiclass
+//=======================================================================================
+struct BulkDeleteElementsResult
+    {
+    BulkDeleteElementsStatus status = BulkDeleteElementsStatus::Success;
+    BeSQLite::DbResult sqlDeleteStatus = BeSQLite::DbResult::BE_SQLITE_OK;
+    DgnElementIdSet  failedIds;
+    };
+
 class BulkElementDeletion
     {
     DgnDbR m_dgndb;
     DgnElementIdSet m_originalElementIds;
     DgnElementIdSet m_failedToDelete;
 
-    bool m_definitionElementsExist = false;
     bool m_geometricElementsExist = false;
     bool m_subModelRootExists = false;
-    bool m_tempTableExists = false;
+    
+    bool m_skipFKConstraintValidations = false;
 
     // Create temporary tables for bulk deletion
-    bool CreateTempTables();
-    bool ExpandElementIdList();
+    BeSQLite::DbResult CreateTempTables() const;
+    BeSQLite::DbResult ExpandElementIdList();
+    int GetTempTableRowCount() const;
 
     // Find and prune constraint violators
-    bool FindAndPruneConstraintViolators();
-    bool FindAndPruneInUseDefinitionElements();
-    bool FindAndNullTypeDefinitionReferences() const;
-    bool PruneViolators();
+    BeSQLite::DbResult FindAndPruneConstraintViolators();
+    BeSQLite::DbResult FindAndPruneInUseDefinitionElements();
+    BeSQLite::DbResult PruneViolators();
 
     bool FireAllCallbacks();
-    bool DeleteLinkTableRelationships();
-    bool ExecuteDeletion();
+    BeSQLite::DbResult DeleteLinkTableRelationships() const;
+    BeSQLite::DbResult ExecuteDeletion();
 
 public:
-    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds) : m_dgndb(dgndb), m_originalElementIds(originalElementIds) {}
-    DgnElementIdSet Execute();
+    BulkElementDeletion(DgnDbR dgndb, const DgnElementIdSet& originalElementIds, bool skipFKConstraintValidations) 
+        :   m_dgndb(dgndb), 
+            m_originalElementIds(originalElementIds), 
+            m_skipFKConstraintValidations(skipFKConstraintValidations) {}
+
+    BulkDeleteElementsResult Execute();
     };
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
@@ -1450,7 +1482,7 @@ protected:
 
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
-    virtual void _OnChildDeleted(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildDeleted");}
+    DGNPLATFORM_EXPORT virtual void _OnChildDeleted(DgnElementCR child) const;
 
     //! Called after an existing element was successfully added to this parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildAdded.
@@ -1490,11 +1522,11 @@ protected:
     //! @param[in] model the DgnModel being deleted
     //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDelete, forwarding its status.
-    virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDelete"); return DgnDbStatus::Success; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const;
 
     //! Called after a delete of a DgnModel modeling this element has completed.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDeleted.
-    virtual void _OnSubModelDeleted(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDeleted"); }
+    DGNPLATFORM_EXPORT virtual void _OnSubModelDeleted(DgnModelCR model) const;
 
 public:
     virtual void _OnBeforeOutputsHandled(ElementDependency::Graph const& graph, ElementDependency::Edge const& edge) const {}
@@ -3558,7 +3590,7 @@ struct JobSubjectUtils
     //! @param[in] bridgeRegSubKey the registry subkey identifier used by the bridge.
     //! @param[in] comments Optional comments
     //! @param[in] properties Optional bridge-specific properties
-    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, JsonValueCP properties = nullptr);
+    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, BeJsConst const* properties = nullptr);
 
     //! Get the job's Bridge property. This is the registry subkey value used by the bridge.
     //! @param[in] jobSubject The job subject
@@ -3642,7 +3674,7 @@ public:
     //! * DgnDbStatus::InvalidCode if `props` does not contain a valid, non-empty code.
     //! @param[in] jsonProperties Optional. If specified, these properties will be stored in the "ExternalSource" namespace of the element's JsonProperties.
     //! @return a non-persistent ExternalSource if successful or nullptr if not
-    DGNPLATFORM_EXPORT static ExternalSourcePtr Create(DgnDbStatus* status, Properties const& props, RepositoryLinkCR rlink, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsConst(Json::Value()));
+    DGNPLATFORM_EXPORT static ExternalSourcePtr Create(DgnDbStatus* status, Properties const& props, RepositoryLinkCR rlink, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsDocument());
 
     //! @name Source
     //! @{
@@ -3729,7 +3761,7 @@ public:
     //! * DgnDbStatus::InvalidCode if `props` does not contain a valid, non-empty code.
     //! @param[in] jsonProperties Optional. If specified, these properties will be stored in the "ExternalSource" namespace of the element's JsonProperties.
     //! @return a non-persistent ExternalSourceGroup if successful or nullptr if not
-    DGNPLATFORM_EXPORT static ExternalSourceGroupPtr Create(DgnDbStatus* status, DgnDbR db, Properties const& props, RepositoryLinkCP rlink = nullptr, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsConst(Json::Value()));
+    DGNPLATFORM_EXPORT static ExternalSourceGroupPtr Create(DgnDbStatus* status, DgnDbR db, Properties const& props, RepositoryLinkCP rlink = nullptr, DgnModelCP model = nullptr, BeJsConst jsonProperties = BeJsDocument());
 
     DGNPLATFORM_EXPORT DgnDbStatus Add(ExternalSourceCR, int memberPriority = 0) const;
     DGNPLATFORM_EXPORT DgnDbStatus Remove(ExternalSourceCR) const;
@@ -4080,11 +4112,15 @@ public:
     //! @param[in] elementIds The set of element IDs to delete.  May contain IDs of any element type.
     //!   Invalid IDs are ignored.  The set may include parent elements whose children are not
     //!   explicitly listed; those children will be pulled in automatically.
-    //! @return The subset of elementIds whose elements could not be deleted because they
-    //!   are still referenced or are in use (definition elements) from outside the set.  An empty set means every requested element was
-    //!   deleted successfully.
+    //! @param[in] skipFKConstraintValidations If true, skips the ON DELETE NO ACTION foreign-key safety checks
+    //!   (i.e. the API does not verify that deleted elements are not still referenced as a CodeScope or Category by
+    //!   elements outside the delete set, and does not check whether deleted DefinitionElements are still in use).
+    //!   ON DELETE CASCADE and ON DELETE SET NULL actions are handled automatically regardless of this flag.
+    //!   Only set this to true when you can guarantee that none of the elements being deleted are referenced by
+    //!   elements outside the delete set via NO ACTION constraints.
+    //! @return A result object containing the status of the bulk delete operation and any element IDs that could not be deleted.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementIdSet DeleteElements(const DgnElementIdSet& elementIds);
+    DGNPLATFORM_EXPORT BulkDeleteElementsResult DeleteElements(const DgnElementIdSet& elementIds, bool skipFKConstraintValidations = false);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
