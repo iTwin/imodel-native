@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDb.h>
+#include <ECDb/SchemaSessions.h>
 #include <Bentley/BeEvent.h>
 #include <functional>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -439,6 +440,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #endif
 
         ECDB_EXPORT SchemaSync& GetSchemaSync() const;
+        ECDB_EXPORT SchemaSessions& GetImportSessions() const;
         ECDB_EXPORT bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace = nullptr) const;
         ECDB_EXPORT bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace = nullptr) const;
         //! Drop a leaf schema from ecdb as long as it has no instances

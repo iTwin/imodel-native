@@ -31,7 +31,14 @@ SchemaManager::~SchemaManager()
 SchemaSync& SchemaManager::GetSchemaSync() const
     {
     return Main().GetSchemaSync();
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSessions& SchemaManager::GetImportSessions() const
+    {
+    return Main().GetSchemaSessions();
     }
 
 //---------------------------------------------------------------------------------------

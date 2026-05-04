@@ -1199,7 +1199,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> con
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void MainSchemaManager::ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const {
-    // We remove temprory information required by ecdb on schema
+    // We remove           information required by ecdb on schema
     auto cache = ECN::ECSchemaCache::Create();
     for (auto schema: schemas)
         cache->AddSchema(*const_cast<ECN::ECSchemaP>(schema));
@@ -1406,6 +1406,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             }
         }
 
+    m_sessions.RecordSession(schemasToMap);
     return SchemaImportResult::OK;
     }
 

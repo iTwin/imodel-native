@@ -19,6 +19,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDb.h \
                 $(publicApiDir)ECInstanceId.h \
                 $(publicApiDir)SchemaManager.h \
+                $(publicApiDir)SchemaSessions.h \
                 $(publicApiDir)ECInstanceFinder.h \
                 $(publicApiDir)ECSqlStatement.h \
                 $(publicApiDir)IECSqlRow.h \
@@ -223,6 +224,8 @@ $(o)IssueReporter$(oext):                                     $(baseDir)IssueRep
 $(o)SchemaPersistenceHelper$(oext):                           $(baseDir)SchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaSessions$(oext):                                    $(baseDir)SchemaSessions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaManagerDispatcher$(oext):                           $(baseDir)SchemaManagerDispatcher.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

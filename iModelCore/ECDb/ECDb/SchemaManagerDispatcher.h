@@ -5,6 +5,7 @@
 #pragma once
 #include <cstddef>
 #include <ECDb/SchemaManager.h>
+#include <ECDb/SchemaSessions.h>
 #include "SchemaImportContext.h"
 #include "SchemaReader.h"
 #include "ECDbSystemSchemaHelper.h"
@@ -192,6 +193,7 @@ private:
     mutable SchemaChangeEvent m_onBeforeSchemaChanged;
     mutable SchemaChangeEvent m_onAfterSchemaCHanged;
     mutable SchemaSync m_schemaSync;
+    mutable SchemaSessions m_sessions;
     SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
 
     SchemaImportResult MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -213,7 +215,7 @@ private:
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
 public:
-    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
+    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)), m_sessions(ecdb) {}
     ~MainSchemaManager() {}
     /* ====================== */
     BentleyStatus CreateOrUpdateRequiredTables() const;
@@ -221,6 +223,7 @@ public:
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     /* ====================== */
     SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
+    SchemaSessions& GetSchemaSessions() const { return m_sessions; }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
     SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
