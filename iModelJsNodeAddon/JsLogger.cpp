@@ -10,6 +10,9 @@ using namespace IModelJsNative;
 /** call the JavaScript logger */
 void JsLogger::logToJs(Utf8CP category, SEVERITY sev, Utf8CP msg)
     {
+    if (m_loggerObj.IsEmpty())
+        return;
+
     Utf8CP fname = (sev == LOG_TRACE) ?   "logTrace" :
                    (sev == LOG_INFO) ?    "logInfo" :
                    (sev == LOG_WARNING) ? "logWarning" :
@@ -99,7 +102,10 @@ void JsLogger::Cleanup()
     BeMutexHolder lock(m_mutex);
     m_loggerObj.Reset();
     if (m_processLogsOnMainThread)
+        {
         m_processLogsOnMainThread.Release();
+        m_processLogsOnMainThread = Napi::ThreadSafeFunction();
+        }
     }
 
 void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)
