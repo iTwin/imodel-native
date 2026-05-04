@@ -1010,6 +1010,9 @@ DgnDbStatus DgnElement::_OnDelete() const
         }
     }
 
+    if (GetDgnDb().Elements().IsBulkOperation())
+        return DgnDbStatus::Success;
+
     CallJsPostHandler("onDelete");
     return GetModel()->_OnDeleteElement(*this);
     }
@@ -1043,13 +1046,14 @@ struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppD
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_OnDeleted() const
     {
+    // For a bulk delete operation, the relationship classes and cache cleanup will be handled separately
+    if (GetDgnDb().Elements().IsBulkOperation())
+        return CallAppData(OnDeletedCaller());
+    
     CallJsPostHandler("onDeleted");
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
-
-    // For a bulk delete operation, the relationship classes will be handled separately
-    if (!GetDgnDb().Elements().IsBulkOperation())
-        deleteLinkTableRelationships(GetDgnDb(), GetElementId());
+    deleteLinkTableRelationships(GetDgnDb(), GetElementId());
 
     DgnModelPtr model = GetModel();
     if (model.IsValid())
@@ -3161,8 +3165,37 @@ DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR child) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR child) const
     {
-    CallJsChildPostHandler(child, "onChildDelete");
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsChildPostHandler(child, "onChildDelete");
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnChildDeleted(DgnElementCR child) const
+    {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsChildPostHandler(child, "onChildDeleted");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnSubModelDelete(DgnModelCR model) const
+    {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsSubModelHandler(model, "onSubModelDelete");
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnSubModelDeleted(DgnModelCR model) const
+    {
+    if (!GetDgnDb().Elements().IsBulkOperation())
+        CallJsSubModelHandler(model, "onSubModelDeleted");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4564,7 +4597,7 @@ void JobSubjectUtils::SetTransform(SubjectR jobSubject, TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, JsonValueCP properties)
+void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, BeJsConst const* properties)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(bridgeRegSubKey.c_str()));
 

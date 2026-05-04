@@ -429,7 +429,10 @@ private:
 public:
     CustomAttributeInstanceReadContext(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext)
         :m_containerSchema(containerSchema), m_schemaContext(schemaContext), ECInstanceReadContext(schemaContext.GetStandaloneEnablerLocater(), containerSchema, nullptr)
-        { }
+        {
+        // Share the issue reporter from the schema context so issues can be reported across instances and avoid possible duplicates
+        SetSharedIssueReporter(schemaContext.Issues());
+        }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod

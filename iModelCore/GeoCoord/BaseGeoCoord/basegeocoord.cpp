@@ -8567,7 +8567,7 @@ public:
     {
         VerticalTransform::ToJson(jsonValue);
 
-        jsonValue["nullTransform"] = Json::nullValue;
+        jsonValue["nullTransform"].SetNull();
 
         return SUCCESS;
     }
@@ -9440,7 +9440,7 @@ VerticalTransformPathInfo::~VerticalTransformPathInfo()
 StatusInt VerticalTransformPathInfo::ToJson(BeJsValue jsonValue) const
 {
     jsonValue["target"] = m_target;
-    jsonValue["path"] = Json::arrayValue;
+    jsonValue["path"].SetEmptyArray();
     int numEntries = 0;
     for (const auto& path : m_paths)
         {
@@ -13037,22 +13037,10 @@ StatusInt BaseGCS::ToHorizontalJson(BeJsValue jsonValue, bool expandDatum) const
         theEllipsoid->Destroy();
         }
 
-    // CSMAP units are, for an unknown reason, completely inconsistent having any number
-    // of case combination ... we normalize
+    // Map CSMAP unit name to JSON UnitType name
     Utf8String unitString;
-    if (0 == BeStringUtilities::Stricmp (m_csParameters->csdef.unit, "Meter"))
-        unitString = "Meter";
-    else if (0 == BeStringUtilities::Stricmp (m_csParameters->csdef.unit, "Foot"))
-        unitString = "USSurveyFoot";
-    else if (0 == BeStringUtilities::Stricmp (m_csParameters->csdef.unit, "ifoot"))
-        unitString = "InternationalFoot";
-    else if (0 == BeStringUtilities::Stricmp (m_csParameters->csdef.unit, "Degree"))
-        unitString = "Degree";
-    // TODO Do we really support grads? Doubtful still old French GCS (probably now unused) still use this unit
-    //else if (0 == BeStringUtilities::Stricmp (m_csParameters->csdef.unit, "Grad"))
-    //    unitString = "Grad";
-    else
-        return ERROR; // Currently the Json format only supports the previous units.
+    if (SUCCESS != MapUnitToJsonName(unitString, m_csParameters->csdef.unit))
+        return ERROR; // Currently the Json format only supports Meter, USSurveyFoot, InternationalFoot, and Degree.
 
     jsonValue["unit"] = unitString;
 
@@ -15844,6 +15832,55 @@ StatusInt   BaseGCS::SetSource (Utf8CP source)
     CSMap::CS_stncp (m_csParameters->csdef.source, source, DIM(m_csParameters->csdef.source));
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CsmapToJsonUnitEntry
+    {
+    Utf8CP m_csmapName;
+    Utf8CP m_jsonName;
+    };
+
+static CsmapToJsonUnitEntry const s_csmapToJsonUnitMap[] =
+    {
+    {"Meter",  "Meter"},
+    {"Foot",   "USSurveyFoot"},
+    {"ifoot",  "InternationalFoot"},
+    {"Degree", "Degree"},
+    };
+
+StatusInt      BaseGCS::MapUnitToJsonName (Utf8StringR jsonUnitName, Utf8CP csmapUnitName)
+    {
+    jsonUnitName.clear();
+    if (Utf8String::IsNullOrEmpty(csmapUnitName))
+        return ERROR;
+
+    for (auto const& entry : s_csmapToJsonUnitMap)
+        {
+        if (0 == BeStringUtilities::Stricmp (csmapUnitName, entry.m_csmapName))
+            {
+            jsonUnitName = entry.m_jsonName;
+            return SUCCESS;
+            }
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+T_Utf8StringVector   BaseGCS::GetSupportedJsonUnitNames
+(
+)
+    {
+    T_Utf8StringVector unitNames;
+    for (auto const& entry : s_csmapToJsonUnitMap)
+        unitNames.push_back (Utf8String (entry.m_jsonName));
+
+    return unitNames;
     }
 
 /*---------------------------------------------------------------------------------**//**

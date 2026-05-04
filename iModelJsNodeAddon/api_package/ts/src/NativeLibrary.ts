@@ -34,6 +34,26 @@ import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
+/**
+ * Status codes returned by the native bulk-delete operation.
+ * @internal
+ */
+export enum BulkDeleteElementsStatus {
+  Success = 0,
+  PartialSuccess = 1,
+  DeletionFailed = 2,
+}
+
+/**
+ * Result of the bulk element deletion operation.
+ * @internal
+ */
+export interface BulkDeleteElementsResult {
+  status: BulkDeleteElementsStatus;
+  sqlDeleteStatus: DbResult;
+  failedIds: Id64Array;
+}
+
 /** Logger categories used by the native addon
  * @internal
  */
@@ -631,7 +651,7 @@ export declare namespace IModelJsNative {
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
-    public deleteElements(elementIds: Id64Array): Id64Array;
+    public deleteElements(elementIds: Id64Array, deleteOptions?: { skipFKConstraintValidations?: boolean }): BulkDeleteElementsResult;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
@@ -822,7 +842,8 @@ export declare namespace IModelJsNative {
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-    public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
+    public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean, unit?: string): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps, unit: string }>;
+    public static getAvailableUnitNames(): string[];
   }
 
   /**
@@ -1507,7 +1528,7 @@ export declare namespace IModelJsNative {
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
 
-  class ChangesetReader {
+  class SqliteChangesetReader {
     public close(): void;
     public getColumnCount(): number;
     public getColumnValue(col: number, stage: number): Uint8Array | number | string | null | undefined;
@@ -1534,6 +1555,31 @@ export declare namespace IModelJsNative {
     public reset(): void;
     public step(): boolean;
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
+  }
+
+  interface ChangesetRowValue {
+    data: any;
+    key: string;
+    changeFetchedPropNames: string[]
+  }
+
+  class ChangesetReader {
+    constructor();
+    public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number): void;
+    public close(): void;
+    public step(): boolean;
+    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ChangesetRowValue | undefined;
+    public getChangeMetadata(): { tableName: string, opCode: DbOpcode, isIndirectChange: boolean, isECTable: boolean };
+    public setTableNameFilters(tableNames: string[]): void;
+    public setOpCodeFilters(ops: string[]): void;
+    public setClassNameFilters(classNames: string[]): void;
+    public clearTableNameFilters(): void;
+    public clearOpCodeFilters(): void;
+    public clearClassNameFilters(): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

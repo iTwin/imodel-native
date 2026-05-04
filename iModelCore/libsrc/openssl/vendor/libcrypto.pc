@@ -1,0 +1,13 @@
+prefix=D:\imodel-native\src\imodel-native\iModelCore\libsrc\openssl\vendor
+exec_prefix=${prefix}
+libdir=${exec_prefix}
+includedir=${prefix}/include ${prefix}/./include 
+enginesdir=${libdir}/engines
+modulesdir=${libdir}/providers
+
+Name: OpenSSL-libcrypto
+Description: OpenSSL cryptography library
+Version: 3.3.7
+Libs: -L${libdir} -lcrypto
+Libs.private: ws2_32.lib gdi32.lib advapi32.lib crypt32.lib user32.lib
+Cflags: -I${prefix}/include  -I${prefix}/./include 

@@ -354,7 +354,7 @@ protected:
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnDeletedElement(DgnElementId id) {CallJsElementPostHandler(id, "onDeletedElement");}
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementId id);
 
     /** @} */
 
@@ -725,7 +725,7 @@ public:
     BeJsValue GetJsonPropertiesR(Utf8CP nameSpace) {return m_jsonProperties[nameSpace];}
 
     //! Change the value of a set of Json Properties on this element
-    void SetJsonProperties(Json::StaticString nameSpace, BeJsConst value) {m_jsonProperties[nameSpace].From(value);}
+    void SetJsonProperties(Utf8CP nameSpace, BeJsConst value) {m_jsonProperties[nameSpace].From(value);}
 
     //! Remove a set of Json Properties on this element
     void RemoveJsonProperties(Utf8CP nameSpace) {m_jsonProperties.removeMember(nameSpace);}
