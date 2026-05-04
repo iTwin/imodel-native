@@ -3829,7 +3829,7 @@ struct MakeQueryOnly {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
+std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(bool captureInstanceChanges) {
     TXN_DEBUG("<< PullMergeReverseLocalChanges()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (conf.InProgress()) {
@@ -3858,6 +3858,10 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
             if (IsTxnReversed(curr))
                 continue;
                 
+            if (captureInstanceChanges) {
+                CaptureInstanceChanges(curr);
+            }
+
             LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
             auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
             if (BE_SQLITE_OK != rc) {
@@ -3883,6 +3887,18 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeBegin(*this); });
     TXN_DEBUG(">> PullMergeReverseLocalChanges() %d txns reversed", reversedTxns.size());
     return reversedTxns;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::CaptureInstanceChanges(TxnId txnId) {
+    if (GetTxnType(txnId) != TxnType::Data)
+        return;
+
+    auto jsTxns = m_dgndb.GetJsTxns();
+    if (nullptr != jsTxns)
+        m_dgndb.CallJsFunction(jsTxns, "_captureInstanceChanges", {Napi::String::New(jsTxns.Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str())});
 }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2950,13 +2950,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_BOOL(0, captureInstanceChanges, false);
         auto& db = GetWritableDb(info);
-        auto txns = db.Txns().PullMergeReverseLocalChanges();
-        auto array = Napi::Array::New(Env(), txns.size());        
+        
+        auto txns = db.Txns().PullMergeReverseLocalChanges(captureInstanceChanges);
+        auto array = Napi::Array::New(Env(), txns.size());
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
-
         return array;
     }
 
