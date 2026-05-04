@@ -36,7 +36,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
                 $(publicApiDir)InstanceRepository.h \
-                $(publicApiDir)ChangesetReader.h
+                $(publicApiDir)ChangesetReader.h \
+                $(publicApiDir)ChangesetSchema.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -75,6 +76,7 @@ ECDbAllHeaders = \
                 $(baseDir)ChangeManager.h \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
+                $(baseDir)ChangesetSchema.h \
                 $(baseDir)ConcurrentQueryManagerImpl.h \
                 $(baseDir)InstanceReaderImpl.h \
                 $(baseDir)SchemaSync.h \
@@ -250,6 +252,8 @@ $(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstan
 $(o)ViewGenerator$(oext):                                     $(baseDir)ViewGenerator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeManager$(oext):                                     $(baseDir)ChangeManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetSchema$(oext):                                   $(baseDir)ChangesetSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSummaryExtractor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
