@@ -3813,7 +3813,7 @@ void TxnManager::PullMergeResume() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeBegin() {
     TXN_DEBUG("<< PullMergeBegin()");
-    PullMergeReverseLocalChanges(false);
+    PullMergeReverseLocalChanges();
     TXN_DEBUG(">> PullMergeBegin()");
 }
 

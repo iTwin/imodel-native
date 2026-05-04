@@ -2950,7 +2950,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_BOOL(0, captureInstanceChanges);
+        OPTIONAL_ARGUMENT_BOOL(0, captureInstanceChanges, false);
         auto& db = GetWritableDb(info);
         
         auto txns = db.Txns().PullMergeReverseLocalChanges(captureInstanceChanges);
