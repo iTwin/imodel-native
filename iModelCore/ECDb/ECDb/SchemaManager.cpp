@@ -23,6 +23,11 @@ SchemaManager::~SchemaManager()
         delete m_dispatcher;
         m_dispatcher = nullptr;
         }
+    if (m_sessions != nullptr)
+        {
+        delete m_sessions;
+        m_sessions = nullptr;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,7 +44,10 @@ SchemaSync& SchemaManager::GetSchemaSync() const
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri) const
     {
-    return Main().ImportSchemas(schemas, options, token, syncDbUri);
+    auto result = Main().ImportSchemas(schemas, options, token, syncDbUri);
+    if (result.IsOk())
+        GetSessions().Record(schemas, options);
+    return result;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod

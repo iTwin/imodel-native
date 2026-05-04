@@ -416,6 +416,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #endif
     private:
         Dispatcher* m_dispatcher = nullptr;
+        mutable Sessions* m_sessions = nullptr;
 
         //not copyable
         SchemaManager(SchemaManager const&) = delete;
@@ -719,6 +720,53 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             };
 
         SchemaManagerUnitsContext GetUnitsContext() const { return SchemaManagerUnitsContext(*this); }
+
+    public:
+        //=======================================================================================
+        //! Records and replays schema import sessions.
+        //! Each session corresponds to one ImportSchemas call. Sessions are stored in be_Local
+        //! as JSON and can be replayed to reconstruct the schema import sequence.
+        //! Nothing is kept in memory — all state is persisted in be_Local.
+        // @bsiclass
+        //+===============+===============+===============+===============+===============+======
+        struct Sessions final
+            {
+        private:
+            ECDb& m_ecdb;
+            bool m_enabled = false;
+
+        public:
+            Sessions(ECDb& ecdb) : m_ecdb(ecdb) {}
+
+            //! Enable or disable session recording.
+            void SetEnabled(bool enabled) { m_enabled = enabled; }
+
+            //! Returns true if sessions are currently enabled.
+            bool IsEnabled() const { return m_enabled; }
+
+            //! Record a schema import session. Called internally after successful ImportSchemas.
+            //! @param schemas   The schemas that were imported
+            //! @param options   The import options used
+            //! @return SUCCESS or ERROR
+            ECDB_EXPORT BentleyStatus Record(bvector<ECN::ECSchemaCP> const& schemas,
+                                             SchemaImportOptions options);
+
+            //! Replay all recorded sessions into the given ECDb.
+            //! Loads schema XML from be_Local, creates ECSchemaReadContext with ecdb as locater,
+            //! and calls ImportSchemas for each session in order.
+            //! @param target   The ECDb to replay into (must be open and writable)
+            //! @return The result of the last schema import, or SUCCESS if no sessions
+            ECDB_EXPORT SchemaImportResult Replay(ECDbR target) const;
+
+            //! Clear all recorded sessions and their stored schema XML.
+            ECDB_EXPORT BentleyStatus Clear();
+
+            //! Get the number of recorded sessions.
+            ECDB_EXPORT int GetCount() const;
+            };
+
+        //! Get the Sessions manager for recording/replaying schema imports.
+        ECDB_EXPORT Sessions& GetSessions() const;
     };
 
 typedef SchemaManager const& SchemaManagerCR;

@@ -225,6 +225,8 @@ $(o)SchemaPersistenceHelper$(oext):                           $(baseDir)SchemaPe
 
 $(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)SchemaSessions$(oext):                                    $(baseDir)SchemaSessions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)SchemaManagerDispatcher$(oext):                           $(baseDir)SchemaManagerDispatcher.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)RemapManager$(oext):                                      $(baseDir)RemapManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
