@@ -759,6 +759,8 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0739;  // this issue id is being used to report instance query related ambiguity
     static ECN::IssueId ECDb_0740;
     static ECN::IssueId ECDb_0741;
+    static ECN::IssueId ECDb_0742; // UPSERT: EXCLUDED.prop refers to unknown property
+    static ECN::IssueId ECDb_0743; // UPSERT: ON CONFLICT DO UPDATE SET column count mismatch
     };
 
 //---------------------------------------------------------------------------------------

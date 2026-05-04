@@ -197,6 +197,7 @@ struct Exp
             NavValueCreationFunc,
             NonJoinQuery,
             NullsOrdering,
+            OnConflict,
             Option,
             Options,
             OrderBy,

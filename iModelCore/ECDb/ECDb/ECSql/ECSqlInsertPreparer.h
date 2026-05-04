@@ -22,6 +22,7 @@ struct ECSqlInsertPreparer final
             NativeSqlBuilder::List m_pkColumnNamesNativeSqlSnippets;
             NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
             NativeSqlBuilder::List m_pkValuesNativeSqlSnippets;
+            NativeSqlBuilder m_onConflictClause; // empty if no ON CONFLICT
             };
 
 
@@ -31,6 +32,7 @@ struct ECSqlInsertPreparer final
 
         static ECSqlStatus GenerateNativeSqlSnippets(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
         static void PrepareClassId(ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
+        static ECSqlStatus GenerateOnConflictClause(NativeSqlBuilder& out, ECSqlPrepareContext&, OnConflictExp const&, InsertStatementExp const&, ClassMap const&);
         static void BuildNativeSqlInsertStatement(NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, InsertStatementExp const& exp);
 
     public:

@@ -552,18 +552,27 @@ BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementE
 BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementExp>& insertExp, OSQLParseNode const& parseNode) const
     {
     insertExp = nullptr;
+    // Grammar: insert_statement:
+    //   SQL_TOKEN_INSERT SQL_TOKEN_INTO table_node opt_column_ref_commalist values_or_query_spec opt_on_conflict_clause          (6 children)
+    //   SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_ONLY table_node opt_column_ref_commalist values_or_query_spec opt_on_conflict_clause (7 children)
+    const bool hasOnly = (parseNode.count() == 7);
+    const size_t tableNodeIdx = hasOnly ? 3 : 2;
+    const size_t colListIdx   = hasOnly ? 4 : 3;
+    const size_t valuesIdx    = hasOnly ? 5 : 4;
+    const size_t onConflictIdx = hasOnly ? 6 : 5;
+
     //insert does not support polymorphic classes. Passing false therefore.
     std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-    BentleyStatus stat = ParseTableNode(classNameExp, parseNode.count() == 6 ? *parseNode.getChild(3) : *parseNode.getChild(2), ECSqlType::Insert, PolymorphicInfo::Only());
+    BentleyStatus stat = ParseTableNode(classNameExp, *parseNode.getChild(tableNodeIdx), ECSqlType::Insert, PolymorphicInfo::Only());
     if (SUCCESS != stat)
         return stat;
 
     std::unique_ptr<PropertyNameListExp> insertPropertyNameListExp = nullptr;
-    stat = ParseOptColumnRefCommalist(insertPropertyNameListExp, parseNode.count() == 6 ? parseNode.getChild(4) : parseNode.getChild(3));
+    stat = ParseOptColumnRefCommalist(insertPropertyNameListExp, parseNode.getChild(colListIdx));
     if (SUCCESS != stat)
         return stat;
 
-    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.count() == 6 ? parseNode.getChild(5) : parseNode.getChild(4);
+    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.getChild(valuesIdx);
     if (valuesOrQuerySpecNode == nullptr)
         {
         BeAssert(false);
@@ -575,7 +584,75 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     if (SUCCESS != stat)
         return stat;
 
-    insertExp = std::make_unique<InsertStatementExp>(classNameExp, insertPropertyNameListExp, valueExpList);
+    std::unique_ptr<OnConflictExp> onConflictExp = nullptr;
+    stat = ParseOnConflictClause(onConflictExp, parseNode.getChild(onConflictIdx));
+    if (SUCCESS != stat)
+        return stat;
+
+    insertExp = std::make_unique<InsertStatementExp>(classNameExp, insertPropertyNameListExp, valueExpList, std::move(onConflictExp));
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseOnConflictClause(std::unique_ptr<OnConflictExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    exp = nullptr;
+    if (parseNode == nullptr)
+        return SUCCESS;
+
+    // opt_on_conflict_clause:  empty rule → 0 children, rule = opt_on_conflict_clause
+    if (SQL_ISRULE(parseNode, opt_on_conflict_clause))
+        return SUCCESS; // no ON CONFLICT clause
+
+    // on_conflict_clause: ON CONFLICT conflict_target on_conflict_do_clause  (4 children)
+    if (!SQL_ISRULE(parseNode, on_conflict_clause))
+        {
+        BeAssert(false && "Wrong grammar. Expecting on_conflict_clause");
+        return ERROR;
+        }
+
+    // child[0] = SQL_TOKEN_ON, child[1] = SQL_TOKEN_CONFLICT
+    // child[2] = conflict_target, child[3] = on_conflict_do_clause
+    OSQLParseNode const* conflictTargetNode = parseNode->getChild(2);
+    OSQLParseNode const* doClauseNode = parseNode->getChild(3);
+
+    // Parse conflict target (may be empty)
+    std::unique_ptr<PropertyNameListExp> conflictTarget = nullptr;
+    if (SQL_ISRULE(conflictTargetNode, conflict_target) && conflictTargetNode->count() > 0)
+        {
+        // conflict_target: '(' column_ref_commalist ')' — the grammar action appended only the list, so count()==1
+        OSQLParseNode const* listNode = conflictTargetNode->getChild(0);
+        if (SUCCESS != ParseColumnRefCommalist(conflictTarget, listNode))
+            return ERROR;
+        }
+
+    // Parse do clause
+    if (!SQL_ISRULE(doClauseNode, on_conflict_do_clause))
+        {
+        BeAssert(false && "Wrong grammar. Expecting on_conflict_do_clause");
+        return ERROR;
+        }
+
+    if (doClauseNode->count() == 2)
+        {
+        // DO NOTHING: child[0]=DO, child[1]=NOTHING
+        exp = std::make_unique<OnConflictExp>(std::move(conflictTarget));
+        return SUCCESS;
+        }
+
+    // DO UPDATE SET assignment_commalist opt_where_clause: count==5
+    // child[0]=DO, child[1]=UPDATE, child[2]=SET, child[3]=assignment_commalist, child[4]=opt_where_clause
+    std::unique_ptr<AssignmentListExp> assignmentListExp = nullptr;
+    if (SUCCESS != ParseAssignmentCommalist(assignmentListExp, doClauseNode->getChild(3)))
+        return ERROR;
+
+    std::unique_ptr<WhereExp> whereExp = nullptr;
+    if (SUCCESS != ParseWhereClause(whereExp, doClauseNode->getChild(4)))
+        return ERROR;
+
+    exp = std::make_unique<OnConflictExp>(std::move(conflictTarget), std::move(assignmentListExp), std::move(whereExp));
     return SUCCESS;
     }
 
@@ -817,6 +894,7 @@ BentleyStatus ECSqlParser::ParseExpressionPath(std::unique_ptr<ValueExp>& exp, O
 
     PropertyPath propertyPath;
     bool propertyPathContainsArrayIndex = false;
+    bool isExcludedPseudoRef = false;
     for (size_t i = 0; i < parseNode->count(); i++)
         {
         OSQLParseNode const* property_path_entry = parseNode->getChild(i);
@@ -837,6 +915,12 @@ BentleyStatus ECSqlParser::ParseExpressionPath(std::unique_ptr<ValueExp>& exp, O
         else if (first->getNodeType() == SQL_NODE_PUNCTUATION)
             {
             propertyPath.Push(tokenValue);
+            }
+        else if (first->getNodeType() == SQL_NODE_KEYWORD && tokenValue.EqualsIAscii("EXCLUDED"))
+            {
+            // EXCLUDED is a pseudo-table reference used in ON CONFLICT DO UPDATE SET clauses.
+            propertyPath.Push(tokenValue);
+            isExcludedPseudoRef = true;
             }
         else
             {
@@ -860,7 +944,10 @@ BentleyStatus ECSqlParser::ParseExpressionPath(std::unique_ptr<ValueExp>& exp, O
             }
         }
 
-    exp = std::make_unique<PropertyNameExp>(std::move(propertyPath));
+    auto propNameExp = std::make_unique<PropertyNameExp>(std::move(propertyPath));
+    if (isExcludedPseudoRef)
+        propNameExp->SetExcludedPseudoRef();
+    exp = std::move(propNameExp);
     return SUCCESS;
     }
 

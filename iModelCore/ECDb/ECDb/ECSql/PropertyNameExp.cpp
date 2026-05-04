@@ -120,6 +120,12 @@ PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, Utf8StringCR prop
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
+    if (m_isExcludedPseudoRef)
+        {
+        // EXCLUDED.PropName references are pseudo-table refs for ON CONFLICT DO UPDATE.
+        // They do not resolve against the EC class model; the preparer handles column mapping.
+        return FinalizeParseStatus::Completed;
+        }
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren) {
         if (ResolveColumnRef(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
@@ -595,7 +601,9 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
 bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
     {
     if (FindParent(Exp::Type::Insert))
-        return GetParent()->GetType() == Exp::Type::PropertyNameList;
+        // LHS of INSERT column list OR LHS of ON CONFLICT DO UPDATE SET assignment
+        return GetParent()->GetType() == Exp::Type::PropertyNameList
+               || GetParent()->GetType() == Exp::Type::Assignment;
 
     if (FindParent(Exp::Type::Update))
         return GetParent()->GetType() == Exp::Type::Assignment;

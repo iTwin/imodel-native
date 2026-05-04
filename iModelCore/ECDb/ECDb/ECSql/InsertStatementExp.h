@@ -6,6 +6,7 @@
 
 #include "ClassRefExp.h"
 #include "ListExp.h"
+#include "OnConflictExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -18,6 +19,7 @@ private:
     size_t m_classNameExpIndex;
     size_t m_propertyNameListExpIndex;
     size_t m_valuesExpIndex;
+    int m_onConflictExpIndex;
     bool m_isOriginalPropertyNameListUnset;
 
     std::vector<RangeClassInfo> m_rangeClassRefExpCache;
@@ -37,11 +39,13 @@ private:
 
 public :
     InsertStatementExp (std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp,
-                        std::vector<std::unique_ptr<ValueExp>>& valuesExp);
+                        std::vector<std::unique_ptr<ValueExp>>& valuesExp, std::unique_ptr<OnConflictExp> onConflictExp = nullptr);
 
     ClassNameExp const* GetClassNameExp () const;
     PropertyNameListExp const* GetPropertyNameListExp () const;
     ValueExpListExp const* GetValuesExp() const;
+    OnConflictExp const* GetOnConflictExp() const;
+    bool HasOnConflict() const { return m_onConflictExpIndex >= 0; }
     };
 
 

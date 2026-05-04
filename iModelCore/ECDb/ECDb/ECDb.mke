@@ -98,6 +98,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/WhereExp.h \
                 $(baseDir)ECSql/SelectStatementExp.h \
                 $(baseDir)ECSql/InsertStatementExp.h \
+                $(baseDir)ECSql/OnConflictExp.h \
                 $(baseDir)ECSql/UpdateStatementExp.h \
                 $(baseDir)ECSql/DeleteStatementExp.h \
                 $(baseDir)ECSql/PragmaStatementExp.h \
@@ -300,6 +301,8 @@ $(o)JoinExp$(oext):                                           $(baseDir)ECSql/Jo
 $(o)SelectStatementExp$(oext):                                $(baseDir)ECSql/SelectStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InsertStatementExp$(oext):                                $(baseDir)ECSql/InsertStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)OnConflictExp$(oext):                                     $(baseDir)ECSql/OnConflictExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)UpdateStatementExp$(oext):                                $(baseDir)ECSql/UpdateStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

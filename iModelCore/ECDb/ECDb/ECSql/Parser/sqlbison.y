@@ -113,6 +113,8 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_ON SQL_TOKEN_ORDER SQL_TOKEN_OUTER
 
+%token <pParseNode> SQL_TOKEN_CONFLICT SQL_TOKEN_DO SQL_TOKEN_NOTHING SQL_TOKEN_EXCLUDED
+
 %token <pParseNode> SQL_TOKEN_IIF
 
 %token <pParseNode> SQL_TOKEN_SELECT SQL_TOKEN_SET SQL_TOKEN_SOME SQL_TOKEN_SUM
@@ -187,7 +189,7 @@ using namespace connectivity;
 %type <pParseNode> ordering_spec opt_asc_desc manipulative_statement opt_null_order first_last_desc
 %type <pParseNode> delete_statement_searched
 %type <pParseNode> type_predicate type_list type_list_item
-%type <pParseNode> insert_statement values_or_query_spec values_commalist
+%type <pParseNode> insert_statement values_or_query_spec values_commalist opt_on_conflict_clause on_conflict_clause conflict_target on_conflict_do_clause
 %type <pParseNode> opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
 %type <pParseNode> update_statement_searched opt_only_all opt_where_clause
@@ -581,14 +583,7 @@ delete_statement_searched:
 
 
 insert_statement:
-        SQL_TOKEN_INSERT SQL_TOKEN_INTO table_node opt_column_ref_commalist values_or_query_spec
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-            $$->append($5);}
-        |   SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_ONLY table_node opt_column_ref_commalist values_or_query_spec
+        SQL_TOKEN_INSERT SQL_TOKEN_INTO table_node opt_column_ref_commalist values_or_query_spec opt_on_conflict_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
@@ -596,6 +591,50 @@ insert_statement:
             $$->append($4);
             $$->append($5);
             $$->append($6);}
+        |   SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_ONLY table_node opt_column_ref_commalist values_or_query_spec opt_on_conflict_clause
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
+            $$->append($6);
+            $$->append($7);}
+    ;
+
+opt_on_conflict_clause:
+        {$$ = SQL_NEW_RULE;}
+    |   on_conflict_clause
+    ;
+
+on_conflict_clause:
+        SQL_TOKEN_ON SQL_TOKEN_CONFLICT conflict_target on_conflict_do_clause
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);}
+    ;
+
+conflict_target:
+        {$$ = SQL_NEW_RULE;}
+    |   '(' column_ref_commalist ')'
+            {$$ = SQL_NEW_RULE;
+            $$->append($2);}
+    ;
+
+on_conflict_do_clause:
+        SQL_TOKEN_DO SQL_TOKEN_NOTHING
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);}
+    |   SQL_TOKEN_DO SQL_TOKEN_UPDATE SQL_TOKEN_SET assignment_commalist opt_where_clause
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);}
     ;
 
 values_commalist:
@@ -2562,6 +2601,12 @@ property_path_entry:
 			$$->append($1);
 			$$->append($2);
 		}
+    |   SQL_TOKEN_EXCLUDED opt_column_array_idx
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
 	|   '*'
         {
             $$ = SQL_NEW_RULE;

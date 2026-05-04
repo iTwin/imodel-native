@@ -56,6 +56,7 @@ struct PropertyNameExp final : ValueExp
         Utf8String m_className;
         RangeClassRefExp const* m_classRefExp = nullptr;
         ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr; //will never be null, but cannot declare as ref as it is set after construction
+        bool m_isExcludedPseudoRef = false; // true when this is an EXCLUDED.PropName reference in ON CONFLICT DO UPDATE
         BentleyStatus ResolveUnionOrderByArg(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
         BentleyStatus ResolveLocalRef(ECSqlParseContext&);
@@ -94,6 +95,8 @@ struct PropertyNameExp final : ValueExp
         bool IsLhsAssignmentOperandExpression() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
         bool IsWildCard() const;
+        bool IsExcludedPseudoRef() const { return m_isExcludedPseudoRef; }
+        void SetExcludedPseudoRef() { m_isExcludedPseudoRef = true; }
 
     };
 

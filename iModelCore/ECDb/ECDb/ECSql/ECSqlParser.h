@@ -155,6 +155,7 @@ private:
     //root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseOnConflictClause(std::unique_ptr<OnConflictExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSelectStatement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseUpdateStatementSearched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParsePragmaStatement(std::unique_ptr<PragmaStatementExp>&, connectivity::OSQLParseNode const&) const;

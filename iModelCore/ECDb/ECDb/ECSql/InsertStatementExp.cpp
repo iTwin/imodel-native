@@ -10,8 +10,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp, std::vector<std::unique_ptr<ValueExp>>& valueExpList)
-    : Exp(Type::Insert), m_isOriginalPropertyNameListUnset(propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
+InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp, std::vector<std::unique_ptr<ValueExp>>& valueExpList, std::unique_ptr<OnConflictExp> onConflictExp)
+    : Exp(Type::Insert), m_isOriginalPropertyNameListUnset(propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0),
+      m_onConflictExpIndex(-1)
     {
     m_classNameExpIndex = AddChild(std::move(classNameExp));
 
@@ -20,6 +21,9 @@ InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameE
 
     m_propertyNameListExpIndex = AddChild(std::move(propertyNameListExp));
     m_valuesExpIndex = AddChild(std::make_unique<ValueExpListExp>(valueExpList));
+
+    if (onConflictExp != nullptr)
+        m_onConflictExpIndex = (int) AddChild(std::move(onConflictExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -183,6 +187,16 @@ ValueExpListExp const* InsertStatementExp::GetValuesExp() const { return GetChil
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+OnConflictExp const* InsertStatementExp::GetOnConflictExp() const
+    {
+    if (m_onConflictExpIndex < 0)
+        return nullptr;
+    return GetChild<OnConflictExp>((size_t) m_onConflictExpIndex);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void InsertStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: InsertStatementExp
@@ -192,6 +206,8 @@ void InsertStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     if (!IsOriginalPropertyNameListUnset())
         GetPropertyNameListExp()->ToJson(val["properties"], fmt);
     GetValuesExp()->ToJson(val["values"], fmt);
+    if (HasOnConflict())
+        GetOnConflictExp()->ToJson(val["onConflict"], fmt);
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -204,6 +220,9 @@ void InsertStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(" ").AppendToECSql(*GetPropertyNameListExp());
 
     ctx.AppendToECSql(" VALUES (").AppendToECSql(*GetValuesExp()).AppendToECSql(")");
+
+    if (HasOnConflict())
+        ctx.AppendToECSql(*GetOnConflictExp());
     }
 
 

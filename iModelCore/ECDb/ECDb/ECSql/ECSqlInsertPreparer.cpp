@@ -79,6 +79,13 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         return ECSqlStatus::Error;
         }
 
+    if (exp.HasOnConflict())
+        {
+        status = GenerateOnConflictClause(insertSqlSnippets.m_onConflictClause, ctx, *exp.GetOnConflictExp(), exp, classMap);
+        if (!status.IsSuccess())
+            return status;
+        }
+
     return ECSqlStatus::Success;
     }
 
@@ -138,6 +145,162 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
         }
 
     insertBuilder.AppendParenRight();
+
+    if (!snippets.m_onConflictClause.IsEmpty())
+        insertBuilder.Append(snippets.m_onConflictClause);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlInsertPreparer::GenerateOnConflictClause(NativeSqlBuilder& out, ECSqlPrepareContext& ctx,
+    OnConflictExp const& onConflict, InsertStatementExp const& /*insertExp*/, ClassMap const& classMap)
+    {
+    DbTable const& contextTable = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
+
+    out.Append(" ON CONFLICT");
+
+    // --- Conflict target columns ---
+    if (onConflict.HasConflictTarget())
+        {
+        PropertyNameListExp const* targetList = onConflict.GetConflictTargetExp();
+        NativeSqlBuilder::List conflictCols;
+        for (Exp const* child : targetList->GetChildren())
+            {
+            PropertyNameExp const& propExp = child->GetAs<PropertyNameExp>();
+            NativeSqlBuilder::List colSnippets;
+            ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(colSnippets, ctx, propExp);
+            if (!stat.IsSuccess())
+                return stat;
+            for (NativeSqlBuilder const& s : colSnippets)
+                conflictCols.push_back(s);
+            }
+        out.AppendParenLeft().Append(conflictCols).AppendParenRight();
+        }
+
+    // --- DO NOTHING ---
+    if (onConflict.GetAction() == OnConflictExp::Action::DoNothing)
+        {
+        out.Append(" DO NOTHING");
+        return ECSqlStatus::Success;
+        }
+
+    // --- DO UPDATE SET ---
+    out.Append(" DO UPDATE SET ");
+
+    AssignmentListExp const* assignList = onConflict.GetAssignmentListExp();
+    BeAssert(assignList != nullptr);
+
+    ctx.PushScope(*assignList);
+
+    bool firstAssignment = true;
+    for (Exp const* child : assignList->GetChildren())
+        {
+        AssignmentExp const& assignExp = child->GetAs<AssignmentExp>();
+        PropertyNameExp const& lhsExp = *assignExp.GetPropertyNameExp();
+        ValueExp const* rhsExp = assignExp.GetValueExp();
+
+        // LHS: resolve to column name(s)
+        NativeSqlBuilder::List lhsCols;
+        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(lhsCols, ctx, lhsExp);
+        if (!stat.IsSuccess())
+            {
+            ctx.PopScope();
+            return stat;
+            }
+
+        if (lhsCols.empty())
+            continue; // virtual column — skip
+
+        // RHS: EXCLUDED pseudo-ref or normal expression
+        NativeSqlBuilder::List rhsCols;
+        if (rhsExp->GetType() == Exp::Type::PropertyName)
+            {
+            PropertyNameExp const& rhsPropExp = rhsExp->GetAs<PropertyNameExp>();
+            if (rhsPropExp.IsExcludedPseudoRef())
+                {
+                BeAssert(rhsPropExp.GetOriginalPropertyPath().Size() == 2); // [EXCLUDED, PropName]
+                Utf8StringCR propName = rhsPropExp.GetOriginalPropertyPath()[1].GetName();
+                PropertyMap const* propMap = classMap.GetPropertyMaps().Find(propName.c_str());
+                if (propMap == nullptr)
+                    {
+                    ctx.PopScope();
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+                        IssueType::ECSQL, ECDbIssueId::ECDb_0742,
+                        "ECSQL ON CONFLICT DO UPDATE SET: EXCLUDED.%s refers to a property not found on class %s.",
+                        propName.c_str(), classMap.GetClass().GetFullName());
+                    return ECSqlStatus::InvalidECSql;
+                    }
+
+                GetColumnsPropertyMapVisitor columnVisitor(contextTable, PropertyMap::Type::Data);
+                propMap->AcceptVisitor(columnVisitor);
+                for (DbColumn const* col : columnVisitor.GetColumns())
+                    {
+                    if (col->GetPersistenceType() != PersistenceType::Virtual)
+                        {
+                        NativeSqlBuilder b;
+                        b.AppendFullyQualified("excluded", col->GetName());
+                        rhsCols.push_back(b);
+                        }
+                    }
+                if (rhsCols.empty())
+                    {
+                    ctx.PopScope();
+                    return ECSqlStatus::Error;
+                    }
+                }
+            else
+                {
+                stat = ECSqlExpPreparer::PrepareValueExp(rhsCols, ctx, *rhsExp);
+                if (!stat.IsSuccess())
+                    {
+                    ctx.PopScope();
+                    return stat;
+                    }
+                }
+            }
+        else
+            {
+            stat = ECSqlExpPreparer::PrepareValueExp(rhsCols, ctx, *rhsExp);
+            if (!stat.IsSuccess())
+                {
+                ctx.PopScope();
+                return stat;
+                }
+            }
+
+        if (lhsCols.size() != rhsCols.size())
+            {
+            ctx.PopScope();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+                IssueType::ECSQL, ECDbIssueId::ECDb_0743,
+                "ECSQL ON CONFLICT DO UPDATE SET: column count mismatch between LHS (%zu) and RHS (%zu) for assignment.",
+                lhsCols.size(), rhsCols.size());
+            return ECSqlStatus::Error;
+            }
+
+        for (size_t i = 0; i < lhsCols.size(); i++)
+            {
+            if (!firstAssignment)
+                out.AppendComma();
+            out.Append(lhsCols[i]).Append(" = ").Append(rhsCols[i]);
+            firstAssignment = false;
+            }
+        }
+
+    ctx.PopScope();
+
+    // Optional WHERE clause
+    if (onConflict.GetWhereClauseExp() != nullptr)
+        {
+        out.AppendSpace();
+        ECSqlStatus stat = ECSqlExpPreparer::PrepareWhereExp(out, ctx, *onConflict.GetWhereClauseExp());
+        if (!stat.IsSuccess())
+            return stat;
+        }
+
+    return ECSqlStatus::Success;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
