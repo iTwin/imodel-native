@@ -175,12 +175,7 @@ DLM_EXPORT_DEST             = $(o)
 DLM_NOINITFUNC              = 1
 DLM_NOENTRY                 = 1
 DLM_NO_BENTLEY_LIB          = 1
-%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER_LIBRARIES           = xmllite$(libext)
-%endif
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(libext)
-LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinXml$(libext)
-LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinLibxml2$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeom$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeomSerialization$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinJsonCpp$(stlibext)

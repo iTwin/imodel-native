@@ -374,7 +374,7 @@ SchemaReadStatus ECUnit::ReadConstantXml(pugi::xml_node unitNode, ECSchemaReadCo
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECUnit::WriteInvertedUnitXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;
@@ -398,7 +398,7 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECUnit::WriteConstantXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;
@@ -424,7 +424,7 @@ SchemaWriteStatus ECUnit::WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecX
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECUnit::WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;

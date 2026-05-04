@@ -13,6 +13,7 @@
 
     <Part Name="PugiXml" BentleyBuildMakeFile="pugixml.mke">
         <SubPart PartName="Prewire" />
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)iTwinPugixml$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)iTwinPugixml$(libext)</Libs>

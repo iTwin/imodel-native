@@ -5,7 +5,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-#include "BeXml/BeXml.h"
+#include <pugixml/src/BePugiXml.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -987,7 +987,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+void    VerifyInstanceWriteReadFile (WCharCP outputFileName, bool utf16)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
 
@@ -1004,12 +1004,25 @@ TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
 
     VerifyTestInstance (testInstance.get(), false);
 
-    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), true, false));
+    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (outputFileName).c_str (), true, utf16));
     IECInstancePtr  readbackInstance;
-    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), *instanceContext);
+    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (outputFileName).c_str (), *instanceContext);
 
     EXPECT_EQ (InstanceReadStatus::Success, readbackStatus);
     VerifyTestInstance (readbackInstance.get(), false);
+    }
+
+TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+    {
+    VerifyInstanceWriteReadFile (L"OutputInstance.xml", false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, InstanceWriteReadFileUtf16)
+    {
+    VerifyInstanceWriteReadFile (L"OutputInstanceUtf16.xml", true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1033,17 +1046,17 @@ TEST_F(InstanceSerializationTest, WriteECInstance)
 
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringProperty", ECValue("Some value")));
 
-    // WriteToBeXmlNode
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
-    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlNode(*xmlWriter));
+    // WriteToXmlNode
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlNode(*xmlWriter));
 
     Utf8String nodeInstanceString;
     xmlWriter->ToString(nodeInstanceString);
 
-    // WriteToBeXmlDom
-    BeXmlWriterPtr xmlDOMWriter = BeXmlWriter::Create();
+    // WriteToXmlDom
+    BePugiXmlWriterPtr xmlDOMWriter = BePugiXmlWriter::Create();
     Utf8String domInstanceString = "";
-    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlDom(*xmlDOMWriter, true));
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlDom(*xmlDOMWriter, true));
     xmlDOMWriter->ToString(domInstanceString);
 
     // compare strings
@@ -1382,6 +1395,56 @@ TEST_F(InstanceSerializationTest, BuildInstanceAndSerializeToXML)
         InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
         EXPECT_EQ(InstanceWriteStatus::Success, status2);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceSerializationTest, WriteUtf16FileWriter)
+    {
+    // Verify that a file writer configured for UTF-16LE produces a valid UTF-16 file
+    // that can be read back correctly.
+    WString filePath = ECTestFixture::GetTempDataPath (L"Utf16Test.xml");
+    BePugiXmlWriterPtr writer = BePugiXmlWriter::CreateFileWriter (filePath.c_str ());
+    ASSERT_TRUE (writer.IsValid ());
+
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteDocumentStart (BEPUGIXML_CHAR_ENCODING_Utf16LE));
+    ASSERT_EQ (BEPUGIXML_Success, writer->SetIndentation (2));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementStart ("Root"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteAttribute ("name", "test"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementStart ("Child"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteText ("Hello"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementEnd ());
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementEnd ());
+
+    // Flush to file via ToString (which triggers flushToFile for file writers).
+    Utf8String dummy;
+    writer->ToString (dummy);
+    writer = nullptr;
+
+    // Read back and verify the content survived the UTF-16 round-trip.
+    Utf8String utf8Path;
+    BeStringUtilities::WCharToUtf8 (utf8Path, filePath.c_str ());
+
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr dom = BePugiXmlDom::CreateAndReadFromFile (xmlStatus, utf8Path.c_str ());
+    ASSERT_EQ (BEPUGIXML_Success, xmlStatus);
+
+    BePugiXmlNode root = dom->GetRootElement ();
+    ASSERT_NE (nullptr, root);
+    EXPECT_STREQ ("Root", root.GetName ());
+
+    Utf8String attrValue;
+    EXPECT_EQ (BEPUGIXML_Success, root.GetAttributeStringValue (attrValue, "name"));
+    EXPECT_STREQ ("test", attrValue.c_str ());
+
+    BePugiXmlNode child = root.GetFirstChild ();
+    ASSERT_NE (nullptr, child);
+    EXPECT_STREQ ("Child", child.GetName ());
+
+    Utf8String content;
+    EXPECT_EQ (BEPUGIXML_Success, child.GetContent (content));
+    EXPECT_STREQ ("Hello", content.c_str ());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

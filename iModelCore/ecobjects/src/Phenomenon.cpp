@@ -106,7 +106,7 @@ SchemaReadStatus Phenomenon::ReadXml(pugi::xml_node phenomenonNode, ECSchemaRead
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus Phenomenon::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus Phenomenon::WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;

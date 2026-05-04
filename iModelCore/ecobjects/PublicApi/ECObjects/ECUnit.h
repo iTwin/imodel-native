@@ -9,6 +9,7 @@
 #include <Bentley/Nullable.h>
 #include <Formatting/FormattingApi.h>
 #include <BeRapidJson/BeJsValue.h>
+#include <pugixml/src/BePugiXml.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -37,7 +38,7 @@ private:
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
 
     SchemaReadStatus ReadXml(pugi::xml_node unitSystemNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -94,7 +95,7 @@ private:
 
     SchemaReadStatus ReadXml(pugi::xml_node phenomenonNode, ECSchemaReadContextR context);
 
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -165,9 +166,9 @@ private:
     SchemaReadStatus ReadInvertedUnitXml(pugi::xml_node, ECSchemaReadContextR context);
     SchemaReadStatus ReadConstantXml(pugi::xml_node, ECSchemaReadContextR context);
 
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-    SchemaWriteStatus WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-    SchemaWriteStatus WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteInvertedUnitXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteConstantXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     ECOBJECTS_EXPORT bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
     bool InvertedUnitToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
@@ -272,7 +273,7 @@ private:
     SchemaReadStatus ReadCompositeSpecXml(pugi::xml_node compositeNode, ECSchemaReadContextR context);
     SchemaReadStatus ReadCompositeUnitXml(pugi::xml_node unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels);
 
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     bool ToJsonInternal(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECFormat(ECSchemaCR schema, Utf8StringCR name);

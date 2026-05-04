@@ -980,7 +980,7 @@ static bool IsCategorySerializable(const ECProperty& prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus ECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
     }
@@ -988,7 +988,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXml
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
+SchemaWriteStatus ECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -1234,7 +1234,7 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus PrimitiveECProperty::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
 
@@ -1471,7 +1471,7 @@ SchemaReadStatus StructECProperty::_ReadXml (pugi::xml_node propertyNode, ECSche
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus StructECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersion);
     }
@@ -1758,7 +1758,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (pugi::xml_node propertyNode, ECSchem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
 
@@ -2340,7 +2340,7 @@ SchemaReadStatus NavigationECProperty::_ReadXml(pugi::xml_node propertyNode, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+SchemaWriteStatus NavigationECProperty::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);

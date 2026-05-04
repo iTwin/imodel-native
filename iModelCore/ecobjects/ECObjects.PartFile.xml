@@ -13,7 +13,6 @@
         <SubPart PartName="BentleyDll"              PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="GeomDlls"                PartFile="iModelCore/GeomLibs/geomlibs" />
         <SubPart PartName="GeomlibsSerialization"   PartFile="iModelCore/GeomLibs/geomlibs" />
-        <SubPart PartName="BeXml"                   PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="BeJsonCpp"               PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="PugiXml"                 PartFile="iModelCore/libsrc/pugixml/pugixml" />
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />

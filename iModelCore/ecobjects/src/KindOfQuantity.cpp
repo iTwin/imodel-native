@@ -127,7 +127,7 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus KindOfQuantity::WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     //will only be serialized in 3.0 and later
     if (ecXmlVersion < ECVersion::V3_0)

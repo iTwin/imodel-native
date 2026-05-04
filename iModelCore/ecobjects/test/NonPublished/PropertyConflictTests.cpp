@@ -5,7 +5,6 @@
 #include "../ECObjectsTestPCH.h"
 #include <ECObjects/SchemaComparer.h>
 #include "../TestFixture/TestFixture.h"
-#include "BeXml/BeXml.h"
 
 USING_NAMESPACE_BENTLEY_EC
 

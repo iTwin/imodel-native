@@ -2,7 +2,7 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-
+BUILD_WITH_C20=1
 
 %include mdl.mki
 
@@ -27,7 +27,11 @@ MultiCompileDepends=$(_MakeFileSpec)
 PugiXmlHeaders =                $(srcDir)pugixml.hpp \
                                 $(srcDir)pugiconfig.hpp
 
+BePugiXmlHeaders =              $(srcDir)BePugiXml.h
+
 $(o)pugixml$(oext) : $(srcDir)pugixml.cpp $(PugiXmlHeaders) ${MultiCompileDepends}
+
+$(o)BePugiXml$(oext) : $(srcDir)BePugiXml.cpp $(BePugiXmlHeaders) $(PugiXmlHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
@@ -39,6 +43,8 @@ DLM_EXPORT_DEST     = $(o)
 DLM_NOINITFUNC      = 1
 DLM_NOENTRY         = 1
 DLM_OBJECT_DEST     = $(o)
+
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(stlibext)
 
 # We support shared or static linking.
 %include $(sharedMki)linkLibrary.mki
