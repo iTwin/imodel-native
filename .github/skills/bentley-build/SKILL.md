@@ -100,7 +100,8 @@ iModelConsole.BuildStrategy.xml
 
 | Alias | Purpose |
 |-------|---------|
-| `iModelConsole` | iModelCore + iModelPlatform + iModelConsoleExe (default) |
+| `iModelNative` | **CI default** — builds and also runs unit tests |
+| `iModelConsole` | iModelCore + iModelPlatform + iModelConsoleExe (no tests) |
 | `iModelCore` | Core libraries only |
 | `iModelJsNodeAddon` | Node.js `.node` addon (**requires `-s` explicitly**) |
 | `iModelJsNodeAddon.Dev` | Dev/debug variant of addon |
