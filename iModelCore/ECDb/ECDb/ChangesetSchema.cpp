@@ -25,17 +25,6 @@ static Utf8String TableTypeToString(int type)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int StringToTableType(Utf8StringCR str)
-    {
-    if (str == "Primary") return 0;
-    if (str == "Joined") return 1;
-    if (str == "Overflow") return 3;
-    return -1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Capture the schema mapping state for all mapped classes in the ECDb.
 * Queries ec_Class, ec_Schema, ec_ClassMap, ec_ClassHasBaseClasses, ec_PropertyMap,
 * ec_PropertyPath, ec_Column, ec_Table to build the snapshot.
@@ -248,7 +237,6 @@ void ChangesetSchema::ToJson(BeJsValue out) const
         tablesJson.SetEmptyObject();
         for (auto const& [tableName, tableInfo] : entry.m_tables)
             tablesJson[tableName.c_str()]["type"] = tableInfo.m_type.c_str();
-        classJson["tables"] = tablesJson;
 
         BeJsValue propertyMapsJson = classJson["propertyMaps"];
         propertyMapsJson.SetEmptyObject();
@@ -258,7 +246,6 @@ void ChangesetSchema::ToJson(BeJsValue out) const
             propJson["table"] = propMap.m_table.c_str();
             propJson["column"] = propMap.m_column.c_str();
             }
-        classJson["propertyMaps"] = propertyMapsJson;
         }
     }
 

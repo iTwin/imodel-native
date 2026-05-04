@@ -286,11 +286,11 @@ TEST_F(ChangesetSchemaTestFixture, StructPropertyCausesOverflow)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_StructOverflow.ecdb", schema1));
 
-    // Insert some data
+    // Insert some data using dot notation for struct members
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
-        "INSERT INTO ts.Element (S, Label) VALUES ({X:1, Y:2, Z:3}, 'hello')");
+        "INSERT INTO ts.Element (S.X, S.Y, S.Z, Label) VALUES (1, 2, 3, 'hello')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
-        "INSERT INTO ts.SubElement (S, Label, Extra) VALUES ({X:4, Y:5, Z:6}, 'world', 'bonus')");
+        "INSERT INTO ts.SubElement (S.X, S.Y, S.Z, Label, Extra) VALUES (4, 5, 6, 'world', 'bonus')");
     m_ecdb.SaveChanges();
 
     // Capture schema BEFORE

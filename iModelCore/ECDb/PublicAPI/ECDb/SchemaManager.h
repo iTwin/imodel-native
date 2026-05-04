@@ -414,6 +414,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif
+        struct Sessions;
     private:
         Dispatcher* m_dispatcher = nullptr;
         mutable Sessions* m_sessions = nullptr;
