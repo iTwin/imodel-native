@@ -819,6 +819,115 @@ ChangeGroup::ChangeGroup(DbCR db, Utf8CP zDb) {
     sqlite3changegroup_schema((sqlite3_changegroup*)m_changegroup, (sqlite3*)db.GetSqlDb(), zDb);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeBuilder::ChangeBuilder() {
+    sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeBuilder::ChangeBuilder(DbCR db, Utf8CP zDb) {
+    sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup);
+    sqlite3changegroup_schema((sqlite3_changegroup*)m_changegroup, (sqlite3*)db.GetSqlDb(), zDb);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeBuilder::Finalize() {
+    if (m_changegroup != nullptr) {
+        sqlite3changegroup_delete((sqlite3_changegroup*)m_changegroup);
+        m_changegroup = nullptr;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeBuilder::~ChangeBuilder() {
+    Finalize();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::Append(Utf8CP tableName, DbOpcode op, std::function<DbResult(Row&)> bindRow, bool indirect) {
+    auto* cg = (sqlite3_changegroup*)m_changegroup;
+    if (cg == nullptr)
+        return BE_SQLITE_ERROR;
+
+    char* pzErr = nullptr;
+    int rc = sqlite3changegroup_change_begin(cg, (int)op, tableName, indirect ? 1 : 0, &pzErr);
+    if (rc != SQLITE_OK) {
+        if (pzErr)
+            sqlite3_free(pzErr);
+        return (DbResult)rc;
+    }
+
+    Row row(m_changegroup);
+    DbResult bindResult = bindRow(row);
+    int bDiscard = (bindResult != BE_SQLITE_OK) ? 1 : 0;
+
+    char* pzErr2 = nullptr;
+    rc = sqlite3changegroup_change_finish(cg, bDiscard, &pzErr2);
+    if (pzErr2)
+        sqlite3_free(pzErr2);
+
+    if (bindResult != BE_SQLITE_OK)
+        return bindResult;
+
+    return (DbResult)rc;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::Row::BindInt64(bool bNew, int iCol, int64_t val) {
+    return (DbResult)sqlite3changegroup_change_int64((sqlite3_changegroup*)m_changegroup, bNew ? 1 : 0, iCol, (sqlite3_int64)val);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::Row::BindDouble(bool bNew, int iCol, double val) {
+    return (DbResult)sqlite3changegroup_change_double((sqlite3_changegroup*)m_changegroup, bNew ? 1 : 0, iCol, val);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::Row::BindText(bool bNew, int iCol, Utf8CP val, int nVal) {
+    return (DbResult)sqlite3changegroup_change_text((sqlite3_changegroup*)m_changegroup, bNew ? 1 : 0, iCol, val, nVal);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::Row::BindBlob(bool bNew, int iCol, void const* val, int nVal) {
+    return (DbResult)sqlite3changegroup_change_blob((sqlite3_changegroup*)m_changegroup, bNew ? 1 : 0, iCol, val, nVal);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeBuilder::Row::BindNull(bool bNew, int iCol) {
+    return (DbResult)sqlite3changegroup_change_null((sqlite3_changegroup*)m_changegroup, bNew ? 1 : 0, iCol);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::FromChangeBuilder(ChangeBuilderCR builder) {
+    auto* cg = (sqlite3_changegroup*)const_cast<ChangeBuilder&>(builder).m_changegroup;
+    if (cg == nullptr)
+        return BE_SQLITE_ERROR;
+    return (DbResult)sqlite3changegroup_output_strm(cg, AppendCallback, this);
+}
+
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -8,6 +8,7 @@
 #include <functional>
 #include "BeSQLite.h"
 
+BESQLITE_TYPEDEFS(ChangeBuilder);
 BESQLITE_TYPEDEFS(ChangeGroup);
 BESQLITE_TYPEDEFS(ChangeSet);
 BESQLITE_TYPEDEFS(ChangeStream);
@@ -209,7 +210,81 @@ public:
     ~ChangeGroup() { Finalize(); }
 };
 
+//=======================================================================================
+//! A fluent builder for constructing SQLite changesets row by row.
+//! Wraps the sqlite3changegroup_change_xxx() APIs to allow constructing new changeset
+//! entries without an existing iterator.
+//!
+//! Usage:
+//! @code
+//!   ChangeBuilder builder(db);
+//!   builder.Append("ts_Animal", DbOpcode::Insert, [](ChangeBuilder::Row& row) {
+//!       row.BindInt64(/*bNew=*/true, 0, instanceId);
+//!       row.BindInt64(/*bNew=*/true, 1, classId);
+//!       row.BindText( /*bNew=*/true, 2, "hello");
+//!       return BE_SQLITE_OK;
+//!   });
+//!   BeSQLite::ChangeSet cs;
+//!   cs.FromChangeBuilder(builder);
+//! @endcode
+// @bsiclass
+//=======================================================================================
+struct ChangeBuilder : NonCopyableClass {
+    friend struct ChangeSet;
+    friend struct ChangeStream;
 
+    //! Represents a single change row being constructed inside an Append() callback.
+    //! Instances are only valid within the lifetime of the enclosing Append() call.
+    struct Row {
+        friend struct ChangeBuilder;
+    private:
+        void* m_changegroup; // sqlite3_changegroup*
+        explicit Row(void* cg) : m_changegroup(cg) {}
+    public:
+        //! Bind a 64-bit integer to a column of the old.* (bNew=false) or new.* (bNew=true) record.
+        BE_SQLITE_EXPORT DbResult BindInt64(bool bNew, int iCol, int64_t val);
+        //! Bind a double to a column.
+        BE_SQLITE_EXPORT DbResult BindDouble(bool bNew, int iCol, double val);
+        //! Bind a UTF-8 text value. Pass nVal=-1 for nul-terminated strings.
+        BE_SQLITE_EXPORT DbResult BindText(bool bNew, int iCol, Utf8CP val, int nVal = -1);
+        //! Bind a blob value.
+        BE_SQLITE_EXPORT DbResult BindBlob(bool bNew, int iCol, void const* val, int nVal);
+        //! Bind a NULL to a column.
+        BE_SQLITE_EXPORT DbResult BindNull(bool bNew, int iCol);
+    };
+
+private:
+    void* m_changegroup; // sqlite3_changegroup*
+    void Finalize();
+
+public:
+    //! Construct a schema-agnostic ChangeBuilder.
+    //! @note Requires sqlite3changegroup_schema() to be configured before calling Append(),
+    //!       or the first change must be added via AddToChangeGroup() to seed the schema.
+    BE_SQLITE_EXPORT ChangeBuilder();
+
+    //! Construct a schema-aware ChangeBuilder from an existing database connection.
+    //! The database schema is used to resolve column counts for each table.
+    //! @param db  The database whose schema to use.
+    //! @param zDb Attached database name (default "main").
+    BE_SQLITE_EXPORT explicit ChangeBuilder(DbCR db, Utf8CP zDb = "main");
+
+    BE_SQLITE_EXPORT ~ChangeBuilder();
+
+    ChangeBuilder(ChangeBuilder const&) = delete;
+    ChangeBuilder& operator=(ChangeBuilder const&) = delete;
+
+    //! Append a single change row.  Invoke the bindRow callback to supply old.* and new.* values.
+    //! For INSERT: provide new.* values for all columns.
+    //! For DELETE: provide old.* values for all columns.
+    //! For UPDATE: provide old.* values for PK columns and both old.*/new.* for changed columns.
+    //! @param tableName  SQLite table name the change targets.
+    //! @param op         DbOpcode::Insert, Update, or Delete.
+    //! @param bindRow    Callback that binds column values via Row; return BE_SQLITE_OK to commit or any error to discard.
+    //! @param indirect   If true, marks the change as indirect.
+    //! @return BE_SQLITE_OK on success.
+    BE_SQLITE_EXPORT DbResult Append(Utf8CP tableName, DbOpcode op, std::function<DbResult(Row&)> bindRow, bool indirect = false);
+};
 
 //=======================================================================================
 //! A base class for a streaming version of the ChangeSet. ChangeSets require that their
@@ -387,6 +462,11 @@ struct ChangeSet : ChangeStream {
     //! Determine whether this ChangeSet holds valid data or not.
     bool IsValid() const { return 0 != GetSize(); }
     bool _IsEmpty() const override final { return 0 == GetSize(); }
+
+    //! Populate this ChangeSet from a ChangeBuilder.
+    //! @param builder The builder whose accumulated changes are serialized into this ChangeSet.
+    //! @return BE_SQLITE_OK on success.
+    BE_SQLITE_EXPORT DbResult FromChangeBuilder(ChangeBuilderCR builder);
 };
 
 //=======================================================================================

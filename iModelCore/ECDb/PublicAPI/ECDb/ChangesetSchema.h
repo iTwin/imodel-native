@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDb.h>
+#include <BeSQLite/ChangeSet.h>
 #include <BeRapidJson/BeJsValue.h>
 #include <map>
 #include <vector>
@@ -68,6 +69,11 @@ public:
 
     //! Capture the schema mapping state for all mapped classes in the ECDb.
     static BentleyStatus CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb);
+
+    //! Capture the schema mapping state for only classes referenced by the given changeset.
+    //! Iterates the changeset to discover referenced tables and ECClassId values,
+    //! then captures only those classes and their inheritance chain.
+    static BentleyStatus Capture(ChangesetSchema& out, ECDbCR ecdb, BeSQLite::ChangeStream const& changeset);
 
     //! Serialize to a BeJsValue (object).
     void ToJson(BeJsValue out) const;
@@ -140,6 +146,23 @@ struct ChangesetSchemaDiff final
     static BentleyStatus Diff(ChangesetSchemaDiff& out,
                               ChangesetSchema const& before,
                               ChangesetSchema const& after);
+    };
+
+//=======================================================================================
+// @bsiclass
+// Transforms a changeset binary by applying the diff (class ID remaps, column swaps,
+// overflow INSERTs) produced by ChangesetSchemaDiff::Diff.
+//=======================================================================================
+struct ChangesetTransformer final
+    {
+    //! Apply all transforms from the diff to the source changeset.
+    //! Produces a new transformed changeset in 'output'.
+    //! Returns ERROR if diff.HasErrors() — the changeset must not be transformed
+    //! when the diff contains missing-class or missing-property errors.
+    static BentleyStatus Transform(BeSQLite::ChangeSet& output,
+                                   BeSQLite::ChangeStream const& source,
+                                   ChangesetSchemaDiff const& diff,
+                                   ECDbCR ecdb);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

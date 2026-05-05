@@ -257,6 +257,8 @@ $(o)ChangeManager$(oext):                                     $(baseDir)ChangeMa
 
 $(o)ChangesetSchema$(oext):                                   $(baseDir)ChangesetSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ChangesetTransformer$(oext):                              $(baseDir)ChangesetTransformer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSummaryExtractor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedIdsIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
