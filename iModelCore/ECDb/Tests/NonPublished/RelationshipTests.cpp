@@ -6249,6 +6249,7 @@ TEST_F(RelationshipStrengthTestFixture, PurgeOrphanLinkTableRelationships)
     {
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA purge_orphan_relationships options enable_experimental_features"));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -6278,6 +6279,7 @@ TEST_F(RelationshipStrengthTestFixture, PurgeOrphanLinkTableRelationships)
     {
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA purge_orphan_relationships options enable_experimental_features"));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 

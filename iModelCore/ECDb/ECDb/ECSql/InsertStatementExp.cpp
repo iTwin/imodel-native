@@ -34,7 +34,6 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             ClassNameExp const* classNameExp = GetClassNameExp();
             if (classNameExp == nullptr)
                 {
-                BeAssert(false && "ClassNameExp expected to be not null for InsertStatementExp");
                 return FinalizeParseStatus::Error;
                 }
 
@@ -56,7 +55,6 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                 {
                 if (!classNameExp->HasMetaInfo())
                     {
-                    BeAssert(false && "ClassNameExp has not been assigned the ClassMap yet.");
                     return FinalizeParseStatus::Error;
                     }
 

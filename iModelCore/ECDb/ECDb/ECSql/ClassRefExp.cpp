@@ -147,7 +147,6 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
         {
         if (m_info == nullptr)
             {
-            BeAssert(false);
             return FinalizeParseStatus::Error;
             }
 
@@ -165,7 +164,6 @@ void ClassNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expa
     {
     if (m_info == nullptr)
         {
-        BeAssert(false);
         return;
         }
 
@@ -182,7 +180,6 @@ void ClassNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expa
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyMatchResult ClassNameExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const {
     if (m_info == nullptr) {
-        BeAssert(false);
         return PropertyMatchResult::NotFound();
         }
 

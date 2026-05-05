@@ -277,6 +277,9 @@ struct TestIssueListener : ECN::IIssueListener
     void CompareIssues(bvector<Utf8String> const& expectedIssues);
     void CompareIssues(const std::vector<ReportedIssue>& expectedIssues);
     Utf8String GetLastMessage() const { return IsEmpty() ? Utf8String() : m_issues.back().message; }
+    bool HasMessage(Utf8CP msg) const {
+        return std::any_of(m_issues.begin(), m_issues.end(), [msg](ReportedIssue const& i) { return i.message == msg; });
+    }
     void ClearIssues() { m_issues.clear(); }
     bool IsEmpty() const { return m_issues.empty(); }
     };

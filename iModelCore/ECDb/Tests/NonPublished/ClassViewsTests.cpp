@@ -182,7 +182,7 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
 
         bvector<Utf8String> expectedIssues {
-          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:SchemaView).",
+          "Invalid View Class 'test_schema:SchemaView'. View query references itself recursively (test_schema:SchemaView -> test_schema:SchemaView).",
           "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)",
           "Total of 4 view classes were checked and 1 were found to be invalid.",
@@ -219,11 +219,11 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
 
         bvector<Utf8String> expectedIssues {
-          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:ClassView -> test_schema:SchemaView).",
+          "Invalid View Class 'test_schema:SchemaView'. View query references itself recursively (test_schema:SchemaView -> test_schema:ClassView -> test_schema:SchemaView).",
           "Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:ClassView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)",
-          "Invalid View Class 'test_schema:ClassView'. View query references itself recusively (test_schema:ClassView -> test_schema:SchemaView -> test_schema:ClassView).",
+          "Invalid View Class 'test_schema:ClassView'. View query references itself recursively (test_schema:ClassView -> test_schema:SchemaView -> test_schema:ClassView).",
           "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.ClassView)",
@@ -267,17 +267,17 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
 
         bvector<Utf8String> expectedIssues {
-          "Invalid View Class 'test_schema:View2'. View query references itself recusively (test_schema:View2 -> test_schema:View3 -> test_schema:View1 -> test_schema:View2).",
+          "Invalid View Class 'test_schema:View2'. View query references itself recursively (test_schema:View2 -> test_schema:View3 -> test_schema:View1 -> test_schema:View2).",
           "Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:View1'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View2)",
-          "Invalid View Class 'test_schema:View3'. View query references itself recusively (test_schema:View3 -> test_schema:View1 -> test_schema:View2 -> test_schema:View3).",
+          "Invalid View Class 'test_schema:View3'. View query references itself recursively (test_schema:View3 -> test_schema:View1 -> test_schema:View2 -> test_schema:View3).",
           "Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:View2'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View3)",
-          "Invalid View Class 'test_schema:View1'. View query references itself recusively (test_schema:View1 -> test_schema:View2 -> test_schema:View3 -> test_schema:View1).",
+          "Invalid View Class 'test_schema:View1'. View query references itself recursively (test_schema:View1 -> test_schema:View2 -> test_schema:View3 -> test_schema:View1).",
           "Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.",

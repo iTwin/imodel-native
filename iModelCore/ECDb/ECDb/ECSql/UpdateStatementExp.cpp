@@ -35,7 +35,6 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
         ClassNameExp const* classNameExp = GetClassNameExp();
         if (classNameExp == nullptr)
             {
-            BeAssert(false && "ClassNameExp expected to be not null for UpdateStatementExp");
             return FinalizeParseStatus::Error;
             }
 

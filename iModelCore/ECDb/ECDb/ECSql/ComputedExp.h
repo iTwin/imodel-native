@@ -20,6 +20,7 @@ struct ComputedExp : Exp
     {
 private:
     friend struct ECSqlParser;
+    friend struct ECSqlRDParser;
 
     bool m_hasParentheses;
     ECSqlTypeInfo m_typeInfo;
@@ -27,9 +28,8 @@ private:
 protected:
     explicit ComputedExp(Type type) : Exp(type), m_hasParentheses(false) {}
 
-    void SetHasParentheses() { m_hasParentheses = true; }
-
 public:
+    void SetHasParentheses() { m_hasParentheses = true; }
     virtual ~ComputedExp () {}
     void SetTypeInfo(ECSqlTypeInfo const& typeInfo) { m_typeInfo = typeInfo; }
     bool HasParentheses() const { return m_hasParentheses; }

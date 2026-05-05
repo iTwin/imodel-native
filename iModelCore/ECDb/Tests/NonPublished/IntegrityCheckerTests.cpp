@@ -58,9 +58,9 @@ TEST_F(IntegrityCheckerFixture, check_all) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check"));
-        EXPECT_EQ(4, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("check", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("check_name", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("result", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("elapsed_sec", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
@@ -72,8 +72,8 @@ TEST_F(IntegrityCheckerFixture, check_all) {
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["check"] = stmt.GetValueText(1);
-            row["result"] = stmt.GetValueText(2);
+            row["check_name"] = stmt.GetValueText(1);
+            row["result"] = stmt.GetValueBoolean(2);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -82,48 +82,48 @@ TEST_F(IntegrityCheckerFixture, check_all) {
             [
                 {
                     "sno": 1,
-                    "check": "check_data_columns",
-                    "result": "true"
+                    "check_name": "check_data_columns",
+                    "result": true
                 },
                 {
                     "sno": 2,
-                    "check": "check_ec_profile",
-                    "result": "true"
+                    "check_name": "check_ec_profile",
+                    "result": true
                 },
                 {
                     "sno": 3,
-                    "check": "check_nav_class_ids",
-                    "result": "true"
+                    "check_name": "check_nav_class_ids",
+                    "result": true
                 },
                 {
                     "sno": 4,
-                    "check": "check_nav_ids",
-                    "result": "true"
+                    "check_name": "check_nav_ids",
+                    "result": true
                 },
                 {
                     "sno": 5,
-                    "check": "check_linktable_fk_class_ids",
-                    "result": "true"
+                    "check_name": "check_linktable_fk_class_ids",
+                    "result": true
                 },
                 {
                     "sno": 6,
-                    "check": "check_linktable_fk_ids",
-                    "result": "true"
+                    "check_name": "check_linktable_fk_ids",
+                    "result": true
                 },
                 {
                     "sno": 7,
-                    "check": "check_class_ids",
-                    "result": "true"
+                    "check_name": "check_class_ids",
+                    "result": true
                 },
                 {
                     "sno": 8,
-                    "check": "check_data_schema",
-                    "result": "true"
+                    "check_name": "check_data_schema",
+                    "result": true
                 },
                 {
                     "sno": 9,
-                    "check": "check_schema_load",
-                    "result": "true"
+                    "check_name": "check_schema_load",
+                    "result": true
                 }
             ]
         )json";
@@ -145,29 +145,29 @@ TEST_F(IntegrityCheckerFixture, check_nav_class_ids) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_nav_class_ids)"));
-        EXPECT_EQ(6, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("nav_id", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("nav_classId", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(10).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(11).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(12).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("nav_id", stmt.GetColumnInfo(13).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("nav_classId", stmt.GetColumnInfo(14).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(12).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(13).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(14).GetDataType().GetPrimitiveType());
 
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["id"] = stmt.GetValueText(1);
-            row["class"] = stmt.GetValueText(2);
-            row["property"] = stmt.GetValueText(3);
-            row["nav_id"] = stmt.GetValueText(4);
-            row["nav_classId"] = stmt.GetValueText(5);
+            row["id"] = stmt.GetValueText(10);
+            row["class"] = stmt.GetValueText(11);
+            row["property"] = stmt.GetValueText(12);
+            row["nav_id"] = stmt.GetValueText(13);
+            row["nav_classId"] = stmt.GetValueText(14);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -225,29 +225,29 @@ TEST_F(IntegrityCheckerFixture, check_nav_ids) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_nav_ids)"));
-        EXPECT_EQ(6, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("nav_id", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("primary_class", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(10).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(11).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(12).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("nav_id", stmt.GetColumnInfo(13).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("primary_class", stmt.GetColumnInfo(15).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(12).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(13).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(15).GetDataType().GetPrimitiveType());
 
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["id"] = stmt.GetValueText(1);
-            row["class"] = stmt.GetValueText(2);
-            row["property"] = stmt.GetValueText(3);
-            row["nav_id"] = stmt.GetValueText(4);
-            row["primary_class"] = stmt.GetValueText(5);
+            row["id"] = stmt.GetValueText(10);
+            row["class"] = stmt.GetValueText(11);
+            row["property"] = stmt.GetValueText(12);
+            row["nav_id"] = stmt.GetValueText(13);
+            row["primary_class"] = stmt.GetValueText(15);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -286,29 +286,29 @@ TEST_F(IntegrityCheckerFixture, check_linktable_fk_ids) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_linktable_fk_ids)"));
-        EXPECT_EQ(6, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("relationship", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("key_id", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("primary_class", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(10).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(11).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(12).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("key_id", stmt.GetColumnInfo(16).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("primary_class", stmt.GetColumnInfo(15).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(12).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(16).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(15).GetDataType().GetPrimitiveType());
 
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["id"] = stmt.GetValueText(1);
-            row["relationship"] = stmt.GetValueText(2);
-            row["property"] = stmt.GetValueText(3);
-            row["key_id"] = stmt.GetValueText(4);
-            row["primary_class"] = stmt.GetValueText(5);
+            row["id"] = stmt.GetValueText(10);
+            row["relationship"] = stmt.GetValueText(11);
+            row["property"] = stmt.GetValueText(12);
+            row["key_id"] = stmt.GetValueText(16);
+            row["primary_class"] = stmt.GetValueText(15);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -373,29 +373,29 @@ TEST_F(IntegrityCheckerFixture, check_linktable_fk_class_ids) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_linktable_fk_class_ids)"));
-        EXPECT_EQ(6, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("relationship", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("key_id", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("key_classId", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(10).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(11).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("property", stmt.GetColumnInfo(12).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("key_id", stmt.GetColumnInfo(16).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("key_classId", stmt.GetColumnInfo(17).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(12).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(16).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(17).GetDataType().GetPrimitiveType());
 
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["id"] = stmt.GetValueText(1);
-            row["relationship"] = stmt.GetValueText(2);
-            row["property"] = stmt.GetValueText(3);
-            row["key_id"] = stmt.GetValueText(4);
-            row["key_classId"] = stmt.GetValueText(4);
+            row["id"] = stmt.GetValueText(10);
+            row["relationship"] = stmt.GetValueText(11);
+            row["property"] = stmt.GetValueText(12);
+            row["key_id"] = stmt.GetValueText(16);
+            row["key_classId"] = stmt.GetValueText(17);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -418,26 +418,26 @@ TEST_F(IntegrityCheckerFixture, check_class_ids) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_class_ids)"));
-        EXPECT_EQ(5, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("class_id", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(11).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(10).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class_id", stmt.GetColumnInfo(18).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(18).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
 
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["class"] = stmt.GetValueText(1);
-            row["id"] = stmt.GetValueText(2);
-            row["class_id"] = stmt.GetValueText(3);
-            row["type"] = stmt.GetValueText(4);
+            row["class"] = stmt.GetValueText(11);
+            row["id"] = stmt.GetValueText(10);
+            row["class_id"] = stmt.GetValueText(18);
+            row["type"] = stmt.GetValueText(5);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -498,26 +498,26 @@ TEST_F(IntegrityCheckerFixture, check_missing_child_rows) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_missing_child_rows)"));
-        EXPECT_EQ(5, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("class_id", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("MissingRowInTables", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(11).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(10).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class_id", stmt.GetColumnInfo(18).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("MissingRowInTables", stmt.GetColumnInfo(19).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(18).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(19).GetDataType().GetPrimitiveType());
 
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["class"] = stmt.GetValueText(1);
-            row["id"] = stmt.GetValueText(2);
-            row["class_id"] = stmt.GetValueText(3);
-            row["MissingRowInTables"] = stmt.GetValueText(4);
+            row["class"] = stmt.GetValueText(11);
+            row["id"] = stmt.GetValueText(10);
+            row["class_id"] = stmt.GetValueText(18);
+            row["MissingRowInTables"] = stmt.GetValueText(19);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -561,19 +561,19 @@ TEST_F(IntegrityCheckerFixture, check_data_columns) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_data_columns)"));
-        EXPECT_EQ(3, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("table", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("column", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("table_name", stmt.GetColumnInfo(8).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("col", stmt.GetColumnInfo(9).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(8).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(9).GetDataType().GetPrimitiveType());
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["table"] = stmt.GetValueText(1);
-            row["column"] = stmt.GetValueText(2);
+            row["table"] = stmt.GetValueText(8);
+            row["column"] = stmt.GetValueText(9);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -626,19 +626,19 @@ TEST_F(IntegrityCheckerFixture, check_data_schema) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_data_schema)"));
-        EXPECT_EQ(3, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("name", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("name", stmt.GetColumnInfo(6).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(6).GetDataType().GetPrimitiveType());
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["type"] = stmt.GetValueText(1);
-            row["name"] = stmt.GetValueText(2);
+            row["type"] = stmt.GetValueText(5);
+            row["name"] = stmt.GetValueText(6);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -694,22 +694,22 @@ TEST_F(IntegrityCheckerFixture, check_ec_profile) {
         BeJsDocument out;
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_ec_profile)"));
-        EXPECT_EQ(4, stmt.GetColumnCount());
+        EXPECT_EQ(20, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("name", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
-        EXPECT_STRCASEEQ("issue", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("name", stmt.GetColumnInfo(6).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("issue", stmt.GetColumnInfo(7).GetProperty()->GetName().c_str());
         EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
-        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(6).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(7).GetDataType().GetPrimitiveType());
         out.SetEmptyArray();
         while (stmt.Step() == BE_SQLITE_ROW) {
             auto row = out.appendObject();
             row["sno"] = stmt.GetValueInt(0);
-            row["type"] = stmt.GetValueText(1);
-            row["name"] = stmt.GetValueText(2);
-            row["issue"] = stmt.GetValueText(3);
+            row["type"] = stmt.GetValueText(5);
+            row["name"] = stmt.GetValueText(6);
+            row["issue"] = stmt.GetValueText(7);
         }
         return out.Stringify(StringifyFormat::Indented);
     };
@@ -944,18 +944,18 @@ TEST_F(IntegrityCheckerFixture, check_linktable_invalid_classIds)
     BeJsDocument out;
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma integrity_check(check_linktable_fk_ids) options enable_experimental_features"));
-    EXPECT_EQ(6, stmt.GetColumnCount());
+    EXPECT_EQ(20, stmt.GetColumnCount());
 
     out.SetEmptyArray();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto row = out.appendObject();
         row["sno"] = stmt.GetValueInt(0);
-        row["id"] = stmt.GetValueText(1);
-        row["relationship"] = stmt.GetValueText(2);
-        row["property"] = stmt.GetValueText(3);
-        row["key_id"] = stmt.GetValueText(4);
-        row["primary_class"] = stmt.GetValueText(5);
+        row["id"] = stmt.GetValueText(10);
+        row["relationship"] = stmt.GetValueText(11);
+        row["property"] = stmt.GetValueText(12);
+        row["key_id"] = stmt.GetValueText(16);
+        row["primary_class"] = stmt.GetValueText(15);
         }
 
     const auto expectedJSON = R"json(
@@ -1094,18 +1094,18 @@ TEST_F(IntegrityCheckerFixture, check_linktable_invalid_classIds_TPH)
     BeJsDocument out;
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma integrity_check(check_linktable_fk_ids) options enable_experimental_features"));
-    EXPECT_EQ(6, stmt.GetColumnCount());
+    EXPECT_EQ(20, stmt.GetColumnCount());
 
     out.SetEmptyArray();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto row = out.appendObject();
         row["sno"] = stmt.GetValueInt(0);
-        row["id"] = stmt.GetValueText(1);
-        row["relationship"] = stmt.GetValueText(2);
-        row["property"] = stmt.GetValueText(3);
-        row["key_id"] = stmt.GetValueText(4);
-        row["primary_class"] = stmt.GetValueText(5);
+        row["id"] = stmt.GetValueText(10);
+        row["relationship"] = stmt.GetValueText(11);
+        row["property"] = stmt.GetValueText(12);
+        row["key_id"] = stmt.GetValueText(16);
+        row["primary_class"] = stmt.GetValueText(15);
         }
 
     const auto expectedJSON = R"json(

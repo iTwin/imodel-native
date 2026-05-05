@@ -62,7 +62,7 @@ TEST_F(BisCoreDomainTests, DisqualifyTypeFilterForExternalSourceAspect)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDgnDb(), "PRAGMA disqualify_type_index=FALSE FOR BisCore.ExternalSourceAspect"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         }
 
     if ("ensure when disqualify_type_index is set to false the generated native sql does not include '+'")

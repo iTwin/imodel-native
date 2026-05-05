@@ -424,6 +424,9 @@ struct Exp
             }
 
         size_t AddChild(std::unique_ptr<Exp> child);
+        //! Insert a child at position 0 (prepend), shifting existing children.
+        //! Used to set the LHS of a JoinExp after construction.
+        void PrependChild(std::unique_ptr<Exp> child);
 
         bool ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& replaceWith); 
 

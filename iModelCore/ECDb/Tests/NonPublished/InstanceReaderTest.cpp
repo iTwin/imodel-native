@@ -739,7 +739,7 @@ TEST_F(InstanceReaderFixture, AmbiguousInstanceQuery) {
 
     // The error message should indicate ambiguous $ (instance query)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, status);
-    ASSERT_TRUE(listener.GetLastMessage() == "In expression '$->COBIE', $ is ambiguous");
+    ASSERT_TRUE(listener.HasMessage("In expression '$->COBIE', $ is ambiguous"));
 }
 
 

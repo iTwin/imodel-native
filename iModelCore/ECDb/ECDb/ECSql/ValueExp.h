@@ -191,7 +191,7 @@ struct SearchCaseValueExp final : ValueExp
         Utf8String _ToString() const override;
 
     public:
-        SearchCaseValueExp(std::vector<std::unique_ptr<SearchedWhenClauseExp>>& whenList, std::unique_ptr<ValueExp>& elseExp)
+        SearchCaseValueExp(std::vector<std::unique_ptr<SearchedWhenClauseExp>>& whenList, std::unique_ptr<ValueExp> elseExp)
             : ValueExp(Type::SearchCaseValue), m_elseIndex(0)
             {
              for(auto& it : whenList)

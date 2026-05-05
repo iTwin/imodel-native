@@ -184,6 +184,10 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
     if (lhsTypeKind == ECSqlTypeInfo::Kind::StructArray || lhsIsStructWithStructArray ||
         rhsTypeKind == ECSqlTypeInfo::Kind::StructArray || rhsIsStructWithStructArray)
         {
+        // Allow IS / IS NOT (for IS NULL / IS NOT NULL) on struct arrays
+        if (m_op == BooleanSqlOperator::Is || m_op == BooleanSqlOperator::IsNot)
+            return FinalizeParseStatus::Completed;
+
         //structs and arrays not supported in where expressions for now
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0460,
             "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());

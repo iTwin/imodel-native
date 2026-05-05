@@ -110,6 +110,8 @@ public:
 
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias,
         Utf8StringCR className, ECSqlType, bool isPolymorphicExp, connectivity::OSQLParseNode const& node);
+    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias,
+        Utf8StringCR className, ECSqlType, bool isPolymorphicExp, bool isInsideTypePredicate);
     BentleyStatus GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     BentleyStatus GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();

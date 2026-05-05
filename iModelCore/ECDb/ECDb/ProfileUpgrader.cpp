@@ -535,30 +535,31 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb, SchemaManager:
     context->AddSchemaPath(ecdbStandardSchemasFolder);
 
     if (SUCCESS != ReadECDbSystemSchema(*context, ecdb.GetDbFileName()))
-        return BE_SQLITE_ERROR;
+        { return BE_SQLITE_ERROR; }
 
     SchemaKey schemaKey("ECDbFileInfo", 2, 0, 1);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
-        return BE_SQLITE_ERROR;
+        { return BE_SQLITE_ERROR; }
 
     schemaKey = SchemaKey("ECDbMap", 2, 0, 4);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
-        return BE_SQLITE_ERROR;
+        { return BE_SQLITE_ERROR; }
 
     schemaKey = SchemaKey("ECDbMeta", 4, 0, 3);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
-        return BE_SQLITE_ERROR;
+        { return BE_SQLITE_ERROR; }
 
     schemaKey = SchemaKey("ECDbSchemaPolicies", 1, 0, 1);
     if (ecdb.Schemas().ContainsSchema("ECDbSchemaPolicies"))
         {
         if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
-            return BE_SQLITE_ERROR;
+            { return BE_SQLITE_ERROR; }
         }
 
     //import if already existing
     ecdb.Schemas().GetSchemaSync().DisableSchemaSync();
-    const auto importStatus = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), opts, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken());
+    auto const& schemasToImport = context->GetCache().GetSchemas();
+    const auto importStatus = ecdb.Schemas().ImportSchemas(schemasToImport, opts, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken());
     ecdb.Schemas().GetSchemaSync().ReEnableSchemaSync();
 
     if (SUCCESS != importStatus)

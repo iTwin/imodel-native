@@ -256,6 +256,7 @@ struct SelectClauseExp final : Exp
         SelectClauseExp() : Exp(Type::Selection) {}
 
         void AddProperty(std::unique_ptr<DerivedPropertyExp> propertyExp) { AddChild(std::move(propertyExp)); }
+        void PrependProperty(std::unique_ptr<DerivedPropertyExp> propertyExp) { PrependChild(std::move(propertyExp)); }
     };
 
 //=======================================================================================
@@ -460,6 +461,7 @@ struct SelectStatementExp final : QueryExp
 struct SubqueryRefExp final : RangeClassRefExp
     {
     friend struct ECSqlParser;
+    friend struct ECSqlRDParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
 	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;

@@ -256,7 +256,11 @@ DbResult ECDb::Impl::ExecuteDDL(Utf8CP ddl) const {
 void ECDb::Impl::RegisterECSqlPragmas() const
     {
     GetPragmaManager().Register(PragmaExplainQuery::Create());
-    GetPragmaManager().Register(DisqualifyTypeIndex::Create());
+    // DisqualifyTypeIndex: register handler first, then its vtab module (needs set reference)
+    auto disqualHandler = DisqualifyTypeIndex::Create();
+    auto* disqualPtr = static_cast<DisqualifyTypeIndex*>(disqualHandler.get());
+    GetPragmaManager().Register(std::move(disqualHandler));
+    (new DisqualifyTypeIndex::Module(m_ecdb, disqualPtr->m_disqualifiedClassSet))->Register();
     GetPragmaManager().Register(PragmaECDbVersion::Create());
     GetPragmaManager().Register(PragmaChecksum::Create());
     GetPragmaManager().Register(PragmaIntegrityCheck::Create());
@@ -267,6 +271,20 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
     GetPragmaManager().Register(PragmaECSqlVersion::Create());
     GetPragmaManager().Register(PragmaSqliteSql::Create());
+    // Register vtab modules for all pragmas
+    ECDbR ecdb = m_ecdb;
+    (new PragmaECDbVersionModule(ecdb))->Register();
+    (new PragmaECSqlVersionModule(ecdb))->Register();
+    (new PragmaExperimentalFeaturesModule(ecdb))->Register();
+    (new PragmaCheckECSqlWriteValuesModule(ecdb))->Register();
+    (new PragmaChecksumModule(ecdb))->Register();
+    (new PragmaParseTreeModule(ecdb))->Register();
+    (new PragmaSqliteSqlModule(ecdb))->Register();
+    (new PragmaExplainQueryModule(ecdb))->Register();
+    (new PragmaDbListModule(ecdb))->Register();
+    (new PragmaPurgeOrphanRelationshipsModule(ecdb))->Register();
+    (new PragmaIntegrityCheckModule(ecdb))->Register();
+    RegisterPragmaHelpModule(ecdb, GetPragmaManager());
     }
 
 //--------------------------------------------------------------------------------------

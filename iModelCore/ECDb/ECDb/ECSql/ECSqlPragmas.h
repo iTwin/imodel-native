@@ -7,6 +7,7 @@
 #include <Bentley/SHA1.h>
 #include <ECDb/ECSqlStatement.h>
 #include "PragmaECSqlPreparedStatement.h"
+#include "PragmaVirtualTab.h"
 
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -44,6 +45,26 @@ struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, ECClassCR, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, ECClassCR, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<DisqualifyTypeIndex>(); }
+
+    struct Module : BeSQLite::DbModule {
+        std::set<ECClassId>& m_set;
+        struct VTab : DbVirtualTable {
+            struct Cursor : PragmaVirtualTabCursor {
+                Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+                DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+                DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+            };
+            VTab(Module& m) : DbVirtualTable(m) {}
+            DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+            DbResult BestIndex(IndexInfo& info) override;
+        };
+        Module(ECDbR ecdb, std::set<ECClassId>& set)
+            : BeSQLite::DbModule(ecdb, "pragma_disqualify_type_index", "CREATE TABLE x(disqualify_type_index,class_id hidden,val hidden)")
+            , m_set(set) {}
+        DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+            out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+        }
+    };
 };
 
 //=======================================================================================
@@ -179,6 +200,238 @@ private:
     static DbResult ComputeSQLiteSchemaHash(Utf8String&, DbCR, Utf8CP, HashSize);
 public:
     static DbResult ComputeHash(Utf8StringR, DbCR, SourceType, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECDbVersionModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int, BeSQLite::DbValue*) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaECDbVersionModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo&) override { return BE_SQLITE_OK; }
+    };
+    PragmaECDbVersionModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_ecdb_ver", "CREATE TABLE x(current,file)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECSqlVersionModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int, BeSQLite::DbValue*) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaECSqlVersionModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo&) override { return BE_SQLITE_OK; }
+    };
+    PragmaECSqlVersionModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_ecsql_ver", "CREATE TABLE x(ecsql_ver)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaExperimentalFeaturesModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaExperimentalFeaturesModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    PragmaExperimentalFeaturesModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_experimental_features_enabled", "CREATE TABLE x(experimental_features_enabled,val hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaCheckECSqlWriteValuesModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaCheckECSqlWriteValuesModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    PragmaCheckECSqlWriteValuesModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_validate_ecsql_writes", "CREATE TABLE x(validate_ecsql_writes,val hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaChecksumModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaChecksumModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    PragmaChecksumModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_checksum", "CREATE TABLE x(sha3_256,val hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaParseTreeModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaParseTreeModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    PragmaParseTreeModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_parse_tree", "CREATE TABLE x(val,ecsql hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaSqliteSqlModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaSqliteSqlModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    PragmaSqliteSqlModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_sqlite_sql", "CREATE TABLE x(sqlite_sql,ecsql hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaExplainQueryModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            std::vector<std::vector<PragmaColumnValue>> m_rows;
+            size_t m_rowIdx = 0;
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override;
+        };
+        VTab(PragmaExplainQueryModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    PragmaExplainQueryModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_explain_query", "CREATE TABLE x(id,parent,notused,detail,ecsql hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaDbListModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            std::vector<std::vector<PragmaColumnValue>> m_rows;
+            size_t m_rowIdx = 0;
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int, BeSQLite::DbValue*) override;
+            DbResult Next() override;
+        };
+        VTab(PragmaDbListModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo&) override { return BE_SQLITE_OK; }
+    };
+    PragmaDbListModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_db_list", "CREATE TABLE x(sno,alias,fileName,profile)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaPurgeOrphanRelationshipsModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int, BeSQLite::DbValue*) override;
+            DbResult Next() override { m_eof = true; return BE_SQLITE_OK; }
+        };
+        VTab(PragmaPurgeOrphanRelationshipsModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo&) override { return BE_SQLITE_OK; }
+    };
+    PragmaPurgeOrphanRelationshipsModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_purge_orphan_relationships", "CREATE TABLE x(status)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaIntegrityCheckModule : BeSQLite::DbModule {
+    struct VTab : DbVirtualTable {
+        struct Cursor : PragmaVirtualTabCursor {
+            std::vector<std::vector<PragmaColumnValue>> m_rows;
+            size_t m_rowIdx = 0;
+            Cursor(VTab& vt) : PragmaVirtualTabCursor(vt) {}
+            DbResult Filter(int, const char*, int argc, BeSQLite::DbValue* argv) override;
+            DbResult Next() override;
+        };
+        VTab(PragmaIntegrityCheckModule& m) : DbVirtualTable(m) {}
+        DbResult Open(DbCursor*& cur) override { cur = new Cursor(*this); return BE_SQLITE_OK; }
+        DbResult BestIndex(IndexInfo& info) override;
+    };
+    // Superset schema: 20 result columns + 1 hidden arg
+    // sno(0), check_name(1), result(2), elapsed_sec(3), schema(4), type(5), name(6),
+    // issue(7), table_name(8), col(9), id(10), class(11), property(12), nav_id(13),
+    // nav_classId(14), primary_class(15), key_id(16), key_classId(17), class_id(18),
+    // MissingRowInTables(19), check_arg(20, hidden)
+    PragmaIntegrityCheckModule(ECDbR ecdb) : BeSQLite::DbModule(ecdb, "pragma_integrity_check",
+        "CREATE TABLE x(sno,check_name,result,elapsed_sec,schema,type,name,issue,table_name,col,id,class,property,nav_id,nav_classId,primary_class,key_id,key_classId,class_id,MissingRowInTables,check_arg hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int, const char* const*) override {
+        out = new VTab(*this); conf.SetTag(Config::Tags::Innocuous); return BE_SQLITE_OK;
+    }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

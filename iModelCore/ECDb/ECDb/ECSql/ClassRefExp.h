@@ -189,6 +189,7 @@ struct MemberFunctionCallExp;
 struct ClassNameExp final : RangeClassRefExp
     {
 friend struct ECSqlParser;
+friend struct ECSqlRDParser;
 public:
     //=======================================================================================
     //! @bsiclass
@@ -240,6 +241,7 @@ public:
 struct TableValuedFunctionExp : RangeClassRefExp
     {
 friend struct ECSqlParser;
+friend struct ECSqlRDParser;
 private:
     ECN::ECEntityClassCP m_virtualEntityClass = nullptr;
     Utf8String m_schemaName;
