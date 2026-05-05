@@ -27,6 +27,7 @@ ipch
 # So we'll ignore specific files we know we don't want tracked.
 .vscode/c_cpp_properties.json
 .vscode/settings.json
+.vscode/browse.vc.db*
 
 # local backup files
 *.orig

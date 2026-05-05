@@ -2138,7 +2138,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
+SchemaWriteStatus ECClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -2275,7 +2275,7 @@ bool ECClass::_ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVer
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     return _WriteXml (xmlWriter, ecXmlVersion, EC_CLASS_ELEMENT, nullptr, true);
     }
@@ -2373,7 +2373,7 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECEntityClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
@@ -2663,7 +2663,7 @@ bool ECEntityClass::IsOrAppliesTo(ECEntityClassCP entityClass) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
@@ -2715,7 +2715,7 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(pugi::xml_node class
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECStructClass::_WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
@@ -3500,7 +3500,7 @@ bool ECRelationshipConstraint::ToJson(BeJsValue outValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECRelationshipConstraint::WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -4067,7 +4067,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECRelationshipClass::_WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;

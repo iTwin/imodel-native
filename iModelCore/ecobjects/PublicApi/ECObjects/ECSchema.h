@@ -97,7 +97,7 @@ protected:
     ECObjectsStatus SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
     CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
+    SchemaWriteStatus WriteCustomAttributes(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     void WriteFilteredCustomAttributes(BeJsValue& parentNode, bool(*skipClassPredicate)(Utf8CP)) const;
     void WriteCustomAttributes(BeJsValue& parentNode) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
@@ -330,8 +330,8 @@ protected:
     SchemaReadStatus                    ReadMinMaxXml(pugi::xml_node propertyNode);
 
     virtual SchemaReadStatus            _ReadXml (pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext);
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
+    virtual SchemaWriteStatus           _WriteXml (BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion);
+    SchemaWriteStatus                   _WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
 
     virtual bool           _ToJson(BeJsValue outValue, bool isInherited) const;
     bool                   _ToJson(BeJsValue outValue, bool isInherited, bvector<bpair<Utf8String, Json::Value>> attributes) const;
@@ -574,7 +574,7 @@ private:
     PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr) {};
 protected:
     SchemaReadStatus _ReadXml(pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     bool _ToJson(BeJsValue outValue, bool isInherited) const override;
 
@@ -631,7 +631,7 @@ private:
 
 protected:
     SchemaReadStatus _ReadXml(pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     bool _ToJson(BeJsValue outValue, bool isInherited) const override;
 
@@ -674,7 +674,7 @@ protected:
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
     SchemaReadStatus            _ReadXml (pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus           _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
     bool                        _IsArray () const override {return true;}
     ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
@@ -831,7 +831,7 @@ protected:
 
 protected:
     SchemaReadStatus _ReadXml(pugi::xml_node propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     bool _ToJson(BeJsValue outValue, bool isInherited) const override;
 
     bool _IsNavigation() const override {return true;}
@@ -1064,7 +1064,7 @@ private:
     ECObjectsStatus SetTypeName(Utf8CP typeName);
 
     SchemaReadStatus ReadXml(pugi::xml_node enumerationNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -1167,7 +1167,7 @@ private:
     bool Verify() const;
 
     SchemaReadStatus ReadXml(pugi::xml_node kindOfQuantityNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -1339,7 +1339,7 @@ private:
     ~PropertyCategory() {};
 
     SchemaReadStatus ReadXml(pugi::xml_node propertyCategoryNode, ECSchemaReadContextR context);
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     bool ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -1557,8 +1557,8 @@ protected:
     SchemaReadStatus _ReadBaseClassFromXml (pugi::xml_node childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
     SchemaReadStatus _ReadPropertyFromXmlAndAddToClass(ECPropertyP ecProperty, pugi::xml_node childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
 
-    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
+    virtual SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> attributes) const;
@@ -1821,7 +1821,7 @@ protected:
     ECEntityClass(ECSchemaCR schema) : ECClass(ECClassType::Entity, schema) {}
     virtual ~ECEntityClass() {}
 
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::EntityClass;}
     ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
@@ -1876,7 +1876,7 @@ private:
 
 protected:
     SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode) override;
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::CustomAttributeClass;}
 
@@ -1914,7 +1914,7 @@ private:
     bool _Validate() const override {return true;}
 
 protected:
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructClass;}
 };
 
@@ -2014,7 +2014,7 @@ private:
     ECObjectsStatus SetAbstractConstraint(ECClassCR abstractConstraint);
     ECObjectsStatus SetAbstractConstraint(Utf8CP value, bool validate);
 
-    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteXml(BePugiXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus ReadXml(pugi::xml_node constraintNode, ECSchemaReadContextR schemaContext);
 
     bool ToJson(BeJsValue outValue);
@@ -2191,7 +2191,7 @@ private:
     bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
 
 protected:
-    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     SchemaReadStatus _ReadXmlAttributes(pugi::xml_node classNode) override;
     SchemaReadStatus _ReadXmlContents(pugi::xml_node classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
@@ -3368,7 +3368,7 @@ public:
     ECOBJECTS_EXPORT ECAppData& GetAppData() const;
 
     //! Used for debugging purposes.
-    //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
+    //! @param[in] showMessages Controls whether messages are displayed during XML operations. Defaults to true.
     //! @param[in] doAssert Controls whether asserts should be tested or not.  Defaults to true.
     ECOBJECTS_EXPORT static void SetErrorHandling (bool showMessages, bool doAssert);
 
