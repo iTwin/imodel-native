@@ -301,3 +301,77 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
         }
       }
     }
+
+TEST_F(SchemaRemapTest, MajorVersionUpgradeRemovesOverflowProperties)
+  {
+  SetupSeedProject();
+
+  auto ctx = ECN::ECSchemaReadContext::CreateContext();
+  ctx->AddSchemaLocater(m_db->GetSchemaLocater());
+
+  BeFileName searchDir;
+  BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+  searchDir.AppendToPath(L"ECSchemas");
+
+  ctx->AddSchemaPath(BeFileName(searchDir).AppendToPath(L"Dgn"));
+  ctx->AddSchemaPath(BeFileName(searchDir).AppendToPath(L"Standard"));
+
+  // Initial state: "TestSchema.1.0.0" with "TestElement" class having more than 32 properties which will trigger the creation of an overflow table
+  {
+  constexpr Utf8CP schemaXmlBase = R"schema(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+      <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA"/>
+
+      <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.1.0.0"/>
+      </ECCustomAttributes>
+
+      <ECEntityClass typeName="TestElement">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+
+        <ECProperty propertyName="Prop0" typeName="string"/>
+        %s
+
+      </ECEntityClass>
+    </ECSchema>
+  )schema";
+  
+  Utf8String allProperties;
+  for (int i = 1; i <= 35; ++i)
+    allProperties += Utf8PrintfString("<ECProperty propertyName=\"Prop%d\" typeName=\"string\"/>\n", i);
+  const Utf8PrintfString schemaXml(schemaXmlBase, allProperties.c_str());
+
+  ECSchemaPtr initialSchema;
+  ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml.c_str(), *ctx));
+  ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({ initialSchema.get() }, true));
+  EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initial schema import"));
+  ASSERT_TRUE(m_db->TableExists("bis_GeometricElement3d_Overflow"));
+  }
+
+  // Major version upgrade "TestSchema.2.0.0" with "TestElement" class which deletes properties
+  {
+  constexpr Utf8CP schemaXml = R"schema(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+      <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA"/>
+
+      <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.1.0.0"/>
+      </ECCustomAttributes>
+
+      <ECEntityClass typeName="TestElement">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECProperty propertyName="Prop0" typeName="string"/>
+      </ECEntityClass>
+
+    </ECSchema>
+  )schema";
+
+  ECSchemaPtr schemaUpgrade;
+  ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaUpgrade, schemaXml, *ctx));
+
+  // Major-version schema upgrade that removes overflow properties
+  EXPECT_EQ(SchemaStatus::Success, m_db->ImportSchemas({ schemaUpgrade.get() }, true)) << "Major-version schema upgrade that removes overflow properties should succeed";
+  }
+  }
