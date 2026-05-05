@@ -73,7 +73,7 @@ SchemaReadStatus UnitSystem::ReadXml(pugi::xml_node unitSystemNode, ECSchemaRead
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus UnitSystem::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus UnitSystem::WriteXml(BePugiXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;
