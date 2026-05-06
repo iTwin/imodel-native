@@ -27,11 +27,12 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
     if (s == nullptr)
         return 0;
     printf (" string form: (%s)\n", s);
-    int value;
-    if (1 == BeStringUtilities::Sscanf (s, "%d", &value))
+    char* unparsed;
+    errno = 0;
+    if (long parsed = std::strtol(s, &unparsed, 10) && errno == 0 && unparsed != s)
         {
-        printf ("GTEST_GEOMLIBS_VERBSOSE=%d\n", value);
-        return value;
+        printf ("GTEST_GEOMLIBS_VERBOSE=%ld\n", parsed);
+        return parsed;
         }
     // not recognized format  . . . call it noisy
     return 100;

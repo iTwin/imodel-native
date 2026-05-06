@@ -511,9 +511,6 @@ public:
     //! Performs a quick sort.
     BENTLEYDLL_EXPORT static void Qsort(void* base, size_t num, size_t width, int(__cdecl* compare)(void*, const void*, const void*), void* context);
 
-    //!Reads formatted data from a string.
-    BENTLEYDLL_EXPORT static int Sscanf(const char *buffer, const char *format, ...);
-
     //! Tokenizes a string based on the provided delimiters, and adds a WString for each token into the provided collection. This essentially wraps wcstok for more convenient access.
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
     //! @param[in]      delimiters  One or more delimiters; cannot be NULL or empty
