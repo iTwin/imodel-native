@@ -4787,9 +4787,6 @@ EXPORTS
   HMAC_Init_ex
   HMAC_Update
   HMAC_size
-  _MallocaComputeSize
-  _MarkAllocaS
-  _freea
   ossl_safe_getenv
   ossl_ffc_params_FIPS186_2_validate
   ossl_ffc_params_FIPS186_4_validate
@@ -7741,22 +7738,8 @@ EXPORTS
   BIO_lookup
   BIO_lookup_ex
   BIO_parse_hostserv
-  WspiapiClone
-  WspiapiFreeAddrInfo
-  WspiapiGetAddrInfo
-  WspiapiGetNameInfo
-  WspiapiLegacyFreeAddrInfo
-  WspiapiLegacyGetAddrInfo
-  WspiapiLegacyGetNameInfo
-  WspiapiLoad
-  WspiapiLookupNode
-  WspiapiNewAddrInfo
-  WspiapiParseV4Address
-  WspiapiQueryDNS
-  WspiapiStrdup
   _vsprintf_s_l
   bio_lookup_lock
-  gai_strerrorA
   sprintf_s
   BIO_f_readbuffer
   BIO_f_prefix

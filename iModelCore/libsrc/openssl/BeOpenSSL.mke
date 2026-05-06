@@ -2533,6 +2533,13 @@ DLM_MODULE_DEF              = $(DLM_OBJECT_DEST)$(DLM_NAME).def
     LINKER_LIBRARIES + advapi32.lib
     LINKER_LIBRARIES + crypt32.lib
     LINKER_LIBRARIES + user32.lib
+    
+    # For Windows Clang: Add legacy stdio definitions library
+    # OpenSSL uses legacy *_l locale-specific functions: _vsnprintf_l, _vsprintf_l, _vsscanf_l, _vfprintf_l
+    # and the non-standard _vsnprintf (pre-C99)
+    %if $(BUILD_TOOLSET) == "WINDOWS_CLANG"
+        LINKER_LIBRARIES + legacy_stdio_definitions.lib
+    %endif
 %endif
 
 %include $(sharedMki)linkLibrary.mki
