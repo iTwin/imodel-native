@@ -935,6 +935,8 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
     if(infos.empty())
         return SUCCESS;
 
+    bool tempTableCreated = false;
+
     for(auto& remappedInfos : infos)
         {
         if(remappedInfos.empty())
@@ -954,11 +956,30 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
             updateStmt.append(Utf8PrintfString(" WHERE([ECClassId]=%s)", first->m_cleanedMapping.m_classId.ToHexStr().c_str()));
             ctx.GetDataTransform().Append(Utf8PrintfString("Moving remapped data between columns (circular) for %s", first->ToString().c_str()), updateStmt);
             }
-        else if (SUCCESS != ResolveRemappedCircularData(remappedInfos))
+        else
             {
-            return ERROR;
+            if (!tempTableCreated)
+                {
+                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(Utf8PrintfString("DROP TABLE IF EXISTS [%s]", TEMP_TABLE_ECDB_REMAP).c_str()) ||
+                    BE_SQLITE_OK != m_ecdb.ExecuteSql(Utf8PrintfString("CREATE TEMP TABLE [%s] ([id] INTEGER, [val])", TEMP_TABLE_ECDB_REMAP).c_str()))
+                    {
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
+                        "Cannot perform cross-table circular remap: failed to create shared temp table '%s'.", TEMP_TABLE_ECDB_REMAP);
+                    return ERROR;
+                    }
+                tempTableCreated = true;
+                }
+
+            if (SUCCESS != ResolveRemappedCircularData(remappedInfos, ctx))
+                return ERROR;
             }
         }
+
+    // Queue the final drop of the temp table
+    if (tempTableCreated)
+        ctx.GetDataTransform().Append(
+            Utf8PrintfString("Circular remap: drop temp table '%s'.", TEMP_TABLE_ECDB_REMAP),
+            Utf8PrintfString("DROP TABLE IF EXISTS [%s]", TEMP_TABLE_ECDB_REMAP));
 
     return SUCCESS;
     }
@@ -966,15 +987,15 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<RemappedColumnInfo*>& remappedColumnCycle)
+BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<RemappedColumnInfo*>& remappedColumnCycle, SchemaImportContext& ctx)
     {
     /*
      * Logic to resolve circular remaps:
-     * 
+     *
      * Example: Consider a circular column mapping across the class and overflow tables:
-     *      
+     *
      *      js16 -> os7 -> os35 -> os71 -> os3 -> js16
-     * 
+     *
      * Step 1: Create a temp table and save the js16 value to it ecdb_remap_temp = js16
      * Step 2: Iterate over the cycle in reverse while moving and nulling out the values:
      *      a) js16 = os3 ; os3 = NULL
@@ -986,7 +1007,7 @@ BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<Remapp
      */
     BeAssert(!remappedColumnCycle.empty());
 
-    // Get the mapping information for the first value
+    // Get the mapping information for the first value of the cycle
     RemappedColumnInfo& firstValue = *remappedColumnCycle.front();
     const Utf8String firstOldIdColumn = GetInstanceIdColumnName(firstValue.m_cleanedMapping.m_tableName);
     const Utf8String classIdHex = firstValue.m_cleanedMapping.m_classId.ToHexStr();
@@ -998,27 +1019,14 @@ BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<Remapp
         return ERROR;
         }
 
-    // Create a temp table to hold the original mapping information for the first value
-    static constexpr Utf8CP tempTableName = "ecdb_remap_temp";
-    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(Utf8PrintfString("DROP TABLE IF EXISTS [%s]", tempTableName).c_str()) ||
-        BE_SQLITE_OK != m_ecdb.ExecuteSql(Utf8PrintfString("CREATE TEMP TABLE [%s] ([id] INTEGER, [val])", tempTableName).c_str()))
-        {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
-            "Cannot perform cross-table circular remap for property %s: failed to create temp table.",
-            firstValue.ToString().c_str());
-        return ERROR;
-        }
-
-    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(Utf8PrintfString(
-            "INSERT INTO [%s] SELECT [%s], [%s] FROM [%s] WHERE ([ECClassId]=%s)",
-            tempTableName, firstOldIdColumn.c_str(), firstValue.m_cleanedMapping.m_columnName.c_str(),
-            firstValue.m_cleanedMapping.m_tableName.c_str(), classIdHex.c_str()).c_str()))
-        {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
-            "Cannot perform cross-table circular remap for property %s: failed to save to the temp table.",
-            firstValue.ToString().c_str());
-        return ERROR;
-        }
+    // Save the values into the temp table
+    ctx.GetDataTransform().Append(
+        Utf8PrintfString("Circular remap: save first column [%s].[%s] into temp table '%s'.",
+            firstValue.m_cleanedMapping.m_tableName.c_str(), firstValue.m_cleanedMapping.m_columnName.c_str(), TEMP_TABLE_ECDB_REMAP),
+        Utf8PrintfString("INSERT INTO [%s] SELECT [%s], [%s] FROM [%s] WHERE ([ECClassId]=%s) AND [%s] IS NOT NULL",
+            TEMP_TABLE_ECDB_REMAP, firstOldIdColumn.c_str(), firstValue.m_cleanedMapping.m_columnName.c_str(),
+            firstValue.m_cleanedMapping.m_tableName.c_str(), classIdHex.c_str(),
+            firstValue.m_cleanedMapping.m_columnName.c_str()));
 
     // Iterate over the cycle in reverse and skip the first value as we handle it separately
     for (auto i = remappedColumnCycle.rbegin(); i != std::prev(remappedColumnCycle.rend()); ++i)
@@ -1026,11 +1034,17 @@ BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<Remapp
         RemappedColumnInfo& currentValue = **i;
 
         Utf8String moveSql;
+        Utf8String nullSql;
         if (currentValue.m_isSameTableName)
             {
-            moveSql = Utf8PrintfString("UPDATE [%s] SET [%s]=[%s] WHERE ([ECClassId]=%s)",
-                currentValue.m_newTableName.c_str(), currentValue.m_newColumnName.c_str(),
-                currentValue.m_cleanedMapping.m_columnName.c_str(), classIdHex.c_str());
+            moveSql = Utf8PrintfString(
+                "UPDATE [%s] SET [%s]=[%s], [%s]=NULL WHERE ([ECClassId]=%s) AND [%s] IS NOT NULL",
+                currentValue.m_newTableName.c_str(),
+                currentValue.m_newColumnName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str(),
+                currentValue.m_cleanedMapping.m_columnName.c_str(),
+                classIdHex.c_str(),
+                currentValue.m_cleanedMapping.m_columnName.c_str());
+            nullSql = "";
             }
         else
             {
@@ -1043,36 +1057,39 @@ BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<Remapp
                     currentValue.ToString().c_str(), currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_newTableName.c_str());
                 return ERROR;
                 }
-            moveSql = Utf8PrintfString("UPDATE [%s] SET [%s]=(SELECT [%s] FROM [%s] WHERE [%s].[%s]=[%s].[%s]) WHERE ([ECClassId]=%s)",
+
+            moveSql = Utf8PrintfString(
+                "UPDATE [%s] SET [%s]=(SELECT [%s] FROM [%s] WHERE [%s].[%s]=[%s].[%s] AND [%s].[%s] IS NOT NULL) WHERE ([ECClassId]=%s)",
                 currentValue.m_newTableName.c_str(), currentValue.m_newColumnName.c_str(),
                 currentValue.m_cleanedMapping.m_columnName.c_str(), currentValue.m_cleanedMapping.m_tableName.c_str(),
                 currentValue.m_cleanedMapping.m_tableName.c_str(), currentOldIdColumn.c_str(),
                 currentValue.m_newTableName.c_str(), currentNewIdColumn.c_str(),
-                classIdHex.c_str());
-            }
-
-        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(moveSql.c_str()))
-            {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
-                "Cannot perform cross-table circular remap for property %s: failed to move [%s].[%s] to [%s].[%s].",
-                currentValue.ToString().c_str(),
                 currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str(),
-                currentValue.m_newTableName.c_str(), currentValue.m_newColumnName.c_str());
-            return ERROR;
+                classIdHex.c_str());
+
+            nullSql = Utf8PrintfString(
+                "UPDATE [%s] SET [%s]=NULL WHERE ([ECClassId]=%s) AND [%s] IS NOT NULL",
+                currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str(),
+                classIdHex.c_str(),
+                currentValue.m_cleanedMapping.m_columnName.c_str());
             }
 
-        const Utf8String nullSql = Utf8PrintfString("UPDATE [%s] SET [%s]=NULL WHERE ([ECClassId]=%s)",
-            currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str(), classIdHex.c_str());
-        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(nullSql.c_str()))
-            {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
-                "Cannot perform cross-table circular remap for property %s: failed to null source column [%s].[%s].",
-                currentValue.ToString().c_str(),
-                currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str());
-            return ERROR;
-            }
+        // Move the data
+        ctx.GetDataTransform().Append(
+            Utf8PrintfString("Circular remap: move [%s].[%s] -> [%s].[%s].",
+                currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str(),
+                currentValue.m_newTableName.c_str(), currentValue.m_newColumnName.c_str()),
+            moveSql);
+
+        // Null the source when move is cross-table. Same table nulling is done in the move statement itself
+        if (!nullSql.empty())
+            ctx.GetDataTransform().Append(
+                Utf8PrintfString("Circular remap: null source [%s].[%s].",
+                    currentValue.m_cleanedMapping.m_tableName.c_str(), currentValue.m_cleanedMapping.m_columnName.c_str()),
+                nullSql);
         }
 
+    // Restore the saved first value from the temp table to its destination
     const Utf8String firstValueNewIdCol = GetInstanceIdColumnName(firstValue.m_newTableName);
     if (firstValueNewIdCol.empty())
         {
@@ -1082,22 +1099,20 @@ BentleyStatus RemapManager::ResolveRemappedCircularData(const std::vector<Remapp
         return ERROR;
         }
 
-    // Write the saved first value's mapping information from the temp table
-    const Utf8String restoreSql = Utf8PrintfString(
-        "UPDATE [%s] SET [%s]=(SELECT [val] FROM [%s] WHERE [%s].[id]=[%s].[%s]) WHERE ([ECClassId]=%s)",
-        firstValue.m_newTableName.c_str(), firstValue.m_newColumnName.c_str(),
-        tempTableName, tempTableName,
-        firstValue.m_newTableName.c_str(), firstValueNewIdCol.c_str(),
-        classIdHex.c_str());
-    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(restoreSql.c_str()))
-        {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
-            "Cannot perform cross-table circular remap for property %s: failed to restore saved value to [%s].[%s].",
-            firstValue.ToString().c_str(), firstValue.m_newTableName.c_str(), firstValue.m_newColumnName.c_str());
-        return ERROR;
-        }
+    ctx.GetDataTransform().Append(
+        Utf8PrintfString("Circular remap: restore saved value to [%s].[%s] from temp table '%s'.",
+            firstValue.m_newTableName.c_str(), firstValue.m_newColumnName.c_str(), TEMP_TABLE_ECDB_REMAP),
+        Utf8PrintfString("UPDATE [%s] SET [%s]=(SELECT [val] FROM [%s] WHERE [%s].[id]=[%s].[%s]) WHERE ([ECClassId]=%s)",
+            firstValue.m_newTableName.c_str(), firstValue.m_newColumnName.c_str(),
+            TEMP_TABLE_ECDB_REMAP, TEMP_TABLE_ECDB_REMAP,
+            firstValue.m_newTableName.c_str(), firstValueNewIdCol.c_str(),
+            classIdHex.c_str()));
 
-    m_ecdb.ExecuteSql(Utf8PrintfString("DROP TABLE IF EXISTS [%s]", tempTableName).c_str());
+    // Clear the temp table so it is empty for the next cycle
+    ctx.GetDataTransform().Append(
+        Utf8PrintfString("Circular remap: clear temp table '%s'.", TEMP_TABLE_ECDB_REMAP),
+        Utf8PrintfString("DELETE FROM [%s]", TEMP_TABLE_ECDB_REMAP));
+
     return SUCCESS;
     }
 

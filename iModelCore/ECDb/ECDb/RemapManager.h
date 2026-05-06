@@ -12,6 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 Check README_Transform.md for information about the logic here
 */
 
+#define TEMP_TABLE_ECDB_REMAP "temp_table_ecdb_remap"
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -166,7 +167,7 @@ private:
     BentleyStatus SortRemapInfos(std::vector<RemappedColumnInfo*>& sortedInfos, std::vector<std::vector<RemappedColumnInfo*>>& circularUpdates, std::map<Utf8String, RemappedColumnInfo*>& remainingInfos);
     BentleyStatus UpdateRemappedData(std::vector<RemappedColumnInfo*>& infos, SchemaImportContext& ctx);
     BentleyStatus UpdateRemappedCircularData(std::vector<std::vector<RemappedColumnInfo*>>& infos, SchemaImportContext& ctx);
-    BentleyStatus ResolveRemappedCircularData(const std::vector<RemappedColumnInfo*>& cycle);
+    BentleyStatus ResolveRemappedCircularData(const std::vector<RemappedColumnInfo*>& cycle, SchemaImportContext& ctx);
     Utf8String GetInstanceIdColumnName(Utf8StringCR tableName);
 
 public:

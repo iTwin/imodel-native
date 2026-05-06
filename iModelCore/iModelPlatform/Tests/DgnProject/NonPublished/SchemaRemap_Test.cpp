@@ -302,7 +302,7 @@ TEST_F(SchemaRemapTest, DeletePropertyOverrideAndDerivedClassSimultaneously)
       }
     }
 
-TEST_F(SchemaRemapTest, MajorVersionUpgradeRemovesOverflowProperties)
+TEST_F(SchemaRemapTest, MajorVersionUpgradeRemovesDataPropertiesFromOverflowTable)
   {
   SetupSeedProject();
 
