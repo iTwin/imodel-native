@@ -1,7 +1,8 @@
 import { expect } from "chai";
 import * as os from "os";
+import { DbResult } from "@itwin/core-bentley";
 import {
-  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, DbResult,
+  DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
   ECSqlReader, IModelError, QueryBinder, QueryOptions,
 } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
@@ -47,7 +48,7 @@ class ConcurrentQueryHelper {
   public static async * query(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, ecsql: string, params?: QueryBinder, options?: QueryOptions & { delay?: number }): AsyncIterableIterator<any> {
     const reader = this.createQueryReader(conn, ecsql, params, options);
     while (await reader.step()) {
-      yield reader.formatCurrentRow();
+      yield reader.current.toRow();
     }
   }
   public static resetConfig(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, config?: IModelJsNative.QueryConfig): IModelJsNative.QueryConfig {
