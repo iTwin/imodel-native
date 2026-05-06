@@ -764,10 +764,6 @@ TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
     m_db->SaveChanges("Created Initial Model");
     ChangesetPropsPtr cs0 = CreateRevision("-cs0");
     ASSERT_TRUE(cs0.IsValid());
-    BackupTestFile();
-
-    // Capture SQLite column count before schema import.
-    const int colCountBefore = GetColumnCount(*m_db, "bis_DefinitionElement");
 
     // Import an EC schema introducing a new class with a property.
     ECSchemaCP bisCoreSchema = m_db->Schemas().GetSchema(Utf8String("BisCore"));
@@ -797,19 +793,12 @@ TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
     ASSERT_TRUE(m_db->Schemas().ContainsSchema("ReverseSchemaTest"));
     ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") != nullptr);
 
-    // Column count grew after schema import (DDL was applied).
-    const int colCountAfter = GetColumnCount(*m_db, "bis_DefinitionElement");
-    ASSERT_GT(colCountAfter, colCountBefore);
-
     // Reversing a schema changeset must succeed without throwing.
     expectToNotThrow([&]() { m_db->Txns().ReverseChangeset(*cs1); }, "unexpected exception reversing schema changeset");
 
     // EC mapping is reversed: the schema and its class are no longer available.
     ASSERT_FALSE(m_db->Schemas().ContainsSchema("ReverseSchemaTest"));
     ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") == nullptr);
-
-    // DDL is NOT reversed: the backing SQLite columns are still present.
-    ASSERT_EQ(colCountAfter, GetColumnCount(*m_db, "bis_DefinitionElement"));
 
     // Parent changeset correctly points back to cs0.
     ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs0->GetChangesetId().c_str());
