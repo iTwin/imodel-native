@@ -1615,11 +1615,11 @@ int             addToBackwards
 
         alloc3dSize = chnP->number * sizeof(DPoint3d);
         alloc2dSize = chnP->number * sizeof(DPoint2d);
-        memcpy (txyzP, chnP->xyz,   alloc3dSize);
-        memcpy (tn0P,  chnP->norm0, alloc3dSize);
-        memcpy (tn1P,  chnP->norm1, alloc3dSize);
-        memcpy (tuv0P, chnP->uv0,   alloc2dSize);
-        memcpy (tuv1P, chnP->uv1,   alloc2dSize);
+        BeStringUtilities::Memcpy (txyzP, alloc3dSize, chnP->xyz,   alloc3dSize);
+        BeStringUtilities::Memcpy (tn0P, alloc3dSize, chnP->norm0, alloc3dSize);
+        BeStringUtilities::Memcpy (tn1P, alloc3dSize, chnP->norm1, alloc3dSize);
+        BeStringUtilities::Memcpy (tuv0P, alloc2dSize, chnP->uv0,   alloc2dSize);
+        BeStringUtilities::Memcpy (tuv1P, alloc2dSize, chnP->uv1, alloc2dSize);
 
         /* Free old link and replace with new combined link */
         if (chnP->xyz)      msbspline_free (chnP->xyz);
@@ -1627,7 +1627,7 @@ int             addToBackwards
         if (chnP->norm1)    msbspline_free (chnP->norm1);
         if (chnP->uv0)      msbspline_free (chnP->uv0);
         if (chnP->uv1)      msbspline_free (chnP->uv1);
-        memcpy (chnP, &tmpLink, sizeof(IntLink));
+        BeStringUtilities::Memcpy (chnP, sizeof(IntLink), &tmpLink, sizeof(IntLink));
 
         /* Free link since the information was copied */
         if (link->xyz)      msbspline_free (link->xyz);
@@ -1643,7 +1643,7 @@ int             addToBackwards
             {
             if (NULL == (*chain = (IntLink*)msbspline_malloc (sizeof(IntLink), HEAPSIG_BSSI)))
                 return ERROR;
-            memcpy (*chain, link, sizeof(IntLink));
+            BeStringUtilities::Memcpy (*chain, sizeof(IntLink), link, sizeof(IntLink));
             (*chain)->last = NULL;
             (*chain)->next = NULL;
             }
@@ -1653,7 +1653,7 @@ int             addToBackwards
                 ;
             if (NULL == (chnP->next = (IntLink*)msbspline_malloc (sizeof(IntLink), HEAPSIG_BSSI)))
                 return ERROR;
-            memcpy (chnP->next, link, sizeof(IntLink));
+            BeStringUtilities::Memcpy (chnP->next, sizeof(IntLink), link, sizeof(IntLink));
             chnP->next->last = chnP;
             chnP->next->next = NULL;
             }
@@ -2338,19 +2338,19 @@ MSBsplineSurface    *surf1
                 allocSize = tmpP->number * sizeof(DPoint2d);
                 if (NULL == (tmpP->uv0 = (DPoint2d*)msbspline_malloc (allocSize, HEAPSIG_BSSI)))
                     goto wrapup;
-                memcpy (tmpP->uv0, chnP->uv0, allocSize);
+                BeStringUtilities::Memcpy (tmpP->uv0, allocSize, chnP->uv0, allocSize);
                 break;
             case CODE_UV1:
                 allocSize = tmpP->number * sizeof(DPoint2d);
                 if (NULL == (tmpP->uv1 = (DPoint2d*)msbspline_malloc (allocSize, HEAPSIG_BSSI)))
                     goto wrapup;
-                memcpy (tmpP->uv1, chnP->uv1, allocSize);
+                BeStringUtilities::Memcpy (tmpP->uv1, allocSize, chnP->uv1, allocSize);
                 break;
             case CODE_XYZ:
                 allocSize = tmpP->number * sizeof(DPoint3d);
                 if (NULL == (tmpP->xyz = (DPoint3d*)msbspline_malloc (allocSize, HEAPSIG_BSSI)))
                     goto wrapup;
-                memcpy (tmpP->xyz, chnP->xyz, allocSize);
+                BeStringUtilities::Memcpy (tmpP->xyz, allocSize, chnP->xyz, allocSize);
                 break;
             }
 
@@ -2386,19 +2386,19 @@ int             number
 )
     {
     if (to->uv0)
-        memcpy (to->uv0 + offsetTo, from->uv0 + offsetFrom, number * sizeof(DPoint2d));
+        BeStringUtilities::Memcpy (to->uv0 + offsetTo, number * sizeof(DPoint2d), from->uv0 + offsetFrom, number * sizeof(DPoint2d));
 
     if (to->uv1)
-        memcpy (to->uv1 + offsetTo, from->uv1 + offsetFrom, number * sizeof(DPoint2d));
+        BeStringUtilities::Memcpy (to->uv1 + offsetTo, number * sizeof(DPoint2d), from->uv1 + offsetFrom, number * sizeof(DPoint2d));
 
     if (to->xyz)
-        memcpy (to->xyz + offsetTo, from->xyz + offsetFrom, number * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (to->xyz + offsetTo, number * sizeof(DPoint3d), from->xyz + offsetFrom, number * sizeof(DPoint3d));
 
     if (to->norm0)
-        memcpy (to->norm0 + offsetTo, from->norm0 + offsetFrom, number * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (to->norm0 + offsetTo, number * sizeof(DPoint3d), from->norm0 + offsetFrom, number * sizeof(DPoint3d));
 
     if (to->norm1)
-        memcpy (to->norm1 + offsetTo, from->norm1 + offsetFrom, number * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (to->norm1 + offsetTo, number * sizeof(DPoint3d), from->norm1 + offsetFrom, number * sizeof(DPoint3d));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2417,7 +2417,7 @@ int             size
     for (toP = to, fromP = from + (number - 1) * size;
          fromP >= from;
          toP += size, fromP -= size)
-        memcpy (toP, fromP, size);
+        BeStringUtilities::Memcpy (toP, size, fromP, size);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2769,7 +2769,7 @@ int             closed
         if (NULL == (bnd.points = (DPoint2d*)BSIBaseGeom::Malloc (bnd.numPoints * sizeof(DPoint2d))))
             return ERROR;
 
-        memcpy (bnd.points, pts, numPts * sizeof(DPoint2d));
+        BeStringUtilities::Memcpy (bnd.points, numPts * sizeof(DPoint2d), pts, numPts * sizeof(DPoint2d));
         bnd.points[numPts] = bnd.points[0];
         }
     else if (closed == CLOSED_ON_EDGE)
@@ -2785,8 +2785,8 @@ int             closed
         if (NULL == (bnd.points = (DPoint2d*)BSIBaseGeom::Malloc (bnd.numPoints * sizeof(DPoint2d))))
             return ERROR;
 
-        memcpy (bnd.points, path, length * sizeof(DPoint2d));
-        memcpy (bnd.points+length, pts, numPts * sizeof(DPoint2d));
+        BeStringUtilities::Memcpy (bnd.points, length * sizeof(DPoint2d), path, length * sizeof(DPoint2d));
+        BeStringUtilities::Memcpy (bnd.points+length, numPts * sizeof(DPoint2d), pts, numPts * sizeof(DPoint2d));
         }
     else
         /* Ignore other cases for now */

@@ -723,7 +723,7 @@ explicit CurvePrimitiveAkimaCurve(MSBsplineCurvePtr &capturedCurve, DPoint3dCP p
     : CurvePrimitiveBsplineCurve ()
     {
     m_points.resize (nPoints);
-    memcpy (&m_points[0], points, nPoints * sizeof (*points));
+    BeStringUtilities::Memcpy (&m_points[0], nPoints * sizeof(*points), points, nPoints * sizeof (*points));
     m_curve = capturedCurve;
     }
 

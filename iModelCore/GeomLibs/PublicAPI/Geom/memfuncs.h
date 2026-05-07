@@ -121,7 +121,6 @@ DPoint3d    **paramPP,
 bvector<DPoint3d> const &source
 );
 
-
 };
 #endif
 END_BENTLEY_GEOMETRY_NAMESPACE

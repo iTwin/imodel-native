@@ -508,7 +508,7 @@ VuSortFunction0 compare
 )
     {
     if (headerP->size () > 1)
-        qsort (&headerP->at(0), (int)headerP->size (), sizeof (VuP), (int (*)(const void *,const void *)) compare);
+        std::sort(&headerP->at(0), &headerP->at(0) + headerP->size(), [compare](const VuP& a, const VuP& b) { return compare(&a, &b) < 0; });
     }
 
 #ifdef CompileSortBuckets

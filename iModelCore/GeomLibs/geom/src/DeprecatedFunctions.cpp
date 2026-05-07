@@ -2543,7 +2543,7 @@ int          n
         pDest[i]= pSource[i];
         }
 #else
-    memcpy (pDest, pSource, n*sizeof(DPoint3d) );
+    BeStringUtilities::Memcpy (pDest, n * sizeof(DPoint3d), pSource, n * sizeof(DPoint3d));
 #endif
     }
 

@@ -429,7 +429,7 @@ ExtractContext  *pContext
                     pBezK[i] = startKnot;
 
                 /* Bsp poles */
-                memcpy (pP, &pPoles[mu - degree], order * sizeof (DPoint4d));
+                BeStringUtilities::Memcpy (pP, order * sizeof(DPoint4d), &pPoles[mu - degree], order * sizeof (DPoint4d));
                 }
             else
                 {
@@ -453,7 +453,7 @@ ExtractContext  *pContext
                 /* Bsp poles (d - mu zero pads) */
                 for (i = 0; i < degree - mu; i++)
                     pP[i] = zeroPole;
-                memcpy (&pP[i], pPoles, (mu + 1) * sizeof (DPoint4d));
+                BeStringUtilities::Memcpy (&pP[i], (mu + 1) * sizeof(DPoint4d), pPoles, (mu + 1) * sizeof (DPoint4d));
                 }
             }
 
@@ -484,7 +484,7 @@ ExtractContext  *pContext
                 pBezK[i] = startKnot;
 
             /* Bsp poles */
-            memcpy (pP, pPoles, order * sizeof (DPoint4d));
+            BeStringUtilities::Memcpy (pP, order * sizeof(DPoint4d), pPoles, order * sizeof (DPoint4d));
             }
         }
 
@@ -520,7 +520,7 @@ ExtractContext  *pContext
 
             /* Bsp poles (one zero pad) */
             pP[0] = zeroPole;
-            memcpy (&pP[1], pPoles, degree * sizeof (DPoint4d));
+            BeStringUtilities::Memcpy (&pP[1], degree * sizeof(DPoint4d), pPoles, degree * sizeof (DPoint4d));
             }
 
         /* open uniform */
@@ -541,7 +541,7 @@ ExtractContext  *pContext
             memset (pBezK, 0, 2 * degree * sizeof (double));
 
             /* Bsp poles */
-            memcpy (pP, pPoles, order * sizeof (DPoint4d));
+            BeStringUtilities::Memcpy (pP, order * sizeof(DPoint4d), pPoles, order * sizeof (DPoint4d));
             }
         }
     }
@@ -631,7 +631,7 @@ ExtractContext  *pContext
                 : 2 * degree - muDiff + 1;
 
         if (l > 0)
-            memcpy (pBspK, &pBspK[muDiff], l * sizeof (double));
+            BeStringUtilities::Memcpy (pBspK, l * sizeof(double), &pBspK[muDiff], l * sizeof (double));
         else
             l = 0;
 
@@ -653,7 +653,7 @@ ExtractContext  *pContext
     Shift left local indices [d..2d-1], and then add the next knot with mult d.
     The result is the subinterval [k[mu] mult d..k[mu + 1] mult d].
     */
-    memcpy (pBezK, &pBezK[degree], degree * sizeof (double));
+    BeStringUtilities::Memcpy (pBezK, degree * sizeof(double), &pBezK[degree], degree * sizeof (double));
     for (l = degree; l < 2 * degree; l++)
         pBezK[l] = pBspK[order];
 
@@ -666,7 +666,7 @@ ExtractContext  *pContext
     l = order - muDiff;
 
     if (l > 0)
-       memcpy (pP, &pP[muDiff], l * sizeof (DPoint4d));
+       BeStringUtilities::Memcpy (pP, l * sizeof(DPoint4d), &pP[muDiff], l * sizeof (DPoint4d));
     else
         l = 0;
 

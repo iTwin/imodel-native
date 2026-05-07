@@ -573,7 +573,8 @@ int      *pNumOut
             if (*ppBuffer != NULL)
                 {
                 *pNumOut = numOut;
-                memcpy (*ppBuffer,
+                BeStringUtilities::Memcpy (*ppBuffer,
+                    numOut * sizeof(DPoint3d),
                     jmdlEmbeddedDPoint3dArray_getPtr (pArray, 0),
                     numOut * sizeof (DPoint3d));
                 }
@@ -1094,7 +1095,7 @@ Transform const *pTransform
             }
 
         outBndP->numPoints = inBndP->numPoints;
-        memcpy (outBndP->points, inBndP->points, allocSize);
+        BeStringUtilities::Memcpy (outBndP->points, allocSize, inBndP->points, allocSize);
         if (pTransform)
             pTransform->Multiply (outBndP->points, outBndP->points, outBndP->numPoints);
 
@@ -1619,7 +1620,7 @@ bool MSBsplineSurface::AddTrimBoundary (bvector<DPoint2d> const &uvPoints)
     bspUtil_initializeBsurfBoundary (pBoundary);
     int numPoints = pBoundary->numPoints = (int)uvPoints.size ();
     pBoundary->points = (DPoint2d*)BSIBaseGeom::Malloc (numPoints * sizeof (DPoint2d));
-    memcpy (pBoundary->points, &uvPoints[0], numPoints * sizeof (DPoint2d));
+    BeStringUtilities::Memcpy (pBoundary->points, numPoints * sizeof(DPoint2d) , &uvPoints[0], numPoints * sizeof (DPoint2d));
     bsputil_addBoundaries (this, &pBoundary, 1);
     return true;
     }

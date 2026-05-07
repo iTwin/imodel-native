@@ -495,7 +495,7 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
     m_visibility.resize (count);
     m_chainEdges.resize (count);
 
-    memcpy (&m_points[0], visitor.GetPointCP(), count * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (&m_points[0], count * sizeof (DPoint3d), visitor.GetPointCP(), count * sizeof (DPoint3d));
     for (size_t i=0; i<count; i++)
         m_visibility[i] = visitor.Visible()[i];
 
@@ -505,13 +505,13 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
     if (nullptr != visitor.GetNormalCP())
         {
         m_normals.resize (count);
-        memcpy (&m_normals[0], visitor.GetNormalCP(), count * sizeof (DVec3d));
+        BeStringUtilities::Memcpy (&m_normals[0], count * sizeof (DVec3d), visitor.GetNormalCP(), count * sizeof (DVec3d));
         }
 
     if (nullptr != visitor.GetParamCP())
         {
         m_params.resize(count);
-        memcpy (&m_params[0], visitor.GetParamCP(), count * sizeof (DPoint2d));
+        BeStringUtilities::Memcpy (&m_params[0], count * sizeof (DPoint2d), visitor.GetParamCP(), count * sizeof (DPoint2d));
         }
     if (visitor.GetAuxDataCP().IsValid())
         m_auxChannels = visitor.GetAuxDataCP()->GetChannels();

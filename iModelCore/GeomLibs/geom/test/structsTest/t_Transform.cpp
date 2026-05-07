@@ -2208,8 +2208,8 @@ TEST(View,MouseMove)
     // return false (AND LEAVE GARBAGE DATA) if any step (matrix inversion) fails.
     bool InitFractionalFrustumTransform(DPoint3d* frustum0, DPoint3d* frustum1, double fractionU = 0.5, double fractionV = 0.5, double fractionW = 0.0)
         {
-        memcpy (m_worldFrustum0, frustum0, 8 * sizeof (DPoint3d));
-        memcpy (m_worldFrustum1, frustum1, 8 * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy(m_worldFrustum0, sizeof m_worldFrustum0, frustum0, 8 * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy(m_worldFrustum1, sizeof m_worldFrustum1, frustum1, 8 * sizeof(DPoint3d));
         m_rigidFrame0 = FrustumFractionToSkewFrame (m_worldFrustum0, fractionU, fractionV, fractionW);
         m_rigidFrame1 = FrustumFractionToSkewFrame(m_worldFrustum1, fractionU, fractionV, fractionW);
         if (!m_inverseRigidFrame0.InverseOf (m_rigidFrame0))

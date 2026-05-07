@@ -292,8 +292,8 @@ int             numPoles
 +----------------------------------------------------------------------*/
 Public GEOMDLLIMPEXP void     bsputil_loadPoles
 (
-DPoint3d        *poles,                /* OUT     poles that define curve at u */
-double          *weights,              /* OUT     weights (if rational) */
+DPoint3d        *poles,                /* OUT     order poles that define curve at u */
+double          *weights,              /* OUT     order weights (if rational) */
 DPoint3d        *fullPoles,            /* IN      all poles of curve */
 double          *fullWeights,          /* IN      all  weights (if rational) */
 int             start,                 /* IN      index of first pole */
@@ -536,7 +536,7 @@ Public GEOMDLLIMPEXP int      bspknot_computeKnotVectorNotNormalized
 (
 double          *knotVector,        /* OUT     Full knot vector */
 BsplineParam    *params,            /* IN      B-Spline parameters */
-double          *interiorKnots      /* IN      interior knots (if nonuniform) */
+double          *sourceKnots        /* IN      full knots to copy (if nonuniform) */
 );
 
 /*----------------------------------------------------------------------+
