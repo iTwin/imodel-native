@@ -49,7 +49,7 @@ T *VectorOps<T>::MallocAndCopy (bvector<T> &source)
         return NULL;
     size_t byteCount = n * sizeof (T);
     T * dest = (T*)BSIBaseGeom::Malloc (byteCount);
-    memcpy (dest, &source[0], byteCount);
+    BeStringUtilities::Memcpy(dest, byteCount, &source[0], byteCount);
     return dest;
     }
 
