@@ -472,13 +472,12 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 
     m_extent = newExtents;
 
-    // DO NOT CHANGE TO RAPID JSON.
-    // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
-    // Tile content Ids include a hash of the project extents.
-    // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
+    // Precision17 produces output byte-identical to the former jsoncpp serialization (sprintf "%#.17g").
+    // Tile content IDs include a hash of the project extents string, so changing the serialized
+    // precision would invalidate every cached tile in existence.
+    BeJsDocument jsonObj;
     BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.Stringify(StringifyFormat::Precision17));
 
     if (!m_ecefLocation.m_isValid)
         {
@@ -549,15 +548,14 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutlie
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::LoadProjectExtents() const
     {
-    // DO NOT CHANGE TO RAPID JSON.
-    // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
-    // Tile content Ids include a hash of the project extents.
-    // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
     Utf8String value;
     AxisAlignedBox3d extentsBeforeReadingFromDb = AxisAlignedBox3d(m_extent);
-    if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()) && Json::Reader::Parse(value, jsonObj))
-        BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+    if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()))
+        {
+        BeJsDocument jsonObj(value);
+        if (!jsonObj.hasParseError())
+            BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+        }
 
     if (!extentsBeforeReadingFromDb.IsEqual(m_extent, DoubleOps::SmallMetricDistance()))
         NotifyProjectExtentsChanged(m_extent);
