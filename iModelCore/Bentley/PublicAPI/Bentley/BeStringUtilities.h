@@ -508,9 +508,6 @@ public:
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
     BENTLEYDLL_EXPORT static BentleyStatus Wmemcpy(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
 
-    //! Performs a quick sort.
-    BENTLEYDLL_EXPORT static void Qsort(void* base, size_t num, size_t width, int(__cdecl* compare)(void*, const void*, const void*), void* context);
-
     //! Tokenizes a string based on the provided delimiters, and adds a WString for each token into the provided collection. This essentially wraps wcstok for more convenient access.
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
     //! @param[in]      delimiters  One or more delimiters; cannot be NULL or empty

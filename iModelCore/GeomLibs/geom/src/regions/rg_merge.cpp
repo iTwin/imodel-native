@@ -1692,7 +1692,7 @@ int                             noisy
     size_t count = sortArray.size ();
     if (count > 0)
         {
-        BeStringUtilities::Qsort (sortArray.data (), sortArray.size (), sizeof (RG_VertexSort), BSIBaseGeom::QSortAdaptor, (void*)jmdlRGIL_compareAngles);
+        std::sort(sortArray.data(), sortArray.data() + sortArray.size(), [](const RG_VertexSort& a, const RG_VertexSort& b) { return jmdlRGIL_compareAngles(&a, &b) < 0; });
 
         /* Yank each edge from its current vertex and insert into the new one. */
         for (size_t i = 0; i < count; i++)

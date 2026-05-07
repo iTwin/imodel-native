@@ -319,10 +319,8 @@ int         axis
     double       maxMinDist = -1.0e200, minDist;
     int          minSize;
 
-
-    BeStringUtilities::Qsort (pSplitEntries, count, sizeof(NodeTest),
-                BSIBaseGeom::QSortAdaptor,
-                (void*)((axis==X_AXIS) ? compareXRange : compareYRange));
+    auto cmp = (axis == X_AXIS) ? compareXRange : compareYRange;
+    std::sort(pSplitEntries, pSplitEntries + count, [cmp](const NodeTest& a, const NodeTest& b) { return cmp(&a, &b) < 0; });
 
     minSize = count/3;
     pLastEntry = pSplitEntries + count;

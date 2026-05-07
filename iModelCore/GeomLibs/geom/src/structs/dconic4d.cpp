@@ -4385,26 +4385,6 @@ DPoint3dP pTrigPoint
 /*-----------------------------------------------------------------*//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
-static int compareZ
-
-(
-const void *vpPoint0,
-const void *vpPoint1
-)
-    {
-    const DPoint3d *pPoint0 = (const DPoint3d*)vpPoint0;
-    const DPoint3d *pPoint1 = (const DPoint3d*)vpPoint1;
-
-    if (pPoint0->z < pPoint1->z)
-        return -1;
-    if (pPoint0->z > pPoint1->z)
-        return 1;
-    return 0;
-    }
-
-/*-----------------------------------------------------------------*//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
 static bool    pointInDPlane4dIntersection
 
 (
@@ -4512,7 +4492,7 @@ int        clipType
                                 cos (theta0), sin(theta0), theta0);
             pCriticalAngleArray[numCritical++].Init (
                                 cos (theta1), sin(theta1), theta1);
-            BeStringUtilities::Qsort (pCriticalAngleArray, numCritical, sizeof (pCriticalAngleArray[0]), BSIBaseGeom::QSortAdaptor, (void*)compareZ);
+            std::sort(pCriticalAngleArray, pCriticalAngleArray + numCritical, [](const DPoint3d& a, const DPoint3d& b) { return a.z < b.z; });
 
             for (i = 1; i < numCritical; i++)
                 {

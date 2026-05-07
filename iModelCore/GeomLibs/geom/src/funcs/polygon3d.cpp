@@ -1775,25 +1775,6 @@ DRay3dCP pParameterizationRay
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int qsort_compareDPoint4dw
-
-(
-void const *vpA,
-void const *vpB
-)
-    {
-    DPoint4d const*pA = (DPoint4d const*)vpA;
-    DPoint4d const*pB = (DPoint4d const*)vpB;
-    if (pA->w < pB->w)
-        return -1;
-    if (pA->w > pB->w)
-        return 1;
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 double      tolerancedDotDiff (DPoint3dCP point, DPoint3dCP origin, DVec3dCP direction, double *tolerance)
     {
     double  dot = point->DotDifference(*origin, *direction);
@@ -1927,7 +1908,7 @@ double*     onTolerance
 
     if (ok && numCrossing > 0)
         {
-        BeStringUtilities::Qsort(pCrossing, numCrossing, sizeof(DPoint4d), BSIBaseGeom::QSortAdaptor, (void*)qsort_compareDPoint4dw);
+        std::sort(pCrossing, pCrossing + numCrossing, [](const DPoint4d& a, const DPoint4d& b) { return a.w < b.w; });
         ok = numCrossing <= maxClipPoints;
         if (numCrossing > maxClipPoints)
             numCrossing = maxClipPoints;
@@ -2685,27 +2666,6 @@ int count
 
     };
 
-
-int cb_compareCrossings
-(
-const void *vpCrossing0,
-const void *vpCrossing1
-)
-    {
-    const ClipCrossing *pCrossing0 = (const ClipCrossing*)vpCrossing0;
-    const ClipCrossing *pCrossing1 = (const ClipCrossing*)vpCrossing1;
-    double a = pCrossing0->sortKey - pCrossing1->sortKey;
-    if (a < 0.0)
-        return -1;
-    else if (a > 0.0)
-        return 1;
-    else
-        {
-        // hm.  Not sure what should happen here.
-        return 0;
-        }
-    }
-
 #define MAX_CLIP_CROSSING 1000
 struct ClipCrossingSorter
 {
@@ -2935,7 +2895,7 @@ bool SortCrossings ()
         {
         mCrossing[i].sortKey = mCrossing[i].xyz.GetComponent (iMax);
         }
-    BeStringUtilities::Qsort(mCrossing, mNumCrossing, sizeof(ClipCrossing), BSIBaseGeom::QSortAdaptor, (void*)cb_compareCrossings);
+    std::sort(mCrossing, mCrossing + mNumCrossing, [](const ClipCrossing& a, const ClipCrossing& b) { return a.sortKey < b.sortKey; });
     // Let id be a pre-sort position.
     // Make mCrossingIndex[id] = sorted position of that mCrossing.
     for (int i = 0; i < mNumCrossing; i++)

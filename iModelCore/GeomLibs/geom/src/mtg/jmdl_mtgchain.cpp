@@ -39,69 +39,6 @@ struct MTG_LexicalSortKey
     };
 
 static int sDebug = 0;
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//--------------------------------------------------------------------------------------
-static int compareId
-(
-const void    *pElem1,
-const void    *pElem2
-)
-    {
-    MTG_LexicalSortKey const*pFirst = (MTG_LexicalSortKey const*) pElem1;
-    MTG_LexicalSortKey const*pSecond = (MTG_LexicalSortKey const*) pElem2;
-
-    if (pFirst->lowVertexIndex < pSecond->lowVertexIndex)
-        return  -1;
-    else if (pFirst->lowVertexIndex > pSecond->lowVertexIndex)
-        return  1;
-    else
-        {
-        if (pFirst->highVertexIndex < pSecond->highVertexIndex)
-            return  -1;
-        else if (pFirst->highVertexIndex > pSecond->highVertexIndex)
-            return  1;
-        else
-            return  0;
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//--------------------------------------------------------------------------------------
-static int compareAngle
-(
-const void    *pElem1,
-const void    *pElem2
-)
-    {
-    MTG_LexicalSortKey const*pFirst = (MTG_LexicalSortKey const*) pElem1;
-    MTG_LexicalSortKey const*pSecond = (MTG_LexicalSortKey const*) pElem2;
-
-    if (pFirst->angle < pSecond->angle)
-        return  -1;
-    else if (pFirst->angle > pSecond->angle)
-        return  1;
-    else
-        {
-        return 0;
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//--------------------------------------------------------------------------------------
-static int compareDist
-(
-const void    *pElem1,
-const void    *pElem2
-)
-    {
-    MTG_SortKey const*pFirst = (MTG_SortKey const*) pElem1;
-    MTG_SortKey const*pSecond = (MTG_SortKey const*) pElem2;
-
-    return pFirst->dotValue < pSecond->dotValue ? -1: pFirst->dotValue == pSecond->dotValue? 0: 1;
-    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -284,7 +221,7 @@ double      relTol
         }
     MTGARRAY_END_SET_LOOP (currNodeId, (jmdlMTGFacets_getGraph (pFacetHeader)))
 
-    BeStringUtilities::Qsort (dotArray.data (), nodeCount, sizeof (MTG_SortKey), BSIBaseGeom::QSortAdaptor, (void*)compareDist);
+    std::sort(dotArray.data(), dotArray.data() + nodeCount, [](const MTG_SortKey& a, const MTG_SortKey& b) { return a.dotValue < b.dotValue; });
 
     for (int pivotIndex = 0; pivotIndex < nodeCount; pivotIndex++)
         {
@@ -725,7 +662,12 @@ MTGFacets * pFacetHeader
         }
     MTGARRAY_END_SET_LOOP (currNodeId, (jmdlMTGFacets_getGraph (pFacetHeader)))
 
-    BeStringUtilities::Qsort (sortArray.data (), (int)count, sizeof (MTG_LexicalSortKey), BSIBaseGeom::QSortAdaptor, (void*)compareId);
+    std::sort(sortArray.data(), sortArray.data() + count, [](const MTG_LexicalSortKey& a, const MTG_LexicalSortKey& b)
+        {
+        if (a.lowVertexIndex != b.lowVertexIndex)
+            return a.lowVertexIndex < b.lowVertexIndex;
+        return a.highVertexIndex < b.highVertexIndex;
+        });
 
     // Compute face normals for each face loop
     bvector <DVec3d> vertexNormalArray;
@@ -788,7 +730,7 @@ MTGFacets * pFacetHeader
         if (n > 1)
             {
             // Sort by angle around the common edge ...
-            BeStringUtilities::Qsort ((void*)pItem0, (int)n, sizeof (MTG_LexicalSortKey), BSIBaseGeom::QSortAdaptor, (void*)compareAngle);
+            std::sort(pItem0, pItem0 + n, [](const MTG_LexicalSortKey& a, const MTG_LexicalSortKey& b) { return a.angle < b.angle; });
             size_t j;
             // And splice them all together.
             // REMARK: This assumes the edges were all dangling in the first place.
