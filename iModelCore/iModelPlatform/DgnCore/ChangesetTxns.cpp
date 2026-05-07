@@ -35,7 +35,35 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
     if (nullptr == jsIModelDb) {
-        return ChangeSet::ConflictResolution::Abort;
+        // Mirror the TypeScript _onRebaseLocalTxnConflict default logic so that C++ tests
+        // behave consistently with the JS context.  In particular, indirect model-timestamp
+        // (LastMod / GeometryGuid) conflicts that arise when multiple pending txns are
+        // reinstated must not abort the rebase.
+        const auto& tableName = iter.GetTableName();
+        const bool isEcTable = tableName.StartsWithIAscii("ec_");
+        switch (cause) {
+            case ConflictCause::NotFound:
+                // Row to update/delete doesn't exist — skip it.
+                return ConflictResolution::Skip;
+            case ConflictCause::Constraint:
+                // Unique / other constraint violation — skip.
+                return ConflictResolution::Skip;
+            case ConflictCause::ForeignKey:
+                // FK violation is a serious error.
+                return ConflictResolution::Abort;
+            case ConflictCause::Conflict:
+                // PK-already-exists for INSERT: ok for schema tables, abort otherwise.
+                return isEcTable ? ConflictResolution::Skip : ConflictResolution::Abort;
+            case ConflictCause::Data:
+                // "Before" value mismatch.  For direct (non-indirect) changes: skip schema
+                // and metadata tables.  For everything else (including indirect model-timestamp
+                // conflicts between txns) apply the "new" value.
+                if (!iter.IsIndirect() && (isEcTable || tableName.StartsWithIAscii("be_Prop")))
+                    return ConflictResolution::Skip;
+                return ConflictResolution::Replace;
+            default:
+                return ConflictResolution::Replace;
+        }
     }
 
     const auto jsDgnDb = jsIModelDb->Value();

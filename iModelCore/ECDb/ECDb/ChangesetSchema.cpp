@@ -215,27 +215,43 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
         };
     std::map<Utf8String, TableInfo> tableInfoMap;
 
-    Statement tableStmt;
-    if (BE_SQLITE_OK != tableStmt.Prepare(ecdb,
-        "SELECT t.Name, t.ExclusiveRootClassId, "
-        "  (SELECT c.Ordinal FROM " TABLE_Column " c WHERE c.TableId = t.Id AND c.ColumnKind = " SQLVAL_DbColumn_Kind_ECClassId " AND c.IsVirtual = 0 LIMIT 1) "
-        "FROM " TABLE_Table " t "
-        "WHERE t.Name = ?"))
+    // Query ExclusiveRootClassId from ec_Table.
+    Statement exclStmt;
+    if (BE_SQLITE_OK != exclStmt.Prepare(ecdb,
+        "SELECT ExclusiveRootClassId FROM " TABLE_Table " WHERE Name = ?"))
         return ERROR;
 
     for (auto const& tableName : referencedTableNames)
         {
-        tableStmt.Reset();
-        tableStmt.BindText(1, tableName, Statement::MakeCopy::No);
-        if (BE_SQLITE_ROW == tableStmt.Step())
+        TableInfo info;
+
+        // Look up ExclusiveRootClassId.
+        exclStmt.Reset();
+        exclStmt.BindText(1, tableName, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == exclStmt.Step() && !exclStmt.IsColumnNull(0))
+            info.m_exclusiveRootClassId = exclStmt.GetValueId<ECClassId>(0);
+
+        // Use PRAGMA table_info to find ECClassId column by name.
+        // This gives the actual SQLite column position (cid), which matches
+        // changeset column indices. Do NOT use ec_Column.Ordinal — it can
+        // have gaps when virtual columns are present.
+        Utf8String pragmaSql;
+        pragmaSql.Sprintf("PRAGMA table_info([%s])", tableName.c_str());
+        Statement pragmaStmt;
+        if (BE_SQLITE_OK == pragmaStmt.Prepare(ecdb, pragmaSql.c_str()))
             {
-            TableInfo info;
-            if (!tableStmt.IsColumnNull(1))
-                info.m_exclusiveRootClassId = tableStmt.GetValueId<ECClassId>(1);
-            if (!tableStmt.IsColumnNull(2))
-                info.m_ecClassIdColumnOrdinal = tableStmt.GetValueInt(2);
-            tableInfoMap[tableName] = info;
+            while (BE_SQLITE_ROW == pragmaStmt.Step())
+                {
+                Utf8CP colName = pragmaStmt.GetValueText(1);
+                if (0 == strcmp(colName, "ECClassId"))
+                    {
+                    info.m_ecClassIdColumnOrdinal = pragmaStmt.GetValueInt(0); // cid
+                    break;
+                    }
+                }
             }
+
+        tableInfoMap[tableName] = info;
         }
 
     // Step 3: Re-iterate changeset to collect class IDs.

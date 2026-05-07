@@ -2996,6 +2996,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetWritableDb(info);
         db.Txns().PullMergeRebaseReinstateTxn();
     }
+    void SetAllowConcurrentSchemaImport(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        const bool allow = info[0].As<Napi::Boolean>().Value();
+        db.Txns().SetAllowConcurrentSchemaImport(allow);
+    }
     Napi::Value PullMergeGetStage(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Merging)
@@ -3320,6 +3325,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("pullMergeGetStage", &NativeDgnDb::PullMergeGetStage),
             InstanceMethod("pullMergeRebaseReinstateTxn", &NativeDgnDb::PullMergeRebaseReinstateTxn),
             InstanceMethod("pullMergeRebaseUpdateTxn", &NativeDgnDb::PullMergeRebaseUpdateTxn),
+            InstanceMethod("setAllowConcurrentSchemaImport", &NativeDgnDb::SetAllowConcurrentSchemaImport),
             InstanceMethod("pullMergeRebaseBegin", &NativeDgnDb::PullMergeRebaseBegin),
             InstanceMethod("pullMergeRebaseEnd", &NativeDgnDb::PullMergeRebaseEnd),
             InstanceMethod("pullMergeRebaseNext", &NativeDgnDb::PullMergeRebaseNext),

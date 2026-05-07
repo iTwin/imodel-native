@@ -552,6 +552,11 @@ void TxnManager::StartNewSession() {
 TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_modelChanges(*this) {
     m_dgndb.SetChangeTracker(this);
     Initialize(SessionOption::New);
+    // Enable schema session recording so that any schema imports made against this DgnDb
+    // are captured in be_Local.  This is required for PullMergeRebaseUpdateSchemaTxn to
+    // be able to replay the original schema sessions when reinstating a local schema txn
+    // during a pull-merge rebase (SetAllowConcurrentSchemaImport mode).
+    m_dgndb.Schemas().GetSessions().SetEnabled(true);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1088,10 +1093,12 @@ DbResult TxnManager::SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, B
          if (rc != BE_SQLITE_OK) {
             return rc;
         }
+        TxnId savedTxnId = m_curr;
         rc = SaveTxn(schemaChanges, operation, TxnType::EcSchema);
         if (rc != BE_SQLITE_OK) {
             return rc;
         }
+        m_dgndb.Schemas().GetSessions().SetTxnId(savedTxnId.GetValue());
     }
     // if schema change is empty and data changes are non empty(indicating only data change)
     // put entire changes binary (including only data changes) into a single data txn
@@ -3965,6 +3972,13 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         return;
     }
 
+    // When concurrent schema import is enabled, EcSchema Txns are handled entirely in
+    // PullMergeRebaseUpdateTxn via schema session replay — skip re-applying the old binary here.
+    if (m_allowConcurrentSchemaImport && type == TxnType::EcSchema) {
+        TXN_DEBUG(">> PullMergeRebaseReinstateTxn() txnId=%s skipped (schema session replay mode)", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+        return;
+    }
+
     const auto isSchemaTxn = type == TxnType::EcSchema;
     LocalChangeSet changeset(GetDgnDb(), txnId, type, desc);
     auto rc = ReadDataChanges(changeset, txnId, TxnAction::None);
@@ -3983,6 +3997,60 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Handles the rebase update step for an EcSchema Txn when concurrent schema import is enabled.
+* Instead of capturing from the change tracker (which is empty because reinstate was skipped),
+* this replays the original schema sessions associated with the Txn against the current merged
+* base. The resulting changeset from the import is used to update the stored Txn in-place.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::PullMergeRebaseUpdateSchemaTxn(TxnId txnId) {
+    TXN_DEBUG("<< PullMergeRebaseUpdateSchemaTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+    const auto idStr = BeInt64Id(txnId.GetValue()).ToHexStr();
+
+    // Disable session recording so the replay does not create a duplicate session entry.
+    auto& sessions = m_dgndb.Schemas().GetSessions();
+    const bool sessionsWereEnabled = sessions.IsEnabled();
+    sessions.SetEnabled(false);
+
+    // Does not call saveChanges
+    const auto result = sessions.ReplayForTxnId(txnId.GetValue(), m_dgndb);
+
+    sessions.SetEnabled(sessionsWereEnabled);
+
+    if (!result.IsOk()) {
+        PullMergeAbortRebase(txnId, SqlPrintfString("failed to replay schema session for Txn (id: %s)", idStr.c_str()).GetUtf8CP(), BE_SQLITE_ERROR);
+        return;
+    }
+
+    if (HasDataChanges()) {
+        ChangeSet newChangeset;
+        newChangeset.FromChangeTrack(*this);
+
+        auto rc = PullMergeUpdateTxn(newChangeset, txnId);
+        if (rc != BE_SQLITE_OK) {
+            PullMergeAbortRebase(txnId, SqlPrintfString("failed to update schema Txn from replay (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
+            return;
+        }
+    } else {
+        // Schema replay produced no changes against the merged base — discard the original Txn.
+        if (!PullMergeEraseTxn(txnId)) {
+            PullMergeAbortRebase(txnId, SqlPrintfString("failed to erase schema Txn with no replay output (id: %s)", idStr.c_str()).GetUtf8CP(), BE_SQLITE_ERROR);
+            return;
+        }
+        sessions.DropByTxnId(txnId.GetValue()); // also drop the session since it is no longer needed
+    }
+
+    Restart();
+    const auto rc = m_dgndb.SaveChanges(); // commit Txn table and be_Local updates
+    if (rc != BE_SQLITE_OK) {
+        PullMergeAbortRebase(txnId, SqlPrintfString("failed to save rebased schema Txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
+        return;
+    }
+    m_curr = txnId;
+    TXN_DEBUG(">> PullMergeRebaseUpdateSchemaTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeRebaseUpdateTxn() {
@@ -3998,6 +4066,10 @@ void TxnManager::PullMergeRebaseUpdateTxn() {
 
     TXN_DEBUG("<< PullMergeRebaseUpdateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     const auto type = GetTxnType(txnId);
+    if (m_allowConcurrentSchemaImport && type == TxnType::EcSchema) {
+        PullMergeRebaseUpdateSchemaTxn(txnId);
+        return;
+    }
     if(type == TxnType::Ddl) {
         PullMergeSetTxnActive(txnId);
         return;
@@ -4144,6 +4216,7 @@ void TxnManager::PullMergeRebaseEnd() {
 
     m_curr = conf.GetEndTxnId();
     m_reversedTxn.clear();
+    m_allowConcurrentSchemaImport = false; // clear for the next pull-merge operation
     conf.SetMergeStage(PullMergeStage::None)
         .SetEndTxnId(TxnId(0))
         .SetStartTxnId(TxnId(0))

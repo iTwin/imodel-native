@@ -24,38 +24,66 @@ struct TableColInfo
 
 /*---------------------------------------------------------------------------------**//**
 * Query column metadata for a SQLite table from the target db.
+*
+* IMPORTANT: m_nameToOrd must hold actual SQLite column positions (cid from
+* PRAGMA table_info), NOT ec_Column.Ordinal values.  For tables with ExclusiveRootClassId
+* the ECClassId column is virtual and absent from the SQLite table, so ec_Column.Ordinal
+* has a gap (e.g. 0, 2, 3) while the SQLite positions are contiguous (0, 1, 2).
+* Using ec_Column.Ordinal directly would cause out-of-bounds accesses when reading or
+* writing changeset values.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static TableColInfo QueryTableColInfo(ECDbCR ecdb, Utf8StringCR tableName)
     {
     TableColInfo info;
 
+    // Step 1: Use PRAGMA table_info to get actual SQLite column positions.
+    // tableName comes from the changeset (ECDb-owned), so square-bracket quoting is safe.
+    {
+    Utf8String pragmaSql;
+    pragmaSql.Sprintf("PRAGMA table_info([%s])", tableName.c_str());
+    Statement pragmaStmt;
+    if (BE_SQLITE_OK == pragmaStmt.Prepare(ecdb, pragmaSql.c_str()))
+        {
+        int maxCid = -1;
+        while (BE_SQLITE_ROW == pragmaStmt.Step())
+            {
+            int cid = pragmaStmt.GetValueInt(0);
+            Utf8String name = pragmaStmt.GetValueText(1);
+            info.m_nameToOrd[name] = cid;
+            if (cid > maxCid)
+                maxCid = cid;
+            }
+        info.m_totalCols = maxCid + 1;
+        }
+    }
+
+    // Step 2: Query ec_Column for kind information (ECClassId, SourceECClassId, etc.)
+    // and update m_classIdOrdinals using the SQLite positions we just determined.
     Statement stmt;
     if (BE_SQLITE_OK == stmt.Prepare(ecdb,
-        "SELECT c.Name, c.Ordinal, c.ColumnKind "
+        "SELECT c.Name, c.ColumnKind "
         "FROM " TABLE_Column " c JOIN " TABLE_Table " t ON t.Id = c.TableId "
-        "WHERE t.Name = ? AND c.IsVirtual = 0 ORDER BY c.Ordinal"))
+        "WHERE t.Name = ? AND c.IsVirtual = 0"))
         {
         stmt.BindText(1, tableName, Statement::MakeCopy::No);
-        int maxOrd = -1;
         while (BE_SQLITE_ROW == stmt.Step())
             {
             Utf8String name = stmt.GetValueText(0);
-            int ord = stmt.GetValueInt(1);
-            int kind = stmt.GetValueInt(2);
-            info.m_nameToOrd[name] = ord;
-            if (ord > maxOrd)
-                maxOrd = ord;
+            int kind = stmt.GetValueInt(1);
+            auto it = info.m_nameToOrd.find(name);
+            if (it == info.m_nameToOrd.end())
+                continue; // column not in actual SQLite table (should not happen for non-virtual)
+            int cid = it->second;
             if (kind == 2)
                 {
-                info.m_classIdOrdinals.insert(ord);
-                info.m_classIdKindOrd = ord;
+                info.m_classIdOrdinals.insert(cid);
+                info.m_classIdKindOrd = cid;
                 }
             // SourceECClassId / TargetECClassId also store class IDs — remap them by name
             if (name == COL_SourceECClassId || name == COL_TargetECClassId)
-                info.m_classIdOrdinals.insert(ord);
+                info.m_classIdOrdinals.insert(cid);
             }
-        info.m_totalCols = maxOrd + 1;
         }
 
     Statement exclStmt;

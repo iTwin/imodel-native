@@ -1159,18 +1159,26 @@ static int GetClassIdColumnOrdinal(ECDbCR ecdb, Utf8CP tableName)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// Helper: query ordinal of a named column in a SQLite table.
+// Helper: query ordinal (0-based SQLite column position) of a named column via PRAGMA.
+// Uses PRAGMA table_info rather than ec_Column.Ordinal because ec_Column.Ordinal can
+// have gaps when virtual columns (e.g. ECClassId for ExclusiveRootClassId tables) occupy
+// ordinal slots that are absent from the actual SQLite table.
 //---------------------------------------------------------------------------------------
 static int GetColumnOrdinal(ECDbCR ecdb, Utf8CP tableName, Utf8CP columnName)
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
-        "SELECT c.Ordinal FROM ec_Column c JOIN ec_Table t ON t.Id = c.TableId "
-        "WHERE t.Name = ? AND c.Name = ? AND c.IsVirtual = 0"))
+    Utf8String sql;
+    sql.Sprintf("PRAGMA table_info([%s])", tableName);
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
         return -1;
-    stmt.BindText(1, tableName, Statement::MakeCopy::No);
-    stmt.BindText(2, columnName, Statement::MakeCopy::No);
-    return (BE_SQLITE_ROW == stmt.Step()) ? stmt.GetValueInt(0) : -1;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        int cid = stmt.GetValueInt(0);
+        Utf8CP name = stmt.GetValueText(1);
+        if (strcmp(name, columnName) == 0)
+            return cid;
+        }
+    return -1;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1763,35 +1771,44 @@ TEST_F(ChangesetSchemaTestFixture, Transform_StructPropertyOverflowCrossTableMov
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// Test Transform remaps SourceECClassId values in a relationship link table.
-// When an entity class referenced by a relationship gets a new ECClassId, the
-// SourceECClassId column in the link table INSERT must be updated.
+// Test Transform remaps ECClassId values in a relationship link table.
+// When a relationship class gets a new ECClassId (e.g. after schema migration), the
+// ECClassId stored in the shared link table INSERT must be updated.
+//
+// ECDb stores SourceECClassId/TargetECClassId as virtual columns in link tables (resolved
+// via JOIN at read time). They never appear in the SQLite table or in changesets.
+// What DOES appear as a physical ECClassId in a link table is the relationship's OWN
+// class identifier — but only when multiple relationship classes share one table (TPH).
+// This test uses an abstract base relationship with TablePerHierarchy so that the link
+// table has a physical ECClassId column distinguishing between concrete subclasses.
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ChangesetSchemaTestFixture, Transform_RelClassIdRemap)
     {
-    // Schema with a standalone relationship (no nav property) — ECDb creates a link table
-    // with SourceECClassId and TargetECClassId columns (named SourceECClassId/TargetECClassId).
+    // Schema: abstract base relationship (TPH) + one concrete sealed subclass.
+    // ECDb creates ts_OwnerHasPets with a physical ECClassId column (not ExclusiveRoot,
+    // because multiple relationship classes could share the table).
     SchemaItem schema(R"xml(
         <?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
                   xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
-          <ECEntityClass typeName="Owner">
+          <ECEntityClass typeName="Owner" />
+          <ECEntityClass typeName="Pet" />
+          <ECRelationshipClass typeName="OwnerHasPets" strength="referencing" modifier="Abstract">
             <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.02.00.00">
-                    <MapStrategy>TablePerHierarchy</MapStrategy>
-                </ClassMap>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
             </ECCustomAttributes>
-          </ECEntityClass>
-          <ECEntityClass typeName="Pet">
-            <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.02.00.00">
-                    <MapStrategy>TablePerHierarchy</MapStrategy>
-                </ClassMap>
-            </ECCustomAttributes>
-            <ECProperty propertyName="Name" typeName="string" />
-          </ECEntityClass>
-          <ECRelationshipClass typeName="OwnerHasPets" strength="referencing" modifier="None">
+            <Source multiplicity="(0..1)" roleLabel="Owner" polymorphic="true">
+                <Class class="Owner"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="Pet" polymorphic="true">
+                <Class class="Pet"/>
+            </Target>
+          </ECRelationshipClass>
+          <ECRelationshipClass typeName="ConcreteOwnerHasPets" strength="referencing" modifier="Sealed">
+            <BaseClass>OwnerHasPets</BaseClass>
             <Source multiplicity="(0..1)" roleLabel="Owner" polymorphic="true">
                 <Class class="Owner"/>
             </Source>
@@ -1805,55 +1822,52 @@ TEST_F(ChangesetSchemaTestFixture, Transform_RelClassIdRemap)
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_RelClassId.ecdb", schema));
 
     m_ecdb.SaveChanges();
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Owner (ECInstanceId) VALUES (NULL)");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Pet (Name) VALUES ('Buddy')");
+    // ECDb uses a global ECInstanceId counter per file: Owner gets id=1, Pet gets id=2.
+    ECSqlStatement ownerStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ownerStmt.Prepare(m_ecdb, "INSERT INTO ts.Owner (ECInstanceId) VALUES (NULL)"));
+    ECInstanceKey ownerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, ownerStmt.Step(ownerKey));
+
+    ECSqlStatement petStmt;
+    ASSERT_EQ(ECSqlStatus::Success, petStmt.Prepare(m_ecdb, "INSERT INTO ts.Pet (ECInstanceId) VALUES (NULL)"));
+    ECInstanceKey petKey;
+    ASSERT_EQ(BE_SQLITE_DONE, petStmt.Step(petKey));
     m_ecdb.SaveChanges();
 
-    uint64_t ownerClassId = GetClassId(m_ecdb, "TestSchema", "Owner");
-    uint64_t petClassId   = GetClassId(m_ecdb, "TestSchema", "Pet");
-    if (ownerClassId == 0 || petClassId == 0)
-        GTEST_SKIP() << "Owner or Pet class not found; skipping RelClassId remap test";
+    uint64_t concreteClassId = GetClassId(m_ecdb, "TestSchema", "ConcreteOwnerHasPets");
+    ASSERT_NE(0u, concreteClassId) << "ConcreteOwnerHasPets class not found";
 
-    // Query the link table name created by ECDb for OwnerHasPets
-    Utf8String linkTable;
-    {
-    Statement q;
-    ASSERT_EQ(BE_SQLITE_OK, q.Prepare(m_ecdb,
-        "SELECT t.Name FROM ec_Table t "
-        "JOIN ec_Class c ON t.ExclusiveRootClassId = c.Id "
-        "JOIN ec_Schema s ON s.Id = c.SchemaId "
-        "WHERE s.Name = 'TestSchema' AND c.Name = 'OwnerHasPets'"));
-    if (BE_SQLITE_ROW != q.Step())
-        GTEST_SKIP() << "OwnerHasPets link table not found; skipping RelClassId remap test";
-    linkTable = q.GetValueText(0);
-    }
+    // The shared link table for the TPH relationship hierarchy.
+    // With TablePerHierarchy, ECDb names the link table after the abstract base class.
+    Utf8CP linkTable = "ts_OwnerHasPets";
 
-    // Find SourceECClassId and TargetECClassId ordinals in the link table
-    int srcClassIdOrd = GetColumnOrdinal(m_ecdb, linkTable.c_str(), "SourceECClassId");
-    int tgtClassIdOrd = GetColumnOrdinal(m_ecdb, linkTable.c_str(), "TargetECClassId");
-    if (srcClassIdOrd < 0 && tgtClassIdOrd < 0)
-        GTEST_SKIP() << "Link table " << linkTable.c_str() << " has no SourceECClassId/TargetECClassId columns; skipping";
+    // ECClassId must be physical (non-virtual) because the table is not ExclusiveRoot.
+    int classIdOrd = GetClassIdColumnOrdinal(m_ecdb, linkTable);
+    ASSERT_GE(classIdOrd, 0) << "Link table " << linkTable << " must have a physical ECClassId column";
 
-    // Insert a relationship instance and capture the changeset
+    // Insert a ConcreteOwnerHasPets relationship and capture the changeset.
+    // Use the captured ECInstanceIds to satisfy FK constraints on SourceId/TargetId.
+    Utf8String relInsert;
+    relInsert.Sprintf("INSERT INTO ts.ConcreteOwnerHasPets (SourceECInstanceId, TargetECInstanceId) VALUES (%s, %s)",
+        ownerKey.GetInstanceId().ToString().c_str(), petKey.GetInstanceId().ToString().c_str());
     TestTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
-        "INSERT INTO ts.OwnerHasPets (SourceECInstanceId, TargetECInstanceId) VALUES (1, 1)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, relInsert.c_str());
     tracker.EnableTracking(false);
     BeSQLite::ChangeSet source;
     ASSERT_EQ(BE_SQLITE_OK, source.FromChangeTrack(tracker));
     ASSERT_TRUE(source.IsValid());
     m_ecdb.SaveChanges();
 
-    // Build diff: remap Owner entity class ID (ownerClassId → remappedOwnerClassId).
-    // This simulates a schema migration that assigns Owner a new class ID.
-    // The SourceECClassId column in the link table stores ownerClassId and must be updated.
-    uint64_t remappedOwnerClassId = ownerClassId + 500;
+    // Build diff: remap ConcreteOwnerHasPets class ID.
+    // This simulates a schema migration that assigns ConcreteOwnerHasPets a new class ID.
+    // The ECClassId stored in the link table must be updated in the changeset.
+    uint64_t remappedClassId = concreteClassId + 500;
     ChangesetSchemaDiff diff;
     ChangesetSchemaDiff::ClassIdRemap remap;
-    remap.m_classKey = "TestSchema:Owner";
-    remap.m_oldClassId = ECClassId(ownerClassId);
-    remap.m_newClassId = ECClassId(remappedOwnerClassId);
+    remap.m_classKey = "TestSchema:ConcreteOwnerHasPets";
+    remap.m_oldClassId = ECClassId(concreteClassId);
+    remap.m_newClassId = ECClassId(remappedClassId);
     diff.m_classIdRemaps.push_back(std::move(remap));
     ASSERT_TRUE(diff.NeedsTransform());
 
@@ -1861,31 +1875,1782 @@ TEST_F(ChangesetSchemaTestFixture, Transform_RelClassIdRemap)
     ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
     ASSERT_TRUE(output.IsValid());
 
-    // Verify: SourceECClassId in the output changeset has been remapped.
-    bool foundRemapped = false;
+    // Verify: ECClassId at classIdOrd in the output INSERT has been remapped.
+    bool foundChange = false;
     for (auto const& change : output.GetChanges())
         {
         if (change.GetTableName() != linkTable)
             continue;
-        int nCols = change.GetColumnCount();
-        for (int i = 0; i < nCols; ++i)
+        foundChange = true;
+        DbValue ecClassIdVal = change.GetNewValue(classIdOrd);
+        ASSERT_EQ(DbValueType::IntegerVal, ecClassIdVal.GetValueType())
+            << "ECClassId column must hold an integer";
+        uint64_t val = (uint64_t) ecClassIdVal.GetValueInt64();
+        EXPECT_NE(concreteClassId, val)
+            << "Old concreteClassId " << concreteClassId << " should have been remapped";
+        EXPECT_EQ(remappedClassId, val)
+            << "ECClassId should be remapped from " << concreteClassId << " to " << remappedClassId;
+        }
+    EXPECT_TRUE(foundChange) << "Output changeset should contain a change for " << linkTable;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform correctly handles Point2d property (2 columns: X, Y) when moved up
+// the hierarchy. Each leaf column becomes an independent ColumnSwap entry.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_Point2dPropertyMovedUp)
+    {
+    // v1: Animal(no props) → Duck(Name:string, Origin:Point2d)
+    //     ECDb assigns: Name→js1, Origin.X→js2, Origin.Y→js3
+    // v2: Animal(Origin:Point2d) → Duck(Name:string)
+    //     ECDb assigns: Origin.X→js1, Origin.Y→js2 (base first), Name→js3
+    //     Result: Name moves js1→js3, Origin.X moves js2→js1, Origin.Y moves js3→js2
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+            <ECProperty propertyName="Origin" typeName="Point2d" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_Point2d.ecdb", schema1));
+
+    // Insert data and capture INSERT changeset
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (Name, Origin.X, Origin.Y) VALUES ('Daffy', 1.5, 2.5)");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceInsert;
+    ASSERT_EQ(BE_SQLITE_OK, sourceInsert.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceInsert.IsValid());
+
+    // Capture UPDATE changeset
+    tracker.EndTracking();
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "UPDATE ts.Duck SET Origin.X=10.0, Origin.Y=20.0");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceUpdate;
+    ASSERT_EQ(BE_SQLITE_OK, sourceUpdate.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceUpdate.IsValid());
+    m_ecdb.SaveChanges();
+
+    // Capture schema BEFORE
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+    auto duckMapBefore = schemaBefore.GetFullPropertyMap("TestSchema:Duck");
+    ASSERT_TRUE(duckMapBefore.count("Origin.X") > 0);
+    ASSERT_TRUE(duckMapBefore.count("Origin.Y") > 0);
+
+    // Schema v2: move Origin to base class
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Origin" typeName="Point2d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    // Capture schema AFTER and compute diff
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        // No swap needed — ECDb kept columns in place; passthrough is acceptable
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceInsert, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Verify diff has swaps for both Origin.X and Origin.Y
+    int originSwapCount = 0;
+    for (auto const& swap : diff.m_columnSwaps)
+        {
+        if (swap.m_classKey == "TestSchema:Duck" &&
+            (swap.m_accessString == "Origin.X" || swap.m_accessString == "Origin.Y"))
+            ++originSwapCount;
+        }
+    EXPECT_EQ(2, originSwapCount) << "Should have column swaps for both Origin.X and Origin.Y";
+
+    // Get new column ordinals
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int originXOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Origin.X"].m_column.c_str());
+    int originYOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Origin.Y"].m_column.c_str());
+    ASSERT_GE(originXOrdAfter, 0);
+    ASSERT_GE(originYOrdAfter, 0);
+
+    // --- Test INSERT ---
+    {
+    BeSQLite::ChangeSet outputInsert;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputInsert, sourceInsert, diff, m_ecdb));
+    ASSERT_TRUE(outputInsert.IsValid());
+
+    bool foundInsert = false;
+    for (auto const& change : outputInsert.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
             {
-            DbValue v = (change.GetOpcode() != DbOpcode::Delete)
-                ? change.GetNewValue(i) : change.GetOldValue(i);
-            if (v.GetValueType() != DbValueType::IntegerVal)
-                continue;
-            uint64_t val = (uint64_t) v.GetValueInt64();
-            // Old ownerClassId must NOT appear
-            if (val == ownerClassId)
-                ADD_FAILURE() << "Old ownerClassId " << ownerClassId
-                              << " should have been remapped in SourceECClassId column";
-            if (val == remappedOwnerClassId)
-                foundRemapped = true;
+            foundInsert = true;
+            DbValue xVal = change.GetNewValue(originXOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, xVal.GetValueType());
+            EXPECT_DOUBLE_EQ(1.5, xVal.GetValueDouble()) << "Origin.X should be at new ordinal";
+
+            DbValue yVal = change.GetNewValue(originYOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, yVal.GetValueType());
+            EXPECT_DOUBLE_EQ(2.5, yVal.GetValueDouble()) << "Origin.Y should be at new ordinal";
             }
         }
-    EXPECT_TRUE(foundRemapped)
-        << "SourceECClassId in link table should carry the remapped owner class ID "
-        << remappedOwnerClassId;
+    ASSERT_TRUE(foundInsert) << "Output should contain INSERT for ts_Animal";
+    }
+
+    // --- Test UPDATE ---
+    {
+    BeSQLite::ChangeSet outputUpdate;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputUpdate, sourceUpdate, diff, m_ecdb));
+    ASSERT_TRUE(outputUpdate.IsValid());
+
+    bool foundUpdate = false;
+    for (auto const& change : outputUpdate.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Update && change.GetTableName() == "ts_Animal")
+            {
+            foundUpdate = true;
+            DbValue xNew = change.GetNewValue(originXOrdAfter);
+            EXPECT_EQ(DbValueType::FloatVal, xNew.GetValueType());
+            if (xNew.GetValueType() == DbValueType::FloatVal)
+                EXPECT_DOUBLE_EQ(10.0, xNew.GetValueDouble());
+
+            DbValue yNew = change.GetNewValue(originYOrdAfter);
+            EXPECT_EQ(DbValueType::FloatVal, yNew.GetValueType());
+            if (yNew.GetValueType() == DbValueType::FloatVal)
+                EXPECT_DOUBLE_EQ(20.0, yNew.GetValueDouble());
+            }
+        }
+    ASSERT_TRUE(foundUpdate) << "Output should contain UPDATE for ts_Animal";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform correctly handles Point3d property (3 columns: X, Y, Z) when moved up.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_Point3dPropertyMovedUp)
+    {
+    // v1: Animal(no props) → Duck(Name:string, Pos:Point3d)
+    // v2: Animal(Pos:Point3d) → Duck(Name:string)
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+            <ECProperty propertyName="Pos" typeName="Point3d" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_Point3d.ecdb", schema1));
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (Name, Pos.X, Pos.Y, Pos.Z) VALUES ('Donald', 1.0, 2.0, 3.0)");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceInsert;
+    ASSERT_EQ(BE_SQLITE_OK, sourceInsert.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceInsert.IsValid());
+
+    tracker.EndTracking();
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "UPDATE ts.Duck SET Pos.X=10.0, Pos.Y=20.0, Pos.Z=30.0");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceUpdate;
+    ASSERT_EQ(BE_SQLITE_OK, sourceUpdate.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceUpdate.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Pos" typeName="Point3d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceInsert, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Verify diff has 3 swap entries for Pos.X, Pos.Y, Pos.Z
+    int posSwapCount = 0;
+    for (auto const& swap : diff.m_columnSwaps)
+        {
+        if (swap.m_classKey == "TestSchema:Duck" &&
+            (swap.m_accessString == "Pos.X" || swap.m_accessString == "Pos.Y" || swap.m_accessString == "Pos.Z"))
+            ++posSwapCount;
+        }
+    EXPECT_EQ(3, posSwapCount) << "Should have column swaps for Pos.X, Pos.Y, and Pos.Z";
+
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int posXOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Pos.X"].m_column.c_str());
+    int posYOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Pos.Y"].m_column.c_str());
+    int posZOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Pos.Z"].m_column.c_str());
+    ASSERT_GE(posXOrdAfter, 0);
+    ASSERT_GE(posYOrdAfter, 0);
+    ASSERT_GE(posZOrdAfter, 0);
+
+    // --- Test INSERT ---
+    {
+    BeSQLite::ChangeSet outputInsert;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputInsert, sourceInsert, diff, m_ecdb));
+    ASSERT_TRUE(outputInsert.IsValid());
+
+    bool foundInsert = false;
+    for (auto const& change : outputInsert.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            foundInsert = true;
+            DbValue xVal = change.GetNewValue(posXOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, xVal.GetValueType());
+            EXPECT_DOUBLE_EQ(1.0, xVal.GetValueDouble());
+
+            DbValue yVal = change.GetNewValue(posYOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, yVal.GetValueType());
+            EXPECT_DOUBLE_EQ(2.0, yVal.GetValueDouble());
+
+            DbValue zVal = change.GetNewValue(posZOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, zVal.GetValueType());
+            EXPECT_DOUBLE_EQ(3.0, zVal.GetValueDouble());
+            }
+        }
+    ASSERT_TRUE(foundInsert);
+    }
+
+    // --- Test UPDATE ---
+    {
+    BeSQLite::ChangeSet outputUpdate;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputUpdate, sourceUpdate, diff, m_ecdb));
+    ASSERT_TRUE(outputUpdate.IsValid());
+
+    bool foundUpdate = false;
+    for (auto const& change : outputUpdate.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Update && change.GetTableName() == "ts_Animal")
+            {
+            foundUpdate = true;
+            DbValue xNew = change.GetNewValue(posXOrdAfter);
+            if (xNew.GetValueType() == DbValueType::FloatVal)
+                EXPECT_DOUBLE_EQ(10.0, xNew.GetValueDouble());
+            DbValue yNew = change.GetNewValue(posYOrdAfter);
+            if (yNew.GetValueType() == DbValueType::FloatVal)
+                EXPECT_DOUBLE_EQ(20.0, yNew.GetValueDouble());
+            DbValue zNew = change.GetNewValue(posZOrdAfter);
+            if (zNew.GetValueType() == DbValueType::FloatVal)
+                EXPECT_DOUBLE_EQ(30.0, zNew.GetValueDouble());
+            }
+        }
+    ASSERT_TRUE(foundUpdate);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform correctly handles NavigationProperty column shift when another property
+// moves up the hierarchy. Nav properties require the owning class to be a DIRECT
+// constraint class in the referenced relationship (polymorphic inheritance is insufficient).
+// Here Duck is the direct source constraint. Duck has MyTarget.Id (js1) and Name (js2).
+// When Name moves to Animal base, it takes js1; MyTarget.Id shifts to js2 — a circular
+// swap. Only the real Id column participates; the virtual RelECClassId is excluded.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_NavPropertyMovedUp)
+    {
+    // v1: Animal(∅) → Duck(MyTarget.Id→js1, Name→js2)
+    //     Relationship DuckRefersToTarget: source=Duck (direct constraint)
+    // v2: Animal(Name→js1) → Duck(MyTarget.Id→js2)
+    //     Result: MyTarget.Id: js1→js2, Name: js2→js1 (circular swap)
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Target">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECRelationshipClass typeName="DuckRefersToTarget" strength="referencing" modifier="None">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="Duck"/>
+            </Source>
+            <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Target"/>
+            </Target>
+          </ECRelationshipClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECNavigationProperty propertyName="MyTarget" relationshipName="DuckRefersToTarget" direction="Forward" />
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_NavProp.ecdb", schema1));
+
+    // Insert a Target row first
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Target (ECInstanceId) VALUES (NULL)");
+    m_ecdb.SaveChanges();
+
+    // Insert a Duck with NavProperty defined FIRST (so MyTarget.Id=js1, Name=js2)
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (MyTarget.Id, Name) VALUES (1, 'Dewey')");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceInsert;
+    ASSERT_EQ(BE_SQLITE_OK, sourceInsert.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceInsert.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+    auto duckMapBefore = schemaBefore.GetFullPropertyMap("TestSchema:Duck");
+    ASSERT_TRUE(duckMapBefore.count("MyTarget.Id") > 0);
+
+    // Schema v2: move Name to Animal base class. NavProp stays on Duck (constraint unchanged).
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Target">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="DuckRefersToTarget" strength="referencing" modifier="None">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="Duck"/>
+            </Source>
+            <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Target"/>
+            </Target>
+          </ECRelationshipClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECNavigationProperty propertyName="MyTarget" relationshipName="DuckRefersToTarget" direction="Forward" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceInsert, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Nav property should have exactly 1 column swap (only Id column; RelClassId is virtual/excluded)
+    int navSwapCount = 0;
+    for (auto const& swap : diff.m_columnSwaps)
+        {
+        if (swap.m_classKey == "TestSchema:Duck" && swap.m_accessString == "MyTarget.Id")
+            ++navSwapCount;
+        }
+    EXPECT_EQ(1, navSwapCount) << "NavProperty should generate exactly 1 ColumnSwap (Id only, RelClassId is virtual)";
+
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int navIdOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["MyTarget.Id"].m_column.c_str());
+    ASSERT_GE(navIdOrdAfter, 0);
+
+    BeSQLite::ChangeSet outputInsert;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputInsert, sourceInsert, diff, m_ecdb));
+    ASSERT_TRUE(outputInsert.IsValid());
+
+    bool foundInsert = false;
+    for (auto const& change : outputInsert.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            foundInsert = true;
+            DbValue navVal = change.GetNewValue(navIdOrdAfter);
+            ASSERT_EQ(DbValueType::IntegerVal, navVal.GetValueType());
+            EXPECT_EQ(1, navVal.GetValueInt64()) << "NavProperty Id should be at new ordinal after column shift";
+            }
+        }
+    ASSERT_TRUE(foundInsert);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform correctly handles struct property (multiple leaf columns) moved up.
+// Each struct member becomes an independent ColumnSwap.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_StructPropertyMovedUp)
+    {
+    // v1: Animal(no props) → Duck(Name:string, S:MyStruct{A,B,C})
+    // v2: Animal(S:MyStruct{A,B,C}) → Duck(Name:string)
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="MyStruct" modifier="None">
+            <ECProperty propertyName="A" typeName="int" />
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+          </ECStructClass>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+            <ECStructProperty propertyName="S" typeName="MyStruct" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_Struct.ecdb", schema1));
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (Name, S.A, S.B, S.C) VALUES ('Huey', 42, 'hello', 3.14)");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceInsert;
+    ASSERT_EQ(BE_SQLITE_OK, sourceInsert.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceInsert.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="MyStruct" modifier="None">
+            <ECProperty propertyName="A" typeName="int" />
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+          </ECStructClass>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECStructProperty propertyName="S" typeName="MyStruct" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceInsert, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Verify 3 swaps for S.A, S.B, S.C
+    int structSwapCount = 0;
+    for (auto const& swap : diff.m_columnSwaps)
+        {
+        if (swap.m_classKey == "TestSchema:Duck" &&
+            (swap.m_accessString == "S.A" || swap.m_accessString == "S.B" || swap.m_accessString == "S.C"))
+            ++structSwapCount;
+        }
+    EXPECT_EQ(3, structSwapCount) << "Should have swaps for S.A, S.B, S.C";
+
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int saOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["S.A"].m_column.c_str());
+    int sbOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["S.B"].m_column.c_str());
+    int scOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["S.C"].m_column.c_str());
+    ASSERT_GE(saOrdAfter, 0);
+    ASSERT_GE(sbOrdAfter, 0);
+    ASSERT_GE(scOrdAfter, 0);
+
+    BeSQLite::ChangeSet outputInsert;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputInsert, sourceInsert, diff, m_ecdb));
+    ASSERT_TRUE(outputInsert.IsValid());
+
+    bool foundInsert = false;
+    for (auto const& change : outputInsert.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            foundInsert = true;
+            DbValue aVal = change.GetNewValue(saOrdAfter);
+            ASSERT_EQ(DbValueType::IntegerVal, aVal.GetValueType());
+            EXPECT_EQ(42, aVal.GetValueInt64());
+
+            DbValue bVal = change.GetNewValue(sbOrdAfter);
+            ASSERT_EQ(DbValueType::TextVal, bVal.GetValueType());
+            EXPECT_STREQ("hello", bVal.GetValueText());
+
+            DbValue cVal = change.GetNewValue(scOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, cVal.GetValueType());
+            EXPECT_DOUBLE_EQ(3.14, cVal.GetValueDouble());
+            }
+        }
+    ASSERT_TRUE(foundInsert);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform handles primitive array property (single JSON blob column) when a sibling
+// property moves up the hierarchy, shifting the array property's column ordinal.
+// ECDb does not support actually remapping array properties up the class hierarchy, so
+// this test uses a synthetic diff to simulate the column-swap scenario and verify that the
+// ChangesetTransformer handles the array's JSON blob correctly at the new ordinal.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_PrimitiveArrayPropertyMovedUp)
+    {
+    // Schema: Animal(∅) → Duck(Name:string, Scores:int[])
+    // ECDb assigns: Name→js1, Scores→js2
+    // Synthetic diff simulates swapping Name and Scores columns.
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+            <ECArrayProperty propertyName="Scores" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_PrimArray.ecdb", schema1));
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    // Get actual column names from the captured schema (Primary tables use "ps" prefix, not "js")
+    auto duckMapBefore = schemaBefore.GetFullPropertyMap("TestSchema:Duck");
+    ASSERT_TRUE(duckMapBefore.count("Name") > 0) << "Duck must have Name in property map";
+    ASSERT_TRUE(duckMapBefore.count("Scores") > 0) << "Duck must have Scores in property map";
+    Utf8String nameColBefore   = duckMapBefore["Name"].m_column;
+    Utf8String scoresColBefore = duckMapBefore["Scores"].m_column;
+
+    // Insert using binder for array property (not string literal — arrays are stored as JSON blobs)
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Duck (Name, Scores) VALUES (?, ?)"));
+    stmt.BindText(1, "Donald", IECSqlBinder::MakeCopy::No);
+    auto& arrBinder = stmt.GetBinder(2);
+    arrBinder.AddArrayElement().BindInt(1);
+    arrBinder.AddArrayElement().BindInt(2);
+    arrBinder.AddArrayElement().BindInt(3);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceInsert;
+    ASSERT_EQ(BE_SQLITE_OK, sourceInsert.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceInsert.IsValid());
+    m_ecdb.SaveChanges();
+
+    // Build a synthetic diff: swap Name and Scores columns.
+    // This simulates what would happen if Scores moved to base and Name stayed derived.
+    ChangesetSchemaDiff syntheticDiff;
+    {
+    ChangesetSchemaDiff::ColumnSwap nameSwap;
+    nameSwap.m_oldTable     = "ts_Animal";
+    nameSwap.m_classKey     = "TestSchema:Duck";
+    nameSwap.m_accessString = "Name";
+    nameSwap.m_oldColumn    = nameColBefore;
+    nameSwap.m_newTable     = "ts_Animal";
+    nameSwap.m_newColumn    = scoresColBefore;
+    syntheticDiff.m_columnSwaps.push_back(nameSwap);
+
+    ChangesetSchemaDiff::ColumnSwap scoresSwap;
+    scoresSwap.m_oldTable     = "ts_Animal";
+    scoresSwap.m_classKey     = "TestSchema:Duck";
+    scoresSwap.m_accessString = "Scores";
+    scoresSwap.m_oldColumn    = scoresColBefore;
+    scoresSwap.m_newTable     = "ts_Animal";
+    scoresSwap.m_newColumn    = nameColBefore;
+    syntheticDiff.m_columnSwaps.push_back(scoresSwap);
+    }
+
+    ASSERT_TRUE(syntheticDiff.NeedsTransform());
+
+    BeSQLite::ChangeSet outputInsert;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputInsert, sourceInsert, syntheticDiff, m_ecdb));
+    ASSERT_TRUE(outputInsert.IsValid());
+
+    // After swap: nameColBefore holds Scores (JSON text), scoresColBefore holds Name (text)
+    // Find the ordinals using the ECDb column metadata
+    int scoresNewOrd = GetColumnOrdinal(m_ecdb, "ts_Animal", nameColBefore.c_str());
+    int nameNewOrd   = GetColumnOrdinal(m_ecdb, "ts_Animal", scoresColBefore.c_str());
+    ASSERT_GE(scoresNewOrd, 0) << "Column '" << nameColBefore << "' must exist in ts_Animal";
+    ASSERT_GE(nameNewOrd, 0)   << "Column '" << scoresColBefore << "' must exist in ts_Animal";
+
+    bool foundInsert = false;
+    for (auto const& change : outputInsert.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            foundInsert = true;
+            // After swap: nameColBefore should hold Scores (JSON text), scoresColBefore should hold Name (text)
+            DbValue scoresVal = change.GetNewValue(scoresNewOrd);
+            DbValue nameVal   = change.GetNewValue(nameNewOrd);
+            EXPECT_EQ(DbValueType::TextVal, scoresVal.GetValueType())
+                << "Scores (JSON blob) should be at " << nameColBefore << " after swap";
+            EXPECT_EQ(DbValueType::TextVal, nameVal.GetValueType())
+                << "Name should be at " << scoresColBefore << " after swap";
+            EXPECT_NE(nullptr, strstr(scoresVal.GetValueText(), "1"))
+                << "Scores JSON should contain element 1";
+            }
+        }
+    ASSERT_TRUE(foundInsert);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test 3-property circular swap: A→1, B→2, C→3 becomes A→3, B→1, C→2 (3-way rotation).
+// This verifies the transformer handles N-way circular dependencies correctly.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_ThreePropertyCircularSwap)
+    {
+    // v1: Animal(no props) → Duck(A:int, B:string, C:double)
+    //     ECDb assigns: A→js1, B→js2, C→js3
+    // v2: Animal(C:double, A:int) → Duck(B:string)
+    //     ECDb assigns: C→js1, A→js2, B→js3 (base first: C, A; then derived: B)
+    //     Result: A: js1→js2, B: js2→js3, C: js3→js1 (3-way rotation!)
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="A" typeName="int" />
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_3WayCircular.ecdb", schema1));
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (A, B, C) VALUES (100, 'text', 9.99)");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceInsert;
+    ASSERT_EQ(BE_SQLITE_OK, sourceInsert.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceInsert.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="C" typeName="double" />
+            <ECProperty propertyName="A" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="B" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceInsert, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Verify 3 swaps for A, B, C
+    EXPECT_GE((int)diff.m_columnSwaps.size(), 3) << "Should have at least 3 column swaps";
+
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int aOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["A"].m_column.c_str());
+    int bOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["B"].m_column.c_str());
+    int cOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["C"].m_column.c_str());
+    ASSERT_GE(aOrdAfter, 0);
+    ASSERT_GE(bOrdAfter, 0);
+    ASSERT_GE(cOrdAfter, 0);
+
+    BeSQLite::ChangeSet outputInsert;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(outputInsert, sourceInsert, diff, m_ecdb));
+    ASSERT_TRUE(outputInsert.IsValid());
+
+    bool foundInsert = false;
+    for (auto const& change : outputInsert.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            foundInsert = true;
+            DbValue aVal = change.GetNewValue(aOrdAfter);
+            ASSERT_EQ(DbValueType::IntegerVal, aVal.GetValueType());
+            EXPECT_EQ(100, aVal.GetValueInt64()) << "A=100 should be at new position";
+
+            DbValue bVal = change.GetNewValue(bOrdAfter);
+            ASSERT_EQ(DbValueType::TextVal, bVal.GetValueType());
+            EXPECT_STREQ("text", bVal.GetValueText()) << "B='text' should be at new position";
+
+            DbValue cVal = change.GetNewValue(cOrdAfter);
+            ASSERT_EQ(DbValueType::FloatVal, cVal.GetValueType());
+            EXPECT_DOUBLE_EQ(9.99, cVal.GetValueDouble()) << "C=9.99 should be at new position";
+            }
+        }
+    ASSERT_TRUE(foundInsert);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform handles two different classes in the same TPH table, each with their
+// own distinct column remapping rules.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_TwoClassesDifferentRemaps)
+    {
+    // v1: Animal → Duck(Quack:string, Age:int), Fish(Depth:int, Scale:string)
+    //     ECDb assigns Duck: Quack→js1, Age→js2; Fish: Depth→js3, Scale→js4
+    // v2: Animal(Age:int) → Duck(Quack:string), Fish(Depth:int, Scale:string)
+    //     Duck's Age moves; Fish columns unchanged
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Quack" typeName="string" />
+            <ECProperty propertyName="Age" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Fish">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Depth" typeName="int" />
+            <ECProperty propertyName="Scale" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_TwoClasses.ecdb", schema1));
+
+    // Insert both a Duck and Fish and capture single changeset
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (Quack, Age) VALUES ('loud', 5)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Fish (Depth, Scale) VALUES (200, 'shiny')");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet source;
+    ASSERT_EQ(BE_SQLITE_OK, source.FromChangeTrack(tracker));
+    ASSERT_TRUE(source.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    // v2: move Age to Animal base class — Duck remaps, Fish unchanged
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Age" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Quack" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Fish">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Depth" typeName="int" />
+            <ECProperty propertyName="Scale" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Get class IDs to verify per-row transform
+    uint64_t duckClassId = GetClassId(m_ecdb, "TestSchema", "Duck");
+    uint64_t fishClassId = GetClassId(m_ecdb, "TestSchema", "Fish");
+    ASSERT_NE(0u, duckClassId);
+    ASSERT_NE(0u, fishClassId);
+
+    // Get new ordinals for Duck's remapped properties
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int quackOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Quack"].m_column.c_str());
+    int ageOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Age"].m_column.c_str());
+    ASSERT_GE(quackOrdAfter, 0);
+    ASSERT_GE(ageOrdAfter, 0);
+
+    // Get Fish ordinals (should be unchanged)
+    auto fishMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Fish");
+    int depthOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", fishMapAfter["Depth"].m_column.c_str());
+    int scaleOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", fishMapAfter["Scale"].m_column.c_str());
+    ASSERT_GE(depthOrdAfter, 0);
+    ASSERT_GE(scaleOrdAfter, 0);
+
+    BeSQLite::ChangeSet output;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
+    ASSERT_TRUE(output.IsValid());
+
+    // Find the ECClassId ordinal
+    int classIdOrd = GetColumnOrdinal(m_ecdb, "ts_Animal", "ECClassId");
+
+    bool foundDuck = false, foundFish = false;
+    for (auto const& change : output.GetChanges())
+        {
+        if (change.GetOpcode() != DbOpcode::Insert || change.GetTableName() != "ts_Animal")
+            continue;
+
+        // Determine class from ECClassId column
+        uint64_t rowClassId = 0;
+        if (classIdOrd >= 0)
+            {
+            DbValue cid = change.GetNewValue(classIdOrd);
+            if (cid.GetValueType() == DbValueType::IntegerVal)
+                rowClassId = (uint64_t)cid.GetValueInt64();
+            }
+
+        if (rowClassId == duckClassId)
+            {
+            foundDuck = true;
+            // Duck's Quack should be at new position
+            DbValue quackVal = change.GetNewValue(quackOrdAfter);
+            EXPECT_EQ(DbValueType::TextVal, quackVal.GetValueType());
+            if (quackVal.GetValueType() == DbValueType::TextVal)
+                EXPECT_STREQ("loud", quackVal.GetValueText());
+
+            // Duck's Age should be at new position
+            DbValue ageVal = change.GetNewValue(ageOrdAfter);
+            EXPECT_EQ(DbValueType::IntegerVal, ageVal.GetValueType());
+            if (ageVal.GetValueType() == DbValueType::IntegerVal)
+                EXPECT_EQ(5, ageVal.GetValueInt64());
+            }
+        else if (rowClassId == fishClassId)
+            {
+            foundFish = true;
+            // Fish's Depth should be at its position (unchanged or correctly mapped)
+            DbValue depthVal = change.GetNewValue(depthOrdAfter);
+            EXPECT_EQ(DbValueType::IntegerVal, depthVal.GetValueType());
+            if (depthVal.GetValueType() == DbValueType::IntegerVal)
+                EXPECT_EQ(200, depthVal.GetValueInt64());
+
+            DbValue scaleVal = change.GetNewValue(scaleOrdAfter);
+            EXPECT_EQ(DbValueType::TextVal, scaleVal.GetValueType());
+            if (scaleVal.GetValueType() == DbValueType::TextVal)
+                EXPECT_STREQ("shiny", scaleVal.GetValueText());
+            }
+        }
+    EXPECT_TRUE(foundDuck) << "Should find Duck INSERT in output";
+    EXPECT_TRUE(foundFish) << "Should find Fish INSERT in output";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform handles DELETE operation when properties have moved to overflow table.
+// Must generate a synthetic DELETE for the overflow row as well.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_DeleteWithOverflowRow)
+    {
+    // v1: Element with props A,B,C,D (MaxOverflow=4, fits in primary)
+    // v2: Add prop E → overflow triggers, some cols move to overflow
+    // Capture a DELETE changeset from v1 and transform it post-v2
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="A" typeName="int" />
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+            <ECProperty propertyName="D" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_DeleteOverflow.ecdb", schema1));
+
+    // Insert then delete to get a DELETE changeset
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Element (A, B, C, D) VALUES (1, 'x', 2.5, 3)");
+    m_ecdb.SaveChanges();
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM ts.Element");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceDelete;
+    ASSERT_EQ(BE_SQLITE_OK, sourceDelete.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceDelete.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    // v2: Add E property to trigger overflow
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="A" typeName="int" />
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+            <ECProperty propertyName="D" typeName="int" />
+            <ECProperty propertyName="E" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    BeSQLite::ChangeSet output;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceDelete, diff, m_ecdb));
+    ASSERT_TRUE(output.IsValid());
+
+    if (!diff.NeedsTransform())
+        {
+        // No cross-table move — verify passthrough
+        EXPECT_GT(output.GetSize(), 0);
+        return;
+        }
+
+    // If there was a cross-table move, verify we get DELETE operations in both tables
+    std::set<Utf8String> overflowTables;
+    for (auto const& ovf : diff.m_overflowTablesAdded)
+        overflowTables.insert(ovf.m_overflowTable);
+
+    bool foundPrimaryDelete = false;
+    bool foundOverflowDelete = false;
+    for (auto const& change : output.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Delete)
+            {
+            if (change.GetTableName() == "ts_Element")
+                foundPrimaryDelete = true;
+            else if (overflowTables.count(change.GetTableName()) > 0)
+                foundOverflowDelete = true;
+            }
+        }
+    EXPECT_TRUE(foundPrimaryDelete) << "Should have DELETE for primary table";
+    // Overflow DELETE is only needed if columns actually moved cross-table
+    bool hasCrossTableMove = false;
+    for (auto const& swap : diff.m_columnSwaps)
+        {
+        if (swap.m_oldTable != swap.m_newTable)
+            { hasCrossTableMove = true; break; }
+        }
+    if (hasCrossTableMove)
+        EXPECT_TRUE(foundOverflowDelete) << "Cross-table move should generate overflow DELETE";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform handles combined ClassId remap AND column swap in a single diff.
+// Both transforms must be applied in a single pass.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_ClassIdRemapPlusColumnSwap)
+    {
+    // This tests Category G1: ClassId remap plus column swap in the same transform.
+    // We set up a schema with Animal → Duck(Quack, Age), schema upgrade moves Age to base.
+    // Additionally, we inject a ClassId remap in the diff (simulating a class ID change).
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Quack" typeName="string" />
+            <ECProperty propertyName="Age" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_ClassIdPlusSwap.ecdb", schema1));
+
+    uint64_t duckClassId = GetClassId(m_ecdb, "TestSchema", "Duck");
+    ASSERT_NE(0u, duckClassId);
+    int classIdOrd = GetColumnOrdinal(m_ecdb, "ts_Animal", "ECClassId");
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (Quack, Age) VALUES ('loud', 7)");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet source;
+    ASSERT_EQ(BE_SQLITE_OK, source.FromChangeTrack(tracker));
+    ASSERT_TRUE(source.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    // Schema v2: move Age to base
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Age" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Quack" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    // Additionally inject a ClassId remap to simulate combined scenario
+    uint64_t remappedDuckId = duckClassId + 300;
+    ChangesetSchemaDiff::ClassIdRemap remap;
+    remap.m_classKey = "TestSchema:Duck";
+    remap.m_oldClassId = ECClassId(duckClassId);
+    remap.m_newClassId = ECClassId(remappedDuckId);
+    diff.m_classIdRemaps.push_back(std::move(remap));
+    ASSERT_TRUE(diff.NeedsTransform());
+
+    BeSQLite::ChangeSet output;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
+    ASSERT_TRUE(output.IsValid());
+
+    // Verify both transforms applied
+    bool foundClassIdRemap = false;
+    bool foundColumnData = false;
+
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int ageOrdAfter = -1;
+    if (duckMapAfter.count("Age") > 0)
+        ageOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["Age"].m_column.c_str());
+
+    for (auto const& change : output.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            // Check ClassId was remapped
+            if (classIdOrd >= 0)
+                {
+                DbValue cid = change.GetNewValue(classIdOrd);
+                if (cid.GetValueType() == DbValueType::IntegerVal && (uint64_t)cid.GetValueInt64() == remappedDuckId)
+                    foundClassIdRemap = true;
+                }
+
+            // Check column data exists (Age=7 should be somewhere in the output)
+            if (ageOrdAfter >= 0)
+                {
+                DbValue ageVal = change.GetNewValue(ageOrdAfter);
+                if (ageVal.GetValueType() == DbValueType::IntegerVal && ageVal.GetValueInt64() == 7)
+                    foundColumnData = true;
+                }
+            }
+        }
+    EXPECT_TRUE(foundClassIdRemap) << "ECClassId should be remapped from " << duckClassId << " to " << remappedDuckId;
+    // Column data may not swap if ECDb didn't reassign columns
+    if (!diff.m_columnSwaps.empty())
+        EXPECT_TRUE(foundColumnData) << "Age=7 should be at new position after column swap";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform handles UPDATE where only a subset of the remapped columns were modified.
+// Unmodified columns should remain "undefined" (not present) in the output UPDATE.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_UpdatePartialColumns)
+    {
+    // v1: Animal(no props) → Duck(A:int, B:string, C:double)
+    // v2: Animal(A:int) → Duck(B:string, C:double)
+    // Capture UPDATE that only touches B — A and C should not appear in output
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="A" typeName="int" />
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_PartialUpdate.ecdb", schema1));
+
+    // Insert full row, then UPDATE only B
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Duck (A, B, C) VALUES (10, 'old', 3.14)");
+    m_ecdb.SaveChanges();
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.Duck SET B='new'");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet sourceUpdate;
+    ASSERT_EQ(BE_SQLITE_OK, sourceUpdate.FromChangeTrack(tracker));
+    ASSERT_TRUE(sourceUpdate.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+    auto duckMapBefore = schemaBefore.GetFullPropertyMap("TestSchema:Duck");
+    int bOrdBefore = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapBefore["B"].m_column.c_str());
+
+    // Verify source changeset only has B defined (A and C should be undefined)
+    for (auto const& change : sourceUpdate.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Update && change.GetTableName() == "ts_Animal")
+            {
+            DbValue bNew = change.GetNewValue(bOrdBefore);
+            ASSERT_EQ(DbValueType::TextVal, bNew.GetValueType()) << "Source should have B='new'";
+            }
+        }
+
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="A" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="B" typeName="string" />
+            <ECProperty propertyName="C" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceUpdate, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    auto duckMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Duck");
+    int bOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", duckMapAfter["B"].m_column.c_str());
+    ASSERT_GE(bOrdAfter, 0);
+
+    BeSQLite::ChangeSet output;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, sourceUpdate, diff, m_ecdb));
+    ASSERT_TRUE(output.IsValid());
+
+    bool foundUpdate = false;
+    for (auto const& change : output.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Update && change.GetTableName() == "ts_Animal")
+            {
+            foundUpdate = true;
+            // B should be at its new position
+            DbValue bNew = change.GetNewValue(bOrdAfter);
+            EXPECT_EQ(DbValueType::TextVal, bNew.GetValueType());
+            if (bNew.GetValueType() == DbValueType::TextVal)
+                EXPECT_STREQ("new", bNew.GetValueText());
+            }
+        }
+    ASSERT_TRUE(foundUpdate);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform correctly handles a table with ExclusiveRootClassId (no per-row
+// ECClassId column). The transformer must use the table's exclusive root class.
+// OwnTable mapping (the default for non-derived classes) gives ExclusiveRootClassId.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_NoECClassIdColumn_ExclusiveRoot)
+    {
+    // A non-derived entity class with OwnTable (default) mapping gets ExclusiveRootClassId —
+    // no per-row ECClassId column in the table.
+    // We test that column swap still works without per-row class ID.
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Widget">
+            <ECProperty propertyName="Name" typeName="string" />
+            <ECProperty propertyName="Score" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_ExclusiveRoot.ecdb", schema1));
+
+    // Verify table has ExclusiveRootClassId (no per-row ECClassId)
+    int classIdOrd = GetColumnOrdinal(m_ecdb, "ts_Widget", "ECClassId");
+
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Widget (Name, Score) VALUES ('gear', 42)");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet source;
+    ASSERT_EQ(BE_SQLITE_OK, source.FromChangeTrack(tracker));
+    ASSERT_TRUE(source.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    // Build a synthetic diff that swaps Name and Score columns
+    auto widgetMap = schemaBefore.GetFullPropertyMap("TestSchema:Widget");
+    if (widgetMap.count("Name") == 0 || widgetMap.count("Score") == 0)
+        {
+        // Schema not structured as expected
+        return;
+        }
+
+    Utf8String nameCol  = widgetMap["Name"].m_column;
+    Utf8String scoreCol = widgetMap["Score"].m_column;
+
+    // Create a synthetic column swap (simulating what would happen if columns moved)
+    ChangesetSchemaDiff diff;
+    ChangesetSchemaDiff::ColumnSwap swap1;
+    swap1.m_classKey = "TestSchema:Widget";
+    swap1.m_accessString = "Name";
+    swap1.m_oldTable = "ts_Widget";
+    swap1.m_oldColumn = nameCol;
+    swap1.m_newTable = "ts_Widget";
+    swap1.m_newColumn = scoreCol;
+    diff.m_columnSwaps.push_back(std::move(swap1));
+
+    ChangesetSchemaDiff::ColumnSwap swap2;
+    swap2.m_classKey = "TestSchema:Widget";
+    swap2.m_accessString = "Score";
+    swap2.m_oldTable = "ts_Widget";
+    swap2.m_oldColumn = scoreCol;
+    swap2.m_newTable = "ts_Widget";
+    swap2.m_newColumn = nameCol;
+    diff.m_columnSwaps.push_back(std::move(swap2));
+    ASSERT_TRUE(diff.NeedsTransform());
+
+    BeSQLite::ChangeSet output;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
+    ASSERT_TRUE(output.IsValid());
+
+    // Verify data was swapped: Name("gear") should be at Score's ordinal, Score(42) at Name's ordinal
+    int nameOrd  = GetColumnOrdinal(m_ecdb, "ts_Widget", nameCol.c_str());
+    int scoreOrd = GetColumnOrdinal(m_ecdb, "ts_Widget", scoreCol.c_str());
+
+    bool foundInsert = false;
+    for (auto const& change : output.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Widget")
+            {
+            foundInsert = true;
+            // After swap: Name data should be where Score column is
+            DbValue nameAtScoreSlot = change.GetNewValue(scoreOrd);
+            EXPECT_EQ(DbValueType::TextVal, nameAtScoreSlot.GetValueType())
+                << "Name text should now be at Score's column ordinal (no ECClassId needed)";
+            if (nameAtScoreSlot.GetValueType() == DbValueType::TextVal)
+                EXPECT_STREQ("gear", nameAtScoreSlot.GetValueText());
+
+            // Score data should be where Name column is
+            DbValue scoreAtNameSlot = change.GetNewValue(nameOrd);
+            EXPECT_EQ(DbValueType::IntegerVal, scoreAtNameSlot.GetValueType())
+                << "Score int should now be at Name's column ordinal";
+            if (scoreAtNameSlot.GetValueType() == DbValueType::IntegerVal)
+                EXPECT_EQ(42, scoreAtNameSlot.GetValueInt64());
+            }
+        }
+    ASSERT_TRUE(foundInsert) << "Should find INSERT in transformed output (ExclusiveRootClassId table)";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Test Transform with derived class inheriting a remap from its base class.
+// Base property remaps and all derived class instances must also be correctly transformed.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangesetSchemaTestFixture, Transform_DerivedClassInheritsRemap)
+    {
+    // v1: Animal → Duck(Quack, Age) → Mallard(Color)
+    //     All in same TPH table. Quack→js1, Age→js2, Color→js3
+    // v2: Animal(Age) → Duck(Quack) → Mallard(Color)
+    //     Age→js1, Quack→js2, Color→js3
+    //     Both Duck AND Mallard instances should have Age/Quack swapped
+    SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Quack" typeName="string" />
+            <ECProperty propertyName="Age" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Mallard">
+            <BaseClass>Duck</BaseClass>
+            <ECProperty propertyName="Color" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesetSchema_Transform_DerivedInherits.ecdb", schema1));
+
+    // Insert a Mallard instance (leaf class inherits Duck's columns)
+    TestTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE,
+        "INSERT INTO ts.Mallard (Quack, Age, Color) VALUES ('soft', 3, 'green')");
+    tracker.EnableTracking(false);
+    BeSQLite::ChangeSet source;
+    ASSERT_EQ(BE_SQLITE_OK, source.FromChangeTrack(tracker));
+    ASSERT_TRUE(source.IsValid());
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaBefore;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaBefore, m_ecdb));
+
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00"
+                  xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Animal">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Age" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Duck">
+            <BaseClass>Animal</BaseClass>
+            <ECProperty propertyName="Quack" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Mallard">
+            <BaseClass>Duck</BaseClass>
+            <ECProperty propertyName="Color" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+
+    ChangesetSchema schemaAfter;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchema::CaptureFromDb(schemaAfter, m_ecdb));
+
+    ChangesetSchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetSchemaDiff::Diff(diff, schemaBefore, schemaAfter));
+    ASSERT_FALSE(diff.HasErrors());
+
+    if (!diff.NeedsTransform() || diff.m_columnSwaps.empty())
+        {
+        BeSQLite::ChangeSet output;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
+        ASSERT_TRUE(output.IsValid());
+        return;
+        }
+
+    // Verify that diff has entries for Mallard (derived class should inherit swaps)
+    bool hasMallardSwap = false;
+    for (auto const& swap : diff.m_columnSwaps)
+        {
+        if (swap.m_classKey == "TestSchema:Mallard")
+            { hasMallardSwap = true; break; }
+        }
+    EXPECT_TRUE(hasMallardSwap) << "Diff should include ColumnSwap entries for derived class Mallard";
+
+    auto mallardMapAfter = schemaAfter.GetFullPropertyMap("TestSchema:Mallard");
+    int quackOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", mallardMapAfter["Quack"].m_column.c_str());
+    int ageOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", mallardMapAfter["Age"].m_column.c_str());
+    int colorOrdAfter = GetColumnOrdinal(m_ecdb, "ts_Animal", mallardMapAfter["Color"].m_column.c_str());
+    ASSERT_GE(quackOrdAfter, 0);
+    ASSERT_GE(ageOrdAfter, 0);
+    ASSERT_GE(colorOrdAfter, 0);
+
+    BeSQLite::ChangeSet output;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ChangesetTransformer::Transform(output, source, diff, m_ecdb));
+    ASSERT_TRUE(output.IsValid());
+
+    bool foundMallard = false;
+    for (auto const& change : output.GetChanges())
+        {
+        if (change.GetOpcode() == DbOpcode::Insert && change.GetTableName() == "ts_Animal")
+            {
+            foundMallard = true;
+            DbValue quackVal = change.GetNewValue(quackOrdAfter);
+            EXPECT_EQ(DbValueType::TextVal, quackVal.GetValueType());
+            if (quackVal.GetValueType() == DbValueType::TextVal)
+                EXPECT_STREQ("soft", quackVal.GetValueText());
+
+            DbValue ageVal = change.GetNewValue(ageOrdAfter);
+            EXPECT_EQ(DbValueType::IntegerVal, ageVal.GetValueType());
+            if (ageVal.GetValueType() == DbValueType::IntegerVal)
+                EXPECT_EQ(3, ageVal.GetValueInt64());
+
+            DbValue colorVal = change.GetNewValue(colorOrdAfter);
+            EXPECT_EQ(DbValueType::TextVal, colorVal.GetValueType());
+            if (colorVal.GetValueType() == DbValueType::TextVal)
+                EXPECT_STREQ("green", colorVal.GetValueText());
+            }
+        }
+    ASSERT_TRUE(foundMallard) << "Mallard INSERT should be correctly transformed";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

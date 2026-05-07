@@ -418,6 +418,7 @@ private:
     BeSQLite::SnappyToBlob   m_snappyTo;
     TxnRelationshipLinkTables m_rlt;
     bool m_allowSaveChangesDuringRebase = false;
+    bool m_allowConcurrentSchemaImport = false;
     int m_txnErrors = 0;
     bool m_fatalValidationError;
     bool m_initTableHandlers;
@@ -487,6 +488,7 @@ private:
     void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
     bool PullMergeEraseTxn(TxnManager::TxnId txnId);
     BeSQLite::DbResult SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation);
+    void PullMergeRebaseUpdateSchemaTxn(TxnId txnId);
         
 public:
     void StartNewSession();
@@ -532,6 +534,14 @@ public:
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
+
+    //! Enable or disable concurrent schema import mode for the rebase phase of PullMerge.
+    //! When enabled, EcSchema Txns are rebased by replaying their original schema sessions
+    //! (via SchemaManager::Sessions::ReplayForTxnId) rather than re-applying the old binary
+    //! changeset. This allows two users to each import schemas locally without an exclusive
+    //! lock: whoever pushes first wins; the second user pulls and upgrades their local Txns.
+    //! Must be set before PullMergeRebaseBegin() is called. Cleared automatically at the end of rebase.
+    DGNPLATFORM_EXPORT void SetAllowConcurrentSchemaImport(bool allow) { m_allowConcurrentSchemaImport = allow; }
     DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
     DGNPLATFORM_EXPORT BeSQLite::DbResult DiscardLocalChanges();
     DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;

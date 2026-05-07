@@ -7161,4 +7161,462 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, MovePrimitiveArrayPropertyUpInHierarchy)
+    {
+    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECArrayProperty propertyName="MovingProperty" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePrimitiveArrayPropertyUpInHierarchy.ecdb", schemaItem));
+    {
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO TestSchema.A (MovingProperty) VALUES (?)"));
+    IECSqlBinder& arrayBinder = insertStmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt64(10));
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt64(20));
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt64(30));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":[10,20,30]}])json"), result);
+    }
+
+    SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECArrayProperty propertyName="MovingProperty" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    {
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO TestSchema.A (MovingProperty) VALUES (?)"));
+    IECSqlBinder& arrayBinder = insertStmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt64(40));
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt64(50));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":[10,20,30]},{"MovingProperty":[40,50]}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, MoveStructArrayPropertyUpInHierarchy)
+    {
+    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="ColorType">
+            <ECProperty propertyName="red" typeName="int" />
+            <ECProperty propertyName="green" typeName="int" />
+            <ECProperty propertyName="blue" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECStructArrayProperty propertyName="MovingProperty" typeName="ColorType" minOccurs="0" maxOccurs="unbounded" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveStructArrayPropertyUpInHierarchy.ecdb", schemaItem));
+    {
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO TestSchema.A (MovingProperty) VALUES (?)"));
+    IECSqlBinder& arrayBinder = insertStmt.GetBinder(1);
+    {
+    IECSqlBinder& elem = arrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elem["red"].BindInt(255));
+    ASSERT_EQ(ECSqlStatus::Success, elem["green"].BindInt(0));
+    ASSERT_EQ(ECSqlStatus::Success, elem["blue"].BindInt(0));
+    }
+    {
+    IECSqlBinder& elem = arrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elem["red"].BindInt(0));
+    ASSERT_EQ(ECSqlStatus::Success, elem["green"].BindInt(255));
+    ASSERT_EQ(ECSqlStatus::Success, elem["blue"].BindInt(0));
+    }
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":[{"red":255,"green":0,"blue":0},{"red":0,"green":255,"blue":0}]}])json"), result);
+    }
+
+    SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="ColorType">
+            <ECProperty propertyName="red" typeName="int" />
+            <ECProperty propertyName="green" typeName="int" />
+            <ECProperty propertyName="blue" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECStructArrayProperty propertyName="MovingProperty" typeName="ColorType" minOccurs="0" maxOccurs="unbounded" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECStructArrayProperty propertyName="MovingProperty" typeName="ColorType" minOccurs="0" maxOccurs="unbounded" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    {
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO TestSchema.A (MovingProperty) VALUES (?)"));
+    IECSqlBinder& arrayBinder = insertStmt.GetBinder(1);
+    IECSqlBinder& elem = arrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elem["red"].BindInt(0));
+    ASSERT_EQ(ECSqlStatus::Success, elem["green"].BindInt(0));
+    ASSERT_EQ(ECSqlStatus::Success, elem["blue"].BindInt(255));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":[{"red":255,"green":0,"blue":0},{"red":0,"green":255,"blue":0}]},{"MovingProperty":[{"red":0,"green":0,"blue":255}]}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, MovePoint2dPropertyUpInHierarchy)
+    {
+    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="MovingProperty" typeName="point2d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePoint2dPropertyUpInHierarchy.ecdb", schemaItem));
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.X, MovingProperty.Y) VALUES (1.5, 2.5)");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"x":1.5,"y":2.5}}])json"), result);
+    }
+
+    SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="MovingProperty" typeName="point2d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="MovingProperty" typeName="point2d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.X, MovingProperty.Y) VALUES (3.5, 4.5)");
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"x":1.5,"y":2.5}},{"MovingProperty":{"x":3.5,"y":4.5}}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, MovePoint3dPropertyUpInHierarchy)
+    {
+    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="MovingProperty" typeName="point3d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePoint3dPropertyUpInHierarchy.ecdb", schemaItem));
+    {
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.X, MovingProperty.Y, MovingProperty.Z) VALUES (1.5, 2.5, 3.5)");
+
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"x":1.5,"y":2.5,"z":3.5}}])json"), result);
+    }
+
+    SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="MovingProperty" typeName="point3d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="MovingProperty" typeName="point3d" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.X, MovingProperty.Y, MovingProperty.Z) VALUES (4.5, 5.5, 6.5)");
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
+    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":{"x":1.5,"y":2.5,"z":3.5}},{"MovingProperty":{"x":4.5,"y":5.5,"z":6.5}}])json"), result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, MoveNavPropertyUpInHierarchy)
+    {
+    // Nav properties can only be defined on a class that is DIRECTLY listed as a
+    // constraint class in the referenced relationship (polymorphic inheritance alone
+    // is not sufficient). This test puts the nav prop on class A (direct constraint)
+    // alongside another property PropA. In v2, PropA moves to MyBaseClass, causing
+    // A's NavProp.Id column to shift — verifying nav prop data survives the remap.
+    // v1: A → NavProp.Id=js1, PropA=js2
+    // v2: MyBaseClass(PropA=js1), A(NavProp.Id=js2)  ← circular swap
+    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Target">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECNavigationProperty propertyName="NavProp" relationshipName="TargetOwnsA" direction="Backward" />
+            <ECProperty propertyName="PropA" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="TargetOwnsA" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+              <Class class="Target"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+              <Class class="A"/>
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveNavPropertyUpInHierarchy.ecdb", schemaItem));
+
+    ECInstanceKey targetKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(targetKey, "INSERT INTO TestSchema.Target (Name) VALUES ('Target 1')"));
+
+    ECInstanceKey aKey;
+    Utf8String insertA;
+    insertA.Sprintf("INSERT INTO TestSchema.A (NavProp.Id, PropA) VALUES (%" PRIu64 ", 42)", targetKey.GetInstanceId().GetValue());
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, insertA.c_str()));
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT NavProp, PropA FROM TestSchema.A");
+    Utf8String expectedJson;
+    expectedJson.Sprintf(R"json([{"NavProp":{"id":"%s","relClassName":"TestSchema.TargetOwnsA"},"PropA":42}])json", targetKey.GetInstanceId().ToHexStr().c_str());
+    ASSERT_EQ(JsonValue(expectedJson.c_str()), result);
+    }
+
+    // v2: move PropA to MyBaseClass. NavProp stays on A, but its column ordinal shifts.
+    SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="MyBaseClass">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropA" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Target">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECNavigationProperty propertyName="NavProp" relationshipName="TargetOwnsA" direction="Backward" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>MyBaseClass</BaseClass>
+            <ECProperty propertyName="PropC1" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="TargetOwnsA" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+              <Class class="Target"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+              <Class class="A"/>
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    ECInstanceKey target2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(target2Key, "INSERT INTO TestSchema.Target (Name) VALUES ('Target 2')"));
+
+    ECInstanceKey a2Key;
+    insertA.Sprintf("INSERT INTO TestSchema.A (NavProp.Id, PropA) VALUES (%" PRIu64 ", 99)", target2Key.GetInstanceId().GetValue());
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(a2Key, insertA.c_str()));
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT NavProp, PropA FROM TestSchema.A");
+    Utf8String expectedJson;
+    expectedJson.Sprintf(R"json([{"NavProp":{"id":"%s","relClassName":"TestSchema.TargetOwnsA"},"PropA":42},{"NavProp":{"id":"%s","relClassName":"TestSchema.TargetOwnsA"},"PropA":99}])json",
+        targetKey.GetInstanceId().ToHexStr().c_str(),
+        target2Key.GetInstanceId().ToHexStr().c_str());
+    ASSERT_EQ(JsonValue(expectedJson.c_str()), result);
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

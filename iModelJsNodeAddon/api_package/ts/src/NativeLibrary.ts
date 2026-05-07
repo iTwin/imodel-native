@@ -823,6 +823,10 @@ export declare namespace IModelJsNative {
     public pullMergeRebaseBegin(): TxnIdString[];
     public pullMergeRebaseEnd(): void;
     public pullMergeReverseLocalChanges(): TxnIdString[];
+    /** Enable concurrent schema import mode for the rebase phase of PullMerge.
+     * When enabled, EcSchema Txns are rebased by replaying their original schema sessions
+     * rather than re-applying the old binary changeset. Must be called before PullMergeRebaseBegin. */
+    public setAllowConcurrentSchemaImport(allow: boolean): void;
     public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
     public stashRestore(stashFile: string): void;
     public getPendingTxnsHash(includeReversedTxns: boolean): string;

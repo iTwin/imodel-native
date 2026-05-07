@@ -764,6 +764,26 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
             //! Get the number of recorded sessions.
             ECDB_EXPORT int GetCount() const;
+
+            //! Associate a TxnId with all recorded sessions that do not yet have one assigned.
+            //! Called automatically by TxnManager when a schema change is committed.
+            //! @param txnId  The uint64_t value of the committed TxnId.
+            //! @return SUCCESS or ERROR
+            ECDB_EXPORT BentleyStatus SetTxnId(uint64_t txnId);
+
+            //! Replay only the recorded sessions that are associated with the given TxnId.
+            //! Used during PullMerge rebase to re-import schemas that were originally committed
+            //! as part of a specific EcSchema Txn, so that the stored Txn can be updated with
+            //! the changeset produced against the new merged schema base.
+            //! @param txnId   The uint64_t value of the TxnId whose sessions should be replayed.
+            //! @param target  The ECDb to replay into (must be open and writable).
+            //! @return The result of the last schema import, or SUCCESS if no matching sessions.
+            ECDB_EXPORT SchemaImportResult ReplayForTxnId(uint64_t txnId, ECDbR target) const;
+
+            //! Remove all sessions associated with the given TxnId, along with their stored schema XML.
+            //! @param txnId  The uint64_t value of the TxnId whose sessions should be removed.
+            //! @return SUCCESS, or ERROR if the operation could not be completed.
+            ECDB_EXPORT BentleyStatus DropByTxnId(uint64_t txnId);
             };
 
         //! Get the Sessions manager for recording/replaying schema imports.

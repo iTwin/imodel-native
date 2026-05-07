@@ -223,7 +223,7 @@ SchemaImportResult SchemaManager::Sessions::Replay(ECDbR target) const
 
         if (!schemasToImport.empty())
             {
-            lastResult = target.Schemas().ImportSchemas(schemasToImport, options);
+            lastResult = target.Schemas().ImportSchemas(schemasToImport, options, target.GetImpl().GetSettingsManager().GetSchemaImportToken());
             if (!lastResult.IsOk())
                 return true; // stop on first error
             }
@@ -292,6 +292,208 @@ int SchemaManager::Sessions::GetCount() const
         return 0;
 
     return (int)sessionsDoc.size();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaManager::Sessions::SetTxnId(uint64_t txnId)
+    {
+    Utf8String sessionsJson;
+    if (BE_SQLITE_ROW != m_ecdb.QueryBriefcaseLocalValue(sessionsJson, KEY_SESSIONS))
+        return SUCCESS;
+
+    BeJsDocument sessionsDoc;
+    sessionsDoc.Parse(sessionsJson);
+    if (!sessionsDoc.isArray() || 0 == sessionsDoc.size())
+        return SUCCESS;
+
+    bool anyUpdated = false;
+    for (BeJsValue::ArrayIndex i = 0, n = sessionsDoc.size(); i < n; ++i)
+        {
+        BeJsValue entry = sessionsDoc[i];
+        if (entry.isObject() && !entry.isMember("txnId"))
+            {
+            entry["txnId"] = (int64_t) txnId;
+            anyUpdated = true;
+            }
+        }
+
+    if (!anyUpdated)
+        return SUCCESS;
+
+    m_ecdb.SaveBriefcaseLocalValue(KEY_SESSIONS, sessionsDoc.Stringify());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaImportResult SchemaManager::Sessions::ReplayForTxnId(uint64_t txnId, ECDbR target) const
+    {
+    Utf8String sessionsJson;
+    if (BE_SQLITE_ROW != m_ecdb.QueryBriefcaseLocalValue(sessionsJson, KEY_SESSIONS))
+        return SchemaImportResult(SchemaImportResult::Status::OK);
+
+    BeJsDocument sessionsDoc;
+    sessionsDoc.Parse(sessionsJson);
+    if (!sessionsDoc.isArray() || 0 == sessionsDoc.size())
+        return SchemaImportResult(SchemaImportResult::Status::OK);
+
+    SchemaImportResult lastResult(SchemaImportResult::Status::OK);
+
+    sessionsDoc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst sessionEntry)
+        {
+        if (!sessionEntry.isObject())
+            return false;
+
+        // Only replay sessions whose committed TxnId matches
+        if (!sessionEntry.isMember("txnId"))
+            return false;
+        if ((uint64_t) sessionEntry["txnId"].GetInt64() != txnId)
+            return false;
+
+        int sessionId = sessionEntry["id"].GetInt();
+        SchemaImportOptions options = SchemaImportOptionsFromString(Utf8String(sessionEntry["importFlags"].asCString()));
+        BeJsConst schemasArr = sessionEntry["schemas"];
+        if (!schemasArr.isArray() || schemasArr.size() == 0)
+            return false;
+
+        ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+        readContext->AddSchemaLocater(const_cast<SchemaManager&>(target.Schemas()));
+
+        bvector<ECSchemaCP> schemasToImport;
+
+        schemasArr.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst schemaNameVal)
+            {
+            Utf8String fullName(schemaNameVal.asCString());
+
+            Utf8String xmlKey = SchemaXmlKey(fullName, true, sessionId);
+            Utf8String xml;
+            if (BE_SQLITE_ROW != m_ecdb.QueryBriefcaseLocalValue(xml, xmlKey.c_str()))
+                {
+                xmlKey = SchemaXmlKey(fullName, false, sessionId);
+                if (BE_SQLITE_ROW != m_ecdb.QueryBriefcaseLocalValue(xml, xmlKey.c_str()))
+                    {
+                    lastResult = SchemaImportResult(SchemaImportResult::Status::ERROR);
+                    return true; // stop iteration
+                    }
+                }
+
+            ECSchemaPtr schema;
+            if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, xml.c_str(), *readContext))
+                {
+                lastResult = SchemaImportResult(SchemaImportResult::Status::ERROR);
+                return true; // stop iteration
+                }
+
+            schemasToImport.push_back(schema.get());
+            return false;
+            });
+
+        if (!lastResult.IsOk())
+            return true; // stop outer iteration
+
+        if (!schemasToImport.empty())
+            {
+            lastResult = target.Schemas().ImportSchemas(schemasToImport, options, target.GetImpl().GetSettingsManager().GetSchemaImportToken());
+            if (!lastResult.IsOk())
+                return true; // stop on first error
+            }
+
+        return false;
+        });
+
+    return lastResult;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaManager::Sessions::DropByTxnId(uint64_t txnId)
+    {
+    Utf8String sessionsJson;
+    if (BE_SQLITE_ROW != m_ecdb.QueryBriefcaseLocalValue(sessionsJson, KEY_SESSIONS))
+        return SUCCESS;
+
+    BeJsDocument sessionsDoc;
+    sessionsDoc.Parse(sessionsJson);
+    if (!sessionsDoc.isArray() || 0 == sessionsDoc.size())
+        return SUCCESS;
+
+    // First pass: identify which sessions to remove, and collect schema names still
+    // referenced by sessions that will survive (needed to guard shared static XML keys).
+    bvector<BeJsValue::ArrayIndex> toRemove;
+    bset<Utf8String> survivingSchemaNames;
+    for (BeJsValue::ArrayIndex i = 0, n = sessionsDoc.size(); i < n; ++i)
+        {
+        BeJsConst entry = sessionsDoc[i];
+        if (!entry.isObject())
+            continue;
+        bool isTarget = entry.isMember("txnId") && (uint64_t) entry["txnId"].GetInt64() == txnId;
+        if (isTarget)
+            {
+            toRemove.push_back(i);
+            }
+        else
+            {
+            // Accumulate schema names from sessions that will survive
+            BeJsConst schemasArr = entry["schemas"];
+            if (schemasArr.isArray())
+                {
+                schemasArr.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst schemaNameVal)
+                    {
+                    survivingSchemaNames.insert(Utf8String(schemaNameVal.asCString()));
+                    return false;
+                    });
+                }
+            }
+        }
+
+    // Second pass: delete XML for sessions being removed.
+    // Dynamic XML keys are session-scoped — always safe to delete.
+    // Static (non-dynamic) XML keys are shared by schema name — only delete when no
+    // surviving session still references the same schema.
+    for (auto idx : toRemove)
+        {
+        BeJsConst entry = sessionsDoc[idx];
+        int sessionId = entry["id"].GetInt();
+        BeJsConst schemasArr = entry["schemas"];
+        if (!schemasArr.isArray())
+            continue;
+        schemasArr.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst schemaNameVal)
+            {
+            Utf8String fullName(schemaNameVal.asCString());
+            // Dynamic key is always session-specific — safe to delete unconditionally
+            m_ecdb.DeleteBriefcaseLocalValue(SchemaXmlKey(fullName, true, sessionId).c_str());
+            // Static key is shared across sessions — only delete if no survivor uses it
+            if (survivingSchemaNames.find(fullName) == survivingSchemaNames.end())
+                m_ecdb.DeleteBriefcaseLocalValue(SchemaXmlKey(fullName, false, sessionId).c_str());
+            return false;
+            });
+        }
+
+    if (toRemove.empty())
+        return SUCCESS;
+
+    // Rebuild the array without the removed entries
+    BeJsDocument newDoc;
+    newDoc.SetEmptyArray();
+    for (BeJsValue::ArrayIndex i = 0, n = sessionsDoc.size(); i < n; ++i)
+        {
+        bool removed = false;
+        for (auto idx : toRemove)
+            if (idx == i) { removed = true; break; }
+        if (!removed)
+            newDoc.appendValue().From(sessionsDoc[i]);
+        }
+
+    if (newDoc.size() == 0)
+        m_ecdb.DeleteBriefcaseLocalValue(KEY_SESSIONS);
+    else
+        m_ecdb.SaveBriefcaseLocalValue(KEY_SESSIONS, newDoc.Stringify());
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
