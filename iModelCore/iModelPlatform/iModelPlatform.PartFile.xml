@@ -21,7 +21,6 @@
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="ECDbLibrary"         PartFile="iModelCore/ECDb/ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs" />
-        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="ECObjects"     PartFile="iModelCore/ecobjects/ECObjects" />
         <SubPart PartName="Freetype2Library" PartFile="iModelCore/libsrc/freetype2/freetype2"/>
         <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
@@ -34,6 +33,7 @@
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore/libsrc/compress/Zlib"/>
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" />
+        <SubPart PartName="PugiXml"        PartFile="iModelCore/libsrc/pugixml/pugixml" />
         <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinPlatform$(libext)</Libs>

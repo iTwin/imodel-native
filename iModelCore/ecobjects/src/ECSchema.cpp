@@ -3636,7 +3636,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     if (!CheckECVersionGreaterThanLatest(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
 
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
 
@@ -3665,7 +3665,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     if (!CheckECVersionGreaterThanLatest(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
     xmlWriter->SetIndentation(4);
 
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
@@ -3709,7 +3709,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
         return SchemaWriteStatus::FailedToSaveXml;
 
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
-        BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
+        BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
         if (xmlWriter.IsNull())
             return SchemaWriteStatus::FailedToCreateXml;

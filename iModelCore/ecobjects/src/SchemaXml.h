@@ -134,7 +134,7 @@ private:
             bset<Utf8CP> m_alreadyWrittenClasses;
         };
 
-    BeXmlWriterR m_xmlWriter;
+    BePugiXmlWriterR m_xmlWriter;
     ECSchemaCR m_ecSchema;
     ECSchemaWriteContext m_context;
     ECVersion m_ecXmlVersion;
@@ -161,7 +161,7 @@ protected:
         }
 
 public:
-    SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion = ECVersion::V2_0) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersion(ecXmlVersion) {}
+    SchemaXmlWriter(BePugiXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion = ECVersion::V2_0) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersion(ecXmlVersion) {}
     virtual SchemaWriteStatus Serialize(bool utf16 = false);
 };
 
