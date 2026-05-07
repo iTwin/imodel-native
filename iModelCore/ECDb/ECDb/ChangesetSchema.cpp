@@ -58,6 +58,11 @@ BentleyStatus ChangesetSchema::CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb)
         out.m_classes[classKey] = std::move(entry);
         }
 
+    // Build classId → classKey reverse index for O(log n) lookup in subsequent steps.
+    std::map<ECClassId, Utf8String> classIdToKey;
+    for (auto const& [key, entry] : out.m_classes)
+        classIdToKey[entry.m_classId] = key;
+
     // Step 2: Resolve base classes. We use the first base class from ec_ClassHasBaseClasses
     // that is also in our mapped set.
     Statement baseStmt;
@@ -76,17 +81,12 @@ BentleyStatus ChangesetSchema::CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb)
         Utf8String baseClassName = baseStmt.GetValueText(2);
         Utf8String baseKey = baseSchemaName + ":" + baseClassName;
 
-        // Find the derived class entry
-        for (auto& [key, entry] : out.m_classes)
-            {
-            if (entry.m_classId == derivedId && entry.m_baseClass.empty())
-                {
-                // Only set baseClass if the base is also in our mapped set
-                if (out.m_classes.find(baseKey) != out.m_classes.end())
-                    entry.m_baseClass = baseKey;
-                break;
-                }
-            }
+        auto idIt = classIdToKey.find(derivedId);
+        if (idIt == classIdToKey.end())
+            continue;
+        auto& entry = out.m_classes[idIt->second];
+        if (entry.m_baseClass.empty() && out.m_classes.count(baseKey))
+            entry.m_baseClass = baseKey;
         }
 
     // Step 3: Get tables for each class.
@@ -106,14 +106,9 @@ BentleyStatus ChangesetSchema::CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb)
         Utf8String tableName = tableStmt.GetValueText(1);
         int tableType = tableStmt.GetValueInt(2);
 
-        for (auto& [key, entry] : out.m_classes)
-            {
-            if (entry.m_classId == classId)
-                {
-                entry.m_tables[tableName] = ChangesetSchemaTableInfo(TableTypeToString(tableType));
-                break;
-                }
-            }
+        auto idIt = classIdToKey.find(classId);
+        if (idIt != classIdToKey.end())
+            out.m_classes[idIt->second].m_tables[tableName] = ChangesetSchemaTableInfo(TableTypeToString(tableType));
         }
 
     // Step 4: Get property maps for each class.
@@ -139,18 +134,16 @@ BentleyStatus ChangesetSchema::CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb)
         Utf8String tableName = propStmt.GetValueText(2);
         Utf8String columnName = propStmt.GetValueText(3);
 
-        for (auto& [key, entry] : out.m_classes)
-            {
-            if (entry.m_classId == classId)
-                {
-                entry.m_propertyMaps[accessString] = ChangesetSchemaPropertyMap(tableName, columnName);
-                break;
-                }
-            }
+        auto idIt = classIdToKey.find(classId);
+        if (idIt != classIdToKey.end())
+            out.m_classes[idIt->second].m_propertyMaps[accessString] = ChangesetSchemaPropertyMap(tableName, columnName);
         }
 
     // Step 5: Optimize — remove inherited property maps.
     // For each class that has a baseClass, remove property maps that are identical to the base.
+    // Cache GetFullPropertyMap results: multiple derived classes sharing the same base
+    // would otherwise recompute the base's full property map redundantly.
+    std::map<Utf8String, std::map<Utf8String, ChangesetSchemaPropertyMap>> fullMapCache;
     for (auto& [key, entry] : out.m_classes)
         {
         if (entry.m_baseClass.empty())
@@ -160,8 +153,11 @@ BentleyStatus ChangesetSchema::CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb)
         if (baseIt == out.m_classes.end())
             continue;
 
-        // Get full property map of the base (recursively)
-        auto baseFullMap = out.GetFullPropertyMap(entry.m_baseClass);
+        // Get full property map of the base (cached)
+        auto cacheIt = fullMapCache.find(entry.m_baseClass);
+        if (cacheIt == fullMapCache.end())
+            cacheIt = fullMapCache.emplace(entry.m_baseClass, out.GetFullPropertyMap(entry.m_baseClass)).first;
+        auto const& baseFullMap = cacheIt->second;
 
         // Remove from this class any property map that matches the base
         auto it = entry.m_propertyMaps.begin();
@@ -355,6 +351,11 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
             }
         }
 
+    // Build classId → classKey reverse index for O(log n) lookup in Step 6.
+    std::map<ECClassId, Utf8String> classIdToKey;
+    for (auto const& [key, entry] : out.m_classes)
+        classIdToKey[entry.m_classId] = key;
+
     // Step 6: Resolve base classes.
     Statement baseResolveStmt;
     if (BE_SQLITE_OK != baseResolveStmt.Prepare(ecdb,
@@ -372,15 +373,12 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
         Utf8String baseClassName = baseResolveStmt.GetValueText(2);
         Utf8String baseKey = baseSchemaName + ":" + baseClassName;
 
-        for (auto& [key, entry] : out.m_classes)
-            {
-            if (entry.m_classId == derivedId && entry.m_baseClass.empty())
-                {
-                if (out.m_classes.find(baseKey) != out.m_classes.end())
-                    entry.m_baseClass = baseKey;
-                break;
-                }
-            }
+        auto idIt = classIdToKey.find(derivedId);
+        if (idIt == classIdToKey.end())
+            continue;
+        auto& entry = out.m_classes[idIt->second];
+        if (entry.m_baseClass.empty() && out.m_classes.count(baseKey))
+            entry.m_baseClass = baseKey;
         }
 
     // Step 7: Get tables for each class.
@@ -433,6 +431,7 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
         }
 
     // Step 9: Optimize — remove inherited property maps (same as CaptureFromDb).
+    std::map<Utf8String, std::map<Utf8String, ChangesetSchemaPropertyMap>> fullMapCache;
     for (auto& [key, entry] : out.m_classes)
         {
         if (entry.m_baseClass.empty())
@@ -442,7 +441,10 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
         if (baseIt == out.m_classes.end())
             continue;
 
-        auto baseFullMap = out.GetFullPropertyMap(entry.m_baseClass);
+        auto cacheIt = fullMapCache.find(entry.m_baseClass);
+        if (cacheIt == fullMapCache.end())
+            cacheIt = fullMapCache.emplace(entry.m_baseClass, out.GetFullPropertyMap(entry.m_baseClass)).first;
+        auto const& baseFullMap = cacheIt->second;
 
         auto it = entry.m_propertyMaps.begin();
         while (it != entry.m_propertyMaps.end())
