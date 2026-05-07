@@ -1090,6 +1090,27 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, Cros
     if (!r.IsSuccess())
         return r;
 
+    if (exp.GetJoinCondition() != nullptr)
+        {
+        JoinConditionExp const& joinCondition = *exp.GetJoinCondition();
+        sqlBuilder.Append(" ON ");
+
+        NativeSqlBuilder::List sqlSnippets;
+        r = PrepareBooleanExp(sqlSnippets, ctx, *joinCondition.GetSearchCondition());
+        if (!r.IsSuccess())
+            return r;
+
+        bool isFirstSnippet = true;
+        for (NativeSqlBuilder const& sqlSnippet : sqlSnippets)
+            {
+            if (!isFirstSnippet)
+                sqlBuilder.Append("AND ");
+
+            sqlBuilder.Append(sqlSnippet).AppendSpace();
+            isFirstSnippet = false;
+            }
+        }
+
     return ECSqlStatus::Success;
     }
 

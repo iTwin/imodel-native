@@ -260,7 +260,7 @@ TEST_F(LocalTransformerUnitTests, JSONHelmertTransformTest)
 
     ASSERT_TRUE(localTransform.IsValid());
 
-    Json::Value outValue;
+    BeJsDocument outValue;
     EXPECT_TRUE(SUCCESS == localTransform->ToJson(outValue, false));
 
     ASSERT_TRUE(!outValue["rotDeg"].isNull());
@@ -277,18 +277,18 @@ TEST_F(LocalTransformerUnitTests, JSONHelmertTransformTest)
     Utf8String errorMessage;
     LocalTransformerPtr localTransform2 = HelmertLocalTransformer::CreateFromJson(outValue, errorMessage);
 
-    Utf8String resultString2 = outValue.toStyledString();
+    Utf8String resultString2 = outValue.Stringify(StringifyFormat::Indented);
 
     ASSERT_TRUE(localTransform2.IsValid());
 
     EXPECT_TRUE(LocalTransformer::IsEquivalent(localTransform, localTransform2));
 
-    Json::Value outValue2;
+    BeJsDocument outValue2;
     EXPECT_TRUE(SUCCESS == localTransform->ToJson(outValue2, true));
 
     ASSERT_TRUE(!outValue2["helmert2DWithZOffset"].isNull());
 
-    Json::Value helmert = outValue2["helmert2DWithZOffset"];
+    auto helmert = outValue2["helmert2DWithZOffset"];
 
     ASSERT_TRUE(!helmert["rotDeg"].isNull());
     EXPECT_NEAR(0.0, helmert["rotDeg"].asDouble(), 0.00001);
@@ -325,8 +325,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationZ\": 0.01"
         "      } }";
 
-    Json::Value resultJson;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform1, resultJson));
+    BeJsDocument resultJson(localTransform1);
+    EXPECT_FALSE(resultJson.hasParseError());
 
     LocalTransformerPtr localTransformObj1 = LocalTransformer::CreateLocalTransformerFromJson(resultJson, errorMessage);
 
@@ -340,8 +340,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationZ\": 0.01"
         "      } }";
 
-    Json::Value resultJson2;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform2, resultJson2));
+    BeJsDocument resultJson2(localTransform2);
+    EXPECT_FALSE(resultJson2.hasParseError());
 
     LocalTransformerPtr localTransformObj2 = LocalTransformer::CreateLocalTransformerFromJson(resultJson2, errorMessage);
 
@@ -355,8 +355,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationZ\": 0.01"
         "      } }";
 
-    Json::Value resultJson3;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform3, resultJson3));
+    BeJsDocument resultJson3(localTransform3);
+    EXPECT_FALSE(resultJson3.hasParseError());
 
     LocalTransformerPtr localTransformObj3 = LocalTransformer::CreateLocalTransformerFromJson(resultJson3, errorMessage);
 
@@ -370,8 +370,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationZ\": 0.01"
         "      } }";
 
-    Json::Value resultJson4;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform4, resultJson4));
+    BeJsDocument resultJson4(localTransform4);
+    EXPECT_FALSE(resultJson4.hasParseError());
 
     LocalTransformerPtr localTransformObj4 = LocalTransformer::CreateLocalTransformerFromJson(resultJson4, errorMessage);
 
@@ -385,8 +385,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationY\": 0.01"
         "      } }";
 
-    Json::Value resultJson5;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform5, resultJson5));
+    BeJsDocument resultJson5(localTransform5);
+    EXPECT_FALSE(resultJson5.hasParseError());
 
     LocalTransformerPtr localTransformObj5 = LocalTransformer::CreateLocalTransformerFromJson(resultJson5, errorMessage);
 
@@ -400,8 +400,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationY\": 0.01"
         "      } }";
 
-    Json::Value resultJson6;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform6, resultJson6));
+    BeJsDocument resultJson6(localTransform6);
+    EXPECT_FALSE(resultJson6.hasParseError());
 
     LocalTransformerPtr localTransformObj6 = LocalTransformer::CreateLocalTransformerFromJson(resultJson6, errorMessage);
 
@@ -416,8 +416,8 @@ TEST_F(LocalTransformerUnitTests, InvalidJson_Test)
         "        \"translationY\": 0.01"
         "      } }";
 
-    Json::Value resultJson7;
-    EXPECT_TRUE(Json::Reader::Parse(localTransform7, resultJson7));
+    BeJsDocument resultJson7(localTransform7);
+    EXPECT_FALSE(resultJson7.hasParseError());
 
     LocalTransformerPtr localTransformObj7 = LocalTransformer::CreateLocalTransformerFromJson(resultJson7, errorMessage);
 
