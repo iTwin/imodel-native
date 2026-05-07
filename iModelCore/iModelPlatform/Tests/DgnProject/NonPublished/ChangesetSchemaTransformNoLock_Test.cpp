@@ -565,3 +565,130 @@ TEST_F(ConcurrentSchemaImportTest, LocalAdditiveSchemaReinstatedOverIncomingRemo
     AssertElementProp(farId1, "PropC", "far_c1");
     AssertElementProp(farId2, "PropC", "far_c2_data");
     }
+
+// ---------------------------------------------------------------------------
+// Test 6 — Transforming schema (column remap) arrives from far while local
+// has a pending UPDATE.
+//
+// This is the critical two-user test for ChangesetTransformer integration with
+// rebase.  When far pushes a transforming schema that remaps columns, local's
+// pending data changeset must be transformed so the binary UPDATE targets the
+// new column positions.
+//
+// Workflow:
+//   [setup]  import base schema; insert C element (propC="initial_c"); create revisions
+//   [backup] S1 = base schema + C element ("sync point")
+//   [far]    import v01.00.01 additive (adds PropC2 to C); create revision 1
+//   [far]    import v01.00.02 transforming (moves PropC from C up to A); create revision 2
+//   [restore S1] local starts at the sync point
+//   [local]  update C.PropC = "local_c_value" (pending, no revision)
+//   [local]  PullMergeApply(rev1) — additive, no remap, UPDATE reinstated unchanged
+//   [local]  PullMergeApply(rev2) — transforming, column remap, UPDATE must be transformed
+//   verify:  schema minor version == 2; C.PropC == "local_c_value"
+//
+// PropC originally maps to one shared column on class C.  After the transform,
+// PropC is defined on base class A and maps to a different shared column.  The
+// pending UPDATE changeset (which targets the old column position) must be
+// rewritten by ChangesetTransformer to target the new column position.
+// ---------------------------------------------------------------------------
+TEST_F(ConcurrentSchemaImportTest, TransformingSchemaArriveWhileLocalUpdatePending)
+    {
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ConcurrentSchema_Test6.bim");
+    m_db->SaveChanges("init");
+
+    ImportSchema(s_schemaV01x00x00);
+    ASSERT_TRUE(CreateRevision("-base-schema").IsValid());
+
+    DgnElementId cId = InsertElement("C", {{"PropA", "initial_a"}, {"PropC", "initial_c"}});
+    ASSERT_TRUE(cId.IsValid());
+    ASSERT_TRUE(CreateRevision("-insert-c").IsValid());
+
+    // Both users synced at S1 (base schema + C element).
+    BackupTestFile();
+
+    // Far: import additive schema (adds PropC2 — no column remapping).
+    ImportSchema(s_schemaV01x00x01_addPropC2);
+    ChangesetPropsPtr farRevision1 = CreateRevision("-far-schema-v01.00.01");
+    ASSERT_TRUE(farRevision1.IsValid());
+
+    // Far: import transforming schema (moves PropC from C up to A — column remap).
+    ImportSchema(s_schemaV01x00x02_movePropCToA);
+    ChangesetPropsPtr farRevision2 = CreateRevision("-far-schema-v01.00.02-transform");
+    ASSERT_TRUE(farRevision2.IsValid());
+
+    // Local: start from the sync point.
+    RestoreTestFile();
+    EXPECT_EQ(0u, GetSchemaMinorVersion());
+
+    // Local pending change: update PropC (targets old column position).
+    UpdateElementProp(cId, "PropC", "local_c_value");
+    AssertElementProp(cId, "PropC", "local_c_value");
+
+    // Local: pull additive schema (no column remap — UPDATE reinstated unchanged).
+    PullMergeApplyWithConcurrentSchema(*farRevision1);
+    EXPECT_EQ(1u, GetSchemaMinorVersion());
+    AssertElementProp(cId, "PropC", "local_c_value");
+
+    // Local: pull transforming schema.  PropC moves from C to A, so the physical
+    // column changes.  Rebase must transform the pending UPDATE changeset to target
+    // the new column position.
+    PullMergeApplyWithConcurrentSchema(*farRevision2);
+
+    EXPECT_EQ(2u, GetSchemaMinorVersion()) << "schema should be v01.00.02 after transform pull";
+    AssertElementProp(cId, "PropC", "local_c_value");
+    }
+
+// ---------------------------------------------------------------------------
+// Test 7 — Transforming schema arrives from far while local has a pending INSERT.
+//
+// Similar to test 6, but the local pending changeset is an INSERT rather than
+// an UPDATE.  The INSERT changeset contains column values at old ordinal positions;
+// after the transforming schema is applied, the changeset must be rewritten so
+// values appear at the new ordinal positions.
+//
+// Workflow:
+//   [setup]  import base schema; create revision
+//   [backup] S0 = base schema only ("sync point")
+//   [far]    import v01.00.01 additive; import v01.00.02 transforming; create revisions
+//   [restore S0] local starts at base schema
+//   [local]  insert C element (PropC="inserted_c_value") — pending INSERT
+//   [local]  PullMergeApply(rev1) then PullMergeApply(rev2)
+//   verify:  schema minor version == 2; PropC == "inserted_c_value"
+// ---------------------------------------------------------------------------
+TEST_F(ConcurrentSchemaImportTest, TransformingSchemaArriveWhileLocalInsertPending)
+    {
+    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ConcurrentSchema_Test7.bim");
+    m_db->SaveChanges("init");
+
+    ImportSchema(s_schemaV01x00x00);
+    ASSERT_TRUE(CreateRevision("-base-schema").IsValid());
+
+    // Sync point: base schema, no data.
+    BackupTestFile();
+
+    // Far: push additive + transforming schemas.
+    ImportSchema(s_schemaV01x00x01_addPropC2);
+    ChangesetPropsPtr farRevision1 = CreateRevision("-far-schema-v01.00.01");
+    ASSERT_TRUE(farRevision1.IsValid());
+
+    ImportSchema(s_schemaV01x00x02_movePropCToA);
+    ChangesetPropsPtr farRevision2 = CreateRevision("-far-schema-v01.00.02-transform");
+    ASSERT_TRUE(farRevision2.IsValid());
+
+    // Local: start from the sync point.
+    RestoreTestFile();
+    EXPECT_EQ(0u, GetSchemaMinorVersion());
+
+    // Local pending INSERT: create a C element with PropC (targets old column position).
+    DgnElementId cId = InsertElement("C", {{"PropA", "a_val"}, {"PropC", "inserted_c_value"}});
+    ASSERT_TRUE(cId.IsValid());
+
+    // Local: apply both revisions.  After the additive schema (no remap), the INSERT
+    // is reinstated unchanged.  After the transforming schema, the INSERT changeset
+    // must be rewritten so PropC is at the new column position.
+    PullMergeApplyWithConcurrentSchema(*farRevision1);
+    PullMergeApplyWithConcurrentSchema(*farRevision2);
+
+    EXPECT_EQ(2u, GetSchemaMinorVersion()) << "schema should be v01.00.02 after transform pulls";
+    AssertElementProp(cId, "PropC", "inserted_c_value");
+    }

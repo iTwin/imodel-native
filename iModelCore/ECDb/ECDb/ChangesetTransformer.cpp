@@ -216,15 +216,23 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
         auto const& srcInfo = getTableInfo(swap.m_oldTable);
         auto const& dstInfo = getTableInfo(swap.m_newTable);
         auto srcIt = srcInfo.m_nameToOrd.find(swap.m_oldColumn);
-        auto dstIt = dstInfo.m_nameToOrd.find(swap.m_newColumn);
-        if (srcIt == srcInfo.m_nameToOrd.end() || dstIt == dstInfo.m_nameToOrd.end())
-            continue;
+        if (srcIt == srcInfo.m_nameToOrd.end())
+            continue;  // source column doesn't exist in DB: nothing to do
         int srcOrd = srcIt->second;
-        int dstOrd = dstIt->second;
+        auto dstIt = dstInfo.m_nameToOrd.find(swap.m_newColumn);
+        int dstOrd = (dstIt != dstInfo.m_nameToOrd.end()) ? dstIt->second : -1;
         auto& remap = classTableRemap[swap.m_classKey][swap.m_oldTable];
         if (swap.m_oldTable == swap.m_newTable)
+            {
+            if (dstOrd < 0)
+                continue;  // same-table swap: destination column must exist in DB
             remap.m_sameTable[srcOrd] = dstOrd;
+            }
         else
+            // dstOrd may be -1 when the overflow table doesn't yet exist in the DB.
+            // Finalize() still adds srcOrd to m_crossTableSrcOrds so the primary-row
+            // column is NULLed.  The overflowOrdMap loop below guards against dstOrd < 0
+            // to avoid writing a changeset row for a table that doesn't exist.
             remap.m_crossTable[srcOrd] = {swap.m_newTable, dstOrd};
         }
 
@@ -258,10 +266,18 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
         uint64_t srcClassId = 0;
         if (tableInfo.m_classIdKindOrd >= 0 && tableInfo.m_classIdKindOrd < nCols)
             {
-            DbValue v = (opcode != DbOpcode::Delete)
-                ? change.GetNewValue(tableInfo.m_classIdKindOrd)
-                : change.GetOldValue(tableInfo.m_classIdKindOrd);
-            if (v.GetValueType() == DbValueType::IntegerVal)
+            DbValue v(nullptr);
+            if (opcode == DbOpcode::Insert)
+                v = change.GetNewValue(tableInfo.m_classIdKindOrd);
+            else if (opcode == DbOpcode::Delete)
+                v = change.GetOldValue(tableInfo.m_classIdKindOrd);
+            else // UPDATE: ECClassId may be undefined if unchanged; try new, then old
+                {
+                v = change.GetNewValue(tableInfo.m_classIdKindOrd);
+                if (!v.IsValid())
+                    v = change.GetOldValue(tableInfo.m_classIdKindOrd);
+                }
+            if (v.IsValid() && v.GetValueType() == DbValueType::IntegerVal)
                 srcClassId = (uint64_t) v.GetValueInt64();
             }
         if (srcClassId == 0)
@@ -302,7 +318,7 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
             {
             for (auto const& [srcOrd, xm] : remap->m_crossTable)
                 {
-                if (srcOrd < nCols)
+                if (xm.m_dstOrd >= 0 && srcOrd < nCols)
                     overflowOrdMap[xm.m_dstTable][xm.m_dstOrd] = srcOrd;
                 }
             }
@@ -350,9 +366,11 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
                     {
                     DbValue oldV = change.GetOldValue(srcOrd);
                     DbValue newV = change.GetNewValue(srcOrd);
-                    // Both undefined → column was not part of this UPDATE (unchanged)
-                    if (oldV.GetValueType() == DbValueType::NullVal &&
-                        newV.GetValueType() == DbValueType::NullVal)
+                    // Both undefined → column was not part of this UPDATE (unchanged).
+                    // NOTE: For UPDATE rows, unchanged columns return a NULL sqlite3_value
+                    // pointer (IsValid()==false), distinct from SQL NULL (IsValid()==true,
+                    // GetValueType()==NullVal).  Must check IsValid() before GetValueType().
+                    if (!oldV.IsValid() && !newV.IsValid())
                         continue;
 
                     // Cross-table move → handled by overflow row below
@@ -375,9 +393,9 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
                             }
                         }
 
-                    if (oldV.GetValueType() != DbValueType::NullVal)
+                    if (oldV.IsValid() && oldV.GetValueType() != DbValueType::NullVal)
                         WriteRemappedValue(row, false, dstOrd, oldV, classIdRemapMap, tableInfo.m_classIdOrdinals);
-                    if (newV.GetValueType() != DbValueType::NullVal)
+                    if (newV.IsValid() && newV.GetValueType() != DbValueType::NullVal)
                         WriteRemappedValue(row, true, dstOrd, newV, classIdRemapMap, tableInfo.m_classIdOrdinals);
                     }
                 }
@@ -398,8 +416,8 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
                     {
                     DbValue oldV = change.GetOldValue(srcOrd);
                     DbValue newV = change.GetNewValue(srcOrd);
-                    if (oldV.GetValueType() != DbValueType::NullVal ||
-                        newV.GetValueType() != DbValueType::NullVal)
+                    if ((oldV.IsValid() && oldV.GetValueType() != DbValueType::NullVal) ||
+                        (newV.IsValid() && newV.GetValueType() != DbValueType::NullVal))
                         {
                         hasChanged = true;
                         break;
@@ -412,12 +430,13 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
             auto const& ovfInfo = getTableInfo(ovfTable);
             int ovfTotal = (ovfInfo.m_totalCols > 0) ? ovfInfo.m_totalCols : 1;
 
-            // ECInstanceId from primary row (always ordinal 0)
+            // ECInstanceId from primary row (always ordinal 0).
+            // For UPDATE, PK new value is undefined (NULL ptr) — use old value.
             int64_t ecInstanceId = 0;
             {
-            DbValue v = (opcode != DbOpcode::Delete)
+            DbValue v = (opcode == DbOpcode::Insert)
                 ? change.GetNewValue(0) : change.GetOldValue(0);
-            if (v.GetValueType() == DbValueType::IntegerVal)
+            if (v.IsValid() && v.GetValueType() == DbValueType::IntegerVal)
                 ecInstanceId = v.GetValueInt64();
             }
 
@@ -480,9 +499,9 @@ BentleyStatus ChangesetTransformer::Transform(ChangeSet& output,
                             {
                             DbValue oldV = change.GetOldValue(srcOrd);
                             DbValue newV = change.GetNewValue(srcOrd);
-                            if (oldV.GetValueType() != DbValueType::NullVal)
+                            if (oldV.IsValid() && oldV.GetValueType() != DbValueType::NullVal)
                                 WriteRemappedValue(row, false, dstOrd, oldV, classIdRemapMap, ovfInfo.m_classIdOrdinals);
-                            if (newV.GetValueType() != DbValueType::NullVal)
+                            if (newV.IsValid() && newV.GetValueType() != DbValueType::NullVal)
                                 WriteRemappedValue(row, true, dstOrd, newV, classIdRemapMap, ovfInfo.m_classIdOrdinals);
                             }
                         continue;
