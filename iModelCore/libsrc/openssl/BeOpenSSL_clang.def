@@ -774,8 +774,6 @@ EXPORTS
   SSL_write
   SSL_write_early_data
   SSL_write_ex
-  _vsnprintf_l
-  _vsprintf_l
   sprintf
   ssl3_undef_enc_method
   ssl_cache_cipherlist
@@ -2521,7 +2519,7 @@ EXPORTS
   X509_email_free
   X509_get1_email
   X509_get1_ocsp
-  _vsscanf_l
+
   a2i_IPADDRESS
   a2i_IPADDRESS_NC
   i2s_ASN1_ENUMERATED
@@ -2962,7 +2960,7 @@ EXPORTS
   UI_OpenSSL
   UI_get_default_method
   UI_set_default_method
-  _vfprintf_l
+
   fprintf
   UI_null
   UI_add_error_string
@@ -4787,9 +4785,6 @@ EXPORTS
   HMAC_Init_ex
   HMAC_Update
   HMAC_size
-  _MallocaComputeSize
-  _MarkAllocaS
-  _freea
   ossl_safe_getenv
   ossl_ffc_params_FIPS186_2_validate
   ossl_ffc_params_FIPS186_4_validate
@@ -6738,7 +6733,6 @@ EXPORTS
   OPENSSL_die
   OPENSSL_isservice
   OPENSSL_showfatal
-  _vsnprintf
   OSSL_CRMF_pbm_new
   OSSL_CRMF_pbmp_new
   OSSL_CRMF_CERTID_gen
@@ -7741,22 +7735,8 @@ EXPORTS
   BIO_lookup
   BIO_lookup_ex
   BIO_parse_hostserv
-  WspiapiClone
-  WspiapiFreeAddrInfo
-  WspiapiGetAddrInfo
-  WspiapiGetNameInfo
-  WspiapiLegacyFreeAddrInfo
-  WspiapiLegacyGetAddrInfo
-  WspiapiLegacyGetNameInfo
-  WspiapiLoad
-  WspiapiLookupNode
-  WspiapiNewAddrInfo
-  WspiapiParseV4Address
-  WspiapiQueryDNS
-  WspiapiStrdup
-  _vsprintf_s_l
+
   bio_lookup_lock
-  gai_strerrorA
   sprintf_s
   BIO_f_readbuffer
   BIO_f_prefix
