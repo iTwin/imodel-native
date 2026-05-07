@@ -39,7 +39,7 @@ TEST_F(BaseGCSUnitTests, ToJsonFromJson1)
 
     ASSERT_TRUE(ll84.IsValid() && ll84->IsValid());
 
-    Json::Value result ;
+    BeJsDocument result ;
 
     ASSERT_TRUE(SUCCESS == ll84->ToHorizontalJson(result));
 
@@ -3041,6 +3041,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoid_Test)
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
+    // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
+    // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum3), errorMessage));
     Utf8String source;
 
@@ -3130,6 +3132,7 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
+    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
     Utf8String source;
 
@@ -3222,6 +3225,7 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
+    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
     Utf8String source;
 
@@ -3314,6 +3318,7 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
+    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum5), errorMessage));
     Utf8String source;
 
@@ -4839,18 +4844,18 @@ TEST_F (BaseGCSUnitTests, GCSTransformToFullJsonThenBack)
 
         if (currentGCS.IsValid() && currentGCS->IsValid())
             {
-            Json::Value result;
+            BeJsDocument result;
 
             if (SUCCESS == currentGCS->ToJson(result, true))
                 {
                 // Transform to string (for debug purposes)
-                Utf8String resultString = result.toStyledString();
+                Utf8String resultString = result.Stringify(StringifyFormat::Indented);
 
                 // Make sure that domain is specified
                 EXPECT_TRUE(!result["horizontalCRS"].isNull());
                 EXPECT_TRUE(!result["verticalCRS"].isNull());
 
-                Utf8String resultString2 = result.toStyledString();
+                Utf8String resultString2 = result.Stringify(StringifyFormat::Indented);
 
                 // Sabotage GCS name to make sure everything is parsed
                 result["horizontalCRS"]["id"] = "XYZ";

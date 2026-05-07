@@ -36,10 +36,9 @@ LsComponentReader::~LsComponentReader ()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsComponentReader::GetJsonValue(JsonValueR componentDef)
+void LsComponentReader::GetJsonValue(BeJsDocument& componentDef)
     {
-    if (!Json::Reader::Parse(m_jsonSource, componentDef))
-        return;
+    componentDef.Parse(m_jsonSource);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,7 +63,7 @@ void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&cu
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsComponent::ExtractDescription(JsonValueCR result)
+void LsComponent::ExtractDescription(BeJsConst result)
     {
     m_descr = LsJsonHelpers::GetString(result, "descr", "");
     }
@@ -72,9 +71,9 @@ void LsComponent::ExtractDescription(JsonValueCR result)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsComponent::SaveToJson(Json::Value& result) const
+void LsComponent::SaveToJson(BeJsValue result) const
     {
-    result.clear();
+    result.SetEmptyObject();
     Utf8String descr = GetDescription();
     if (descr.SizeInBytes() > 0)
         result["descr"] = descr.c_str();
@@ -102,7 +101,7 @@ void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDefIn, uint8_t const*imageData, uint32_t dataSize)
+LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, BeJsConst jsonDefIn, uint8_t const*imageData, uint32_t dataSize)
     {
     //  First put out the raster image
     BeSQLite::PropertySpec spec = LineStyleProperty::RasterImage();
@@ -114,12 +113,13 @@ LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentI
         return LINESTYLE_STATUS_SQLITE_Error;
 
     spec = LineStyleProperty::RasterComponent();
-    Json::Value jsonValue(jsonDefIn);
+    BeJsDocument jsonValue;
+    jsonValue.From(jsonDefIn);
     jsonValue["imageId"] = rasterImageNumber;
 
     uint32_t componentNumber;
     GetNextComponentNumber (componentNumber, project, spec);
-    Utf8String data = Json::FastWriter::ToString(jsonValue);
+    Utf8String data = jsonValue.Stringify();
 
     if (project.SavePropertyString (spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
         return LINESTYLE_STATUS_SQLITE_Error;
@@ -132,7 +132,7 @@ LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue)
+LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, BeJsConst jsonValue)
     {
     BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
 
@@ -161,7 +161,7 @@ LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componen
     uint32_t componentNumber;
     GetNextComponentNumber (componentNumber, project, spec);
 
-    Utf8String data = Json::FastWriter::ToString(jsonValue);
+    Utf8String data = jsonValue.Stringify();
 
     if (project.SavePropertyString(spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
         {
@@ -221,12 +221,12 @@ BentleyStatus       LsStrokePatternComponent::PostCreate ()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponentP* newLC, Json::Value const & jsonDef, LsLocationCP location)
+LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponentP* newLC, BeJsConst jsonDef, LsLocationCP location)
     {
     LsStrokePatternComponentP retval = new LsStrokePatternComponent(location);
     retval->ExtractDescription(jsonDef);
 
-    JsonValueCR strokes = jsonDef["strokes"];
+    auto strokes = jsonDef["strokes"];
     uint32_t nStrokes = strokes.size();
 
     if (nStrokes == 0)
@@ -243,7 +243,7 @@ LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponen
         for (uint32_t i = 0; i < retval->m_nStrokes; i++)
             {
             LsStroke&   pStroke = retval->m_strokes[i];
-            JsonValueCR jsonStroke = strokes[i];
+            auto jsonStroke = strokes[i];
             double length = LsJsonHelpers::GetDouble(jsonStroke, "length", 0);
             double width = LsJsonHelpers::GetDouble(jsonStroke, "orgWidth", 0);
             double endWidth = LsJsonHelpers::GetDouble(jsonStroke, "endWidth", width);
@@ -293,7 +293,7 @@ LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponen
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsStrokePatternComponent::SaveToJson(Json::Value& result) const
+void LsStrokePatternComponent::SaveToJson(BeJsValue result) const
     {
     LsComponent::SaveToJson(result);
     double phase = 0.0;
@@ -334,11 +334,12 @@ void LsStrokePatternComponent::SaveToJson(Json::Value& result) const
     if (maxIterate != 0)
         result["maxIter"] = maxIterate;
 
-    Json::Value strokes(Json::arrayValue);
+    auto strokes = result["strokes"];
+    strokes.SetEmptyArray();
     for (uint32_t index = 0; index<m_nStrokes; ++index)
         {
         LsStroke const& stroke = m_strokes[index];
-        Json::Value  entry(Json::objectValue);
+        auto entry = strokes.appendObject();
         entry["length"] = stroke.m_length;
         if (stroke.m_orgWidth != 0)
             entry["orgWidth"] = stroke.m_orgWidth;
@@ -365,11 +366,7 @@ void LsStrokePatternComponent::SaveToJson(Json::Value& result) const
 
         if (strokeMode != 0)
             entry["strokeMode"] = strokeMode;
-
-        strokes[index] = entry;
         }
-
-    result["strokes"] = strokes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -380,7 +377,7 @@ LsStrokePatternComponentP LsStrokePatternComponent::LoadStrokePatternComponent
 LsComponentReader*    reader
 )
     {
-    Json::Value      jsonValue;
+    BeJsDocument      jsonValue;
     reader->GetJsonValue(jsonValue);
 
     LsStrokePatternComponentP compPtr;
@@ -631,7 +628,7 @@ double          offset
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsCompoundComponentP  LsCompoundComponent::LoadCompoundComponent(LsComponentReader* reader)
     {
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     reader->GetJsonValue(jsonValue);
 
     LsCompoundComponentP compPtr;
@@ -755,7 +752,7 @@ LsStrokePatternComponentP  LsInternalComponent::LoadInternalComponent(LsComponen
 //---------------------------------------------------------------------------------------
 LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentReader* reader)
     {
-    Json::Value      jsonValue;
+    BeJsDocument      jsonValue;
     reader->GetJsonValue(jsonValue);
 
     LsRasterImageComponentP newComp;

@@ -268,11 +268,11 @@ struct ExportCommand final : public Command
             BeSQLite::EC::ECSqlStatementCache m_changedInstanceStmtCache;
             BeFileName m_jsonOutputPath;
 
-            Json::Value m_outputJson = Json::Value(Json::arrayValue);
+            BeJsDocument m_outputJson;
             BeFile m_outputFile;
             BeFile m_diagnosticsFile;
 
-            ChangeSummaryExportContext(BeSQLite::EC::ECDbCR ecdb, BeSQLite::EC::ECInstanceId summaryId) : m_ecdb(ecdb), m_summaryId(summaryId), m_summaryIdString(summaryId.ToHexStr()), m_changedInstanceStmtCache(50) {}
+            ChangeSummaryExportContext(BeSQLite::EC::ECDbCR ecdb, BeSQLite::EC::ECInstanceId summaryId) : m_ecdb(ecdb), m_summaryId(summaryId), m_summaryIdString(summaryId.ToHexStr()), m_changedInstanceStmtCache(50) { m_outputJson.SetEmptyArray(); }
             BentleyStatus InitializeOutput(Utf8StringCR jsonOutputPath);
             BentleyStatus WriteOutput();
             };
@@ -283,9 +283,9 @@ struct ExportCommand final : public Command
 
         void RunExportSchema(Session&, Utf8StringCR outFolder, bool useECXmlV2) const;
         void RunExportTables(Session&, Utf8StringCR jsonFile) const;
-        void ExportTable(Session&, Json::Value& out, Utf8CP tableName) const;
+        void ExportTable(Session&, BeJsValue out, Utf8CP tableName) const;
         void RunExportChangeSummary(Session&, BeSQLite::EC::ECInstanceId changeSummaryId, Utf8StringCR jsonFile) const;
-        BentleyStatus PropertyValueChangesToJson(Json::Value& propValueJson, ChangeSummaryExportContext&, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState) const;
+        BentleyStatus PropertyValueChangesToJson(BeJsValue propValueJson, ChangeSummaryExportContext&, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState) const;
 
         static Utf8CP ToString(BeSQLite::EC::ChangedValueState);
 

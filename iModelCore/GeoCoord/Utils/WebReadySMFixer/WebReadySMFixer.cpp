@@ -144,22 +144,22 @@ int wmain(int argc, wchar_t* argv[])
     
     delete [] content;
 
-    Json::Value resultJson;
-    if (!Json::Reader::Parse(jsonString, resultJson))
+    BeJsDocument resultJson(jsonString);
+    if (resultJson.hasParseError())
     {
         printf("JSON parsing error for file:%s \n", fileName.c_str());
         return 1;
     }
     
     // Extraction of information
-    Json::Value root = resultJson["root"];
+    auto root = resultJson["root"];
     if (root.isNull())
     {
         printf("root node not found in file:%s \n", fileName.c_str());
         return 1;
     }
 
-    Json::Value SMMasterHeader = root["SMMasterHeader"];
+    auto SMMasterHeader = root["SMMasterHeader"];
     if (SMMasterHeader.isNull())
     {
         printf("SMMasterHeader node not found. DATA is probably a Point Cloud.\n");
@@ -170,7 +170,7 @@ int wmain(int argc, wchar_t* argv[])
         isAScalableMesh = true;
         printf("SMMasterHeader node found. DATA appears to be  Scalable Mesh.\n");
 
-        Json::Value GCSWKT = SMMasterHeader["GCS"];
+        auto GCSWKT = SMMasterHeader["GCS"];
         if (!GCSWKT.isNull())
         {
             theWKT = Utf8String(GCSWKT.asString());
@@ -195,14 +195,14 @@ int wmain(int argc, wchar_t* argv[])
         }
     }
 
-    Json::Value boundingVolume = root["boundingVolume"];
+    auto boundingVolume = root["boundingVolume"];
     if (boundingVolume.isNull())
     {
         printf("boundingVolume node not found in root node of file:%s \n", fileName.c_str());
         return 1;
     }
 
-    Json::Value box = boundingVolume["box"];
+    auto box = boundingVolume["box"];
     if (box.isNull())
     {
         printf("box node not found in boundingVolume node of root node of file:%s \n", fileName.c_str());
@@ -224,7 +224,7 @@ int wmain(int argc, wchar_t* argv[])
 
     double transformValues[16];
 
-    Json::Value transform = root["transform"];
+    auto transform = root["transform"];
     if (transform.isNull())
     {
         printf("No transform present in file:%s \n", fileName.c_str());
@@ -459,9 +459,7 @@ int wmain(int argc, wchar_t* argv[])
                 printf("ERROR Generating the Compound WKT.\n");
                 return 1;
             }
-            Json::Value newGCS = fullWellKnownText;
-            SMMasterHeader["GCS"] = newGCS;
-            root["SMMasterHeader"] = SMMasterHeader;
+            SMMasterHeader["GCS"] = fullWellKnownText.c_str();
             printf("Vertical datum set to %s \n", theGCS->GetVerticalDatumName());
         }
     
@@ -493,13 +491,10 @@ int wmain(int argc, wchar_t* argv[])
             transform[13] = matrix.coff[1][3];
             transform[14] = matrix.coff[2][3];
             transform[15] = matrix.coff[3][3];
-
-            root["transform"] = transform;
         }
 
         // Write to string
-        resultJson["root"] = root;
-        Utf8String finalJson = resultJson.toStyledString();
+        Utf8String finalJson = resultJson.Stringify(StringifyFormat::Indented);
 
         printf ("Result:\n");
         printf ("%s\n", finalJson.c_str());
@@ -526,9 +521,7 @@ int wmain(int argc, wchar_t* argv[])
             printf("ERROR Generating the Compound WKT.\n");
             return 1;
         }
-        Json::Value newGCS = fullWellKnownText;
-        SMMasterHeader["GCS"] = newGCS;
-        root["SMMasterHeader"] = SMMasterHeader;
+        SMMasterHeader["GCS"] = fullWellKnownText.c_str();
         printf("Vertical datum set to %s \n", theGCS->GetVerticalDatumName());
 
         // We recompute the transform anyway (no transform or any inconsistency ...)
@@ -557,13 +550,10 @@ int wmain(int argc, wchar_t* argv[])
         transform[13] = matrix.coff[1][3];
         transform[14] = matrix.coff[2][3];
         transform[15] = matrix.coff[3][3];
-
-        root["transform"] = transform;
         
 
         // Write to string
-        resultJson["root"] = root;
-        Utf8String finalJson = resultJson.toStyledString();
+        Utf8String finalJson = resultJson.Stringify(StringifyFormat::Indented);
 
         printf("Result:\n");
         printf("%s\n", finalJson.c_str());

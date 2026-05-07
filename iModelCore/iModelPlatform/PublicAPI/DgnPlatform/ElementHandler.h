@@ -84,7 +84,7 @@ namespace dgn_ElementHandler
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbR db, ECN::IECInstanceCR, bool ignoreErrors, DgnDbStatus* stat);
         // WIP
-        //DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbR db, JsonValueCR, DgnDbStatus* stat);
+        //DGNPLATFORM_EXPORT virtual DgnElementPtr _CreateNewElement(DgnDbR db, BeJsConst, DgnDbStatus* stat);
         ElementHandlerP _ToElementHandler() override {return this;}
         virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
         DGNPLATFORM_EXPORT DgnDbStatus _VerifySchema(DgnDomains&) override;

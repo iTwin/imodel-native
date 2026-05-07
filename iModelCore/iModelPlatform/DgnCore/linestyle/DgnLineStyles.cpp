@@ -18,9 +18,9 @@ BentleyStatus DgnLineStyles::Insert(DgnStyleId& newStyleId, DgnModelId modelId, 
         return ERROR;
         }
 
-    Json::Value jsonObj(Json::objectValue);
+    BeJsDocument jsonObj;
     LsDefinition::InitializeJsonObject(jsonObj, componentId, flags, unitDefinition);
-    Utf8String data = Json::FastWriter::ToString(jsonObj);
+    Utf8String data = jsonObj.Stringify();
 
     LineStyleElementPtr lsElement = LineStyleElement::Create(*model);
     lsElement->SetName(name);
@@ -54,9 +54,9 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
     {
     PRECONDITION(styleId.IsValid(), ERROR);
 
-    Json::Value jsonObj(Json::objectValue);
+    BeJsDocument jsonObj;
     LsDefinition::InitializeJsonObject(jsonObj, componentId, flags, unitDefinition);
-    Utf8String data = Json::FastWriter::ToString(jsonObj);
+    Utf8String data = jsonObj.Stringify();
 
     LineStyleElementPtr lsElement = m_dgndb.Elements().GetForEdit<LineStyleElement>(styleId);
     if (!lsElement.IsValid())

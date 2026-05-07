@@ -3677,6 +3677,8 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonSpecific)
 
         GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
+        // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
+        // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
         Json::Value result;
         EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
@@ -3700,6 +3702,7 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonError1)
 
     GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
+    // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
     Json::Value result;
     EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
@@ -3743,11 +3746,12 @@ TEST_F(GCSUnitTests, EllipsoidTransformFromJsonSpecific)
         GeoCoordinates::Ellipsoid* currentEllipsoid1 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
         GeoCoordinates::Ellipsoid* currentEllipsoid2 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
 
+        // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
         Json::Value result;
         EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentEllipsoid1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentEllipsoid1->FromJson(Json::Value::From(theJson), errorMessage)) << errorMessage.c_str();
 
         // Sabotage the id to reparse
         result["id"] = "XYZ";
@@ -3774,11 +3778,12 @@ TEST_F(GCSUnitTests, DatumTransformFromJsonSpecific)
         GeoCoordinates::Datum* currentDatum1 = GeoCoordinates::Datum::CreateDatum();
         GeoCoordinates::Datum* currentDatum2 = GeoCoordinates::Datum::CreateDatum();
 
+        // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
         Json::Value result;
         EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentDatum1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentDatum1->FromJson(Json::Value::From(theJson), errorMessage)) << errorMessage.c_str();
 
         // Sabotage the id to reparse
         result["id"] = "XYZ";
@@ -3806,11 +3811,12 @@ TEST_F(GCSUnitTests, GeodeticTransformTransformFromJsonSpecific)
         GeoCoordinates::GeodeticTransform* currentTransform1 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
         GeoCoordinates::GeodeticTransform* currentTransform2 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
 
+        // DO NOT CHANGE TO BeJsDocument — see comment in GCSTransformFromJsonSpecific
         Json::Value result;
         EXPECT_TRUE(Json::Reader::Parse(theJson, result));
 
         Utf8String errorMessage;
-        EXPECT_EQ(SUCCESS, currentTransform1->FromJson(BeJsDocument(theJson), errorMessage)) << errorMessage.c_str();
+        EXPECT_EQ(SUCCESS, currentTransform1->FromJson(Json::Value::From(theJson), errorMessage)) << errorMessage.c_str();
 
         Json::Value returnedResult;
         EXPECT_TRUE(SUCCESS == currentTransform1->ToJson(returnedResult));
@@ -4462,4 +4468,3 @@ TEST_F(GCSUnitTests, FromiTwinJsCore)
       convertTest(R"X({ "horizontalCRS": { "id": "UTM84-17N" }, "verticalCRS": { "id": "ELLIPSOID" } })X", R"X({ "horizontalCRS": { "id": "badfood" }, "verticalCRS": { "id": "GEOID" } })X", { 1473327.251, 1257049.636, 0.0 }, { 473325.6830048648, 257049.77062273448, -47.87643904264457 }, REPROJECT_BadArgument );
 
    }
-

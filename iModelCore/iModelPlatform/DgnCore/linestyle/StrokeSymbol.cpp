@@ -372,7 +372,7 @@ void            LsSymbolComponent::_ClearPostProcess ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
     {
-    Json::Value     jsonValue;
+    BeJsDocument     jsonValue;
     reader->GetJsonValue(jsonValue);
     LsSymbolComponentP symbolComponent;
     LsSymbolComponent::CreateFromJson(&symbolComponent, jsonValue, reader->GetSource());

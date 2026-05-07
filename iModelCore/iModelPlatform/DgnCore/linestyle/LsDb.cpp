@@ -18,52 +18,52 @@ static Utf8CP DGNPROPERTYBLOB_UnitDef               = "unitDef";
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-double LsJsonHelpers::GetDouble(JsonValueCR json, CharCP fieldName, double defaultValue)
+double LsJsonHelpers::GetDouble(BeJsConst json, CharCP fieldName, double defaultValue)
     {
-    Json::Value def(defaultValue);
-    return json.get(fieldName, def).asDouble();
+    auto member = json[fieldName];
+    return member.isNull() ? defaultValue : member.asDouble();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-uint32_t LsJsonHelpers::GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue)
+uint32_t LsJsonHelpers::GetUInt32(BeJsConst json, CharCP fieldName, uint32_t defaultValue)
     {
-    Json::Value def(defaultValue);
-    return json.get(fieldName, def).asUInt();
+    auto member = json[fieldName];
+    return member.isNull() ? defaultValue : member.GetUInt();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-int32_t LsJsonHelpers::GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue)
+int32_t LsJsonHelpers::GetInt32(BeJsConst json, CharCP fieldName, int32_t defaultValue)
     {
-    Json::Value def(defaultValue);
-    return json.get(fieldName, def).asInt();
+    auto member = json[fieldName];
+    return member.isNull() ? defaultValue : member.GetInt();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-uint64_t LsJsonHelpers::GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue)
+uint64_t LsJsonHelpers::GetUInt64(BeJsConst json, CharCP fieldName, uint64_t defaultValue)
     {
-    Json::Value def(defaultValue);
-    return json.get(fieldName, def).asUInt64();
+    auto member = json[fieldName];
+    return member.isNull() ? defaultValue : member.GetUInt64();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Utf8String LsJsonHelpers::GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue)
+Utf8String LsJsonHelpers::GetString(BeJsConst json, CharCP fieldName, CharCP defaultValue)
     {
-    Json::Value def(defaultValue);
-    return json.get(fieldName, def).asString();
+    auto member = json[fieldName];
+    return member.isNull() ? Utf8String(defaultValue) : Utf8String(member.asCString());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LsComponentId LsJsonHelpers::GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType)
+LsComponentId LsJsonHelpers::GetComponentId(BeJsConst json, CharCP typeName, CharCP idName, LsComponentType defaultType)
     {
     uint32_t idValue = GetUInt32(json, idName, 0);
     int32_t typeValue = GetInt32(json, typeName, (int32_t)defaultType);
@@ -102,7 +102,7 @@ LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) con
     {
     LsStrokePatternComponentP result = new LsStrokePatternComponent(this);
 
-    Json::Value     jsonValue;
+    BeJsDocument     jsonValue;
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LineCode, jsonValue);
@@ -134,7 +134,7 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
             }
         }
 
-    Json::Value     jsonValue;
+    BeJsDocument     jsonValue;
     cloned->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LinePoint, jsonValue);
@@ -147,42 +147,39 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsCompoundComponent::SaveToJson(Json::Value& result) const
+void LsCompoundComponent::SaveToJson(BeJsValue result) const
     {
     LsComponent::SaveToJson(result);
 
-    Json::Value components(Json::arrayValue);
-    uint32_t index = 0;
+    auto components = result["comps"];
+    components.SetEmptyArray();
     for (LsOffsetComponent const& offset: m_components)
         {
         if (!offset.m_subComponent.IsValid())
             continue;
-        Json::Value  entry(Json::objectValue);
+        auto entry = components.appendObject();
         if (offset.m_offset != 0)
             entry["offset"] = offset.m_offset;
         LsComponentId id = offset.m_subComponent->GetId();
         entry["id"] = id.GetValue();
         entry["type"] = (int)id.GetType();
-        components[index++] = entry;
         }
-
-    result["comps"]=components;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentP* newCompound, Json::Value const & jsonDef, LsLocationCP thisLocation)
+LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentP* newCompound, BeJsConst jsonDef, LsLocationCP thisLocation)
     {
     LsCompoundComponentP comp = new LsCompoundComponent(thisLocation);
     comp->ExtractDescription(jsonDef);
 
-    JsonValueCR components = jsonDef["comps"];
+    auto components = jsonDef["comps"];
     uint32_t nComponents = components.size();
 
     for (uint32_t i = 0; i < nComponents; i++)
         {
-        JsonValueCR curr = components[i];
+        auto curr = components[i];
         double offset = LsJsonHelpers::GetDouble(curr, "offset", 0.0);
         LsComponentId id = LsJsonHelpers::GetComponentId(curr, "type", "id");
         LsLocation childLocation;
@@ -199,7 +196,7 @@ LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentP* newCom
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsPointComponent::SaveLineCodeIdToJson(JsonValueR json, LsComponentId patternId)
+void LsPointComponent::SaveLineCodeIdToJson(BeJsValue json, LsComponentId patternId)
     {
     if (patternId.GetType() != LsComponentType::LineCode)
         json["lcType"] = (int)patternId.GetType();
@@ -209,7 +206,7 @@ void LsPointComponent::SaveLineCodeIdToJson(JsonValueR json, LsComponentId patte
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsPointComponent::SaveSymbolIdToJson(JsonValueR json, LsComponentId symbolId)
+void LsPointComponent::SaveSymbolIdToJson(BeJsValue json, LsComponentId symbolId)
     {
     if (symbolId.GetType() != LsComponentType::PointSymbol)
         json["symType"] = (int)symbolId.GetType();
@@ -220,7 +217,7 @@ void LsPointComponent::SaveSymbolIdToJson(JsonValueR json, LsComponentId symbolI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsPointComponent::SaveToJson(Json::Value& result) const
+void LsPointComponent::SaveToJson(BeJsValue result) const
     {
     LsComponent::SaveToJson(result);
 
@@ -232,16 +229,16 @@ void LsPointComponent::SaveToJson(Json::Value& result) const
     LsComponentId  pattern = strokePattern->GetId();
     SaveLineCodeIdToJson(result, pattern);
 
-    Json::Value symbols(Json::arrayValue);
-    uint32_t index = 0;
+    auto symbols = result["symbols"];
+    symbols.SetEmptyArray();
     for (LsSymbolReference const& symRef: m_symbols)
         {
-        Json::Value  entry(Json::objectValue);
-
         LsSymbolComponentCP symbolComponent = symRef.GetSymbolComponentCP();
         BeAssert(symbolComponent != nullptr);
         if (nullptr == symbolComponent)
             continue;       //  NEEDSWORK_LINESTYLE report error
+
+        auto entry = symbols.appendObject();
 
         LsComponentId symbolId = symbolComponent->GetId();
         SaveSymbolIdToJson(entry, symbolId);
@@ -256,17 +253,13 @@ void LsPointComponent::SaveToJson(Json::Value& result) const
 
         if (symRef.GetMod1() != 0)
             entry["mod1"] = symRef.GetMod1();
-
-        symbols[index++] = entry;
         }
-
-    result["symbols"]=symbols;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, Json::Value const & jsonDef, LsLocationCP thisLocation)
+LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, BeJsConst jsonDef, LsLocationCP thisLocation)
     {
     LsPointComponentP pPoint = new LsPointComponent(thisLocation);
     pPoint->ExtractDescription(jsonDef);
@@ -278,13 +271,13 @@ LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, Jso
     LsComponentPtr child = DgnLineStyles::GetLsComponent(childLocation);
     pPoint->m_strokeComponent = dynamic_cast<LsStrokePatternComponentP>(child.get());
 
-    JsonValueCR symbols = jsonDef["symbols"];
+    auto symbols = jsonDef["symbols"];
     uint32_t limit = symbols.size();
     if (limit > 32)
         limit = 32;
     for (unsigned index = 0; index < limit; ++index)
         {
-        JsonValueCR  entry = symbols[index];
+        auto entry = symbols[index];
         LsSymbolReference symbolRef;
 
         LsComponentId symbolId = LsJsonHelpers::GetComponentId(entry, "symType", "symId", LsComponentType::PointSymbol);
@@ -322,7 +315,7 @@ LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
         compOffset.m_subComponent = LsComponent::GetImportedComponent(compOffset.m_subComponent->GetId(), importer);
 
 
-    Json::Value     jsonValue;
+    BeJsDocument     jsonValue;
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::Compound, jsonValue);
@@ -341,7 +334,7 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
 
     result->m_geomPartId = importer.RemapGeometryPartId(result->m_geomPartId);
 
-    Json::Value     jsonValue;
+    BeJsDocument     jsonValue;
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::PointSymbol, jsonValue);
@@ -354,7 +347,7 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Json::Value const & jsonDef, LsLocationCP location)
+LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, BeJsConst jsonDef, LsLocationCP location)
     {
     LsSymbolComponentP pSym = new LsSymbolComponent(location);
     pSym->ExtractDescription(jsonDef);
@@ -378,7 +371,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale) 
+void LsSymbolComponent::SaveSymbolDataToJson(BeJsValue result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale) 
     {
     if (base.x != 0)
         result["baseX"] = base.x;
@@ -403,7 +396,7 @@ void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR bas
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveToJson(Json::Value& result) const
+void LsSymbolComponent::SaveToJson(BeJsValue result) const
     {
     LsComponent::SaveToJson(result);
 
@@ -413,7 +406,7 @@ void LsSymbolComponent::SaveToJson(Json::Value& result) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
-void LsDefinition::InitializeJsonObject (Json::Value& jsonObj)
+void LsDefinition::InitializeJsonObject (BeJsValue jsonObj)
     {
     InitializeJsonObject (jsonObj, m_location.GetComponentId(), m_attributes, (uint32_t) m_unitDef); // WIP: m_unitDef double --> UInt32 conversion
     }
@@ -421,9 +414,9 @@ void LsDefinition::InitializeJsonObject (Json::Value& jsonObj)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
-void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition)
+void LsDefinition::InitializeJsonObject (BeJsValue jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition)
     {
-    jsonObj.clear();
+    jsonObj.SetEmptyObject();
 
     jsonObj[DGNPROPERTYBLOB_CompId] = componentId.GetValue();
     jsonObj[DGNPROPERTYBLOB_CompType] = static_cast <uint16_t> (componentId.GetType());
@@ -434,7 +427,7 @@ void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId com
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
-double LsDefinition::GetUnitDef (Json::Value& lsDefinition)
+double LsDefinition::GetUnitDef (BeJsConst lsDefinition)
     {
     return lsDefinition[DGNPROPERTYBLOB_UnitDef].asDouble();
     }
@@ -442,24 +435,24 @@ double LsDefinition::GetUnitDef (Json::Value& lsDefinition)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
-uint32_t LsDefinition::GetAttributes (Json::Value& lsDefinition)
+uint32_t LsDefinition::GetAttributes (BeJsConst lsDefinition)
     {
-    return lsDefinition[DGNPROPERTYBLOB_Flags].asUInt();
+    return lsDefinition[DGNPROPERTYBLOB_Flags].GetUInt();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
-LsComponentId LsDefinition::GetComponentId (Json::Value& lsDefinition)
+LsComponentId LsDefinition::GetComponentId (BeJsConst lsDefinition)
     {
-    LsComponentType typeValue = (LsComponentType)lsDefinition[DGNPROPERTYBLOB_CompType].asUInt();
+    LsComponentType typeValue = (LsComponentType)lsDefinition[DGNPROPERTYBLOB_CompType].GetUInt();
     if (!LsComponent::IsValidComponentType(typeValue))
         {
         BeAssert(LsComponent::IsValidComponentType(typeValue));
         typeValue = LsComponentType::Unknown;
         }
 
-    uint32_t idValue = lsDefinition[DGNPROPERTYBLOB_CompId].asUInt();
+    uint32_t idValue = lsDefinition[DGNPROPERTYBLOB_CompId].GetUInt();
     return LsComponentId(typeValue, idValue);
     }
 
@@ -541,8 +534,8 @@ DgnDbStatus LineStyleElement::_OnInsert()
     if (DgnDbStatus::Success != status)
         return status;
 
-    Json::Value dataObj(Json::objectValue);
-    if (!Json::Reader::Parse(GetData(), dataObj))
+    BeJsDocument dataObj(GetData());
+    if (dataObj.hasParseError())
         return DgnDbStatus::Success;
 
     DgnDbR db = GetDgnDb();
@@ -625,8 +618,8 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
     Utf8String name(srcStyle->GetName());
     Utf8String  data (srcStyle->GetData());
 
-    Json::Value  jsonObj (Json::objectValue);
-    if (!Json::Reader::Parse(data, jsonObj))
+    BeJsDocument  jsonObj(data);
+    if (jsonObj.hasParseError())
         return DgnStyleId();
 
     LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
@@ -659,10 +652,9 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     if(!context.IsBetweenDbs())
         return newElem;
 
-    Json::Value  jsonObj (Json::objectValue);
-
     Utf8String  srcData (this->GetData());
-    if (!Json::Reader::Parse(srcData, jsonObj))
+    BeJsDocument  jsonObj(srcData);
+    if (jsonObj.hasParseError())
       return newElem;
     LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
     
@@ -674,8 +666,8 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
         LineStyleElementCPtr dstElem = LineStyleElement::Get(context.GetDestinationDb(), dstStyleId);
         Utf8String  dstData (dstElem->GetData());
 
-        Json::Value  dstJsonObj (Json::objectValue);
-        if (!Json::Reader::Parse(dstData, dstJsonObj))
+        BeJsDocument  dstJsonObj(dstData);
+        if (dstJsonObj.hasParseError())
           return newElem;
 
         compId = LsDefinition::GetComponentId (dstJsonObj);
@@ -686,7 +678,7 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
         }
 
     LsDefinition::InitializeJsonObject(jsonObj, compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
-    Utf8String data = Json::FastWriter::ToString(jsonObj);
+    Utf8String data = jsonObj.Stringify();
 
     LineStyleElementPtr lsElement = dynamic_cast<LineStyleElement*>(newElem.get());
     lsElement->SetData(data.c_str());

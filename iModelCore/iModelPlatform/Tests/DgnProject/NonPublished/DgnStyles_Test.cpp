@@ -60,7 +60,7 @@ TEST_F(DgnLineStyleTest, InsertReadLineStyles)
     ASSERT_TRUE(componentId0.IsValid());
     LsComponentId componentId1(LsComponentType::LineCode, 11);
     ASSERT_TRUE(componentId1.IsValid());
-    Json::Value     jsonValue(Json::objectValue);
+    BeJsDocument     jsonValue("{}");
     LsComponent::AddComponentAsJsonProperty(componentId0, *m_db, LsComponentType::LineCode, jsonValue);
     LsComponent::AddComponentAsJsonProperty(componentId1, *m_db, LsComponentType::LineCode, jsonValue);
 
@@ -128,7 +128,7 @@ TEST_F(DgnLineStyleTest, InsertLineStyleIntoDefinitionModel)
     // Create new component.
     LsComponentId componentId(LsComponentType::LineCode, 10);
     ASSERT_TRUE(componentId.IsValid());
-    Json::Value componentJson(Json::objectValue);
+    BeJsDocument componentJson("{}");
     LsComponent::AddComponentAsJsonProperty(componentId, *m_db, LsComponentType::LineCode, componentJson);
 
     // Insert LineStyle
@@ -202,8 +202,8 @@ TEST_F(DgnLineStyleTest, UpdateLineStyle)
 
     Utf8String data = lsEl->GetData();
 
-    Json::Value  jsonObj(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(data, jsonObj)) << "Failed to parse LineStyle data";
+    BeJsDocument  jsonObj(data);
+    ASSERT_TRUE(!jsonObj.hasParseError()) << "Failed to parse LineStyle data";
     EXPECT_EQ(0.0001, LsDefinition::GetUnitDef(jsonObj)) << "UnitsDefinition should have been updated";
     }
 
@@ -324,7 +324,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
 
     Image image(width, height, std::move(testImage), Image::Format::Rgb);
 
-    Json::Value     jsonValue(Json::objectValue);
+    BeJsDocument     jsonValue;
     jsonValue["x"] = image.GetWidth();
     jsonValue["y"] = image.GetHeight();
     jsonValue["flags"] = 12;
@@ -393,14 +393,15 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     options |= LsStrokePatternComponent::PhaseMode::PHASEMODE_Fixed;
     phase = 10;
 
-    Json::Value     jsonValue(Json::objectValue);
+    BeJsDocument     jsonValue;
     jsonValue["phase"] = phase;
     jsonValue["options"] = options;
     jsonValue["maxIter"] = maxIterate;
-    Json::Value strokes(Json::arrayValue);
+    auto strokes = jsonValue["strokes"];
+    strokes.SetEmptyArray();
     for (int i = 0; i < 4; i++)
         {
-        Json::Value  entry(Json::objectValue);
+        auto entry = strokes.appendObject();
         entry["length"] = 10;
         entry["orgWidth"] = 5;
         entry["endWidth"] = 5;
@@ -411,10 +412,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
         entry["strokeMode"] = strokeMode;
         entry["widthMode"] = LCWIDTH_FULL;
         entry["capMode"] = LCCAP_CLOSED;
-        strokes[i] = entry;
         }
-
-    jsonValue["strokes"] = strokes;
 
     // Add component
     LsComponentId componentId(LsComponentType::LineCode, 10);
@@ -487,19 +485,18 @@ TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     {
     SetupSeedProject();
 
-    Json::Value components(Json::arrayValue);
+    BeJsDocument     jsonValue;
+    auto components = jsonValue["comps"];
+    components.SetEmptyArray();
     for (int i = 0; i < 2; ++i)
         {
         LsComponentId componentId(LsComponentType::Internal, i);
-        Json::Value  entry(Json::objectValue);
+        auto entry = components.appendObject();
         entry["offset"] = i + 1;
         entry["id"] = i;
         uint32_t type = (uint32_t) componentId.GetType();
         entry["type"] = type;
-        components.append(entry);
         }
-    Json::Value     jsonValue(Json::objectValue);
-    jsonValue["comps"] = components;
 
     LsComponentId componentId(LsComponentType::Compound, 4);
     LsComponent::AddComponentAsJsonProperty(componentId, *m_db, LsComponentType::Compound, jsonValue);

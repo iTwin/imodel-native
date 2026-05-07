@@ -73,7 +73,7 @@ LsComponentPtr LsRasterImageComponent::_Import(DgnImportContext& importer) const
     LsRasterImageComponentP result = new LsRasterImageComponent(*this);
 
     bvector<uint8_t> imageData;
-    Json::Value jsonValue;
+    BeJsDocument jsonValue;
     SaveToJson(jsonValue, imageData);
     LsComponentId newId;
     AddRasterComponentAsJson(newId, importer.GetDestinationDb(), jsonValue, &imageData[0], (uint32_t)imageData.size());
@@ -84,7 +84,7 @@ LsComponentPtr LsRasterImageComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsRasterImageComponent::SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const
+void LsRasterImageComponent::SaveToJson(BeJsValue result, bvector<uint8_t>& imageData) const
     {
     LsComponent::SaveToJson(result);
 
@@ -100,7 +100,7 @@ void LsRasterImageComponent::SaveToJson(Json::Value& result, bvector<uint8_t>& i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentP* result, Json::Value const & jsonDef, LsLocationCP location)
+LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentP* result, BeJsConst jsonDef, LsLocationCP location)
     {
     LsRasterImageComponentP comp = new LsRasterImageComponent(location);
     comp->ExtractDescription(jsonDef);

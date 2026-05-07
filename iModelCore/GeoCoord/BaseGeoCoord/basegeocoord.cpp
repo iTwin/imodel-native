@@ -12060,7 +12060,7 @@ struct JsonStatus
 };
 
 template<typename Functor>
-JsonStatus GetAndSet(JsonValueCR value, Utf8CP name, Functor functor)
+JsonStatus GetAndSet(BeJsConst value, Utf8CP name, Functor functor)
 {
     StatusInt result = SUCCESS;
 

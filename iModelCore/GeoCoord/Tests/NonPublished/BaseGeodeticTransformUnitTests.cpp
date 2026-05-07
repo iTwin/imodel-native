@@ -393,8 +393,8 @@ TEST_F(BaseGeodeticTransformUnitTests, GeodeticTransformReversalTest)
 
     GeoCoordinates::GeodeticTransformP transform1 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
     
-    Json::Value transformJson1;
-    EXPECT_TRUE(Json::Reader::Parse(geodeticTransform1, transformJson1));
+    BeJsDocument transformJson1(geodeticTransform1);
+    EXPECT_TRUE(!transformJson1.hasParseError());
 
     Utf8String errorMessage;
     EXPECT_EQ(SUCCESS, transform1->FromJson(transformJson1, errorMessage)) << errorMessage.c_str();
@@ -428,8 +428,8 @@ TEST_F(BaseGeodeticTransformUnitTests, GeodeticTransformReversalTest)
 
     GeoCoordinates::GeodeticTransformP transform2 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
     
-    Json::Value transformJson2;
-    EXPECT_TRUE(Json::Reader::Parse(geodeticTransform2, transformJson2));
+    BeJsDocument transformJson2(geodeticTransform2);
+    EXPECT_TRUE(!transformJson2.hasParseError());
 
     EXPECT_EQ(SUCCESS, transform2->FromJson(transformJson2, errorMessage)) << errorMessage.c_str();
 
@@ -509,8 +509,8 @@ TEST_F(BaseGeodeticTransformUnitTests, GeodeticTransformReversalTest)
 
     GeoCoordinates::GeodeticTransformP transform3 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
     
-    Json::Value transformJson3;
-    EXPECT_TRUE(Json::Reader::Parse(geodeticTransform3, transformJson3));
+    BeJsDocument transformJson3(geodeticTransform3);
+    EXPECT_TRUE(!transformJson3.hasParseError());
 
     EXPECT_EQ(SUCCESS, transform3->FromJson(transformJson3, errorMessage)) << errorMessage.c_str();
 
@@ -568,8 +568,8 @@ TEST_F(BaseGeodeticTransformUnitTests, GeodeticTransformReversalTest)
 
     GeoCoordinates::GeodeticTransformP transform4 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
     
-    Json::Value transformJson4;
-    EXPECT_TRUE(Json::Reader::Parse(geodeticTransform4, transformJson4));
+    BeJsDocument transformJson4(geodeticTransform4);
+    EXPECT_TRUE(!transformJson4.hasParseError());
 
     EXPECT_EQ(SUCCESS, transform4->FromJson(transformJson4, errorMessage)) << errorMessage.c_str();
 

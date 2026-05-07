@@ -452,8 +452,8 @@ void DefinitionElementUsageInfo::ScanLineStyles()
         if (!lineStyleElement.IsValid())
             continue;
 
-        Json::Value dataObj(Json::objectValue);
-        if (!Json::Reader::Parse(lineStyleElement->GetData(), dataObj))
+        BeJsDocument dataObj(lineStyleElement->GetData());
+        if (dataObj.hasParseError())
             continue;
 
         LsComponentId lineStyleComponentId = LsDefinition::GetComponentId(dataObj);
