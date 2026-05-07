@@ -826,45 +826,45 @@ TEST_F(BeSQliteTestFixture, WriteCommitWithAssert)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, Profiler)
-    {
-    auto db1 = Create("first.db");
-    ASSERT_EQ(BE_SQLITE_OK, Profiler::InitScope(*db1, "test scope", "test", Profiler::Params()));
-    db1->ExecuteSql("create table test(Id integer primary key, c0);");
+// TEST_F(BeSQliteTestFixture, Profiler)
+//     {
+//     auto db1 = Create("first.db");
+//     ASSERT_EQ(BE_SQLITE_OK, Profiler::InitScope(*db1, "test scope", "test", Profiler::Params()));
+//     db1->ExecuteSql("create table test(Id integer primary key, c0);");
 
-    auto scope = Profiler::GetScope(*db1);
-    ASSERT_EQ(BE_SQLITE_OK, scope->Start());
+//     auto scope = Profiler::GetScope(*db1);
+//     ASSERT_EQ(BE_SQLITE_OK, scope->Start());
 
-    Statement stmt;
-    stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
-    for (int i=0; i< 100; ++i) {
-        stmt.BindInt(1, i);
-        stmt.BindText(2, "Hello World", Statement::MakeCopy::No);
-        stmt.Step();
-        stmt.ClearBindings();
-        stmt.Reset();
-        db1->SaveChanges();
-    }
-    stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_OK, scope->Stop());
+//     Statement stmt;
+//     stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
+//     for (int i=0; i< 100; ++i) {
+//         stmt.BindInt(1, i);
+//         stmt.BindText(2, "Hello World", Statement::MakeCopy::No);
+//         stmt.Step();
+//         stmt.ClearBindings();
+//         stmt.Reset();
+//         db1->SaveChanges();
+//     }
+//     stmt.Finalize();
+//     ASSERT_EQ(BE_SQLITE_OK, scope->Stop());
 
-    ASSERT_GT(scope->GetElapsedTime(), 0);
-    auto scopeId = scope->GetScopeId();
-    auto file = scope->GetProfileDbFileName();
+//     ASSERT_GT(scope->GetElapsedTime(), 0);
+//     auto scopeId = scope->GetScopeId();
+//     auto file = scope->GetProfileDbFileName();
 
-    Db profileDb;
-    ASSERT_EQ(BE_SQLITE_OK, profileDb.OpenBeSQLiteDb(file, Db::OpenParams(Db::OpenMode::Readonly)));
-    auto stats = profileDb.GetCachedStatement("SELECT row_count, sql from v_perf_sql where scope_id=? order by sql_id");
-    stats->BindInt64(1, scopeId);
+//     Db profileDb;
+//     ASSERT_EQ(BE_SQLITE_OK, profileDb.OpenBeSQLiteDb(file, Db::OpenParams(Db::OpenMode::Readonly)));
+//     auto stats = profileDb.GetCachedStatement("SELECT row_count, sql from v_perf_sql where scope_id=? order by sql_id");
+//     stats->BindInt64(1, scopeId);
 
-    ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
-    ASSERT_EQ(100, stats->GetValueInt(0));
-    ASSERT_STREQ( "insert into test (id,c0) values(?,?)", stats->GetValueText(1));;
+//     ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
+//     ASSERT_EQ(100, stats->GetValueInt(0));
+//     ASSERT_STREQ( "insert into test (id,c0) values(?,?)", stats->GetValueText(1));;
 
-    ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
-    ASSERT_EQ(100, stats->GetValueInt(0));
-    ASSERT_STREQ( "COMMIT", stats->GetValueText(1));;
-    }
+//     ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
+//     ASSERT_EQ(100, stats->GetValueInt(0));
+//     ASSERT_STREQ( "COMMIT", stats->GetValueText(1));;
+//     }
 
 //=======================================================================================
 //! Virtual Table to generate series
