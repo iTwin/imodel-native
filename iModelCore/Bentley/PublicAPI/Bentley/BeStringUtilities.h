@@ -600,10 +600,6 @@ public:
     //! Attempts to detect if a string contains any invalid UTF-8 sequences.
     //! This does NOT ensure the string accurately represents what the user intends, however it can be used to discard obviously corrupt data.
     BENTLEYDLL_EXPORT static bool IsInvalidUtf8Sequence(Utf8CP);
-
-    //! Generates a pseudorandom number in the range [0, UINT_MAX].
-    //! param[in] randomValue A pointer to an integer to hold the generated value.
-    BENTLEYDLL_EXPORT static BentleyStatus Rand(unsigned int* randomValue);
 };
 
 //=======================================================================================

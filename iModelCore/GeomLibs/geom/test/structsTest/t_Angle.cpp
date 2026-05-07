@@ -5,6 +5,7 @@
 #include "testHarness.h"
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeNumerical.h>
+#include <random>
 
 void TestFunc (double a, double b)
     {
@@ -830,26 +831,22 @@ UsageSums m_fractionSums;
 UsageSums m_angleSums;
 #define NUM_BIT_CHECK 5
 uint64_t m_bits[NUM_BIT_CHECK];
-DoubleGenerator (double a = 0.0, double b = 1.0)
-  : m_a (a), m_b (b), m_fractionSums(), m_angleSums ()
-  {
-  m_xmin = SIZE_MAX;
-  m_xmax = 0;
-  for (int i = 0; i < NUM_BIT_CHECK; i++)
-      m_bits[i] = 0;
-  }
+std::random_device m_rd;
+std::uniform_int_distribution<uint64_t> m_distr;
+
+DoubleGenerator(double a = 0.0, double b = 1.0) : m_a(a), m_b(b), m_fractionSums(), m_angleSums(), m_distr(0, 0x7FFF) // same as range of rand(), what we used previously
+    {
+    m_xmin = SIZE_MAX;
+    m_xmax = 0;
+    for (int i = 0; i < NUM_BIT_CHECK; i++)
+        m_bits[i] = 0;
+    }
 
 double Next ()
     {
-    unsigned int randValue0, randValue1, randValue2;
-    BeStringUtilities::Rand(&randValue0);
-    BeStringUtilities::Rand(&randValue1);
-    BeStringUtilities::Rand(&randValue2);
-    // NOTE: Originally u0,u1,u2 were the output of rand(), which returns 15-bit values in [0, RAND_MAX=0x7fff].
-    // Now we use the first 15 bits of rand_s(), which returns 32-bit values in [0, UINT_MAX=0xffffffff].
-    uint64_t u0 = randValue0 & 0x7FFF;
-    uint64_t u1 = randValue1 & 0x7FFF;
-    uint64_t u2 = randValue2 & 0x7FFF;
+    uint64_t u0 = m_distr(m_rd);
+    uint64_t u1 = m_distr(m_rd);
+    uint64_t u2 = m_distr(m_rd);
     u1 = u1 << 15;
     u2 = u2 << 30;
     m_bits[0] |= u0;

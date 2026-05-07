@@ -5,6 +5,7 @@
 #include "testHarness.h"
 #include <stdlib.h>
 #include <chrono>
+#include <random>
 
 void rayIntersectPlaneTest (DPoint3d planeOrigin, DVec3d planeU, DVec3d planeV, DPoint3d rayOrigin, double u, double v)
     {
@@ -278,14 +279,8 @@ TEST(DRay3d, DotVector)
     Check::Near(dotProduct, dotProductExpected);
     }
 
-/** Return a random number between -100 and 100 */
-int getRandomNumber()
-    {
-    unsigned int x = 0;
-    if (Check::True(BeStringUtilities::Rand(&x) == SUCCESS, "random number succeeded"))
-        x = x % 200 - 100;
-    return x;
-    }
+std::random_device rd;
+std::uniform_real_distribution<double> distr(-100.0, 100.0);
 
 TEST(DRay3d, IntersectTriangle)
     {
@@ -301,8 +296,8 @@ TEST(DRay3d, IntersectTriangle)
     DPoint3d rotatedIntersectionPoint;
     DPoint3d rotatedOriginalIntersectionPoint;
     RotMatrix rotationMatrix;
-    double angle = getRandomNumber();
-    DVec3d rotationAxis = DVec3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+    double angle = distr(rd);
+    DVec3d rotationAxis = DVec3d::From(distr(rd), distr(rd), distr(rd));
     if (0 != rotationAxis.Magnitude())
         {
         rotationMatrix.InitIdentity();
@@ -497,8 +492,8 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
     DPoint3d rotatedIntersectionPoint;
     DPoint3d rotatedOriginalIntersectionPoint;
     RotMatrix rotationMatrix;
-    double angle = getRandomNumber();
-    DVec3d rotationAxis = DVec3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+    double angle = distr(rd);
+    DVec3d rotationAxis = DVec3d::From(distr(rd), distr(rd), distr(rd));
     if (0 != rotationAxis.Magnitude())
         {
         rotationMatrix.InitIdentity();
@@ -510,12 +505,12 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
     for (int i = 0; i < N && !exitTheTest; i++)
         for (int j = 0; j < N && !exitTheTest; j++)
             {
-            origin = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
-            direction = DVec3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            origin = DPoint3d::From(distr(rd), distr(rd), distr(rd));
+            direction = DVec3d::From(distr(rd), distr(rd), distr(rd));
             ray = DRay3d::FromOriginAndVector(origin, direction);
-            trianglePoints[0] = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
-            trianglePoints[1] = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
-            trianglePoints[2] = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            trianglePoints[0] = DPoint3d::From(distr(rd), distr(rd), distr(rd));
+            trianglePoints[1] = DPoint3d::From(distr(rd), distr(rd), distr(rd));
+            trianglePoints[2] = DPoint3d::From(distr(rd), distr(rd), distr(rd));
             // shoot ray at triangle using bsiDRay3d_intersectTriangle
             start = std::chrono::high_resolution_clock::now();
             slowRet = bsiDRay3d_intersectTriangle(

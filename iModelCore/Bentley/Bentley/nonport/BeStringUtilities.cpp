@@ -5,7 +5,6 @@
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     #define NOMINMAX
-    #define _CRT_RAND_S
     #include <Windows.h>
     #include <WinNls.h>
     #include <objbase.h>
@@ -3052,14 +3051,6 @@ bool BeStringUtilities::IsInvalidUtf8Sequence(Utf8CP str)
     UErrorCode icuError = U_ZERO_ERROR;
     u_strFromUTF8(NULL, 0, NULL, str, (int32_t)strlen(str), &icuError);
     return (U_INVALID_CHAR_FOUND == icuError);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Rand(unsigned int* randomValue)
-    {
-    return rand_s(randomValue) == 0 ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
