@@ -62,11 +62,7 @@ public:
         }
 
         char buffer[40];
-#if defined(_MSC_VER) && defined(__STDC_SECURE_LIB__)
-        sprintf_s(buffer, sizeof(buffer), "%#.17g", d);
-#else
-        sprintf(buffer, "%#.17g", d);
-#endif
+        snprintf(buffer, sizeof(buffer), "%#.17g", d);
 
         // Trailing zero cleanup matching jsoncpp behavior exactly:
         char* ch = buffer + strlen(buffer) - 1;
