@@ -18,7 +18,7 @@ static int s_echoErrorGeometry = 0;
 void messagePrefix (const char* content = nullptr)
     {
     printf_s("%s: ", s_messagePrefix);
-	if (content)
+	  if (content)
         printf_s("%s", content);
     }
 struct JsonData {

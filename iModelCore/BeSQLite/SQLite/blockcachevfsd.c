@@ -16,11 +16,14 @@
 #include <sys/stat.h>
 #ifdef __WIN32__
 # include <windows.h>
+# include <io.h>
+# include <direct.h>
 # define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
 #endif
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
@@ -38,6 +41,11 @@
 
 #include "sqlite3.h"
 #include "simplexml.h"
+
+/* Forward declaration for custom init function */
+#ifdef SQLITE_BCV_CUSTOM_INIT
+int SQLITE_BCV_CUSTOM_INIT(void);
+#endif
 
 /* Default values of various command line parameters. */
 #define BCV_DEFAULT_CACHEFILE_SIZE   (1024*1024*1024)
@@ -641,7 +649,7 @@ static void bcvOpenHandle(CommandSwitches *pCmd, sqlite3_bcv **ppBcv){
       sqlite3_bcv_config(*ppBcv, SQLITE_BCVCONFIG_VERBOSE, (int)1);
     }
     if( pCmd->mLog & (BCV_LOG_HTTP|BCV_LOG_HTTPRETRY) ){
-      void *pCtx = (void*)(pCmd->mLog & BCV_LOG_HTTP ? 1 : 0);
+      void *pCtx = (void*)(intptr_t)(pCmd->mLog & BCV_LOG_HTTP ? 1 : 0);
       sqlite3_bcv_config(*ppBcv, SQLITE_BCVCONFIG_LOG, pCtx, bcvHttpLog);
     }
     sqlite3_bcv_config(*ppBcv, SQLITE_BCVCONFIG_NREQUEST, pCmd->nRequest);
@@ -669,7 +677,7 @@ static void bcvOpenContainer(
   }
   bcvDispatchVerbose(*ppDisp, (pCmd->mLog & BCV_LOG_VERBOSE) ? 1 : 0);
   if( pCmd->mLog & (BCV_LOG_HTTP|BCV_LOG_HTTPRETRY) ){
-    void *pCtx = (void*)(pCmd->mLog & BCV_LOG_HTTP ? 1 : 0);
+    void *pCtx = (void*)(intptr_t)(pCmd->mLog & BCV_LOG_HTTP ? 1 : 0);
     bcvDispatchLog(*ppDisp, pCtx, bcvHttpLog);
   }
 }

@@ -34,7 +34,7 @@
     #define FOLLY_HAVE_CLOCK_GETTIME 1
 #endif
 
-#if defined(__clang__) && !defined(__APPLE__)
+#if defined(__clang__) && !defined(__APPLE__) && !defined(_WIN32)
     #define FOLLY_HAVE_MEMRCHR 1
 #endif
 

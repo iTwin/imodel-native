@@ -13,7 +13,7 @@
 #ifdef WIP_DUMP_UPLOAD
 #include <breakpad/client/windows/sender/crash_report_sender.h>
 #endif
-#include "iModelJsNative.h"
+#include "IModelJsNative.h"
 #include <Bentley/BeDirectoryIterator.h>
 
 const DWORD MS_VC_EXCEPTION = 0x406D1388;

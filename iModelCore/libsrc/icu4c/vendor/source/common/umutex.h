@@ -207,9 +207,11 @@ public:
     U_COMMON_API UMUTEX_CONSTEXPR UMutex() {}
     U_COMMON_API ~UMutex() = default;
 
-    U_COMMON_API UMutex(const UMutex& other) = delete;
-    U_COMMON_API UMutex& operator=(const UMutex& other) = delete;
-    U_COMMON_API void* operator new(size_t) = delete;
+    // Clang rejects __declspec(dllexport) on deleted functions (MSVC ignores it).
+    // Remove U_COMMON_API from these deleted declarations.
+    UMutex(const UMutex& other) = delete;
+    UMutex& operator=(const UMutex& other) = delete;
+    void* operator new(size_t) = delete;
 
     // requirements for C++ BasicLockable, allows UMutex to work with std::lock_guard
     U_COMMON_API void lock() {
