@@ -106,9 +106,10 @@ TEST_F(BaseEllipsoidUnitTests, CreateAFullySelfContainedEllipsoid_Test1)
     GeoCoordinates::EllipsoidP theEllipsoid = const_cast<GeoCoordinates::EllipsoidP>(GeoCoordinates::Ellipsoid::CreateEllipsoid());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
-    // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
-    ASSERT_TRUE(SUCCESS == theEllipsoid->FromJson(Json::Value::From(customEllipsoid1), errorMessage));
+    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
+    BeJsDocument parsedEllipsoid;
+    parsedEllipsoid.ParseFullPrecision(customEllipsoid1);
+    ASSERT_TRUE(SUCCESS == theEllipsoid->FromJson(parsedEllipsoid, errorMessage));
     Utf8String source;
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetDescription()) == "Custom ellipsoid description");
