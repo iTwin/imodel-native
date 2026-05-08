@@ -1012,12 +1012,15 @@ public:
         m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator());
         return *this;
         }
-    // replace the content of this document with the parsed value of stringified JSON.
-    // kParseFullPrecisionFlag ensures doubles are parsed with correctly-rounded (strtod-equivalent)
-    // precision, matching jsoncpp's parser behavior. Without it, some doubles may differ by 1 ULP.
-    void Parse(Utf8CP jsonString) { m_doc.Parse<rapidjson::kParseFullPrecisionFlag>(jsonString); }
+    // replace the content of this document with the parsed value of stringified JSON
+    void Parse(Utf8CP jsonString) { m_doc.Parse(jsonString); }
     // replace the content of this document with the parsed value of stringified JSON
     void Parse(std::string const& jsonString) { Parse(jsonString.c_str()); }
+    // Parse with full-precision (strtod-equivalent) double conversion. Slower than Parse() but
+    // guarantees correctly-rounded IEEE 754 doubles, matching jsoncpp's parser. Use when parsed
+    // double values must be bit-identical to jsoncpp-parsed results (e.g. for hashing raw bytes).
+    void ParseFullPrecision(Utf8CP jsonString) { m_doc.Parse<rapidjson::kParseFullPrecisionFlag>(jsonString); }
+    void ParseFullPrecision(std::string const& jsonString) { ParseFullPrecision(jsonString.c_str()); }
 
     bool hasParseError() { return m_doc.HasParseError(); }
     void PurgeNulls() { PurgeNulls(m_doc); }

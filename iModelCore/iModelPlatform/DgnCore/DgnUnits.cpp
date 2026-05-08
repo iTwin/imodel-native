@@ -554,7 +554,8 @@ void DgnGeoLocation::LoadProjectExtents() const
     AxisAlignedBox3d extentsBeforeReadingFromDb = AxisAlignedBox3d(m_extent);
     if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()))
         {
-        BeJsDocument jsonObj(value);
+        BeJsDocument jsonObj;
+        jsonObj.ParseFullPrecision(value);
         if (!jsonObj.hasParseError())
             BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
         }
