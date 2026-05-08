@@ -3677,9 +3677,7 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonSpecific)
 
         GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-        // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
-        BeJsDocument result;
-        result.ParseFullPrecision(theJson);
+        BeJsDocument result(theJson);
         EXPECT_FALSE(result.hasParseError());
 
         Utf8String errMessage;
@@ -3702,9 +3700,7 @@ TEST_F (GCSUnitTests, GCSTransformFromJsonError1)
 
     GeoCoordinates::BaseGCSPtr currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
-    BeJsDocument result;
-    result.ParseFullPrecision(theJson);
+    BeJsDocument result(theJson);
     EXPECT_FALSE(result.hasParseError());
 
     // Sabotage the id to make sure we do not use pre-defined
@@ -3747,9 +3743,7 @@ TEST_F(GCSUnitTests, EllipsoidTransformFromJsonSpecific)
         GeoCoordinates::Ellipsoid* currentEllipsoid1 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
         GeoCoordinates::Ellipsoid* currentEllipsoid2 = GeoCoordinates::Ellipsoid::CreateEllipsoid();
 
-        // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
-        BeJsDocument result;
-        result.ParseFullPrecision(theJson);
+        BeJsDocument result(theJson);
         EXPECT_FALSE(result.hasParseError());
 
         Utf8String errorMessage;
@@ -3780,9 +3774,7 @@ TEST_F(GCSUnitTests, DatumTransformFromJsonSpecific)
         GeoCoordinates::Datum* currentDatum1 = GeoCoordinates::Datum::CreateDatum();
         GeoCoordinates::Datum* currentDatum2 = GeoCoordinates::Datum::CreateDatum();
 
-        // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
-        BeJsDocument result;
-        result.ParseFullPrecision(theJson);
+        BeJsDocument result(theJson);
         EXPECT_FALSE(result.hasParseError());
 
         Utf8String errorMessage;
@@ -3814,9 +3806,7 @@ TEST_F(GCSUnitTests, GeodeticTransformTransformFromJsonSpecific)
         GeoCoordinates::GeodeticTransform* currentTransform1 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
         GeoCoordinates::GeodeticTransform* currentTransform2 = GeoCoordinates::GeodeticTransform::CreateGeodeticTransform();
 
-        // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
-        BeJsDocument result;
-        result.ParseFullPrecision(theJson);
+        BeJsDocument result(theJson);
         EXPECT_FALSE(result.hasParseError());
 
         Utf8String errorMessage;
