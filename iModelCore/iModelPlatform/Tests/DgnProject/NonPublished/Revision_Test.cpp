@@ -773,7 +773,7 @@ TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
 
     ECSchemaPtr testSchema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, "ReverseSchemaTest", "rst", 1, 0, 0));
-    testSchema->AddReferencedSchema(*const_cast<ECSchemaP>(bisCoreSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->AddReferencedSchema(*const_cast<ECSchemaP>(bisCoreSchema)));
 
     ECEntityClassP testClass = nullptr;
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(testClass, "TestWidget"));
