@@ -459,7 +459,7 @@ VuSetP          sourceGraphP
         saveP     = vu_getInternalDataP (destNodeP);
         /* Copy all bits.  Immediately fix up the "next" pointer, and
                 look at source successors to find corresponding destination successors. */
-        memcpy (destNodeP, sourceNodeP, bytesPerNode);
+        BeStringUtilities::Memcpy (destNodeP, bytesPerNode, sourceNodeP, bytesPerNode);
         destNodeP->next = nextP;
         destNodeP->fs = (VuP)vu_getInternalDataP (sourceNodeP->fs);
         destNodeP->vs = (VuP)vu_getInternalDataP (sourceNodeP->vs);

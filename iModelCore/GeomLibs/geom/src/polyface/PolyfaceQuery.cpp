@@ -26,9 +26,7 @@ ImplementNullArgPolyfaceQueryDispatcher (PolyfaceEdgeChainCP, GetEdgeChain)
 ImplementNullArgPolyfaceQueryDispatcher (uint32_t const*,GetIntColor)
 ImplementNullArgPolyfaceQueryDispatcher (int32_t const*,GetPointIndex)
 
-
-// _AsPolyfaceVectorsP and _GetAuxDataCP are now inline in Polyface.h to avoid cross-DLL vtable link errors with lld-link.
-
+// PolyfaceQuery::_GetAuxDataCP and _AsPolyfaceVectorsP are now inline in Polyface.h to avoid cross-DLL vtable link errors with lld-link.
 
 //! Select an index pointer -- e.g. normal, param, color -- with optional fallback to point index.
 //! @param[in] firstChoice first choice (e.g. the available nomal, param, or color index)
