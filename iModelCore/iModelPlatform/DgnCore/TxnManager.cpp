@@ -1707,10 +1707,10 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
     bool containsSchemaChanges = false;
-    DdlChanges ignoredDdlChanges; // Required by GetSchemaChanges even though reverse only needs the schema-change flag.
-    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ignoredDdlChanges);
+    DdlChanges ddlChangesOutput; // Required by GetSchemaChanges even though reverse only needs the schema-change flag.
+    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChangesOutput);
     if (result != BE_SQLITE_OK)
-        m_dgndb.ThrowException("error reading changeset data", result);
+        m_dgndb.ThrowException("failed to read schema changes from changeset", result);
 
     // Reverse EC schema mapping (ec_* metadata) but skip DDL (tables/columns cannot be dropped).
     const bool hasEcOrDdlChanges = containsSchemaChanges || changeset.ContainsEcChanges();
