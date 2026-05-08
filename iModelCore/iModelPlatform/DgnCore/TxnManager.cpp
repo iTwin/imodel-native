@@ -1707,8 +1707,8 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
     bool containsSchemaChanges = false;
-    DdlChanges ddlChanges;
-    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
+    DdlChanges ignoredDdlChanges; // Required by GetSchemaChanges even though reverse only needs the schema-change flag.
+    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ignoredDdlChanges);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("error reading changeset data", result);
 
