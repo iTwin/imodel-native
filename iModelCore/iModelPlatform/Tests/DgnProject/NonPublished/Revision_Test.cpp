@@ -729,7 +729,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     expectToNotThrow([&]() { m_db->Txns().ReverseChangeset(*revision4); }, "unexpected exception reversing schema changeset");
 
     // Data changes from revision 4 should be reversed: Id=2 deleted, Column2 of Id=1 back to null.
-    ASSERT_FALSE(ValidateValue(*m_db, "SELECT COUNT(*) FROM TestTable1 WHERE Id=2", 1));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT COUNT(*) FROM TestTable1 WHERE Id=2", 0));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // null (i.e., 0)
 
     // Schema changes from revision 4 must be preserved (DDL is skipped when reversing).
