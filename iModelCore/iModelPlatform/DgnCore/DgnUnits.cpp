@@ -472,11 +472,13 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 
     m_extent = newExtents;
 
-    // Precision17 produces output byte-identical to the former jsoncpp serialization (sprintf "%#.17g").
-    // Tile content IDs include a hash of the project extents string, so changing the serialized
-    // precision would invalidate every cached tile in existence.
+    // Tile content IDs include a hash of the project extents string. The serialized format must be
+    // byte-identical to the former jsoncpp output to avoid invalidating every cached tile in existence.
+    // jsoncpp sorts object keys alphabetically ("high" before "low") and uses sprintf "%#.17g" for doubles.
+    // We replicate both behaviors here: alphabetical key insertion + Precision17 formatting.
     BeJsDocument jsonObj;
-    BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
+    BeJsGeomUtils::DPoint3dToJson(jsonObj["high"], m_extent.high);
+    BeJsGeomUtils::DPoint3dToJson(jsonObj["low"], m_extent.low);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.Stringify(StringifyFormat::Precision17));
 
     if (!m_ecefLocation.m_isValid)
