@@ -725,14 +725,83 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=1", 0)); // i.e., null value
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=2", 0)); // i.e., null value
 
-    // Reverse revision 4 (Note that all data or schema changes are entirely skipped in this apply)
-    expectToThrow([&]() { m_db->Txns().ReverseChangeset(*revision4); }, "Cannot reverse a changeset containing schema changes");
+    // Reverse revision 4: data changes are reversed, schema (DDL) changes are skipped.
+    expectToNotThrow([&]() { m_db->Txns().ReverseChangeset(*revision4); }, "unexpected exception reversing schema changeset");
+
+    // Data changes from revision 4 should be reversed: Id=2 deleted, Column2 of Id=1 back to null.
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT COUNT(*) FROM TestTable1 WHERE Id=2", 0));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // null (i.e., 0)
+
+    // Schema changes from revision 4 must be preserved (DDL is skipped when reversing).
+    ASSERT_TRUE(m_db->ColumnExists("TestTable2", "Column2"));
+
+    // Parent changeset should now point to revision 3.
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), revision3->GetChangesetId().c_str());
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
+
+    // Re-open and re-apply revision 4, then reverse via SchemaUpgradeOptions.
     DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Reverse));
-    expectToThrow([&]() { m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams); }, "Cannot reverse a changeset containing schema changes");
+    DgnDb::OpenParams mergeParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Merge));
+    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, mergeParams);
+    ASSERT_TRUE(m_db.IsValid());
+
+    m_db->CloseDb();
+    DgnDb::OpenParams reverseParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Reverse));
+    expectToNotThrow([&]() { m_db = DgnDb::OpenIModelDb(&openStatus, fileName, reverseParams); }, "unexpected exception reversing schema changeset via OpenParams");
+    ASSERT_TRUE(m_db.IsValid());
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), revision3->GetChangesetId().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ReverseSchemaChangeset)
+    {
+    // Setup a baseline db.
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReverseSchemaChanges.bim");
+    m_db->SaveChanges("Created Initial Model");
+    ChangesetPropsPtr cs0 = CreateRevision("-cs0");
+    ASSERT_TRUE(cs0.IsValid());
+
+    // Import an EC schema introducing a new class with a property.
+    ECSchemaCP bisCoreSchema = m_db->Schemas().GetSchema(Utf8String("BisCore"));
+    ASSERT_TRUE(bisCoreSchema != nullptr);
+    ECClassCP definitionElement = m_db->Schemas().GetClass(Utf8String("BisCore"), Utf8String("DefinitionElement"));
+    ASSERT_TRUE(definitionElement != nullptr);
+
+    ECSchemaPtr testSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, "ReverseSchemaTest", "rst", 1, 0, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->AddReferencedSchema(*const_cast<ECSchemaP>(bisCoreSchema)));
+
+    ECEntityClassP testClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(testClass, "TestWidget"));
+    ASSERT_EQ(ECObjectsStatus::Success, testClass->AddBaseClass(*definitionElement));
+
+    PrimitiveECPropertyP prop = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testClass->CreatePrimitiveProperty(prop, "WidgetCode", PRIMITIVETYPE_String));
+
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({testSchema.get()}, true));
+    m_db->SaveChanges("Imported ReverseSchemaTest schema");
+
+    ChangesetPropsPtr cs1 = CreateRevision("-cs1");
+    ASSERT_TRUE(cs1.IsValid());
+    ASSERT_TRUE(cs1->ContainsDdlChanges(*m_db));
+
+    // Schema and class are available after import.
+    ASSERT_TRUE(m_db->Schemas().ContainsSchema("ReverseSchemaTest"));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") != nullptr);
+
+    // Reversing a schema changeset must succeed without throwing.
+    expectToNotThrow([&]() { m_db->Txns().ReverseChangeset(*cs1); }, "unexpected exception reversing schema changeset");
+
+    // EC mapping is reversed: the schema and its class are no longer available.
+    ASSERT_FALSE(m_db->Schemas().ContainsSchema("ReverseSchemaTest"));
+    ASSERT_TRUE(m_db->Schemas().GetClass("ReverseSchemaTest", "TestWidget") == nullptr);
+
+    // Parent changeset correctly points back to cs0.
+    ASSERT_STREQ(m_db->Txns().GetParentChangesetId().c_str(), cs0->GetChangesetId().c_str());
     }
 
 //---------------------------------------------------------------------------------------

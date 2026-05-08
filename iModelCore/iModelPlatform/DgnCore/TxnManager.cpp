@@ -1704,14 +1704,20 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (GetParentChangesetId() != changeset.GetChangesetId())
         m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
 
-    if (changeset.ContainsDdlChanges(m_dgndb))
-        m_dgndb.ThrowException("Cannot reverse a changeset containing schema changes", (int) ChangesetStatus::ReverseOrReinstateSchemaChanges);
-
     ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
-    // Skip the entire schema change set when reversing or reinstating - DDL and
-    // the meta-data changes. Reversing meta data changes cause conflicts
-    DbResult result = ApplyChanges(changeStream, TxnAction::Reverse, false, true);
+    bool containsSchemaChanges = false;
+    DdlChanges outDdlChanges; // Required by GetSchemaChanges even though reverse only needs the schema-change flag.
+    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, outDdlChanges);
+    if (result != BE_SQLITE_OK)
+        m_dgndb.ThrowException("failed to read schema changes from changeset", result);
+
+    // Reverse EC schema mapping (ec_* metadata) but skip DDL (tables/columns cannot be dropped).
+    const bool hasSchemaOrEcChanges = containsSchemaChanges || changeset.ContainsEcChanges();
+    if (hasSchemaOrEcChanges)
+        m_dgndb.ClearECDbCache();
+
+    result = ApplyChanges(changeStream, TxnAction::Reverse, hasSchemaOrEcChanges, true);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
