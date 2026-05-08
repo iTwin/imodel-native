@@ -1012,8 +1012,10 @@ public:
         m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator());
         return *this;
         }
-    // replace the content of this document with the parsed value of stringified JSON
-    void Parse(Utf8CP jsonString) { m_doc.Parse(jsonString); }
+    // replace the content of this document with the parsed value of stringified JSON.
+    // kParseFullPrecisionFlag ensures doubles are parsed with correctly-rounded (strtod-equivalent)
+    // precision, matching jsoncpp's parser behavior. Without it, some doubles may differ by 1 ULP.
+    void Parse(Utf8CP jsonString) { m_doc.Parse<rapidjson::kParseFullPrecisionFlag>(jsonString); }
     // replace the content of this document with the parsed value of stringified JSON
     void Parse(std::string const& jsonString) { Parse(jsonString.c_str()); }
 
