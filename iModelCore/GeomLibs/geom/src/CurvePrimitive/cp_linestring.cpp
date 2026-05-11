@@ -16,7 +16,7 @@ CurvePrimitiveLineString::CurvePrimitiveLineString (DPoint3dCP points, size_t nP
         if (nPoints > 0 && NULL != points)
             {
             m_points.resize (nPoints);
-            memcpy (&m_points[0], points, nPoints * sizeof (*points));
+            BeStringUtilities::Memcpy (&m_points[0], nPoints * sizeof(*points), points, nPoints * sizeof (*points));
             }
         else
             {

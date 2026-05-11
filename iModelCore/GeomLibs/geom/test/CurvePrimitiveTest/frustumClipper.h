@@ -81,7 +81,7 @@ void ClipPolygonWithFrustum(DPoint3d* outPts, int* outCount, int maxOut, DPoint3
 
     //start with input points, then keep clipping them to the planes
     numIn = numIn > 100 ? 100: numIn;
-    memcpy(currPts, inPts, numIn * sizeof(DPoint3d));
+    BeStringUtilities::Memcpy(currPts, sizeof buffer1, inPts, numIn * sizeof(DPoint3d));
     nCurr = numIn;
 
     //clip with each plane
@@ -106,7 +106,7 @@ void ClipPolygonWithFrustum(DPoint3d* outPts, int* outCount, int maxOut, DPoint3
 
     //copy currPts to output
     nCurr = nCurr > maxOut ? maxOut: nCurr;
-    memcpy(outPts, currPts, nCurr * sizeof(DPoint3d));
+    BeStringUtilities::Memcpy(outPts, maxOut * sizeof(DPoint3d), currPts, nCurr * sizeof(DPoint3d));
     *outCount = nCurr;
     }
 
@@ -183,7 +183,7 @@ DPoint3d frustumBCorners[8] //=> IN 2nd frustum corners in XYZ lexical order.
 
         if (copyToOutput)
             {
-            memcpy(&intersections[*nIntersectionsP][0], &clipPts[ii][0], nClip[ii] * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy(&intersections[*nIntersectionsP][0], sizeof intersections[*nIntersectionsP], &clipPts[ii][0], nClip[ii] * sizeof(DPoint3d));
             intersectionCounts[*nIntersectionsP] = nClip[ii];
             *nIntersectionsP = *nIntersectionsP + 1;
             }

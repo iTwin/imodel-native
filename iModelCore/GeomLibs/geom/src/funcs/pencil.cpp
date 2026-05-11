@@ -1582,7 +1582,7 @@ void rootTest ()
 
     for (;;)
         {
-        if (4 != scanf ("%lf %lf %lf %lf", &C2.x, &C2.y, &S2.x, &S2.y))
+        if (4 != BeFile::Scanf ("%lf %lf %lf %lf", &C2.x, &C2.y, &S2.x, &S2.y))
             return;
         bsiCTrig_halfAngleFunctions (&C, &S, &C2, &S2);
 
@@ -1625,7 +1625,7 @@ void scanSigma
 DPoint4dP pSigma
 )
     {
-    if (4 != scanf ("%lf %lf %lf %lf", &pSigma->x, &pSigma->y, &pSigma->z, &pSigma->w))
+    if (4 != BeFile::Scanf ("%lf %lf %lf %lf", &pSigma->x, &pSigma->y, &pSigma->z, &pSigma->w))
         {
         exit(10);
         }
@@ -1642,7 +1642,7 @@ DMatrix4dP pA
         {
         for (j = 0; j < 4; j++)
             {
-            if (1 != scanf ("%lf", &pA->coff[i][j]))
+            if (1 != BeFile::Scanf ("%lf", &pA->coff[i][j]))
                 exit (10);
             }
         }
@@ -1720,7 +1720,7 @@ void main ()
         printf(" Select Test: (1) half angles    (2) enter B (3) Random B\n");
         printf("              (4) sigma0         (5) sigma1  (6) solve \n");
         printf("              (8) B0,B1 entry    (9) non-planar test  (+-10) planar test \n");
-        if (1 != scanf ("%d", &opcode))
+        if (1 != BeFile::Scanf ("%d", &opcode))
                 break;
 
         expandDMatrix (&Dr, &Di, &sigma0, &B, &sigma1);

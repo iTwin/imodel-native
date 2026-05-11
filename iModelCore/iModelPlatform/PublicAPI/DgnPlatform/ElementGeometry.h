@@ -559,9 +559,9 @@ public:
     //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
     DGNPLATFORM_EXPORT GeometryCollection(GeometrySourceCR source);
 
-    //! Create a Json::Value that represents the GeometryStream from this GeometryCollection.
+    //! Create a BeJsValue that represents the GeometryStream from this GeometryCollection.
     //! @param[in] opts options for customizing the value.
-    DGNPLATFORM_EXPORT void ToJson(BeJsValue out, BeJsConst opts=Json::Value()) const;
+    DGNPLATFORM_EXPORT void ToJson(BeJsValue out, BeJsConst opts=BeJsDocument::Null()) const;
 
 }; // GeometryCollection
 
