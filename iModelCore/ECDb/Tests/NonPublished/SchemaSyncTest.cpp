@@ -21254,7 +21254,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Import initial schema",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "91512573f4f3c7a91af927334c09d17a2a13deb1a681eba93b353a70bcaecc05";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "8433644ea08fc86ddd41338fb9d379119ea7afff3ad0894f4a9e61268761d406";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21294,7 +21294,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Modify DisplayLabel, Description, NumericSpec",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "2e86b22109095bda87264361dbb3f87f3486aa8b799e7d7ee527fcf2f8ebd8e8";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "25467cb28616bd8d5c3bff82f5620a20f1190138bbbea5c326fe574a558157b5";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21332,7 +21332,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
     );
 
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "a0a72d9d43c034813c226f13b654e6dcc869c4d2c0e797797112708333f2df48";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "129400d3713e9f8933eb8bba6d43aa545b503f3aa51188ee9698ba0994bef481";
     Test(
         "remove optional attributes from num spec",
         [&]()
@@ -21390,7 +21390,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "start with format that already has a composite",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "c3aff045337092963149b287d40b0ff8eb68d0eba00130689751503e29685a05";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "26e6c0c2f76c92fd840996f772fa36349eac371100202c608921e66ef3f5bd20";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21421,7 +21421,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "36cc7aeb3b7b8f861ef88c6f9d8149c875a20686108396123e7f069a98938220";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "493f50d5376a71d87d98033653bc4249817dc64dd5fce27af582308ff08986e7";
     Test(
         "Modify CompSpec except for units",
         [&]()
