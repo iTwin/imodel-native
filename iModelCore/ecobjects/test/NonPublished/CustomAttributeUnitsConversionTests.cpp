@@ -403,6 +403,93 @@ TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleFailsCon
     }
 
 //---------------------------------------------------------------------------------------
+// When a derived property's UnitSpecification is incompatible with the base property's
+// persistence unit, schema conversion must surface two issue IDs through the
+// ECSchemaReadContext's IIssueReporter so the connector / sync-report layer can
+// produce an actionable error: EC_0063 (incompatible units) and EC_0064 (KOQ
+// creation failure follow-up). See itwinjs-backlog#2058.
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleReportsIssueIds)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="SpecialPipe" displayLabel="A more specialized pipe" isDomainClass="True">
+                <BaseClass>Pipe</BaseClass>
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>AREA</KindOfQuantityName>
+                            <DimensionName>L2</DimensionName>
+                            <UnitName>ACRE</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
+                <ECProperty propertyName="Length" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                            <DimensionName>L</DimensionName>
+                            <UnitName>DECIMETRE</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    bvector<Utf8String> reportedIds;
+    bvector<Utf8String> reportedMessages;
+    auto onReport = [&](IssueSeverity, IssueCategory, IssueType, IssueId id, Utf8CP message)
+        {
+        reportedIds.push_back(Utf8String(id.m_issueId));
+        reportedMessages.push_back(Utf8String(message));
+        };
+    RelayIssueListener<decltype(onReport)> testListener(onReport);
+    context->Issues().AddListener(testListener);
+
+    ASSERT_FALSE(ECSchemaConverter::Convert(*schema.get(), *context.get())) << "Converted a schema with incompatible units";
+
+    context->Issues().RemoveListener();
+
+    bool sawIncompatibleUnits = false;
+    bool sawFailedToCreateKOQ = false;
+    Utf8String incompatibleUnitsMessage;
+    Utf8String failedToCreateKOQMessage;
+    for (size_t i = 0; i < reportedIds.size(); ++i)
+        {
+        if (reportedIds[i].Equals("EC_0063"))
+            {
+            sawIncompatibleUnits = true;
+            incompatibleUnitsMessage = reportedMessages[i];
+            }
+        else if (reportedIds[i].Equals("EC_0064"))
+            {
+            sawFailedToCreateKOQ = true;
+            failedToCreateKOQMessage = reportedMessages[i];
+            }
+        }
+
+    EXPECT_TRUE(sawIncompatibleUnits) << "Expected EC_0063 to be reported for incompatible base / derived UnitSpecification";
+    EXPECT_TRUE(sawFailedToCreateKOQ) << "Expected EC_0064 to be reported for the follow-up KindOfQuantity creation failure";
+
+    EXPECT_TRUE(incompatibleUnitsMessage.ContainsI("SpecialPipe")) << "EC_0063 message should name the offending property class. Got: " << incompatibleUnitsMessage.c_str();
+    EXPECT_TRUE(incompatibleUnitsMessage.ContainsI("Length")) << "EC_0063 message should name the offending property. Got: " << incompatibleUnitsMessage.c_str();
+    EXPECT_TRUE(failedToCreateKOQMessage.ContainsI("SpecialPipe")) << "EC_0064 message should name the offending property class. Got: " << failedToCreateKOQMessage.c_str();
+    EXPECT_TRUE(failedToCreateKOQMessage.ContainsI("Length")) << "EC_0064 message should name the offending property. Got: " << failedToCreateKOQMessage.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)

@@ -483,15 +483,6 @@ PFBezPatch_Go    goFunc,    /* => to check half, or NULL */
 PFBezPatch_Select selectFunc /* => loads ouput, or NULL */
 );
 
-Public GEOMDLLIMPEXP  void      bsprsurf_netPoles
-(
-DPoint3d            *poles,            /* <= poles of single Bezier patch of surface */
-double              *weights,          /* <= weights of Bezier patch */
-int                 uIndex,            /* => index of patch desired */
-int                 vIndex,            /* => index of patch desired */
-MSBsplineSurface    *surface           /* => input surface */
-);
-
 Public GEOMDLLIMPEXP  int       bspproc_processBsplineSurface
 (
 BezierInfo          *infoP,            /* <=> information desired of surf */

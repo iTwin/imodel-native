@@ -442,7 +442,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)iTwinBentley$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)\
-                            $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinPugixml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinFreetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext) \
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \

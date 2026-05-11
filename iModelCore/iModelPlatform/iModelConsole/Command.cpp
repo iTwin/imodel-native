@@ -1548,7 +1548,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
         ECInstanceId changedInstanceId = stmt.GetValueId<ECInstanceId>(changedInstanceIdIx);
         Utf8PrintfString changedInstanceClassName("[%s].[%s]", stmt.GetValueText(changedInstanceSchemaNameIx), stmt.GetValueText(changedInstanceClassNameIx));
 
-        Json::Value& instanceChangeJson = ctx.m_outputJson.append(Json::ValueType::objectValue);
+        auto instanceChangeJson = ctx.m_outputJson.appendObject();
         instanceChangeJson["id"] = icId.ToHexStr();
         instanceChangeJson["summaryId"] = ctx.m_summaryIdString;
 
@@ -1559,7 +1559,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
         instanceChangeJson["opCode"] = (int) opCode;
         instanceChangeJson["isIndirect"] = stmt.GetValueBoolean(isIndirectIx);
 
-        Json::Value& changedPropsJson = instanceChangeJson["changedProperties"];
+        auto changedPropsJson = instanceChangeJson["changedProperties"];
         switch (opCode)
             {
                 case ChangeOpCode::Insert:
@@ -1597,7 +1597,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
+BentleyStatus ExportCommand::PropertyValueChangesToJson(BeJsValue propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
     {
     Utf8String changedInstanceLabel;
     changedInstanceLabel.Sprintf("%s:%s (%s)", changedInstanceClassName.c_str(), changedInstanceId.ToHexStr().c_str(), ToString(changedValueState));
@@ -1690,14 +1690,15 @@ void ExportCommand::RunExportTables(Session& session, Utf8StringCR jsonFile) con
 
     Statement stmt;
     stmt.Prepare(session.GetFile().GetHandle(), "SELECT name FROM sqlite_master WHERE type ='table'");
-    Json::Value tableData(Json::ValueType::arrayValue);
+    BeJsDocument tableData;
+    tableData.SetEmptyArray();
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ExportTable(session, tableData, stmt.GetValueText(0));
         }
 
-    Utf8String jsonString = tableData.ToString();
+    Utf8String jsonString = tableData.Stringify();
     if (file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size())) != BeFileStatus::Success)
         {
         IModelConsole::WriteErrorLine("Failed to write to JSON file %s", jsonFile.c_str());
@@ -1711,19 +1712,17 @@ void ExportCommand::RunExportTables(Session& session, Utf8StringCR jsonFile) con
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP tableName) const
+void ExportCommand::ExportTable(Session& session, BeJsValue out, Utf8CP tableName) const
     {
-    Json::Value& tableObj = out.append(Json::ValueType::objectValue);
+    auto tableObj = out.appendObject();
     tableObj["Name"] = tableName;
-    tableObj["Rows"] = Json::Value(Json::ValueType::arrayValue);
-    Json::Value& rows = tableObj["Rows"];
-    rows.clear();
+    auto rows = tableObj["Rows"];
+    rows.SetEmptyArray();
     Statement stmt;
     stmt.Prepare(session.GetFile().GetHandle(), SqlPrintfString("SELECT * FROM %s", tableName));
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        auto& row = rows.append(Json::ValueType::objectValue);
-        row.clear();
+        auto row = rows.appendObject();
         for (auto i = 0; i < stmt.GetColumnCount(); i++)
             {
             switch (stmt.GetColumnType(i))
@@ -1736,13 +1735,13 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
                     break;
                     }
                     case DbValueType::FloatVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueDouble(i)); break;
+                        row[stmt.GetColumnName(i)] = stmt.GetValueDouble(i); break;
                     case DbValueType::IntegerVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueInt64(i)); break;
+                        row[stmt.GetColumnName(i)] = stmt.GetValueInt64(i); break;
                     case DbValueType::NullVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(Json::nullValue); break;
+                        row[stmt.GetColumnName(i)].SetNull(); break;
                     case DbValueType::TextVal:
-                        row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueText(i)); break;
+                        row[stmt.GetColumnName(i)] = stmt.GetValueText(i); break;
                 }
             }
         }
@@ -1779,7 +1778,7 @@ BentleyStatus ExportCommand::ChangeSummaryExportContext::InitializeOutput(Utf8St
 //---------------------------------------------------------------------------------------
 BentleyStatus ExportCommand::ChangeSummaryExportContext::WriteOutput()
     {
-    Utf8String jsonString = m_outputJson.ToString();
+    Utf8String jsonString = m_outputJson.Stringify();
     if (m_outputFile.Write(nullptr, jsonString.c_str(), (uint32_t) jsonString.size()) != BeFileStatus::Success ||
         BeFileStatus::Success != m_outputFile.Flush())
         {
@@ -2464,14 +2463,14 @@ void JsonCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     while (BE_SQLITE_ROW == stmt.Step())
         {
         rowCount++;
-        Json::Value json;
+        BeJsDocument json;
         if (SUCCESS != adapter.GetRow(json))
             {
             IModelConsole::WriteErrorLine("Failed to retrieve the result of the ECSQL as JSON.");
             return;
             }
 
-        IModelConsole::WriteLine("%d | %s", rowCount, json.ToString().c_str());
+        IModelConsole::WriteLine("%d | %s", rowCount, json.Stringify().c_str());
         }
 
     }
