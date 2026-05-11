@@ -13,7 +13,7 @@ links = "rustls_ffi"
 rust-version = "1.73"
 
 [features]
-default = ["aws-lc-rs", "prefer-post-quantum"]
+default = ["ring"]
 # Enable this feature when building as Rust dependency. It inhibits the
 # default behavior of capturing the global logger, which only works when
 # built using the Makefile, which passes -C metadata=rustls-ffi to avoid
