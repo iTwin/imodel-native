@@ -630,6 +630,12 @@ export declare namespace IModelJsNative {
     public invalidateFontMap(): void;
     public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
+    /** Revert the iModel to a previous version by diffing it against the older base version and applying the diff inverted.
+     * Only tracked tables are included in the diff (e.g. be_Local, txn tables, etc. are excluded).
+     * @param baseFileName The filename of the older version of the same iModel.
+     * @throws if there are local changes (uncommitted or committed txns), or if GUIDs differ.
+     */
+    public revertToVersion(baseFileName: string): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
     public beginPurgeOperation(): IModelStatus;

@@ -2872,6 +2872,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
         db.Txns().RevertTimelineChanges(changesets, skipSchemaChanges);
     }
+    void RevertToVersion(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, baseFileName);
+        db.Txns().RevertToVersion(baseFileName);
+    }
     void AttachDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, fileName);
         REQUIRE_ARGUMENT_STRING(1, alias);
@@ -3130,6 +3135,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("invalidateFontMap", &NativeDgnDb::InvalidateFontMap),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
             InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
+            InstanceMethod("revertToVersion", &NativeDgnDb::RevertToVersion),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("beginPurgeOperation", &NativeDgnDb::BeginPurgeOperation),

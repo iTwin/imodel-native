@@ -1570,6 +1570,73 @@ DbResult TxnManager::DiscardLocalChanges() {
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::RevertToVersion(Utf8StringCR baseFile) {
+    if (m_dgndb.IsReadonly())
+        m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
+
+    if (HasLocalChanges())
+        m_dgndb.ThrowException("local changes are present - commit or discard them before reverting", (int) ChangesetStatus::HasLocalChanges);
+
+    m_dgndb.AbandonChanges();
+    PurgeCaches();
+
+    auto tableFilter = [this](Utf8CP tableName) {
+        return _FilterTable(tableName) == TrackChangesForTable::Yes;
+    };
+
+    constexpr Utf8CP kBaseAlias = "base";
+    DbResult result = m_dgndb.AttachDb(baseFile.c_str(), kBaseAlias);
+    if (BE_SQLITE_OK != result)
+        m_dgndb.ThrowException(m_dgndb.GetLastError().c_str(), (int) result);
+
+    Utf8String errMsg;
+    result = DifferenceToAttachDb(&errMsg, kBaseAlias, tableFilter);
+    if (BE_SQLITE_OK != result){
+        m_dgndb.DetachDb(kBaseAlias);
+        m_dgndb.ThrowException(errMsg.empty() ? "failed to compute diff between current and base version" : errMsg.c_str(), (int) result);
+    }
+    
+    if (!HasDataChanges()) {
+         m_dgndb.DetachDb(kBaseAlias);
+        return;
+    }
+
+    ChangeSet changeStream;
+    result = changeStream.FromChangeTrack(*this, ChangeSet::SetType::Full);
+    if (BE_SQLITE_OK != result) {
+        Restart();
+        m_dgndb.DetachDb(kBaseAlias);
+        m_dgndb.ThrowException("failed to read changeset from diff", (int) result);
+    }
+
+
+    Restart(); // clear the change tracker since we're going to apply the changeset we just read from it
+    auto applyArgs = ApplyChangesArgs::Default()
+        .SetInvert(true)
+        .SetIgnoreNoop(false)
+        .SetConflictHandler([](ChangeStream::ConflictCause cause, Changes::Change change) {
+            return ChangeStream::ConflictResolution::Replace;
+        })
+        .SetFkNoAction(true);
+
+    result = changeStream.ApplyChanges(m_dgndb, applyArgs);
+    if (BE_SQLITE_OK != result) {
+        m_dgndb.AbandonChanges();
+        PurgeCaches();
+        m_dgndb.ThrowException("failed to apply revert changeset", (int) result);
+    }
+
+    result = m_dgndb.SaveChanges();
+    if (BE_SQLITE_OK != result)
+        m_dgndb.ThrowException("failed to save changes after revert", (int) result);
+
+    PurgeCaches();
+    m_dgndb.DetachDb(kBaseAlias);
+}
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool TxnManager::HasPendingSchemaChanges() const {
     auto stmt = GetTxnStatement(R"sql(SELECT 1 FROM [main].[dgn_Txns] WHERE ([IsSchemaChange] IS NULL OR [IsSchemaChange] IN (1,2)) AND [Deleted] = 0)sql");
     return stmt->Step() == BE_SQLITE_ROW;

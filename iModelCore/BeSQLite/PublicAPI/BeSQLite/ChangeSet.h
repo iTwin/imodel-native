@@ -502,6 +502,24 @@ public:
     //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
     BE_SQLITE_EXPORT DbResult DifferenceToDb(Utf8StringP errMsg, BeFileNameCR baseFile);
 
+    //! Like DifferenceToDb(BeFileNameCR) but accepts an already-opened Db connection instead of a filename.
+    //! This supports both local files and cloud SQLite connections transparently.
+    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
+    //! @param[in] baseDb   An opened (read-only) connection to a different version of the same db.
+    //!                     Its filename (including any cloud SQLite URI) is used for ATTACH.
+    //! @param[in] tableFilter  Optional filter: called for each table name; return true to include the table
+    //!                         in the diff, false to skip it. If nullptr, all tables are diffed.
+    //! @return BE_SQLITE_OK if changeset was created; else a non-zero error status if the diff failed.
+    //!         Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
+    BE_SQLITE_EXPORT DbResult DifferenceToDb(Utf8StringP errMsg, Db& baseDb, std::function<bool(Utf8CP)> tableFilter = nullptr);
+
+    //! Compute the difference between the current Db and a database already attached under the given alias.
+    //! The attached database must have been attached before calling this method.
+    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
+    //! @param[in] alias    The attach alias of the other database (e.g. "base").
+    //! @param[in] tableFilter  Optional filter: return true to include a table in the diff, false to skip it.
+    //! @return BE_SQLITE_OK on success; a non-zero SQLite error code otherwise.
+    BE_SQLITE_EXPORT DbResult DifferenceToAttachDb(Utf8StringP errMsg, Utf8CP alias, std::function<bool(Utf8CP)> tableFilter = nullptr);
     //! Turn off change tracking for a database.
     BE_SQLITE_EXPORT void EndTracking();
 

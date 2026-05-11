@@ -1593,3 +1593,270 @@ TEST_F(BeSQliteTestFixture, MonotoneClock_ThreadSafe)
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// Helper: count Changes by opcode, scoped to a specific table name.
+//---------------------------------------------------------------------------------------
+static int CountOpcodeForTable(BeSQLite::ChangeSet const& cs, DbOpcode opcode, Utf8CP tableName)
+    {
+    int count = 0;
+    for (auto change : Changes(cs, false))
+        {
+        if (change.GetTableName() == tableName && change.GetOpcode() == opcode)
+            ++count;
+        }
+    return count;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_InsertDetected)
+    {
+    // Base has rows 1,2; current adds rows 3,4 → diff must report 2 INSERTs for "items".
+    auto base = Create("diff_ins_base.db");
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (1, 'a')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (2, 'b')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->SaveChanges());
+    base->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("diff_ins_base.db", "diff_ins_cur.db"));
+    auto current = OpenReadWrite("diff_ins_cur.db");
+    ASSERT_TRUE(current != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("INSERT INTO items VALUES (3, 'c')"));
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("INSERT INTO items VALUES (4, 'd')"));
+    ASSERT_EQ(BE_SQLITE_OK, current->SaveChanges());
+
+    auto baseDb = OpenReadOnly("diff_ins_base.db");
+    ASSERT_TRUE(baseDb != nullptr);
+
+    TestChangeTracker tracker(*current);
+    Utf8String errMsg;
+    ASSERT_EQ(BE_SQLITE_OK, tracker.DifferenceToDb(&errMsg, *baseDb)) << errMsg;
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    ASSERT_FALSE(cs._IsEmpty());
+
+    EXPECT_EQ(2, CountOpcodeForTable(cs, DbOpcode::Insert, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Update, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Delete, "items"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_DeleteDetected)
+    {
+    // Base has rows 1,2,3; current deletes 2 and 3 → diff must report 2 DELETEs for "items".
+    auto base = Create("diff_del_base.db");
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (1, 'a')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (2, 'b')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (3, 'c')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->SaveChanges());
+    base->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("diff_del_base.db", "diff_del_cur.db"));
+    auto current = OpenReadWrite("diff_del_cur.db");
+    ASSERT_TRUE(current != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("DELETE FROM items WHERE id IN (2, 3)"));
+    ASSERT_EQ(BE_SQLITE_OK, current->SaveChanges());
+
+    auto baseDb = OpenReadOnly("diff_del_base.db");
+    ASSERT_TRUE(baseDb != nullptr);
+
+    TestChangeTracker tracker(*current);
+    Utf8String errMsg;
+    ASSERT_EQ(BE_SQLITE_OK, tracker.DifferenceToDb(&errMsg, *baseDb)) << errMsg;
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    ASSERT_FALSE(cs._IsEmpty());
+
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Insert, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Update, "items"));
+    EXPECT_EQ(2, CountOpcodeForTable(cs, DbOpcode::Delete, "items"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_UpdateDetected)
+    {
+    // Base has row (1, 'old'); current changes it to (1, 'new') → diff reports 1 UPDATE
+    // with the correct old and new values.
+    auto base = Create("diff_upd_base.db");
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (1, 'old')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->SaveChanges());
+    base->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("diff_upd_base.db", "diff_upd_cur.db"));
+    auto current = OpenReadWrite("diff_upd_cur.db");
+    ASSERT_TRUE(current != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("UPDATE items SET val = 'new' WHERE id = 1"));
+    ASSERT_EQ(BE_SQLITE_OK, current->SaveChanges());
+
+    auto baseDb = OpenReadOnly("diff_upd_base.db");
+    ASSERT_TRUE(baseDb != nullptr);
+
+    TestChangeTracker tracker(*current);
+    Utf8String errMsg;
+    ASSERT_EQ(BE_SQLITE_OK, tracker.DifferenceToDb(&errMsg, *baseDb)) << errMsg;
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    ASSERT_FALSE(cs._IsEmpty());
+
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Insert, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Delete, "items"));
+
+    // Verify old and new values on the UPDATE record (col 0 = id PK, col 1 = val).
+    int updates = 0;
+    for (auto change : Changes(cs, false))
+        {
+        if (change.GetTableName() != "items" || !change.IsUpdate())
+            continue;
+        ++updates;
+        EXPECT_STREQ("old", change.GetOldValue(1).GetValueText());
+        EXPECT_STREQ("new", change.GetNewValue(1).GetValueText());
+        }
+    EXPECT_EQ(1, updates);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_IdenticalIsEmpty)
+    {
+    // When current and base are identical the resulting changeset must be empty.
+    auto base = Create("diff_same_base.db");
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (1, 'a')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->SaveChanges());
+    base->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("diff_same_base.db", "diff_same_cur.db"));
+    auto current = OpenReadWrite("diff_same_cur.db");
+    ASSERT_TRUE(current != nullptr);
+    // No modifications to current.
+
+    auto baseDb = OpenReadOnly("diff_same_base.db");
+    ASSERT_TRUE(baseDb != nullptr);
+
+    TestChangeTracker tracker(*current);
+    Utf8String errMsg;
+    ASSERT_EQ(BE_SQLITE_OK, tracker.DifferenceToDb(&errMsg, *baseDb)) << errMsg;
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    EXPECT_TRUE(cs._IsEmpty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_GuidMismatch)
+    {
+    // Two completely independent databases (different GUIDs) must return BE_SQLITE_MISMATCH.
+    auto dbA = Create("diff_guid_a.db");
+    ASSERT_TRUE(dbA != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, dbA->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, dbA->SaveChanges());
+
+    auto dbB = Create("diff_guid_b.db");
+    ASSERT_TRUE(dbB != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, dbB->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, dbB->SaveChanges());
+
+    TestChangeTracker tracker(*dbA);
+    Utf8String errMsg;
+    DbResult result = tracker.DifferenceToDb(&errMsg, *dbB);
+    EXPECT_EQ(BE_SQLITE_MISMATCH, result);
+    EXPECT_STREQ("DbGuids differ", errMsg.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_TableFilter)
+    {
+    // Both "items" and "meta" are modified in current. A filter that accepts only "items"
+    // must result in a changeset that contains no changes for "meta".
+    auto base = Create("diff_filt_base.db");
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE meta  (id INTEGER PRIMARY KEY, info TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (1, 'a')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO meta  VALUES (1, 'x')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->SaveChanges());
+    base->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("diff_filt_base.db", "diff_filt_cur.db"));
+    auto current = OpenReadWrite("diff_filt_cur.db");
+    ASSERT_TRUE(current != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("INSERT INTO items VALUES (2, 'b')"));
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("INSERT INTO meta  VALUES (2, 'y')"));
+    ASSERT_EQ(BE_SQLITE_OK, current->SaveChanges());
+
+    auto baseDb = OpenReadOnly("diff_filt_base.db");
+    ASSERT_TRUE(baseDb != nullptr);
+
+    TestChangeTracker tracker(*current);
+    Utf8String errMsg;
+    auto filter = [](Utf8CP tableName) { return Utf8String(tableName) == "items"; };
+    ASSERT_EQ(BE_SQLITE_OK, tracker.DifferenceToDb(&errMsg, *baseDb, filter)) << errMsg;
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    ASSERT_FALSE(cs._IsEmpty());
+
+    // Every change in the set must belong to "items"; none to "meta".
+    for (auto change : Changes(cs, false))
+        EXPECT_STREQ("items", change.GetTableName().c_str());
+
+    EXPECT_EQ(1, CountOpcodeForTable(cs, DbOpcode::Insert, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Insert, "meta"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, DifferenceToDb_FileOverload)
+    {
+    // Verify the BeFileNameCR overload produces the same result as the Db& overload.
+    auto base = Create("diff_file_base.db");
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("CREATE TABLE items (id INTEGER PRIMARY KEY, val TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, base->ExecuteSql("INSERT INTO items VALUES (1, 'a')"));
+    ASSERT_EQ(BE_SQLITE_OK, base->SaveChanges());
+    base->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("diff_file_base.db", "diff_file_cur.db"));
+    auto current = OpenReadWrite("diff_file_cur.db");
+    ASSERT_TRUE(current != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, current->ExecuteSql("INSERT INTO items VALUES (2, 'b')"));
+    ASSERT_EQ(BE_SQLITE_OK, current->SaveChanges());
+
+    BeFileName basePath;
+    BeTest::GetHost().GetOutputRoot(basePath);
+    basePath.AppendUtf8("diff_file_base.db");
+
+    TestChangeTracker tracker(*current);
+    Utf8String errMsg;
+    ASSERT_EQ(BE_SQLITE_OK, tracker.DifferenceToDb(&errMsg, basePath)) << errMsg;
+
+    TestChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    ASSERT_FALSE(cs._IsEmpty());
+
+    EXPECT_EQ(1, CountOpcodeForTable(cs, DbOpcode::Insert, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Update, "items"));
+    EXPECT_EQ(0, CountOpcodeForTable(cs, DbOpcode::Delete, "items"));
+    }

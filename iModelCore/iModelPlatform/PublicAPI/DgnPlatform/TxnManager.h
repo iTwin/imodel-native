@@ -535,6 +535,16 @@ public:
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
     DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
     DGNPLATFORM_EXPORT BeSQLite::DbResult DiscardLocalChanges();
+
+    //! Revert the iModel to a previous version by computing a diff changeset between
+    //! the current db and an older version (baseDb), then applying it inverted.
+    //! Only tracked tables are diffed (e.g. be_Local, dgn_Txns, etc. are excluded).
+    //! @param[in] baseDb An opened read-only connection to the older version of the same iModel.
+    //!            Works with both local files and cloud SQLite connections.
+    //! @note Throws if the db is readonly, if there are local changes (uncommitted or committed txns),
+    //!       or if the GUIDs of the two databases do not match.
+    DGNPLATFORM_EXPORT void RevertToVersion(Utf8StringCR baseFile);
+
     DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;
     DGNPLATFORM_EXPORT bool HasPendingSchemaChanges() const;
     DGNPLATFORM_EXPORT void StashRestore(BeFileNameCR stashFile);

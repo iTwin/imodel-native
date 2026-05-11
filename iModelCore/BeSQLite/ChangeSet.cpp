@@ -335,6 +335,87 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeTracker::DifferenceToAttachDb(Utf8StringP errMsgOut, Utf8CP alias, std::function<bool(Utf8CP)> tableFilter)
+    {
+    Restart(); // make sure we don't currently have any changes
+
+    Statement tablesStmt(*m_db, "SELECT name FROM main.sqlite_master WHERE type='table'");
+    DbResult result = BE_SQLITE_OK;
+    while (tablesStmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP tableName = tablesStmt.GetValueText(0);
+        if (tableFilter && !tableFilter(tableName))
+            continue;
+
+        char* errMsg = nullptr;
+        result = (DbResult) sqlite3session_diff(GetSqlSession(), alias, tableName, &errMsg);
+        if (BE_SQLITE_OK != result)
+            {
+            if (errMsgOut != nullptr)
+                {
+                if (errMsg != nullptr)
+                    *errMsgOut = errMsg;
+                else
+                    *errMsgOut = tableName;
+                }
+            break;
+            }
+        }
+    return result;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, Db& baseDb, std::function<bool(Utf8CP)> tableFilter)
+    {
+    if (m_db->GetDbGuid() != baseDb.GetDbGuid())
+        {
+        if (errMsgOut != nullptr)
+            *errMsgOut = "DbGuids differ";
+        return BE_SQLITE_MISMATCH;
+        }
+
+    // baseDb.GetDbFileName() returns the URI used to open the db, which works for both
+    // local file paths and cloud SQLite URIs (e.g. file:name?vfs=bcvfs&...).
+    DbResult result = m_db->AttachDb(baseDb.GetDbFileName(), "base");
+    if (BE_SQLITE_OK != result)
+        {
+        if (errMsgOut != nullptr)
+            *errMsgOut = m_db->GetLastError();
+        return result;
+        }
+
+    Restart(); // make sure we don't currently have any changes
+
+    Statement tablesStmt(*m_db, "SELECT name FROM main.sqlite_master WHERE type='table'");
+    while (tablesStmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP tableName = tablesStmt.GetValueText(0);
+        if (tableFilter && !tableFilter(tableName))
+            continue;
+
+        char* errMsg = nullptr;
+        result = (DbResult) sqlite3session_diff(GetSqlSession(), "base", tableName, &errMsg);
+        if (BE_SQLITE_OK != result)
+            {
+            if (errMsgOut != nullptr)
+                {
+                if (errMsg != nullptr)
+                    *errMsgOut = errMsg;
+                else
+                    *errMsgOut = tableName;
+                }
+            break;
+            }
+        }
+
+    m_db->DetachDb("base");
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeSet::Write(Utf8StringCR pathname) const {
     BeFile file;
     if (BeFileStatus::Success != file.Create(pathname))
