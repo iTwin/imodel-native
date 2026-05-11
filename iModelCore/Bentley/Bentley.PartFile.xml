@@ -193,16 +193,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/bexml.mke">
-        <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="LibXml2" PartFile="iModelCore\libsrc\libxml2\BeLibxml2"/>
-        <Bindings>
-            <PublicAPI Domain="BeXml"/>
-            <Assemblies>Delivery/$(shlibprefix)iTwinXml$(shlibext)</Assemblies>
-            <Libs>Delivery/$(libprefix)iTwinXml$(libext)</Libs>
-        </Bindings>
-    </Part>
-
     <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke">
         <SubPart PartName="rapidjsonapi" PartFile="iModelCore/libsrc/rapidjson/rapidjson"/>
         <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
