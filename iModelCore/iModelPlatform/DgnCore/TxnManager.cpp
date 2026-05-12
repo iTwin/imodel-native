@@ -1570,7 +1570,7 @@ DbResult TxnManager::DiscardLocalChanges() {
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::RevertToVersion(Utf8StringCR baseFile) {
+void TxnManager::RevertToCheckpoint(Utf8StringCR baseFile) {
     if (m_dgndb.IsReadonly())
         m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
 

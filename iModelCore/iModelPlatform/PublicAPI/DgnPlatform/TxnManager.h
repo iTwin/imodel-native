@@ -543,7 +543,7 @@ public:
     //!            Works with both local files and cloud SQLite connections.
     //! @note Throws if the db is readonly, if there are local changes (uncommitted or committed txns),
     //!       or if the GUIDs of the two databases do not match.
-    DGNPLATFORM_EXPORT void RevertToVersion(Utf8StringCR baseFile);
+    DGNPLATFORM_EXPORT void RevertToCheckpoint(Utf8StringCR baseFile);
 
     DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;
     DGNPLATFORM_EXPORT bool HasPendingSchemaChanges() const;

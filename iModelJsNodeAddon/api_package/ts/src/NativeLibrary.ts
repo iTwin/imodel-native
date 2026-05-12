@@ -635,7 +635,7 @@ export declare namespace IModelJsNative {
      * @param baseFileName The filename of the older version of the same iModel.
      * @throws if there are local changes (uncommitted or committed txns), or if GUIDs differ.
      */
-    public revertToVersion(baseFileName: string): void;
+    public revertToCheckpoint(baseFileName: string): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
     public beginPurgeOperation(): IModelStatus;
