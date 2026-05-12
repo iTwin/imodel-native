@@ -552,6 +552,8 @@ typedef T_Utf8StringVector const*   T_Utf8StringVectorCP;
 typedef T_Utf8StringVector const&   T_Utf8StringVectorCR;
 
 // Supports char8_t (including u8 literals) interop with Utf8String/Utf8CP APIs.
+// Guard with __cpp_char8_t — char8_t is a keyword only in C++20 (or with -fchar8_t in C++17).
+#if defined(__cpp_char8_t)
 template <size_t N>
 class Utf8Chars {
     Utf8Char m_characters[N];
@@ -565,5 +567,6 @@ public:
     constexpr operator Utf8CP() const { return m_characters; }
     constexpr Utf8CP operator&() const { return m_characters; }
 };
+#endif
 
 END_BENTLEY_NAMESPACE

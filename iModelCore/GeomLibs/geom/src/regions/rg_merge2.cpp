@@ -476,22 +476,6 @@ typedef struct
     } VertexSortData;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int vsd_compare
-(
-const VertexSortData *p0,
-const VertexSortData *p1
-)
-    {
-    if (p0->theta < p1->theta)
-        return -1;
-    if (p0->theta > p1->theta)
-        return 1;
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 *  @return distance to mid-edge point.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -571,7 +555,7 @@ bvector<double>   *pParamArray
             pSortData[i].theta = Angle::Atan2 (vector.y, vector.x);
             }
         }
-    qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
+    std::sort(pSortData, pSortData + numSort, [](const VertexSortData& a, const VertexSortData& b) { return a.theta < b.theta; });
     }
 
 static bool    anglesWithinTolerance
@@ -762,7 +746,7 @@ EmbeddedDPoint3dArray *pXYZArray
     static double s_angleTol = 1.0e-5;
     double radius;
 
-    qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
+    std::sort(pSortData, pSortData + numSort, [](const VertexSortData& a, const VertexSortData& b) { return a.theta < b.theta; });
     numDup = countAngleDups (pSortData, numSort, s_angleTol);
 
     if (numDup > 0)
