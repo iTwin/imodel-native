@@ -473,6 +473,7 @@ struct JsInterop {
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
+    BE_JSON_NAME(skipWriteLockCheck)
     BE_JSON_NAME(startFromId)
     BE_JSON_NAME(state)
     BE_JSON_NAME(storageType)
