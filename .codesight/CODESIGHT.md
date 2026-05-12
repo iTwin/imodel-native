@@ -1,0 +1,455 @@
+# imodel-native — AI Context Map
+
+> **Stack:** raw-http | none | unknown | javascript
+
+> 0 routes | 0 models | 0 components | 84 lib files | 30 env vars | 32 middleware | 0% test coverage
+> **Token savings:** this file is ~7,700 tokens. Without it, AI exploration would cost ~43,200 tokens. **Saves ~35,400 tokens per conversation.**
+> **Last scanned:** 2026-05-12 15:34 — re-run after significant changes
+
+---
+
+# Libraries
+
+- `TestingScripts/CommonTasks/CodeCoverage.py` — class CodeCoverage
+- `TestingScripts/CommonTasks/Components.py`
+  - function CompForDll: (dllToFind)
+  - function DllForComp: (compToFind)
+  - function ExeForComp: (compToFind)
+  - function CompForExe: (exeToFind)
+  - function IgnoreForComp: (compToFind)
+  - function PdbForComp: (compToFind)
+  - _...7 more_
+- `TestingScripts/Coverage/CoverageOpenCPP.py`
+  - function main: ()
+  - class ExcelReport
+  - class CoverageOpenCPP
+- `TestingScripts/MemoryLeak/RunUMDH-AllTestsInSuite.py`
+  - function ParseTestList: (exeName)
+  - function RunTest: (exeName, gtestFilter, runPath, gflagsPath)
+  - function AnalyzeLog: (logPath, totIncrease, testWithSuiteName)
+  - function ArchiveLogs: (compLog, firstSnap, secondSnap, resultsFolder)
+- `iModelCore/BeGTest/Android/CheckLogFilesForFailures.py` — function checkLogFileForFailures: (logfilename)
+- `iModelCore/BeGTest/Android/GenerateJUnitTestFileList.py`
+  - function convertToJniName: (nm)
+  - function GenJUnitTestFilesForDir: (rootDir, dirNameIn, listfilename, javaTemplate, jniTemplate)
+  - function main: ()
+- `iModelCore/BeGTest/gtest/CheckLogfilesForFailures.py` — function printLogFile: (logFilename, hasErrors), function checkLogFileForFailures: (logfilename)
+- `iModelCore/BeGTest/gtest/TeeGtest.py` — function main: ()
+- `iModelCore/BeGTest/iOS/CheckLogFilesForFailures.py` — function checkLogFileForFailures: (logfilename)
+- `iModelCore/BeGTest/iOS/GenerateSenTestSource.py` — function processDir: (rootDir, dirNameIn, listfilename, senTestTemplate, XCodeProject_BeTestiOSName), function main: ()
+- `iModelCore/BeGTest/iOS/RunXCTests.py`
+  - function printProgress: (procStdOutLine, status_len)
+  - function RunTest: (xcodeprojpath, deviceName, okToRetry, logfile)
+  - function main: ()
+- `iModelCore/BeGTest/scripts/PerformanceTestSummary.py`
+  - function findTestResult: (toFind)
+  - function addHeader: (ws, maxRun)
+  - function addData: (CSV, ws, curr)
+  - function addSummary: (ws)
+  - function Help: ()
+  - function GetArgument: (needed)
+  - _...1 more_
+- `iModelCore/iModelPlatform/DgnHandlers/WordBreakDataGenerator.py`
+  - function printUsageAndExit: ()
+  - function emitCharRangesForClass: (outputFile, charClasses, className)
+  - function emitHelperTestMethod: (outputFile, className)
+  - function main: ()
+- `iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/PrepareCurrentTestRunner.py` — function main: ()
+- `iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/PreparePulledTestRunners.py`
+  - function mergeFolder: (sourceFolder, targetFolder)
+  - function mergeFolders: (sourceFolder1, sourceFolder2, targetFolder)
+  - function main: ()
+- `iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py`
+  - function DownloadPackage: (pkgAddress, pkgName, version, localDir, authHeader, packageObj)
+  - function pullAllNugets: (path, pathToNugetPuller, name, minimumVersion, ignoreVersionsSet)
+  - function unzipNugets: (srcPath)
+  - function copyFiles: (sourceFolder, targetFolder)
+  - function mergeTestFiles: (testFilesNugetPath, targetDir)
+  - function main: ()
+- `iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py`
+  - function getIgnoreList: (currentTestRunnerKey)
+  - function createGTestFilter: (exeDir, currentTestRunner)
+  - function main: ()
+- `iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/ShouldPublishPackage.py` — function filesAreContainedIn: (folderToTest, containerFolder), function main: ()
+- `iModelCore/libsrc/crashpad/copy_headers.py` — function linkDir: (srcDir, outDir), function main: ()
+- `iModelCore/libsrc/flatbuffers/source/android/jni/msbuild.py` — function compare_version: (a, b), function main: ()
+- `iModelCore/libsrc/flatbuffers/source/android/jni/run_flatc.py` — function main: ()
+- `iModelCore/libsrc/flatbuffers/source/conan/build.py`
+  - function set_appveyor_environment: ()
+  - function get_branch: ()
+  - function get_version: ()
+  - function get_reference: (username)
+- `iModelCore/libsrc/flatbuffers/source/conan/test_package/conanfile.py` — class TestPackageConan
+- `iModelCore/libsrc/flatbuffers/source/conanfile.py` — class FlatbuffersConan
+- `iModelCore/libsrc/flatbuffers/source/dart/example/example.dart`
+  - function main
+  - function builderTest
+  - function objectBuilderTest
+  - function print
+  - function verify
+  - function assert
+- `iModelCore/libsrc/flatbuffers/source/dart/example/monster_my_game.sample_generated.dart`
+  - class Color
+  - class EquipmentTypeId
+  - class Vec3
+  - class Vec3Builder
+  - class Vec3ObjectBuilder
+  - class Monster
+  - _...24 more_
+- `iModelCore/libsrc/flatbuffers/source/dart/lib/flat_buffers.dart`
+  - class BufferContext
+  - class ObjectBuilder
+  - class Builder
+  - class BoolListReader
+  - class BoolReader
+  - class Float64ListReader
+  - _...74 more_
+- `iModelCore/libsrc/flatbuffers/source/go/builder.go` — function NewBuilder: (initialSize int) *Builder, class Builder
+- `iModelCore/libsrc/flatbuffers/source/go/encode.go`
+  - function GetByte: (buf []byte) byte
+  - function GetBool: (buf []byte) bool
+  - function GetUint8: (buf []byte) (n uint8)
+  - function GetUint16: (buf []byte) (n uint16)
+  - function GetUint32: (buf []byte) (n uint32)
+  - function GetUint64: (buf []byte) (n uint64)
+  - _...24 more_
+- `iModelCore/libsrc/flatbuffers/source/go/grpc.go` — class FlatbuffersCodec
+- `iModelCore/libsrc/flatbuffers/source/go/lib.go` — function GetRootAs: (buf []byte, offset UOffsetT, fb FlatBuffer), interface FlatBuffer
+- `iModelCore/libsrc/flatbuffers/source/go/struct.go` — class Struct
+- `iModelCore/libsrc/flatbuffers/source/go/table.go` — class Table
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/ByteBuffer.cs`
+  - class ByteBufferAllocator
+  - class ByteArrayAllocator
+  - class ByteBuffer
+  - function GrowFront
+  - function Reset
+  - function Duplicate
+  - _...32 more_
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/ByteBufferUtil.cs`
+  - class ByteBufferUtil
+  - function GetSizePrefix
+  - function RemoveSizePrefix
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/FlatBufferBuilder.cs`
+  - class FlatBufferBuilder
+  - function Clear
+  - function Pad
+  - function Prep
+  - function PutBool
+  - function PutSbyte
+  - _...36 more_
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/FlatBufferConstants.cs` — class FlatBufferConstants, function FLATBUFFERS_1_12_0
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/Offset.cs`
+  - class Offset
+  - class StringOffset
+  - class VectorOffset
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/Struct.cs` — class Struct
+- `iModelCore/libsrc/flatbuffers/source/net/FlatBuffers/Table.cs`
+  - class Table
+  - function __offset
+  - function __indirect
+  - function __string
+  - function __vector_len
+  - function __vector
+  - _...2 more_
+- `iModelCore/libsrc/flatbuffers/source/php/ByteBuffer.php`
+  - class ByteBuffer
+  - function wrap
+  - function __construct
+  - function capacity
+  - function getPosition
+  - function setPosition
+  - _...31 more_
+- `iModelCore/libsrc/flatbuffers/source/php/Constants.php` — class Constants
+- `iModelCore/libsrc/flatbuffers/source/php/FlatbufferBuilder.php`
+  - class FlatbufferBuilder
+  - function __construct
+  - function offset
+  - function pad
+  - function prep
+  - function putBool
+  - _...51 more_
+- `iModelCore/libsrc/flatbuffers/source/php/Struct.php`
+  - class Struct
+  - function setByteBufferPos
+  - function setByteBuffer
+- `iModelCore/libsrc/flatbuffers/source/php/Table.php`
+  - class Table
+  - function __construct
+  - function setByteBufferPos
+  - function setByteBuffer
+- `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/builder.py`
+  - function vtableEqual: (a, objectStart, b)
+  - class OffsetArithmeticError
+  - class IsNotNestedError
+  - class IsNestedError
+  - class StructIsNotInlineError
+  - class BuilderSizeError
+  - _...2 more_
+- `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/compat.py` — function import_numpy: (), class NumpyRequiredForThisFeature
+- `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/encode.py`
+  - function Get: (packer_type, buf, head)
+  - function GetVectorAsNumpy: (numpy_type, buf, count, offset)
+  - function Write: (packer_type, buf, head, n)
+- `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/number_types.py`
+  - function valid_number: (n, flags)
+  - function enforce_number: (n, flags)
+  - function float32_to_uint32: (n)
+  - function uint32_to_float32: (n)
+  - function float64_to_uint64: (n)
+  - function uint64_to_float64: (n)
+  - _...15 more_
+- `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/table.py` — class Table
+- `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/util.py`
+  - function GetSizePrefix: (buf, offset)
+  - function GetBufferIdentifier: (buf, offset, size_prefixed)
+  - function BufferHasIdentifier: (buf, offset, file_identifier, size_prefixed)
+  - function RemoveSizePrefix: (buf, offset)
+- `iModelCore/libsrc/flatbuffers/source/python/setup.py` — function version: ()
+- `iModelCore/libsrc/flatbuffers/source/samples/sample_binary.py` — function main: ()
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/ByteBuffer.swift`
+  - class ByteBuffer
+  - function clearSize
+  - function clear
+  - function read
+  - function readSlice
+  - function readString
+  - _...1 more_
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/Constants.swift` — interface Scalar, function FlatBuffersVersion_1_12_0
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/FlatBufferBuilder.swift`
+  - class FlatBufferBuilder
+  - function clear
+  - function clearOffsets
+  - function require
+  - function finish
+  - function startTable
+  - _...8 more_
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/FlatBufferObject.swift`
+  - interface FlatBufferObject
+  - interface Readable
+  - interface Enum
+  - interface Mutable
+  - function mutate
+  - function directMutate
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/FlatBuffersUtils.swift`
+  - class FlatBuffersUtils
+  - function getSizePrefix
+  - function removeSizePrefix
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/Message.swift` — interface FlatBufferGRPCMessage, class Message
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/Offset.swift` — class Offset
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/Struct.swift` — class Struct, function readBuffer
+- `iModelCore/libsrc/flatbuffers/source/swift/Sources/FlatBuffers/Table.swift`
+  - class Table
+  - function offset
+  - function indirect
+  - function string
+  - function directString
+  - function readBuffer
+  - _...5 more_
+- `iModelCore/libsrc/google_re2/benchlog/benchplot.py` — class gnuplot
+- `iModelCore/libsrc/google_re2/re2/make_unicode_casefold.py` — function main: ()
+- `iModelCore/libsrc/google_re2/re2/make_unicode_groups.py`
+  - function MakeRanges: (codes)
+  - function PrintRanges: (type, name, ranges)
+  - function PrintGroup: (name, codes)
+  - function main: ()
+- `iModelCore/libsrc/google_re2/re2/unicode.py`
+  - function ReadUnicodeTable: (filename, nfields, doline)
+  - function CaseGroups: (unicode_dir)
+  - function Scripts: (unicode_dir)
+  - function Categories: (unicode_dir)
+  - class Error
+  - class InputError
+- `iModelCore/libsrc/jsoncpp/amalgamate.py`
+  - function amalgamate_source: (source_top_dir, target_source_path, header_include_path)
+  - function main: ()
+  - class AmalgamationFile
+- `iModelCore/libsrc/jsoncpp/devtools/antglob.py` — function ant_pattern_to_re: (ant_pattern), function glob: (dir_path, includes, excludes, entry_type, prune_dirs, max_depth)
+- `iModelCore/libsrc/jsoncpp/devtools/fixeol.py` — function fix_source_eol: (path, is_dry_run, verbose, eol)
+- `iModelCore/libsrc/jsoncpp/devtools/licenseupdater.py`
+  - function update_license: (path, dry_run, show_diff)
+  - function update_license_in_source_directories: (source_dirs, dry_run, show_diff)
+  - function main: ()
+- `iModelCore/libsrc/jsoncpp/devtools/tarball.py` — function make_tarball: (tarball_path, sources, base_dir, prefix_dir), function decompress: (tarball_path, base_dir)
+- `iModelCore/libsrc/jsoncpp/doxybuild.py`
+  - function find_program: (*filenames)
+  - function do_subst_in_file: (targetfile, sourcefile, dict)
+  - function run_doxygen: (doxygen_path, config_file, working_dir, is_silent)
+  - function build_doc: (options, make_release)
+  - function main: ()
+- `iModelCore/libsrc/jsoncpp/makerelease.py`
+  - function set_version: (version)
+  - function rmdir_if_exist: (dir_path)
+  - function svn_command: (command, *args)
+  - function check_no_pending_commit: ()
+  - function svn_join_url: (base_url, suffix)
+  - function svn_check_if_tag_exist: (tag_url)
+  - _...14 more_
+- `iModelCore/libsrc/jsoncpp/scons-tools/globtool.py` — function generate: (env), function exists: (env)
+- `iModelCore/libsrc/jsoncpp/scons-tools/srcdist.py`
+  - function srcDistEmitter: (source, target, env)
+  - function generate: (env)
+  - function exists: (env)
+- `iModelCore/libsrc/jsoncpp/scons-tools/substinfile.py` — function generate: (env), function exists: (env)
+- `iModelCore/libsrc/jsoncpp/scons-tools/targz.py` — function exists: (env)
+- `iModelCore/util/gtest/BentleyTest/GenerateTestFileList.py`
+  - function GetRootLocation: ()
+  - class Tree
+  - class FileRelationships
+- `iModelCore/util/gtest/BentleyTest/PrintLogAndReturnResult.py` — function getResults: (logfile)
+- `iModelCore/util/gtest/BentleyTest/RunTests.py`
+  - function forceFileFlushAndClose: (f)
+  - function Log: (msg)
+  - function Exit: (result)
+  - function FakeCleanExit: (result)
+  - function closeLogFileIfNecessary: ()
+  - function PrintError: (msg)
+  - _...2 more_
+- `iModelCore/util/gtest/BentleyTest/StripLines.py` — function forceFileFlushAndClose: (f), function LogToFileAndStripToScreen: (filename, totalCount, forcedIndex)
+- `iModelJsNodeAddon/api_package/ts/src/NativeCloudSqlite.ts`
+  - class Daemon
+  - interface ContainerProps
+  - interface CachedDbProps
+  - interface BcvHttpLog
+  - interface BcvStats
+  - interface DbNameProp
+  - _...12 more_
+- `iModelJsNodeAddon/api_package/ts/src/NativeLibrary.ts`
+  - class NativeLibrary
+  - interface BulkDeleteElementsResult
+  - interface NativeLogger
+  - interface QueryConfig
+  - interface ElementGraphicsContent
+  - interface ElementGraphicsError
+  - _...8 more_
+- `iModelJsNodeAddon/makePackages.py`
+  - function writePackageJson: (packagefile, NODE_OS, NODE_CPU, PACKAGE_VERSION)
+  - function generate_package_for_platform: (outdirParent, inputProductdir, packageVersion, sourceDir, platform)
+  - function generate_imodeljs_native_platform_api: (outdirParent, parentSourceDir, packageVersion)
+
+---
+
+# Config
+
+## Environment Variables
+
+- `A` **required** — iModelJsNodeAddon/api_package/ts/src/test/DgnDb.test.ts
+- `APPVEYOR` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `APPVEYOR_REPO_BRANCH` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `APPVEYOR_REPO_TAG` **required** — iModelCore/libsrc/flatbuffers/source/conan/appveyor/build.py
+- `APPVEYOR_REPO_TAG_NAME` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CMAKE_VS_VERSION` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `COMPARE_GENERATED_TO_GO` **required** — iModelCore/libsrc/flatbuffers/source/tests/py_test.py
+- `COMPARE_GENERATED_TO_JAVA` **required** — iModelCore/libsrc/flatbuffers/source/tests/py_test.py
+- `CONAN_ARCHS` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_BUILD_TYPES` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_LOGIN_USERNAME` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_STABLE_BRANCH_PATTERN` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_UPLOAD` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_UPLOAD_ONLY_WHEN_STABLE` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_USERNAME` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CONAN_VISUAL_VERSIONS` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `CPT_TEST_FOLDER` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `DEBUG_GTEST_OUTPUT_TEST` **required** — iModelCore/util/gtest/test/googletest-output-test.py
+- `EMPTY_VAR` **required** — iModelCore/util/gtest/test/googletest-filter-unittest.py
+- `GTEST_CATCH_EXCEPTIONS` **required** — iModelCore/util/gmock/test/gmock_output_test.py
+- `GTEST_STACK_TRACE_DEPTH` **required** — iModelCore/util/gtest/test/googletest-json-outfiles-test.py
+- `IMODELJS_NATIVE_OVERRIDE` **required** — iModelJsNodeAddon/api_package/installNativePlatform.js
+- `LINUX_MINIDUMP_ENABLED` **required** — iModelJsNodeAddon/api_package/ts/src/test/DgnDb.test.ts
+- `O` **required** — iModelJsNodeAddon/api_package/ts/src/test/utils.ts
+- `PATH` **required** — iModelCore/libsrc/jsoncpp/doxybuild.py
+- `SYSTEMROOT` **required** — iModelCore/libsrc/flatbuffers/source/android/jni/msbuild.py
+- `TRAVIS` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `TRAVIS_BRANCH` **required** — iModelCore/libsrc/flatbuffers/source/conan/build.py
+- `UNSET_VAR` **required** — iModelCore/util/gtest/test/googletest-filter-unittest.py
+- `VERSION` **required** — iModelCore/libsrc/flatbuffers/source/python/setup.py
+
+---
+
+# Middleware
+
+## custom
+- GenerateJUnitTestFileList — `iModelCore/BeGTest/Android/GenerateJUnitTestFileList.py`
+- GenerateSenTestSource — `iModelCore/BeGTest/iOS/GenerateSenTestSource.py`
+- monster_my_game.sample_generated — `iModelCore/libsrc/flatbuffers/source/dart/example/monster_my_game.sample_generated.dart`
+- monster_test_my_game.example2_generated — `iModelCore/libsrc/flatbuffers/source/dart/test/monster_test_my_game.example2_generated.dart`
+- monster_test_my_game.example_generated — `iModelCore/libsrc/flatbuffers/source/dart/test/monster_test_my_game.example_generated.dart`
+- monster_test_my_game_generated — `iModelCore/libsrc/flatbuffers/source/dart/test/monster_test_my_game_generated.dart`
+- monster_generated — `iModelCore/libsrc/flatbuffers/source/samples/monster_generated.rs`
+- monster_test_generated — `iModelCore/libsrc/flatbuffers/source/tests/FlatBuffers.Test.Swift/Tests/FlatBuffers.Test.SwiftTests/monster_test_generated.swift`
+- union_vector_generated — `iModelCore/libsrc/flatbuffers/source/tests/FlatBuffers.Test.Swift/Tests/FlatBuffers.Test.SwiftTests/union_vector_generated.swift`
+- include_test1_generated — `iModelCore/libsrc/flatbuffers/source/tests/include_test/include_test1_generated.rs`
+- include_test2_generated — `iModelCore/libsrc/flatbuffers/source/tests/include_test/sub/include_test2_generated.rs`
+- monster_extra_my_game_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_extra_my_game_generated.dart`
+- monster_test_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_test_generated.js`
+- monster_test_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_test_generated.rs`
+- monster_test_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_test_generated.ts`
+- monster_test_my_game.example2_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_test_my_game.example2_generated.dart`
+- monster_test_my_game.example_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_test_my_game.example_generated.dart`
+- monster_test_my_game_generated — `iModelCore/libsrc/flatbuffers/source/tests/monster_test_my_game_generated.dart`
+- namespace_test1_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test1_generated.js`
+- namespace_test1_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test1_generated.rs`
+- namespace_test1_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test1_generated.ts`
+- namespace_test1_namespace_a.namespace_b_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test1_namespace_a.namespace_b_generated.dart`
+- namespace_test2_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test2_generated.js`
+- namespace_test2_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test2_generated.rs`
+- namespace_test2_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test2_generated.ts`
+- namespace_test2_namespace_a_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test2_namespace_a_generated.dart`
+- namespace_test2_namespace_c_generated — `iModelCore/libsrc/flatbuffers/source/tests/namespace_test/namespace_test2_namespace_c_generated.dart`
+- union_vector_generated — `iModelCore/libsrc/flatbuffers/source/tests/union_vector/union_vector_generated.js`
+- union_vector_generated — `iModelCore/libsrc/flatbuffers/source/tests/union_vector/union_vector_generated.ts`
+- generate_expected — `iModelCore/libsrc/jsoncpp/test/generate_expected.py`
+
+## validation
+- greeter_generated — `iModelCore/libsrc/flatbuffers/source/tests/FlatBuffers.GRPC.Swift/Sources/Model/greeter_generated.swift`
+- GenerateTestFileList — `iModelCore/util/gtest/BentleyTest/GenerateTestFileList.py`
+
+---
+
+# Dependency Graph
+
+## Most Imported Files (change these carefully)
+
+- `iModelJsNodeAddon/api_package/ts/src/test/utils.ts` — imported by **13** files
+- `iModelJsNodeAddon/api_package/ts/src/NativeLibrary.ts` — imported by **12** files
+- `/compat.py` — imported by **7** files
+- `iModelJsNodeAddon/api_package/ts/src/test/index.ts` — imported by **5** files
+- `iModelCore/libsrc/flatbuffers/source/java/com/google/flatbuffers/FlatBufferBuilder.java` — imported by **4** files
+- `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/Monster.java` — imported by **3** files
+- `iModelCore/libsrc/flatbuffers/source/js/flatbuffers.js` — imported by **3** files
+- `iModelJsNodeAddon/api_package/ts/src/NativeCloudSqlite.ts` — imported by **3** files
+- `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/Stat.java` — imported by **2** files
+- `MyGame/Example2` — imported by **2** files
+- `iModelCore/libsrc/flatbuffers/source/tests/rust_usage_test/bin/monster_test_generated.rs` — imported by **2** files
+- `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/MonsterStorageGrpc.java` — imported by **1** files
+- `/builder.py` — imported by **1** files
+- `/table.py` — imported by **1** files
+- `/number_types.py` — imported by **1** files
+- `iModelCore/libsrc/flatbuffers/source/rust/flatbuffers/src/builder.rs` — imported by **1** files
+- `iModelCore/libsrc/flatbuffers/source/rust/flatbuffers/src/endian_scalar.rs` — imported by **1** files
+- `iModelCore/libsrc/flatbuffers/source/rust/flatbuffers/src/follow.rs` — imported by **1** files
+- `iModelCore/libsrc/flatbuffers/source/rust/flatbuffers/src/primitives.rs` — imported by **1** files
+- `iModelCore/libsrc/flatbuffers/source/rust/flatbuffers/src/push.rs` — imported by **1** files
+
+## Import Map (who imports what)
+
+- `iModelJsNodeAddon/api_package/ts/src/test/utils.ts` ← `iModelJsNodeAddon/api_package/ts/src/test/CloudSqlite.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/DgnDb.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/ECDb.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/ECSchemaOps.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/ECSqlStatement.test.ts` +8 more
+- `iModelJsNodeAddon/api_package/ts/src/NativeLibrary.ts` ← `iModelJsNodeAddon/api_package/ts/src/NativeCloudSqlite.ts`, `iModelJsNodeAddon/api_package/ts/src/imodeljs-native.ts`, `iModelJsNodeAddon/api_package/ts/src/test/CloudSqlite.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/DgnDb.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/ECDb.test.ts` +7 more
+- `/compat.py` ← `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/__init__.py`, `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/builder.py`, `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/builder.py`, `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/builder.py`, `iModelCore/libsrc/flatbuffers/source/python/flatbuffers/encode.py` +2 more
+- `iModelJsNodeAddon/api_package/ts/src/test/index.ts` ← `iModelJsNodeAddon/api_package/ts/src/test/DgnDb.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/ECDb.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/ElementDependency.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/SchemaChanges.test.ts`, `iModelJsNodeAddon/api_package/ts/src/test/SqlStatement.test.ts`
+- `iModelCore/libsrc/flatbuffers/source/java/com/google/flatbuffers/FlatBufferBuilder.java` ← `iModelCore/libsrc/flatbuffers/source/grpc/tests/GameFactory.java`, `iModelCore/libsrc/flatbuffers/source/grpc/tests/JavaGrpcTest.java`, `iModelCore/libsrc/flatbuffers/source/samples/SampleBinary.java`, `iModelCore/libsrc/flatbuffers/source/tests/JavaTest.java`
+- `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/Monster.java` ← `iModelCore/libsrc/flatbuffers/source/grpc/tests/GameFactory.java`, `iModelCore/libsrc/flatbuffers/source/grpc/tests/JavaGrpcTest.java`, `iModelCore/libsrc/flatbuffers/source/samples/SampleBinary.java`
+- `iModelCore/libsrc/flatbuffers/source/js/flatbuffers.js` ← `iModelCore/libsrc/flatbuffers/source/samples/samplebinary.js`, `iModelCore/libsrc/flatbuffers/source/tests/JavaScriptTest.js`, `iModelCore/libsrc/flatbuffers/source/tests/JavaScriptUnionVectorTest.js`
+- `iModelJsNodeAddon/api_package/ts/src/NativeCloudSqlite.ts` ← `iModelJsNodeAddon/api_package/ts/src/NativeLibrary.ts`, `iModelJsNodeAddon/api_package/ts/src/imodeljs-native.ts`, `iModelJsNodeAddon/api_package/ts/src/test/CloudSqlite.test.ts`
+- `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/Stat.java` ← `iModelCore/libsrc/flatbuffers/source/grpc/tests/GameFactory.java`, `iModelCore/libsrc/flatbuffers/source/grpc/tests/JavaGrpcTest.java`
+- `MyGame/Example2` ← `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/Any.go`, `iModelCore/libsrc/flatbuffers/source/tests/MyGame/Example/AnyUniqueAliases.go`
+
+---
+
+# Test Coverage
+
+> **0%** of routes and models are covered by tests
+> 380 test files found
+
+---
+
+_Generated by [codesight](https://github.com/Houseofmvps/codesight) — see your codebase clearly_
