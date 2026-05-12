@@ -320,10 +320,15 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
             if (errMsgOut != nullptr)
                 {
                 if (errMsg != nullptr)
+                    {
                     *errMsgOut = errMsg;
+                    sqlite3_free(errMsg);
+                    }
                 else
                     *errMsgOut = tableName;
                 }
+            else
+                sqlite3_free(errMsg);
             break;
             }
         }
@@ -354,10 +359,15 @@ DbResult ChangeTracker::DifferenceToAttachDb(Utf8StringP errMsgOut, Utf8CP alias
             if (errMsgOut != nullptr)
                 {
                 if (errMsg != nullptr)
+                    {
                     *errMsgOut = errMsg;
+                    sqlite3_free(errMsg);
+                    }
                 else
                     *errMsgOut = tableName;
                 }
+            else
+                sqlite3_free(errMsg);
             break;
             }
         }
@@ -401,10 +411,15 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, Db& baseDb, std::f
             if (errMsgOut != nullptr)
                 {
                 if (errMsg != nullptr)
+                    {
                     *errMsgOut = errMsg;
+                    sqlite3_free(errMsg);
+                    }
                 else
                     *errMsgOut = tableName;
                 }
+            else
+                sqlite3_free(errMsg);
             break;
             }
         }

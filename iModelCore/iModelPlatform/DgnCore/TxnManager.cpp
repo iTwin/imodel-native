@@ -1623,6 +1623,7 @@ void TxnManager::RevertToVersion(Utf8StringCR baseFile) {
     if (BE_SQLITE_OK != result) {
         m_dgndb.AbandonChanges();
         PurgeCaches();
+        m_dgndb.DetachDb(kBaseAlias);
         m_dgndb.ThrowException("failed to apply revert changeset", (int) result);
     }
 
