@@ -487,7 +487,7 @@ DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statemen
 DbResult BulkElementDeletion::CreateTempTables() const
     {
     const auto tempTableCreationStatements = {
-        // Create the temp table from scratch
+        // Create the temp table if needed; subsequent calls reuse it after clearing stale entries.
         "CREATE TABLE IF NOT EXISTS " TEMP_TABLE(TEMP_ELEMENT_DELETION) " ("
             "ElementId              INTEGER PRIMARY KEY, "
             "LogicalParentId        INTEGER, "
