@@ -1609,18 +1609,44 @@ void TxnManager::RevertToCheckpoint(Utf8StringCR baseFile) {
         m_dgndb.ThrowException("failed to read changeset from diff", (int) result);
     }
 
-
     Restart(); // clear the change tracker since we're going to apply the changeset we just read from it
     auto applyArgs = ApplyChangesArgs::Default()
         .SetInvert(true)
         .SetIgnoreNoop(false)
-        .SetConflictHandler([](ChangeStream::ConflictCause cause, Changes::Change change) {
+        .SetConflictHandler([&](ChangeStream::ConflictCause cause, Changes::Change iter) {
+            switch(cause) {
+                case ChangeStream::ConflictCause::Data: {
+                    LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+                    break;
+                }
+                case ChangeStream::ConflictCause::NotFound: {
+                    return ChangeStream::ConflictResolution::Skip;
+                }
+                case ChangeStream::ConflictCause::Conflict: {
+                    LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
+                    break;
+                }
+                case ChangeStream::ConflictCause::ForeignKey: {
+                    int nConflicts = iter.GetForeignKeyConflicts();
+                    LOG.errorv("Detected %d foreign key conflicts in changeset. ", nConflicts);
+                    return ChangeSet::ConflictResolution::Abort;
+                }
+                case ChangeStream::ConflictCause::Constraint: {
+                    LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
+                    iter.Dump(m_dgndb, false, 1);
+                    return ChangeSet::ConflictResolution::Skip;
+                }
+            };
+            
+            LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
+            iter.Dump(m_dgndb, false, 1);
             return ChangeStream::ConflictResolution::Replace;
         })
         .SetFkNoAction(true);
 
     result = changeStream.ApplyChanges(m_dgndb, applyArgs);
     if (BE_SQLITE_OK != result) {
+        LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
         m_dgndb.AbandonChanges();
         PurgeCaches();
         m_dgndb.DetachDb(kBaseAlias);
