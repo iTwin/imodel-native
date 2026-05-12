@@ -685,7 +685,7 @@ public:
     }
 };
 
-/** Add the container to the openParms, if the argument is a container object.
+/** Add the container to the openParams, if the argument is a container object.
  * @param skipWriteLockCheck If true, bypasses the write lock requirement for opening in ReadWrite mode.
  *        This is used for cloud briefcases that make local-only writes (no upload) against a read-only container.
  */
@@ -700,7 +700,7 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 
     auto container = getCloudContainer(jsContainer);
     if (!skipWriteLockCheck && !params.IsReadonly() && !container->m_writeLockHeld)
-        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open for database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
 
     dbName = params.SetFromContainer(dbName.c_str(), container);
 };
