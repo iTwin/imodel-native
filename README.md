@@ -1,5 +1,7 @@
 # imodel-native
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/iTwin/imodel-native)
+
 This is the public portion of the iTwin native add-on.
 
 ## System Proxies
