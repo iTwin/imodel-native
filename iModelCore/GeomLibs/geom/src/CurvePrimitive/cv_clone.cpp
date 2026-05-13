@@ -6,6 +6,11 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*--------------------------------------------------------------------------------**//**
+* A pervasive assumption in geomlibs is that a CurveVector's children are not null.
+* When this assumption is violated, geomlibs can crash.
+* An historical source of these unexpected CurveVectors is the cloning process, specifically
+* when CurvePrimitiveInterpolationCurve::Create fails on degenerate input.
+* This method is used during CurveVector::CloneXXX to prevent null CurvePrimitives from being added.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 bool PushIfNonNull(CurveVectorR dest, ICurvePrimitivePtr const &curve)
@@ -17,6 +22,9 @@ bool PushIfNonNull(CurveVectorR dest, ICurvePrimitivePtr const &curve)
     return true;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 bool CloneAndPush
     (
     CurveVectorR dest,
@@ -56,7 +64,7 @@ CurveVectorPtr CurveVector::Clone () const
     {
     CurveVectorPtr clone = Create (m_boundaryType);
     for (size_t i = 0, n = size (); i < n; i++)
-        clone->push_back (at(i)->Clone ());
+        PushIfNonNull(*clone, at(i)->Clone());
     return clone;
     }
 
@@ -67,7 +75,7 @@ CurveVectorPtr CurveVector::Clone (TransformCR transform) const
     {
     CurveVectorPtr clone = Create (m_boundaryType);
     for (size_t i = 0, n = size (); i < n; i++)
-        clone->push_back (at(i)->Clone (transform));
+        PushIfNonNull(*clone, at(i)->Clone(transform));
     return clone;
     }
 
@@ -87,8 +95,6 @@ CurveVectorPtr CurveVector::Clone (DMatrix4dCR transform) const
         }
     return clone->empty() ? nullptr : clone;
     }
-
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -116,7 +122,9 @@ CurveVectorPtr CurveVector::CloneWithExplodedLinestrings () const
                 ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*childClone));
              }
         else
-            dest->push_back (at(i)->Clone ());
+            {
+            PushIfNonNull(*dest, at(i)->Clone());
+            }
         }
     return dest;
     }
@@ -581,7 +589,7 @@ static CurveVectorPtr CloneChainWithGapsClosed (CurveVectorCR source, CurveGapOp
             }
         else
             {
-            result->push_back (source[i]->Clone ());
+            PushIfNonNull(*result, source[i]->Clone());
             }
         }
     size_t i0 = 0;
@@ -796,7 +804,7 @@ CurveVectorPtr CurveVector::CloneWithGapsClosed (CurveGapOptionsCR options) cons
                 else
                     {
                     // Simple curve primitive -- just clone in isolation.
-                    result->push_back (at(i)->Clone ());
+                    PushIfNonNull(*result, at(i)->Clone());
                     }
                 }
             break;
@@ -864,14 +872,12 @@ CurveVectorPtr CurveVector::CloneReversed () const
             result->push_back (ICurvePrimitive::CreateChildCurveVector (child->CloneReversed ()));
             }
         else    // hmm.. does 1..0 work for "all" primitives?  would be better to have a dispatched clone reverse
-            result->push_back (at(i)->CloneBetweenFractions (1.0, 0.0, false));
+            {
+            PushIfNonNull(*result, at(i)->CloneBetweenFractions(1.0, 0.0, false));
+            }
         }
     return result;
     }
-
-
-
-
 
 #define WIP1
 #ifdef WIP1
