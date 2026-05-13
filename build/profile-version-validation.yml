@@ -13,14 +13,14 @@ pr:
       - main
 
 parameters:
-- name: defaultNativeBranch
-  displayName: Default Native Branch Used for PR Validation
-  type: string
-  default: 'main'
-- name: defaultCoreBranch
-  displayName: Default itwinjs-core Branch Used for PR Validation
-  type: string
-  default: 'master'
+  - name: defaultNativeBranch
+    displayName: Default Native Branch Used for PR Validation
+    type: string
+    default: "main"
+  - name: defaultCoreBranch
+    displayName: Default itwinjs-core Branch Used for PR Validation
+    type: string
+    default: "master"
 
 resources:
   repositories:
@@ -28,6 +28,7 @@ resources:
       type: github
       endpoint: imodel-native
       name: iTwin/profileversion-tests
+      ref: naveed/fix-linked-prs-failure
 
     - repository: imodel-native-internal
       type: github
