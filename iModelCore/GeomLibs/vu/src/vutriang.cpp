@@ -1351,26 +1351,6 @@ VuMask  mask            /* => mask to install in each upedge ( and clear in down
     END_VU_SET_LOOP( currP, graphP )
     }
 
-static int s_downwardMinMaskForSorting;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int vutriang_compareLexicalUV
-(
-const VuP * node0PP,
-const VuP * node1PP
-)
-    {
-    int result = vu_compareLexicalUV( node0PP, node1PP, NULL);
-    if (  (result == 0 ) && (*node0PP != *node1PP ) )
-        {
-        if (VU_GETMASK ( *node0PP, s_downwardMinMaskForSorting ) )
-            return -1;
-        if (VU_GETMASK ( *node1PP, s_downwardMinMaskForSorting ) )
-            return 1;
-        }
-    return result;
-    }
 /*PF*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1403,8 +1383,21 @@ RegularizationState *rsP
         }
     END_VU_SET_LOOP ( currP, rsP->graphP );
 
-    s_downwardMinMaskForSorting = rsP->downwardMinMask;
-    vu_arraySort0 (rsP->minArrayP, vutriang_compareLexicalUV);
+    VuMask downwardMinMaskForSorting = rsP->downwardMinMask;
+    auto vutriang_compareLexicalUV = [downwardMinMaskForSorting](VuP const& node0P, VuP const& node1P) -> bool
+        {
+        int result = vu_compareLexicalUV(&node0P, &node1P, NULL);
+        if ((result == 0) && (node0P != node1P))
+            {
+            if (VU_GETMASK(node0P, downwardMinMaskForSorting))
+                return true;
+            if (VU_GETMASK(node1P, downwardMinMaskForSorting))
+                return false;
+            }
+        return result < 0;
+        };
+
+    std::sort(rsP->minArrayP->data(), rsP->minArrayP->data() + rsP->minArrayP->size(), vutriang_compareLexicalUV);
     return count;
     }
 
