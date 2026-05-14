@@ -13,19 +13,29 @@
  * See README.md for explanation.
  */
 
-#if defined(_WIN32)
-#pragma warning(disable : 4100)
-#define ABORT_NO_BACKTRACE() raise(SIGABRT)
-#define FORWARD_EXPORT(name) __pragma(comment(linker, "/export:"##name))
-#elif defined(__clang__)
-#define ABORT_NO_BACKTRACE() abort()
-#define FORWARD_EXPORT(name)
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma clang diagnostic ignored "-Wconstant-conversion"
 #endif
 
+#if defined(_WIN32)
+#define ABORT_NO_BACKTRACE() raise(SIGABRT)
+#if defined(__clang__)
+// clang-cl supports __pragma(comment(linker,...)) but not MSVC's ## string-literal pasting.
+// Use adjacent string literal concatenation instead.
+#define FORWARD_EXPORT(name) __pragma(comment(linker, "/export:" name))
+#define FORWARD_NAPI_EXPORT(name) FORWARD_EXPORT("napi_" name)
+#else
+#pragma warning(disable : 4100)
+#define FORWARD_EXPORT(name) __pragma(comment(linker, "/export:"##name))
 #define FORWARD_NAPI_EXPORT(name) FORWARD_EXPORT("napi_"##name)
+#endif
+#else
+#define ABORT_NO_BACKTRACE() abort()
+#define FORWARD_EXPORT(name)
+#define FORWARD_NAPI_EXPORT(name)
+#endif
 
 #if defined(BUILD_FOR_NODE)
 
