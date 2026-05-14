@@ -1515,10 +1515,10 @@ DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModel
     DgnElementCR element = *orig;
     DgnModelId oldModelId = element.GetModelId();
 
-    // 2. If element has children, reject
+    // 2. If element has children, reject (only leaf elements can be moved)
     DgnElementIdSet children = element.QueryChildren();
     if (!children.empty())
-        return DgnDbStatus::InvalidParent;
+        return DgnDbStatus::BadRequest;
 
     // 3. Resolve the target model
     if (!newModelId.IsValid())
@@ -1584,7 +1584,7 @@ DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModel
         // Check if code scope is model-based - if so, the element needs a new code
         CodeSpecCPtr codeSpec = m_dgndb.CodeSpecs().GetCodeSpec(codeToUse.GetCodeSpecId());
         if (codeSpec.IsValid() && codeSpec->IsModelScope())
-            return DgnDbStatus::DuplicateCode; // caller must provide a new code for model-scoped codes
+            return DgnDbStatus::InvalidCode; // model-scoped code is invalid in new model; caller must provide a new code
         }
 
     // Check for code uniqueness in new scope
