@@ -4095,6 +4095,14 @@ public:
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
 
+    //! Move a single element (without children) to a different model and/or parent.
+    //! @param[in] elementId The element to move
+    //! @param[in] newModelId The target model (can be invalid if newParentId is provided — model will be derived from parent)
+    //! @param[in] newParentId The new parent element (invalid for root elements)
+    //! @param[in] newCode Optional new code for the element (required if element has model-scoped code)
+    //! @return DgnDbStatus::Success if the element was moved, error status otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus MoveElement(DgnElementId elementId, DgnModelId newModelId, DgnElementId newParentId, DgnCode const* newCode);
+
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
