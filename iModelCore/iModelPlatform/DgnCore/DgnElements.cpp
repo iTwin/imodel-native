@@ -1595,36 +1595,10 @@ DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModel
             return DgnDbStatus::DuplicateCode;
         }
 
-    // 7. Load old model for range index cleanup
-    DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
+    // 7. Prepare the edit copy with ALL changes (model, parent, code) so handlers see full transition
+    DgnElementPtr editCopy = element.CopyForEdit();
+    editCopy->m_modelId = newModelId;
 
-    // 8. Remove from old model's range index (for geometric elements)
-    if (oldModel.IsValid())
-        {
-        auto oldGeomModel = oldModel->ToGeometricModelP();
-        if (nullptr != oldGeomModel)
-            oldGeomModel->RemoveFromRangeIndex(elementId);
-        }
-
-    // 9. Perform the model change via direct SQL
-    {
-    CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-    stmt->BindId(1, newModelId);
-    stmt->BindId(2, elementId);
-    auto sqlResult = stmt->Step();
-    if (BE_SQLITE_DONE != sqlResult)
-        return DgnDbStatus::WriteError;
-    }
-
-    // 10. Drop the stale cached element
-    DropFromPool(element);
-
-    // 11. Reload element, set parent and code, then perform normal update for those changes
-    DgnElementCPtr reloaded = GetElement(elementId);
-    if (!reloaded.IsValid())
-        return DgnDbStatus::InvalidId;
-
-    DgnElementPtr editCopy = reloaded->CopyForEdit();
     if (newParentId.IsValid())
         {
         DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
@@ -1635,10 +1609,63 @@ DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModel
         {
         editCopy->SetParentId(DgnElementId(), DgnClassId()); // clear parent
         }
-    if (codeToUse != reloaded->GetCode())
+    if (codeToUse != element.GetCode())
         editCopy->SetCode(codeToUse);
 
-    stat = UpdateElement(*editCopy);
+    // 8. Call pre-update handler — handler sees old model vs new model on editCopy
+    stat = editCopy->_OnUpdate(element);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // 9. Handle parent change notifications (pre)
+    bool parentChanged = false;
+    DgnElementId prevParent = element.m_parent.m_id;
+    if (prevParent != editCopy->m_parent.m_id)
+        {
+        parentChanged = true;
+        DgnElementCPtr originalParent = GetElement(element.m_parent.m_id);
+        if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element)))
+            return stat;
+
+        DgnElementCPtr replacementParent = GetElement(editCopy->m_parent.m_id);
+        if (replacementParent.IsValid() && DgnDbStatus::Success != (stat = replacementParent->_OnChildAdd(*editCopy)))
+            return stat;
+        }
+
+    // 10. Load old model and remove from range index
+    DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
+    if (oldModel.IsValid())
+        {
+        auto oldGeomModel = oldModel->ToGeometricModelP();
+        if (nullptr != oldGeomModel)
+            oldGeomModel->RemoveFromRangeIndex(elementId);
+        }
+
+    // 11. Perform the model change via direct SQL (_BindWriteParams does not write ModelId on update)
+    {
+    CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
+    stmt->BindId(1, newModelId);
+    stmt->BindId(2, elementId);
+    auto sqlResult = stmt->Step();
+    if (BE_SQLITE_DONE != sqlResult)
+        {
+        // Restore range index on failure
+        if (oldModel.IsValid())
+            {
+            auto oldGeomModel = oldModel->ToGeometricModelP();
+            if (nullptr != oldGeomModel)
+                {
+                GeometrySourceCP geom = element.ToGeometrySource();
+                if (nullptr != geom && geom->HasGeometry())
+                    oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+                }
+            }
+        return DgnDbStatus::WriteError;
+        }
+    }
+
+    // 12. Write parent/code/other properties via normal update path
+    stat = editCopy->_UpdateInDb();
     if (DgnDbStatus::Success != stat)
         {
         // Rollback: restore ModelId
@@ -1648,27 +1675,37 @@ DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModel
         rollbackStmt->BindId(2, elementId);
         rollbackStmt->Step();
         }
-        DropFromPool(*reloaded);
-
         // Restore old model range index
         if (oldModel.IsValid())
             {
             auto oldGeomModel = oldModel->ToGeometricModelP();
             if (nullptr != oldGeomModel)
                 {
-                DgnElementCPtr restored = GetElement(elementId);
-                if (restored.IsValid())
-                    {
-                    GeometrySourceCP geom = restored->ToGeometrySource();
-                    if (nullptr != geom && geom->HasGeometry())
-                        oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                    }
+                GeometrySourceCP geom = element.ToGeometrySource();
+                if (nullptr != geom && geom->HasGeometry())
+                    oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
                 }
             }
         return stat;
         }
 
-    // 12. Add to new model's range index (for geometric elements)
+    // 13. Post-update handler notification
+    editCopy->_OnUpdated(element);
+
+    if (parentChanged)
+        {
+        DgnElementCPtr originalParent = GetElement(prevParent);
+        if (originalParent.IsValid())
+            originalParent->_OnChildDropped(element);
+
+        DgnElementCPtr replacementParent = GetElement(editCopy->m_parent.m_id);
+        if (replacementParent.IsValid())
+            replacementParent->_OnChildAdded(*editCopy);
+        }
+
+    // 14. Drop stale cached element, add to new model's range index
+    DropFromPool(element);
+
     auto newGeomModel = newModel->ToGeometricModelP();
     if (nullptr != newGeomModel)
         {
