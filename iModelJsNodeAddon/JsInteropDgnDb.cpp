@@ -556,29 +556,33 @@ void JsInterop::MoveElement(DgnDbR dgndb, Napi::Object obj) {
     if (!elementId.IsValid())
         throwInvalidId();
 
+    DgnModelId newModelId = props["targetModelId"].GetId64<DgnModelId>();
     DgnElementId targetElementId = props["targetElementId"].GetId64<DgnElementId>();
-    if (!targetElementId.IsValid())
-        throwInvalidId();
-
-    // Determine newModelId and newParentId from targetElementId
-    DgnModelId newModelId;
     DgnElementId newParentId;
 
-    DgnElementCPtr targetElem = dgndb.Elements().GetElement(targetElementId);
-    if (!targetElem.IsValid())
-        throwMissingId();
+    if (!newModelId.IsValid() && !targetElementId.IsValid())
+        throwInvalidId(); // at least one of targetModelId or targetElementId must be specified
 
-    // Check if target element has a sub-model (modeled element case: element becomes root in that sub-model)
-    DgnModelId subModelId = targetElem->GetSubModelId();
-    if (subModelId.IsValid())
+    if (targetElementId.IsValid())
         {
-        newModelId = subModelId;
-        // newParentId remains invalid (root element in the sub-model)
-        }
-    else
-        {
-        newModelId = targetElem->GetModelId();
-        newParentId = targetElementId;
+        DgnElementCPtr targetElem = dgndb.Elements().GetElement(targetElementId);
+        if (!targetElem.IsValid())
+            throwMissingId();
+
+        // Check if target element has a sub-model (modeled element case: element becomes root in that sub-model)
+        DgnModelId subModelId = targetElem->GetSubModelId();
+        if (subModelId.IsValid())
+            {
+            if (!newModelId.IsValid())
+                newModelId = subModelId;
+            // newParentId remains invalid (root element in the sub-model)
+            }
+        else
+            {
+            if (!newModelId.IsValid())
+                newModelId = targetElem->GetModelId();
+            newParentId = targetElementId;
+            }
         }
 
     // Parse optional code

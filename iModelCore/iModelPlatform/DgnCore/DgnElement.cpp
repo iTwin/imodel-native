@@ -893,9 +893,13 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId, DgnClassId parentRel
     if (parentId.IsValid() && !parentRelClassId.IsValid())
         return DgnDbStatus::InvalidId;
 
-    ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
-    if (relClass == nullptr || !relClass->IsRelationshipClass())
-        return DgnDbStatus::WrongClass;
+    // Clearing parent (both invalid) is always allowed - skip relClass validation
+    if (parentRelClassId.IsValid())
+        {
+        ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
+        if (relClass == nullptr || !relClass->IsRelationshipClass())
+            return DgnDbStatus::WrongClass;
+        }
 
     m_parent.m_id = parentId;
     m_parent.m_relClassId = parentRelClassId;
