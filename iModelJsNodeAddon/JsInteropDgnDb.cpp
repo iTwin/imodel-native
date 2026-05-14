@@ -549,6 +549,52 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::MoveElement(DgnDbR dgndb, Napi::Object obj) {
+    BeJsConst props(obj);
+
+    DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
+    if (!elementId.IsValid())
+        throwInvalidId();
+
+    DgnElementId targetElementId = props["targetElementId"].GetId64<DgnElementId>();
+    if (!targetElementId.IsValid())
+        throwInvalidId();
+
+    // Determine newModelId and newParentId from targetElementId
+    DgnModelId newModelId;
+    DgnElementId newParentId;
+
+    DgnElementCPtr targetElem = dgndb.Elements().GetElement(targetElementId);
+    if (!targetElem.IsValid())
+        throwMissingId();
+
+    // Check if target element has a sub-model (modeled element case: element becomes root in that sub-model)
+    DgnModelId subModelId = targetElem->GetSubModelId();
+    if (subModelId.IsValid())
+        {
+        newModelId = subModelId;
+        // newParentId remains invalid (root element in the sub-model)
+        }
+    else
+        {
+        newModelId = targetElem->GetModelId();
+        newParentId = targetElementId;
+        }
+
+    // Parse optional code
+    std::unique_ptr<DgnCode> newCode;
+    auto codeProp = props[DgnElement::json_code()];
+    if (!codeProp.isNull())
+        newCode = std::make_unique<DgnCode>(DgnCode::FromJson(codeProp, dgndb, true));
+
+    DgnDbStatus status = dgndb.Elements().MoveElement(elementId, newModelId, newParentId, newCode.get());
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static DgnElementId getElementIdFromNapiValue(Napi::Value const& napiVal)
     {
     auto napiString = napiVal.As<Napi::String>();

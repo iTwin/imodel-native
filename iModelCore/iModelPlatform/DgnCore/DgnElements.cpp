@@ -1503,6 +1503,190 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModelId, DgnElementId newParentId, DgnCode const* newCode)
+    {
+    DgnDb::VerifyClientThread();
+
+    // 1. Load the element
+    DgnElementCPtr orig = GetElement(elementId);
+    if (!orig.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCR element = *orig;
+    DgnModelId oldModelId = element.GetModelId();
+
+    // 2. If element has children, reject
+    DgnElementIdSet children = element.QueryChildren();
+    if (!children.empty())
+        return DgnDbStatus::InvalidParent;
+
+    // 3. Resolve the target model
+    if (!newModelId.IsValid())
+        {
+        // Derive model from new parent
+        if (!newParentId.IsValid())
+            return DgnDbStatus::InvalidId;
+
+        DgnElementCPtr parentElem = GetElement(newParentId);
+        if (!parentElem.IsValid())
+            return DgnDbStatus::InvalidId;
+
+        // Check if parent element has a sub-model (modeled element case)
+        DgnModelId subModelId = parentElem->GetSubModelId();
+        if (subModelId.IsValid())
+            {
+            newModelId = subModelId;
+            newParentId = DgnElementId(); // becomes root in that model
+            }
+        else
+            {
+            newModelId = parentElem->GetModelId();
+            }
+        }
+
+    // 4. Load and validate destination model
+    DgnModelPtr newModel = m_dgndb.Models().GetModel(newModelId);
+    if (!newModel.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // If model didn't change, just do a normal update with parent/code changes
+    if (oldModelId == newModelId)
+        {
+        DgnElementPtr editCopy = element.CopyForEdit();
+        if (newParentId.IsValid())
+            {
+            DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
+                : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+            editCopy->SetParentId(newParentId, relClassId);
+            }
+        else if (element.GetParentId().IsValid())
+            {
+            editCopy->SetParentId(DgnElementId(), DgnClassId()); // clear parent
+            }
+        if (nullptr != newCode)
+            editCopy->SetCode(*newCode);
+        return UpdateElement(*editCopy);
+        }
+
+    // 5. Validate element-model type compatibility
+    DgnDbStatus stat = newModel->_ValidateElementForModel(element);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // 6. Code handling
+    DgnCode codeToUse = element.GetCode();
+    if (nullptr != newCode)
+        {
+        codeToUse = *newCode;
+        }
+    else if (codeToUse.IsValid() && !codeToUse.IsEmpty())
+        {
+        // Check if code scope is model-based - if so, the element needs a new code
+        CodeSpecCPtr codeSpec = m_dgndb.CodeSpecs().GetCodeSpec(codeToUse.GetCodeSpecId());
+        if (codeSpec.IsValid() && codeSpec->IsModelScope())
+            return DgnDbStatus::DuplicateCode; // caller must provide a new code for model-scoped codes
+        }
+
+    // Check for code uniqueness in new scope
+    if (codeToUse.IsValid() && !codeToUse.IsEmpty())
+        {
+        DgnElementId existingElem = QueryElementIdByCode(codeToUse);
+        if (existingElem.IsValid() && existingElem != elementId)
+            return DgnDbStatus::DuplicateCode;
+        }
+
+    // 7. Load old model for range index cleanup
+    DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
+
+    // 8. Remove from old model's range index (for geometric elements)
+    if (oldModel.IsValid())
+        {
+        auto oldGeomModel = oldModel->ToGeometricModelP();
+        if (nullptr != oldGeomModel)
+            oldGeomModel->RemoveFromRangeIndex(elementId);
+        }
+
+    // 9. Perform the model change via direct SQL
+    {
+    CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
+    stmt->BindId(1, newModelId);
+    stmt->BindId(2, elementId);
+    auto sqlResult = stmt->Step();
+    if (BE_SQLITE_DONE != sqlResult)
+        return DgnDbStatus::WriteError;
+    }
+
+    // 10. Drop the stale cached element
+    DropFromPool(element);
+
+    // 11. Reload element, set parent and code, then perform normal update for those changes
+    DgnElementCPtr reloaded = GetElement(elementId);
+    if (!reloaded.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementPtr editCopy = reloaded->CopyForEdit();
+    if (newParentId.IsValid())
+        {
+        DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
+            : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+        editCopy->SetParentId(newParentId, relClassId);
+        }
+    else if (element.GetParentId().IsValid())
+        {
+        editCopy->SetParentId(DgnElementId(), DgnClassId()); // clear parent
+        }
+    if (codeToUse != reloaded->GetCode())
+        editCopy->SetCode(codeToUse);
+
+    stat = UpdateElement(*editCopy);
+    if (DgnDbStatus::Success != stat)
+        {
+        // Rollback: restore ModelId
+        {
+        CachedStatementPtr rollbackStmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
+        rollbackStmt->BindId(1, oldModelId);
+        rollbackStmt->BindId(2, elementId);
+        rollbackStmt->Step();
+        }
+        DropFromPool(*reloaded);
+
+        // Restore old model range index
+        if (oldModel.IsValid())
+            {
+            auto oldGeomModel = oldModel->ToGeometricModelP();
+            if (nullptr != oldGeomModel)
+                {
+                DgnElementCPtr restored = GetElement(elementId);
+                if (restored.IsValid())
+                    {
+                    GeometrySourceCP geom = restored->ToGeometrySource();
+                    if (nullptr != geom && geom->HasGeometry())
+                        oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+                    }
+                }
+            }
+        return stat;
+        }
+
+    // 12. Add to new model's range index (for geometric elements)
+    auto newGeomModel = newModel->ToGeometricModelP();
+    if (nullptr != newGeomModel)
+        {
+        DgnElementCPtr finalElem = GetElement(elementId);
+        if (finalElem.IsValid())
+            {
+            GeometrySourceCP geom = finalElem->ToGeometrySource();
+            if (nullptr != geom && geom->HasGeometry())
+                newGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+            }
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
     {
     // delete children, if any.
