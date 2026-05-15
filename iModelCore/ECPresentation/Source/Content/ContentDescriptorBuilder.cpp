@@ -1323,7 +1323,8 @@ private:
     size_t AddCalculatedFieldsFromContentModifiers(PropertyAppender& appender, ECClassCR ecClass)
         {
         size_t count = 0;
-        for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
+        auto modifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
+        for (ContentModifierCP modifier : modifiers)
             {
             if (!modifier->HasClassSpecified())
                 {

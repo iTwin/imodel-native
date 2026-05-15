@@ -745,7 +745,7 @@ static void AddSizeSampler (bvector<IGeometryPtr> &data)
             DEllipse3d::From (1,2,3,4,5,6,7,8,9,0,2))));
 
     bvector<int> lineStringSizes;
-    lineStringSizes.push_back (4);
+    lineStringSizes.push_back (6);
     lineStringSizes.push_back (10);
     lineStringSizes.push_back (110);
     lineStringSizes.push_back (1110);
@@ -757,14 +757,12 @@ static void AddSizeSampler (bvector<IGeometryPtr> &data)
         data.push_back (IGeometry::Create (ICurvePrimitive::CreateLineString (points)));
 
         }
-#ifdef testAkima
     for (int n : lineStringSizes )
         {
         bvector<DPoint3d> points;
         StrokeUnitCircle (points, n);
         data.push_back (IGeometry::Create (ICurvePrimitive::CreateAkimaCurve (&points[0], points.size ())));
         }
-#endif
     bvector<int> bcurveSizes;
     bcurveSizes.push_back (4);
     bcurveSizes.push_back (10);
