@@ -154,10 +154,10 @@ VuP                 faceP   /* => OPTIONAL face.  If NULL, mark entire graph. */
         int result = vu_compareLexicalUV(&node0P, &node1P, NULL);
         if ((result == 0) && (node0P != node1P))
             {
-            if (VU_GETMASK(node0P, downwardExtremumMaskForSorting))
-                return true;
-            if (VU_GETMASK(node1P, downwardExtremumMaskForSorting))
-                return false;
+            bool node0IsDownward = 0 != VU_GETMASK(node0P, downwardExtremumMaskForSorting);
+            bool node1IsDownward = 0 != VU_GETMASK(node1P, downwardExtremumMaskForSorting);
+            if (node0IsDownward != node1IsDownward)
+                return node0IsDownward;
             }
         return result < 0;
         };
