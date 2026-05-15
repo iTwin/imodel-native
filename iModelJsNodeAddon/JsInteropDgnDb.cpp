@@ -573,14 +573,17 @@ void JsInterop::MoveElement(DgnDbR dgndb, Napi::Object obj) {
         DgnModelId subModelId = targetElem->GetSubModelId();
         if (subModelId.IsValid())
             {
-            if (!newModelId.IsValid())
-                newModelId = subModelId;
+            if (newModelId.IsValid() && newModelId != subModelId)
+                throwDgnDbStatus(DgnDbStatus::WrongModel); // targetModelId conflicts with targetElementId's sub-model
+            newModelId = subModelId;
             // newParentId remains invalid (root element in the sub-model)
             }
         else
             {
-            if (!newModelId.IsValid())
-                newModelId = targetElem->GetModelId();
+            DgnModelId targetElemModelId = targetElem->GetModelId();
+            if (newModelId.IsValid() && newModelId != targetElemModelId)
+                throwDgnDbStatus(DgnDbStatus::WrongModel); // targetModelId conflicts with targetElementId's model
+            newModelId = targetElemModelId;
             newParentId = targetElementId;
             }
         }
