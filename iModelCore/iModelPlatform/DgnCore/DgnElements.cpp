@@ -1498,7 +1498,7 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModelId, DgnElementId newParentId, DgnCode const* newCode)
+DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModelId, DgnElementId newParentId, DgnCode const* newCode, bool allowChildren)
     {
     DgnDb::VerifyClientThread();
 
@@ -1510,9 +1510,9 @@ DgnDbStatus DgnElements::MoveElement(DgnElementId elementId, DgnModelId newModel
     DgnElementCR element = *orig;
     DgnModelId oldModelId = element.GetModelId();
 
-    // 2. If element has children, reject (only leaf elements can be moved)
+    // 2. If element has children, reject (only leaf elements can be moved unless allowChildren is set)
     DgnElementIdSet children = element.QueryChildren();
-    if (!children.empty())
+    if (!allowChildren && !children.empty())
         return DgnDbStatus::BadRequest;
 
     // 3. Resolve the target model

@@ -4100,8 +4100,9 @@ public:
     //! @param[in] newModelId The target model (can be invalid if newParentId is provided — model will be derived from parent)
     //! @param[in] newParentId The new parent element (invalid for root elements)
     //! @param[in] newCode Optional new code for the element (required if element has model-scoped code)
+    //! @param[in] allowChildren If true, allow moving elements that have children (caller is responsible for moving children separately)
     //! @return DgnDbStatus::Success if the element was moved, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus MoveElement(DgnElementId elementId, DgnModelId newModelId, DgnElementId newParentId, DgnCode const* newCode);
+    DGNPLATFORM_EXPORT DgnDbStatus MoveElement(DgnElementId elementId, DgnModelId newModelId, DgnElementId newParentId, DgnCode const* newCode, bool allowChildren = false);
 
 
     //! Delete a DgnElement from this DgnDb.

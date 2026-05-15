@@ -591,7 +591,9 @@ void JsInterop::MoveElement(DgnDbR dgndb, Napi::Object obj) {
     if (!codeProp.isNull())
         newCode = std::make_unique<DgnCode>(DgnCode::FromJson(codeProp, dgndb, true));
 
-    DgnDbStatus status = dgndb.Elements().MoveElement(elementId, newModelId, newParentId, newCode.get());
+    bool allowChildren = props["allowChildren"].GetBoolean(false);
+
+    DgnDbStatus status = dgndb.Elements().MoveElement(elementId, newModelId, newParentId, newCode.get(), allowChildren);
     if (DgnDbStatus::Success != status)
         throwDgnDbStatus(status);
 }
