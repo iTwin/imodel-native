@@ -1,0 +1,89 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Zlib.mke - Build zlib and minizip via vcpkg, deliver as BeZlib.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+appName             = BeZlib
+compressDir         = $(_MakeFilePath)
+libsrcDir           = $(compressDir)../
+
+o                   = $(OutputRootDir)build/$(appName)/
+
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64"
+    vcpkgTriplet = arm64-osx
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
+    vcpkgTriplet = x64-osx
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
+    vcpkgTriplet = x64-linux
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    %if defined (IS_VERACODE_BUILD)
+        vcpkgTriplet = x64-windows-static-veracode
+    %else
+        vcpkgTriplet = x64-windows-static
+    %endif
+%else
+    %error Unsupported TARGET_PROCESSOR_ARCHITECTURE for vcpkg: $(TARGET_PROCESSOR_ARCHITECTURE)
+%endif
+
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/
+vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir     = $(vcpkgTripletDir)include/
+vcpkgLibDir         = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
+
+#--------------------------------------------------------------------------------------
+#   Run vcpkg to build zlib and minizip
+#--------------------------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    $(libsrcDir)vcpkg_run_install.sh $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+
+#--------------------------------------------------------------------------------------
+#   Deliver headers to VendorAPI
+#   Downstream code uses #include "zlib/zlib.h" and #include "zlib/zip/unzip.h"
+#   vcpkg puts zlib.h/zconf.h in include/ and minizip headers in include/minizip/
+#   Create a staging directory to provide the expected layout:
+#     staging/zlib.h      -> vcpkg include/zlib.h
+#     staging/zconf.h     -> vcpkg include/zconf.h
+#     staging/zip/        -> vcpkg include/minizip/
+#--------------------------------------------------------------------------------------
+vcpkgStaging = $(o)vcpkg_headers/
+
+always:
+    !~@mkdir $(vcpkgStaging)
+    ~linkfile "$(vcpkgStaging)zlib.h=$(vcpkgIncludeDir)zlib.h"
+    ~linkfile "$(vcpkgStaging)zconf.h=$(vcpkgIncludeDir)zconf.h"
+    ~linkdir "$(vcpkgStaging)zip=$(vcpkgIncludeDir)minizip/"
+    ~linkdir "$(BuildContext)VendorAPI/zlib=$(vcpkgStaging)"
+
+#--------------------------------------------------------------------------------------
+#   Deliver the combined static library (BeZlib = zlib + minizip)
+#   Merge both vcpkg-built static libs into a single BeZlib archive.
+#--------------------------------------------------------------------------------------
+BeZlibOut = $(o)$(stlibprefix)$(appName)$(stlibext)
+vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
+vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizip$(stlibext)
+
+always:
+%if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
+    libtool -static -o $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%elif $(TARGET_PLATFORM) == "Linux"
+    $(libsrcDir)merge_static_libs.sh $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%elif $(TARGET_PLATFORM) == "Windows"
+    lib /OUT:$(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%endif
+    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(BeZlibOut)"
+
+#--------------------------------------------------------------------------------------
+#   Deliver license files from vcpkg
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/minizip-license.txt=$(vcpkgTripletDir)share/minizip/copyright"
+    ~linkfile "$(BuildContext)Delivery/zlib-license.txt=$(vcpkgTripletDir)share/zlib/copyright"
