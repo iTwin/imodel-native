@@ -43,7 +43,11 @@ vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
+%if $(TARGET_PLATFORM) == "Windows"
+    $(libsrcDir)vcpkg_run_install.bat $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%else
     $(libsrcDir)vcpkg_run_install.sh $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%endif
 
 #--------------------------------------------------------------------------------------
 #   Deliver headers to VendorAPI
@@ -68,8 +72,12 @@ always:
 #   Merge both vcpkg-built static libs into a single BeZlib archive.
 #--------------------------------------------------------------------------------------
 BeZlibOut = $(o)$(stlibprefix)$(appName)$(stlibext)
-vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
 vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizip$(stlibext)
+%if $(TARGET_PLATFORM) == "Windows"
+vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)zs$(stlibext)
+%else
+vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
+%endif
 
 always:
 %if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
@@ -77,7 +85,7 @@ always:
 %elif $(TARGET_PLATFORM) == "Linux"
     $(libsrcDir)merge_static_libs.sh $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
 %elif $(TARGET_PLATFORM) == "Windows"
-    lib /OUT:$(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+    lib "-OUT:$(BeZlibOut)" "$(vcpkgZlib)" "$(vcpkgMinizip)"
 %endif
     ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(BeZlibOut)"
 
