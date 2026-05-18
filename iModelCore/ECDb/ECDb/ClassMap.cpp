@@ -598,6 +598,33 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         return ERROR;
     }
 
+    if (ctx.RemapManager().HasFreedColumns())
+        {
+        for (ECPropertyCP property : m_ecClass.GetProperties(true))
+            {
+            const auto propMap = m_propertyMaps.Find(property->GetName().c_str());
+            if (propMap == nullptr || !propMap->IsData() || propMap->GetType() == PropertyMap::Type::Navigation)
+                continue;
+
+            GetColumnsPropertyMapVisitor colVisitor;
+            propMap->AcceptVisitor(colVisitor);
+
+            // If the property has been mapped to a column that has been freed in this schema import, avoid it's reuse and force a re-load to allocate a new column
+            for (const DbColumn* column : colVisitor.GetColumns())
+                {
+                if (column->IsShared() && ctx.RemapManager().IsColumnFreed(*column))
+                    {
+                    m_propertyMaps.Remove(property->GetName().c_str());
+
+                    if (std::find(m_failedToLoadProperties.begin(), m_failedToLoadProperties.end(), property) == m_failedToLoadProperties.end())
+                        m_failedToLoadProperties.push_back(property);
+
+                    break;
+                    }
+                }
+            }
+        }
+
     //Follow can change ECInstanceId, ECClassId by optionally adding
     if (m_failedToLoadProperties.empty())
         return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
