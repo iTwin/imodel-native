@@ -120,7 +120,7 @@ struct ChangesetReaderTests : ECDbTestFixture {
 
     //! Writes @p cs to an LZMA-compressed changeset file in the test output directory.
     //! Returns the absolute path of the created file.
-    static BeFileName WriteChangesetToFile(ECDbCR ecdb, TestCSChangeSet& cs, Utf8CP fileName)
+    BeFileName WriteChangesetToFile(ECDbCR ecdb, TestCSChangeSet& cs, Utf8CP fileName)
         {
         BeFileName path = BuildECDbPath(fileName);
         BeSQLite::ChangeGroup group(ecdb);
