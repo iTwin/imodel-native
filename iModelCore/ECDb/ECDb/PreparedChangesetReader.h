@@ -30,6 +30,10 @@ private:
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedPropNames;
 
+    //! Path to the temporary merged changeset file created by OpenGroup, empty otherwise.
+    //! Deleted in Close().
+    BeFileName m_tempGroupFile;
+
     //filters
     std::vector<Utf8String> m_tableFilters;
     std::vector<DbOpcode> m_opcodeFilters;
@@ -50,6 +54,9 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
+    //! Merges @p changeGroup into a temporary LZMA-compressed changeset file and sets @p outPath to its path.
+    //! The file is written with fast compression (level 1) since it is ephemeral.
+    DbResult WriteMergedGroupToFile(ChangeGroupCR changeGroup, BeFileNameR outPath);
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 

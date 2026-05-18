@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <BeSQLite/ChangesetFile.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -114,6 +116,20 @@ struct ChangesetReaderTests : ECDbTestFixture {
                                 <ECStructArrayProperty propertyName="MetaTags" typeName="Tag" minOccurs="0" maxOccurs="unbounded"/>
                             </ECEntityClass>
                         </ECSchema>)xml";
+        }
+
+    //! Writes @p cs to an LZMA-compressed changeset file in the test output directory.
+    //! Returns the absolute path of the created file.
+    static BeFileName WriteChangesetToFile(ECDbCR ecdb, TestCSChangeSet& cs, Utf8CP fileName)
+        {
+        BeFileName path = BuildECDbPath(fileName);
+        BeSQLite::ChangeGroup group(ecdb);
+        EXPECT_EQ(BE_SQLITE_OK, cs.AddToChangeGroup(group));
+        BeSQLite::DdlChanges emptyDdl;
+        BeSQLite::ChangesetFileWriter writer(path, false, emptyDdl, &ecdb);
+        EXPECT_EQ(BE_SQLITE_OK, writer.Initialize());
+        EXPECT_EQ(BE_SQLITE_OK, writer.FromChangeGroup(group));
+        return path;
         }
 };
 
@@ -2740,6 +2756,260 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClass
     EXPECT_EQ(personKey.GetClassId(),     stmt.GetValue(2).GetId<ECClassId>());
     EXPECT_EQ(projectKey.GetClassId(),    stmt.GetValue(3).GetId<ECClassId>());
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenGroup with a single file should produce the same opcode and row count as OpenFile.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_single.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Alpha", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_single.changeset");
+
+    // Read with OpenFile.
+    int fileRowCount = 0;
+    DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++fileRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(fileOpcode));
+        }
+    reader.Close();
+    }
+
+    // Read with OpenGroup using the same single file.
+    int groupRowCount = 0;
+    DbOpcode groupOpcode = DbOpcode::Delete; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    T_Utf8StringVector files{csFile.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++groupRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(groupOpcode));
+        }
+    reader.Close();
+    }
+
+    EXPECT_EQ(fileRowCount, groupRowCount);
+    EXPECT_EQ(fileOpcode, groupOpcode);
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenGroup with two files each inserting a different row should return both INSERT rows.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_TwoIndependentInserts_BothRowsReturned)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_two_inserts.ecdb", SchemaItem(GetSchema())));
+
+    // Changeset 1: INSERT Widget "Alpha".
+    BeFileName cs1File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Alpha", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey k;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(k));
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs1File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_two_inserts_cs1.changeset");
+    }
+
+    // Changeset 2: INSERT Widget "Beta".
+    BeFileName cs2File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Beta", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey k;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(k));
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs2File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_two_inserts_cs2.changeset");
+    }
+
+    ChangesetReader reader;
+    T_Utf8StringVector files{cs1File.GetNameUtf8(), cs2File.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All));
+
+    int insertCount = 0;
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        DbOpcode opcode;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        ++insertCount;
+        }
+    reader.Close();
+
+    EXPECT_EQ(2, insertCount);
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenGroup merges two sequential updates to the same row via ChangeGroup net-merge
+// semantics: the merged result is a single UPDATE whose Old value comes from cs1 and
+// whose New value comes from cs2.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_net_merge.ecdb", SchemaItem(GetSchema())));
+
+    // Pre-insert the Widget outside tracking so its initial value is "Original".
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Original", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    // Changeset 1: UPDATE → "Version1".
+    BeFileName cs1File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Widget SET Name=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Version1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs1File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs1.changeset");
+    }
+
+    // Changeset 2: UPDATE → "Version2".
+    BeFileName cs2File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Widget SET Name=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Version2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs2File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs2.changeset");
+    }
+
+    // OpenGroup merges the two: result must be a single UPDATE.
+    ChangesetReader reader;
+    T_Utf8StringVector files{cs1File.GetNameUtf8(), cs2File.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Update, opcode);
+
+    // New stage: Name must be "Version2".
+    Utf8String newName;
+    int newColCount = reader.GetColumnCount(Changes::Change::Stage::New);
+    for (int i = 0; i < newColCount; ++i)
+        {
+        IECSqlValue const& v = reader.GetValue(Changes::Change::Stage::New, i);
+        ECN::ECPropertyCP prop = v.GetColumnInfo().GetProperty();
+        if (prop != nullptr && Utf8String("Name") == prop->GetName())
+            {
+            newName = v.GetText();
+            break;
+            }
+        }
+    EXPECT_EQ(Utf8String("Version2"), newName);
+
+    // Old stage: Name must be "Original".
+    Utf8String oldName;
+    int oldColCount = reader.GetColumnCount(Changes::Change::Stage::Old);
+    for (int i = 0; i < oldColCount; ++i)
+        {
+        IECSqlValue const& v = reader.GetValue(Changes::Change::Stage::Old, i);
+        ECN::ECPropertyCP prop = v.GetColumnInfo().GetProperty();
+        if (prop != nullptr && Utf8String("Name") == prop->GetName())
+            {
+            oldName = v.GetText();
+            break;
+            }
+        }
+    EXPECT_EQ(Utf8String("Original"), oldName);
+
+    EXPECT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// After Close(), OpenGroup must have deleted the temporary "*-merged.changeset" file
+// it created during the merge phase.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_TempFileDeletedAfterClose)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_cleanup.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "CleanupWidget", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_cleanup.changeset");
+
+    // Helper: count files matching "*-merged.changeset" in the test output root.
+    BeFileName outputDir;
+    BeTest::GetHost().GetOutputRoot(outputDir);
+    auto countMergedFiles = [&]() -> size_t
+        {
+        bvector<BeFileName> matches;
+        BeDirectoryIterator::WalkDirsAndMatch(matches, outputDir, L"*-merged.changeset", false);
+        return matches.size();
+        };
+
+    {
+    ChangesetReader reader;
+    T_Utf8StringVector files{csFile.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All));
+
+    // The temp merged file must exist while the reader is open.
+    EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp *-merged.changeset file must exist while reader is open";
+
+    while (BE_SQLITE_ROW == reader.Step()) {}
+    reader.Close();
+    }
+
+    // After Close() the temp file must be gone.
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp *-merged.changeset file must be deleted after Close()";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -56,6 +56,35 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedChangesetReader::WriteMergedGroupToFile(ChangeGroupCR changeGroup, BeFileNameR outPath) {
+    BeGuid guid(true);
+    BeFileName tempPath(Utf8String(m_ecdb.GetTempFileBaseName() + "-" + guid.ToString() + "-merged.changeset").c_str());
+
+    // Level 1 compression with a small dictionary: this file is ephemeral so speed beats ratio.
+    LzmaEncoder::LzmaParams fastParams(1 << 16, false, 1, 1);
+    DdlChanges emptyDdl;
+    ChangesetFileWriter writer(tempPath, changeGroup.ContainsEcSchemaChanges(), emptyDdl, &m_ecdb, fastParams);
+
+    if (BE_SQLITE_OK != writer.Initialize()) {
+        LOG.errorv("WriteMergedGroupToFile: failed to initialize ChangesetFileWriter for '%s'.", tempPath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    if (BE_SQLITE_OK != writer.FromChangeGroup(changeGroup)) {
+        LOG.errorv("WriteMergedGroupToFile: failed to write merged changeset to '%s'.", tempPath.GetNameUtf8().c_str());
+        // writer destructor calls FinishOutput which closes the file; delete the partial file
+        tempPath.BeDeleteFile();
+        return BE_SQLITE_ERROR;
+    }
+
+    // writer destructor fires FinishOutput here, flushing and closing the file
+    outPath = tempPath;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a group on an already open PreparedChangesetReader.");
@@ -69,18 +98,21 @@ DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, boo
 
         bvector<BeFileName> fileVec{inputFile};
         ChangesetFileReaderBase reader(fileVec);
-        
+
         if (BE_SQLITE_OK != reader.AddToChangeGroup(*changeGroup))
             return BE_SQLITE_ERROR;
     }
 
-    m_changeStream = std::make_unique<ChangeSet>();
-    if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*changeGroup))
+    // Write the merged result to a temp file and release the ChangeGroup from RAM before
+    // opening the streaming reader. This avoids holding both the ChangeGroup and a full
+    // in-memory ChangeSet alive at the same time.
+    if (BE_SQLITE_OK != WriteMergedGroupToFile(*changeGroup, m_tempGroupFile))
         return BE_SQLITE_ERROR;
 
-    m_invert = invert;
-    m_propertyFilter = propertyFilter;
-    return BE_SQLITE_OK;
+    changeGroup.reset(); // free ChangeGroup memory before streaming begins
+
+    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{m_tempGroupFile});
+    return Open(std::move(reader), invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
@@ -97,12 +129,15 @@ void PreparedChangesetReader::ClearFields() {
 void PreparedChangesetReader::Close() {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
-    m_changeStream = nullptr;
+    m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
     m_invert = false;
     ClearFields();
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
+    if (m_tempGroupFile.DoesPathExist())
+        m_tempGroupFile.BeDeleteFile();
+    m_tempGroupFile = BeFileName{};
 }
 
 
