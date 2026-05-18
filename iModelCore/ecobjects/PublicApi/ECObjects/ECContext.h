@@ -238,9 +238,20 @@ private:
     IssueReporter*                  m_sharedIssueReporter = nullptr;    // Use this shared reporter when issues need to be reported across instances
 
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver)
         : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr)
         {
+        // Pin the fallback schema for the lifetime of this context. m_fallBackSchema is a
+        // reference, not a smart pointer, so without this AddRef a caller that drops their
+        // last ECSchemaPtr while still holding the context would leave m_fallBackSchema
+        // dangling (the bug observed by the Microstation connector, ADO 2054941).
+        // Same retain-by-AddRef pattern as StandaloneECRelationshipInstance.
+        m_fallBackSchema.AddRef();
+        }
+
+    virtual ~ECInstanceReadContext()
+        {
+        m_fallBackSchema.Release();
         }
 
     void SetSharedIssueReporter(IssueReporter& reporter) { m_sharedIssueReporter = &reporter; }
