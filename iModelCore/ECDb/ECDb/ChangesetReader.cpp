@@ -43,6 +43,13 @@ DbResult ChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& chang
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult ChangesetReader::OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter) {
+    return m_pimpl->OpenChangeSet(ecdb, std::move(changeSet), invert, propertyFilter);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void ChangesetReader::Close() { m_pimpl->Close(); }
 DbResult ChangesetReader::Step() { return m_pimpl->Step(); }
 

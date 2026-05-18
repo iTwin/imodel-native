@@ -39,6 +39,15 @@ DbResult ChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult ChangesetReader::Impl::OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter) {
+    if (!IsPrepared())
+        m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_prepared->OpenChangeSet(std::move(changeSet), invert, propertyFilter);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void ChangesetReader::Impl::Close() {
     if (IsPrepared())
         m_prepared->Close();

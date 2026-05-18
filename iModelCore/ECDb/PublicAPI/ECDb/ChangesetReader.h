@@ -63,6 +63,17 @@ public:
     //! @return BE_SQLITE_OK on success, or an error code if the group could not be opened.
     ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter);
 
+    //! Opens a pre-built in-memory ChangeSet for reading.
+    //! If the changeset byte size meets or exceeds 500 MB, it is transparently spilled to a
+    //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to
+    //! roughly one copy of the data at a time.
+    //! @param[in] ecdb ECDb connection used to resolve EC schema information.
+    //! @param[in] changeSet The in-memory changeset to open. Ownership is transferred.
+    //! @param[in] invert If true, the changeset is read as an inverted (undo) changeset.
+    //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
+    //! @return BE_SQLITE_OK on success, or an error code if the changeset could not be opened.
+    ECDB_EXPORT DbResult OpenChangeSet(ECDbCR ecdb, std::unique_ptr<BeSQLite::ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter);
+
     //! Closes the reader and releases all associated resources.
     //! @remarks Safe to call on a reader that was never opened or that has already been closed.
     ECDB_EXPORT void Close();

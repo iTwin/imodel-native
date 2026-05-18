@@ -33,6 +33,9 @@ private:
     //! Path to the temporary merged changeset file created by OpenGroup, empty otherwise.
     //! Deleted in Close().
     BeFileName m_tempGroupFile;
+    //! Changesets at or above this byte size are spilled to a temporary LZMA file instead of
+    //! being kept in RAM alongside the streaming reader. Configurable to ease testing.
+    size_t m_spillThresholdBytes = 50ull * 1024 * 1024; // 50 MB by default
 
     //filters
     std::vector<Utf8String> m_tableFilters;
@@ -54,14 +57,24 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
-    //! Merges @p changeGroup into a temporary LZMA-compressed changeset file and sets @p outPath to its path.
+    //! Writes @p changeSet to a temporary LZMA-compressed changeset file and sets @p outPath to its path.
     //! The file is written with fast compression (level 1) since it is ephemeral.
-    DbResult WriteMergedGroupToFile(ChangeGroupCR changeGroup, BeFileNameR outPath);
+    DbResult WriteChangeSetToFile(ChangeSetCR changeSet, BeFileNameR outPath);
+    //! Stores @p changeStream directly in m_changeStream without any size-based spill logic.
+    //! Kept private so callers are steered toward the appropriate Open* methods.
+    //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
+    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    friend struct ChangesetReader::Impl;
+
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 
     DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
-    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    //! Opens a pre-built in-memory ChangeSet for reading.
+    //! If the changeset size exceeds the spill threshold it is transparently written to a
+    //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
+    //! single copy at a time.
+    DbResult OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter);
     DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter);
     void Close();
     DbResult Step();

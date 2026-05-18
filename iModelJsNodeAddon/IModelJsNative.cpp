@@ -5238,7 +5238,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openLocalChanges() failed", rc);
         }
@@ -5256,7 +5256,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openInMemoryChanges() failed", rc);
         }

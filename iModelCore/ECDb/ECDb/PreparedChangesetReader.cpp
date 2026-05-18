@@ -56,12 +56,36 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter) {
+    if (IsOpen()) {
+        LOG.errorv("Attempting to open a changeset on an already open PreparedChangesetReader.");
+        return BE_SQLITE_ERROR;
+    }
+
+    if (!changeSet || changeSet->_IsEmpty())
+        return BE_SQLITE_ERROR;
+
+    if (changeSet->GetSize() >= m_spillThresholdBytes) {
+        if (BE_SQLITE_OK != WriteChangeSetToFile(*changeSet, m_tempGroupFile))
+            return BE_SQLITE_ERROR;
+        changeSet.reset(); // release the ChangeSet RAM before the streaming reader opens
+        auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{m_tempGroupFile});
+        return Open(std::move(reader), invert, propertyFilter);
+    }
+
+    return Open(std::move(changeSet), invert, propertyFilter);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter) {
-    if(IsOpen()) {
+    if (IsOpen()) {
         LOG.errorv("Attempting to open a group on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    auto changeGroup = std::make_unique<ChangeGroup>(m_ecdb);
+
+    ChangeGroup group(m_ecdb);
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist() || inputFile.IsDirectory())
@@ -70,40 +94,42 @@ DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, boo
         bvector<BeFileName> fileVec{inputFile};
         ChangesetFileReaderBase reader(fileVec);
 
-        if (BE_SQLITE_OK != reader.AddToChangeGroup(*changeGroup))
+        if (BE_SQLITE_OK != reader.AddToChangeGroup(group))
             return BE_SQLITE_ERROR;
     }
 
-    // Write the merged result to a temp file and release the ChangeGroup from RAM before
-    // opening the streaming reader.
-    if (BE_SQLITE_OK != WriteMergedGroupToFile(*changeGroup, m_tempGroupFile))
+    // Materialize the merged group as an in-memory ChangeSet, then delegate to OpenChangeSet
+    // which applies the 50 MB spill threshold uniformly across all open paths.
+    auto cs = std::make_unique<ChangeSet>();
+    if (BE_SQLITE_OK != cs->FromChangeGroup(group))
         return BE_SQLITE_ERROR;
 
-    changeGroup.reset(); // free ChangeGroup memory before streaming begins
-
-    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{m_tempGroupFile});
-    return Open(std::move(reader), invert, propertyFilter);
+    group.Finalize(); // free the ChangeGroup buffer before delegating
+    return OpenChangeSet(std::move(cs), invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::WriteMergedGroupToFile(ChangeGroupCR changeGroup, BeFileNameR outPath) {
+DbResult PreparedChangesetReader::WriteChangeSetToFile(ChangeSetCR changeSet, BeFileNameR outPath) {
     BeGuid guid(true);
     BeFileName tempPath(Utf8String(m_ecdb.GetTempFileBaseName() + "-" + guid.ToString() + "-merged.changeset").c_str());
 
     // Level 1 compression with a small dictionary: this file is ephemeral so speed beats ratio.
     LzmaEncoder::LzmaParams fastParams(1 << 16, false, 1, 1);
     DdlChanges emptyDdl;
-    ChangesetFileWriter writer(tempPath, changeGroup.ContainsEcSchemaChanges(), emptyDdl, &m_ecdb, fastParams);
+    // containsEcSchemaChanges=false: these temp files are only used for streaming/iteration,
+    // not for applying to a database, so the prefix flag is irrelevant here.
+    ChangesetFileWriter writer(tempPath, false, emptyDdl, &m_ecdb, fastParams);
 
     if (BE_SQLITE_OK != writer.Initialize()) {
-        LOG.errorv("WriteMergedGroupToFile: failed to initialize ChangesetFileWriter for '%s'.", tempPath.GetNameUtf8().c_str());
+        LOG.errorv("WriteChangeSetToFile: failed to initialize ChangesetFileWriter for '%s'.", tempPath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
     }
 
-    if (BE_SQLITE_OK != writer.FromChangeGroup(changeGroup)) {
-        LOG.errorv("WriteMergedGroupToFile: failed to write merged changeset to '%s'.", tempPath.GetNameUtf8().c_str());
+    auto reader = changeSet._GetReader();
+    if (BE_SQLITE_OK != writer.ReadFrom(*reader)) {
+        LOG.errorv("WriteChangeSetToFile: failed to write changeset to '%s'.", tempPath.GetNameUtf8().c_str());
         // writer destructor calls FinishOutput which closes the file; delete the partial file
         tempPath.BeDeleteFile();
         return BE_SQLITE_ERROR;
