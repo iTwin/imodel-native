@@ -22,22 +22,22 @@ ChangesetReader::~ChangesetReader() { delete m_pimpl; }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenFile(ecdb, changesetFile, invert, propertyFilter);
+DbResult ChangesetReader::OpenChangesetFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
+    return m_pimpl->OpenChangesetFile(ecdb, changesetFile, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter, spillThreshold);
+DbResult ChangesetReader::OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    return m_pimpl->OpenChangeGroup(ecdb, changesetFiles, invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
-    return m_pimpl->OpenChangeSet(ecdb, std::move(changeSet), invert, propertyFilter, spillThreshold);
+DbResult ChangesetReader::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    return m_pimpl->OpenInMemoryChangeset(ecdb, std::move(changeSet), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------

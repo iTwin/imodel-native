@@ -181,7 +181,7 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // Step one by one.
@@ -364,7 +364,7 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(reader.Step(), BE_SQLITE_ROW);
@@ -531,7 +531,7 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -669,7 +669,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -769,7 +769,7 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -857,7 +857,7 @@ TEST_F(ChangesetReaderTests, Update_TwoScalars)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -938,7 +938,7 @@ TEST_F(ChangesetReaderTests, Insert_NestedStruct)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1023,7 +1023,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1102,7 +1102,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1183,7 +1183,7 @@ TEST_F(ChangesetReaderTests, Insert_StructArray)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1282,7 +1282,7 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1347,7 +1347,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1500,7 +1500,7 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -1652,7 +1652,7 @@ TEST_F(ChangesetReaderTests, Filter_ByTableName)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     reader.SetTableFilters({"ts_Widget"});
@@ -1710,7 +1710,7 @@ TEST_F(ChangesetReaderTests, Filter_ByOpcode)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     reader.SetOpcodeFilters({DbOpcode::Update});
@@ -1767,7 +1767,7 @@ TEST_F(ChangesetReaderTests, Filter_ByECClassId)
     ASSERT_TRUE(widgetClassId.IsValid());
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     reader.SetECClassNameFilters({"TestReadCS:Widget"});
@@ -1820,7 +1820,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
         ChangesetReader reader;
-        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
             std::move(cs), false,
             ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
@@ -1836,7 +1836,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
         ChangesetReader reader;
-        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
             std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
         reader.SetTableFilters({"no_such_table"});
@@ -1918,7 +1918,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // --- Changeset row 1: primary table (to_Entity) ---
@@ -2034,7 +2034,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // Only the overflow table row must appear; primary table was not written.
@@ -2136,7 +2136,7 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // --- Changeset row 1: primary table (tj_JBase) ---
@@ -2271,7 +2271,7 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // --- Changeset row 1: primary table (tjo_JBase) ---
@@ -2436,7 +2436,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // ExistingTable maps to exactly one physical table — exactly one changeset row.
@@ -2498,7 +2498,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2595,7 +2595,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb,
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2740,7 +2740,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClass
     }
 
 //---------------------------------------------------------------------------------------
-// OpenGroup with a single file should produce the same opcode and row count as OpenFile.
+// OpenChangeGroup with a single file should produce the same opcode and row count as OpenChangesetFile.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
@@ -2762,12 +2762,12 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
     ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
     BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_single.changeset");
 
-    // Read with OpenFile.
+    // Read with OpenChangesetFile.
     int fileRowCount = 0;
     DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
     {
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
     while (BE_SQLITE_ROW == reader.Step())
         {
         ++fileRowCount;
@@ -2776,13 +2776,13 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
     reader.Close();
     }
 
-    // Read with OpenGroup using the same single file.
+    // Read with OpenChangeGroup using the same single file.
     int groupRowCount = 0;
     DbOpcode groupOpcode = DbOpcode::Delete; // sentinel — will be overwritten
     {
     ChangesetReader reader;
     T_Utf8StringVector files{csFile.GetNameUtf8()};
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 50ull * 1024 * 1024 /* 50 MiB spill threshold */));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 50ull * 1024 * 1024 /* 50 MiB spill threshold */));
     while (BE_SQLITE_ROW == reader.Step())
         {
         ++groupRowCount;
@@ -2796,7 +2796,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
     }
 
 //---------------------------------------------------------------------------------------
-// OpenGroup with two files each inserting a different row should return both INSERT rows.
+// OpenChangeGroup with two files each inserting a different row should return both INSERT rows.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, OpenGroup_TwoIndependentInserts_BothRowsReturned)
@@ -2835,7 +2835,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoIndependentInserts_BothRowsReturned)
 
     ChangesetReader reader;
     T_Utf8StringVector files{cs1File.GetNameUtf8(), cs2File.GetNameUtf8()};
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     int insertCount = 0;
     while (BE_SQLITE_ROW == reader.Step())
@@ -2851,7 +2851,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoIndependentInserts_BothRowsReturned)
     }
 
 //---------------------------------------------------------------------------------------
-// OpenGroup merges two sequential updates to the same row via ChangeGroup net-merge
+// OpenChangeGroup merges two sequential updates to the same row via ChangeGroup net-merge
 // semantics: the merged result is a single UPDATE whose Old value comes from cs1 and
 // whose New value comes from cs2.
 // @bsimethod
@@ -2899,10 +2899,10 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
     cs2File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs2.changeset");
     }
 
-    // OpenGroup merges the two: result must be a single UPDATE.
+    // OpenChangeGroup merges the two: result must be a single UPDATE.
     ChangesetReader reader;
     T_Utf8StringVector files{cs1File.GetNameUtf8(), cs2File.GetNameUtf8()};
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
     DbOpcode opcode;
@@ -2944,7 +2944,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
     }
 
 //---------------------------------------------------------------------------------------
-// After Close(), OpenGroup must have deleted the temporary "*-merged.changeset" file
+// After Close(), OpenChangeGroup must have deleted the temporary "*-merged.changeset" file
 // it created during the merge phase.
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2980,7 +2980,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TempFileDeletedAfterClose)
     {
     ChangesetReader reader;
     T_Utf8StringVector files{csFile.GetNameUtf8()};
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
 
     // The temp merged file must exist while the reader is open.
     EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp *-merged.changeset file must exist while reader is open";
@@ -2997,7 +2997,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TempFileDeletedAfterClose)
     }
 
 //---------------------------------------------------------------------------------------
-// OpenChangeSet with a changeset below the default 50 MB threshold must stream directly
+// OpenInMemoryChangeset with a changeset below the default 50 MB threshold must stream directly
 // from the in-memory ChangeSet without writing any temp file.
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -3030,7 +3030,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
 
     // Default threshold is 50 MB; a tiny changeset must stream in memory — no file written.
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
     EXPECT_EQ((size_t) 0, countMergedFiles()) << "No temp file should be created for a sub-threshold changeset";
 
     int rowCount = 0;
@@ -3047,7 +3047,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
     }
 
 //---------------------------------------------------------------------------------------
-// OpenChangeSet with threshold=1 must spill to a temp LZMA file, stream the same data
+// OpenInMemoryChangeset with threshold=1 must spill to a temp LZMA file, stream the same data
 // correctly, and delete the file on Close().
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -3080,7 +3080,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_SpillPath_TempFileCreatedAndDeleted)
 
     {
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeSet(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, 1));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, 1));
 
     // Temp file must exist while the reader is open and streaming.
     EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp *-merged.changeset file must exist during spill-path reading";
@@ -3113,7 +3113,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_SpillPath_TempFileCreatedAndDeleted)
     }
 
 //---------------------------------------------------------------------------------------
-// OpenGroup with threshold=1 spills the merged ChangeSet to a temp LZMA file, yields
+// OpenChangeGroup with threshold=1 spills the merged ChangeSet to a temp LZMA file, yields
 // the correct rows, and deletes the file on Close().
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -3148,7 +3148,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
     {
     ChangesetReader reader;
     T_Utf8StringVector files{csFile.GetNameUtf8()};
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
 
     EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp file must exist while group reader is open (spill path)";
 
@@ -3159,7 +3159,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
     reader.Close();
     }
 
-    EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp file must be deleted after Close() for OpenGroup spill path";
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp file must be deleted after Close() for OpenChangeGroup spill path";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

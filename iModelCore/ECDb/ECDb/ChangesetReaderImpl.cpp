@@ -12,41 +12,31 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::Impl::OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter) {
+DbResult ChangesetReader::Impl::OpenChangesetFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter) {
     if (!IsPrepared()) {
         m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
     }
-    return m_prepared->OpenFile(file, invert, propertyFilter);
+    return m_prepared->OpenChangesetFile(file, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::Impl::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
+DbResult ChangesetReader::Impl::OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
     if(!IsPrepared()) {
         m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
     }
-    return m_prepared->Open(std::move(changeStream), invert, propertyFilter);
+    return m_prepared->OpenChangeGroup(files, invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::Impl::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
-    if(!IsPrepared()) {
-        m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
-    }
-    return m_prepared->OpenGroup(files, invert, propertyFilter, spillThreshold);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::Impl::OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+DbResult ChangesetReader::Impl::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
     if (!IsPrepared()) {
         m_prepared = std::make_unique<PreparedChangesetReader>(ecdb);
     }
-    return m_prepared->OpenChangeSet(std::move(changeSet), invert, propertyFilter, spillThreshold);
+    return m_prepared->OpenInMemoryChangeset(std::move(changeSet), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------

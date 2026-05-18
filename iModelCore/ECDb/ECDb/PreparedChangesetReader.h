@@ -30,7 +30,7 @@ private:
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedPropNames;
 
-    //! Path to the temporary merged changeset file created by OpenGroup, empty otherwise.
+    //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
     //! Deleted in Close().
     BeFileName m_tempGroupFile;
 
@@ -54,9 +54,10 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
-    //! Writes @p changeSet to a temporary LZMA-compressed changeset file and sets @p outPath to its path.
+    //! Writes @p changeGroup to a temporary LZMA-compressed changeset file, preserving @p ddlChanges
+    //! and @p containsSchemaChanges in the file header. Sets @p outPath to the written path.
     //! The file is written with fast compression (level 1) since it is ephemeral.
-    DbResult WriteChangeSetToFile(ChangeSetCR changeSet, BeFileNameR outPath);
+    DbResult WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
     //! Stores @p changeStream directly in m_changeStream without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.
     //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
@@ -66,13 +67,13 @@ private:
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 
-    DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     //! Opens a pre-built in-memory ChangeSet for reading.
     //! If the changeset size exceeds the spill threshold it is transparently written to a
     //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
     //! single copy at a time.
-    DbResult OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
-    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     void Close();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }

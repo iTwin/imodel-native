@@ -23,10 +23,9 @@ public:
     Impl() {}
     ~Impl() {Close();}
 
-    DbResult OpenFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter);
-    DbResult OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
-    DbResult OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
-    DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenChangesetFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     void Close();
     DbResult Step();
 

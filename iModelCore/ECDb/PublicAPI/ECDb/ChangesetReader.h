@@ -45,7 +45,7 @@ public:
     //! @param[in] invert If true, the changeset is read as an inverted (undo) changeset.
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
     //! @return BE_SQLITE_OK on success, or an error code if the file cannot be opened.
-    ECDB_EXPORT DbResult OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
+    ECDB_EXPORT DbResult OpenChangesetFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
 
     //! Opens a group of changeset files for reading as a single logical sequence.
     //! @param[in] ecdb ECDb connection used to resolve EC schema information.
@@ -53,7 +53,7 @@ public:
     //! @param[in] invert If true, the changesets are read as inverted (undo) changesets, iterated in reverse order.
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
     //! @return BE_SQLITE_OK on success, or an error code if the group could not be opened.
-    ECDB_EXPORT DbResult OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    ECDB_EXPORT DbResult OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
 
     //! Opens a pre-built in-memory ChangeSet for reading.
     //! If the changeset byte size meets or exceeds @p spillThreshold, it is transparently
@@ -65,7 +65,7 @@ public:
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
     //! @param[in] spillThreshold Byte size at or above which the changeset is spilled to disk. Use kDefaultSpillThresholdBytes for the 50 MB default.
     //! @return BE_SQLITE_OK on success, or an error code if the changeset could not be opened.
-    ECDB_EXPORT DbResult OpenChangeSet(ECDbCR ecdb, std::unique_ptr<BeSQLite::ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    ECDB_EXPORT DbResult OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<BeSQLite::ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
 
     //! Closes the reader and releases all associated resources.
     //! @remarks Safe to call on a reader that was never opened or that has already been closed.

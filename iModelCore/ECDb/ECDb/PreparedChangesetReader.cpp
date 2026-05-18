@@ -18,7 +18,7 @@ PreparedChangesetReader::PreparedChangesetReader(ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter mode) {
+DbResult PreparedChangesetReader::OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter mode) {
     if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -56,7 +56,7 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+DbResult PreparedChangesetReader::OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
     if (IsOpen()) {
         LOG.errorv("Attempting to open a changeset on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -65,12 +65,17 @@ DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> chang
     if (!changeSet || changeSet->_IsEmpty())
         return BE_SQLITE_ERROR;
 
-    if (changeSet->GetSize() >= spillThreshold) {
-        if (BE_SQLITE_OK != WriteChangeSetToFile(*changeSet, m_tempGroupFile))
+    if (changeSet->GetSize() > spillThreshold) {
+        // OpenInMemoryChangeset has no DDL context, so the temp file is written with empty DDL.
+        ChangeGroup tempGroup;
+        if (BE_SQLITE_OK != changeSet->AddToChangeGroup(tempGroup))
             return BE_SQLITE_ERROR;
-        changeSet.reset(); // release the ChangeSet RAM before the streaming reader opens
-        auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{m_tempGroupFile});
-        return Open(std::move(reader), invert, propertyFilter);
+        changeSet.reset(); // release the ChangeSet RAM before writing
+        DdlChanges emptyDdl;
+        if (BE_SQLITE_OK != WriteGroupToFile(tempGroup, emptyDdl, tempGroup.ContainsEcSchemaChanges(), m_tempGroupFile))
+            return BE_SQLITE_ERROR;
+        tempGroup.Finalize(); // release the ChangeGroup RAM before opening the file
+        return OpenChangesetFile(m_tempGroupFile.GetNameUtf8(), invert, propertyFilter);
     }
 
     return Open(std::move(changeSet), invert, propertyFilter);
@@ -79,13 +84,15 @@ DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> chang
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+DbResult PreparedChangesetReader::OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
     if (IsOpen()) {
         LOG.errorv("Attempting to open a group on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
 
     ChangeGroup group(m_ecdb);
+    DdlChanges groupDdl;
+    bool containsSchemaChanges = false;
     for (auto& changesetFile : files) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist() || inputFile.IsDirectory())
@@ -94,44 +101,63 @@ DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, boo
         bvector<BeFileName> fileVec{inputFile};
         ChangesetFileReaderBase reader(fileVec);
 
+        // Collect DDL and schema-change flag from each file before merging.
+        bool fileHasSchemaChanges = false;
+        DdlChanges fileDdl;
+        if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(fileHasSchemaChanges, fileDdl))
+            return BE_SQLITE_ERROR;
+        if (fileHasSchemaChanges)
+            containsSchemaChanges = true;
+        for (auto const& ddl : fileDdl.GetDDLs())
+            groupDdl.AddDDL(ddl.c_str());
+
         if (BE_SQLITE_OK != reader.AddToChangeGroup(group))
             return BE_SQLITE_ERROR;
     }
 
-    // Materialize the merged group as an in-memory ChangeSet, then delegate to OpenChangeSet
-    // which applies the 50 MB spill threshold uniformly across all open paths.
+    // Materialize the merged group to measure its size.
     auto cs = std::make_unique<ChangeSet>();
     if (BE_SQLITE_OK != cs->FromChangeGroup(group))
         return BE_SQLITE_ERROR;
 
-    group.Finalize(); // free the ChangeGroup buffer before delegating
-    return OpenChangeSet(std::move(cs), invert, propertyFilter, spillThreshold);
+    if (cs->GetSize() > spillThreshold) {
+        cs.reset();
+        if (BE_SQLITE_OK != WriteGroupToFile(group, groupDdl, containsSchemaChanges, m_tempGroupFile))
+            return BE_SQLITE_ERROR;
+        group.Finalize(); // release the ChangeGroup RAM before opening the file
+        return OpenChangesetFile(m_tempGroupFile.GetNameUtf8(), invert, propertyFilter);
+    }
+
+    group.Finalize(); // group is fully materialized into cs; release the ChangeGroup RAM
+    return OpenInMemoryChangeset(std::move(cs), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::WriteChangeSetToFile(ChangeSetCR changeSet, BeFileNameR outPath) {
+DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath) {
     BeGuid guid(true);
     BeFileName tempPath(Utf8String(m_ecdb.GetTempFileBaseName() + "-" + guid.ToString() + "-merged.changeset").c_str());
 
-    // Level 1 compression with a small dictionary: this file is ephemeral so speed beats ratio.
-    LzmaEncoder::LzmaParams fastParams(1 << 16, false, 1, 1);
-    DdlChanges emptyDdl;
-    // containsEcSchemaChanges=false: these temp files are only used for streaming/iteration,
-    // not for applying to a database, so the prefix flag is irrelevant here.
-    ChangesetFileWriter writer(tempPath, false, emptyDdl, &m_ecdb, fastParams);
-
-    if (BE_SQLITE_OK != writer.Initialize()) {
-        LOG.errorv("WriteChangeSetToFile: failed to initialize ChangesetFileWriter for '%s'.", tempPath.GetNameUtf8().c_str());
+    if(tempPath.DoesPathExist()) {
+        LOG.errorv("WriteGroupToFile: temp file '%s' already exists.", tempPath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
     }
 
-    auto reader = changeSet._GetReader();
-    if (BE_SQLITE_OK != writer.ReadFrom(*reader)) {
-        LOG.errorv("WriteChangeSetToFile: failed to write changeset to '%s'.", tempPath.GetNameUtf8().c_str());
-        // writer destructor calls FinishOutput which closes the file; delete the partial file
-        tempPath.BeDeleteFile();
+    // Level 1 compression with a small dictionary: this file is ephemeral so speed beats ratio.
+    LzmaEncoder::LzmaParams fastParams(1 << 16, false, 1, 1);
+    ChangesetFileWriter writer(tempPath, containsSchemaChanges, ddlChanges, &m_ecdb, fastParams);
+
+    if (BE_SQLITE_OK != writer.Initialize()) {
+        LOG.errorv("WriteGroupToFile: failed to initialize ChangesetFileWriter for '%s'.", tempPath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    // Always write via FromChangeGroup so that DDL and schema-change flags flow through correctly.
+    writer.FromChangeGroup(changeGroup);
+
+    if(!tempPath.DoesPathExist()) {
+        LOG.errorv("WriteGroupToFile: failed to write temp file '%s'.", tempPath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
     }
 
