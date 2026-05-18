@@ -21,7 +21,7 @@ import type {
   ElementGeometryBuilderParams,
   ElementGeometryBuilderParamsForPart,
   ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
-  FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
+  FilePropertyProps, FontId, FontProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
@@ -768,7 +768,7 @@ export declare namespace IModelJsNative {
     public queryNextTxnId(txnId: TxnIdString): TxnIdString;
     public queryPreviousTxnId(txnId: TxnIdString): TxnIdString;
     public queryTextureData(opts: TextureLoadProps): Promise<TextureData | undefined>;
-    public readFontMap(): FontMapProps;
+    public readFontMap(): { fonts: FontProps[] };
     public reinstateTxn(): IModelStatus;
     public getNextReinstateTxnRange(): { firstTxnId: TxnIdString, lastTxnId: TxnIdString };
     public removeEmbeddedFile(name: string): void;
@@ -822,7 +822,7 @@ export declare namespace IModelJsNative {
     public pullMergeRebaseAbortTxn(): void
     public pullMergeRebaseBegin(): TxnIdString[];
     public pullMergeRebaseEnd(): void;
-    public pullMergeReverseLocalChanges(): TxnIdString[];
+    public pullMergeReverseLocalChanges(captureInstanceChanges?: boolean): TxnIdString[];
     public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
     public stashRestore(stashFile: string): void;
     public getPendingTxnsHash(includeReversedTxns: boolean): string;

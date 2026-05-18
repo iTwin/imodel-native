@@ -60,8 +60,7 @@ TEST_F(BaseEllipsoidUnitTests, BasicJSONTests1ShortForm)
 {
     GeoCoordinates::EllipsoidCP wgs84Ellipsoid = GeoCoordinates::Ellipsoid::CreateEllipsoid("WGS84");
 
-    Json::Value result;
-    BeJsValue resultLong(result);
+    BeJsDocument resultLong;
     ASSERT_TRUE(SUCCESS == wgs84Ellipsoid->ToJson(resultLong));
 
     EXPECT_TRUE(!resultLong["description"].isNull());
@@ -71,7 +70,7 @@ TEST_F(BaseEllipsoidUnitTests, BasicJSONTests1ShortForm)
     EXPECT_TRUE(!resultLong["polarRadius"].isNull());
     EXPECT_TRUE(!resultLong["equatorialRadius"].isNull());
 
-    Json::Value resultShort;
+    BeJsDocument resultShort;
     ASSERT_TRUE(SUCCESS == wgs84Ellipsoid->ToJson(resultShort, true));
 
     EXPECT_TRUE(resultShort["description"].isNull());
@@ -107,6 +106,8 @@ TEST_F(BaseEllipsoidUnitTests, CreateAFullySelfContainedEllipsoid_Test1)
     GeoCoordinates::EllipsoidP theEllipsoid = const_cast<GeoCoordinates::EllipsoidP>(GeoCoordinates::Ellipsoid::CreateEllipsoid());
 
     Utf8String errorMessage;
+    // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
+    // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
     ASSERT_TRUE(SUCCESS == theEllipsoid->FromJson(Json::Value::From(customEllipsoid1), errorMessage));
     Utf8String source;
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");

@@ -78,7 +78,7 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)iTwinCsmapStatic$(stlibex
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)iTwinGeom$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)iTwinSQLite$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)iTwinJsonCpp$(stlibext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)iTwinXml$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)iTwinPugixml$(stlibext)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 
