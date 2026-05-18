@@ -104,8 +104,7 @@ DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, boo
     }
 
     // Write the merged result to a temp file and release the ChangeGroup from RAM before
-    // opening the streaming reader. This avoids holding both the ChangeGroup and a full
-    // in-memory ChangeSet alive at the same time.
+    // opening the streaming reader.
     if (BE_SQLITE_OK != WriteMergedGroupToFile(*changeGroup, m_tempGroupFile))
         return BE_SQLITE_ERROR;
 
