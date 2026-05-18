@@ -56,7 +56,7 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter) {
+DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
     if (IsOpen()) {
         LOG.errorv("Attempting to open a changeset on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -65,7 +65,7 @@ DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> chang
     if (!changeSet || changeSet->_IsEmpty())
         return BE_SQLITE_ERROR;
 
-    if (changeSet->GetSize() >= m_spillThresholdBytes) {
+    if (changeSet->GetSize() >= spillThreshold) {
         if (BE_SQLITE_OK != WriteChangeSetToFile(*changeSet, m_tempGroupFile))
             return BE_SQLITE_ERROR;
         changeSet.reset(); // release the ChangeSet RAM before the streaming reader opens
@@ -79,7 +79,7 @@ DbResult PreparedChangesetReader::OpenChangeSet(std::unique_ptr<ChangeSet> chang
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter) {
+DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
     if (IsOpen()) {
         LOG.errorv("Attempting to open a group on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
@@ -105,7 +105,7 @@ DbResult PreparedChangesetReader::OpenGroup(T_Utf8StringVector const& files, boo
         return BE_SQLITE_ERROR;
 
     group.Finalize(); // free the ChangeGroup buffer before delegating
-    return OpenChangeSet(std::move(cs), invert, propertyFilter);
+    return OpenChangeSet(std::move(cs), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------

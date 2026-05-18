@@ -33,9 +33,6 @@ private:
     //! Path to the temporary merged changeset file created by OpenGroup, empty otherwise.
     //! Deleted in Close().
     BeFileName m_tempGroupFile;
-    //! Changesets at or above this byte size are spilled to a temporary LZMA file instead of
-    //! being kept in RAM alongside the streaming reader. Configurable to ease testing.
-    size_t m_spillThresholdBytes = 50ull * 1024 * 1024; // 50 MB by default
 
     //filters
     std::vector<Utf8String> m_tableFilters;
@@ -74,8 +71,8 @@ public:
     //! If the changeset size exceeds the spill threshold it is transparently written to a
     //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
     //! single copy at a time.
-    DbResult OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter);
-    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenChangeSet(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     void Close();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }

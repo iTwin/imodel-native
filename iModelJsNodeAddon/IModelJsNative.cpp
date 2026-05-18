@@ -5219,7 +5219,8 @@ public:
         REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
-        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt));
+        REQUIRE_ARGUMENT_INTEGER(4, spillThresholdBytes);
+        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
         }
@@ -5230,6 +5231,7 @@ public:
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        REQUIRE_ARGUMENT_INTEGER(4, spillThresholdBytes);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5238,7 +5240,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openLocalChanges() failed", rc);
         }
@@ -5248,6 +5250,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
         REQUIRE_ARGUMENT_INTEGER(2, propFilterInt);
+        REQUIRE_ARGUMENT_INTEGER(3, spillThresholdBytes);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5256,7 +5259,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openInMemoryChanges() failed", rc);
         }
@@ -5267,6 +5270,7 @@ public:
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        REQUIRE_ARGUMENT_INTEGER(4, spillThresholdBytes);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5278,7 +5282,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenChangeSet(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openTxn() failed", rc);
         }

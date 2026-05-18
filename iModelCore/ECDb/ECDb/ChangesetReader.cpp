@@ -29,22 +29,15 @@ DbResult ChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert, propertyFilter);
+DbResult ChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenChangeSet(ecdb, std::move(changeSet), invert, propertyFilter);
+DbResult ChangesetReader::OpenChangeSet(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    return m_pimpl->OpenChangeSet(ecdb, std::move(changeSet), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
