@@ -230,7 +230,11 @@ struct ECInstanceReadContext : RefCountedBase
 
 private:
     IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
-    ECSchemaCR                      m_fallBackSchema;
+    // May be null when the caller has no fallback schema to provide (see the
+    // CreateContext(ECSchemaReadContextR, ECSchemaPtr*) overload). Held as a pointer so
+    // the "no fallback" case is representable in the type system; the reference returned
+    // by GetFallBackSchema() preserves the previous public contract.
+    ECSchema const*                 m_fallBackSchema;
     IPrimitiveTypeResolver const*   m_typeResolver;
     IUnitResolver const*            m_unitResolver;
     IECSchemaRemapperCP             m_schemaRemapper;
@@ -238,20 +242,21 @@ private:
     IssueReporter*                  m_sharedIssueReporter = nullptr;    // Use this shared reporter when issues need to be reported across instances
 
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver)
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCP fallBackSchema, IPrimitiveTypeResolver const* typeResolver)
         : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr)
         {
-        // Pin the fallback schema for the lifetime of this context. m_fallBackSchema is a
-        // reference, not a smart pointer, so without this AddRef a caller that drops their
-        // last ECSchemaPtr while still holding the context would leave m_fallBackSchema
-        // dangling (the bug observed by the Microstation connector, ADO 2054941).
-        // Same retain-by-AddRef pattern as StandaloneECRelationshipInstance.
-        m_fallBackSchema.AddRef();
+        // Pin the fallback schema for the lifetime of this context. Without this retention a
+        // caller that drops their last ECSchemaPtr while still holding the context would
+        // leave m_fallBackSchema dangling - the bug observed by the Microstation connector,
+        // ADO 2054941. Same retain-by-AddRef pattern as StandaloneECRelationshipInstance.
+        if (m_fallBackSchema != nullptr)
+            m_fallBackSchema->AddRef();
         }
 
     virtual ~ECInstanceReadContext()
         {
-        m_fallBackSchema.Release();
+        if (m_fallBackSchema != nullptr)
+            m_fallBackSchema->Release();
         }
 
     void SetSharedIssueReporter(IssueReporter& reporter) { m_sharedIssueReporter = &reporter; }
@@ -278,15 +283,24 @@ public:
 
     IECInstancePtr CreateStandaloneInstance(ECClassCR ecClass);
 
-    ECSchemaCR GetFallBackSchema() {return m_fallBackSchema;}
+    //! Returns the fallback schema. Only call this on a context that was constructed with one;
+    //! contexts created via the CreateContext(ECSchemaReadContextR, ECSchemaPtr*) overload have
+    //! no fallback and dereferencing the result is undefined.
+    ECSchemaCR GetFallBackSchema() {return *m_fallBackSchema;}
+
+    bool       HasFallBackSchema() const {return m_fallBackSchema != nullptr;}
 
     IssueReporter& Issues() { return m_sharedIssueReporter != nullptr ? *m_sharedIssueReporter : m_issueReporter; }
 public:
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);
 
-    //! - For use when the caller does not know the schema of the instance he is deserializing.
+    //! - For use when the caller has a fallback schema to apply if a referenced schema cannot be located.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
+
+    //! - For use when the caller does not know the schema yet and has no fallback to provide.
+    //! Replaces the historical pattern of passing *nullptr through the ECSchemaCR overload.
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaPtr* foundSchema);
 
     //! - For use when the caller is deserializing custom attributes and has the container schema for the current instance
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContextForCA(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext);
