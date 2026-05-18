@@ -9,7 +9,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-static constexpr uint32_t MAGIC = 0x43534348; // "CSCH" - Indicates the file is an EC schema blob."
+static constexpr uint32_t MAGIC = 0x43534348; // "CSCH" - Indicates the file is an EC schema blob.
 static constexpr uint8_t  FORMAT_VERSION = 1;
 
 // Safely narrow int64_t SQLite row ID to uint32_t for the binary format.
@@ -783,9 +783,19 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
                     {
                     PutSRef(Safe(constrClassStmt.GetValueText(0)));
                     PutSRef(Safe(constrClassStmt.GetValueText(1)));
+                    if (ccCount == UINT8_MAX)
+                        {
+                        ECDbLogger::Get().errorv("SchemaViewWriter: relationship constraint %" PRIi64 " has more than %u constraint classes", constraintId, (unsigned)UINT8_MAX);
+                        return BE_SQLITE_ERROR;
+                        }
                     ccCount++;
                     }
                 m_output[ccCountPos] = ccCount;
+                if (constrCount == UINT8_MAX)
+                    {
+                    ECDbLogger::Get().errorv("SchemaViewWriter: relationship class %" PRIi64 " has more than %u constraints", classId, (unsigned)UINT8_MAX);
+                    return BE_SQLITE_ERROR;
+                    }
                 constrCount++;
                 }
             m_output[constrCountPos] = constrCount;
