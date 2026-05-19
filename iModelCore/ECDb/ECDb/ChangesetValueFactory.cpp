@@ -25,10 +25,10 @@ const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl, ECDbC
         rootClassId = tbl.GetExclusiveRootECClassId();
     }
 
-    const auto rootClass = conn.Schemas().Main().GetClass(rootClassId);
+    const auto rootClass = conn.Schemas().GetDispatcher().GetClass(rootClassId, nullptr); // GetClass will look in all table spaces
     if (rootClass == nullptr)
         return nullptr;
-    return conn.Schemas().Main().GetClassMap(*rootClass);
+    return conn.Schemas().GetDispatcher().GetClassMap(*rootClass, nullptr); // GetClassMap will look in all table spaces
 }
 
 //---------------------------------------------------------------------------------------
@@ -840,11 +840,11 @@ BentleyStatus ChangesetValueFactory::BuildPropertyFields(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId, ECDbCR conn) {
-    const ECClass* cls = conn.Schemas().Main().GetClass(classId);
+    const ECClass* cls = conn.Schemas().GetDispatcher().GetClass(classId, nullptr); // GetClass will look in all table spaces
     if (cls == nullptr)
         return false;
 
-    const ECClass* bisElementClass = conn.Schemas().Main().GetClass("BisCore", "Element");
+    const ECClass* bisElementClass = conn.Schemas().GetDispatcher().GetClass("BisCore", "Element", SchemaLookupMode::AutoDetect, nullptr); // GetClass will look in all table spaces
     if (bisElementClass == nullptr)
         return false;
 
@@ -894,13 +894,13 @@ BentleyStatus ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
     std::vector<std::unique_ptr<IECSqlValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
 
-    const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
+    const ECClass* cls = conn.Schemas().GetDispatcher().GetClass(resolvedClassId, nullptr); // GetClass will look in all table spaces
     if (cls == nullptr) {
         LOG.errorv("Resolved ECClassId %" PRIu64 " could not be found in the schema.", resolvedClassId.GetValueUnchecked());
         return ERROR;
     }
 
-    const ClassMap* classMap  = conn.Schemas().Main().GetClassMap(*cls);
+    const ClassMap* classMap  = conn.Schemas().GetDispatcher().GetClassMap(*cls, nullptr); // GetClassMap will look in all table spaces
     if (classMap == nullptr) {
         LOG.errorv("ClassMap for ECClassId %" PRIu64 " could not be found in the schema.", resolvedClassId.GetValueUnchecked());
         return ERROR;

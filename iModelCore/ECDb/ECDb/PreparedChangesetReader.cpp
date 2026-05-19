@@ -154,7 +154,10 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, Ddl
     }
 
     // Always write via FromChangeGroup so that DDL and schema-change flags flow through correctly.
-    writer.FromChangeGroup(changeGroup);
+    if(BE_SQLITE_OK != writer.FromChangeGroup(changeGroup)) {
+        LOG.errorv("WriteGroupToFile: failed to write change group to temp file '%s'.", tempPath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
+    }
 
     if(!tempPath.DoesPathExist()) {
         LOG.errorv("WriteGroupToFile: failed to write temp file '%s'.", tempPath.GetNameUtf8().c_str());
@@ -177,7 +180,34 @@ void PreparedChangesetReader::ClearFields() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedChangesetReader::Close() {
+BentleyStatus PreparedChangesetReader::Close() {
+    if (m_tempGroupFile.DoesPathExist()) {
+        if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
+            LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
+            return ERROR;
+        }
+    }
+    ClearMembers();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PreparedChangesetReader::CloseInfallible() {
+    if (m_tempGroupFile.DoesPathExist()) {
+        if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
+            LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
+        }
+    }
+    ClearMembers();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PreparedChangesetReader::ClearMembers() {
+    m_tempGroupFile = BeFileName{};
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
     m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
@@ -186,9 +216,6 @@ void PreparedChangesetReader::Close() {
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
-    if (m_tempGroupFile.DoesPathExist())
-        m_tempGroupFile.BeDeleteFile();
-    m_tempGroupFile = BeFileName{};
 }
 
 
@@ -253,8 +280,7 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
             return SUCCESS;
         }
 
-        DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
-        DbTable const* dbTable = dbSchema.FindTable(tableName);
+        DbTable const* dbTable = m_ecdb.Schemas().GetDispatcher().FindTable(tableName, nullptr); // Find in all table spaces
         if (dbTable == nullptr) {
             LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
             return ERROR;
@@ -276,7 +302,7 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
             bool isClassIdFromChangeset = false;
             if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != SUCCESS)
                 return ERROR;
-            ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
+            ECClassCP ecClass = m_ecdb.Schemas().GetDispatcher().GetClass(classId, nullptr); // GetClass will look in all table spaces
             if (ecClass == nullptr) {
                 LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
                 return ERROR;
@@ -298,7 +324,7 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
             bool isClassIdFromChangeset = false;
             if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != SUCCESS)
                 return ERROR;
-            ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
+            ECClassCP ecClass = m_ecdb.Schemas().GetDispatcher().GetClass(classId, nullptr); // GetClass will look in all table spaces
             if (ecClass == nullptr) {
                 LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
                 return ERROR;

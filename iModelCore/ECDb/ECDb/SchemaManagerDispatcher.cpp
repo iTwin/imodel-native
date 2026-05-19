@@ -636,6 +636,25 @@ ClassMap const* SchemaManager::Dispatcher::GetClassMap(ECClassCR ecClass, Utf8CP
 
     return nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbTable const* SchemaManager::Dispatcher::FindTable(Utf8StringCR tableName, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        DbTable const* table = manager->GetDbSchema().FindTable(tableName);
+        if (table != nullptr)
+            return table;
+        }
+    return nullptr;
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

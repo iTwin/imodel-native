@@ -62,7 +62,7 @@ private:
     //! Kept private so callers are steered toward the appropriate Open* methods.
     //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
-    friend struct ChangesetReader::Impl;
+    void ClearMembers();
 
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
@@ -74,7 +74,8 @@ public:
     //! single copy at a time.
     DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
-    void Close();
+    BentleyStatus Close();
+    void CloseInfallible();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }
 

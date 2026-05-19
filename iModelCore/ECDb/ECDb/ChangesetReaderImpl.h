@@ -19,14 +19,15 @@ private:
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;
     bool IsPrepared() const { return m_prepared != nullptr; }
+    void CloseInfallible();
 public:
     Impl() {}
-    ~Impl() {Close();}
+    ~Impl() {CloseInfallible();}
 
     DbResult OpenChangesetFile(ECDbCR ecdb, Utf8StringCR file, bool invert, PropertyFilter propertyFilter);
     DbResult OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     DbResult OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
-    void Close();
+    BentleyStatus Close();
     DbResult Step();
 
     BentleyStatus GetTableName(Utf8StringR tableName) const;

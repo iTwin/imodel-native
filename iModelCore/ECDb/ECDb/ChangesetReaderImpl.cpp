@@ -42,9 +42,23 @@ DbResult ChangesetReader::Impl::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_p
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetReader::Impl::Close() {
+BentleyStatus ChangesetReader::Impl::Close() {
+    BentleyStatus status = SUCCESS;
     if (IsPrepared())
-        m_prepared->Close();
+        status = m_prepared->Close();
+    if(status != SUCCESS) {
+        return status;
+    }
+    m_prepared = nullptr;
+    return status;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ChangesetReader::Impl::CloseInfallible() {
+    if (IsPrepared())
+        m_prepared->CloseInfallible();
     m_prepared = nullptr;
 }
 

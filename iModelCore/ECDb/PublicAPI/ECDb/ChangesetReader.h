@@ -52,6 +52,7 @@ public:
     //! @param[in] changesetFiles Ordered list of paths to the changeset files to open.
     //! @param[in] invert If true, the changesets are read as inverted (undo) changesets, iterated in reverse order.
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
+    //! @param[in] spillThreshold Byte size at or above which the merged changeset is spilled to a temporary LZMA-compressed file on disk rather than held entirely in memory.
     //! @return BE_SQLITE_OK on success, or an error code if the group could not be opened.
     ECDB_EXPORT DbResult OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
 
@@ -63,13 +64,14 @@ public:
     //! @param[in] changeSet The in-memory changeset to open. Ownership is transferred.
     //! @param[in] invert If true, the changeset is read as an inverted (undo) changeset.
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
-    //! @param[in] spillThreshold Byte size at or above which the changeset is spilled to disk. Use kDefaultSpillThresholdBytes for the 50 MB default.
+    //! @param[in] spillThreshold Byte size at or above which the changeset is spilled to disk.
     //! @return BE_SQLITE_OK on success, or an error code if the changeset could not be opened.
     ECDB_EXPORT DbResult OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<BeSQLite::ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
 
     //! Closes the reader and releases all associated resources.
     //! @remarks Safe to call on a reader that was never opened or that has already been closed.
-    ECDB_EXPORT void Close();
+    //! @return SUCCESS on success, or ERROR if a resource could not be released (e.g. the temporary spill file could not be deleted).
+    ECDB_EXPORT BentleyStatus Close();
 
     //! Advances the reader to the next change row.
     //! @return BE_SQLITE_ROW if a new row is available, BE_SQLITE_DONE when there are no more rows,

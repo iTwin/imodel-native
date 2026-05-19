@@ -5295,7 +5295,8 @@ public:
 
     void Close(NapiInfoCR info)
         {
-        m_reader.Close();
+        if(m_reader.Close() != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "close() failed", IModelJsNativeErrorKey::ChangesetError);
         }
 
     Napi::Value GetChangeMetadata(NapiInfoCR info)

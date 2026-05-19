@@ -43,7 +43,7 @@ DbResult ChangesetReader::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<Cha
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetReader::Close() { m_pimpl->Close(); }
+BentleyStatus ChangesetReader::Close() { return m_pimpl->Close(); }
 DbResult ChangesetReader::Step() { return m_pimpl->Step(); }
 
 //---------------------------------------------------------------------------------------
