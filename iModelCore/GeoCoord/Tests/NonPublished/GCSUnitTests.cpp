@@ -2167,7 +2167,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -129"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AK83/2011-1\","
 "      \"description\": \"NSRS11(NAD83/2011) datum, Alaska State Plane; Zone 1, Meter\","
@@ -2198,7 +2198,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -129"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AlbanyGrid.GDA2020\","
 "      \"description\": \"Albany Grid Western Australia on GDA2020\","
@@ -2228,7 +2228,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 118.21666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AlbanyGrid.GDA94-7P\","
 "      \"description\": \"Albany Grid Western Australia on GDA94-7P (7-Param to GDA2020)\","
@@ -2257,7 +2257,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 118.21666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AlbanyGrid.GDA94/GSB\","
 "      \"description\": \"Albany Grid WA on GDA94/GSB (NTv2 to GDA2020)\","
@@ -2286,7 +2286,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 118.21666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AmSamoa62.Lambert\","
 "      \"description\": \"Deprecated use Samoa1962/Lambert - American Samoa 1962 Lambert\","
@@ -2315,7 +2315,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -169.12"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AnokaMN-F\","
 "      \"description\": \"Minnesota DOT: Anoka County, US Foot\","
@@ -2346,7 +2346,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -92.6"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"ARATU_BS.UTM-23S\","
 "      \"description\": \"Aratu BS / UTM zone 23S\","
@@ -2372,7 +2372,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -42"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"ArPoly-27F\","
 "      \"description\": \"Arkansas Polyconic Projection (feet)\","
@@ -2400,7 +2400,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -89"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AshlandWI-F\","
 "      \"description\": \"Use HARN/WI.AshlandWI-F instead - Wisc.: Ashland County, US ft\","
@@ -2431,7 +2431,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -90.09153130333333"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"AshlandWI-IF\","
 "      \"description\": \"Use HARN/WI.AshlandWI-IF instead - Wisc.: Ashland County, IFoot\","
@@ -2462,7 +2462,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -90.09153130333333"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"BayfieldWI-F\","
 "      \"description\": \"Use HARN/WI.BayfieldWI-F instead - Wisc.: Bayfield County\","
@@ -2494,7 +2494,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -90.48611111111111"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"BeckerMN-F\","
 "      \"description\": \"Minnesota DOT: Becker County, US Foot\","
@@ -2525,7 +2525,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -95.01666666666667"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"Belge72/a.Lambert72\","
 "      \"description\": \"Belge 1972 / Belge Lambert 72\","
@@ -2556,7 +2556,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 6.4"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"Belgium1972\","
 "      \"description\": \"Belgium National System 1972, non-geodetic; Metres\","
@@ -2591,7 +2591,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 7"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"BrownWI-F\","
 "      \"description\": \"Use HARN/WI.BrownWI-F instead - Wisc.: Brown County\","
@@ -2622,7 +2622,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -87.25"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CA-Teale\","
 "      \"description\": \"NAD27 Albers Equal Area for California, per Teale Data Center\","
@@ -2652,7 +2652,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -113.5"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CH1903.LV03C\","
 "      \"description\": \"Deprecated - Use CH1903/GSB.LV03C or CH1903/2.LV03C instead\","
@@ -2680,7 +2680,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 10.49"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CH1903/GSB.LV03\","
 "      \"description\": \"Bern 1898 (Bern) / LV03 Datum based on NTv2 GSB grid shift\","
@@ -2709,7 +2709,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 10.49"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CH1903Plus_1.LV95\","
 "      \"description\": \"CH1903+ / LV95\","
@@ -2738,7 +2738,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 10.49"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CSRS.BC/Albers\","
 "      \"description\": \"NAD83(CSRS) / BC Albers\","
@@ -2783,7 +2783,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -114.03"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"DealulPiscu1933.Stereo\","
 "      \"description\": \"Dealul Piscului 1933/ Stereo 33\","
@@ -3205,7 +3205,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 148.1686344"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:900913\","
 "      \"description\": \"Popular Visualization Mercator on a Sphere (Google/Bing)\","
@@ -3234,7 +3234,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53003\","
 "      \"description\": \"Sphere Miller Cylindrical\","
@@ -3261,7 +3261,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53009\","
 "      \"description\": \"Sphere Mollweide\","
@@ -3288,7 +3288,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"NZGD49.NewZealandGrid\","
 "      \"description\": \"New Zealand National Grid, Meter\","
@@ -3316,7 +3316,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"HU-EOV72\","
 "      \"description\": \"Hungary - Uniform National Projection System of 1972\","
@@ -3347,7 +3347,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 25"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"CookNorthShoreMN-F\","
 "      \"description\": \"Minnesota DOT: Cook North Shore, US Foot\","
@@ -3379,7 +3379,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -89"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"TREX\","
 "      \"description\": \"Denver TREX Project (Southwest Corridor)\","
@@ -3409,7 +3409,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": -104"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"MalaysiaRsoSabah\","
 "      \"description\": \"Eastern Malaysia, Sabah, RSO, Meters\","
@@ -3439,7 +3439,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 119.5"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53030\","
 "      \"description\": \"Sphere Robinson\","
@@ -3466,7 +3466,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53008\","
 "      \"description\": \"Sphere Sinusoidal\","
@@ -3493,7 +3493,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"SouthAfricaZn-15\","
 "      \"description\": \"South African Grid through Multiple Regression Zone 15\","
@@ -3522,7 +3522,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 16.75"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"EPSG:53029\","
 "      \"description\": \"Sphere Van der Grinten I\","
@@ -3549,7 +3549,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "          \"longitude\": 180"
 "        }"
 "      }"
-"    },",
+"    }",
 "    {"
 "      \"id\": \"WGS84.Winkel\","
 "      \"description\": \"Winkel-Tripel, Central Meridian = Greenwich\","
