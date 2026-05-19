@@ -220,4 +220,24 @@ BentleyStatus ChangesetReader::Impl::ClearECClassNameFilters() {
     return SUCCESS;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::Impl::EnableStrictMode() {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->EnableStrictMode();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::Impl::DisableStrictMode() {
+    if (!IsPrepared())
+        return ERROR;
+    m_prepared->DisableStrictMode();
+    return SUCCESS;
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -47,6 +47,8 @@ public:
     BentleyStatus ClearTableFilters();
     BentleyStatus ClearOpcodeFilters();
     BentleyStatus ClearECClassNameFilters();
+    BentleyStatus EnableStrictMode();
+    BentleyStatus DisableStrictMode();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

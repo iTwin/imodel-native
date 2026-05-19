@@ -151,4 +151,18 @@ BentleyStatus ChangesetReader::ClearECClassNameFilters() {
     return m_pimpl->ClearECClassNameFilters();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::EnableStrictMode() {
+    return m_pimpl->EnableStrictMode();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::DisableStrictMode() {
+    return m_pimpl->DisableStrictMode();
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

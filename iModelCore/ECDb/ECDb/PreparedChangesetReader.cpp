@@ -251,6 +251,32 @@ DbResult PreparedChangesetReader::Step() {
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames) {
+    ColumnValueMap values;
+    if (GetColumnValues(stage, values) != SUCCESS)
+        return StageProcessResult::Error;
+    ECClassId classId;
+    bool isClassIdFromChangeset = false;
+    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, values, classId, isClassIdFromChangeset) != SUCCESS)
+        return StageProcessResult::Error;
+    ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
+    if (ecClass == nullptr) {
+        LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
+        return StageProcessResult::Error;
+    }
+    Utf8String className = ecClass->GetFullName();
+    if (!IsECClassNameAllowedPostFilter(className)) {
+        LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", className.c_str());
+        return StageProcessResult::Filtered;
+    }
+    if (ChangesetValueFactory::Create(m_ecdb, dbTable, values, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
+        return StageProcessResult::Error;
+    return StageProcessResult::Success;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
 // In case the current row doesnot fit the filters, we will not create fields for it. When users call GetColumnValue, the number of rows returned will be 0. 
 // As the current API we step row  by row. And after we step onto a row we come to know whether the row is filtered out or not.
 // So if the row is filtered out, we will not create fields for it(as that is the most expensive part of the operation).
@@ -280,12 +306,6 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
             return SUCCESS;
         }
 
-        DbTable const* dbTable = m_ecdb.Schemas().GetDispatcher().FindTable(tableName, nullptr); // Find in all table spaces
-        if (dbTable == nullptr) {
-            LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-            return ERROR;
-        }
-
         bool isECTable = false;
         if(IsECTable(isECTable) != SUCCESS)
             return ERROR;
@@ -294,50 +314,22 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
             return SUCCESS;
         }
 
+        DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
+        if (dbTable == nullptr) {
+            LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+            return ERROR;
+        }
+
         if(opCode != DbOpcode::Delete) {
-            ColumnValueMap newValues;
-            if (GetColumnValues(Stage::New, newValues) != SUCCESS)
-                return ERROR;
-            ECClassId classId;
-            bool isClassIdFromChangeset = false;
-            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset) != SUCCESS)
-                return ERROR;
-            ECClassCP ecClass = m_ecdb.Schemas().GetDispatcher().GetClass(classId, nullptr); // GetClass will look in all table spaces
-            if (ecClass == nullptr) {
-                LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
-                return ERROR;
-            }
-            Utf8String fullClassName = ecClass->GetFullName();
-            if(!IsECClassNameAllowedPostFilter(fullClassName)) { // Third is ECClassName filter for old values
-                LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", fullClassName.c_str());
-                isCurrentRowFilteredOut = true;
-                return SUCCESS;
-            }
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, newValues, classId, isClassIdFromChangeset, m_fields.at(Stage::New), m_propertyFilter, m_changedPropNames) != SUCCESS)
-                return ERROR;
+            auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
+            if (result == StageProcessResult::Error) return ERROR;
+            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
         }
         if(opCode != DbOpcode::Insert) {
-            ColumnValueMap oldValues;
-            if (GetColumnValues(Stage::Old, oldValues) != SUCCESS)
-                return ERROR;
-            ECClassId classId;
-            bool isClassIdFromChangeset = false;
-            if (ChangesetValueFactory::ResolveClassId(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset) != SUCCESS)
-                return ERROR;
-            ECClassCP ecClass = m_ecdb.Schemas().GetDispatcher().GetClass(classId, nullptr); // GetClass will look in all table spaces
-            if (ecClass == nullptr) {
-                LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
-                return ERROR;
-            }
-            Utf8String classFullName = ecClass->GetFullName();
-            if(!IsECClassNameAllowedPostFilter(classFullName)) { // Third is ECClassName filter for old values
-                LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", classFullName.c_str());
-                isCurrentRowFilteredOut = true;
-                return SUCCESS;
-            }
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            if (ChangesetValueFactory::Create(m_ecdb, *dbTable, oldValues, classId, isClassIdFromChangeset, m_fields.at(Stage::Old), m_propertyFilter, opCode == DbOpcode::Update ? ignored : m_changedPropNames) != SUCCESS)
-                return ERROR;
+            auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
+            if (result == StageProcessResult::Error) return ERROR;
+            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
         }
     }
     return SUCCESS;
@@ -359,6 +351,16 @@ BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueM
     if (GetTableName(tableName) != SUCCESS)
         return ERROR;
 
+    int columnCount = 0;
+    if (GetColumnCountForCurrentChangedTable(columnCount, tableName) != SUCCESS) {
+        LOG.errorv("Failed to get column count for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    if(m_strictMode && columnCount != m_currentChange.GetColumnCount()) {
+        LOG.errorv("Column count mismatch for table '%s': expected %d columns based on PRAGMA_TABLE_INFO, but changeset has %d columns. Disable strict mode to not treat this as an error.", tableName.c_str(), columnCount, m_currentChange.GetColumnCount());
+        return ERROR;
+    }
+    int minimum = std::min(columnCount, m_currentChange.GetColumnCount());
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
     if(stmt == nullptr) {
         LOG.errorv("Failed to prepare statement to get column names for table '%s'.", tableName.c_str());
@@ -371,7 +373,7 @@ BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueM
     outMap.clear();
     int colIdx = 0;
     DbResult stat = stmt->Step();
-    while (stat == BE_SQLITE_ROW) {
+    while (colIdx < minimum && stat == BE_SQLITE_ROW) {
         Utf8CP colName = stmt->GetValueText(0);
         DbValue val = m_currentChange.GetValue(colIdx, stage);
         if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(colIdx)) {
@@ -386,10 +388,35 @@ BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueM
     }
     stmt->Reset(); // reset after stepping to prepare for next use
     stmt->ClearBindings(); // clear bindings after stepping to remove parameters for next use
-    if(stat != BE_SQLITE_DONE) {
-        LOG.errorv("Failed to step through column names for table '%s'.", tableName.c_str());
+    if(colIdx != minimum) {
+        LOG.errorv("Failed to step through required column names for table '%s'.", tableName.c_str());
         return ERROR;
     }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM PRAGMA_TABLE_INFO(?)");
+    if(stmt == nullptr) {
+        LOG.errorv("Failed to prepare statement to get column count for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    stmt->Reset(); // reset before each use to ensure statement is in a clean state
+    stmt->ClearBindings(); // clear bindings to remove any previous parameters
+    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
+
+    DbResult stat = stmt->Step();
+    if(stat == BE_SQLITE_ROW) {
+        columnCount = stmt->GetValueInt(0);
+    } else {
+        LOG.errorv("Failed to step through column count query for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    stmt->Reset(); // reset after stepping to prepare for next use
+    stmt->ClearBindings(); // clear bindings after stepping to remove parameters for next use
     return SUCCESS;
 }
 

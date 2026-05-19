@@ -17,6 +17,7 @@ private:
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.
     using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
+    enum class StageProcessResult { Success, Error, Filtered };
     ECDbCR                         m_ecdb;
 
     // change mappings
@@ -35,6 +36,7 @@ private:
     BeFileName m_tempGroupFile;
 
     //filters
+    bool m_strictMode = false;
     std::vector<Utf8String> m_tableFilters;
     std::vector<DbOpcode> m_opcodeFilters;
     std::vector<Utf8String> m_ecclassNameFilters;
@@ -63,6 +65,8 @@ private:
     //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
     void ClearMembers();
+    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
+    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
 
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
@@ -95,6 +99,8 @@ public:
     void ClearTableFilters() { m_tableFilters.clear(); }
     void ClearOpcodeFilters() { m_opcodeFilters.clear(); }
     void ClearECClassNameFilters() { m_ecclassNameFilters.clear(); }
+    void EnableStrictMode() { m_strictMode = true; }
+    void DisableStrictMode() { m_strictMode = false; }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

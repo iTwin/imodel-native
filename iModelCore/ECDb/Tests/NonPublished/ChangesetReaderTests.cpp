@@ -133,6 +133,33 @@ struct ChangesetReaderTests : ECDbTestFixture {
         }
     
     size_t GetDefaultSpillThresholdBytes() const { return 50ull * 1024 * 1024; /* 50 MB */ }
+
+    //! V1 schema: Item with Name (string) and Value (int).
+    Utf8CP GetStrictModeV1Schema() const {
+        return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.00"
+                                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                        <ECEntityClass typeName="Item" modifier="Sealed">
+                            <ECProperty propertyName="Name" typeName="string"/>
+                            <ECProperty propertyName="Val" typeName="int"/>
+                        </ECEntityClass>
+                        </ECSchema>)xml";
+        }
+
+    //! V2 schema: Item with Name, Value, and Extra (string) — one column wider than V1.
+    Utf8CP GetStrictModeV2Schema() const {
+        return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.01"
+                                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                        <ECEntityClass typeName="Item" modifier="Sealed">
+                            <ECProperty propertyName="Name" typeName="string"/>
+                            <ECProperty propertyName="Val" typeName="int"/>
+                            <ECProperty propertyName="Extra" typeName="string"/>
+                        </ECEntityClass>
+                        </ECSchema>)xml";
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -3494,6 +3521,161 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
     }
 
     EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp file must be deleted after Close() for OpenChangeGroup spill path";
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies strict-mode behaviour when the changeset was captured against an older (V1)
+// schema and is later read against a newer (V2) DB whose table has an extra column.
+// Strict mode ON  → Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF → Step() must succeed and return BE_SQLITE_ROW.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_cs.ecdb", SchemaItem(GetStrictModeV1Schema())));
+
+    // Capture a V1 INSERT changeset (table has 4 columns: Id, ECClassId, Name, Value).
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey itemKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(itemKey,
+        "INSERT INTO tsi.Item(Name, Val) VALUES('Foo', 42)"));
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "strict_older_cs.changeset");
+
+    // Upgrade the DB to V2 — the tsi_Item table now has 5 columns (Id, ECClassId, Name, Value, Extra).
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
+
+    // Strict mode ON: column-count mismatch (4 in changeset vs 5 in table) must be an error.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(SUCCESS, reader.EnableStrictMode());
+    EXPECT_EQ(BE_SQLITE_ERROR, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Strict mode OFF: reader must tolerate the shorter changeset and return a valid row.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage is empty for an INSERT.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    // Only the 4 V1 columns are readable; the V2 Extra column is not present in the changeset.
+    EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Foo", v2.GetText());
+
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Val", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(42, v3.GetInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies strict-mode behaviour when the changeset was captured against a newer (V2)
+// schema and is read against an older (V1) DB whose table is one column shorter.
+// The V2 changeset is produced by a separate ECDb instance; the reader uses a V1 DB.
+// Strict mode ON  → Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF → Step() must succeed and return BE_SQLITE_ROW.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
+    {
+    // Build a V2 changeset using a separate ECDb upgraded to V2 (5 columns).
+    BeFileName csFile;
+    ECInstanceKey itemKey;
+    {
+    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_newer_src.ecdb", SchemaItem(GetStrictModeV1Schema())));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(itemKey,
+        "INSERT INTO tsi.Item(Name, Val, Extra) VALUES('Bar', 99, 'bonus')"));
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    csFile = WriteChangesetToFile(m_ecdb, cs, "strict_newer_cs.changeset");
+    }   // m_ecdb goes out of scope and is closed here.
+
+    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
+
+    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4 → error.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(SUCCESS, reader.EnableStrictMode());
+    EXPECT_EQ(BE_SQLITE_ERROR, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Strict mode OFF: reader must read the first min(5,4)=4 columns and succeed.
+    // The Extra column (index 4 in the changeset) is beyond the minimum and not surfaced.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage is empty for an INSERT.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    // Only the 4 V1 columns are resolved; Extra (5th changeset column) is beyond the minimum.
+    EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Bar", v2.GetText());
+
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Val", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(99, v3.GetInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

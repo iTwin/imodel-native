@@ -162,6 +162,14 @@ public:
     //! @return SUCCESS on success, or ERROR if the reader is not open.
     ECDB_EXPORT BentleyStatus ClearECClassNameFilters();
 
+    //! Enables strict mode for the changeset reader.
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus EnableStrictMode();
+
+    //! Disables strict mode for the changeset reader.
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    ECDB_EXPORT BentleyStatus DisableStrictMode();
+
 };
 
 

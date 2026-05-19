@@ -1580,6 +1580,8 @@ export declare namespace IModelJsNative {
     public clearTableNameFilters(): void;
     public clearOpCodeFilters(): void;
     public clearClassNameFilters(): void;
+    public enableStrictMode(): void;
+    public disableStrictMode(): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

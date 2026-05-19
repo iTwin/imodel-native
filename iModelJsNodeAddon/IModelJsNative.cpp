@@ -5200,6 +5200,8 @@ public:
             InstanceMethod("clearTableNameFilters", &NativeChangesetReader::ClearTableNameFilters),
             InstanceMethod("clearOpCodeFilters",   &NativeChangesetReader::ClearOpCodeFilters),
             InstanceMethod("clearClassNameFilters", &NativeChangesetReader::ClearClassNameFilters),
+            InstanceMethod("enableStrictMode",      &NativeChangesetReader::EnableStrictMode),
+            InstanceMethod("disableStrictMode",     &NativeChangesetReader::DisableStrictMode),
 
         });
         exports.Set("ChangesetReader", t);
@@ -5430,6 +5432,18 @@ public:
         BentleyStatus rc = m_reader.ClearECClassNameFilters();
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearClassNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void EnableStrictMode(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.EnableStrictMode();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "enableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void DisableStrictMode(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.DisableStrictMode();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "disableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
 };
 
