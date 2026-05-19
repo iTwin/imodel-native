@@ -999,7 +999,7 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
 
         // TODO: It might happen that a major schema upgrade deletes all the data properties in the overflow table.
         // This still leaves behind a state where the overflow table still has the system properties mapped to it, but no data properties.
-        // Refer test case SchemaRemapTest:MajorVersionUpgradeRemovesOverflowProperties
+        // Refer test case SchemaRemapTest:MajorVersionUpgradeRemovesDataPropertiesFromOverflowTable
         // It would be worthwhile to look into clearing up those empty data rows and their mappings.
         }
 

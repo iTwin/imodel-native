@@ -431,8 +431,8 @@ TEST_F(SchemaRemapTest, SwapColumnsWithOverflow)
 
   ECSchemaPtr initialSchema;
   ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml.c_str(), *context));
-  m_db->ImportSchemas({ initialSchema.get() }, true);
-  m_db->SaveChanges("Initialized Test Schema");
+  ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas({ initialSchema.get() }, true));
+  ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized Test Schema"));
 
   //import edited schema with some changes.
   const Utf8String updatedSchemaXml = R"schema(<?xml version="1.0" encoding="UTF-8"?>
