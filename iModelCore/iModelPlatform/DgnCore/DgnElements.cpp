@@ -1100,6 +1100,10 @@ DbResult BulkElementDeletion::ExecuteDeletion()
     {
     // Explicitly execute ON DELETE CASCADE and ON DELETE SET NULL FK actions for all tables that reference bis_Element.
     {
+    const auto changeMode = m_dgndb.Txns().GetMode();
+
+    m_dgndb.Txns().SetMode(ChangeTracker::Mode::Indirect);  // The cascade changes should be tracked as indirect changes
+
     Statement onDeleteStmt;
     onDeleteStmt.Prepare(m_dgndb, "SELECT name FROM main.sqlite_master WHERE type='table' AND sql LIKE '%REFERENCES%bis_Element%ON DELETE%' AND name != '" BIS_TABLE(BIS_CLASS_Element) "' ORDER BY name");
     while (BE_SQLITE_ROW == onDeleteStmt.Step())
@@ -1134,6 +1138,7 @@ DbResult BulkElementDeletion::ExecuteDeletion()
                 }
             }
         }
+    m_dgndb.Txns().SetMode(changeMode); // restore original transaction mode
     }
 
     auto reset = [&]() {
