@@ -74,7 +74,7 @@ DbResult SchemaViewWriter::CollectExcludedSchemaIds(DbCR db)
     {
     m_excludedSchemaIds.clear();
     Statement stmt;
-    auto rc = PrepareStmt(stmt, db, "SELECT Id, Name FROM ec_Schema");
+    auto rc = PrepareStmt(stmt, db, "SELECT Id, Name FROM [main].[ec_Schema]");
     if (rc != BE_SQLITE_OK)
         return rc;
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -124,8 +124,8 @@ DbResult SchemaViewWriter::ResolveHiddenPropertyCAClassId(DbCR db)
 
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
-        "SELECT c.Id FROM ec_Class c "
-        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "SELECT c.Id FROM [main].[ec_Class] c "
+        "JOIN [main].[ec_Schema] s ON c.SchemaId=s.Id "
         "WHERE s.Name='CoreCustomAttributes' AND c.Name='HiddenProperty'");
     if (rc != BE_SQLITE_OK)
         return rc;
@@ -172,8 +172,8 @@ DbResult SchemaViewWriter::ResolveQueryViewCAClassId(DbCR db)
 
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
-        "SELECT c.Id FROM ec_Class c "
-        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "SELECT c.Id FROM [main].[ec_Class] c "
+        "JOIN [main].[ec_Schema] s ON c.SchemaId=s.Id "
         "WHERE s.Name='ECDbMap' AND c.Name='QueryView'");
     if (rc != BE_SQLITE_OK)
         return rc;
@@ -222,11 +222,11 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
         sql.append(", hp_ca.Instance");
     sql.append(
         ", p.Priority "
-        "FROM ec_Property p "
-        "JOIN ec_Class c ON p.ClassId=c.Id ");
+        "FROM [main].[ec_Property] p "
+        "JOIN [main].[ec_Class] c ON p.ClassId=c.Id ");
     if (hasHiddenJoin)
         sql.append(Utf8PrintfString(
-            "LEFT JOIN ec_CustomAttribute hp_ca ON hp_ca.ContainerId=p.Id "
+            "LEFT JOIN [main].[ec_CustomAttribute] hp_ca ON hp_ca.ContainerId=p.Id "
             "AND hp_ca.ContainerType & %d <> 0 "
             "AND hp_ca.ClassId=%" PRIi64 " ",
             (int)ECN::CustomAttributeContainerType::AnyProperty,
@@ -304,9 +304,9 @@ DbResult SchemaViewWriter::CollectMixinClassIds(DbCR db)
     m_mixinClassIds.clear();
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
-        "SELECT ca.ContainerId FROM ec_CustomAttribute ca "
-        "JOIN ec_Class cac ON ca.ClassId=cac.Id "
-        "JOIN ec_Schema cas ON cac.SchemaId=cas.Id "
+        "SELECT ca.ContainerId FROM [main].[ec_CustomAttribute] ca "
+        "JOIN [main].[ec_Class] cac ON ca.ClassId=cac.Id "
+        "JOIN [main].[ec_Schema] cas ON cac.SchemaId=cas.Id "
         "WHERE ca.ContainerType & %d <> 0 "
         "AND cas.Name='CoreCustomAttributes' AND cac.Name='IsMixin'",
         (int)ECN::CustomAttributeContainerType::AnyClass).c_str());
@@ -327,7 +327,7 @@ DbResult SchemaViewWriter::CollectQueryViewClassIds(DbCR db)
         return BE_SQLITE_OK;
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
-        "SELECT ContainerId FROM ec_CustomAttribute "
+        "SELECT ContainerId FROM [main].[ec_CustomAttribute] "
         "WHERE ContainerType & %d <> 0 AND ClassId=%" PRIi64,
         (int)ECN::CustomAttributeContainerType::AnyClass,
         m_queryViewCAClassId.value()).c_str());
@@ -347,8 +347,8 @@ DbResult SchemaViewWriter::ResolveHiddenSchemaCAClassId(DbCR db)
 
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
-        "SELECT c.Id FROM ec_Class c "
-        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "SELECT c.Id FROM [main].[ec_Class] c "
+        "JOIN [main].[ec_Schema] s ON c.SchemaId=s.Id "
         "WHERE s.Name='CoreCustomAttributes' AND c.Name='HiddenSchema'");
     if (rc != BE_SQLITE_OK)
         return rc;
@@ -367,8 +367,8 @@ DbResult SchemaViewWriter::ResolveHiddenClassCAClassId(DbCR db)
 
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
-        "SELECT c.Id FROM ec_Class c "
-        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "SELECT c.Id FROM [main].[ec_Class] c "
+        "JOIN [main].[ec_Schema] s ON c.SchemaId=s.Id "
         "WHERE s.Name='CoreCustomAttributes' AND c.Name='HiddenClass'");
     if (rc != BE_SQLITE_OK)
         return rc;
@@ -393,7 +393,7 @@ DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
         return BE_SQLITE_OK;
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
-        "SELECT ContainerId, Instance FROM ec_CustomAttribute "
+        "SELECT ContainerId, Instance FROM [main].[ec_CustomAttribute] "
         "WHERE ContainerType & %d <> 0 AND ClassId=%" PRIi64,
         (int)ECN::CustomAttributeContainerType::Schema,
         m_hiddenSchemaCAClassId.value()).c_str());
@@ -424,7 +424,7 @@ DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
         return BE_SQLITE_OK;
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
-        "SELECT ContainerId, Instance FROM ec_CustomAttribute "
+        "SELECT ContainerId, Instance FROM [main].[ec_CustomAttribute] "
         "WHERE ContainerType & %d <> 0 AND ClassId=%" PRIi64,
         (int)ECN::CustomAttributeContainerType::AnyClass,
         m_hiddenClassCAClassId.value()).c_str());
@@ -494,7 +494,7 @@ DbResult SchemaViewWriter::WritePropertyDefTable()
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
     {
-    Utf8String sql("SELECT Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema");
+    Utf8String sql("SELECT Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM [main].[ec_Schema]");
     AppendExcludedSchemaFilter(sql, "Id", m_excludedSchemaIds);
     sql.append(" ORDER BY Id");
 
@@ -531,7 +531,7 @@ DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
     {
-    Utf8String sql("SELECT e.Id,e.Name,e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues,e.SchemaId FROM ec_Enumeration e");
+    Utf8String sql("SELECT e.Id,e.Name,e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues,e.SchemaId FROM [main].[ec_Enumeration] e");
     AppendExcludedSchemaFilter(sql, "e.SchemaId", m_excludedSchemaIds);
     sql.append(" ORDER BY e.SchemaId, e.Id");
 
@@ -566,7 +566,7 @@ DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
     {
-    Utf8String sql("SELECT k.Id,k.Name,k.DisplayLabel,k.Description,k.PersistenceUnit,k.RelativeError,k.PresentationUnits,k.SchemaId FROM ec_KindOfQuantity k");
+    Utf8String sql("SELECT k.Id,k.Name,k.DisplayLabel,k.Description,k.PersistenceUnit,k.RelativeError,k.PresentationUnits,k.SchemaId FROM [main].[ec_KindOfQuantity] k");
     AppendExcludedSchemaFilter(sql, "k.SchemaId", m_excludedSchemaIds);
     sql.append(" ORDER BY k.SchemaId, k.Id");
 
@@ -602,7 +602,7 @@ DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WritePropCatTable(DbCR db)
     {
-    Utf8String sql("SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Priority,c.SchemaId FROM ec_PropertyCategory c");
+    Utf8String sql("SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Priority,c.SchemaId FROM [main].[ec_PropertyCategory] c");
     AppendExcludedSchemaFilter(sql, "c.SchemaId", m_excludedSchemaIds);
     sql.append(" ORDER BY c.SchemaId, c.Id");
 
@@ -639,7 +639,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
     Utf8String sql(
         "SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Type,c.Modifier,"
         "c.RelationshipStrength,c.RelationshipStrengthDirection,c.SchemaId "
-        "FROM ec_Class c");
+        "FROM [main].[ec_Class] c");
     AppendExcludedSchemaFilter(sql, "c.SchemaId", m_excludedSchemaIds);
     sql.append(" ORDER BY c.SchemaId, c.Id");
 
@@ -651,9 +651,9 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
     Statement baseStmt;
     if ((rc = PrepareStmt(baseStmt, db,
         "SELECT s.Name, bc.Name, b.Ordinal "
-        "FROM ec_ClassHasBaseClasses b "
-        "JOIN ec_Class bc ON b.BaseClassId=bc.Id "
-        "JOIN ec_Schema s ON bc.SchemaId=s.Id "
+        "FROM [main].[ec_ClassHasBaseClasses] b "
+        "JOIN [main].[ec_Class] bc ON b.BaseClassId=bc.Id "
+        "JOIN [main].[ec_Schema] s ON bc.SchemaId=s.Id "
         "WHERE b.ClassId=? ORDER BY b.Ordinal")) != BE_SQLITE_OK)
         return rc;
 
@@ -661,17 +661,17 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
     if ((rc = PrepareStmt(constrStmt, db,
         "SELECT rc.Id, rc.RelationshipEnd, rc.MultiplicityLowerLimit, rc.MultiplicityUpperLimit, "
         "rc.IsPolymorphic, rc.RoleLabel, acs.Name, acc.Name "
-        "FROM ec_RelationshipConstraint rc "
-        "LEFT JOIN ec_Class acc ON rc.AbstractConstraintClassId=acc.Id "
-        "LEFT JOIN ec_Schema acs ON acc.SchemaId=acs.Id "
+        "FROM [main].[ec_RelationshipConstraint] rc "
+        "LEFT JOIN [main].[ec_Class] acc ON rc.AbstractConstraintClassId=acc.Id "
+        "LEFT JOIN [main].[ec_Schema] acs ON acc.SchemaId=acs.Id "
         "WHERE rc.RelationshipClassId=? ORDER BY rc.RelationshipEnd")) != BE_SQLITE_OK)
         return rc;
 
     Statement constrClassStmt;
     if ((rc = PrepareStmt(constrClassStmt, db,
-        "SELECT s.Name, c.Name FROM ec_RelationshipConstraintClass rcc "
-        "JOIN ec_Class c ON rcc.ClassId=c.Id "
-        "JOIN ec_Schema s ON c.SchemaId=s.Id "
+        "SELECT s.Name, c.Name FROM [main].[ec_RelationshipConstraintClass] rcc "
+        "JOIN [main].[ec_Class] c ON rcc.ClassId=c.Id "
+        "JOIN [main].[ec_Schema] s ON c.SchemaId=s.Id "
         "WHERE rcc.ConstraintId=? ORDER BY rcc.Id")) != BE_SQLITE_OK)
         return rc;
 
