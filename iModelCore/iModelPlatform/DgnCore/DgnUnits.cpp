@@ -472,14 +472,10 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 
     m_extent = newExtents;
 
-    // Tile content IDs include a hash of the project extents string. The serialized format must be
-    // byte-identical to the former jsoncpp output to avoid invalidating every cached tile in existence.
-    // jsoncpp sorts object keys alphabetically ("high" before "low") and uses sprintf "%#.17g" for doubles.
-    // We replicate both behaviors here: alphabetical key insertion + Precision17 formatting.
     BeJsDocument jsonObj;
     BeJsGeomUtils::DPoint3dToJson(jsonObj["high"], m_extent.high);
     BeJsGeomUtils::DPoint3dToJson(jsonObj["low"], m_extent.low);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.Stringify(StringifyFormat::Precision17));
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.Stringify());
 
     if (!m_ecefLocation.m_isValid)
         {
@@ -555,7 +551,7 @@ void DgnGeoLocation::LoadProjectExtents() const
     if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()))
         {
         BeJsDocument jsonObj;
-        jsonObj.ParseFullPrecision(value);
+        jsonObj.Parse(value);
         if (!jsonObj.hasParseError())
             BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
         }

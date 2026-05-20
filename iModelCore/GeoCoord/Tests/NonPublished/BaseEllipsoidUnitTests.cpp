@@ -106,15 +106,14 @@ TEST_F(BaseEllipsoidUnitTests, CreateAFullySelfContainedEllipsoid_Test1)
     GeoCoordinates::EllipsoidP theEllipsoid = const_cast<GeoCoordinates::EllipsoidP>(GeoCoordinates::Ellipsoid::CreateEllipsoid());
 
     Utf8String errorMessage;
-    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
     BeJsDocument parsedEllipsoid;
-    parsedEllipsoid.ParseFullPrecision(customEllipsoid1);
+    parsedEllipsoid.Parse(customEllipsoid1);
     ASSERT_TRUE(SUCCESS == theEllipsoid->FromJson(parsedEllipsoid, errorMessage));
     Utf8String source;
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetDescription()) == "Custom ellipsoid description");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetSource(source)) == "Custom Ellipsoid source");
-    EXPECT_TRUE(theEllipsoid->GetEquatorialRadius() == 6378120.0);
-    EXPECT_TRUE(theEllipsoid->GetPolarRadius() == 6356794.719195305951);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetEquatorialRadius(), 6378120.0);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetPolarRadius(), 6356794.719195305951);
     theEllipsoid->Destroy();
 }

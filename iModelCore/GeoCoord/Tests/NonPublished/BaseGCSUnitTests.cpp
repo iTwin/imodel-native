@@ -3041,9 +3041,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoid_Test)
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
     BeJsDocument parsedDatum;
-    parsedDatum.ParseFullPrecision(customDatum3);
+    parsedDatum.Parse(customDatum3);
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
@@ -3082,8 +3081,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoid_Test)
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetDescription()) == "Custom ellipsoid description");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetSource(source)) == "Custom Ellipsoid source");
-    EXPECT_TRUE(theEllipsoid->GetEquatorialRadius() == 6378120.0);
-    EXPECT_TRUE(theEllipsoid->GetPolarRadius() == 6356794.719195305951);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetEquatorialRadius(), 6378120.0);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetPolarRadius(), 6356794.719195305951);
 
     bvector<Utf8String> listOfFiles;
     EXPECT_FALSE(theDatum->HasMissingGridFiles(listOfFiles));
@@ -3133,9 +3132,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
     BeJsDocument parsedDatum;
-    parsedDatum.ParseFullPrecision(customDatum4);
+    parsedDatum.Parse(customDatum4);
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
@@ -3175,8 +3173,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetDescription()) == "Custom ellipsoid description");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetSource(source)) == "Custom Ellipsoid source");
-    EXPECT_TRUE(theEllipsoid->GetEquatorialRadius() == 6378120.0);
-    EXPECT_TRUE(theEllipsoid->GetPolarRadius() == 6356794.719195305951);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetEquatorialRadius(), 6378120.0);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetPolarRadius(), 6356794.719195305951);
 
     bvector<Utf8String> listOfFiles;
     EXPECT_TRUE(theDatum->HasMissingGridFiles(listOfFiles));
@@ -3228,9 +3226,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
     BeJsDocument parsedDatum;
-    parsedDatum.ParseFullPrecision(customDatum4);
+    parsedDatum.Parse(customDatum4);
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
@@ -3271,8 +3268,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetDescription()) == "Custom ellipsoid description");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetSource(source)) == "Custom Ellipsoid source");
-    EXPECT_TRUE(theEllipsoid->GetEquatorialRadius() == 6378120.0);
-    EXPECT_TRUE(theEllipsoid->GetPolarRadius() == 6356794.719195305951);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetEquatorialRadius(), 6378120.0);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetPolarRadius(), 6356794.719195305951);
 
     bvector<Utf8String> listOfFiles;
     EXPECT_TRUE(theDatum->HasMissingGridFiles(listOfFiles));
@@ -3323,9 +3320,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
     BeJsDocument parsedDatum;
-    parsedDatum.ParseFullPrecision(customDatum5);
+    parsedDatum.Parse(customDatum5);
     ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
@@ -3365,8 +3361,8 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     EXPECT_TRUE(Utf8String(theEllipsoid->GetName()) == "CustomEllipsoid");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetDescription()) == "Custom ellipsoid description");
     EXPECT_TRUE(Utf8String(theEllipsoid->GetSource(source)) == "Custom Ellipsoid source");
-    EXPECT_TRUE(theEllipsoid->GetEquatorialRadius() == 6378120.0);
-    EXPECT_TRUE(theEllipsoid->GetPolarRadius() == 6356794.719195305951);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetEquatorialRadius(), 6378120.0);
+    EXPECT_DOUBLE_EQ(theEllipsoid->GetPolarRadius(), 6356794.719195305951);
 
     bvector<Utf8String> listOfFiles;
     EXPECT_TRUE(theDatum->HasMissingGridFiles(listOfFiles));
