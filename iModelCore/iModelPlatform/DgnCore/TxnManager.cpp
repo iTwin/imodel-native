@@ -1704,14 +1704,20 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (GetParentChangesetId() != changeset.GetChangesetId())
         m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
 
-    if (changeset.ContainsDdlChanges(m_dgndb))
-        m_dgndb.ThrowException("Cannot reverse a changeset containing schema changes", (int) ChangesetStatus::ReverseOrReinstateSchemaChanges);
-
     ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
-    // Skip the entire schema change set when reversing or reinstating - DDL and
-    // the meta-data changes. Reversing meta data changes cause conflicts
-    DbResult result = ApplyChanges(changeStream, TxnAction::Reverse, false, true);
+    bool containsSchemaChanges = false;
+    DdlChanges outDdlChanges; // Required by GetSchemaChanges even though reverse only needs the schema-change flag.
+    DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, outDdlChanges);
+    if (result != BE_SQLITE_OK)
+        m_dgndb.ThrowException("failed to read schema changes from changeset", result);
+
+    // Reverse EC schema mapping (ec_* metadata) but skip DDL (tables/columns cannot be dropped).
+    const bool hasSchemaOrEcChanges = containsSchemaChanges || changeset.ContainsEcChanges();
+    if (hasSchemaOrEcChanges)
+        m_dgndb.ClearECDbCache();
+
+    result = ApplyChanges(changeStream, TxnAction::Reverse, hasSchemaOrEcChanges, true);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
@@ -3829,7 +3835,7 @@ struct MakeQueryOnly {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
+std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges(bool captureInstanceChanges) {
     TXN_DEBUG("<< PullMergeReverseLocalChanges()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (conf.InProgress()) {
@@ -3858,6 +3864,10 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
             if (IsTxnReversed(curr))
                 continue;
                 
+            if (captureInstanceChanges) {
+                CaptureInstanceChanges(curr);
+            }
+
             LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
             auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
             if (BE_SQLITE_OK != rc) {
@@ -3883,6 +3893,18 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeBegin(*this); });
     TXN_DEBUG(">> PullMergeReverseLocalChanges() %d txns reversed", reversedTxns.size());
     return reversedTxns;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::CaptureInstanceChanges(TxnId txnId) {
+    if (GetTxnType(txnId) != TxnType::Data)
+        return;
+
+    auto jsTxns = m_dgndb.GetJsTxns();
+    if (nullptr != jsTxns)
+        m_dgndb.CallJsFunction(jsTxns, "_captureInstanceChanges", {Napi::String::New(jsTxns.Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str())});
 }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1902,7 +1902,14 @@ BentleyStatus ECSqlParser::ParseCrossUnion(std::unique_ptr<CrossJoinExp>& exp, O
     if (SUCCESS != ParseTableRef(to_table_ref, parseNode->getChild(3/*table_ref*/), ECSqlType::Select))
         return ERROR;
 
-    exp = std::make_unique<CrossJoinExp>(std::move(from_table_ref), std::move(to_table_ref));
+    std::unique_ptr<JoinConditionExp> joinCondition = nullptr;
+    if (parseNode->count() == 5)
+        {
+        if (SUCCESS != ParseJoinCondition(joinCondition, parseNode->getChild(4/*join_condition*/)))
+            return ERROR;
+        }
+
+    exp = std::make_unique<CrossJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(joinCondition));
     return SUCCESS;
     }
 

@@ -1229,9 +1229,9 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
         }
 
     if (utf16)
-        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF16LE);
+        m_xmlWriter.WriteDocumentStart(BEPUGIXML_CHAR_ENCODING_Utf16LE);
     else
-        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+        m_xmlWriter.WriteDocumentStart(BEPUGIXML_CHAR_ENCODING_Utf8);
 
     Utf8PrintfString ns("%s.%s", ECXML_URI, ECSchema::GetECVersionString(m_ecXmlVersion));
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());

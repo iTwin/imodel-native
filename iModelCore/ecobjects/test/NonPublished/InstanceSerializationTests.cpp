@@ -5,7 +5,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-#include "BeXml/BeXml.h"
+#include <pugixml/src/BePugiXml.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -568,6 +568,95 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleEC3Insta
     EXPECT_EQ(expectedXmlString, actualXmlString);
     }
 
+// Sits in the same slot as iModelConnectorFwk's SchemaRemapper - it is invoked by
+// InstanceXmlReader::GetInstance via ECInstanceReadContext::ResolveSerializedClassName
+// before the class lookup. We use it as a liveness probe: the schema is RefCountedBase,
+// so a refcount of zero proves the destructor has already run.
+struct CapturingSchemaRemapper : IECSchemaRemapper
+    {
+    mutable bool m_invoked = false;
+    mutable uint32_t m_observedRefCount = 0;
+
+    void Reset() { m_invoked = false; m_observedRefCount = 0; }
+
+    bool _ResolvePropertyName(Utf8StringR, ECClassCR) const override { return false; }
+    bool _ResolveClassName(Utf8StringR, ECSchemaCR ecSchema) const override
+        {
+        m_invoked = true;
+        m_observedRefCount = ecSchema.GetRefCount();
+        return false;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// Verifies that ECInstanceReadContext keeps its fallback schema alive for its own lifetime.
+//
+// Before the fix, ECInstanceReadContext::m_fallBackSchema was a raw ECSchemaCR with no
+// refcount. If the caller dropped every ECSchemaPtr/ECSchemaReadContextPtr that owned the
+// schema, the context's reference would dangle, and the next ReadFromXmlString call would
+// dereference a freed ECSchema. The Microstation connector observed this as a strnlen
+// crash inside its SchemaRemapper::_ResolveClassName (ADO 2054941).
+//
+// The two ReadFromXmlString calls in this test share the same remapper. The first call
+// runs while every external schema owner is still alive and establishes the baseline:
+// the remapper is invoked and sees a positive refcount. The second call runs after every
+// external owner has been released; with the fix the context still pins the schema, so
+// the refcount is still positive. Without the fix the destructor has already run, the
+// refcount field reads zero, and the second assertion fails.
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(InstanceDeserializationTest, FallbackSchemaSurvivesECSchemaPtrRelease)
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="IntProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>
+        )xml";
+
+    // No xmlns on the instance root -> InstanceXmlReader::GetInstance takes the fallback
+    // schema path (ECInstance.cpp around line 2692: schema = &m_context.GetFallBackSchema()).
+    Utf8CP instanceXml = R"xml(<Foo><IntProp>42</IntProp></Foo>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+
+    CapturingSchemaRemapper remapper;
+    instanceContext->SetSchemaRemapper(&remapper);
+
+    // Baseline: schema still held externally. Remapper must run and see a live refcount.
+    {
+    IECInstancePtr instance;
+    InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml, *instanceContext);
+    EXPECT_TRUE(remapper.m_invoked) << "Remapper was not called - the lifetime probe is not wired up";
+    EXPECT_TRUE(remapper.m_observedRefCount >= 1 && remapper.m_observedRefCount < 10) << "Remapper observed an unexpected refcount value, indicating the lifetime probe is not working as intended";
+    EXPECT_EQ(InstanceReadStatus::Success, status);
+    ASSERT_TRUE(instance.IsValid());
+    }
+
+    remapper.Reset();
+
+    // Drop every external owner. The context's internal refcount must be the only thing
+    // keeping the schema alive after this.
+    schema = nullptr;
+    schemaContext = nullptr;
+
+    {
+    IECInstancePtr instance;
+    InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml, *instanceContext);
+    EXPECT_TRUE(remapper.m_invoked);
+    EXPECT_TRUE(remapper.m_observedRefCount >= 1 && remapper.m_observedRefCount < 10) << "Remapper observed an unexpected refcount value, indicating the lifetime probe is not working as intended";
+    EXPECT_EQ(InstanceReadStatus::Success, status);
+    ASSERT_TRUE(instance.IsValid());
+    EXPECT_STREQ("Foo", instance->GetClass().GetName().c_str());
+    EXPECT_STREQ("TestSchema", instance->GetClass().GetSchema().GetName().c_str());
+    }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -987,7 +1076,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+void    VerifyInstanceWriteReadFile (WCharCP outputFileName, bool utf16)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
 
@@ -1004,12 +1093,25 @@ TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
 
     VerifyTestInstance (testInstance.get(), false);
 
-    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), true, false));
+    EXPECT_EQ (InstanceWriteStatus::Success, testInstance->WriteToXmlFile (ECTestFixture::GetTempDataPath (outputFileName).c_str (), true, utf16));
     IECInstancePtr  readbackInstance;
-    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (L"OutputInstance.xml").c_str (), *instanceContext);
+    InstanceReadStatus readbackStatus = IECInstance::ReadFromXmlFile (readbackInstance, ECTestFixture::GetTempDataPath (outputFileName).c_str (), *instanceContext);
 
     EXPECT_EQ (InstanceReadStatus::Success, readbackStatus);
     VerifyTestInstance (readbackInstance.get(), false);
+    }
+
+TEST_F(InstanceSerializationTest, InstanceWriteReadFile)
+    {
+    VerifyInstanceWriteReadFile (L"OutputInstance.xml", false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, InstanceWriteReadFileUtf16)
+    {
+    VerifyInstanceWriteReadFile (L"OutputInstanceUtf16.xml", true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1033,17 +1135,17 @@ TEST_F(InstanceSerializationTest, WriteECInstance)
 
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringProperty", ECValue("Some value")));
 
-    // WriteToBeXmlNode
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
-    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlNode(*xmlWriter));
+    // WriteToXmlNode
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlNode(*xmlWriter));
 
     Utf8String nodeInstanceString;
     xmlWriter->ToString(nodeInstanceString);
 
-    // WriteToBeXmlDom
-    BeXmlWriterPtr xmlDOMWriter = BeXmlWriter::Create();
+    // WriteToXmlDom
+    BePugiXmlWriterPtr xmlDOMWriter = BePugiXmlWriter::Create();
     Utf8String domInstanceString = "";
-    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToBeXmlDom(*xmlDOMWriter, true));
+    ASSERT_EQ(InstanceWriteStatus::Success, instance->WriteToXmlDom(*xmlDOMWriter, true));
     xmlDOMWriter->ToString(domInstanceString);
 
     // compare strings
@@ -1382,6 +1484,56 @@ TEST_F(InstanceSerializationTest, BuildInstanceAndSerializeToXML)
         InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
         EXPECT_EQ(InstanceWriteStatus::Success, status2);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceSerializationTest, WriteUtf16FileWriter)
+    {
+    // Verify that a file writer configured for UTF-16LE produces a valid UTF-16 file
+    // that can be read back correctly.
+    WString filePath = ECTestFixture::GetTempDataPath (L"Utf16Test.xml");
+    BePugiXmlWriterPtr writer = BePugiXmlWriter::CreateFileWriter (filePath.c_str ());
+    ASSERT_TRUE (writer.IsValid ());
+
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteDocumentStart (BEPUGIXML_CHAR_ENCODING_Utf16LE));
+    ASSERT_EQ (BEPUGIXML_Success, writer->SetIndentation (2));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementStart ("Root"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteAttribute ("name", "test"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementStart ("Child"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteText ("Hello"));
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementEnd ());
+    ASSERT_EQ (BEPUGIXML_Success, writer->WriteElementEnd ());
+
+    // Flush to file via ToString (which triggers flushToFile for file writers).
+    Utf8String dummy;
+    writer->ToString (dummy);
+    writer = nullptr;
+
+    // Read back and verify the content survived the UTF-16 round-trip.
+    Utf8String utf8Path;
+    BeStringUtilities::WCharToUtf8 (utf8Path, filePath.c_str ());
+
+    BePugiXmlStatus xmlStatus;
+    BePugiXmlDomPtr dom = BePugiXmlDom::CreateAndReadFromFile (xmlStatus, utf8Path.c_str ());
+    ASSERT_EQ (BEPUGIXML_Success, xmlStatus);
+
+    BePugiXmlNode root = dom->GetRootElement ();
+    ASSERT_NE (nullptr, root);
+    EXPECT_STREQ ("Root", root.GetName ());
+
+    Utf8String attrValue;
+    EXPECT_EQ (BEPUGIXML_Success, root.GetAttributeStringValue (attrValue, "name"));
+    EXPECT_STREQ ("test", attrValue.c_str ());
+
+    BePugiXmlNode child = root.GetFirstChild ();
+    ASSERT_NE (nullptr, child);
+    EXPECT_STREQ ("Child", child.GetName ());
+
+    Utf8String content;
+    EXPECT_EQ (BEPUGIXML_Success, child.GetContent (content));
+    EXPECT_STREQ ("Hello", content.c_str ());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

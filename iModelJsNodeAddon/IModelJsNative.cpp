@@ -685,8 +685,11 @@ public:
     }
 };
 
-/** Add the container to the openParms, if the argument is a container object */
-static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenParams& params, Napi::Value arg) {
+/** Add the container to the openParams, if the argument is a container object.
+ * @param skipWriteLockCheck If true, bypasses the write lock requirement for opening in ReadWrite mode.
+ *        This is used for cloud briefcases that make local-only writes (no upload) against a read-only container.
+ */
+static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenParams& params, Napi::Value arg, bool skipWriteLockCheck = false) {
     auto jsContainer = getJsCloudContainer(arg);
     if (!jsContainer.IsObject()) { // did they supply a container argument?
         db.Set(JSON_NAME(cloudContainer), db.Env().Undefined());
@@ -696,8 +699,8 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
     db.Set(JSON_NAME(cloudContainer), jsContainer);
 
     auto container = getCloudContainer(jsContainer);
-    if (!params.IsReadonly() && !container->m_writeLockHeld)
-        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open for database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
+    if (!skipWriteLockCheck && !params.IsReadonly() && !container->m_writeLockHeld)
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
 
     dbName = params.SetFromContainer(dbName.c_str(), container);
 };
@@ -1189,13 +1192,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
 
         BeJsConst props(info[3]);
+        bool skipWriteLockCheck = false;
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
             if (tempFileBase.isString())
                 openParams.m_tempfileBase = tempFileBase.asString();
+            skipWriteLockCheck = props[JSON_NAME(skipWriteLockCheck)].asBool(false);
         }
 
-        addContainerParams(Value(), dbName, openParams, info[4]);
+        addContainerParams(Value(), dbName, openParams, info[4], skipWriteLockCheck);
 
         if (!openParams.IsReadonly()) {
             // 20 sec to retain previous behaviour.
@@ -2950,13 +2955,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_BOOL(0, captureInstanceChanges, false);
         auto& db = GetWritableDb(info);
-        auto txns = db.Txns().PullMergeReverseLocalChanges();
-        auto array = Napi::Array::New(Env(), txns.size());        
+        
+        auto txns = db.Txns().PullMergeReverseLocalChanges(captureInstanceChanges);
+        auto array = Napi::Array::New(Env(), txns.size());
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
-
         return array;
     }
 

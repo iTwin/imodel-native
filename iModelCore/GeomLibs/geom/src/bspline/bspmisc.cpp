@@ -210,7 +210,8 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
     if (pPoles && !pParams->closed)
         {
         int nExcess0, nExcess1;
-
+        int numCurvePoles = pParams->numPoles;
+        int numCurveKnots = bspknot_numberKnots (pParams->numPoles, pParams->order, pParams->closed);
         double tol = (*pEnd - *pStart) * RELATIVE_BSPLINE_EXT_KNOT_TOLERANCE;
 
         for (i = pParams->order, nExcess0 = 0; i < numKnots; i++, nExcess0++)
@@ -227,10 +228,10 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
             // TR #170011: don't throw out the exterior knots and pole; they are likely golden!
             if (nExcess0 > 0)
                 {
-                memmove (pKnots + pParams->order, pKnots + pParams->order + nExcess0, (numKnots - pParams->order - nExcess0) * sizeof (*pKnots));
-                memmove (pPoles + 1, pPoles + 1 + nExcess0, (pParams->numPoles - 1 - nExcess0) * sizeof (*pPoles));
+                BeStringUtilities::Memmove (pKnots + pParams->order, (numCurveKnots - pParams->order) * sizeof(*pKnots), pKnots + pParams->order + nExcess0, (numKnots - pParams->order - nExcess0) * sizeof (*pKnots));
+                BeStringUtilities::Memmove (pPoles + 1, (numCurvePoles - 1) * sizeof(*pPoles), pPoles + 1 + nExcess0, (pParams->numPoles - 1 - nExcess0) * sizeof (*pPoles));
                 if (pWeights)
-                    memmove (pWeights + 1, pWeights + 1 + nExcess0, (pParams->numPoles - 1 - nExcess0) * sizeof (*pWeights));
+                    BeStringUtilities::Memmove (pWeights + 1, (numCurvePoles - 1) * sizeof(*pWeights), pWeights + 1 + nExcess0, (pParams->numPoles - 1 - nExcess0) * sizeof (*pWeights));
 
                 numKnots          -= nExcess0;
                 pParams->numKnots -= nExcess0;
@@ -238,10 +239,10 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
                 }
             if (nExcess1 > 0)
                 {
-                memmove (pKnots + numKnots - pParams->order - nExcess1, pKnots + numKnots - pParams->order, pParams->order * sizeof (*pKnots));
-                memmove (pPoles + pParams->numPoles - 1 - nExcess1, pPoles + pParams->numPoles - 1, sizeof (*pPoles));
+                BeStringUtilities::Memmove (pKnots + numKnots - pParams->order - nExcess1, (numCurveKnots - (numKnots - pParams->order - nExcess1)) * sizeof(*pKnots), pKnots + numKnots - pParams->order, pParams->order * sizeof (*pKnots));
+                BeStringUtilities::Memmove (pPoles + pParams->numPoles - 1 - nExcess1, (numCurvePoles - (pParams->numPoles - 1 - nExcess1)) * sizeof(*pPoles), pPoles + pParams->numPoles - 1, sizeof (*pPoles));
                 if (pWeights)
-                    memmove (pWeights + pParams->numPoles - 1 - nExcess1, pWeights + pParams->numPoles - 1, sizeof (*pWeights));
+                    BeStringUtilities::Memmove (pWeights + pParams->numPoles - 1 - nExcess1, (numCurvePoles - (pParams->numPoles - 1 - nExcess1)) * sizeof(*pWeights), pWeights + pParams->numPoles - 1, sizeof (*pWeights));
 
                 numKnots          -= nExcess1;
                 pParams->numKnots -= nExcess1;
@@ -322,9 +323,10 @@ int                     direction
             /* Only copy new knot vector first time */
             if (*knotP)
                 {
-                memcpy (*knotP, curve.knots,
-                        bspknot_numberKnots (curve.params.numPoles, curve.params.order,
-                                            curve.params.closed) * sizeof(double));
+                BeStringUtilities::Memcpy (*knotP,
+                    (direction == BSSURF_U ? surf.GetNumUKnots() : surf.GetNumVKnots()) * sizeof(double),
+                    curve.knots,
+                    bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
                 }
             }
 
@@ -344,16 +346,18 @@ int                     direction
     if (direction == BSSURF_U)
         {
         _Analysis_assume_(surf.vKnots != nullptr);
-        memcpy (surf.vKnots, surface->vKnots,
-                bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order,
-                                     surf.vParams.closed) * sizeof(double));
+        BeStringUtilities::Memcpy (surf.vKnots,
+            surf.GetNumVKnots() * sizeof(double),
+            surface->vKnots,
+            bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order, surf.vParams.closed) * sizeof(double));
         }
     else
         {
         _Analysis_assume_(surf.uKnots != nullptr);
-        memcpy (surf.uKnots, surface->uKnots,
-                bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order,
-                                     surf.uParams.closed) * sizeof(double));
+        BeStringUtilities::Memcpy (surf.uKnots,
+            surf.GetNumUKnots() * sizeof(double),
+            surface->uKnots,
+            bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order, surf.uParams.closed) * sizeof(double));
         }
 
     if (SUCCESS != (status = bspsurf_copyBoundaries (&surf, surface)))
@@ -427,9 +431,10 @@ int                 which              /* => -1 mean last row/column */
             *cvWP = *sfWP;
 
     /* Copy knot vector */
-    memcpy (curve->knots, knotPtr,
-            bspknot_numberKnots (curve->params.numPoles, curve->params.order,
-                                 curve->params.closed) * sizeof(double));
+    BeStringUtilities::Memcpy (curve->knots,
+        curve->GetNumKnots() * sizeof(double),
+        knotPtr,
+        bspknot_numberKnots (curve->params.numPoles, curve->params.order, curve->params.closed) * sizeof(double));
     return (SUCCESS);
     }
 
@@ -540,18 +545,19 @@ MSBsplineSurfaceCP   input
     if (SUCCESS != (status = bspcurv_allocateCurve (&curve)))
         return status;
 
-    memcpy (curve.knots, input->uKnots,
-            bspknot_numberKnots (curve.params.numPoles, curve.params.order,
-                                 curve.params.closed) * sizeof(double));
+   BeStringUtilities::Memcpy (curve.knots,
+        curve.GetNumKnots() * sizeof(double),
+        input->uKnots,
+        bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
     inpP = input->poles;
     inwP = input->weights;
     for (i=0; i < input->vParams.numPoles;
          i++, spP += surf.uParams.numPoles, inpP += input->uParams.numPoles)
         {
-        memcpy (curve.poles, inpP, curve.params.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (curve.poles, curve.params.numPoles * sizeof(DPoint3d), inpP, curve.params.numPoles * sizeof(DPoint3d));
         if (curve.rational)
-            memcpy (curve.weights, inwP, curve.params.numPoles*sizeof(double));
+            BeStringUtilities::Memcpy (curve.weights, curve.params.numPoles * sizeof(double), inwP, curve.params.numPoles*sizeof(double));
 
         if (SUCCESS != (status = bspcurv_closeCurve (&open, &curve)))
             goto wrapup;
@@ -564,12 +570,14 @@ MSBsplineSurfaceCP   input
             surf.display  = input->display;
             if (SUCCESS != (status = bspsurf_allocateSurface (&surf)))
                 goto wrapup;
-            memcpy (surf.uKnots, open.knots,
-                    bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order,
-                                         surf.uParams.closed) * sizeof(double));
-            memcpy (surf.vKnots, input->vKnots,
-                    bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order,
-                                         surf.vParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.uKnots,
+                surf.GetNumUKnots() * sizeof(double),
+                open.knots,
+                bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order, surf.uParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.vKnots,
+                surf.GetNumVKnots() * sizeof(double),
+                input->vKnots,
+                bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order, surf.vParams.closed) * sizeof(double));
             spP = surf.poles;
             swP = surf.weights;
             }
@@ -577,10 +585,10 @@ MSBsplineSurfaceCP   input
         if (surf.uParams.numPoles != open.params.numPoles)
             goto wrapup;
 
-        memcpy (spP, open.poles, surf.uParams.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (spP, surf.uParams.numPoles * sizeof(DPoint3d), open.poles, surf.uParams.numPoles * sizeof(DPoint3d));
         if (surf.rational)
             {
-            memcpy (swP, open.weights, surf.uParams.numPoles * sizeof(double));
+            BeStringUtilities::Memcpy (swP, surf.uParams.numPoles * sizeof(double), open.weights, surf.uParams.numPoles * sizeof(double));
             inwP += input->uParams.numPoles;
             swP  += surf.uParams.numPoles;
             }
@@ -635,9 +643,10 @@ MSBsplineSurfaceCP   input
     if (SUCCESS != (status = bspcurv_allocateCurve (&curve)))
         return status;
 
-    memcpy (curve.knots, input->vKnots,
-            bspknot_numberKnots (curve.params.numPoles, curve.params.order,
-                                 curve.params.closed) * sizeof(double));
+    BeStringUtilities::Memcpy (curve.knots,
+        curve.GetNumKnots() * sizeof(double),
+        input->vKnots,
+        bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
     for (i=0; i < input->uParams.numPoles; i++)
         {
@@ -663,12 +672,14 @@ MSBsplineSurfaceCP   input
             surf.display  = input->display;
             if (SUCCESS != (status = bspsurf_allocateSurface (&surf)))
                 goto wrapup;
-            memcpy (surf.uKnots, input->uKnots,
-                    bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order,
-                                         surf.uParams.closed) * sizeof(double));
-            memcpy (surf.vKnots, open.knots,
-                    bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order,
-                                         surf.vParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.uKnots,
+                surf.GetNumUKnots() * sizeof(double),
+                input->uKnots,
+                bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order, surf.uParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.vKnots,
+                surf.GetNumVKnots() * sizeof(double),
+                open.knots,
+                bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order, surf.vParams.closed) * sizeof(double));
             }
 
         if (surf.vParams.numPoles != open.params.numPoles)
@@ -757,18 +768,19 @@ double              uValue
     if (SUCCESS != (status = bspcurv_allocateCurve (&curve)))
         return status;
 
-    memcpy (curve.knots, input->uKnots,
-            bspknot_numberKnots (curve.params.numPoles, curve.params.order,
-                                 curve.params.closed) * sizeof(double));
+    BeStringUtilities::Memcpy (curve.knots,
+        curve.GetNumKnots() * sizeof(double),
+        input->uKnots,
+        bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
     inpP = input->poles;
     inwP = input->weights;
     for (i=0; i < input->vParams.numPoles;
          i++, spP += surf.uParams.numPoles, inpP += input->uParams.numPoles)
         {
-        memcpy (curve.poles, inpP, curve.params.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (curve.poles, curve.params.numPoles * sizeof(DPoint3d), inpP, curve.params.numPoles * sizeof(DPoint3d));
         if (curve.rational)
-            memcpy (curve.weights, inwP, curve.params.numPoles * sizeof(double));
+            BeStringUtilities::Memcpy (curve.weights, curve.params.numPoles * sizeof(double), inwP, curve.params.numPoles * sizeof(double));
 
         if (SUCCESS != (status = bspcurv_openCurve (&open, &curve, uValue)))
             goto wrapup;
@@ -781,19 +793,21 @@ double              uValue
             surf.display  = input->display;
             if (SUCCESS != (status = bspsurf_allocateSurface (&surf)))
                 goto wrapup;
-            memcpy (surf.uKnots, open.knots,
-                    bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order,
-                                         surf.uParams.closed) * sizeof(double));
-            memcpy (surf.vKnots, input->vKnots,
-                    bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order,
-                                         surf.vParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.uKnots,
+                surf.GetNumUKnots() * sizeof(double),
+                open.knots,
+                bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order, surf.uParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.vKnots,
+                surf.GetNumVKnots() * sizeof(double),
+                input->vKnots,
+                bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order, surf.vParams.closed) * sizeof(double));
             spP = surf.poles;
             swP = surf.weights;
             }
-        memcpy (spP, open.poles, surf.uParams.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (spP, surf.uParams.numPoles * sizeof(DPoint3d), open.poles, surf.uParams.numPoles * sizeof(DPoint3d));
         if (surf.rational)
             {
-            memcpy (swP, open.weights, surf.uParams.numPoles * sizeof(double));
+            BeStringUtilities::Memcpy (swP, surf.uParams.numPoles * sizeof(double), open.weights, surf.uParams.numPoles * sizeof(double));
             inwP += input->uParams.numPoles;
             swP += surf.uParams.numPoles;
             }
@@ -850,9 +864,10 @@ double              vValue
     if (SUCCESS != (status = bspcurv_allocateCurve (&curve)))
         return status;
 
-    memcpy (curve.knots, input->vKnots,
-            bspknot_numberKnots (curve.params.numPoles, curve.params.order,
-                                 curve.params.closed) * sizeof(double));
+    BeStringUtilities::Memcpy (curve.knots,
+        curve.GetNumKnots() * sizeof(double),
+        input->vKnots,
+        bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed) * sizeof(double));
 
     for (i=0; i < input->uParams.numPoles; i++)
         {
@@ -877,12 +892,14 @@ double              vValue
             surf.display  = input->display;
             if (SUCCESS != (status = bspsurf_allocateSurface (&surf)))
                 goto wrapup;
-            memcpy (surf.uKnots, input->uKnots,
-                    bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order,
-                                         surf.uParams.closed) * sizeof(double));
-            memcpy (surf.vKnots, open.knots,
-                    bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order,
-                                         surf.vParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.uKnots,
+                surf.GetNumUKnots() * sizeof(double),
+                input->uKnots,
+                bspknot_numberKnots (surf.uParams.numPoles, surf.uParams.order, surf.uParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.vKnots,
+                surf.GetNumVKnots() * sizeof(double),
+                open.knots,
+                bspknot_numberKnots (surf.vParams.numPoles, surf.vParams.order, surf.vParams.closed) * sizeof(double));
             }
 
         for (spP = surf.poles+i, cpP=endP=open.poles, endP += open.params.numPoles;
@@ -970,10 +987,10 @@ double              knotTolerance
          outpP += curve.params.numPoles,  outwP += curve.params.numPoles)
         {
         curve.params = input->uParams;
-        memcpy (curve.poles, inpP, input->uParams.numPoles * sizeof(DPoint3d));
-        memcpy (curve.knots, input->uKnots, numKnots * sizeof(double));
+        BeStringUtilities::Memcpy (curve.poles, curve.GetNumPoles() * sizeof(DPoint3d), inpP, input->uParams.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (curve.knots, curve.GetNumKnots() * sizeof(double), input->uKnots, numKnots * sizeof(double));
         if (curve.rational)
-            memcpy (curve.weights, inwP, input->uParams.numPoles * sizeof (double));
+            BeStringUtilities::Memcpy (curve.weights, curve.GetNumPoles() * sizeof(double), inwP, input->uParams.numPoles * sizeof (double));
 
         for (i=0; i < numDistinct; i++)
             {
@@ -985,20 +1002,20 @@ double              knotTolerance
                 }
             }
 
-        memcpy (outpP, curve.poles, curve.params.numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (outpP, output->GetNumUPoles() * sizeof(DPoint3d), curve.poles, curve.params.numPoles * sizeof(DPoint3d));
         if (curve.rational)
-            memcpy (outwP, curve.weights, curve.params.numPoles * sizeof (double));
+            BeStringUtilities::Memcpy (outwP, output->GetNumUPoles() * sizeof(double), curve.weights, curve.params.numPoles * sizeof (double));
         }
 
     numKnots = bspknot_numberKnots (curve.params.numPoles, curve.params.order,
                                     curve.params.closed);
-    memcpy (output->uKnots, curve.knots, numKnots * sizeof (double));
+    BeStringUtilities::Memcpy (output->uKnots, output->GetNumUKnots() * sizeof(double), curve.knots, numKnots * sizeof (double));
     output->uParams = curve.params;
 
+    output->vParams = input->vParams;
     numKnots = bspknot_numberKnots (input->vParams.numPoles, input->vParams.order,
                                     input->vParams.closed);
-    memcpy (output->vKnots, input->vKnots, numKnots * sizeof (double));
-    output->vParams = input->vParams;
+    BeStringUtilities::Memcpy (output->vKnots, output->GetNumVKnots() * sizeof(double), input->vKnots, numKnots * sizeof (double));
 
 wrapup:
     bspcurv_freeCurve (&curve);
@@ -1040,7 +1057,7 @@ double              knotTolerance
              cpP < endP; cpP++, pP += output->uParams.numPoles)
             *cpP = *pP;
 
-        memcpy (curve.knots, output->vKnots, numKnots * sizeof(double));
+        BeStringUtilities::Memcpy (curve.knots, curve.GetNumKnots() * sizeof(double), output->vKnots, numKnots * sizeof(double));
 
         if (curve.rational)
             for (cwP=endW=curve.weights, wp=output->weights+col,
@@ -1069,10 +1086,10 @@ double              knotTolerance
                 *outwP = *cwP;
         }
 
+    output->vParams = curve.params;
     numKnots = bspknot_numberKnots (curve.params.numPoles, curve.params.order,
                                     curve.params.closed);
-    memcpy (output->vKnots, curve.knots, numKnots * sizeof (double));
-    output->vParams = curve.params;
+    BeStringUtilities::Memcpy (output->vKnots, output->GetNumVKnots() * sizeof(double), curve.knots, numKnots * sizeof (double));
 
 wrapup:
     bspcurv_freeCurve (&curve);
@@ -1166,21 +1183,23 @@ MSBsplineSurfaceCP   inSurface
         else
             {
             /* surf is already Bezier in rows so just copy data */
-            memcpy (surf.poles, inSurface->poles,
-                   (inSurface->uParams.numPoles * inSurface->vParams.numPoles)
-                   * sizeof(DPoint3d));
-            memcpy (surf.uKnots, inSurface->uKnots,
-                    bspknot_numberKnots (inSurface->uParams.numPoles,
-                    inSurface->uParams.order, inSurface->uParams.closed)
-                    * sizeof(double));
-            memcpy (surf.vKnots, inSurface->vKnots,
-                    bspknot_numberKnots (inSurface->vParams.numPoles,
-                    inSurface->vParams.order, inSurface->vParams.closed)
-                    * sizeof(double));
+            BeStringUtilities::Memcpy (surf.poles,
+                surf.GetNumPoles() * sizeof(DPoint3d),
+                inSurface->poles,
+                (inSurface->uParams.numPoles * inSurface->vParams.numPoles) * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (surf.uKnots,
+                surf.GetNumUKnots() * sizeof(double),
+                inSurface->uKnots,
+                bspknot_numberKnots (inSurface->uParams.numPoles, inSurface->uParams.order, inSurface->uParams.closed) * sizeof(double));
+            BeStringUtilities::Memcpy (surf.vKnots,
+                surf.GetNumVKnots() * sizeof(double),
+                inSurface->vKnots,
+                bspknot_numberKnots (inSurface->vParams.numPoles, inSurface->vParams.order, inSurface->vParams.closed) * sizeof(double));
             if (surf.rational)
-                memcpy (surf.weights, inSurface->weights,
-                        (inSurface->uParams.numPoles * inSurface->vParams.numPoles)
-                       * sizeof(double));
+                BeStringUtilities::Memcpy (surf.weights,
+                    surf.GetNumPoles() * sizeof(double),
+                    inSurface->weights,
+                    (inSurface->uParams.numPoles * inSurface->vParams.numPoles) * sizeof(double));
             }
 
         if (vAddNum)
@@ -1321,7 +1340,7 @@ int             newDegree
         goto wrapup;
         }
 
-    memcpy (eP->knots, newKnotVector, temp);
+    BeStringUtilities::Memcpy (eP->knots, temp, newKnotVector, temp);
 
 wrapup:
     bspcurv_freeCurve (&curve);
@@ -1443,10 +1462,10 @@ int                     dummy
             inCurve->weights[0] = firstWeight;
         }
 
-    memcpy (inCurve->knots, eP->knots,
-            bspknot_numberKnots (inCurve->params.numPoles,
-                                 inCurve->params.order,
-                                 inCurve->params.closed) * sizeof(double));
+    BeStringUtilities::Memcpy (inCurve->knots,
+        inCurve->GetNumKnots() * sizeof(double),
+        eP->knots,
+        bspknot_numberKnots (inCurve->params.numPoles, inCurve->params.order, inCurve->params.closed) * sizeof(double));
 
     if (closed)
         status = bspcurv_closeCurve (inCurve, inCurve);
@@ -1497,17 +1516,17 @@ int                 newDegree
     if (SUCCESS != (status = bspcurv_allocateCurve (&curve)))
         return status;
 
-    memcpy (curve.poles, input->poles,
+    BeStringUtilities::Memcpy (curve.poles, curve.params.numPoles * sizeof(DPoint3d), input->poles,
             curve.params.numPoles * sizeof(DPoint3d));
 
     if (curve.rational)
-        memcpy (curve.weights, input->weights,
+        BeStringUtilities::Memcpy (curve.weights, curve.params.numPoles * sizeof(double), input->weights,
                 curve.params.numPoles * sizeof(double));
 
     numKnots = bspknot_numberKnots (curve.params.numPoles,
                                     curve.params.order,
                                     curve.params.closed);
-    memcpy (curve.knots, input->uKnots, numKnots * sizeof(double));
+    BeStringUtilities::Memcpy (curve.knots, numKnots * sizeof(double), input->uKnots, numKnots * sizeof(double));
 
     if (SUCCESS != (status = bsprsurf_matrixElevateDegree (&eP, &curve, newDegree)))
         goto wrapup;
@@ -1587,7 +1606,7 @@ int                 newDegree
     numKnots = bspknot_numberKnots (curve.params.numPoles,
                                     curve.params.order,
                                     curve.params.closed);
-    memcpy (curve.knots, input->vKnots, numKnots * sizeof(double));
+    BeStringUtilities::Memcpy (curve.knots, numKnots * sizeof(double), input->vKnots, numKnots * sizeof(double));
 
     if (SUCCESS != (status = bsprsurf_matrixElevateDegree (&eP, &curve, newDegree)))
         goto wrapup;
@@ -1649,6 +1668,8 @@ MSBsplineSurfaceCP   in
     if (SUCCESS != (status = bsprsurf_openSurface (out, in, 0.0, BSSURF_V)))
         return status;
 
+    int numSurfacePoles = out->uParams.numPoles * out->vParams.numPoles;
+
     numKnots = bspknot_numberKnots (out->vParams.numPoles, out->vParams.order, false);
     if (NULL == (pDistinctKnots         = (double*)dlmSystem_mdlMalloc (numKnots * sizeof (double))) ||
         NULL == (pKnotMultiplicities    = (int*)dlmSystem_mdlMalloc (numKnots * sizeof (int)))    ||
@@ -1709,15 +1730,15 @@ MSBsplineSurfaceCP   in
         iRead  = pRemoveKnotIndices[i] + pRemoveMults[i];
         nMove  = numKnots - iRead;
 
-        memmove (out->vKnots + iWrite, out->vKnots + iRead, nMove * sizeof (*out->vKnots));
+        BeStringUtilities::Memmove (out->vKnots + iWrite, (numKnots - iWrite) * sizeof(double), out->vKnots + iRead, nMove * sizeof (*out->vKnots));
 
         iWrite = out->uParams.numPoles * pRemovePoleRowIndices[i];
         iRead  = out->uParams.numPoles * (pRemovePoleRowIndices[i] + pRemoveMults[i]);
         nMove  = out->uParams.numPoles * out->vParams.numPoles - iRead;
 
-        memmove (out->poles + iWrite, out->poles + iRead, nMove * sizeof (*out->poles));
+        BeStringUtilities::Memmove (out->poles + iWrite, (numSurfacePoles - iWrite) * sizeof(DPoint3d), out->poles + iRead, nMove * sizeof (*out->poles));
         if (out->rational)
-            memmove (out->weights + iWrite, out->weights + iRead, nMove * sizeof (*out->weights));
+            BeStringUtilities::Memmove (out->weights + iWrite, (numSurfacePoles - iWrite) * sizeof(double), out->weights + iRead, nMove * sizeof (*out->weights));
 
         // reset remaining excess indices
         for (j = i + 1; j < numRemove; j++)
@@ -2143,7 +2164,7 @@ bool                            processBounds       /* => process boundaries as 
             return status;
 
         size = bspknot_numberKnots (pSurface->vParams.numPoles, pSurface->vParams.order, pSurface->vParams.closed);
-        memcpy (isoCurve.knots, pSurface->vKnots, size * sizeof(double));
+        BeStringUtilities::Memcpy (isoCurve.knots, isoCurve.GetNumKnots() * sizeof(double), pSurface->vKnots, size * sizeof(double));
 
         for (rule=0, u=0.0; rule < pSurface->vParams.numRules; rule++, u += delta)
             {
@@ -2206,11 +2227,11 @@ bool                            processBounds       /* => process boundaries as 
 
         size = bspknot_numberKnots (pSurface->vParams.numPoles, pSurface->vParams.order,
                                     pSurface->vParams.closed);
-        memcpy (curve.knots, pSurface->vKnots, size * sizeof (double));
+        BeStringUtilities::Memcpy (curve.knots, curve.GetNumKnots() * sizeof(double), pSurface->vKnots, size * sizeof (double));
 
         size = bspknot_numberKnots (pSurface->uParams.numPoles, pSurface->uParams.order,
                                     pSurface->uParams.closed);
-        memcpy (isoCurve.knots, pSurface->uKnots, size * sizeof (double));
+        BeStringUtilities::Memcpy (isoCurve.knots, isoCurve.GetNumKnots() * sizeof(double), pSurface->uKnots, size * sizeof (double));
 
         for (rule=0, v=0.0; rule < pSurface->uParams.numRules; rule++, v += delta)
             {
@@ -2451,6 +2472,9 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
         {
         double  tol, *pStart, *pEnd;
         int     nExcess0, nExcess1, numKnots, i, iWrite, iRead, nMove;
+        int     numSurfacePoles = pUParams->numPoles * pVParams->numPoles;
+        int     numSurfaceUKnots = bspknot_numberKnots (pUParams->numPoles, pUParams->order, pUParams->closed);
+        int     numSurfaceVKnots = bspknot_numberKnots (pVParams->numPoles, pVParams->order, pVParams->closed);
 
         if (!pUParams->closed)
             {
@@ -2474,7 +2498,7 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
 
                 if (nExcess0 > 0)
                     {
-                    memmove (pUKnots + pUParams->order, pUKnots + pUParams->order + nExcess0, (numKnots - pUParams->order - nExcess0) * sizeof (*pUKnots));
+                    BeStringUtilities::Memmove (pUKnots + pUParams->order, (numSurfaceUKnots - pUParams->order) * sizeof(*pUKnots), pUKnots + pUParams->order + nExcess0, (numKnots - pUParams->order - nExcess0) * sizeof (*pUKnots));
 
                     newNumUPoles = pUParams->numPoles - nExcess0;
                     nMove = newNumUPoles - 1;
@@ -2486,9 +2510,9 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
 
                         iWrite += 1;
                         iRead  += 1 + nExcess0;
-                        memmove (pPoles + iWrite, pPoles + iRead, nMove * sizeof (*pPoles));
+                        BeStringUtilities::Memmove (pPoles + iWrite, (numSurfacePoles - iWrite) * sizeof(*pPoles), pPoles + iRead, nMove * sizeof (*pPoles));
                         if (pWeights)
-                            memmove (pWeights + iWrite, pWeights + iRead, nMove * sizeof (*pWeights));
+                            BeStringUtilities::Memmove (pWeights + iWrite, (numSurfacePoles - iWrite) * sizeof(*pWeights), pWeights + iRead, nMove * sizeof (*pWeights));
                         }
 
                     numKnots           -= nExcess0;
@@ -2498,15 +2522,15 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
 
                 if (nExcess1 > 0)
                     {
-                    memmove (pUKnots + numKnots - pUParams->order - nExcess1, pUKnots + numKnots - pUParams->order, pUParams->order * sizeof (*pUKnots));
+                    BeStringUtilities::Memmove (pUKnots + numKnots - pUParams->order - nExcess1, (numSurfaceUKnots - (numKnots - pUParams->order - nExcess1)) * sizeof(*pUKnots), pUKnots + numKnots - pUParams->order, pUParams->order * sizeof (*pUKnots));
 
                     newNumUPoles = pUParams->numPoles - nExcess1;
                     nMove = newNumUPoles - 1;
                     for (iRow = iWrite = iRead = 0; iRow < pVParams->numPoles; iRow++, iWrite++, iRead++)
                         {
-                        memmove (pPoles + iWrite, pPoles + iRead, nMove * sizeof (*pPoles));
+                        BeStringUtilities::Memmove (pPoles + iWrite, (numSurfacePoles - iWrite) * sizeof(*pPoles), pPoles + iRead, nMove * sizeof (*pPoles));
                         if (pWeights)
-                            memmove (pWeights + iWrite, pWeights + iRead, nMove * sizeof (*pWeights));
+                            BeStringUtilities::Memmove (pWeights + iWrite, (numSurfacePoles - iWrite) * sizeof(*pWeights), pWeights + iRead, nMove * sizeof (*pWeights));
 
                         iWrite += nMove;
                         iRead  += nMove + nExcess1;
@@ -2542,14 +2566,14 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
                 {
                 if (nExcess0 > 0)
                     {
-                    memmove (pVKnots + pVParams->order, pVKnots + pVParams->order + nExcess0, (numKnots - pVParams->order - nExcess0) * sizeof (*pVKnots));
+                    BeStringUtilities::Memmove (pVKnots + pVParams->order, (numSurfaceVKnots - pVParams->order) * sizeof(*pVKnots), pVKnots + pVParams->order + nExcess0, (numKnots - pVParams->order - nExcess0) * sizeof (*pVKnots));
 
                     iWrite = pUParams->numPoles;
                     iRead  = pUParams->numPoles * (1 + nExcess0);
                     nMove  = pUParams->numPoles * (pVParams->numPoles - 1 - nExcess0);
-                    memmove (pPoles + iWrite, pPoles + iRead, nMove * sizeof (*pPoles));
+                    BeStringUtilities::Memmove (pPoles + iWrite, (numSurfacePoles - iWrite) * sizeof(*pPoles), pPoles + iRead, nMove * sizeof (*pPoles));
                     if (pWeights)
-                        memmove (pWeights + iWrite, pWeights + iRead, nMove * sizeof (*pWeights));
+                        BeStringUtilities::Memmove (pWeights + iWrite, (numSurfacePoles - iWrite) * sizeof(*pWeights), pWeights + iRead, nMove * sizeof (*pWeights));
 
                     numKnots           -= nExcess0;
                     pVParams->numKnots -= nExcess0;
@@ -2558,14 +2582,14 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
 
                 if (nExcess1 > 0)
                     {
-                    memmove (pVKnots + numKnots - pVParams->order - nExcess1, pVKnots + numKnots - pVParams->order, pVParams->order * sizeof (*pVKnots));
+                    BeStringUtilities::Memmove (pVKnots + numKnots - pVParams->order - nExcess1, (numSurfaceVKnots - (numKnots - pVParams->order - nExcess1)) * sizeof(*pVKnots), pVKnots + numKnots - pVParams->order, pVParams->order * sizeof (*pVKnots));
 
                     iWrite = pUParams->numPoles * (pVParams->numPoles - 2 - nExcess0);
                     iRead  = pUParams->numPoles * (pVParams->numPoles - 1);
                     nMove  = pUParams->numPoles;
-                    memmove (pPoles + iWrite, pPoles + iRead, nMove * sizeof (*pPoles));
+                    BeStringUtilities::Memmove (pPoles + iWrite, (numSurfacePoles - iWrite) * sizeof(*pPoles), pPoles + iRead, nMove * sizeof (*pPoles));
                     if (pWeights)
-                        memmove (pWeights + iWrite, pWeights + iRead, nMove * sizeof (*pWeights));
+                        BeStringUtilities::Memmove (pWeights + iWrite, (numSurfacePoles - iWrite) * sizeof(*pWeights), pWeights + iRead, nMove * sizeof (*pWeights));
 
                     numKnots           -= nExcess1;
                     pVParams->numKnots -= nExcess1;
@@ -2704,14 +2728,15 @@ double              tolerance
         bsputil_unWeightPoles (tmpCurvPolesP, curveP->poles, curveP->weights,
                                   curveP->params.numPoles);
     else
-        memcpy (tmpCurvPolesP, curveP->poles,
+        BeStringUtilities::Memcpy (tmpCurvPolesP, (curveP->params.numPoles * sizeof(DPoint3d)), curveP->poles,
                 (curveP->params.numPoles * sizeof (DPoint3d)));
 
     if (0 != surfaceP->rational)
         bsputil_unWeightPoles (tmpSurfPolesP, surfaceP->poles,
                                   surfaceP->weights, numSurfPoles);
     else
-        memcpy (tmpSurfPolesP, surfaceP->poles, numSurfPoles * sizeof (DPoint3d));
+        BeStringUtilities::Memcpy (tmpSurfPolesP, numSurfPoles * sizeof(DPoint3d), surfaceP->poles, numSurfPoles * sizeof (DPoint3d));
+
 
     /*
         find curve parameter space delta, the curve poles are in uv space
@@ -2724,9 +2749,12 @@ double              tolerance
     deltaUVCurve.z = box.high.z - box.low.z;
 
     /* find surface parameter space delta */
-    box.high.z = box.low.z = 0.0;
-    memcpy (&box.high, &surfUVRange->high, sizeof (DPoint2d));
-    memcpy (&box.low, &surfUVRange->low, sizeof (DPoint2d));
+    box.high.x = surfUVRange->high.x;
+    box.high.y = surfUVRange->high.y;
+    box.high.z = 0.0;
+    box.low.x = surfUVRange->low.x;
+    box.low.y = surfUVRange->low.y;
+    box.low.z = 0.0;
 
     deltaUVSurf.x = box.high.x - box.low.x;
     deltaUVSurf.y = box.high.y - box.low.y;

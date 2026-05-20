@@ -100,7 +100,7 @@ void BCurveSegment::AddStrokes
     DPoint4dCP polePtr = useWorkPoles ? m_workPoles : m_poles;
     int order = (int) (useWorkPoles ? m_workOrder : m_order);
     DPoint4d poles[MAX_BEZIER_ORDER];
-    memcpy (poles, polePtr, order * sizeof (DPoint4d));
+    BeStringUtilities::Memcpy (poles, sizeof poles, polePtr, order * sizeof (DPoint4d));
     if (fractionA != 0.0 || fractionB != 1.0)
         {
         bsiBezierDPoint4d_subdivideToIntervalInPlace (poles, order, fractionA, fractionB);

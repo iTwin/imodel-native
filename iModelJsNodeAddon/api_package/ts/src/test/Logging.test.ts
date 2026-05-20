@@ -5,7 +5,7 @@
 
 import { expect } from "chai";
 import * as sinon from "sinon";
-import { BeDuration, Logger, LogLevel, StopWatch, using } from "@itwin/core-bentley";
+import { BeDuration, Logger, LogLevel, StopWatch } from "@itwin/core-bentley";
 import { iModelJsNative } from "./utils";
 
 describe("Logger", () => {
@@ -98,14 +98,17 @@ describe("Logger", () => {
       }
     });
 
-    await using(new MainThreadMonitor(), async (monitor) => {
+    const monitor = new MainThreadMonitor();
+    try {
       onFirstEmission = () => monitor.start();
       await new Promise<void>((resolve) => {
         iModelJsNative.NativeDevTools.emitLogs(count, testCategory, LogLevel.Trace, "worker", resolve);
       });
       await waitFor(() => expect(logTrace.callCount).to.eq(count));
       expect(monitor.triggerCount).to.be.above(0);
-    });
+    } finally {
+      monitor.dispose();
+    }
   });
 });
 
