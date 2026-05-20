@@ -1012,7 +1012,7 @@ TEST_F(TransactionManagerTests, FileBasedTxnSaveAndRead)
     auto& txns = m_db->Txns();
 
     // Enable file-based txn storage
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
     m_db->SaveChanges();
 
     // Insert an element — this should save txn to file
