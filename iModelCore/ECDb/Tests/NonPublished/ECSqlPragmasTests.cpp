@@ -729,4 +729,64 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
     }
 }
 
+//---------------------------------------------------------------------------------------
+// Regression test against the 4.0.0.1 benchmark fixture. Profile 4.0.0.1 predates the
+// EC3.2 Units/Formats migration (introduced in 4.0.0.2, ~2018). SchemaViewWriter does
+// not query any of the tables/columns added in 4.0.0.2, so the pragma must succeed
+// without requiring a profile upgrade. KoQ PersistenceUnit/PresentationUnits will pass
+// through in legacy FUS format - that is acceptable degradation; the consumer can
+// detect it and decide how to handle it.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_works_on_old_profile_4001) {
+    BeFileName benchmarkFilePath;
+    BeTest::GetHost().GetDocumentsRoot(benchmarkFilePath);
+    benchmarkFilePath.AppendToPath(L"ECDb").AppendToPath(L"fileformatbenchmark").AppendToPath(L"4001").AppendToPath(L"imodel2.ecdb");
+    ASSERT_TRUE(benchmarkFilePath.DoesPathExist())
+        << "Profile 4.0.0.1 benchmark fixture missing at " << benchmarkFilePath.GetNameUtf8().c_str();
+
+    BeFileName outDir;
+    BeTest::GetHost().GetOutputRoot(outDir);
+    if (!outDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(outDir));
+    BeFileName workingFilePath(outDir);
+    workingFilePath.AppendToPath(L"schema_view_4001.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, workingFilePath));
+
+    ECDb oldFile;
+    ASSERT_EQ(BE_SQLITE_OK, oldFile.OpenBeSQLiteDb(workingFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
+        << "Failed to open 4.0.0.1 file readonly";
+    ASSERT_EQ(ProfileVersion(4, 0, 0, 1), oldFile.GetECDbProfileVersion())
+        << "Fixture is not at expected profile 4.0.0.1";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(oldFile, "PRAGMA schema_view"))
+        << "PRAGMA schema_view must prepare against profile 4.0.0.1";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_STREQ("binary", stmt.GetValueText(0));
+    ASSERT_EQ(1, stmt.GetValueInt(1));
+
+    Utf8CP dataText = stmt.GetValueText(2);
+    ASSERT_NE(nullptr, dataText);
+    static constexpr Utf8CP base64Prefix = "encoding=base64;";
+    static constexpr size_t base64PrefixLen = 16;
+    ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
+    ByteStream decoded;
+    Utf8CP b64 = dataText + base64PrefixLen;
+    Base64Utilities::Decode(decoded, b64, strlen(b64));
+    ASSERT_GT((int)decoded.GetSize(), 9);
+
+    auto bytes = decoded.GetData();
+    uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+    ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
+    ASSERT_EQ(1, bytes[4]) << "Expected format version 1";
+
+    Utf8CP token = stmt.GetValueText(3);
+    ASSERT_NE(nullptr, token);
+    ASSERT_GT(strlen(token), 0u);
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+}
+
 END_ECDBUNITTESTS_NAMESPACE

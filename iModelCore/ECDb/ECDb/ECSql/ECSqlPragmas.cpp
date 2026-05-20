@@ -989,6 +989,18 @@ DbResult PragmaSchemaView::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Prag
 	result->AppendProperty("schemaToken", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
+	// Profile 4.0.0.1 predates the EC3.2 Units/Formats migration (introduced in 4.0.0.2, ~2018).
+	// The writer queries no tables/columns added in 4.0.0.2+, so the pragma succeeds, but
+	// KindOfQuantity persistence/presentation strings are still in legacy FUS format rather
+	// than the alias-qualified EC3.2 form. See SchemaViewBinaryFormat.md "ECDb Profile Compatibility".
+	if (ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 2)) {
+		ECDbLogger::Get().warningv(
+			"PRAGMA schema_view: ECDb profile %s predates the EC3.2 Units/Formats migration. "
+			"KindOfQuantity persistence and presentation strings will be returned in legacy FUS format. "
+			"Upgrade the ECDb profile to 4.0.0.2 or later for EC3.2-formatted strings.",
+			ecdb.GetECDbProfileVersion().ToString().c_str());
+	}
+
 	// Build the binary blob (v1: property definition dedup).
 	// Currently only one format version exists. When adding v2+, this must route to
 	// the appropriate writer based on requestedVersion instead of always using v1.
