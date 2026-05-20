@@ -454,6 +454,15 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
+    // File-based txn storage
+    bool IsFileBasedTxnEnabled() const;
+    BeFileName GetTxnFilePath(TxnId txnId) const;
+    BentleyStatus EnsureTxnDirectory() const;
+    BeSQLite::DbResult WriteTxnToFile(TxnId txnId, BeSQLite::ChangeSetCR changeset, Byte* outChecksum);
+    BeSQLite::DbResult ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, BeSQLite::ChangeSet& changeset);
+    void DeleteTxnFile(TxnId txnId);
+    bool ValidateFileBasedTxns() const;
+
     BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
     BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
