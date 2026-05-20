@@ -31,39 +31,40 @@ static DbResult PrepareStmt(Statement& stmt, DbCR db, Utf8CP sql)
     return rc;
     }
 
-// Schemas excluded from the runtime binary blob. These fall into three categories:
-// 1. Units/Formats: schemas whose items (Unit, Format, Phenomenon, UnitSystem)
-//    are only referenced as strings from KindOfQuantity. Consumers who need
-//    this info will pull it separately.
-// 2. ECDb-internal: ECDbSystem, ECDbMap, ECDbFileInfo, ECDbSchemaPolicies
-//    describe the EC storage layer. Runtime consumers should not need these.
-//    Note: ECDbMeta is NOT excluded - consumers use it for metadata queries.
-// 3. Pure CA schemas: CoreCustomAttributes, ECv3ConversionAttributes,
-//    EditorCustomAttributes, BisCustomAttributes, SchemaLocalizationCustomAttributes,
-//    SchemaUpgradeCustomAttributes. Their classes are only CustomAttribute and Struct
-//    types used for decoration. Since the blob doesn't include CA instances, including
-//    these schema definitions provides little value.
-// The list is checked case-insensitively via BeStringUtilities::StricmpAscii.
+// Schemas excluded from the runtime binary blob.
+//
+// Base: ECObjects' standard-schema list (ECN::ECSchema::IsStandardSchema). Covers
+// legacy EC2-era schemas (Bentley_Standard_*, Dimension_Schema, iip_mdb_*, rdl_*),
+// pre-EC3.2 unit/quantity schemas (Units_Schema, KindOfQuantity_Schema,
+// Unit_Attributes, SIUnitSystemDefaults, USCustomaryUnitSystemDefaults), and the
+// EC3 standards (CoreCustomAttributes, Units, Formats, ECDbMap,
+// SchemaLocalizationCustomAttributes, EditorCustomAttributes). Their items are
+// either obsolete or referenced from KindOfQuantity as strings.
+//
+// Additions: ECDb-specific schemas not in the standard list:
+// - ECDbSystem, ECDbFileInfo, ECDbSchemaPolicies: ECDb storage internals.
+//   Note: ECDbMeta is NOT excluded - consumers use it for metadata queries.
+// - BisCustomAttributes, ECv3ConversionAttributes, SchemaUpgradeCustomAttributes:
+//   pure CA schemas with no value once CA instances are dropped.
+//
+// Additions are checked case-insensitively. IsStandardSchema is case-sensitive,
+// which matches how schema names are stored canonically in ec_Schema.Name.
 static bool IsExcludedSchema(Utf8CP name)
     {
+    if (ECN::ECSchema::IsStandardSchema(Utf8String(name)))
+        return true;
     struct CiLess {
         bool operator()(std::string const& a, std::string const& b) const { return BeStringUtilities::StricmpAscii(a.c_str(), b.c_str()) < 0; }
     };
-    static const std::set<std::string, CiLess> s_excluded = {
+    static const std::set<std::string, CiLess> s_additionalExcludedSchemas = {
         "BisCustomAttributes",
-        "CoreCustomAttributes",
         "ECDbFileInfo",
-        "ECDbMap",
         "ECDbSchemaPolicies",
         "ECDbSystem",
         "ECv3ConversionAttributes",
-        "EditorCustomAttributes",
-        "Formats",
-        "SchemaLocalizationCustomAttributes",
         "SchemaUpgradeCustomAttributes",
-        "Units",
     };
-    return s_excluded.find(name) != s_excluded.end();
+    return s_additionalExcludedSchemas.find(name) != s_additionalExcludedSchemas.end();
     }
 
 //---------------------------------------------------------------------------------------
