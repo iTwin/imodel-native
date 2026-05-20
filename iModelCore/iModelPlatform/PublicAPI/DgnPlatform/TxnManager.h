@@ -456,7 +456,6 @@ private:
 
     // File-based txn storage
     bool IsFileBasedTxnEnabled() const;
-    BeFileName GetTxnFilePath(TxnId txnId) const;
     BentleyStatus EnsureTxnDirectory() const;
     BeSQLite::DbResult WriteTxnToFile(TxnId txnId, BeSQLite::ChangeSetCR changeset, Byte* outChecksum);
     BeSQLite::DbResult ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, BeSQLite::ChangeSet& changeset);
@@ -638,6 +637,9 @@ public:
     TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
 
     DGNPLATFORM_EXPORT TxnId GetLastTxnId();
+
+    //! Get the file path for a file-based transaction's .txn file.
+    DGNPLATFORM_EXPORT BeFileName GetTxnFilePath(TxnId txnId) const;
 
     /** For readonly connections, new Txns may be added from other writeable connections while this session is active.
      * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
