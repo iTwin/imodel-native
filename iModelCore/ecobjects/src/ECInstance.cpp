@@ -2689,7 +2689,7 @@ struct  InstanceXmlReader
                 schemaStatus = GetSchema(schema);
                 }
             else
-                schema = &(m_context.GetFallBackSchema());
+                schema = m_context.HasFallBackSchema() ? &m_context.GetFallBackSchema() : nullptr;
             }
 
             if (ECObjectsStatus::SchemaIsPruned == schemaStatus)
@@ -4471,7 +4471,7 @@ ECObjectsStatus ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatch
         return status;
 
     if (ECObjectsStatus::Success != status)
-        schema = &m_fallBackSchema;
+        schema = m_fallBackSchema;
 
     return status;
     }

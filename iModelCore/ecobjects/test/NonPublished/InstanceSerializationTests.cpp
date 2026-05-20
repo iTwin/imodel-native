@@ -568,6 +568,95 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleEC3Insta
     EXPECT_EQ(expectedXmlString, actualXmlString);
     }
 
+// Sits in the same slot as iModelConnectorFwk's SchemaRemapper - it is invoked by
+// InstanceXmlReader::GetInstance via ECInstanceReadContext::ResolveSerializedClassName
+// before the class lookup. We use it as a liveness probe: the schema is RefCountedBase,
+// so a refcount of zero proves the destructor has already run.
+struct CapturingSchemaRemapper : IECSchemaRemapper
+    {
+    mutable bool m_invoked = false;
+    mutable uint32_t m_observedRefCount = 0;
+
+    void Reset() { m_invoked = false; m_observedRefCount = 0; }
+
+    bool _ResolvePropertyName(Utf8StringR, ECClassCR) const override { return false; }
+    bool _ResolveClassName(Utf8StringR, ECSchemaCR ecSchema) const override
+        {
+        m_invoked = true;
+        m_observedRefCount = ecSchema.GetRefCount();
+        return false;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// Verifies that ECInstanceReadContext keeps its fallback schema alive for its own lifetime.
+//
+// Before the fix, ECInstanceReadContext::m_fallBackSchema was a raw ECSchemaCR with no
+// refcount. If the caller dropped every ECSchemaPtr/ECSchemaReadContextPtr that owned the
+// schema, the context's reference would dangle, and the next ReadFromXmlString call would
+// dereference a freed ECSchema. The Microstation connector observed this as a strnlen
+// crash inside its SchemaRemapper::_ResolveClassName (ADO 2054941).
+//
+// The two ReadFromXmlString calls in this test share the same remapper. The first call
+// runs while every external schema owner is still alive and establishes the baseline:
+// the remapper is invoked and sees a positive refcount. The second call runs after every
+// external owner has been released; with the fix the context still pins the schema, so
+// the refcount is still positive. Without the fix the destructor has already run, the
+// refcount field reads zero, and the second assertion fails.
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(InstanceDeserializationTest, FallbackSchemaSurvivesECSchemaPtrRelease)
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="IntProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>
+        )xml";
+
+    // No xmlns on the instance root -> InstanceXmlReader::GetInstance takes the fallback
+    // schema path (ECInstance.cpp around line 2692: schema = &m_context.GetFallBackSchema()).
+    Utf8CP instanceXml = R"xml(<Foo><IntProp>42</IntProp></Foo>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+
+    CapturingSchemaRemapper remapper;
+    instanceContext->SetSchemaRemapper(&remapper);
+
+    // Baseline: schema still held externally. Remapper must run and see a live refcount.
+    {
+    IECInstancePtr instance;
+    InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml, *instanceContext);
+    EXPECT_TRUE(remapper.m_invoked) << "Remapper was not called - the lifetime probe is not wired up";
+    EXPECT_TRUE(remapper.m_observedRefCount >= 1 && remapper.m_observedRefCount < 10) << "Remapper observed an unexpected refcount value, indicating the lifetime probe is not working as intended";
+    EXPECT_EQ(InstanceReadStatus::Success, status);
+    ASSERT_TRUE(instance.IsValid());
+    }
+
+    remapper.Reset();
+
+    // Drop every external owner. The context's internal refcount must be the only thing
+    // keeping the schema alive after this.
+    schema = nullptr;
+    schemaContext = nullptr;
+
+    {
+    IECInstancePtr instance;
+    InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml, *instanceContext);
+    EXPECT_TRUE(remapper.m_invoked);
+    EXPECT_TRUE(remapper.m_observedRefCount >= 1 && remapper.m_observedRefCount < 10) << "Remapper observed an unexpected refcount value, indicating the lifetime probe is not working as intended";
+    EXPECT_EQ(InstanceReadStatus::Success, status);
+    ASSERT_TRUE(instance.IsValid());
+    EXPECT_STREQ("Foo", instance->GetClass().GetName().c_str());
+    EXPECT_STREQ("TestSchema", instance->GetClass().GetSchema().GetName().c_str());
+    }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
