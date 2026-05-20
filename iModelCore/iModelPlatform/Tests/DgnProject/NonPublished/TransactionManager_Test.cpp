@@ -5,7 +5,6 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/PlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatform/DgnTexture.h>
 
@@ -1051,7 +1050,7 @@ TEST_F(TransactionManagerTests, FileBasedTxnChecksumFailure)
     auto& txns = m_db->Txns();
 
     // Enable file-based txn storage
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
     m_db->SaveChanges();
 
     // Insert an element
@@ -1065,20 +1064,10 @@ TEST_F(TransactionManagerTests, FileBasedTxnChecksumFailure)
     txnDir.AppendToPath(L"txns");
     ASSERT_TRUE(txnDir.DoesPathExist());
 
-    // Find a .txn file using directory iteration
-    BeFileName txnFile;
-    bool found = false;
-    WString filename;
-    bool isDir;
-    for (BeDirectoryIterator iter(txnDir); SUCCESS == iter.GetCurrentEntry(filename, isDir); iter.ToNext()) {
-        if (!isDir && filename.EndsWithI(L".txn")) {
-            txnFile = txnDir;
-            txnFile.AppendToPath(filename.c_str());
-            found = true;
-            break;
-        }
-    }
-    ASSERT_TRUE(found);
+    // Get the specific txn file for the last saved transaction
+    auto lastTxnId = txns.GetLastTxnId();
+    BeFileName txnFile = txns.GetTxnFilePath(lastTxnId);
+    ASSERT_TRUE(txnFile.DoesPathExist());
 
     // Corrupt the file by overwriting first bytes
     BeFile file;
@@ -1107,7 +1096,7 @@ TEST_F(TransactionManagerTests, FileBasedTxnMixedMode)
     m_db->SaveChanges("legacy change");
 
     // Now enable file-based txn storage
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->SaveBriefcaseLocalValue("fileBasedTxns", "1"));
     m_db->SaveChanges();
 
     // Insert another element (file-based)

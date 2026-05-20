@@ -341,6 +341,58 @@ BentleyStatus TxnManager::EnsureTxnDirectory() const {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Compute SHA1 checksum of a file using streaming reads in fixed-size chunks.
+* Avoids loading the entire file into memory to support large files (2+ GB).
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult ComputeFileChecksumStreaming(BeFileNameCR filePath, Byte* outChecksum) {
+    static constexpr uint32_t CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB chunks
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read)) {
+        return BE_SQLITE_ERROR;
+    }
+
+    uint64_t fileSize = 0;
+    file.GetSize(fileSize);
+
+    SHA1 sha1;
+    bvector<Byte> buffer(CHUNK_SIZE);
+    uint64_t remaining = fileSize;
+
+    while (remaining > 0) {
+        uint32_t toRead = (uint32_t)std::min((uint64_t)CHUNK_SIZE, remaining);
+        uint32_t bytesRead = 0;
+        if (BeFileStatus::Success != file.Read(buffer.data(), &bytesRead, toRead)) {
+            file.Close();
+            return BE_SQLITE_ERROR;
+        }
+        if (bytesRead == 0)
+            break;
+        sha1.Add(buffer.data(), bytesRead);
+        remaining -= bytesRead;
+    }
+    file.Close();
+
+    SHA1::HashVal hashVal = sha1.GetHashVal();
+    memcpy(outChecksum, hashVal.m_buffer, SHA1::HashBytes);
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Parse a FileBasedTxnHeader from a SQLite blob safely (using memcpy to avoid unaligned access).
+* Returns true if the blob contains a valid file-based txn header.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ParseFileBasedTxnHeader(FileBasedTxnHeader& outHeader, void const* blobData, int blobSize) {
+    if (blobSize < (int)sizeof(FileBasedTxnHeader))
+        return false;
+
+    memcpy(&outHeader, blobData, sizeof(FileBasedTxnHeader));
+    return outHeader.m_signature == FileBasedTxnHeader::DB_Signature07;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Write a changeset to a .txn file using LZMA compression. Computes SHA1 checksum of
 * the written file and returns it via outChecksum.
 * @bsimethod
@@ -372,28 +424,12 @@ DbResult TxnManager::WriteTxnToFile(TxnId txnId, ChangeSetCR changeset, Byte* ou
         }
     }
 
-    // Compute SHA1 checksum of the file
-    SHA1 sha1;
-    BeFile file;
-    if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read)) {
-        LOG.error("WriteTxnToFile: failed to open file for checksum");
-        return BE_SQLITE_ERROR;
+    // Compute SHA1 checksum of the file using streaming reads
+    DbResult checksumRc = ComputeFileChecksumStreaming(filePath, outChecksum);
+    if (checksumRc != BE_SQLITE_OK) {
+        LOG.error("WriteTxnToFile: failed to compute checksum");
+        return checksumRc;
     }
-
-    uint64_t fileSize = 0;
-    file.GetSize(fileSize);
-    bvector<Byte> fileData((size_t)fileSize);
-    uint32_t bytesRead = 0;
-    if (BeFileStatus::Success != file.Read(fileData.data(), &bytesRead, (uint32_t)fileSize)) {
-        LOG.error("WriteTxnToFile: failed to read file for checksum");
-        file.Close();
-        return BE_SQLITE_ERROR;
-    }
-    file.Close();
-
-    sha1.Add(fileData.data(), (size_t)fileSize);
-    SHA1::HashVal hashVal = sha1.GetHashVal();
-    memcpy(outChecksum, hashVal.m_buffer, SHA1::HashBytes);
     return BE_SQLITE_OK;
 }
 
@@ -409,30 +445,15 @@ DbResult TxnManager::ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, 
         return BE_SQLITE_ERROR;
     }
 
-    // Read file and compute SHA1
-    BeFile file;
-    if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read)) {
-        LOG.errorv("ReadTxnFromFile: failed to open file: %s", filePath.GetNameUtf8().c_str());
-        return BE_SQLITE_ERROR;
+    // Validate SHA1 checksum using streaming reads
+    Byte computedChecksum[SHA1::HashBytes];
+    DbResult checksumRc = ComputeFileChecksumStreaming(filePath, computedChecksum);
+    if (checksumRc != BE_SQLITE_OK) {
+        LOG.errorv("ReadTxnFromFile: failed to compute checksum for file: %s", filePath.GetNameUtf8().c_str());
+        return checksumRc;
     }
 
-    uint64_t fileSize = 0;
-    file.GetSize(fileSize);
-    bvector<Byte> fileData((size_t)fileSize);
-    uint32_t bytesRead = 0;
-    if (BeFileStatus::Success != file.Read(fileData.data(), &bytesRead, (uint32_t)fileSize)) {
-        LOG.error("ReadTxnFromFile: failed to read file");
-        file.Close();
-        return BE_SQLITE_ERROR;
-    }
-    file.Close();
-
-    // Validate SHA1 checksum
-    SHA1 sha1;
-    sha1.Add(fileData.data(), (size_t)fileSize);
-    SHA1::HashVal computedHash = sha1.GetHashVal();
-
-    if (0 != memcmp(computedHash.m_buffer, expectedChecksum, SHA1::HashBytes)) {
+    if (0 != memcmp(computedChecksum, expectedChecksum, SHA1::HashBytes)) {
         LOG.errorv("ReadTxnFromFile: checksum mismatch for file: %s", filePath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
     }
@@ -473,16 +494,13 @@ bool TxnManager::ValidateFileBasedTxns() const {
 
     while (stmt.Step() == BE_SQLITE_ROW) {
         int blobSize = stmt.GetColumnBytes(1);
-        if (blobSize < (int)sizeof(FileBasedTxnHeader))
-            continue;
-
         void const* blobData = stmt.GetValueBlob(1);
-        uint32_t signature = *(uint32_t const*)blobData;
-        if (signature != FileBasedTxnHeader::DB_Signature07)
+
+        FileBasedTxnHeader fileHeader;
+        if (!ParseFileBasedTxnHeader(fileHeader, blobData, blobSize))
             continue;
 
         // This is a file-based txn — validate it
-        FileBasedTxnHeader const& fileHeader = *(FileBasedTxnHeader const*)blobData;
         TxnId txnId = stmt.GetValueId<TxnId>(0);
         BeFileName filePath = GetTxnFilePath(txnId);
 
@@ -493,33 +511,17 @@ bool TxnManager::ValidateFileBasedTxns() const {
             continue;
         }
 
-        // Read file and verify SHA1 checksum
-        BeFile file;
-        if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read)) {
-            LOG.errorv("ValidateFileBasedTxns: failed to open .txn file for txnId %s: %s",
+        // Verify SHA1 checksum using streaming reads
+        Byte computedChecksum[SHA1::HashBytes];
+        DbResult checksumRc = ComputeFileChecksumStreaming(filePath, computedChecksum);
+        if (checksumRc != BE_SQLITE_OK) {
+            LOG.errorv("ValidateFileBasedTxns: failed to read .txn file for txnId %s: %s",
                 BeInt64Id(txnId.GetValue()).ToHexStr().c_str(), filePath.GetNameUtf8().c_str());
             valid = false;
             continue;
         }
 
-        uint64_t fileSize = 0;
-        file.GetSize(fileSize);
-        bvector<Byte> fileData((size_t)fileSize);
-        uint32_t bytesRead = 0;
-        if (BeFileStatus::Success != file.Read(fileData.data(), &bytesRead, (uint32_t)fileSize)) {
-            LOG.errorv("ValidateFileBasedTxns: failed to read .txn file for txnId %s",
-                BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
-            file.Close();
-            valid = false;
-            continue;
-        }
-        file.Close();
-
-        SHA1 sha1;
-        sha1.Add(fileData.data(), (size_t)fileSize);
-        SHA1::HashVal computedHash = sha1.GetHashVal();
-
-        if (0 != memcmp(computedHash.m_buffer, fileHeader.m_checksum, SHA1::HashBytes)) {
+        if (0 != memcmp(computedChecksum, fileHeader.m_checksum, SHA1::HashBytes)) {
             LOG.errorv("ValidateFileBasedTxns: SHA1 checksum mismatch for txnId %s: %s",
                 BeInt64Id(txnId.GetValue()).ToHexStr().c_str(), filePath.GetNameUtf8().c_str());
             valid = false;
@@ -616,6 +618,7 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         FileBasedTxnHeader fileHeader((uint32_t)changeSet.GetSize(), checksum);
         rc = stmt->BindBlob(Column::Change, &fileHeader, sizeof(fileHeader), Statement::MakeCopy::Yes);
         if (rc != BE_SQLITE_OK) {
+            DeleteTxnFile(m_curr);
             BeAssert(false);
             return rc;
         }
@@ -623,6 +626,7 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         rc = stmt->Step();
         if (BE_SQLITE_DONE != rc) {
             LOG.errorv("SaveChangeSet failed: %s", BeSQLiteLib::GetErrorName(rc));
+            DeleteTxnFile(m_curr);
             BeAssert(false);
             return rc;
         }
@@ -2059,8 +2063,13 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
         m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
 
     // Enable file-based txn storage for the revert operation
-    m_dgndb.SaveBriefcaseLocalValue(FILE_BASED_TXN_PROP, "1");
-    m_dgndb.SaveChanges();
+    DbResult saveRc = m_dgndb.SaveBriefcaseLocalValue(FILE_BASED_TXN_PROP, "1");
+    if (saveRc != BE_SQLITE_DONE)
+        m_dgndb.ThrowException("failed to enable file-based txns", (int)saveRc);
+
+    saveRc = m_dgndb.SaveChanges();
+    if (saveRc != BE_SQLITE_OK)
+        m_dgndb.ThrowException("failed to save file-based txn flag", (int)saveRc);
 
     constexpr auto invert = true;
 
@@ -2141,7 +2150,11 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
 
         Utf8String saveDesc;
         saveDesc.Sprintf("reverted changeset %d", changesetIndex);
-        m_dgndb.SaveChanges(saveDesc.c_str());
+        auto saveResult = m_dgndb.SaveChanges(saveDesc.c_str());
+        if (saveResult != BE_SQLITE_OK) {
+            m_dgndb.AbandonChanges();
+            m_dgndb.ThrowException("failed to save reverted changeset", (int)saveResult);
+        }
 
         timer.Stop();
         LOG.infov("RevertTimelineChanges: reverted changeset [%d] in %.3fs, size=%" PRIuPTR,
@@ -2836,15 +2849,13 @@ ZipErrors TxnManager::ReadChanges(ChangeSet& changeset, TxnId rowId) {
             return ZIP_ERROR_BAD_DATA;
 
         int blobSize = peekStmt->GetColumnBytes(0);
-        if (blobSize >= (int)sizeof(FileBasedTxnHeader)) {
-            void const* blobData = peekStmt->GetValueBlob(0);
-            uint32_t signature = *(uint32_t const*)blobData;
-            if (signature == FileBasedTxnHeader::DB_Signature07) {
-                // File-based txn: parse header and read from file
-                FileBasedTxnHeader fileHeader = *(FileBasedTxnHeader const*)blobData;
-                DbResult rc = ReadTxnFromFile(rowId, fileHeader.m_checksum, changeset);
-                return (rc == BE_SQLITE_OK) ? ZIP_SUCCESS : ZIP_ERROR_BAD_DATA;
-            }
+        void const* blobData = peekStmt->GetValueBlob(0);
+
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            // File-based txn: read from file
+            DbResult rc = ReadTxnFromFile(rowId, fileHeader.m_checksum, changeset);
+            return (rc == BE_SQLITE_OK) ? ZIP_SUCCESS : ZIP_ERROR_BAD_DATA;
         }
     }
 
@@ -3199,13 +3210,11 @@ void TxnManager::DeleteAllTxns() {
     Statement queryStmt(m_dgndb, "SELECT [Id], [Change] FROM " DGN_TABLE_Txns);
     while (queryStmt.Step() == BE_SQLITE_ROW) {
         int blobSize = queryStmt.GetColumnBytes(1);
-        if (blobSize >= (int)sizeof(FileBasedTxnHeader)) {
-            void const* blobData = queryStmt.GetValueBlob(1);
-            uint32_t signature = *(uint32_t const*)blobData;
-            if (signature == FileBasedTxnHeader::DB_Signature07) {
-                TxnId txnId = queryStmt.GetValueId<TxnId>(0);
-                DeleteTxnFile(txnId);
-            }
+        void const* blobData = queryStmt.GetValueBlob(1);
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            TxnId txnId = queryStmt.GetValueId<TxnId>(0);
+            DeleteTxnFile(txnId);
         }
     }
 
@@ -3225,13 +3234,11 @@ void TxnManager::DeleteReversedTxns() {
     Statement queryStmt(m_dgndb, "SELECT [Id], [Change] FROM " DGN_TABLE_Txns " WHERE Deleted=1");
     while (queryStmt.Step() == BE_SQLITE_ROW) {
         int blobSize = queryStmt.GetColumnBytes(1);
-        if (blobSize >= (int)sizeof(FileBasedTxnHeader)) {
-            void const* blobData = queryStmt.GetValueBlob(1);
-            uint32_t signature = *(uint32_t const*)blobData;
-            if (signature == FileBasedTxnHeader::DB_Signature07) {
-                TxnId txnId = queryStmt.GetValueId<TxnId>(0);
-                DeleteTxnFile(txnId);
-            }
+        void const* blobData = queryStmt.GetValueBlob(1);
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            TxnId txnId = queryStmt.GetValueId<TxnId>(0);
+            DeleteTxnFile(txnId);
         }
     }
 
@@ -3252,13 +3259,11 @@ void TxnManager::DeleteFromStartTo(TxnId lastId) {
     queryStmt.BindInt64(1, lastId.GetValue());
     while (queryStmt.Step() == BE_SQLITE_ROW) {
         int blobSize = queryStmt.GetColumnBytes(1);
-        if (blobSize >= (int)sizeof(FileBasedTxnHeader)) {
-            void const* blobData = queryStmt.GetValueBlob(1);
-            uint32_t signature = *(uint32_t const*)blobData;
-            if (signature == FileBasedTxnHeader::DB_Signature07) {
-                TxnId txnId = queryStmt.GetValueId<TxnId>(0);
-                DeleteTxnFile(txnId);
-            }
+        void const* blobData = queryStmt.GetValueBlob(1);
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            TxnId txnId = queryStmt.GetValueId<TxnId>(0);
+            DeleteTxnFile(txnId);
         }
     }
 
@@ -4158,19 +4163,49 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
     DbResult rc = BE_SQLITE_OK;
 
     if (IsFileBasedTxnEnabled()) {
-        // File-based txn: delete old file (if exists) and write new one
-        DeleteTxnFile(id);
+        // File-based txn: write new content to a temp file, update the DB row,
+        // then replace the old file. This avoids data loss if the UPDATE fails.
+        if (EnsureTxnDirectory() != SUCCESS) {
+            LOG.error("PullMergeUpdateTxn: failed to create txns directory");
+            return BE_SQLITE_ERROR;
+        }
 
+        BeFileName finalPath = GetTxnFilePath(id);
+        BeFileName tempPath = finalPath;
+        tempPath.append(L".tmp");
+
+        // Write changeset to the temp file
+        {
+            DdlChanges emptyDdl;
+            ChangesetFileWriter writer(tempPath, false /*containsEcSchemaChanges*/, emptyDdl, &m_dgndb);
+            rc = writer.Initialize();
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("PullMergeUpdateTxn: failed to initialize writer: %s", BeSQLiteLib::GetErrorName(rc));
+                return rc;
+            }
+            auto reader = changeSet._GetReader();
+            rc = writer.ReadFrom(*reader);
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("PullMergeUpdateTxn: failed to write changeset to temp file: %s", BeSQLiteLib::GetErrorName(rc));
+                tempPath.BeDeleteFile();
+                return rc;
+            }
+        }
+
+        // Compute checksum of the temp file
         Byte checksum[SHA1::HashBytes];
-        rc = WriteTxnToFile(id, changeSet, checksum);
+        rc = ComputeFileChecksumStreaming(tempPath, checksum);
         if (rc != BE_SQLITE_OK) {
-            LOG.errorv("PullMergeUpdateTxn: WriteTxnToFile failed: %s", BeSQLiteLib::GetErrorName(rc));
+            LOG.error("PullMergeUpdateTxn: failed to compute checksum of temp file");
+            tempPath.BeDeleteFile();
             return rc;
         }
 
+        // Update the DB row
         FileBasedTxnHeader fileHeader((uint32_t)changeSet.GetSize(), checksum);
         rc = stmt->BindBlob(Column::Change, &fileHeader, sizeof(fileHeader), Statement::MakeCopy::Yes);
         if (rc != BE_SQLITE_OK) {
+            tempPath.BeDeleteFile();
             BeAssert(false);
             return rc;
         }
@@ -4178,9 +4213,15 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
         rc = stmt->Step();
         if (BE_SQLITE_DONE != rc) {
             LOG.errorv("PullMergeUpdateTxn failed: %s", BeSQLiteLib::GetErrorName(rc));
+            tempPath.BeDeleteFile();
             BeAssert(false);
             return rc;
         }
+
+        // DB update succeeded — now safely replace the old file
+        if (finalPath.DoesPathExist())
+            finalPath.BeDeleteFile();
+        BeFileName::BeMoveFile(tempPath, finalPath);
     } else {
         // Legacy path: compress with Snappy and store in blob
         m_snappyTo.Init();
