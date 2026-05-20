@@ -2071,7 +2071,6 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
     m_dgndb.ClearECDbCache();
 
     Utf8String currentChangesetId = GetParentChangesetId();
-    int revertIndex = 0;
     for(auto& changesetProp : changesetProps) {
         changesetProp->ValidateContent(m_dgndb);
         ChangesetFileReader changeStream(changesetProp->GetFileName(), &m_dgndb);
@@ -2079,9 +2078,10 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
         }
         currentChangesetId = changesetProp->GetParentId();
+        auto changesetIndex = changesetProp->GetChangesetIndex();
 
-        LOG.infov("RevertTimelineChanges: reverting changeset [%d] id=%s index=%d desc='%s' size=%" PRIuPTR,
-            revertIndex, changesetProp->GetChangesetId().c_str(), changesetProp->GetChangesetIndex(),
+        LOG.infov("RevertTimelineChanges: reverting changeset [%d] id=%s desc='%s' size=%" PRIuPTR,
+            changesetIndex, changesetProp->GetChangesetId().c_str(),
             changesetProp->GetSummary().c_str(), changesetProp->GetUncompressedSize());
 
         StopWatch timer(true);
@@ -2140,14 +2140,12 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
         }
 
         Utf8String saveDesc;
-        saveDesc.Sprintf("reverted changeset %d", revertIndex);
+        saveDesc.Sprintf("reverted changeset %d", changesetIndex);
         m_dgndb.SaveChanges(saveDesc.c_str());
 
         timer.Stop();
         LOG.infov("RevertTimelineChanges: reverted changeset [%d] in %.3fs, size=%" PRIuPTR,
-            revertIndex, timer.GetElapsedSeconds(), changesetProp->GetUncompressedSize());
-
-        ++revertIndex;
+            changesetIndex, timer.GetElapsedSeconds(), changesetProp->GetUncompressedSize());
     }
 }
 /*---------------------------------------------------------------------------------**/ /**
