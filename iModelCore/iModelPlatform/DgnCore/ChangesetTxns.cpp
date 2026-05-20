@@ -39,6 +39,9 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         // behave consistently with the JS context.  In particular, indirect model-timestamp
         // (LastMod / GeometryGuid) conflicts that arise when multiple pending txns are
         // reinstated must not abort the rebase.
+        //
+        // CROSS-REFERENCE: Keep in sync with IModelDb.txns._onRebaseLocalTxnConflict in
+        // core-backend (imodeljs).  If the JS handler changes, update this C++ fallback.
         const auto& tableName = iter.GetTableName();
         const bool isEcTable = tableName.StartsWithIAscii("ec_");
         switch (cause) {

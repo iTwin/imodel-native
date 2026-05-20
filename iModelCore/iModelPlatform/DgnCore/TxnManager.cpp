@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/Profiler.h>
+#include <ECDb/ChangesetSchema.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -3986,6 +3987,23 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         PullMergeAbortRebase(txnId, "failed to read data changes", rc);
     }
 
+    // When a far schema import remapped columns, the local data changeset targets old
+    // column positions.  Transform it so column ordinals match the post-merge schema.
+    if (!isSchemaTxn && m_rebaseSchemaDiff != nullptr && m_rebaseSchemaDiff->NeedsTransform())
+        {
+        ChangeSet transformed;
+        if (SUCCESS == ChangesetTransformer::Transform(transformed, changeset, *m_rebaseSchemaDiff, m_dgndb))
+            {
+            TXN_DEBUG("   PullMergeRebaseReinstateTxn() txnId=%s transformed data changeset", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+            // Re-read the transformed bytes into the LocalChangeSet so it retains
+            // its conflict handler when ApplyChanges calls _OnConflict.
+            changeset.Clear();
+            auto readRc = changeset.ReadFrom(*transformed._GetReader());
+            if (readRc != BE_SQLITE_OK)
+                PullMergeAbortRebase(txnId, "failed to read transformed changeset", readRc);
+            }
+        }
+
     rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
     if (rc != BE_SQLITE_OK) {
         if (changeset.GetLastErrorMessage().empty())
@@ -4217,6 +4235,8 @@ void TxnManager::PullMergeRebaseEnd() {
     m_curr = conf.GetEndTxnId();
     m_reversedTxn.clear();
     m_allowConcurrentSchemaImport = false; // clear for the next pull-merge operation
+    delete m_rebaseSchemaDiff;
+    m_rebaseSchemaDiff = nullptr;
     conf.SetMergeStage(PullMergeStage::None)
         .SetEndTxnId(TxnId(0))
         .SetStartTxnId(TxnId(0))
@@ -4274,7 +4294,27 @@ bool TxnManager::PullMergeInProgress() const {
 ChangesetStatus TxnManager::PullMergeApply(ChangesetPropsCR revision){
     TXN_DEBUG("<< PullMergeApply(): %s", revision.GetFileName().GetNameUtf8().c_str());
     PullMergeBegin();
+
+    // Capture the pre-merge schema mapping so we can compute a diff after merging.
+    // This is needed to transform data txn changesets when a far schema import
+    // remaps columns (e.g. property moves to a different shared column).
+    ChangesetSchema premergeSchema;
+    if (m_allowConcurrentSchemaImport)
+        ChangesetSchema::CaptureFromDb(premergeSchema, m_dgndb);
+
     auto rc = MergeChangeset(revision, false);
+
+    // Compute the schema diff: if far pushed a transforming schema, data txn
+    // changesets will need column ordinals rewritten during reinstate.
+    if (m_allowConcurrentSchemaImport)
+        {
+        ChangesetSchema postmergeSchema;
+        ChangesetSchema::CaptureFromDb(postmergeSchema, m_dgndb);
+        delete m_rebaseSchemaDiff;
+        m_rebaseSchemaDiff = new ChangesetSchemaDiff();
+        ChangesetSchemaDiff::Diff(*m_rebaseSchemaDiff, premergeSchema, postmergeSchema);
+        }
+
     PullMergeEnd();
     TXN_DEBUG(">> PullMergeApply(): %s rc(%d)", revision.GetFileName().GetNameUtf8().c_str(), rc);
     return rc;

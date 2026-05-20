@@ -283,7 +283,7 @@ public:
     //! @param bindRow    Callback that binds column values via Row; return BE_SQLITE_OK to commit or any error to discard.
     //! @param indirect   If true, marks the change as indirect.
     //! @return BE_SQLITE_OK on success.
-    BE_SQLITE_EXPORT DbResult Append(Utf8CP tableName, DbOpcode op, std::function<DbResult(Row&)> bindRow, bool indirect = false);
+    BE_SQLITE_EXPORT DbResult Append(Utf8CP tableName, DbOpcode op, std::function<DbResult(Row&)> const& bindRow, bool indirect = false);
 };
 
 //=======================================================================================
@@ -466,7 +466,7 @@ struct ChangeSet : ChangeStream {
     //! Populate this ChangeSet from a ChangeBuilder.
     //! @param builder The builder whose accumulated changes are serialized into this ChangeSet.
     //! @return BE_SQLITE_OK on success.
-    BE_SQLITE_EXPORT DbResult FromChangeBuilder(ChangeBuilderCR builder);
+    BE_SQLITE_EXPORT DbResult FromChangeBuilder(ChangeBuilderR builder);
 };
 
 //=======================================================================================

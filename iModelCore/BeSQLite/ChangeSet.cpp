@@ -854,7 +854,7 @@ ChangeBuilder::~ChangeBuilder() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeBuilder::Append(Utf8CP tableName, DbOpcode op, std::function<DbResult(Row&)> bindRow, bool indirect) {
+DbResult ChangeBuilder::Append(Utf8CP tableName, DbOpcode op, std::function<DbResult(Row&)> const& bindRow, bool indirect) {
     auto* cg = (sqlite3_changegroup*)m_changegroup;
     if (cg == nullptr)
         return BE_SQLITE_ERROR;
@@ -920,8 +920,8 @@ DbResult ChangeBuilder::Row::BindNull(bool bNew, int iCol) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::FromChangeBuilder(ChangeBuilderCR builder) {
-    auto* cg = (sqlite3_changegroup*)const_cast<ChangeBuilder&>(builder).m_changegroup;
+DbResult ChangeSet::FromChangeBuilder(ChangeBuilderR builder) {
+    auto* cg = (sqlite3_changegroup*)builder.m_changegroup;
     if (cg == nullptr)
         return BE_SQLITE_ERROR;
     return (DbResult)sqlite3changegroup_output_strm(cg, AppendCallback, this);

@@ -423,7 +423,7 @@ BentleyStatus SchemaManager::Sessions::DropByTxnId(uint64_t txnId)
 
     // First pass: identify which sessions to remove, and collect schema names still
     // referenced by sessions that will survive (needed to guard shared static XML keys).
-    bvector<BeJsValue::ArrayIndex> toRemove;
+    bset<BeJsValue::ArrayIndex> toRemove;
     bset<Utf8String> survivingSchemaNames;
     for (BeJsValue::ArrayIndex i = 0, n = sessionsDoc.size(); i < n; ++i)
         {
@@ -433,7 +433,7 @@ BentleyStatus SchemaManager::Sessions::DropByTxnId(uint64_t txnId)
         bool isTarget = entry.isMember("txnId") && (uint64_t) entry["txnId"].GetInt64() == txnId;
         if (isTarget)
             {
-            toRemove.push_back(i);
+            toRemove.insert(i);
             }
         else
             {
@@ -481,10 +481,7 @@ BentleyStatus SchemaManager::Sessions::DropByTxnId(uint64_t txnId)
     newDoc.SetEmptyArray();
     for (BeJsValue::ArrayIndex i = 0, n = sessionsDoc.size(); i < n; ++i)
         {
-        bool removed = false;
-        for (auto idx : toRemove)
-            if (idx == i) { removed = true; break; }
-        if (!removed)
+        if (!toRemove.count(i))
             newDoc.appendValue().From(sessionsDoc[i]);
         }
 

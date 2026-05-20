@@ -11,6 +11,10 @@
 #include <ECDb/ECInstanceId.h>
 #include <functional>
 
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct ChangesetSchemaDiff;
+END_BENTLEY_SQLITE_EC_NAMESPACE
+
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
 #define TXN_TABLE_PREFIX "txn_"
@@ -419,6 +423,7 @@ private:
     TxnRelationshipLinkTables m_rlt;
     bool m_allowSaveChangesDuringRebase = false;
     bool m_allowConcurrentSchemaImport = false;
+    BeSQLite::EC::ChangesetSchemaDiff* m_rebaseSchemaDiff = nullptr;
     int m_txnErrors = 0;
     bool m_fatalValidationError;
     bool m_initTableHandlers;

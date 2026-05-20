@@ -64,29 +64,29 @@ BentleyStatus ChangesetSchema::CaptureFromDb(ChangesetSchema& out, ECDbCR ecdb)
         classIdToKey[entry.m_classId] = key;
 
     // Step 2: Resolve base classes. We use the first base class from ec_ClassHasBaseClasses
-    // that is also in our mapped set.
+    // that is also in our mapped set. Query per-class to avoid scanning the entire table.
     Statement baseStmt;
     if (BE_SQLITE_OK != baseStmt.Prepare(ecdb,
-        "SELECT chbc.ClassId, s.Name, bc.Name "
+        "SELECT s.Name, bc.Name "
         "FROM " TABLE_ClassHasBaseClasses " chbc "
         "JOIN " TABLE_Class " bc ON bc.Id = chbc.BaseClassId "
         "JOIN " TABLE_Schema " s ON bc.SchemaId = s.Id "
-        "ORDER BY chbc.ClassId, chbc.Ordinal"))
+        "WHERE chbc.ClassId = ? "
+        "ORDER BY chbc.Ordinal LIMIT 1"))
         return ERROR;
 
-    while (BE_SQLITE_ROW == baseStmt.Step())
+    for (auto& [key, entry] : out.m_classes)
         {
-        ECClassId derivedId = baseStmt.GetValueId<ECClassId>(0);
-        Utf8String baseSchemaName = baseStmt.GetValueText(1);
-        Utf8String baseClassName = baseStmt.GetValueText(2);
-        Utf8String baseKey = baseSchemaName + ":" + baseClassName;
-
-        auto idIt = classIdToKey.find(derivedId);
-        if (idIt == classIdToKey.end())
-            continue;
-        auto& entry = out.m_classes[idIt->second];
-        if (entry.m_baseClass.empty() && out.m_classes.count(baseKey))
-            entry.m_baseClass = baseKey;
+        baseStmt.Reset();
+        baseStmt.BindId(1, entry.m_classId);
+        if (BE_SQLITE_ROW == baseStmt.Step())
+            {
+            Utf8String baseSchemaName = baseStmt.GetValueText(0);
+            Utf8String baseClassName = baseStmt.GetValueText(1);
+            Utf8String baseKey = baseSchemaName + ":" + baseClassName;
+            if (out.m_classes.count(baseKey))
+                entry.m_baseClass = baseKey;
+            }
         }
 
     // Step 3: Get tables for each class.
@@ -184,48 +184,39 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
     {
     out.m_classes.clear();
 
-    // Step 1: Iterate the changeset to collect referenced table names and ECClassId values.
-    // For each table, determine which classes are referenced.
-    bset<Utf8String> referencedTableNames;
-    bset<ECClassId> referencedClassIds;
-
-    Changes changes = const_cast<ChangeStream&>(changeset).GetChanges();
-    for (auto const& change : changes)
-        {
-        Utf8String tableName = change.GetTableName();
-        referencedTableNames.insert(tableName);
-
-        // Try to read ECClassId from old or new values.
-        // We need the ECClassId column index for this table — we'll query it below.
-        }
-
-    if (referencedTableNames.empty())
-        return SUCCESS;
-
-    // Step 2: For each referenced table, look up ExclusiveRootClassId or find ECClassId column.
-    // Build a map: tableName -> { exclusiveRootClassId (or invalid), ecClassIdColumnOrdinal }
+    // Steps 1-3 combined: Iterate the changeset once.
+    // For each row, lazily look up the table's ExclusiveRootClassId and ECClassId column
+    // ordinal, then immediately extract the class ID from the changeset row.
     struct TableInfo
         {
         ECClassId m_exclusiveRootClassId;
         int m_ecClassIdColumnOrdinal = -1; // column ordinal in SQLite table (0-based)
         };
     std::map<Utf8String, TableInfo> tableInfoMap;
+    bset<ECClassId> referencedClassIds;
 
-    // Query ExclusiveRootClassId from ec_Table.
+    // Prepare statements used by the lazy table info lookup.
     Statement exclStmt;
     if (BE_SQLITE_OK != exclStmt.Prepare(ecdb,
         "SELECT ExclusiveRootClassId FROM " TABLE_Table " WHERE Name = ?"))
         return ERROR;
 
-    for (auto const& tableName : referencedTableNames)
+    auto getOrBuildTableInfo = [&](Utf8StringCR tableName) -> TableInfo const&
         {
+        auto it = tableInfoMap.find(tableName);
+        if (it != tableInfoMap.end())
+            return it->second;
+
         TableInfo info;
 
         // Look up ExclusiveRootClassId.
         exclStmt.Reset();
         exclStmt.BindText(1, tableName, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == exclStmt.Step() && !exclStmt.IsColumnNull(0))
+            {
             info.m_exclusiveRootClassId = exclStmt.GetValueId<ECClassId>(0);
+            referencedClassIds.insert(info.m_exclusiveRootClassId);
+            }
 
         // Use PRAGMA table_info to find ECClassId column by name.
         // This gives the actual SQLite column position (cid), which matches
@@ -247,28 +238,15 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
                 }
             }
 
-        tableInfoMap[tableName] = info;
-        }
+        return tableInfoMap.emplace(tableName, info).first->second;
+        };
 
-    // Step 3: Re-iterate changeset to collect class IDs.
-    // For tables with ExclusiveRootClassId, add that class directly.
-    // For tables with ECClassId column, read the value from changeset rows.
-    for (auto const& [tableName, info] : tableInfoMap)
-        {
-        if (info.m_exclusiveRootClassId.IsValid())
-            referencedClassIds.insert(info.m_exclusiveRootClassId);
-        }
-
-    // Now re-iterate to read ECClassId values from changeset rows.
-    Changes changes2 = const_cast<ChangeStream&>(changeset).GetChanges();
-    for (auto const& change : changes2)
+    Changes changes = const_cast<ChangeStream&>(changeset).GetChanges();
+    for (auto const& change : changes)
         {
         Utf8String tableName = change.GetTableName();
-        auto infoIt = tableInfoMap.find(tableName);
-        if (infoIt == tableInfoMap.end())
-            continue;
+        auto const& info = getOrBuildTableInfo(tableName);
 
-        auto const& info = infoIt->second;
         if (info.m_ecClassIdColumnOrdinal < 0)
             continue; // no ECClassId column in this table
 
@@ -351,34 +329,29 @@ BentleyStatus ChangesetSchema::Capture(ChangesetSchema& out, ECDbCR ecdb, Change
             }
         }
 
-    // Build classId → classKey reverse index for O(log n) lookup in Step 6.
-    std::map<ECClassId, Utf8String> classIdToKey;
-    for (auto const& [key, entry] : out.m_classes)
-        classIdToKey[entry.m_classId] = key;
-
-    // Step 6: Resolve base classes.
+    // Step 6: Resolve base classes. Query per-class to avoid scanning the entire table.
     Statement baseResolveStmt;
     if (BE_SQLITE_OK != baseResolveStmt.Prepare(ecdb,
-        "SELECT chbc.ClassId, s.Name, bc.Name "
+        "SELECT s.Name, bc.Name "
         "FROM " TABLE_ClassHasBaseClasses " chbc "
         "JOIN " TABLE_Class " bc ON bc.Id = chbc.BaseClassId "
         "JOIN " TABLE_Schema " s ON bc.SchemaId = s.Id "
-        "ORDER BY chbc.ClassId, chbc.Ordinal"))
+        "WHERE chbc.ClassId = ? "
+        "ORDER BY chbc.Ordinal LIMIT 1"))
         return ERROR;
 
-    while (BE_SQLITE_ROW == baseResolveStmt.Step())
+    for (auto& [key, entry] : out.m_classes)
         {
-        ECClassId derivedId = baseResolveStmt.GetValueId<ECClassId>(0);
-        Utf8String baseSchemaName = baseResolveStmt.GetValueText(1);
-        Utf8String baseClassName = baseResolveStmt.GetValueText(2);
-        Utf8String baseKey = baseSchemaName + ":" + baseClassName;
-
-        auto idIt = classIdToKey.find(derivedId);
-        if (idIt == classIdToKey.end())
-            continue;
-        auto& entry = out.m_classes[idIt->second];
-        if (entry.m_baseClass.empty() && out.m_classes.count(baseKey))
-            entry.m_baseClass = baseKey;
+        baseResolveStmt.Reset();
+        baseResolveStmt.BindId(1, entry.m_classId);
+        if (BE_SQLITE_ROW == baseResolveStmt.Step())
+            {
+            Utf8String baseSchemaName = baseResolveStmt.GetValueText(0);
+            Utf8String baseClassName = baseResolveStmt.GetValueText(1);
+            Utf8String baseKey = baseSchemaName + ":" + baseClassName;
+            if (out.m_classes.count(baseKey))
+                entry.m_baseClass = baseKey;
+            }
         }
 
     // Step 7: Get tables for each class.
@@ -600,6 +573,10 @@ BentleyStatus ChangesetSchemaDiff::Diff(ChangesetSchemaDiff& out,
     out.m_overflowTablesAdded.clear();
     out.m_errors.clear();
 
+    // Caches for GetFullPropertyMap — avoid recomputing for classes sharing ancestors.
+    std::map<Utf8String, std::map<Utf8String, ChangesetSchemaPropertyMap>> beforeFullMapCache;
+    std::map<Utf8String, std::map<Utf8String, ChangesetSchemaPropertyMap>> afterFullMapCache;
+
     for (auto const& [classKey, beforeEntry] : before.GetClasses())
         {
         // ERROR: Class not found in after
@@ -627,8 +604,16 @@ BentleyStatus ChangesetSchemaDiff::Diff(ChangesetSchemaDiff& out,
             }
 
         // 2. COLUMN SWAP — compare full property maps (with inheritance resolved)
-        auto beforeFullMap = before.GetFullPropertyMap(classKey);
-        auto afterFullMap = after.GetFullPropertyMap(classKey);
+        // Use caches to avoid recomputing the same ancestor chain for sibling classes.
+        auto beforeCacheIt = beforeFullMapCache.find(classKey);
+        if (beforeCacheIt == beforeFullMapCache.end())
+            beforeCacheIt = beforeFullMapCache.emplace(classKey, before.GetFullPropertyMap(classKey)).first;
+        auto const& beforeFullMap = beforeCacheIt->second;
+
+        auto afterCacheIt = afterFullMapCache.find(classKey);
+        if (afterCacheIt == afterFullMapCache.end())
+            afterCacheIt = afterFullMapCache.emplace(classKey, after.GetFullPropertyMap(classKey)).first;
+        auto const& afterFullMap = afterCacheIt->second;
 
         for (auto const& [accessString, beforePropMap] : beforeFullMap)
             {
