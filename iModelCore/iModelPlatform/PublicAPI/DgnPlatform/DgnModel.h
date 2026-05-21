@@ -310,7 +310,7 @@ protected:
     /** @name Events associated with DgnElements of a DgnModel */
     /** @{ */
     //! Validate that an element is type-compatible with this model, without side effects.
-    //! Used by MoveElement to check compatibility before performing the move.
+    //! Used by ChangeElementParent/ChangeElementModel to check compatibility before performing the operation.
     //! @param[in] element The element to validate
     //! @return DgnDbStatus::Success if element is compatible with this model type.
     //! @note Subclasses should override to enforce model-specific type constraints.
