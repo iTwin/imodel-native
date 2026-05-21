@@ -86,7 +86,7 @@ DbResult SchemaViewWriter::CollectExcludedSchemaIds(DbCR db)
     return BE_SQLITE_OK;
     }
 
-// Binary record tags - must stay in sync with Tag enum in RuntimeSchemaBinaryReader.ts
+// Binary record tags - must stay in sync with Tag enum in SchemaViewBinaryReader.ts
 // flat format: each tag marks a table header (count-prefixed), not individual records.
 namespace Tag
     {

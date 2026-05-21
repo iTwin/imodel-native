@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! records (properties as PropRef) + string table (offset patched in header).
 //! The TS reader's parseSchemaViewBlob() understands this exact format.
 //!
-//! Format spec: docs/learning/metadata/RuntimeSchemaBinaryFormat.md in itwinjs-core.
+//! Format spec: docs/learning/metadata/SchemaViewBinaryFormat.md in itwinjs-core.
 //!
 //! Thread safety: safe for concurrent reads when ECDb is in WAL mode.
 //! Called from the PragmaSchemaView handler on the ConcurrentQuery thread pool.
