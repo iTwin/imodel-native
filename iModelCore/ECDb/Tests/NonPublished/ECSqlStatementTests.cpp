@@ -9734,7 +9734,7 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     ECSchemaPtr schema;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schemaReadContext, *schema, &schema);
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schemaReadContext, &schema);
     IECInstancePtr instance;
     InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml.c_str(), *instanceContext);
     ASSERT_TRUE(InstanceReadStatus::Success == status);
