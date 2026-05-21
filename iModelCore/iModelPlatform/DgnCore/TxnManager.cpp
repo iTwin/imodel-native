@@ -479,8 +479,11 @@ DbResult TxnManager::ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::DeleteTxnFile(TxnId txnId) {
     BeFileName filePath = GetTxnFilePath(txnId);
-    if (filePath.DoesPathExist())
-        filePath.BeDeleteFile();
+    if (filePath.DoesPathExist()) {
+        auto status = filePath.BeDeleteFile();
+        if (status != BeFileNameStatus::Success)
+            LOG.warningv("DeleteTxnFile: failed to delete .txn file for txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+    }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4218,10 +4221,37 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
             return rc;
         }
 
-        // DB update succeeded — now safely replace the old file
-        if (finalPath.DoesPathExist())
-            finalPath.BeDeleteFile();
-        BeFileName::BeMoveFile(tempPath, finalPath);
+        // DB update succeeded — now safely replace the old file using backup-then-move-then-delete
+        if (finalPath.DoesPathExist()) {
+            BeFileName backupPath = finalPath;
+            backupPath.append(L".bak");
+
+            auto moveStatus = BeFileName::BeMoveFile(finalPath, backupPath);
+            if (moveStatus != BeFileNameStatus::Success) {
+                LOG.error("PullMergeUpdateTxn: failed to backup existing .txn file before replacement");
+                tempPath.BeDeleteFile();
+                return BE_SQLITE_ERROR;
+            }
+
+            moveStatus = BeFileName::BeMoveFile(tempPath, finalPath);
+            if (moveStatus != BeFileNameStatus::Success) {
+                LOG.error("PullMergeUpdateTxn: failed to move temp file to final path, restoring backup");
+                BeFileName::BeMoveFile(backupPath, finalPath); // best-effort restore
+                tempPath.BeDeleteFile();
+                return BE_SQLITE_ERROR;
+            }
+
+            auto deleteStatus = backupPath.BeDeleteFile();
+            if (deleteStatus != BeFileNameStatus::Success)
+                LOG.warningv("PullMergeUpdateTxn: failed to delete backup file after successful replacement");
+        } else {
+            auto moveStatus = BeFileName::BeMoveFile(tempPath, finalPath);
+            if (moveStatus != BeFileNameStatus::Success) {
+                LOG.error("PullMergeUpdateTxn: failed to move temp file to final path");
+                tempPath.BeDeleteFile();
+                return BE_SQLITE_ERROR;
+            }
+        }
     } else {
         // Legacy path: compress with Snappy and store in blob
         m_snappyTo.Init();
