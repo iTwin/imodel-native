@@ -549,54 +549,41 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::MoveElement(DgnDbR dgndb, Napi::Object obj) {
+void JsInterop::ChangeElementParent(DgnDbR dgndb, Napi::Object obj) {
     BeJsConst props(obj);
 
     DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
     if (!elementId.IsValid())
         throwInvalidId();
 
-    DgnModelId newModelId = props["targetModelId"].GetId64<DgnModelId>();
-    DgnElementId targetElementId = props["targetElementId"].GetId64<DgnElementId>();
-    DgnElementId newParentId;
-
-    if (!newModelId.IsValid() && !targetElementId.IsValid())
-        throwInvalidId(); // at least one of targetModelId or targetElementId must be specified
-
-    if (targetElementId.IsValid())
-        {
-        DgnElementCPtr targetElem = dgndb.Elements().GetElement(targetElementId);
-        if (!targetElem.IsValid())
-            throwMissingId();
-
-        // Check if target element has a sub-model (modeled element case: element becomes root in that sub-model)
-        DgnModelId subModelId = targetElem->GetSubModelId();
-        if (subModelId.IsValid())
-            {
-            if (newModelId.IsValid() && newModelId != subModelId)
-                throwDgnDbStatus(DgnDbStatus::WrongModel); // targetModelId conflicts with targetElementId's sub-model
-            newModelId = subModelId;
-            // newParentId remains invalid (root element in the sub-model)
-            }
-        else
-            {
-            DgnModelId targetElemModelId = targetElem->GetModelId();
-            if (newModelId.IsValid() && newModelId != targetElemModelId)
-                throwDgnDbStatus(DgnDbStatus::WrongModel); // targetModelId conflicts with targetElementId's model
-            newModelId = targetElemModelId;
-            newParentId = targetElementId;
-            }
-        }
-
-    // Parse optional code
-    std::unique_ptr<DgnCode> newCode;
-    auto codeProp = props[DgnElement::json_code()];
-    if (!codeProp.isNull())
-        newCode = std::make_unique<DgnCode>(DgnCode::FromJson(codeProp, dgndb, true));
+    DgnElementId newParentId = props["parentId"].GetId64<DgnElementId>();
+    if (!newParentId.IsValid())
+        throwInvalidId();
 
     bool allowChildren = props["allowChildren"].GetBoolean(false);
 
-    DgnDbStatus status = dgndb.Elements().MoveElement(elementId, newModelId, newParentId, newCode.get(), allowChildren);
+    DgnDbStatus status = dgndb.Elements().ChangeElementParent(elementId, newParentId, allowChildren);
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ChangeElementModel(DgnDbR dgndb, Napi::Object obj) {
+    BeJsConst props(obj);
+
+    DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
+    if (!elementId.IsValid())
+        throwInvalidId();
+
+    DgnModelId newModelId = props["modelId"].GetId64<DgnModelId>();
+    if (!newModelId.IsValid())
+        throwInvalidId();
+
+    bool allowChildren = props["allowChildren"].GetBoolean(false);
+
+    DgnDbStatus status = dgndb.Elements().ChangeElementModel(elementId, newModelId, allowChildren);
     if (DgnDbStatus::Success != status)
         throwDgnDbStatus(status);
 }

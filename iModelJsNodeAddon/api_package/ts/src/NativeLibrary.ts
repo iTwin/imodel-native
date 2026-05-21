@@ -800,7 +800,8 @@ export declare namespace IModelJsNative {
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
-    public moveElement(moveProps: { id: Id64String, targetModelId?: Id64String, targetElementId?: Id64String, code?: CodeProps, allowChildren?: boolean }): void;
+    public changeElementParent(props: { id: Id64String, parentId: Id64String, allowChildren?: boolean }): void;
+    public changeElementModel(props: { id: Id64String, modelId: Id64String, allowChildren?: boolean }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
