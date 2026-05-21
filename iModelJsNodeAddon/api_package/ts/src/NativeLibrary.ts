@@ -1566,10 +1566,10 @@ export declare namespace IModelJsNative {
   class ChangesetReader {
     constructor();
     public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
-    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number, spillThreshHoldBytes: number): void;
-    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number, spillThreshHoldBytes: number): void;
-    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number, spillThreshHoldBytes: number): void;
-    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number, spillThreshHoldBytes: number): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
     public close(): void;
     public step(): boolean;
     public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ChangesetRowValue | undefined;
