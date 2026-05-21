@@ -3624,7 +3624,7 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     TestCSChangeSet cs;
     ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
     csFile = WriteChangesetToFile(m_ecdb, cs, "strict_newer_cs.changeset");
-    }   // m_ecdb goes out of scope and is closed here.
+    }   // End source-db setup scope; m_ecdb is reinitialized by the SetupECDb() call below.
 
     // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
