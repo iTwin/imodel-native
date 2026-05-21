@@ -52,7 +52,7 @@ public:
     //! @param[in] changesetFiles Ordered list of paths to the changeset files to open.
     //! @param[in] invert If true, the changesets are read as inverted (undo) changesets, iterated in reverse order.
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
-    //! @param[in] spillThreshold Byte size at or above which the merged changeset is spilled to a temporary LZMA-compressed file on disk rather than held entirely in memory.
+    //! @param[in] spillThreshold Byte size above which the merged changeset is spilled to a temporary LZMA-compressed file on disk rather than held entirely in memory.
     //! @return BE_SQLITE_OK on success, or an error code if the group could not be opened.
     ECDB_EXPORT DbResult OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
 
@@ -64,7 +64,7 @@ public:
     //! @param[in] changeSet The in-memory changeset to open. Ownership is transferred.
     //! @param[in] invert If true, the changeset is read as an inverted (undo) changeset.
     //! @param[in] propertyFilter Controls which properties are emitted per row. @see PropertyFilter
-    //! @param[in] spillThreshold Byte size at or above which the changeset is spilled to disk.
+    //! @param[in] spillThreshold Byte size above which the changeset is spilled to disk.
     //! @return BE_SQLITE_OK on success, or an error code if the changeset could not be opened.
     ECDB_EXPORT DbResult OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<BeSQLite::ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
 

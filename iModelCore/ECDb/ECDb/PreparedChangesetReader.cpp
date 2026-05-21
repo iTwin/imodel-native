@@ -181,13 +181,15 @@ void PreparedChangesetReader::ClearFields() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::Close() {
+    ClearMembers();
+
     if (m_tempGroupFile.DoesPathExist()) {
         if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
             LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
             return ERROR;
         }
     }
-    ClearMembers();
+    m_tempGroupFile = BeFileName{};
     return SUCCESS;
 }
 
@@ -195,19 +197,20 @@ BentleyStatus PreparedChangesetReader::Close() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::CloseInfallible() {
+    ClearMembers();
+
     if (m_tempGroupFile.DoesPathExist()) {
         if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
             LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
         }
     }
-    ClearMembers();
+    m_tempGroupFile = BeFileName{};
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearMembers() {
-    m_tempGroupFile = BeFileName{};
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
     m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
@@ -216,6 +219,7 @@ void PreparedChangesetReader::ClearMembers() {
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
+    DisableStrictMode();
 }
 
 
