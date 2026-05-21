@@ -5177,6 +5177,25 @@ private:
         return static_cast<ChangesetReader::PropertyFilter>(modeInt);
         }
 
+    size_t ParseSpillThreshold(NapiInfoCR info, int argIndex)
+        {
+        if (ARGUMENT_IS_NOT_NUMBER(argIndex))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be a number");
+        double val = info[argIndex].As<Napi::Number>().DoubleValue();
+        if (std::isnan(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must not be NaN");
+        if (std::isinf(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must not be infinite");
+        if (val < 0)
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be a non-negative number");
+        if (val != std::floor(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be an integer (no decimal part)");
+        const double kUpperBound = static_cast<double>(std::numeric_limits<size_t>::max());
+        if (val >= kUpperBound) // This depends on the node add on binary (32 bit or 64 bit)
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes exceeds the maximum allowed value");
+        return static_cast<size_t>(val);
+        }
+
 public:
     NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
     ~NativeChangesetReader() { SetInDestructor(); }
@@ -5227,7 +5246,7 @@ public:
         REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
-        REQUIRE_ARGUMENT_INTEGER(4, spillThresholdBytes);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
         DbResult rc = m_reader.OpenChangeGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
@@ -5239,7 +5258,7 @@ public:
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
-        REQUIRE_ARGUMENT_INTEGER(4, spillThresholdBytes);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5258,7 +5277,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
         REQUIRE_ARGUMENT_INTEGER(2, propFilterInt);
-        REQUIRE_ARGUMENT_INTEGER(3, spillThresholdBytes);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 3);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5278,7 +5297,7 @@ public:
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
-        REQUIRE_ARGUMENT_INTEGER(4, spillThresholdBytes);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
