@@ -844,7 +844,7 @@ bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId, ECDbCR co
     if (cls == nullptr)
         return false;
 
-    const ECClass* bisElementClass = conn.Schemas().Main().GetClass("BisCore", "Element");
+    const ECClass* bisElementClass = conn.Schemas().Main().GetClass("BisCore", "Element", SchemaLookupMode::AutoDetect);
     if (bisElementClass == nullptr)
         return false;
 

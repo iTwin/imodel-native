@@ -22,28 +22,28 @@ ChangesetReader::~ChangesetReader() { delete m_pimpl; }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenFile(ecdb, changesetFile, invert, propertyFilter);
+DbResult ChangesetReader::OpenChangesetFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
+    return m_pimpl->OpenChangesetFile(ecdb, changesetFile, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert, propertyFilter);
+DbResult ChangesetReader::OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    return m_pimpl->OpenChangeGroup(ecdb, changesetFiles, invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter);
+DbResult ChangesetReader::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    return m_pimpl->OpenInMemoryChangeset(ecdb, std::move(changeSet), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetReader::Close() { m_pimpl->Close(); }
+BentleyStatus ChangesetReader::Close() { return m_pimpl->Close(); }
 DbResult ChangesetReader::Step() { return m_pimpl->Step(); }
 
 //---------------------------------------------------------------------------------------
@@ -149,6 +149,20 @@ BentleyStatus ChangesetReader::ClearOpcodeFilters() {
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::ClearECClassNameFilters() {
     return m_pimpl->ClearECClassNameFilters();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::EnableStrictMode() {
+    return m_pimpl->EnableStrictMode();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::DisableStrictMode() {
+    return m_pimpl->DisableStrictMode();
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
