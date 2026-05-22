@@ -2809,7 +2809,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
     {
     ChangesetReader reader;
     T_Utf8StringVector files{csFile.GetNameUtf8()};
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 50ull * 1024 * 1024 /* 50 MiB spill threshold */));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
     while (BE_SQLITE_ROW == reader.Step())
         {
         ++groupRowCount;
@@ -2818,8 +2818,68 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
     ASSERT_EQ(SUCCESS, reader.Close());
     }
 
+    EXPECT_EQ(groupRowCount, 1);
     EXPECT_EQ(fileRowCount, groupRowCount);
     EXPECT_EQ(fileOpcode, groupOpcode);
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenInMemoryChangeset with the same in memory changeset should produce the same opcode and row count as OpenChangesetFile.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenInMemoryChangeset_SingleFile_SameResultAsOpenFile)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_single.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Alpha", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto inMemoryCS = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, inMemoryCS->FromChangeTrack(tracker));
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_single.changeset");
+
+
+    // Read with OpenChangesetFile.
+    int fileRowCount = 0;
+    DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++fileRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(fileOpcode));
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Read with OpenInMemoryChangeset using the same in memory changeset.
+    int inMemRowCount = 0;
+    DbOpcode inMemOpcode = DbOpcode::Delete; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(inMemoryCS), false, ChangesetReader::PropertyFilter::All, 1));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++inMemRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(inMemOpcode));
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    EXPECT_EQ(inMemRowCount, 1);
+    EXPECT_EQ(fileRowCount, inMemRowCount);
+    EXPECT_EQ(fileOpcode, inMemOpcode);
     }
 
 //---------------------------------------------------------------------------------------
