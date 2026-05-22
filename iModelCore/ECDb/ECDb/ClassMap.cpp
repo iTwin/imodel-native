@@ -609,7 +609,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             GetColumnsPropertyMapVisitor colVisitor;
             propMap->AcceptVisitor(colVisitor);
 
-            // If the property has been mapped to a column that has been freed in this schema import, avoid it's reuse and force a re-load to allocate a new column
+            // If the property has been mapped to a column that has been freed in this schema import, avoid its reuse and force a re-load to allocate a new column
             for (const DbColumn* column : colVisitor.GetColumns())
                 {
                 if (column->IsShared() && ctx.RemapManager().IsColumnFreed(*column))

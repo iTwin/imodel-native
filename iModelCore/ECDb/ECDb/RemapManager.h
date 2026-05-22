@@ -176,13 +176,16 @@ public:
         return idStr;
         }
 
-    // Returns true if ANY columns were freed/cleaned during CleanModifiedMappings in this schema import.
+    // Returns true if any columns were freed during CleanModifiedMappings on a table whose linked primary/overflow table also freed columns.
+    // Only such columns are tracked because they carry a risk of cross-table circular remaps.
+    // Columns freed on tables without a linked freed table are safe to reuse immediately and are NOT reflected here.
     bool HasFreedColumns() const
         {
         return !m_allFreedColumnIdentifiers.empty();
         }
 
-    // Returns true if the given column was freed/cleaned during CleanModifiedMappings in this schema import.
+    // Returns true if the given column was freed during CleanModifiedMappings AND its table's linked primary/overflow table also freed columns in the same import.
+    // Such a column cannot be immediately reused due to the risk of a cross-table circular remap.
     bool IsColumnFreed(const DbColumn& column) const
         {
         return m_allFreedColumnIdentifiers.count(RemapManager::GetFullColumnIdentifier(column.GetTable().GetName(), column.GetName())) > 0;

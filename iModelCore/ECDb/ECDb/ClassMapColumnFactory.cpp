@@ -514,9 +514,10 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         return;
         }
 
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     for (DbColumn const* sharedColumn : sharedColumns)
         {
-        if (ctx.RemapManager().IsColumnFreed(*sharedColumn))
+        if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*sharedColumn))
             continue;
 
         if (!IsColumnInUse(*sharedColumn) && !IsColumnUsedByAnyDerivedClass(*sharedColumn, ctx))

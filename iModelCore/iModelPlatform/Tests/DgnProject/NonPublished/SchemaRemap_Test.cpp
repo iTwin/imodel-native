@@ -371,8 +371,16 @@ TEST_F(SchemaRemapTest, MajorVersionUpgradeRemovesDataPropertiesFromOverflowTabl
   ECSchemaPtr schemaUpgrade;
   ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaUpgrade, schemaXml, *ctx));
 
+  TestIssueListener listener;
+  m_db->AddIssueListener(listener);
+  EXPECT_EQ(listener.GetReportedIssueCount(), 0);
+
   // Major-version schema upgrade that removes overflow properties
   EXPECT_EQ(SchemaStatus::Success, m_db->ImportSchemas({ schemaUpgrade.get() }, true)) << "Major-version schema upgrade that removes overflow properties should succeed";
+
+  const auto warningReported = listener.GetFilteredIssuesBySeverity(ECN::IssueSeverity::Warning);
+  EXPECT_EQ(warningReported.size(), 1);
+  EXPECT_EQ(warningReported[0].message, "The class 'TestSchema:TestElement' ECInstanceId and ECClassId property map point to overflow table but there is no data property that is stored in overflow table.");
   }
   }
 
