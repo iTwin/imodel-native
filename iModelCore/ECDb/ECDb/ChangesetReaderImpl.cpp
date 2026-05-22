@@ -46,9 +46,6 @@ BentleyStatus ChangesetReader::Impl::Close() {
     BentleyStatus status = SUCCESS;
     if (IsPrepared())
         status = m_prepared->Close();
-    if(status != SUCCESS) {
-        return status;
-    }
     m_prepared = nullptr;
     return status;
 }
