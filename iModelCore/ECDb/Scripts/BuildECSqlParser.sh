@@ -85,15 +85,19 @@ fi
 echo "Using flex  $FLEX_VER at $FLEX"
 
 # ---------------------------------------------------------------------------
-# Compile Lexical Analyzer  (mirrors: win_flex -i -8 -PSQLyy -L -o ... )
-#   -i          case-insensitive scanner
+# Compile Lexical Analyzer  (mirrors: win_flex -8 -PSQLyy -L -o ... )
 #   -8          8-bit characters
 #   -PSQLyy     prefix all yy symbols with SQLyy
 #   -L          suppress #line directives
+#
+# NOTE: -i (case-insensitive) is NOT used because keyword rules are written
+#       with explicit case-insensitive patterns (e.g. [Ss][Ee][Ll][Ee][Cc][Tt]).
+#       This avoids flex warnings about ambiguous character ranges for high
+#       bytes (\200-\375) used in UTF-8 identifier matching.
 # ---------------------------------------------------------------------------
 echo ""
 echo "Compiling Lexical Analyzer ..."
-"$FLEX" -i -8 -PSQLyy -L \
+"$FLEX" -8 -PSQLyy -L \
     -o "$PARSE_DIR/SqlFlex.cpp" \
     "$PARSE_DIR/sqlflex.l"
 
@@ -105,9 +109,13 @@ echo "Compiling Lexical Analyzer ..."
 #                     but kept for parity with the .bat)
 # Note: -k (report conflicts as errors) was a very old flag; modern bison
 #       ignores it, so it is omitted here.
+# Note: -Wno-conflicts-sr and -Wno-conflicts-rr suppress shift/reduce and
+#       reduce/reduce conflict warnings which are inherent to the SQL grammar
+#       and do not affect parser correctness.
 # ---------------------------------------------------------------------------
 echo "Compiling Parser ..."
 "$BISON" -l -pSQLyy -bSql \
+    -Wno-conflicts-sr -Wno-conflicts-rr \
     -o "$PARSE_DIR/SqlBison.cpp" \
     --defines="$PARSE_DIR/SqlBison.h" \
     "$PARSE_DIR/sqlbison.y"

@@ -35,8 +35,8 @@ cscript //nologo %vbs%
 
 :build
 ECHO Compiling Lexical Analyzer ...
-%flex_tool% -i -8 -PSQLyy -L -o%parse_dir%\SqlFlex.cpp %parse_dir%\SQLflex.l
+%flex_tool% -8 -PSQLyy -L -o%parse_dir%\SqlFlex.cpp %parse_dir%\SQLflex.l
 
 ECHO Compiling Parser ...
-%bison_tool% -k -l -pSQLyy -bSql -o %parse_dir%\SqlBison.cpp --defines=%parse_dir%\SqlBison.h %parse_dir%\SQlbison.y
+%bison_tool% -l -pSQLyy -bSql -Wno-conflicts-sr -Wno-conflicts-rr -o %parse_dir%\SqlBison.cpp --defines=%parse_dir%\SqlBison.h %parse_dir%\SQlbison.y
 
