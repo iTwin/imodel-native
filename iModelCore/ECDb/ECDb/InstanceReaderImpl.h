@@ -72,6 +72,7 @@ struct InstanceReader::Impl final {
             int m_ecClassIdCol;
             int m_ecSourceClassIdCol;
             int m_ecTargetClassIdCol;
+            mutable ECInstanceId m_lastSeekId;
             static Ptr CreateNullTableView(ECDbCR, DbTable const&);
             static Ptr CreateTableView(ECDbCR, DbTable const&);
             static Ptr CreateLinkTableView(ECDbCR, DbTable const&, RelationshipClassLinkTableMap const&);
@@ -92,6 +93,7 @@ struct InstanceReader::Impl final {
             static Ptr Create(ECDbCR, DbTable const&);
             DbTableId GetId() const { return m_id; }
             bool Seek(ECInstanceId rowId, ECN::ECClassId* classId = nullptr) const;
+            void InvalidateLastSeek() const { m_lastSeekId = ECInstanceId(); }
     };
 
     //======================================================================================

@@ -233,6 +233,11 @@ void Reader::Clear() const {
 void Reader::InvalidateSeekPos(ECInstanceKey const& key){
     if (!key.IsValid()) {
         m_seekPos.Reset();
+        return;
+    }
+    // A valid key means data was modified - invalidate table seek caches
+    for (auto& [_, tableView] : m_queryTableMap) {
+        if (tableView) tableView->InvalidateLastSeek();
     }
     if (m_seekPos.GetRowId() == key.GetInstanceId() && m_seekPos.GetClass() != nullptr && m_seekPos.GetClass()->GetClassId() == key.GetClassId()) {
         m_seekPos.Reset();
@@ -441,11 +446,17 @@ bool Property::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool TableView::Seek(ECInstanceId rowId, ECN::ECClassId* classId) const {
+    if (m_lastSeekId == rowId && rowId.IsValid()) {
+        if (classId && m_ecClassIdCol >= 0) {
+            *classId = GetSqliteStmt().GetValueId<ECN::ECClassId>(m_ecClassIdCol);
+        }
+        return true;
+    }
     auto& stmt = GetSqliteStmt();
     stmt.Reset();
-    stmt.ClearBindings();
     stmt.BindId(1, rowId);
     const auto hasRow =  stmt.Step() == BE_SQLITE_ROW;
+    m_lastSeekId = hasRow ? rowId : ECInstanceId();
     if (hasRow && classId && m_ecClassIdCol >= 0) {
         *classId = stmt.GetValueId<ECN::ECClassId>(m_ecClassIdCol);
     }

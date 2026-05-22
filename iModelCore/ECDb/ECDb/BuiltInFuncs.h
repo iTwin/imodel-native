@@ -234,6 +234,7 @@ struct XmlCAToJson final : ScalarFunction
 struct SupportInstanceQueryFunc final : ScalarFunction {
     private:
         ECDbCR m_ecdb;
+        mutable std::map<Utf8String, int, CompareIUtf8Ascii> m_cache;
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:

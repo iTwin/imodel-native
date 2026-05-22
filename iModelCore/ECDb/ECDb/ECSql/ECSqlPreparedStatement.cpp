@@ -534,7 +534,7 @@ DbResult ECSqlSelectPreparedStatement::Step()
         return BE_SQLITE_ERROR;
 
     if (IsInstanceQuery())
-        m_ecdb.GetInstanceReader().Reset();
+        m_ecdb.GetInstanceReader().InvalidateSeekPos();
 
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)

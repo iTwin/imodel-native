@@ -54,7 +54,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
             auto& colIdxArg = args[5];
             if (colIdxArg.GetNumericType() == DbValueType::IntegerVal) {
                 columnInfoIndex = colIdxArg.GetValueInt();
-                if (columnInfoIndex < 0 && columnInfoIndex >= stmt->GetColumnCount() && !stmt->GetValue(columnInfoIndex).GetColumnInfo().IsDynamic()) {
+                if (columnInfoIndex < 0 || columnInfoIndex >= stmt->GetColumnCount() || !stmt->GetValue(columnInfoIndex).GetColumnInfo().IsDynamic()) {
                     stmt = nullptr;
                 } else {
                     field = stmt->GetField(columnInfoIndex);
@@ -105,7 +105,8 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
-                ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes );
+                Utf8CP text = val.GetText();
+                ctx.SetResultText(text, (int)strlen(text), Context::CopyData::Yes );
                 if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
@@ -804,6 +805,13 @@ void SupportInstanceQueryFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* 
     ECN::ECClassCP ecClass = nullptr;
     if (arg.GetValueType() == DbValueType::TextVal) {
         Utf8String name = arg.GetValueText();
+
+        auto cacheIt = m_cache.find(name);
+        if (cacheIt != m_cache.end()) {
+            ctx.SetResultInt(cacheIt->second);
+            return;
+        }
+
         const auto delimiterPos = name.find_first_of(".:");
         if (delimiterPos == std::string::npos) {
             ctx.SetResultError("supports_instance_query() expects class name in format 'SchemaNameOrAlias.ClassName' or 'SchemaNameOrAlias:ClassName'.");
@@ -824,11 +832,40 @@ void SupportInstanceQueryFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* 
         stmt->BindText(1, className, Statement::MakeCopy::No);
         stmt->BindText(2, schemaNameOrAlias, Statement::MakeCopy::No);
         if (stmt->Step() != BE_SQLITE_ROW) {
+            m_cache[name] = 0;
             ctx.SetResultInt(0);
             return;
         }
         auto classId = stmt->GetValueId<ECN::ECClassId>(0);
         ecClass = m_ecdb.Schemas().GetClass(classId);
+
+        if (ecClass == nullptr) {
+            m_cache[name] = 0;
+            ctx.SetResultInt(0);
+            return;
+        }
+
+        if (ecClass->IsMixin()) {
+            m_cache[name] = 0;
+            ctx.SetResultInt(0);
+            return;
+        }
+
+        auto const* classMap = m_ecdb.Schemas().Main().GetClassMap(*ecClass);
+        if (classMap == nullptr) {
+            m_cache[name] = 0;
+            ctx.SetResultInt(0);
+            return;
+        }
+
+        auto mapType = classMap->GetType();
+        int result = 0;
+        if (mapType == ClassMap::Type::Class || mapType == ClassMap::Type::RelationshipLinkTable) {
+            result = 1;
+        }
+        m_cache[name] = result;
+        ctx.SetResultInt(result);
+        return;
     } else if (arg.GetValueType() == DbValueType::IntegerVal) {
         ECN::ECClassId classId(arg.GetValueUInt64());
         ecClass = m_ecdb.Schemas().GetClass(classId);
