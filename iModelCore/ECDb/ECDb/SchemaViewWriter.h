@@ -7,10 +7,12 @@
 #include <BeSQLite/BeSQLite.h>
 #include <set>
 #include <vector>
+#include <deque>
 #include <unordered_map>
 #include <unordered_set>
 #include <optional>
 #include <string>
+#include <string_view>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -36,8 +38,9 @@ struct SchemaViewWriter
     {
 private:
     bvector<Byte> m_output;
-    bvector<Utf8CP> m_stringTable; // pointers into m_stringIndex keys (stable across rehash)
-    std::unordered_map<std::string, uint32_t> m_stringIndex;
+    // deque (not vector): push_back must not invalidate the string_views held by m_stringIndex.
+    std::deque<std::string> m_stringTable;
+    std::unordered_map<std::string_view, uint32_t> m_stringIndex;
 
     // Property definition dedup
     struct PropertyDefRecord

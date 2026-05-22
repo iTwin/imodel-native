@@ -104,13 +104,13 @@ namespace Tag
 uint32_t SchemaViewWriter::Intern(Utf8CP str)
     {
     str = Safe(str);
-    std::string key(str);
-    auto it = m_stringIndex.find(key);
+    std::string_view sv(str);
+    auto it = m_stringIndex.find(sv);
     if (it != m_stringIndex.end())
         return it->second;
     uint32_t idx = (uint32_t)m_stringTable.size();
-    auto result = m_stringIndex.emplace(std::move(key), idx);
-    m_stringTable.push_back(result.first->first.c_str()); // pointer into map key (stable)
+    std::string const& stored = m_stringTable.emplace_back(str);
+    m_stringIndex.emplace(std::string_view(stored), idx);
     return idx;
     }
 
@@ -815,12 +815,12 @@ void SchemaViewWriter::WriteStringTable(size_t stOffsetPos)
     {
     uint32_t stOffset = (uint32_t)m_output.size();
     PutU32((uint32_t)m_stringTable.size());
-    for (auto s : m_stringTable)
+    for (std::string const& s : m_stringTable)
         {
-        uint32_t len = (uint32_t)strlen(s);
+        uint32_t len = (uint32_t)s.size();
         PutU32(len);
         if (len)
-            m_output.insert(m_output.end(), (Byte const*)s, (Byte const*)s + len);
+            m_output.insert(m_output.end(), (Byte const*)s.data(), (Byte const*)s.data() + len);
         }
     PatchU32(stOffsetPos, stOffset);
     }
