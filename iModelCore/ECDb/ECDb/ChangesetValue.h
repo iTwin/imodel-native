@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! subclasses only override what is meaningful for their property type.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetValueBase : IECSqlValue {
+struct ChangesetValue : IECSqlValue {
 protected:
     ECSqlColumnInfo m_columnInfo;
 
@@ -41,8 +41,10 @@ protected:
     int                        _GetArrayLength() const override;
     IECSqlValueIterable const& _GetArrayIterable() const override;
 
-    explicit ChangesetValueBase(ECSqlColumnInfo const& colInfo);
-    ~ChangesetValueBase() {}
+    explicit ChangesetValue(ECSqlColumnInfo const& colInfo);
+
+public:
+    virtual ~ChangesetValue() {}
 };
 
 //=======================================================================================
@@ -51,7 +53,7 @@ protected:
 //! for the lifetime of this object.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetPrimitiveValue final : ChangesetValueBase {
+struct ChangesetPrimitiveValue final : ChangesetValue {
 private:
     DbValue        m_value;
     DateTime::Info m_datetimeInfo;
@@ -78,7 +80,7 @@ public:
 //! Mirrors ClassIdECSqlField but implements IECSqlValue instead of ECSqlField.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetFixedInt64Value final : ChangesetValueBase {
+struct ChangesetFixedInt64Value final : ChangesetValue {
 private:
     BeInt64Id          m_id;
     mutable Utf8String m_idStr;
@@ -98,7 +100,7 @@ public:
 //! DbValues immediately at construction; pointers need not survive beyond this call.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetPoint2dValue final : ChangesetValueBase {
+struct ChangesetPoint2dValue final : ChangesetValue {
 private:
     DPoint2d m_point;
     bool     m_isNull { true };
@@ -117,7 +119,7 @@ public:
 //! DbValues immediately at construction; pointers need not survive beyond this call.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetPoint3dValue final : ChangesetValueBase {
+struct ChangesetPoint3dValue final : ChangesetValue {
 private:
     DPoint3d m_point;
     bool     m_isNull { true };
@@ -137,7 +139,7 @@ public:
 //! accessors to JsonECSqlValue, mirroring ArrayECSqlField exactly.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetArrayValue final : ChangesetValueBase {
+struct ChangesetArrayValue final : ChangesetValue {
 private:
     mutable rapidjson::Document m_json;
     std::unique_ptr<JsonECSqlValue> m_jsonValue;
@@ -170,7 +172,7 @@ public:
 //! iterate over its member values.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetStructValue final : ChangesetValueBase, IECSqlValueIterable {
+struct ChangesetStructValue final : ChangesetValue, IECSqlValueIterable {
 private:
     //=======================================================================================
     // @bsiclass
@@ -191,8 +193,8 @@ private:
         explicit IteratorState(ChangesetStructValue const& owner) : m_idx(0), m_owner(owner) {}
     };
 
-    std::vector<std::unique_ptr<IECSqlValue>> m_members;
-    std::vector<Utf8String>                   m_names;   //!< parallel to m_members
+    std::vector<std::unique_ptr<ChangesetValue>> m_members;
+    std::vector<Utf8String>                      m_names;   //!< parallel to m_members
 
     bool                       _IsNull() const override;
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;
@@ -201,7 +203,7 @@ private:
 
 public:
     explicit ChangesetStructValue(ECSqlColumnInfo const& colInfo);
-    void AppendMember(Utf8StringCR name, std::unique_ptr<IECSqlValue> member);
+    void AppendMember(Utf8StringCR name, std::unique_ptr<ChangesetValue> member);
     ~ChangesetStructValue() {}
 };
 
@@ -210,7 +212,7 @@ public:
 //! and supports iteration over those two sub-values.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ChangesetNavValue final : ChangesetValueBase, IECSqlValueIterable {
+struct ChangesetNavValue final : ChangesetValue, IECSqlValueIterable {
 private:
     //=======================================================================================
     // @bsiclass
@@ -233,8 +235,8 @@ private:
         explicit IteratorState(ChangesetNavValue const& owner) : m_owner(owner) {}
     };
 
-    std::unique_ptr<IECSqlValue> m_id;
-    std::unique_ptr<IECSqlValue> m_relClassId;
+    std::unique_ptr<ChangesetValue> m_id;
+    std::unique_ptr<ChangesetValue> m_relClassId;
 
     bool                       _IsNull() const override { return m_id == nullptr || m_id->IsNull(); }
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;
@@ -242,7 +244,7 @@ private:
     const_iterator             _CreateIterator()       const override { return const_iterator(std::unique_ptr<IIteratorState>(new IteratorState(*this))); }
 
 public:
-    ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<IECSqlValue> id, std::unique_ptr<IECSqlValue> relClassId);
+    ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<ChangesetValue> id, std::unique_ptr<ChangesetValue> relClassId);
     ~ChangesetNavValue() {}
 };
 

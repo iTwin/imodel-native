@@ -451,9 +451,6 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// In case the current row does not fit the filters, we will not create fields for it. When users call GetColumnValue, the number of rows returned will be 0.
-// As the current API we step row by row. And after we step onto a row we come to know whether the row is filtered out or not.
-// So if the row is filtered out, we will not create fields for it(as that is the most expensive part of the operation).
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredOut) {
     isCurrentRowFilteredOut = false;
@@ -513,11 +510,11 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 //+---------------+---------------+---------------+---------------+---------------+------
 int PreparedChangesetReader::GetColumnCount(Stage stage) const {
     if (!IsOpen()) {
-        LOG.warningv("Attempting to get column count from a closed PreparedChangesetReader.");
+        LOG.errorv("Attempting to get column count from a closed PreparedChangesetReader.");
         return 0;
     }
     if (!IsStepped()) {
-        LOG.warningv("Attempting to get column count from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+        LOG.errorv("Attempting to get column count from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return 0;
     }
     return m_fields.find(stage) != m_fields.end() ? static_cast<int>(m_fields.at(stage).size()) : 0;
@@ -558,16 +555,16 @@ BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnIndex) const {
     if (!IsOpen()) {
-        LOG.warningv("Attempting to get value from a closed PreparedChangesetReader.");
+        LOG.errorv("Attempting to get value from a closed PreparedChangesetReader.");
         return NoopECSqlValue::GetSingleton();
     }
     if (!IsStepped()) {
-        LOG.warningv("Attempting to get value from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+        LOG.errorv("Attempting to get value from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return NoopECSqlValue::GetSingleton();
     }
     int size = GetColumnCount(stage);
     if (columnIndex < 0 || columnIndex >= size) {
-        LOG.warningv("Column index %d is out of range for table.", columnIndex);
+        LOG.errorv("Column index %d is out of range for current row of change record for stage %s.", columnIndex, stage == Stage::New ? "New" : "Old");
         return NoopECSqlValue::GetSingleton();
     }
     return *m_fields.at(stage).at(columnIndex);
@@ -606,7 +603,7 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
             classId = val.GetId<ECN::ECClassId>().ToHexStr();
     }
     if (instanceId.empty() || classId.empty()) {
-        LOG.warningv("Could not find either ECInstanceId or ECClassId or both for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
+        LOG.errorv("Could not find either ECInstanceId or ECClassId or both for stage %s of current change. Instance key cannot be constructed.", stage == Stage::New ? "New" : "Old");
         key.clear();
         return ERROR;
     }
@@ -632,18 +629,16 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PreparedChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+std::vector<Utf8String> const* PreparedChangesetReader::GetChangeFetchedPropertyNames() const {
     if (!IsOpen()) {
         LOG.errorv("Attempting to get changed property names from a closed PreparedChangesetReader.");
-        return ERROR;
+        return nullptr;
     }
     if (!IsStepped()) {
         LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
+        return nullptr;
     }
-    out.clear();
-    out = m_changedPropNames;
-    return SUCCESS;
+    return &m_changedPropNames;
 }
 
 //---------------------------------------------------------------------------------------

@@ -134,7 +134,7 @@ private:
     ChangesetSqliteIterator  m_iterator;
 
     PropertyFilter           m_propertyFilter = PropertyFilter::All;
-    std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
+    std::unordered_map<Stage, std::vector<std::unique_ptr<ChangesetValue>>> m_fields;
     std::vector<Utf8String>  m_changedPropNames;
 
     PreparedChangesetReader(PreparedChangesetReader const&) = delete;
@@ -142,8 +142,7 @@ private:
 
     void ClearFields();
     BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
-    bool IsOpen()    const { return m_iterator.IsOpen(); }
-    bool IsStepped() const { return m_iterator.IsStepped(); }
+    bool IsOpen() const { return m_iterator.IsOpen(); }
     //! Stores @p changeStream directly via the iterator without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
@@ -154,10 +153,6 @@ public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 
     DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
-    //! Opens a pre-built in-memory ChangeSet for reading.
-    //! If the changeset size exceeds the spill threshold it is transparently written to a
-    //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
-    //! single copy at a time.
     DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     BentleyStatus Close();
@@ -170,8 +165,9 @@ public:
     int GetColumnCount(Stage stage) const;
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     BentleyStatus GetInstanceKey(Stage stage, Utf8StringR key) const;
+    bool IsStepped() const { return m_iterator.IsStepped(); }
     BentleyStatus IsECTable(bool& isECTable) const;
-    BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    std::vector<Utf8String> const* GetChangeFetchedPropertyNames() const;
     BentleyStatus IsIndirectChange(bool& isIndirect) const;
 
     // filtering APIs — delegate to m_filter

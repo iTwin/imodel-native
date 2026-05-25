@@ -7,109 +7,109 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//**** ChangesetValueBase ****
+//**** ChangesetValue ****
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetValueBase::ChangesetValueBase(ECSqlColumnInfo const& colInfo)
+ChangesetValue::ChangesetValue(ECSqlColumnInfo const& colInfo)
     : IECSqlValue(), m_columnInfo(colInfo)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueBase::_IsNull() const
+bool ChangesetValue::_IsNull() const
     { return NoopECSqlValue::GetSingleton().IsNull(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* ChangesetValueBase::_GetBlob(int* blobSize) const
+void const* ChangesetValue::_GetBlob(int* blobSize) const
     { return NoopECSqlValue::GetSingleton().GetBlob(blobSize); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueBase::_GetBoolean() const
+bool ChangesetValue::_GetBoolean() const
     { return NoopECSqlValue::GetSingleton().GetBoolean(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-double ChangesetValueBase::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+double ChangesetValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t ChangesetValueBase::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
+uint64_t ChangesetValue::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     { return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-double ChangesetValueBase::_GetDouble() const
+double ChangesetValue::_GetDouble() const
     { return NoopECSqlValue::GetSingleton().GetDouble(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int ChangesetValueBase::_GetInt() const
+int ChangesetValue::_GetInt() const
     { return NoopECSqlValue::GetSingleton().GetInt(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int64_t ChangesetValueBase::_GetInt64() const
+int64_t ChangesetValue::_GetInt64() const
     { return NoopECSqlValue::GetSingleton().GetInt64(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ChangesetValueBase::_GetText() const
+Utf8CP ChangesetValue::_GetText() const
     { return NoopECSqlValue::GetSingleton().GetText(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d ChangesetValueBase::_GetPoint2d() const
+DPoint2d ChangesetValue::_GetPoint2d() const
     { return NoopECSqlValue::GetSingleton().GetPoint2d(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d ChangesetValueBase::_GetPoint3d() const
+DPoint3d ChangesetValue::_GetPoint3d() const
     { return NoopECSqlValue::GetSingleton().GetPoint3d(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-IGeometryPtr ChangesetValueBase::_GetGeometry() const
+IGeometryPtr ChangesetValue::_GetGeometry() const
     { return NoopECSqlValue::GetSingleton().GetGeometry(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue const& ChangesetValueBase::_GetStructMemberValue(Utf8CP /*memberName*/) const
+IECSqlValue const& ChangesetValue::_GetStructMemberValue(Utf8CP /*memberName*/) const
     { return NoopECSqlValue::GetSingleton(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValueIterable const& ChangesetValueBase::_GetStructIterable() const
+IECSqlValueIterable const& ChangesetValue::_GetStructIterable() const
     { return NoopECSqlValue::GetSingleton().GetStructIterable(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int ChangesetValueBase::_GetArrayLength() const
+int ChangesetValue::_GetArrayLength() const
     { return NoopECSqlValue::GetSingleton().GetArrayLength(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValueIterable const& ChangesetValueBase::_GetArrayIterable() const
+IECSqlValueIterable const& ChangesetValue::_GetArrayIterable() const
     { return NoopECSqlValue::GetSingleton().GetArrayIterable(); }
 
 
@@ -119,7 +119,7 @@ IECSqlValueIterable const& ChangesetValueBase::_GetArrayIterable() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetPrimitiveValue::ChangesetPrimitiveValue(ECSqlColumnInfo const& colInfo, DbValue const& value, DateTime::Info const& dtInfo)
-    : ChangesetValueBase(colInfo), m_value(value), m_datetimeInfo(dtInfo)
+    : ChangesetValue(colInfo), m_value(value), m_datetimeInfo(dtInfo)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -209,7 +209,7 @@ IGeometryPtr ChangesetPrimitiveValue::_GetGeometry() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetFixedInt64Value::ChangesetFixedInt64Value(ECSqlColumnInfo const& colInfo, BeInt64Id const& id)
-    : ChangesetValueBase(colInfo), m_id(id)
+    : ChangesetValue(colInfo), m_id(id)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -229,7 +229,7 @@ Utf8CP ChangesetFixedInt64Value::_GetText() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo const& colInfo, double x, double y)
-    : ChangesetValueBase(colInfo)
+    : ChangesetValue(colInfo)
     {
     m_isNull = IECSqlValueHelper::IsNullCoord(x) || IECSqlValueHelper::IsNullCoord(y);
     if (m_isNull)
@@ -245,7 +245,7 @@ ChangesetPoint2dValue::ChangesetPoint2dValue(ECSqlColumnInfo const& colInfo, dou
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo const& colInfo, double x, double y, double z)
-    : ChangesetValueBase(colInfo)
+    : ChangesetValue(colInfo)
     {
     m_isNull = IECSqlValueHelper::IsNullCoord(x) || IECSqlValueHelper::IsNullCoord(y) || IECSqlValueHelper::IsNullCoord(z);
     if (m_isNull)
@@ -261,7 +261,7 @@ ChangesetPoint3dValue::ChangesetPoint3dValue(ECSqlColumnInfo const& colInfo, dou
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetArrayValue::ChangesetArrayValue(ECSqlColumnInfo const& colInfo, DbValue const& value, ECDbCR ecdb)
-    : ChangesetValueBase(colInfo)
+    : ChangesetValue(colInfo)
     {
     if (!value.IsValid() || value.IsNull())
         m_json.SetArray();
@@ -377,13 +377,13 @@ IECSqlValueIterable const& ChangesetArrayValue::_GetArrayIterable() const
 //**** ChangesetStructValue ****
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo const& colInfo)
-    : ChangesetValueBase(colInfo), IECSqlValueIterable()
+    : ChangesetValue(colInfo), IECSqlValueIterable()
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetStructValue::AppendMember(Utf8StringCR name, std::unique_ptr<IECSqlValue> member)
+void ChangesetStructValue::AppendMember(Utf8StringCR name, std::unique_ptr<ChangesetValue> member)
     {
     m_names.push_back(name);
     m_members.push_back(std::move(member));
@@ -419,8 +419,8 @@ IECSqlValue const& ChangesetStructValue::_GetStructMemberValue(Utf8CP memberName
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<IECSqlValue> id, std::unique_ptr<IECSqlValue> relClassId)
-    : ChangesetValueBase(colInfo), IECSqlValueIterable(),
+ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<ChangesetValue> id, std::unique_ptr<ChangesetValue> relClassId)
+    : ChangesetValue(colInfo), IECSqlValueIterable(),
       m_id(std::move(id)), m_relClassId(std::move(relClassId))
     {}
 

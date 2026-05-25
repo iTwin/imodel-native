@@ -5384,14 +5384,14 @@ public:
         out["key"] = instanceKey.c_str();
         
         // filling fetched changeset properties
-        std::vector<Utf8String> names;
-        if (m_reader.GetChangeFetchedPropertyNames(names) != SUCCESS)
+        std::vector<Utf8String> const* names = m_reader.GetChangeFetchedPropertyNames();
+        if (names == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
         
         BeJsValue changeFetchedPropNames = out["changeFetchedPropNames"];
         changeFetchedPropNames.SetEmptyArray();
         uint32_t i = 0;
-        for (auto const& name : names) 
+        for (auto const& name : *names) 
             {
             changeFetchedPropNames[i] = name;
             i++;
