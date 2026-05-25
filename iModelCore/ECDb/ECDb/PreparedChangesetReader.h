@@ -76,10 +76,7 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ChangesetSqliteIterator final {
 public:
-    //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
-    //! Only columns that are actually present (non-absent) in the changeset are included.
-    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
-    using Stage          = Changes::Change::Stage;
+    using Stage = Changes::Change::Stage;
 
 private:
     ECDbCR                        m_ecdb;
@@ -111,13 +108,11 @@ public:
     BentleyStatus IsIndirectChange(bool& isIndirect) const;
     //! Raw column count reported by the changeset for the current change row.
     int GetChangeColumnCount() const;
-    //! Column count for @p tableName via PRAGMA_TABLE_INFO.
-    BentleyStatus GetColumnCount(Utf8StringCR tableName, int& columnCount) const;
-    //! Fills @p outMap with (columnName → DbValue) for the current row at @p stage.
-    //! Only non-absent values are included. PK columns missing from the stage slot are
-    //! back-filled from the Old slot.
-    BentleyStatus GetColumnValues(Stage stage, Utf8StringCR tableName, ColumnValueMap& outMap) const;
-    void DumpColumnValues(ColumnValueMap const& map) const;
+    //! Returns the DbValue for @p col at @p stage.
+    //! Computes the 0-based SQLite cid via DbColumn::SqliteCidFromColumn and bounds-checks it.
+    //! Falls back to the Old slot when the value is absent and the column backs ECInstanceId
+    //! (needed for Stage::New on UPDATE where the PK/InstanceId slot is omitted).
+    DbValue GetColumnValue(DbColumn const& col, Stage stage) const;
     static Utf8String DbOpcodeToString(DbOpcode opcode);
 };
 
@@ -131,7 +126,6 @@ struct PreparedChangesetReader final {
 private:
     using Stage          = ChangesetSqliteIterator::Stage;
     using PropertyFilter = ChangesetReader::PropertyFilter;
-    using ColumnValueMap = ChangesetSqliteIterator::ColumnValueMap;
     enum class StageProcessResult { Success, Error, Filtered };
 
     ECDbCR                   m_ecdb;
@@ -142,9 +136,6 @@ private:
     PropertyFilter           m_propertyFilter = PropertyFilter::All;
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String>  m_changedPropNames;
-    //! Scratch map reused across ProcessStageValues calls to avoid repeated heap alloc/dealloc
-    //! of the unordered_map bucket array and node pool on every changeset row.
-    ColumnValueMap           m_columnValuesScratch;
 
     PreparedChangesetReader(PreparedChangesetReader const&) = delete;
     PreparedChangesetReader& operator=(PreparedChangesetReader const&) = delete;

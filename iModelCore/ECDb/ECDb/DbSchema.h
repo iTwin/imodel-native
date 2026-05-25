@@ -215,6 +215,8 @@ public:
 
     static Utf8CP TypeToSql(DbColumn::Type);
     static bool IsCompatible(Type lhs, Type rhs);
+    //!@return 0-based SQLite cid of this column in its table, skipping virtual columns. Returns -1 if not found.
+    static int SqliteCidFromColumn(DbColumn const&);
     };
 
 

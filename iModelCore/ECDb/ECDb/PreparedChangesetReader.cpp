@@ -205,76 +205,15 @@ int ChangesetSqliteIterator::GetChangeColumnCount() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetSqliteIterator::GetColumnCount(Utf8StringCR tableName, int& columnCount) const {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM PRAGMA_TABLE_INFO(?)");
-    if (stmt == nullptr) {
-        LOG.errorv("Failed to prepare statement to get column count for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    stmt->Reset();
-    stmt->ClearBindings();
-    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
-    DbResult stat = stmt->Step();
-    if (stat == BE_SQLITE_ROW) {
-        columnCount = stmt->GetValueInt(0);
-    } else {
-        LOG.errorv("Failed to step through column count query for table '%s'.", tableName.c_str());
-        stmt->Reset();
-        stmt->ClearBindings();
-        return ERROR;
-    }
-    stmt->Reset();
-    stmt->ClearBindings();
-    return SUCCESS;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetSqliteIterator::GetColumnValues(Stage stage, Utf8StringCR tableName, ColumnValueMap& outMap) const {
-    int columnCount = 0;
-    if (GetColumnCount(tableName, columnCount) != SUCCESS) {
-        LOG.errorv("Failed to get column count for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    int minimum = std::min(columnCount, m_currentChange.GetColumnCount());
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
-    if (stmt == nullptr) {
-        LOG.errorv("Failed to prepare statement to get column names for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    stmt->Reset();
-    stmt->ClearBindings();
-    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
-
-    outMap.clear();
-    int colIdx = 0;
-    DbResult stat = stmt->Step();
-    while (colIdx < minimum && stat == BE_SQLITE_ROW) {
-        Utf8CP colName = stmt->GetValueText(0);
-        DbValue val = m_currentChange.GetValue(colIdx, stage);
-        if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(colIdx))
-            val = m_currentChange.GetOldValue(colIdx);
-        if (val.IsValid())
-            outMap.emplace(colName, val);
-        ++colIdx;
-        stat = stmt->Step();
-    }
-    stmt->Reset();
-    stmt->ClearBindings();
-    if (colIdx != minimum) {
-        LOG.errorv("Failed to step through required column names for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetSqliteIterator::DumpColumnValues(ColumnValueMap const& map) const {
-    for (auto const& [key, val] : map)
-        LOG.debugv("%s = %s", key.c_str(), val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)"));
+DbValue ChangesetSqliteIterator::GetColumnValue(DbColumn const& col, Stage stage) const {
+    const int cid = DbColumn::SqliteCidFromColumn(col);
+    if (cid < 0 || cid >= m_currentChange.GetColumnCount())
+        return DbValue(nullptr);
+    DbValue val = m_currentChange.GetValue(cid, stage);
+    // For Stage::New on an UPDATE the InstanceId slot is omitted; back-fill from Old.
+    if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(cid))
+        val = m_currentChange.GetOldValue(cid);
+    return val;
 }
 
 //---------------------------------------------------------------------------------------
@@ -449,7 +388,6 @@ void PreparedChangesetReader::ClearMembers() {
     m_filter.Reset();
     m_fields.clear();
     m_changedPropNames.clear();
-    m_columnValuesScratch.clear();
     m_propertyFilter = PropertyFilter::All;
 }
 
@@ -477,11 +415,14 @@ DbResult PreparedChangesetReader::Step() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames) {
-    if (m_iterator.GetColumnValues(stage, dbTable.GetName(), m_columnValuesScratch) != SUCCESS)
-        return StageProcessResult::Error;
+    // Build a getter that resolves a DbColumn to its changeset value by SQLite cid,
+    // avoiding any intermediate name→value map or PRAGMA_TABLE_INFO query.
+    auto getter = [&](DbColumn const& col) -> DbValue {
+        return m_iterator.GetColumnValue(col, stage);
+    };
     ECClassId classId;
     bool isClassIdFromChangeset = false;
-    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset) != SUCCESS)
+    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, getter, classId, isClassIdFromChangeset) != SUCCESS)
         return StageProcessResult::Error;
     ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
@@ -494,15 +435,16 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
         return StageProcessResult::Filtered;
     }
     if (m_filter.IsStrictMode()) {
-        int columnCount = 0;
-        if (m_iterator.GetColumnCount(dbTable.GetName(), columnCount) != SUCCESS)
-            return StageProcessResult::Error;
-        if (columnCount != m_iterator.GetChangeColumnCount()) {
-            LOG.errorv("Column count mismatch for table '%s': expected %d columns based on PRAGMA_TABLE_INFO, but changeset has %d columns. Disable strict mode to not treat this as an error.", dbTable.GetName().c_str(), columnCount, m_iterator.GetChangeColumnCount());
+        int physicalColCount = 0;
+        for (DbColumn const* col : dbTable.GetColumns())
+            if (!col->IsVirtual())
+                physicalColCount++;
+        if (physicalColCount != m_iterator.GetChangeColumnCount()) {
+            LOG.errorv("Column count mismatch for table '%s': expected %d physical columns from DbTable, but changeset has %d columns. Disable strict mode to not treat this as an error.", dbTable.GetName().c_str(), physicalColCount, m_iterator.GetChangeColumnCount());
             return StageProcessResult::Error;
         }
     }
-    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(m_ecdb, dbTable, getter, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
@@ -554,14 +496,12 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 
     if (opCode != DbOpcode::Delete) {
         auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
-        m_columnValuesScratch.clear(); // clear scratch map after processing New stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
     if (opCode != DbOpcode::Insert) {
         std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
         auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
-        m_columnValuesScratch.clear(); // clear scratch map after processing Old stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }

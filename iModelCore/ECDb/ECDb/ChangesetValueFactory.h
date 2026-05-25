@@ -6,20 +6,21 @@
 #include "ChangesetValue.h"
 #include <ECDb/ChangesetReader.h>
 #include <unordered_set>
+#include <functional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! Creates IECSqlValue objects for each property of a changeset row.
-//! All values are read exclusively from the supplied ColumnValueMap.
-//! Properties whose backing columns are absent from the map are silently skipped.
+//! All values are read via a ColumnValueGetter callable, keyed by DbColumn.
+//! Properties whose backing columns return an invalid DbValue are silently skipped.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetValueFactory final {
 private:
-    //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
-    //! Only columns that are actually present (non-absent) in the changeset are included.
-    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
+    //! A callable that maps a DbColumn to its DbValue for the current changeset row/stage.
+    //! Returns an invalid DbValue when the column has no value in the changeset.
+    using ColumnValueGetter = std::function<DbValue(DbColumn const&)>;
     // ------------------------------------------------------------------
     // Schema / mapping helpers
     // ------------------------------------------------------------------
@@ -36,43 +37,33 @@ private:
     static DateTime::Info GetDateTimeInfo(PropertyMap const& propertyMap);
 
     // ------------------------------------------------------------------
-    // ColumnValueMap accessors
+    // ColumnValueGetter helpers
     // ------------------------------------------------------------------
 
-    //! Returns true when @p colName is present in @p columnValues with a valid DbValue.
-    static bool IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
-
-    //! Reads @p colName from @p columnValues.  Asserts that the key is present.
-    //! Use only when the caller has already verified IsInMap().
-    static DbValue GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues);
-
-    //! Returns the double value stored in @p val, or 0.0 if @p val is null.
+    //! Returns the double value stored in @p val, or quiet_NaN if @p val is null.
     static double CheckNullAndGetDoubleValueFromDbValue(DbValue const& val);
 
     //! Returns the uint64_t value stored in @p val, or 0 if @p val is null.
     static BeInt64Id CheckNullAndGetBeInt64IdValueFromDbValue(DbValue const& val);
 
-    //! Validates that all PK columns of @p tbl are present/valid/non-null in @p columnValues,
-    //! prepares a "SELECT [@p selectCol] FROM <table> WHERE [pk1]=? AND ..." statement,
-    //! and binds all PK values.  Returns the statement ready to Step(), or nullptr on any failure.
     static CachedStatementPtr PreparePkStatement(ECDbCR conn, DbTable const& tbl,
                                                  Utf8StringCR selectColName,
-                                                 ColumnValueMap const& columnValues);
+                                                 ColumnValueGetter const& getter);
 
     //! Resets and clears bindings on @p stmt if not null.  Call after each use of a statement prepared by PreparePkStatement() to ensure it is ready for next use.
     static void ClearStatement(CachedStatementPtr stmt);
 
     //! Fetches a single real column value from the live DB for the row identified by
-    //! the table's primary-key column in @p columnValues.
+    //! the table's primary-key column via @p getter.
     //! Returns true and sets @p outVal on success; false on any failure.
     static bool TryFetchDoubleFromDb(double& outVal, ECDbCR conn, DbColumn const& col,
-                                     ColumnValueMap const& columnValues);
+                                     ColumnValueGetter const& getter);
 
     //! Fetches a single integer column value from the live DB for the row identified by
-    //! the table's primary-key column in @p columnValues.
+    //! the table's primary-key column via @p getter.
     //! Returns true and sets @p outVal on success; false on any failure.
     static bool TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn, DbColumn const& col,
-                                    ColumnValueMap const& columnValues);
+                                        ColumnValueGetter const& getter);
 
     // ------------------------------------------------------------------
     // ECSqlColumnInfo construction
@@ -98,59 +89,57 @@ private:
     //   Any non-OK DbResult is a hard error; the caller must propagate immediately.
     // ------------------------------------------------------------------
 
-    //! Single-pass dispatch: checks presence and fills fieldsOut/changedProps in one step.
-    //! Returns SUCCESS or ERROR.
     static BentleyStatus CreateValueForProperty(ECDbCR conn, PropertyMap const&,
-                                                ColumnValueMap const&, DbTable const& dbTable,
+                                                ColumnValueGetter const&, DbTable const& dbTable,
                                                 std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                                 std::vector<Utf8String>& changedProps);
 
     //! Skips when neither coordinate is in the changeset.
     //! Returns ERROR when a coordinate cannot be fetched from the live DB.
     static BentleyStatus CreatePoint2d(ECDbCR conn, PropertyMap const&,
-                                       ColumnValueMap const&, DbTable const&,
+                                       ColumnValueGetter const&, DbTable const&,
                                        std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                        std::vector<Utf8String>& changedProps);
 
     //! Skips when no coordinate is in the changeset.
     //! Returns ERROR when a coordinate cannot be fetched from the live DB.
     static BentleyStatus CreatePoint3d(ECDbCR conn, PropertyMap const&,
-                                       ColumnValueMap const&, DbTable const&,
+                                       ColumnValueGetter const&, DbTable const&,
                                        std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                        std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent from the changeset.
     //! Returns SUCCESS or ERROR.
     static BentleyStatus CreatePrimitive(ECDbCR conn, PropertyMap const&,
-                                         ColumnValueMap const&, DbTable const&,
+                                         ColumnValueGetter const&, DbTable const&,
                                          std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                          std::vector<Utf8String>& changedProps);
 
     //! Skips when the backing column is absent or virtual.
     //! Returns ERROR on internal mapping failures.
     static BentleyStatus CreateSystem(ECDbCR conn, PropertyMap const&,
-                                      ColumnValueMap const&, DbTable const& dbTable,
+                                      ColumnValueGetter const&, DbTable const& dbTable,
                                       std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                       std::vector<Utf8String>& changedProps);
 
     //! Skips when neither physical component is in the changeset.
     //! Returns ERROR when a component is partly present but the DB fetch fails.
     static BentleyStatus CreateNav(ECDbCR conn, PropertyMap const&,
-                                   ColumnValueMap const&, DbTable const&,
+                                   ColumnValueGetter const&, DbTable const&,
                                    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                    std::vector<Utf8String>& changedProps);
 
     //! Skips when the column is absent from the changeset.
     //! Returns SUCCESS or ERROR.
     static BentleyStatus CreateArray(ECDbCR conn, PropertyMap const&,
-                                     ColumnValueMap const&, DbTable const&,
+                                     ColumnValueGetter const&, DbTable const&,
                                      std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                      std::vector<Utf8String>& changedProps);
 
     //! Skips when no member has changeset data.
     //! Returns ERROR if any member value fails to be created.
     static BentleyStatus CreateStruct(ECDbCR conn, PropertyMap const&,
-                                      ColumnValueMap const&, DbTable const& dbTable,
+                                      ColumnValueGetter const&, DbTable const& dbTable,
                                       std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
                                       std::vector<Utf8String>& changedProps);
 
@@ -162,10 +151,10 @@ private:
     // High-level resolution helpers used by Create()
     // ------------------------------------------------------------------
 
-    //! Tries to resolve classMap + classId from the column values map's class-id entry.
+    //! Tries to resolve classMap + classId from the getter's class-id entry.
     //! Returns true and populates @p outClassId on success.
     static bool TryResolveClassIdFromChangeset(DbTable const& dbTable,
-                                                ColumnValueMap const& columnValues,
+                                                ColumnValueGetter const& getter,
                                                 ECDbCR conn,
                                                 ECClassId& outClassId);
 
@@ -173,14 +162,14 @@ private:
     //! Returns false immediately when the ECClassId column is virtual.
     //! Returns true and populates @p outClassId on success.
     static bool TryResolveClassIdFromDbSeek(DbTable const& dbTable,
-                                             ColumnValueMap const& columnValues,
+                                             ColumnValueGetter const& getter,
                                              ECDbCR conn,
                                              ECClassId& outClassId);
 
-    //! Reads ECInstanceId from @p columnValues, validates it, creates the field.
+    //! Reads ECInstanceId via @p getter, validates it, creates the field.
     //! Returns SUCCESS and populates outputs on success; ERROR otherwise.
     static BentleyStatus ResolveInstanceId(ClassMap const& classMap,
-                                           ColumnValueMap const& columnValues,
+                                           ColumnValueGetter const& getter,
                                            ECDbCR conn, DbTable const& tbl,
                                            ECInstanceId& outInstanceId,
                                            std::unique_ptr<IECSqlValue>& outInstanceIdField);
@@ -196,7 +185,7 @@ private:
     //! and dispatches each to CreateValueForProperty.
     //! Returns SUCCESS on success; ERROR immediately on any failure.
     static BentleyStatus BuildPropertyFields(ClassMap const& classMap,
-                                             ColumnValueMap const& columnValues,
+                                             ColumnValueGetter const& getter,
                                              ECDbCR conn, DbTable const& dbTable,
                                              std::vector<std::unique_ptr<IECSqlValue>>& fields,
                                              std::vector<Utf8String>& changedProps);
@@ -211,7 +200,7 @@ public:
     //! then falls back to the table's root ClassMap.
     //! Returns SUCCESS and populates all three out params on success; ERROR otherwise.
     static BentleyStatus ResolveClassId(ECDbCR conn, DbTable const& tbl,
-                                        ColumnValueMap const& columnValues,
+                                        ColumnValueGetter const& getter,
                                         ECClassId& resolvedClassIdOut,
                                         bool& classIdFromChangesetOut);
 
@@ -221,7 +210,7 @@ public:
     //! Returns SUCCESS on success; ERROR otherwise.
     //! Examples of entries written to @p changedProps: "Name", "Pos2d", "Pos2d.X", "Details.Label", "Owner", "Owner.Id".
     static BentleyStatus Create(ECDbCR conn, DbTable const& tbl,
-                                ColumnValueMap const& columnValues,
+                                ColumnValueGetter const& getter,
                                 ECClassId resolvedClassId, bool classIdFromChangeset,
                                 std::vector<std::unique_ptr<IECSqlValue>>& fields,
                                 ChangesetReader::PropertyFilter propertyFilter,

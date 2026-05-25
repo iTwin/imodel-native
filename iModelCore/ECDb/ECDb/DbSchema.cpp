@@ -1556,6 +1556,25 @@ int DbColumn::DeterminePosition() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+//static
+int DbColumn::SqliteCidFromColumn(DbColumn const& col)
+    {
+    int cid = 0;
+    for (DbColumn const* c : col.GetTable().GetColumns())
+        {
+        if (c->GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+        if (c == &col)
+            return cid;
+        cid++;
+        }
+    BeAssert(false && "Column must exist in the table");
+    return -1;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus DbColumn::SetKind(Kind kind)
     {
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
