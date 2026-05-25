@@ -126,9 +126,9 @@ public:
     //! For struct properties the property names are always returned in the "StructProp.MemberName" format.
     //! So if only X changed for a point2d property named "Myp2d" inide a struct "CustomStruct", the returned property name will be "CustomStruct.Myp2d.X".
     //! Similaly if both X and Y changed for the same point2d property, the returned property name will be "CustomStruct.Myp2d".
-    //! @param[out] out Receives the list of property names.
-    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
-    ECDB_EXPORT BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    //! @return Pointer to the internal list of property names, or nullptr if the reader is not open or not positioned on a valid row.
+    //! The pointer is valid until the next call to Step() or Close().
+    ECDB_EXPORT std::vector<Utf8String> const* GetChangeFetchedPropertyNames() const;
 
     //! Determines whether the current change row is an indirect change.
     //! @param[out] isIndirect Set to true if the current change is indirect, false otherwise.

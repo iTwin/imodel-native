@@ -66,7 +66,7 @@ struct ChangesetReaderTests : ECDbTestFixture {
         }
 
         //! Schema with a many-to-many (link table) relationship where source and target
-        //! constraints are non-polymorphic → SourceECClassId and TargetECClassId are virtual.
+        //! constraints are non-polymorphic â†’ SourceECClassId and TargetECClassId are virtual.
         Utf8CP GetRelSchema() const {
             return R"xml(<?xml version="1.0" encoding="utf-8"?>
                             <ECSchema schemaName="TestRelCS" alias="tr" version="01.00.00"
@@ -147,7 +147,7 @@ struct ChangesetReaderTests : ECDbTestFixture {
                         </ECSchema>)xml";
         }
 
-    //! V2 schema: Item with Name, Value, and Extra (string) — one column wider than V1.
+    //! V2 schema: Item with Name, Value, and Extra (string) â€” one column wider than V1.
     Utf8CP GetStrictModeV2Schema() const {
         return R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.01"
@@ -174,7 +174,7 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_insert.ecdb", SchemaItem(GetSchema())));
 
-    // Container inserted BEFORE tracking — must not appear in the changeset.
+    // Container inserted BEFORE tracking â€” must not appear in the changeset.
     ECInstanceKey containerKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
         "INSERT INTO ts.Container(Name) VALUES('Box')"));
@@ -323,18 +323,18 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT â€” always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
-    EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set â†’ full name
     EXPECT_FALSE(hasName("Pos2d.X"));
     EXPECT_FALSE(hasName("Pos2d.Y"));
-    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set â†’ full name
     EXPECT_FALSE(hasName("Pos3d.X"));
     EXPECT_FALSE(hasName("Pos3d.Y"));
     EXPECT_FALSE(hasName("Pos3d.Z"));
@@ -351,9 +351,9 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
 //---------------------------------------------------------------------------------------
 // UPDATE a Widget with a partial set of columns:
 //   - Name changed
-//   - Pos2d.X changed (Pos2d.Y NOT changed — falls back from DB)
-//   - Details.Label changed (Details.Score NOT changed — falls back from DB)
-//   - All other properties untouched — must NOT appear in the changeset
+//   - Pos2d.X changed (Pos2d.Y NOT changed â€” falls back from DB)
+//   - Details.Label changed (Details.Score NOT changed â€” falls back from DB)
+//   - All other properties untouched â€” must NOT appear in the changeset
 // Step through the changeset, print every New-stage and Old-stage column, then assert.
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -484,9 +484,9 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     EXPECT_FALSE(newKey.empty());
     EXPECT_FALSE(oldKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     // Changed: Name (scalar), Pos2d.X (partial Point2d), Details.Label (partial struct).
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Pos2d.X"));
@@ -498,7 +498,7 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     EXPECT_FALSE(hasName("Weight"));
     EXPECT_FALSE(hasName("Cnt"));
     EXPECT_FALSE(hasName("Pos3d"));
-    EXPECT_TRUE(hasName("ECInstanceId"));   // UPDATE — always present
+    EXPECT_TRUE(hasName("ECInstanceId"));   // UPDATE â€” always present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
 
@@ -515,12 +515,12 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_delete.ecdb", SchemaItem(GetSchema())));
 
-    // Container inserted BEFORE tracking — must not appear in the changeset.
+    // Container inserted BEFORE tracking â€” must not appear in the changeset.
     ECInstanceKey containerKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
         "INSERT INTO ts.Container(Name) VALUES('Box')"));
 
-    // Widget inserted BEFORE tracking — deleted row values appear in Old stage.
+    // Widget inserted BEFORE tracking â€” deleted row values appear in Old stage.
     ECInstanceKey widgetKey;
     {
     ECSqlStatement stmt;
@@ -650,10 +650,10 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::Old, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("ECInstanceId")); // DELETE — always present
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // DELETE â€” always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
@@ -671,7 +671,7 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     }
 
 //---------------------------------------------------------------------------------------
-// INSERT a Widget with only two scalar properties (Name + Weight) — all other properties
+// INSERT a Widget with only two scalar properties (Name + Weight) â€” all other properties
 // left unset (NULL).  Verifies that the changeset reader emits exactly those properties
 // that were explicitly provided and that GetChangeFetchedPropertyNames is consistent.
 // @bsimethod
@@ -683,7 +683,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     TestCSChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    // Insert only Name and Weight — all other properties left unset (NULL).
+    // Insert only Name and Weight â€” all other properties left unset (NULL).
     ECInstanceKey widgetKey;
     {
     ECSqlStatement stmt;
@@ -743,10 +743,10 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     EXPECT_TRUE(foundWeight) << "Weight must appear in the partial-insert changeset";
 
     // GetChangeFetchedPropertyNames must always include the explicitly set properties.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT â€” always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
 
@@ -756,7 +756,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
 
 //---------------------------------------------------------------------------------------
 // INSERT a Widget with Tags outside tracker, then UPDATE Tags with a completely new set.
-// For UPDATE: only Tags changes — New and Old stages each carry exactly 3 fields
+// For UPDATE: only Tags changes â€” New and Old stages each carry exactly 3 fields
 // (ECInstanceId, ECClassId, Tags).
 // Verifies array values in both stages and GetChangeFetchedPropertyNames = {"Tags"}.
 // @bsimethod
@@ -809,7 +809,7 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
-    // New stage — Tags has 3 elements.
+    // New stage â€” Tags has 3 elements.
     IECSqlValue const& newTags = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("Tags", newTags.GetColumnInfo().GetProperty()->GetName().c_str());
     ASSERT_EQ(3, newTags.GetArrayLength());
@@ -822,7 +822,7 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
         }
     EXPECT_EQ(3, idx);
 
-    // Old stage — Tags had 2 elements.
+    // Old stage â€” Tags had 2 elements.
     IECSqlValue const& oldTags = reader.GetValue(Changes::Change::Stage::Old, 2);
     EXPECT_STREQ("Tags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
     ASSERT_EQ(2, oldTags.GetArrayLength());
@@ -836,9 +836,9 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
     EXPECT_EQ(2, idx);
 
     // changedProps for UPDATE contains only "Tags" (no ECInstanceId).
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Tags"));
     EXPECT_FALSE(hasName("Name"));
     EXPECT_FALSE(hasName("Weight"));
@@ -893,7 +893,7 @@ TEST_F(ChangesetReaderTests, Update_TwoScalars)
     ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Update, opcode);
 
-    // ECInstanceId, ECClassId, Weight, Cnt — nothing else.
+    // ECInstanceId, ECClassId, Weight, Cnt â€” nothing else.
     ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::Old));
 
@@ -920,14 +920,14 @@ TEST_F(ChangesetReaderTests, Update_TwoScalars)
     EXPECT_EQ(10, old_v3.GetInt64());
 
     // changedProps: only Weight and Cnt; Name and Active were not touched.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_FALSE(hasName("Name"));
     EXPECT_FALSE(hasName("Active"));
-    EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE — always present
+    EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE â€” always present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(SUCCESS, reader.Close());
@@ -994,9 +994,9 @@ TEST_F(ChangesetReaderTests, Insert_NestedStruct)
     EXPECT_DOUBLE_EQ(2.34,  locVal["Coord"]["Lon"].GetDouble());
 
     // changedProps: fully-dotted paths for nested members.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Location.Street"));
@@ -1015,7 +1015,7 @@ TEST_F(ChangesetReaderTests, Insert_NestedStruct)
 // Verifies:
 //   - The Location struct is emitted but contains only the Street member (Coord absent
 //     because neither Coord column was in the changeset).
-//   - changedProps = {"Location.Street"} — Coord paths are absent.
+//   - changedProps = {"Location.Street"} â€” Coord paths are absent.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
@@ -1037,7 +1037,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     TestCSChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    // Update only Location.Street — Coord columns are untouched.
+    // Update only Location.Street â€” Coord columns are untouched.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
@@ -1059,7 +1059,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Update, opcode);
 
-    // ECInstanceId, ECClassId, Location (Street changed) — Name not touched.
+    // ECInstanceId, ECClassId, Location (Street changed) â€” Name not touched.
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
@@ -1071,11 +1071,11 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     EXPECT_STREQ("Location", oldLoc.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("Old Street", oldLoc["Street"].GetText());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Location.Street"));
-    // Coord was not touched — must not appear at all.
+    // Coord was not touched â€” must not appear at all.
     EXPECT_FALSE(hasName("Location.Coord.Lat"));
     EXPECT_FALSE(hasName("Location.Coord.Lon"));
     EXPECT_FALSE(hasName("Location.Coord"));
@@ -1092,7 +1092,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
 // Location.Coord.Lat and Location.Coord.Lon (both nested struct leaf coords).
 // Verifies:
 //   - Location struct is emitted containing only Coord (Street absent).
-//   - changedProps = {"Location.Coord.Lat", "Location.Coord.Lon"} — struct types
+//   - changedProps = {"Location.Coord.Lat", "Location.Coord.Lon"} â€” struct types
 //     never collapse to a bare name even when all their members change.
 //   - "Location.Coord" is NOT in changedProps (unlike Point2d/3d which collapse).
 // @bsimethod
@@ -1138,7 +1138,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
     ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Update, opcode);
 
-    // ECInstanceId, ECClassId, Location (Coord changed) — Name + Street not touched.
+    // ECInstanceId, ECClassId, Location (Coord changed) â€” Name + Street not touched.
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
@@ -1156,12 +1156,12 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
 
     // Key distinction from Point2d/3d: struct nesting NEVER collapses to a bare name,
     // so even when BOTH Lat and Lon change, changedProps has two dotted entries, not "Location.Coord".
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Location.Coord.Lat"));
     EXPECT_TRUE(hasName("Location.Coord.Lon"));
-    EXPECT_FALSE(hasName("Location.Coord"));  // struct, not a Point — no collapse
+    EXPECT_FALSE(hasName("Location.Coord"));  // struct, not a Point â€” no collapse
     EXPECT_FALSE(hasName("Location.Street"));
     EXPECT_FALSE(hasName("Location"));
     EXPECT_FALSE(hasName("Name"));
@@ -1175,7 +1175,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
 // INSERT a Document with a struct-array property (MetaTags: Tag[]).
 // Verifies:
 //   - The MetaTags field is emitted with the correct element count.
-//   - changedProps = {"ECInstanceId", "Title", "MetaTags"} — array uses the bare
+//   - changedProps = {"ECInstanceId", "Title", "MetaTags"} â€” array uses the bare
 //     property name (same as primitive arrays), not per-element paths.
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1232,9 +1232,9 @@ TEST_F(ChangesetReaderTests, Insert_StructArray)
     EXPECT_EQ(2, tagsVal.GetArrayLength());
 
     // changedProps: struct-array uses bare property name, same as primitive arrays.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Title"));
     EXPECT_TRUE(hasName("MetaTags"));
@@ -1247,7 +1247,7 @@ TEST_F(ChangesetReaderTests, Insert_StructArray)
 
 //---------------------------------------------------------------------------------------
 // Insert a Document with 2 MetaTags outside the tracker; update MetaTags to 3 elements
-// inside the tracker.  Only MetaTags changed — Title was not touched.
+// inside the tracker.  Only MetaTags changed â€” Title was not touched.
 // Verifies:
 //   - New stage MetaTags has 3 elements; Old stage has 2.
 //   - changedProps = {"MetaTags"}, Title absent.
@@ -1280,7 +1280,7 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     TestCSChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    // Replace MetaTags with 3 elements — Title left untouched.
+    // Replace MetaTags with 3 elements â€” Title left untouched.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
@@ -1318,7 +1318,7 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
     ASSERT_EQ(DbOpcode::Update, opcode);
 
-    // ECInstanceId, ECClassId, MetaTags — Title not changed.
+    // ECInstanceId, ECClassId, MetaTags â€” Title not changed.
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::Old));
 
@@ -1330,12 +1330,12 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     EXPECT_STREQ("MetaTags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(2, oldTags.GetArrayLength()) << "Old MetaTags must have 2 elements";
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("MetaTags"));
     EXPECT_FALSE(hasName("Title"));       // not changed
-    EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE — always present
+    EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE â€” always present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(SUCCESS, reader.Close());
@@ -1343,7 +1343,7 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
 
 //---------------------------------------------------------------------------------------
 // INSERT a Widget with only partial Point2d (X only) and partial Point3d (Y and Z only)
-// — all other fields left unset.
+// â€” all other fields left unset.
 // Verifies:
 //   - changedProps contains "Pos2d.X" but NOT "Pos2d" (full collapse) or "Pos2d.Y" (Y absent).
 //   - changedProps contains "Pos3d.Y" and "Pos3d.Z" but NOT "Pos3d" (full collapse) or "Pos3d.X" (X absent).
@@ -1423,13 +1423,13 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
     ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
-    EXPECT_TRUE(v6.IsNull()); // Partial Point2d does not collapse → full Pos2d emitted but null because missing Y means entire struct is null.
+    EXPECT_TRUE(v6.IsNull()); // Partial Point2d does not collapse â†’ full Pos2d emitted but null because missing Y means entire struct is null.
 
     //Property 8
     IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
     ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
-    EXPECT_TRUE(v7.IsNull()); // Partial Point3d does not collapse → full Pos3d emitted but null because missing X means entire struct is null.
+    EXPECT_TRUE(v7.IsNull()); // Partial Point3d does not collapse â†’ full Pos3d emitted but null because missing X means entire struct is null.
 
     //Property 9
     IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
@@ -1449,18 +1449,18 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     EXPECT_STREQ("Owner", prop10->GetName().c_str());
     EXPECT_TRUE(v10.IsNull());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT â€” always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
-    EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set â†’ full name
     EXPECT_FALSE(hasName("Pos2d.X"));
     EXPECT_FALSE(hasName("Pos2d.Y"));
-    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set â†’ full name
     EXPECT_FALSE(hasName("Pos3d.X"));
     EXPECT_FALSE(hasName("Pos3d.Y"));
     EXPECT_FALSE(hasName("Pos3d.Z"));
@@ -1495,7 +1495,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     }
 
 //---------------------------------------------------------------------------------------
-// INSERT a Widget with only a navigation property set — all other fields left unset.
+// INSERT a Widget with only a navigation property set â€” all other fields left unset.
 // Verifies:
 //   - The Owner field is emitted with the correct ECInstanceId target.
 //   - changedProps contains "Owner.Id" but not "Name", "Weight", etc.
@@ -1505,7 +1505,7 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_nav_insert.ecdb", SchemaItem(GetSchema())));
 
-    // Container inserted BEFORE tracking — provides the nav prop target.
+    // Container inserted BEFORE tracking â€” provides the nav prop target.
     ECInstanceKey containerKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
         "INSERT INTO ts.Container(Name) VALUES('Box')"));
@@ -1610,18 +1610,18 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
     EXPECT_TRUE(relId.IsValid());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
-    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
+    EXPECT_TRUE(hasName("ECInstanceId")); // INSERT â€” always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
-    EXPECT_TRUE(hasName("Pos2d"));        // both coords set → full name
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set â†’ full name
     EXPECT_FALSE(hasName("Pos2d.X"));
     EXPECT_FALSE(hasName("Pos2d.Y"));
-    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set → full name
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set â†’ full name
     EXPECT_FALSE(hasName("Pos3d.X"));
     EXPECT_FALSE(hasName("Pos3d.Y"));
     EXPECT_FALSE(hasName("Pos3d.Z"));
@@ -1695,9 +1695,9 @@ TEST_F(ChangesetReaderTests, Filter_ByTableName)
         bool isECTable = false;
         ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
         EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        EXPECT_TRUE(!changedProps.empty());
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_TRUE(!changedProps->empty());
         
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
         EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
@@ -1755,8 +1755,7 @@ TEST_F(ChangesetReaderTests, Filter_ByOpcode)
     ASSERT_EQ(ERROR, reader.GetInstanceKey(Changes::Change::Stage::Old, instanceKey));
     bool isIndirect = false;
     ASSERT_EQ(ERROR, reader.IsIndirectChange(isIndirect));
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(ERROR, reader.GetChangeFetchedPropertyNames(changedProps));
+    ASSERT_EQ(nullptr, reader.GetChangeFetchedPropertyNames());
     ASSERT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
     EXPECT_TRUE(reader.GetValue(Changes::Change::Stage::New, 0).IsNull());
@@ -1811,9 +1810,9 @@ TEST_F(ChangesetReaderTests, Filter_ByECClassId)
         bool isECTable = false;
         ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
         EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        EXPECT_TRUE(!changedProps.empty());
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_TRUE(!changedProps->empty());
         
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
         EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
@@ -1841,7 +1840,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
         "INSERT INTO ts.Widget(Name) VALUES('Sprocket')"));
 
-        // First reader: non-matching table filter → no rows.
+        // First reader: non-matching table filter â†’ no rows.
         {
         auto cs = std::make_unique<TestCSChangeSet>();
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
@@ -1857,7 +1856,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         ASSERT_EQ(SUCCESS, reader.Close());
         }
 
-        // Second reader: set the same filter then clear it → the Widget row must appear.
+        // Second reader: set the same filter then clear it â†’ the Widget row must appear.
         {
         auto cs = std::make_unique<TestCSChangeSet>();
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
@@ -1879,9 +1878,9 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         bool isECTable = false;
         ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
         EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps)); 
-        EXPECT_TRUE(!changedProps.empty()); // should not be empty because the filter was cleared
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_TRUE(!changedProps->empty()); // should not be empty because the filter was cleared
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should not be empty because the filter was cleared
         EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should not be empty because the filter was cleared
@@ -1927,7 +1926,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_overflow.ecdb", SchemaItem(overflowSchema)));
 
     // -----------------------------------------------------------------------
-    // Part 1: INSERT inside tracker → two changeset entries (primary + overflow)
+    // Part 1: INSERT inside tracker â†’ two changeset entries (primary + overflow)
     // -----------------------------------------------------------------------
     ECInstanceKey bigKey;
     {
@@ -1960,7 +1959,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId, ECClassId, A, B, C — D and E live in the overflow table.
+        // ECInstanceId, ECClassId, A, B, C â€” D and E live in the overflow table.
         ASSERT_EQ(5, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -1983,16 +1982,16 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         EXPECT_STREQ("C", v4.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("gamma", v4.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("A"));
         EXPECT_TRUE(hasName("B"));
         EXPECT_TRUE(hasName("C"));
-        EXPECT_FALSE(hasName("D")); // D lives in overflow table — absent from this row
-        EXPECT_FALSE(hasName("E")); // E lives in overflow table — absent from this row
+        EXPECT_FALSE(hasName("D")); // D lives in overflow table â€” absent from this row
+        EXPECT_FALSE(hasName("E")); // E lives in overflow table â€” absent from this row
         }
 
     // --- Changeset row 2: overflow table (to_Entity_Overflow) ---
@@ -2007,7 +2006,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId, ECClassId, D, E — A, B, C live in the primary table.
+        // ECInstanceId, ECClassId, D, E â€” A, B, C live in the primary table.
         ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2026,14 +2025,14 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         EXPECT_STREQ("E", v3.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("epsilon", v3.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("D"));
         EXPECT_TRUE(hasName("E"));
-        EXPECT_FALSE(hasName("A")); // A lives in primary table — absent from this overflow row
+        EXPECT_FALSE(hasName("A")); // A lives in primary table â€” absent from this overflow row
         EXPECT_FALSE(hasName("B"));
         EXPECT_FALSE(hasName("C"));
         }
@@ -2043,7 +2042,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     }
 
     // -----------------------------------------------------------------------
-    // Part 2: UPDATE only D and E (overflow columns) — only to_Entity_Overflow is written.
+    // Part 2: UPDATE only D and E (overflow columns) â€” only to_Entity_Overflow is written.
     // -----------------------------------------------------------------------
     {
     TestCSChangeTracker tracker2(m_ecdb);
@@ -2103,9 +2102,9 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
 
         // ECClassId was not in the UPDATE changeset (neither PK nor changed column),
         // so classIdFromChangeset=false and ECClassId does not appear in changedProps.
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("D"));
         EXPECT_TRUE(hasName("E"));
@@ -2178,7 +2177,7 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId, ECClassId (physical — in changeset), BaseCode
+        // ECInstanceId, ECClassId (physical â€” in changeset), BaseCode
         ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2193,11 +2192,11 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         EXPECT_STREQ("BaseCode", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("hello", v2.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
-        EXPECT_TRUE(hasName("ECClassId")); // physical in the primary table — present in changeset
+        EXPECT_TRUE(hasName("ECClassId")); // physical in the primary table â€” present in changeset
         EXPECT_TRUE(hasName("BaseCode"));
         EXPECT_FALSE(hasName("P")); // P lives in the joined table
         EXPECT_FALSE(hasName("Q")); // Q lives in the joined table
@@ -2215,7 +2214,7 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId, ECClassId (via GetRootClassMap — virtual col not in changeset), P, Q
+        // ECInstanceId, ECClassId (via GetRootClassMap â€” virtual col not in changeset), P, Q
         ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2224,7 +2223,7 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
 
         IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
         EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
-        // Virtual ECClassId resolved via GetRootClassMap → JChild's class id.
+        // Virtual ECClassId resolved via GetRootClassMap â†’ JChild's class id.
         EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
 
         IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
@@ -2235,14 +2234,14 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         EXPECT_STREQ("Q", v3.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("world", v3.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("P"));
         EXPECT_TRUE(hasName("Q"));
         EXPECT_TRUE(hasName("ECClassId"));
-        // BaseCode lives in the primary table — absent from this joined-table row.
+        // BaseCode lives in the primary table â€” absent from this joined-table row.
         EXPECT_FALSE(hasName("BaseCode"));
         }
 
@@ -2313,7 +2312,7 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId, ECClassId (physical — in changeset), BaseCode
+        // ECInstanceId, ECClassId (physical â€” in changeset), BaseCode
         ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2328,9 +2327,9 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         EXPECT_STREQ("BaseCode", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("hello", v2.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("BaseCode"));
@@ -2359,20 +2358,20 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
 
         IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
         EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
-        // Virtual ECClassId in tjo_JChild — resolved via GetRootClassMap → JChild's class id.
+        // Virtual ECClassId in tjo_JChild â€” resolved via GetRootClassMap â†’ JChild's class id.
         EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
 
         IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
         EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("Alice", v2.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("Name"));
         EXPECT_TRUE(hasName("ECClassId"));
-        // Age overflowed; BaseCode is in the primary table — both absent from this row.
+        // Age overflowed; BaseCode is in the primary table â€” both absent from this row.
         EXPECT_FALSE(hasName("Age"));
         EXPECT_FALSE(hasName("BaseCode"));
         }
@@ -2389,7 +2388,7 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId, ECClassId (physical — in changeset), Age (os1)
+        // ECInstanceId, ECClassId (physical â€” in changeset), Age (os1)
         ASSERT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2404,11 +2403,11 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         EXPECT_STREQ("Age", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_EQ(30, v2.GetInt());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
-        EXPECT_TRUE(hasName("ECClassId")); // physical in the overflow table — present in changeset
+        EXPECT_TRUE(hasName("ECClassId")); // physical in the overflow table â€” present in changeset
         EXPECT_TRUE(hasName("Age"));
         EXPECT_FALSE(hasName("Name"));     // Name is in tjo_JChild (joined table)
         EXPECT_FALSE(hasName("BaseCode")); // BaseCode is in tjo_JBase (primary table)
@@ -2466,7 +2465,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
-    // ExistingTable maps to exactly one physical table — exactly one changeset row.
+    // ExistingTable maps to exactly one physical table â€” exactly one changeset row.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {
         Utf8String tableName;
@@ -2478,7 +2477,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId + ECClassId (virtual → resolved via GetRootClassMap) + Label + Score
+        // ECInstanceId + ECClassId (virtual â†’ resolved via GetRootClassMap) + Label + Score
         ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2487,7 +2486,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
 
         IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
         EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
-        // Virtual ECClassId — resolved via GetRootClassMap(te_Gadget) → Gadget's class id.
+        // Virtual ECClassId â€” resolved via GetRootClassMap(te_Gadget) â†’ Gadget's class id.
         EXPECT_EQ(m_ecdb.Schemas().GetClass("TestExisting","Gadget")->GetId(), v1.GetId<ECN::ECClassId>());
 
         IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
@@ -2498,11 +2497,11 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         EXPECT_STREQ("Score", v3.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_EQ(99, v3.GetInt());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
-        // ECClassId is virtual — not in the SQLite changeset, so classIdFromChangeset=false.
+        // ECClassId is virtual â€” not in the SQLite changeset, so classIdFromChangeset=false.
         EXPECT_FALSE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("Label"));
         EXPECT_TRUE(hasName("Score"));
@@ -2564,12 +2563,12 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         EXPECT_STREQ("Score", oldScore.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_EQ(99, oldScore.GetInt());
 
-        // ECClassId virtual → not from changeset → absent from changedProps.
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        // ECClassId virtual â†’ not from changeset â†’ absent from changedProps.
+        auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
-        EXPECT_FALSE(hasName("ECClassId")); // virtual — resolved via GetRootClassMap, not changeset
+        EXPECT_FALSE(hasName("ECClassId")); // virtual â€” resolved via GetRootClassMap, not changeset
         EXPECT_TRUE(hasName("Label"));
         EXPECT_TRUE(hasName("Score"));
         }
@@ -2588,7 +2587,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
 //   - SourceECClassId and TargetECClassId produce no IECSqlValue (CreateSystem skips
 //     them because FindDataPropertyMap returns nullptr for virtual columns).
 //   - GetChangeFetchedPropertyNames contains the two physical IDs but omits ECClassId,
-//     SourceECClassId and TargetECClassId (all virtual — not in the SQLite changeset).
+//     SourceECClassId and TargetECClassId (all virtual â€” not in the SQLite changeset).
 //   - Rendering the row via ECSqlRowAdaptor + ChangesetRow produces JSON with
 //     classFullName, sourceId and targetId, but no sourceClassName or targetClassName
 //     (the virtual class IDs were never captured in the changeset).
@@ -2598,7 +2597,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_rel_virtual_classids.ecdb", SchemaItem(GetRelSchema())));
 
-    // Insert Person and Project before tracking — they must not appear in the changeset.
+    // Insert Person and Project before tracking â€” they must not appear in the changeset.
     ECInstanceKey personKey, projectKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(personKey,
         "INSERT INTO tr.Person(Name) VALUES('Alice')"));
@@ -2633,36 +2632,36 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
 
     EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
 
-    // Only 4 columns: ECInstanceId, ECClassId (virtual→resolved), SourceECInstanceId,
+    // Only 4 columns: ECInstanceId, ECClassId (virtualâ†’resolved), SourceECInstanceId,
     // TargetECInstanceId.  SourceECClassId and TargetECClassId are virtual
     // (polymorphic=false on source/target constraints) so CreateSystem emits nothing.
     ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
-    // Column 0: ECInstanceId — physical primary key, always present.
+    // Column 0: ECInstanceId â€” physical primary key, always present.
     IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
     EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(relKey.GetInstanceId(), v0.GetId<ECInstanceId>());
 
-    // Column 1: ECClassId — virtual for a sealed single-hierarchy link table,
+    // Column 1: ECClassId â€” virtual for a sealed single-hierarchy link table,
     //           resolved via GetRootClassMap, not from a physical changeset column.
     IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
     EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(relKey.GetClassId(), v1.GetId<ECClassId>());
 
-    // Column 2: SourceECInstanceId — physical column in the link table.
+    // Column 2: SourceECInstanceId â€” physical column in the link table.
     IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
     EXPECT_STREQ("SourceECInstanceId", v2.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(personKey.GetInstanceId(), v2.GetId<ECInstanceId>());
 
-    // Column 3: TargetECInstanceId — physical column in the link table.
+    // Column 3: TargetECInstanceId â€” physical column in the link table.
     IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
     EXPECT_STREQ("TargetECInstanceId", v3.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(projectKey.GetInstanceId(), v3.GetId<ECInstanceId>());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
     auto hasName = [&](Utf8CP n) {
-        return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end();
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
     };
 
     // Physical columns: ECInstanceId always present for INSERT; Source/TargetECInstanceId
@@ -2671,13 +2670,13 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     EXPECT_TRUE(hasName("SourceECInstanceId"));
     EXPECT_TRUE(hasName("TargetECInstanceId"));
 
-    // Virtual columns: no physical SQLite column → absent from the changeset →
+    // Virtual columns: no physical SQLite column â†’ absent from the changeset â†’
     // absent from GetChangeFetchedPropertyNames.
-    EXPECT_FALSE(hasName("ECClassId"));       // virtual — resolved via GetRootClassMap
-    EXPECT_FALSE(hasName("SourceECClassId")); // virtual — polymorphic=false on source constraint
-    EXPECT_FALSE(hasName("TargetECClassId")); // virtual — polymorphic=false on target constraint
+    EXPECT_FALSE(hasName("ECClassId"));       // virtual â€” resolved via GetRootClassMap
+    EXPECT_FALSE(hasName("SourceECClassId")); // virtual â€” polymorphic=false on source constraint
+    EXPECT_FALSE(hasName("TargetECClassId")); // virtual â€” polymorphic=false on target constraint
 
-    // Render the New-stage row as a JSON object via ECSqlRowAdaptor + ChangesetRow —
+    // Render the New-stage row as a JSON object via ECSqlRowAdaptor + ChangesetRow â€”
     // the same path taken by GetValue() in IModelJsNative.cpp.
     // The JSON must contain classFullName, sourceId and targetId, but sourceClassName and
     // targetClassName must be absent because SourceECClassId / TargetECClassId are virtual
@@ -2691,7 +2690,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(true);
     ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
 
-    // classFullName is present — ECClassId was resolved via GetRootClassMap even though virtual.
+    // classFullName is present â€” ECClassId was resolved via GetRootClassMap even though virtual.
     Utf8String classFullName = rowJson["classFullName"].asString();
     EXPECT_FALSE(classFullName.empty());
 
@@ -2699,7 +2698,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     EXPECT_FALSE(rowJson["sourceId"].asString().empty());
     EXPECT_FALSE(rowJson["targetId"].asString().empty());
 
-    // Virtual class IDs are absent from the JSON — they were not in the changeset.
+    // Virtual class IDs are absent from the JSON â€” they were not in the changeset.
     EXPECT_TRUE(rowJson["sourceClassName"].isNull());
     EXPECT_TRUE(rowJson["targetClassName"].isNull());
     }
@@ -2712,7 +2711,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
 // Verify that InstanceRepository::Insert on a link-table relationship succeeds when
 // SourceECClassId and TargetECClassId are absent from the input JSON.
 // Because the source/target constraints are non-polymorphic (polymorphic=false), those
-// class IDs are virtual — ECDb infers them from the schema rather than reading them from
+// class IDs are virtual â€” ECDb infers them from the schema rather than reading them from
 // the row.  A JSON round-trip that captures only the physical properties
 // (classFullName + sourceId + targetId) is therefore sufficient to re-insert the
 // relationship without losing fidelity.
@@ -2729,7 +2728,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClass
         "INSERT INTO tr.Project(Title) VALUES('ProjX')"));
 
     // Build JSON with only classFullName + physical source/target IDs.
-    // SourceECClassId and TargetECClassId are intentionally omitted — ECDb must infer
+    // SourceECClassId and TargetECClassId are intentionally omitted â€” ECDb must infer
     // them from the non-polymorphic schema without error.
     Utf8String jsonStr;
     jsonStr.Sprintf(
@@ -2750,7 +2749,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClass
 
     // Read back the inserted row and confirm all four constraint columns are correct.
     // SourceECClassId == Person's class ID and TargetECClassId == Project's class ID are
-    // inferred by ECDb from the schema — no explicit value was needed in the JSON.
+    // inferred by ECDb from the schema â€” no explicit value was needed in the JSON.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
@@ -2791,7 +2790,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
 
     // Read with OpenChangesetFile.
     int fileRowCount = 0;
-    DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
+    DbOpcode fileOpcode = DbOpcode::Update; // sentinel â€” will be overwritten
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
@@ -2805,7 +2804,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
 
     // Read with OpenChangeGroup using the same single file.
     int groupRowCount = 0;
-    DbOpcode groupOpcode = DbOpcode::Delete; // sentinel — will be overwritten
+    DbOpcode groupOpcode = DbOpcode::Delete; // sentinel â€” will be overwritten
     {
     ChangesetReader reader;
     T_Utf8StringVector files{csFile.GetNameUtf8()};
@@ -2851,7 +2850,7 @@ TEST_F(ChangesetReaderTests, OpenInMemoryChangeset_SingleFile_SameResultAsOpenFi
 
     // Read with OpenChangesetFile.
     int fileRowCount = 0;
-    DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
+    DbOpcode fileOpcode = DbOpcode::Update; // sentinel â€” will be overwritten
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
@@ -2865,7 +2864,7 @@ TEST_F(ChangesetReaderTests, OpenInMemoryChangeset_SingleFile_SameResultAsOpenFi
 
     // Read with OpenInMemoryChangeset using the same in memory changeset.
     int inMemRowCount = 0;
-    DbOpcode inMemOpcode = DbOpcode::Delete; // sentinel — will be overwritten
+    DbOpcode inMemOpcode = DbOpcode::Delete; // sentinel â€” will be overwritten
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(inMemoryCS), false, ChangesetReader::PropertyFilter::All, 1));
@@ -2956,7 +2955,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
     }
 
-    // Changeset 1: UPDATE → "Version1".
+    // Changeset 1: UPDATE â†’ "Version1".
     BeFileName cs1File;
     {
     TestCSChangeTracker tracker(m_ecdb);
@@ -2971,7 +2970,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
     cs1File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs1.changeset");
     }
 
-    // Changeset 2: UPDATE → "Version2".
+    // Changeset 2: UPDATE â†’ "Version2".
     BeFileName cs2File;
     {
     TestCSChangeTracker tracker(m_ecdb);
@@ -3093,7 +3092,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_cs_inmem.ecdb", SchemaItem(GetSchema())));
 
-    // Container inserted BEFORE tracking — must not appear in the changeset.
+    // Container inserted BEFORE tracking â€” must not appear in the changeset.
     ECInstanceKey containerKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
         "INSERT INTO ts.Container(Name) VALUES('Box')"));
@@ -3135,7 +3134,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
         return matches.size();
         };
 
-    // Default threshold is 50 MB; a tiny changeset must stream in memory — no file written.
+    // Default threshold is 50 MB; a tiny changeset must stream in memory â€” no file written.
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
     EXPECT_EQ((size_t) 0, countMergedFiles()) << "No temp file should be created for a sub-threshold changeset";
@@ -3226,9 +3225,9 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -3256,7 +3255,7 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_SpillPath_TempFileCreatedAndDeleted)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_cs_spill.ecdb", SchemaItem(GetSchema())));
 
-    // Container inserted BEFORE tracking — must not appear in the changeset.
+    // Container inserted BEFORE tracking â€” must not appear in the changeset.
     ECInstanceKey containerKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
         "INSERT INTO ts.Container(Name) VALUES('Crate')"));
@@ -3392,9 +3391,9 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_SpillPath_TempFileCreatedAndDeleted)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -3425,7 +3424,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_spill.ecdb", SchemaItem(GetSchema())));
 
-    // Container inserted BEFORE tracking — must not appear in the changeset.
+    // Container inserted BEFORE tracking â€” must not appear in the changeset.
     ECInstanceKey containerKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
         "INSERT INTO ts.Container(Name) VALUES('Bin')"));
@@ -3561,9 +3560,9 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -3586,8 +3585,8 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
 //---------------------------------------------------------------------------------------
 // Verifies strict-mode behaviour when the changeset was captured against an older (V1)
 // schema and is later read against a newer (V2) DB whose table has an extra column.
-// Strict mode ON  → Step() must return BE_SQLITE_ERROR.
-// Strict mode OFF → Step() must succeed and return BE_SQLITE_ROW.
+// Strict mode ON  â†’ Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF â†’ Step() must succeed and return BE_SQLITE_ROW.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
@@ -3606,7 +3605,7 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
     ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
     BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "strict_older_cs.changeset");
 
-    // Upgrade the DB to V2 — the tsi_Item table now has 5 columns (Id, ECClassId, Name, Value, Extra).
+    // Upgrade the DB to V2 â€” the tsi_Item table now has 5 columns (Id, ECClassId, Name, Value, Extra).
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
 
     // Strict mode ON: column-count mismatch (4 in changeset vs 5 in table) must be an error.
@@ -3661,8 +3660,8 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
 // Verifies strict-mode behaviour when the changeset was captured against a newer (V2)
 // schema and is read against an older (V1) DB whose table is one column shorter.
 // The V2 changeset is produced by a separate ECDb instance; the reader uses a V1 DB.
-// Strict mode ON  → Step() must return BE_SQLITE_ERROR.
-// Strict mode OFF → Step() must succeed and return BE_SQLITE_ROW.
+// Strict mode ON  â†’ Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF â†’ Step() must succeed and return BE_SQLITE_ROW.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
@@ -3671,7 +3670,7 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     BeFileName csFile;
     ECInstanceKey itemKey;
     {
-    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    // m_ecdb is the reader DB â€” it carries only the V1 schema (4 columns).
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_newer_src.ecdb", SchemaItem(GetStrictModeV1Schema())));
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
 
@@ -3686,10 +3685,10 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     csFile = WriteChangesetToFile(m_ecdb, cs, "strict_newer_cs.changeset");
     }   // End source-db setup scope; m_ecdb is reinitialized by the SetupECDb() call below.
 
-    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    // m_ecdb is the reader DB â€” it carries only the V1 schema (4 columns).
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
 
-    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4 → error.
+    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4 â†’ error.
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,

@@ -149,8 +149,7 @@ private:
 
     void ClearFields();
     BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
-    bool IsOpen()    const { return m_iterator.IsOpen(); }
-    bool IsStepped() const { return m_iterator.IsStepped(); }
+    bool IsOpen() const { return m_iterator.IsOpen(); }
     //! Stores @p changeStream directly via the iterator without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
@@ -173,8 +172,9 @@ public:
     int GetColumnCount(Stage stage) const;
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     BentleyStatus GetInstanceKey(Stage stage, Utf8StringR key) const;
+    bool IsStepped() const { return m_iterator.IsStepped(); }
     BentleyStatus IsECTable(bool& isECTable) const;
-    BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    std::vector<Utf8String> const* GetChangeFetchedPropertyNames() const;
     BentleyStatus IsIndirectChange(bool& isIndirect) const;
 
     // filtering APIs — delegate to m_filter

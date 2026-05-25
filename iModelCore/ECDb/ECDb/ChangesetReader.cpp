@@ -163,12 +163,12 @@ BentleyStatus ChangesetReader::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+std::vector<Utf8String> const* ChangesetReader::GetChangeFetchedPropertyNames() const {
     if (!IsOpen()) {
         LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
-        return ERROR;
+        return nullptr;
     }
-    return m_pimpl->GetChangeFetchedPropertyNames(out);
+    return m_pimpl->GetChangeFetchedPropertyNames();
 }
 
 //---------------------------------------------------------------------------------------
