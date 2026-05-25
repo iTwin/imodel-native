@@ -12,44 +12,85 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetReader::ChangesetReader() : m_pimpl(new Impl()) {}
+ChangesetReader::ChangesetReader() {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetReader::~ChangesetReader() { delete m_pimpl; }
+ChangesetReader::~ChangesetReader() {
+    CloseInfallible();
+}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenFile(ecdb, changesetFile, invert, propertyFilter);
+bool ChangesetReader::IsOpen() const {
+    return m_pimpl != nullptr;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenChangeStream(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenChangeStream(ecdb, std::move(changeStream), invert, propertyFilter);
+DbResult ChangesetReader::OpenChangesetFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter) {
+    if (!IsOpen())
+        m_pimpl = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_pimpl->OpenChangesetFile(changesetFile, invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ChangesetReader::OpenGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter) {
-    return m_pimpl->OpenGroup(ecdb, changesetFiles, invert, propertyFilter);
+DbResult ChangesetReader::OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& changesetFiles, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    if (!IsOpen())
+        m_pimpl = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_pimpl->OpenChangeGroup(changesetFiles, invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetReader::Close() { m_pimpl->Close(); }
-DbResult ChangesetReader::Step() { return m_pimpl->Step(); }
+DbResult ChangesetReader::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    if (!IsOpen())
+        m_pimpl = std::make_unique<PreparedChangesetReader>(ecdb);
+    return m_pimpl->OpenInMemoryChangeset(std::move(changeSet), invert, propertyFilter, spillThreshold);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::Close() {
+    BentleyStatus status = SUCCESS;
+    if (IsOpen())
+        status = m_pimpl->Close();
+    m_pimpl = nullptr;
+    return status;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ChangesetReader::CloseInfallible() {
+    if (IsOpen())
+        m_pimpl->CloseInfallible();
+    m_pimpl = nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ChangesetReader::Step() {
+    if (!IsOpen()) {
+        LOG.error("A file or group of files or a txn or in memory changes or local changes must be opened before stepping.");
+        return BE_SQLITE_ERROR;
+    }
+    return m_pimpl->Step();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::GetTableName(Utf8StringR tableName) const {
+    if (!IsOpen()) {
+        LOG.error("A file or group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
     return m_pimpl->GetTableName(tableName);
 }
 
@@ -57,6 +98,10 @@ BentleyStatus ChangesetReader::GetTableName(Utf8StringR tableName) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::GetOpcode(DbOpcode& opcode) const {
+    if (!IsOpen()) {
+        LOG.error("A file or group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
     return m_pimpl->GetOpcode(opcode);
 }
 
@@ -64,6 +109,10 @@ BentleyStatus ChangesetReader::GetOpcode(DbOpcode& opcode) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& ChangesetReader::GetValue(Stage stage, int columnIndex) const {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return NoopECSqlValue::GetSingleton();
+    }
     return m_pimpl->GetValue(stage, columnIndex);
 }
 
@@ -71,13 +120,21 @@ IECSqlValue const& ChangesetReader::GetValue(Stage stage, int columnIndex) const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDb const* ChangesetReader::GetECDb() const {
-    return  m_pimpl->GetECDb();
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return nullptr;
+    }
+    return &m_pimpl->GetECDb();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 int ChangesetReader::GetColumnCount(Stage stage) const {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return 0;
+    }
     return m_pimpl->GetColumnCount(stage);
 }
 
@@ -85,6 +142,10 @@ int ChangesetReader::GetColumnCount(Stage stage) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
     return m_pimpl->GetInstanceKey(stage, key);
 }
 
@@ -92,6 +153,10 @@ BentleyStatus ChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) cons
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::IsECTable(bool& isECTable) const {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
     return m_pimpl->IsECTable(isECTable);
 }
 
@@ -99,6 +164,10 @@ BentleyStatus ChangesetReader::IsECTable(bool& isECTable) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
     return m_pimpl->GetChangeFetchedPropertyNames(out);
 }
 
@@ -106,6 +175,10 @@ BentleyStatus ChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8Str
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::IsIndirectChange(bool& isIndirect) const {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
     return m_pimpl->IsIndirectChange(isIndirect);
 }
 
@@ -113,42 +186,94 @@ BentleyStatus ChangesetReader::IsIndirectChange(bool& isIndirect) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
-    return m_pimpl->SetTableFilters(tableFilters);
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->SetTableFilters(tableFilters);
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
-    return m_pimpl->SetOpcodeFilters(opcodeFilters);
+    if (!IsOpen())
+        return ERROR;
+    m_pimpl->SetOpcodeFilters(opcodeFilters);
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
-    return m_pimpl->SetECClassNameFilters(ecclassNameFilters);
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->SetECClassNameFilters(ecclassNameFilters);
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::ClearTableFilters() {
-    return m_pimpl->ClearTableFilters();
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->ClearTableFilters();
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::ClearOpcodeFilters() {
-    return m_pimpl->ClearOpcodeFilters();
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->ClearOpcodeFilters();
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetReader::ClearECClassNameFilters() {
-    return m_pimpl->ClearECClassNameFilters();
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->ClearECClassNameFilters();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::EnableStrictMode() {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->EnableStrictMode();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::DisableStrictMode() {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->DisableStrictMode();
+    return SUCCESS;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

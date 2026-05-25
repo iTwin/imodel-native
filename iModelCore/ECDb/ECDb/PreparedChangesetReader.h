@@ -50,6 +50,17 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
+    //! Writes @p changeGroup to a temporary LZMA-compressed changeset file, preserving @p ddlChanges
+    //! and @p containsSchemaChanges in the file header. Sets @p outPath to the written path.
+    //! The file is written with fast compression (level 1) since it is ephemeral.
+    DbResult WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
+    //! Stores @p changeStream directly in m_changeStream without any size-based spill logic.
+    //! Kept private so callers are steered toward the appropriate Open* methods.
+    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    void ClearMembers();
+    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
+    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
+
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 

@@ -7,15 +7,15 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct PreparedChangesetReader;
+
 //=======================================================================================
 //! ChangesetReader provides EC-typed value access while iterating over changesets.
 //! It iterates over the changeset and exposes a higher-level API that returns EC-typed values and abstracts away the underlying SQLite tables and columns.
-//! It follows the same PIMPL pattern as ECSqlStatement.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetReader {
 public:
-    struct Impl;
 
     //! Controls which properties are emitted per row.
     enum class PropertyFilter {
@@ -26,7 +26,10 @@ public:
 
 private:
     using Stage = Changes::Change::Stage;
-    Impl* m_pimpl = nullptr;
+    std::unique_ptr<PreparedChangesetReader> m_pimpl;
+
+    bool IsOpen() const;
+    void CloseInfallible();
 
     ChangesetReader(ChangesetReader const&) = delete;
     ChangesetReader& operator=(ChangesetReader const&) = delete;
