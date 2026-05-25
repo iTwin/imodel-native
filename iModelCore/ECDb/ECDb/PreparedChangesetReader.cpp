@@ -419,7 +419,8 @@ DbResult PreparedChangesetReader::OpenChangeGroup(T_Utf8StringVector const& file
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearFields() {
-    // Only clear the vectors — the Stage::New / Stage::Old keys must stay intact for the lifetime of an open reader.
+    m_valueArena.Reset();
+    // Clear the index vectors (regular std::vector, NOT pmr-backed, so they survive arena reset).
     m_fields[Stage::New].clear();
     m_fields[Stage::Old].clear();
     m_changedPropNames.clear();
@@ -445,6 +446,8 @@ void PreparedChangesetReader::CloseInfallible() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearMembers() {
+    // Drain the arena before destroying the map — raw ptrs in m_fields have no owned destructors.
+    m_valueArena.Reset();
     m_iterator.Close();          // stream destroyed here — safe to delete any temp file afterwards
     m_filter.Reset();
     m_fields.clear();
@@ -502,7 +505,8 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
             return StageProcessResult::Error;
         }
     }
-    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
+    auto alloc = m_valueArena.MakeAllocator();
+    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), alloc, m_propertyFilter, changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }

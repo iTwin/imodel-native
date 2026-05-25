@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ChangesetValueFactory.h"
+#include <array>
+#include <memory_resource>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -122,6 +124,36 @@ public:
 };
 
 //=======================================================================================
+//! Owns the PMR inline buffer, monotonic resource, polymorphic allocator, and destructor
+//! registry used to arena-allocate IECSqlValue objects during changeset reading.
+//! PreparedChangesetReader holds one of these by composition.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ChangesetValueArena final {
+    static constexpr size_t kBytes = 64 * 1024;  // covers ~250–300 properties/stage without overflow; raise if profiling shows frequent spill
+    std::array<std::byte, kBytes>                 m_storage {};
+    std::pmr::monotonic_buffer_resource           m_resource { m_storage.data(), kBytes };
+    std::vector<std::pair<void(*)(void*), void*>> m_dtors;
+
+    ChangesetValueArena() = default;
+    ChangesetValueArena(ChangesetValueArena const&)            = delete;
+    ChangesetValueArena(ChangesetValueArena&&)                 = delete;
+    ChangesetValueArena& operator=(ChangesetValueArena const&) = delete;
+    ChangesetValueArena& operator=(ChangesetValueArena&&)      = delete;
+
+    //! Calls all registered destructors in reverse order, then resets the bump pointer.
+    void Reset() {
+        for (auto it = m_dtors.rbegin(); it != m_dtors.rend(); ++it)
+            it->first(it->second);
+        m_dtors.clear();
+        m_resource.release();
+    }
+
+    //! Returns an allocator handle for passing to ChangesetValueFactory.
+    ChangesetValueAllocator MakeAllocator() { return { std::pmr::polymorphic_allocator<std::byte>(&m_resource), m_dtors }; }
+};
+
+//=======================================================================================
 //! Coordinates EC-typed changeset reading by composing ChangesetFilter,
 //! ChangesetTempFileManager, and ChangesetSqliteIterator.
 //! Translates raw SQLite column values into IECSqlValue-typed fields via ChangesetValueFactory.
@@ -139,8 +171,10 @@ private:
     ChangesetTempFileManager m_tempFileManager;
     ChangesetSqliteIterator  m_iterator;
 
+    ChangesetValueArena      m_valueArena;
+
     PropertyFilter           m_propertyFilter = PropertyFilter::All;
-    std::unordered_map<Stage, std::vector<std::unique_ptr<ChangesetValue>>> m_fields;
+    std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;
     std::vector<Utf8String>  m_changedPropNames;
     ColumnValueMap           m_columnValuesScratch;
 

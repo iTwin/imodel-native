@@ -193,8 +193,8 @@ private:
         explicit IteratorState(ChangesetStructValue const& owner) : m_idx(0), m_owner(owner) {}
     };
 
-    std::vector<std::unique_ptr<ChangesetValue>> m_members;
-    std::vector<Utf8String>                      m_names;   //!< parallel to m_members
+    std::vector<ChangesetValue*> m_members;
+    std::vector<Utf8String>      m_names;   //!< parallel to m_members
 
     bool                       _IsNull() const override;
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;
@@ -203,7 +203,7 @@ private:
 
 public:
     explicit ChangesetStructValue(ECSqlColumnInfo const& colInfo);
-    void AppendMember(Utf8StringCR name, std::unique_ptr<ChangesetValue> member);
+    void AppendMember(Utf8StringCR name, ChangesetValue* member);
     ~ChangesetStructValue() {}
 };
 
@@ -235,8 +235,8 @@ private:
         explicit IteratorState(ChangesetNavValue const& owner) : m_owner(owner) {}
     };
 
-    std::unique_ptr<ChangesetValue> m_id;
-    std::unique_ptr<ChangesetValue> m_relClassId;
+    ChangesetValue* m_id;
+    ChangesetValue* m_relClassId;
 
     bool                       _IsNull() const override { return m_id == nullptr || m_id->IsNull(); }
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;
@@ -244,7 +244,7 @@ private:
     const_iterator             _CreateIterator()       const override { return const_iterator(std::unique_ptr<IIteratorState>(new IteratorState(*this))); }
 
 public:
-    ChangesetNavValue(ECSqlColumnInfo const& colInfo, std::unique_ptr<ChangesetValue> id, std::unique_ptr<ChangesetValue> relClassId);
+    ChangesetNavValue(ECSqlColumnInfo const& colInfo, ChangesetValue* id, ChangesetValue* relClassId);
     ~ChangesetNavValue() {}
 };
 
