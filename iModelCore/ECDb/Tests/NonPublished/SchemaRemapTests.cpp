@@ -3267,20 +3267,19 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
-    //The below part is the expected result, in case we start supporting this scenario:
-    /*{
+    {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Peanut (A,B,C) VALUES ('PA','PB','PC')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Peanut");
-    ASSERT_EQ(JsonValue(R"json([{"A":"PA","B":"PB","C":"PC"}])json"), result);
+    ASSERT_EQ(JsonValue(R"json([{"A":"PA","B":"PB","C":"PC"},{"A":"PA","B":"PB","C":"PC"}])json"), result);
     }
 
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Potato (A,B,C) VALUES ('PoA','PoB','PoC')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Potato");
-    ASSERT_EQ(JsonValue(R"json([{"A":"PoA","B":"PoB","C":"PoC"}])json"), result);
-    }*/
+    ASSERT_EQ(JsonValue(R"json([{"A":"PoA","B":"PoB","C":"PoC"},{"A":"PoA","B":"PoB","C":"PoC"}])json"), result);
+    }
     }
 
 
