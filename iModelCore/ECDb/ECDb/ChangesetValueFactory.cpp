@@ -292,7 +292,7 @@ ECSqlColumnInfo ChangesetValueFactory::MakeArrayColumnInfo(PropertyMap const& pr
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreatePoint2d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
     const DbColumn& xCol = pt2dMap.GetX().GetColumn();
@@ -345,7 +345,7 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreatePoint3d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
     const DbColumn& xCol = pt3dMap.GetX().GetColumn();
@@ -411,7 +411,7 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreatePrimitive(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
 
@@ -447,7 +447,7 @@ BentleyStatus ChangesetValueFactory::CreatePrimitive(
 BentleyStatus ChangesetValueFactory::CreateSystem(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
@@ -485,7 +485,7 @@ BentleyStatus ChangesetValueFactory::CreateSystem(
 //+---------------+---------------+---------------+---------------+---------------+------
 void ChangesetValueFactory::CreateFixedId(
     ECDbCR conn, PropertyMap const& propertyMap, BeInt64Id id,
-    std::unique_ptr<IECSqlValue>& out) {
+    std::unique_ptr<ChangesetValue>& out) {
 
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
@@ -506,7 +506,7 @@ void ChangesetValueFactory::CreateFixedId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateNav(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
     const auto& idPropMap = navMap.GetIdPropertyMap();
@@ -524,7 +524,7 @@ BentleyStatus ChangesetValueFactory::CreateNav(
     }
 
     // --- Resolve id sub-component ---
-    std::unique_ptr<IECSqlValue> idVal;
+    std::unique_ptr<ChangesetValue> idVal;
     if (hasIdInCurrentTableAndChangeset) {
         CreateFixedId(conn, idPropMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(idCol.GetName(), columnValues)), idVal);
     } else {
@@ -539,7 +539,7 @@ BentleyStatus ChangesetValueFactory::CreateNav(
 
     LOG.infov("Nav property '%s'-> virtual: %s", propertyMap.GetProperty().GetName().c_str(), relClassIdIsVirtual ? "true" : "false");
     // --- Resolve relClassId sub-component ---
-    std::unique_ptr<IECSqlValue> relClassIdVal;
+    std::unique_ptr<ChangesetValue> relClassIdVal;
     if (hasPhysicalRelClassIdInCurrentTableAndChangeset) {
         CreateFixedId(conn, relClassIdMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(relClassIdMap.GetColumn().GetName(), columnValues)), relClassIdVal);
     } else if (relClassIdIsVirtual) {
@@ -575,7 +575,7 @@ BentleyStatus ChangesetValueFactory::CreateNav(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateArray(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
 
@@ -605,13 +605,13 @@ BentleyStatus ChangesetValueFactory::CreateArray(
 BentleyStatus ChangesetValueFactory::CreateStruct(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     auto structVal = std::make_unique<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
     Utf8StringCR structName = propertyMap.GetProperty().GetName();
     bool anyMember = false;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
-        std::vector<std::unique_ptr<IECSqlValue>> memberTemp;
+        std::vector<std::unique_ptr<ChangesetValue>> memberTemp;
         std::vector<Utf8String> memberChangedProps;
         BentleyStatus status = CreateValueForProperty(conn, *memberMap, columnValues, dbTable, memberTemp, memberChangedProps);
         if (status != SUCCESS)
@@ -640,7 +640,7 @@ BentleyStatus ChangesetValueFactory::CreateStruct(
 BentleyStatus ChangesetValueFactory::CreateValueForProperty(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
 
     const auto& prop = propertyMap.GetProperty();
 
@@ -716,7 +716,7 @@ BentleyStatus ChangesetValueFactory::ResolveInstanceId(
     ClassMap const& classMap,
     ColumnValueMap const& columnValues,
     ECDbCR conn, DbTable const& primaryDbTable,
-    ECInstanceId& instanceIdOut, std::unique_ptr<IECSqlValue>& fieldOut) {
+    ECInstanceId& instanceIdOut, std::unique_ptr<ChangesetValue>& fieldOut) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         if (!propertyMap->IsSystem())
@@ -758,7 +758,7 @@ BentleyStatus ChangesetValueFactory::ResolveInstanceId(
             return ERROR;
         }
 
-        std::unique_ptr<IECSqlValue> sysVal;
+        std::unique_ptr<ChangesetValue> sysVal;
         CreateFixedId(conn, *propertyMap, instanceId, sysVal);
 
         instanceIdOut = instanceId;
@@ -780,7 +780,7 @@ BentleyStatus ChangesetValueFactory::ResolveClassIdField(
     ClassMap const& classMap,
     ECClassId resolvedClassId,
     ECDbCR conn, DbTable const& primaryDbTable,
-    std::unique_ptr<IECSqlValue>& out) {
+    std::unique_ptr<ChangesetValue>& out) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         if (!propertyMap->IsSystem())
@@ -811,7 +811,7 @@ BentleyStatus ChangesetValueFactory::BuildPropertyFields(
     ColumnValueMap const& columnValues,
     ECDbCR conn,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
+    std::vector<std::unique_ptr<ChangesetValue>>& fieldsOut,
     std::vector<Utf8String>& changedProps) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
@@ -892,7 +892,7 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
-    std::vector<std::unique_ptr<IECSqlValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<ChangesetValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
 
     const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
@@ -916,7 +916,7 @@ BentleyStatus ChangesetValueFactory::Create(
     // Step 2: Resolve ECInstanceId (slot [0]).
     // -----------------------------------------------------------------------
     ECInstanceId instanceId;
-    std::unique_ptr<IECSqlValue> instanceIdField;
+    std::unique_ptr<ChangesetValue> instanceIdField;
     BentleyStatus status = ResolveInstanceId(*classMap, columnValues, conn, tbl, instanceId, instanceIdField);
     if (status != SUCCESS)
         return status;
@@ -924,7 +924,7 @@ BentleyStatus ChangesetValueFactory::Create(
     // -----------------------------------------------------------------------
     // Step 3: Build ECClassId field (slot [1]).
     // -----------------------------------------------------------------------
-    std::unique_ptr<IECSqlValue> classIdField;
+    std::unique_ptr<ChangesetValue> classIdField;
     status = ResolveClassIdField(*classMap, resolvedClassId, conn, tbl, classIdField);
     if (status != SUCCESS)
         return status;

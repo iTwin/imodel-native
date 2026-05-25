@@ -509,9 +509,6 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// In case the current row does not fit the filters, we will not create fields for it. When users call GetColumnValue, the number of rows returned will be 0.
-// As the current API we step row by row. And after we step onto a row we come to know whether the row is filtered out or not.
-// So if the row is filtered out, we will not create fields for it(as that is the most expensive part of the operation).
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredOut) {
     isCurrentRowFilteredOut = false;

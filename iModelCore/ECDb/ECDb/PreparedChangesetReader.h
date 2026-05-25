@@ -140,10 +140,8 @@ private:
     ChangesetSqliteIterator  m_iterator;
 
     PropertyFilter           m_propertyFilter = PropertyFilter::All;
-    std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
+    std::unordered_map<Stage, std::vector<std::unique_ptr<ChangesetValue>>> m_fields;
     std::vector<Utf8String>  m_changedPropNames;
-    //! Scratch map reused across ProcessStageValues calls to avoid repeated heap alloc/dealloc
-    //! of the unordered_map bucket array and node pool on every changeset row.
     ColumnValueMap           m_columnValuesScratch;
 
     PreparedChangesetReader(PreparedChangesetReader const&) = delete;
@@ -163,10 +161,6 @@ public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 
     DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
-    //! Opens a pre-built in-memory ChangeSet for reading.
-    //! If the changeset size exceeds the spill threshold it is transparently written to a
-    //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
-    //! single copy at a time.
     DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     BentleyStatus Close();
