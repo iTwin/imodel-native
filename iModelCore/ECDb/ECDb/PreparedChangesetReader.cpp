@@ -50,6 +50,8 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
     m_invert = invert;
     m_propertyFilter = propertyFilter;
     m_changeStream = std::move(changeStream);
+    m_fields.try_emplace(Stage::New);
+    m_fields.try_emplace(Stage::Old);
     return BE_SQLITE_OK;
 }
 
@@ -173,7 +175,9 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, Ddl
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearFields() {
-    m_fields.clear();
+    // Only clear the vectors — the Stage::New / Stage::Old keys must stay intact for the lifetime of an open reader.
+    m_fields[Stage::New].clear();
+    m_fields[Stage::Old].clear();
     m_changedPropNames.clear();
 }
 
@@ -215,7 +219,8 @@ void PreparedChangesetReader::ClearMembers() {
     m_changes = nullptr;
     m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
     m_invert = false;
-    ClearFields();
+    m_fields.clear();         // fully remove both stage entries on close
+    m_changedPropNames.clear();
     m_columnValuesScratch.clear();
     ClearTableFilters();
     ClearOpcodeFilters();
@@ -274,6 +279,18 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
         LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", className.c_str());
         return StageProcessResult::Filtered;
     }
+    if (m_strictMode) {
+        Utf8String tableName;
+        if (GetTableName(tableName) != SUCCESS)
+            return StageProcessResult::Error;
+        int columnCount = 0;
+        if (GetColumnCountForCurrentChangedTable(columnCount, tableName) != SUCCESS)
+            return StageProcessResult::Error;
+        if (columnCount != m_currentChange.GetColumnCount()) {
+            LOG.errorv("Column count mismatch for table '%s': expected %d columns based on PRAGMA_TABLE_INFO, but changeset has %d columns. Disable strict mode to not treat this as an error.", tableName.c_str(), columnCount, m_currentChange.GetColumnCount());
+            return StageProcessResult::Error;
+        }
+    }
     if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
@@ -287,8 +304,6 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredOut) {
     isCurrentRowFilteredOut = false;
-    m_fields.try_emplace(Stage::New);
-    m_fields.try_emplace(Stage::Old);
     if (m_currentChange.IsValid()) {
         DbOpcode opCode;
         if(GetOpcode(opCode) != SUCCESS)
@@ -352,10 +367,6 @@ BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueM
     int columnCount = 0;
     if (GetColumnCountForCurrentChangedTable(columnCount, tableName) != SUCCESS) {
         LOG.errorv("Failed to get column count for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    if(m_strictMode && columnCount != m_currentChange.GetColumnCount()) {
-        LOG.errorv("Column count mismatch for table '%s': expected %d columns based on PRAGMA_TABLE_INFO, but changeset has %d columns. Disable strict mode to not treat this as an error.", tableName.c_str(), columnCount, m_currentChange.GetColumnCount());
         return ERROR;
     }
     int minimum = std::min(columnCount, m_currentChange.GetColumnCount());
