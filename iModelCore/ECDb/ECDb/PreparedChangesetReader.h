@@ -17,6 +17,7 @@ private:
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.
     using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
+    enum class StageProcessResult { Success, Error, Filtered };
     ECDbCR                         m_ecdb;
 
     // change mappings
@@ -30,7 +31,12 @@ private:
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedPropNames;
 
+    //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
+    //! Deleted in Close().
+    BeFileName m_tempGroupFile;
+
     //filters
+    bool m_strictMode = false;
     std::vector<Utf8String> m_tableFilters;
     std::vector<DbOpcode> m_opcodeFilters;
     std::vector<Utf8String> m_ecclassNameFilters;
@@ -64,10 +70,15 @@ private:
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
 
-    DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
-    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
-    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter);
-    void Close();
+    DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
+    //! Opens a pre-built in-memory ChangeSet for reading.
+    //! If the changeset size exceeds the spill threshold it is transparently written to a
+    //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
+    //! single copy at a time.
+    DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    BentleyStatus Close();
+    void CloseInfallible();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }
 
@@ -87,6 +98,8 @@ public:
     void ClearTableFilters() { m_tableFilters.clear(); }
     void ClearOpcodeFilters() { m_opcodeFilters.clear(); }
     void ClearECClassNameFilters() { m_ecclassNameFilters.clear(); }
+    void EnableStrictMode() { m_strictMode = true; }
+    void DisableStrictMode() { m_strictMode = false; }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
