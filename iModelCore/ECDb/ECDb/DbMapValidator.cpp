@@ -945,10 +945,10 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
         {
         if (propertyMap->IsSystem())
             {
-            if (propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+            if (!hasECInstanceIdInOverflowTable && propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
                 hasECInstanceIdInOverflowTable = containOverflow(propertyMap->GetAs<SystemPropertyMap>().GetTables());
 
-            if (propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            if (!hasECClassIdInOverflowTable && propertyMap->GetAccessString().EqualsIAscii(ECDBSYS_PROP_ECClassId))
                 hasECClassIdInOverflowTable = containOverflow(propertyMap->GetAs<SystemPropertyMap>().GetTables());
             }
         else
@@ -992,9 +992,12 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
         const bool hasSystemPropertyMap = hasECInstanceIdInOverflowTable || hasECClassIdInOverflowTable;
         if (hasSystemPropertyMap && nDataPropertyInOverflowTable == 0)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0173,
+            // TODO: It might happen that a major schema upgrade deletes all the data properties in the overflow table.
+            // This still leaves behind a state where the overflow table still has the system properties mapped to it, but no data properties.
+            // Refer test case SchemaRemapTest:MajorVersionUpgradeRemovesDataPropertiesFromOverflowTable
+            // It would be worthwhile to look into clearing up those empty data rows and their mappings.
+            Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0173,
                 "The class '%s' ECInstanceId and ECClassId property map point to overflow table but there is no data property that is stored in overflow table.", classMap.GetClass().GetFullName());
-            return ERROR;
             }
 
         if (!hasSystemPropertyMap && nDataPropertyInOverflowTable > 0)

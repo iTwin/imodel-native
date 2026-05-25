@@ -152,6 +152,51 @@ WHERE [ec_PropertyPath].[RootPropertyId] = ? AND NOT EXISTS (SELECT 1 FROM [ec_P
             LOG.infov("Cleaned up %" PRIi32 " orphan row(s) in PropertyPath for property %d", affectedRows, cleanedPropertyId.GetValue());
         }
 
+    const auto& dbSchema = m_schemaManager.GetDbSchema();
+
+    // Get all the columns that were freed/cleaned during this schema import
+    std::map<const DbTable*, std::vector<const DbColumn*>> freedColumnsByTable;
+    for (auto const& classPair : m_cleanedMappingInfo)
+        {
+        for (auto const& cleaned : classPair.second)
+            {
+            const auto table = dbSchema.FindTable(cleaned.m_tableName.c_str());
+            if (table == nullptr)
+                continue;
+            const auto column = table->FindColumn(cleaned.m_columnName.c_str());
+            if (column == nullptr)
+                continue;
+            freedColumnsByTable[table].push_back(column);
+            }
+        }
+
+    // Only block columns on tables whose linked table also has a freed column which might lead to cross table circular remaps.
+    for (auto const& tablePair : freedColumnsByTable)
+        {
+        const auto table = tablePair.first;
+        auto linkedTableHasFreedColumns = false;
+
+        if (table->GetType() == DbTable::Type::Overflow)
+            {
+            // This is an overflow table, check whether its parent table also freed columns
+            if (const DbTable::LinkNode* parentNode = table->GetLinkNode().GetParent(); parentNode != nullptr)
+                linkedTableHasFreedColumns = (freedColumnsByTable.count(&parentNode->GetTable()) > 0);
+            }
+        else
+            {
+            // This is a primary or joined table, check whether its overflow child also freed columns
+            if (const DbTable::LinkNode* overflowNode = table->GetLinkNode().FindOverflowTable(); overflowNode != nullptr)
+                linkedTableHasFreedColumns = (freedColumnsByTable.count(&overflowNode->GetTable()) > 0);
+            }
+
+        if (!linkedTableHasFreedColumns)
+            continue; // safe to reuse, no risk of a possible circular remap across the linked tables
+
+        for (const DbColumn* column : tablePair.second)
+            m_allFreedColumnIdentifiers.insert(RemapManager::GetFullColumnIdentifier(column->GetTable().GetName(), column->GetName()));
+        }
+
+
     return SUCCESS;
     }
 

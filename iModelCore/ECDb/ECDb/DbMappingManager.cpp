@@ -478,10 +478,7 @@ RefCountedPtr<PrimitiveArrayPropertyMap> DbMappingManager::Classes::MapPrimitive
         std::vector<DbColumn const*> const* columns;
         columns = ctx.m_loadCtx->FindColumnByAccessString(accessString);
         if (columns == nullptr || columns->size() != 1)
-            {
-            BeAssert(false);
             return nullptr;
-            }
 
         column = columns->front();
         }
@@ -510,10 +507,7 @@ RefCountedPtr<StructArrayPropertyMap> DbMappingManager::Classes::MapStructArrayP
         std::vector<DbColumn const*> const* columns;
         columns = ctx.m_loadCtx->FindColumnByAccessString(accessString);
         if (columns == nullptr || columns->size() != 1)
-            {
-            BeAssert(false);
             return nullptr;
-            }
 
         column = columns->front();
         }
