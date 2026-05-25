@@ -216,6 +216,7 @@ void PreparedChangesetReader::ClearMembers() {
     m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
     m_invert = false;
     ClearFields();
+    m_columnValuesScratch.clear();
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
@@ -257,12 +258,11 @@ DbResult PreparedChangesetReader::Step() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames) {
-    ColumnValueMap values;
-    if (GetColumnValues(stage, values) != SUCCESS)
+    if (GetColumnValues(stage, m_columnValuesScratch) != SUCCESS)
         return StageProcessResult::Error;
     ECClassId classId;
     bool isClassIdFromChangeset = false;
-    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, values, classId, isClassIdFromChangeset) != SUCCESS)
+    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset) != SUCCESS)
         return StageProcessResult::Error;
     ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
@@ -274,7 +274,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
         LOG.infov("ECClass '%s' is not allowed by filters. Skipping creating fields", className.c_str());
         return StageProcessResult::Filtered;
     }
-    if (ChangesetValueFactory::Create(m_ecdb, dbTable, values, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), m_propertyFilter, changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
@@ -326,12 +326,14 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 
         if(opCode != DbOpcode::Delete) {
             auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
+            m_columnValuesScratch.clear(); // clear scratch map after processing New stage to free up memory
             if (result == StageProcessResult::Error) return ERROR;
             if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
         }
         if(opCode != DbOpcode::Insert) {
             std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
             auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
+            m_columnValuesScratch.clear(); // clear scratch map after processing Old stage to free up memory
             if (result == StageProcessResult::Error) return ERROR;
             if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
         }
@@ -343,14 +345,6 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueMap& outMap) const {
-    if (!IsOpen()) {
-        LOG.errorv("Attempting to get column values from a closed PreparedChangesetReader.");
-        return ERROR;
-    }
-    if (!IsStepped()) {
-        LOG.errorv("Attempting to get column values from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-    }
     Utf8String tableName;
     if (GetTableName(tableName) != SUCCESS)
         return ERROR;

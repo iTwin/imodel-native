@@ -30,6 +30,9 @@ private:
     // data fields
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedPropNames;
+    //! Scratch map reused across ProcessStageValues calls to avoid repeated heap alloc/dealloc
+    //! of the unordered_map bucket array and node pool on every changeset row.
+    ColumnValueMap m_columnValuesScratch;
 
     //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
     //! Deleted in Close().
