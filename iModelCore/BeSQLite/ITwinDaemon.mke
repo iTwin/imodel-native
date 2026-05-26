@@ -65,6 +65,9 @@ EXE_LOPT1           = -entry:mainCRTStartup -NODEFAULTLIB:msvcrtd.lib
 %endif
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
     LINKER_LIBRARIES + -framework CFNetwork
+    LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework Foundation
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
 %endif
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)

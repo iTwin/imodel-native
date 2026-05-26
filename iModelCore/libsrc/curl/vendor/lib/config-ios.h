@@ -1007,13 +1007,13 @@
 /* #undef USE_OPENLDAP */
 
 /* if OpenSSL is in use */
-#define USE_OPENSSL 1
+#undef USE_OPENSSL
 
 /* if quiche is in use */
 /* #undef USE_QUICHE */
 
 /* if rustls is enabled */
-/* #undef USE_RUSTLS */
+#define USE_RUSTLS 1
 
 /* to enable Windows native SSL/TLS support */
 /* #undef USE_SCHANNEL */

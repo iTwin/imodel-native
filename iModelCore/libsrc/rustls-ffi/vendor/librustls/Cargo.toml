@@ -1,0 +1,62 @@
+[package]
+name = "rustls-ffi"
+# Keep in sync with defines in cbindgen.toml
+version = "0.15.1"
+license = "Apache-2.0 OR ISC OR MIT"
+readme = "../README-crates.io.md"
+description = "Rustls bindings for non-Rust languages"
+homepage = "https://github.com/rustls/rustls-ffi"
+repository = "https://github.com/rustls/rustls-ffi"
+categories = ["network-programming", "cryptography"]
+edition = "2021"
+links = "rustls_ffi"
+rust-version = "1.73"
+
+[features]
+default = ["ring"]
+# Enable this feature when building as Rust dependency. It inhibits the
+# default behavior of capturing the global logger, which only works when
+# built using the Makefile, which passes -C metadata=rustls-ffi to avoid
+# interfering with copies of the global logger brought in by other Rust
+# libraries.
+no_log_capture = []
+read_buf = ["rustls/read_buf"]
+capi = []
+ring = ["rustls/ring", "webpki/ring"]
+aws-lc-rs = ["rustls/aws-lc-rs", "webpki/aws-lc-rs"]
+cert_compression = ["rustls/brotli", "rustls/zlib"]
+fips = ["rustls/fips", "webpki/aws-lc-rs-fips"]
+prefer-post-quantum = ["aws-lc-rs", "rustls/prefer-post-quantum"]
+
+[dependencies]
+# Keep in sync with RUSTLS_CRATE_VERSION in build.rs
+rustls = { version = "=0.23.37", default-features = false, features = ["std", "tls12"] }
+webpki  = { workspace = true }
+libc = { workspace = true }
+log = { workspace = true }
+rustls-platform-verifier = { workspace = true }
+macro_rules_attribute = "0.2.2"
+
+[lib]
+name = "rustls_ffi"
+crate-type = ["lib", "staticlib"]
+
+[dev-dependencies]
+toml = { workspace = true }
+
+[package.metadata.capi.header]
+name = "rustls"
+subdirectory = false
+generation = false # Prefer a vendored .h
+
+[package.metadata.capi.library]
+name = "rustls"
+version_suffix_components = 3
+rustflags = "-Cmetadata=rustls-ffi"
+
+[package.metadata.capi.pkg_config]
+name = "rustls"
+filename = "rustls"
+
+[package.metadata.capi.install.include]
+asset = [{ from = "src/rustls.h", to = "" }]

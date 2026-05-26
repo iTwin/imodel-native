@@ -181,6 +181,10 @@ DLM_NO_CONTEXT_LINK = 1
 
         # macOS 10.15+
         LINKER_LIBRARIES  + -framework DriverKit
+
+        # Required by rustls (aws-lc-rs crypto provider)
+        LINKER_LIBRARIES  + -framework Security
+
         # This is a hack, Mac is not set up with the various context definitions like linux
         BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
     %endif

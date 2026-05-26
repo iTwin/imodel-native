@@ -100,7 +100,10 @@
 #define HAVE_INET_NTOP 1
 
 /* Define to enable OpenSSL support */
-#define USE_OPENSSL             1
+#undef USE_OPENSSL
+
+/* Define to enable rustls support */
+#define USE_RUSTLS 1
 
 /* Define to enable c-ares support */
 #define USE_ARES 1
