@@ -145,6 +145,7 @@ ECDbAllHeaders = \
                 $(baseDir)ClassViews.h \
                 $(baseDir)ChangesetValue.h \
                 $(baseDir)IECSqlValueHelper.h \
+                $(baseDir)ChangesetValueArena.h \
                 $(baseDir)ChangesetValueFactory.h \
                 $(baseDir)PreparedChangesetReader.h
 

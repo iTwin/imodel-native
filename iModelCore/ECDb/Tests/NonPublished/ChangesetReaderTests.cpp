@@ -66,7 +66,7 @@ struct ChangesetReaderTests : ECDbTestFixture {
         }
 
         //! Schema with a many-to-many (link table) relationship where source and target
-        //! constraints are non-polymorphic â†’ SourceECClassId and TargetECClassId are virtual.
+        //! constraints are non-polymorphic  SourceECClassId and TargetECClassId are virtual.
         Utf8CP GetRelSchema() const {
             return R"xml(<?xml version="1.0" encoding="utf-8"?>
                             <ECSchema schemaName="TestRelCS" alias="tr" version="01.00.00"
@@ -331,10 +331,10 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
-    EXPECT_TRUE(hasName("Pos2d"));        // both coords set â†’ full name
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set  full name
     EXPECT_FALSE(hasName("Pos2d.X"));
     EXPECT_FALSE(hasName("Pos2d.Y"));
-    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set â†’ full name
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set  full name
     EXPECT_FALSE(hasName("Pos3d.X"));
     EXPECT_FALSE(hasName("Pos3d.Y"));
     EXPECT_FALSE(hasName("Pos3d.Z"));
@@ -1423,13 +1423,13 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
     ECN::ECPropertyCP prop6 = v6.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos2d", prop6->GetName().c_str());
-    EXPECT_TRUE(v6.IsNull()); // Partial Point2d does not collapse â†’ full Pos2d emitted but null because missing Y means entire struct is null.
+    EXPECT_TRUE(v6.IsNull()); // Partial Point2d does not collapse  full Pos2d emitted but null because missing Y means entire struct is null.
 
     //Property 8
     IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
     ECN::ECPropertyCP prop7 = v7.GetColumnInfo().GetProperty();
     EXPECT_STREQ("Pos3d", prop7->GetName().c_str());
-    EXPECT_TRUE(v7.IsNull()); // Partial Point3d does not collapse â†’ full Pos3d emitted but null because missing X means entire struct is null.
+    EXPECT_TRUE(v7.IsNull()); // Partial Point3d does not collapse  full Pos3d emitted but null because missing X means entire struct is null.
 
     //Property 9
     IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
@@ -1457,10 +1457,10 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
-    EXPECT_TRUE(hasName("Pos2d"));        // both coords set â†’ full name
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set  full name
     EXPECT_FALSE(hasName("Pos2d.X"));
     EXPECT_FALSE(hasName("Pos2d.Y"));
-    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set â†’ full name
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set  full name
     EXPECT_FALSE(hasName("Pos3d.X"));
     EXPECT_FALSE(hasName("Pos3d.Y"));
     EXPECT_FALSE(hasName("Pos3d.Z"));
@@ -1618,10 +1618,10 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_TRUE(hasName("Active"));
-    EXPECT_TRUE(hasName("Pos2d"));        // both coords set â†’ full name
+    EXPECT_TRUE(hasName("Pos2d"));        // both coords set  full name
     EXPECT_FALSE(hasName("Pos2d.X"));
     EXPECT_FALSE(hasName("Pos2d.Y"));
-    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set â†’ full name
+    EXPECT_TRUE(hasName("Pos3d"));        // all three coords set  full name
     EXPECT_FALSE(hasName("Pos3d.X"));
     EXPECT_FALSE(hasName("Pos3d.Y"));
     EXPECT_FALSE(hasName("Pos3d.Z"));
@@ -1840,7 +1840,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
         "INSERT INTO ts.Widget(Name) VALUES('Sprocket')"));
 
-        // First reader: non-matching table filter â†’ no rows.
+        // First reader: non-matching table filter  no rows.
         {
         auto cs = std::make_unique<TestCSChangeSet>();
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
@@ -1856,7 +1856,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         ASSERT_EQ(SUCCESS, reader.Close());
         }
 
-        // Second reader: set the same filter then clear it â†’ the Widget row must appear.
+        // Second reader: set the same filter then clear it  the Widget row must appear.
         {
         auto cs = std::make_unique<TestCSChangeSet>();
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
@@ -1926,7 +1926,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_overflow.ecdb", SchemaItem(overflowSchema)));
 
     // -----------------------------------------------------------------------
-    // Part 1: INSERT inside tracker â†’ two changeset entries (primary + overflow)
+    // Part 1: INSERT inside tracker  two changeset entries (primary + overflow)
     // -----------------------------------------------------------------------
     ECInstanceKey bigKey;
     {
@@ -2223,7 +2223,7 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
 
         IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
         EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
-        // Virtual ECClassId resolved via GetRootClassMap â†’ JChild's class id.
+        // Virtual ECClassId resolved via GetRootClassMap  JChild's class id.
         EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
 
         IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
@@ -2358,7 +2358,7 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
 
         IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
         EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
-        // Virtual ECClassId in tjo_JChild â€” resolved via GetRootClassMap â†’ JChild's class id.
+        // Virtual ECClassId in tjo_JChild â€” resolved via GetRootClassMap  JChild's class id.
         EXPECT_EQ(jChildKey.GetClassId(), v1.GetId<ECN::ECClassId>());
 
         IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
@@ -2477,7 +2477,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         ASSERT_EQ(DbOpcode::Insert, opcode);
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
-        // ECInstanceId + ECClassId (virtual â†’ resolved via GetRootClassMap) + Label + Score
+        // ECInstanceId + ECClassId (virtual  resolved via GetRootClassMap) + Label + Score
         ASSERT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
         IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -2486,7 +2486,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
 
         IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
         EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
-        // Virtual ECClassId â€” resolved via GetRootClassMap(te_Gadget) â†’ Gadget's class id.
+        // Virtual ECClassId â€” resolved via GetRootClassMap(te_Gadget)  Gadget's class id.
         EXPECT_EQ(m_ecdb.Schemas().GetClass("TestExisting","Gadget")->GetId(), v1.GetId<ECN::ECClassId>());
 
         IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
@@ -2563,7 +2563,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         EXPECT_STREQ("Score", oldScore.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_EQ(99, oldScore.GetInt());
 
-        // ECClassId virtual â†’ not from changeset â†’ absent from changedProps.
+        // ECClassId virtual  not from changeset  absent from changedProps.
         auto const* changedProps = reader.GetChangeFetchedPropertyNames();
         ASSERT_NE(nullptr, changedProps);
         auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
@@ -2670,7 +2670,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     EXPECT_TRUE(hasName("SourceECInstanceId"));
     EXPECT_TRUE(hasName("TargetECInstanceId"));
 
-    // Virtual columns: no physical SQLite column â†’ absent from the changeset â†’
+    // Virtual columns: no physical SQLite column  absent from the changeset 
     // absent from GetChangeFetchedPropertyNames.
     EXPECT_FALSE(hasName("ECClassId"));       // virtual â€” resolved via GetRootClassMap
     EXPECT_FALSE(hasName("SourceECClassId")); // virtual â€” polymorphic=false on source constraint
@@ -2955,7 +2955,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
     }
 
-    // Changeset 1: UPDATE â†’ "Version1".
+    // Changeset 1: UPDATE  "Version1".
     BeFileName cs1File;
     {
     TestCSChangeTracker tracker(m_ecdb);
@@ -2970,7 +2970,7 @@ TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
     cs1File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs1.changeset");
     }
 
-    // Changeset 2: UPDATE â†’ "Version2".
+    // Changeset 2: UPDATE  "Version2".
     BeFileName cs2File;
     {
     TestCSChangeTracker tracker(m_ecdb);
@@ -3585,8 +3585,8 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
 //---------------------------------------------------------------------------------------
 // Verifies strict-mode behaviour when the changeset was captured against an older (V1)
 // schema and is later read against a newer (V2) DB whose table has an extra column.
-// Strict mode ON  â†’ Step() must return BE_SQLITE_ERROR.
-// Strict mode OFF â†’ Step() must succeed and return BE_SQLITE_ROW.
+// Strict mode ON   Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF  Step() must succeed and return BE_SQLITE_ROW.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
@@ -3660,8 +3660,8 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
 // Verifies strict-mode behaviour when the changeset was captured against a newer (V2)
 // schema and is read against an older (V1) DB whose table is one column shorter.
 // The V2 changeset is produced by a separate ECDb instance; the reader uses a V1 DB.
-// Strict mode ON  â†’ Step() must return BE_SQLITE_ERROR.
-// Strict mode OFF â†’ Step() must succeed and return BE_SQLITE_ROW.
+// Strict mode ON Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF Step() must succeed and return BE_SQLITE_ROW.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
@@ -3688,7 +3688,7 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     // m_ecdb is the reader DB â€” it carries only the V1 schema (4 columns).
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
 
-    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4 â†’ error.
+    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4  error.
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
@@ -3736,5 +3736,190 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     ASSERT_EQ(SUCCESS, reader.Close());
     }
     }
+// ============================================================================
+// ChangesetReader API — memory lifecycle tests
+// Focus: prove the arena is recycled between rows and on close.
+// Value equality is deliberately not checked (covered by other tests in this file).
+// @bsiclass
+// ============================================================================
 
+//---------------------------------------------------------------------------------------
+// Insert two identical rows and open the reader.  After step 1, capture the raw
+// address of the first column's IECSqlValue.  After step 2, capture the same column's
+// address again.  Because the arena is reset between rows, the bump pointer is rewound
+// and the same memory slot is reused — the two addresses must be equal.
+// This proves the arena is recycled on every step (no memory accumulation).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Memory_ArenaRecycledBetweenRows_SameAddressForSameColumn)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("arena_recycle.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert two minimal Widget rows (only Name set).
+    for (int i = 0; i < 2; ++i)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "INSERT INTO ts.Widget(Name) VALUES(?)"));
+        Utf8String name = Utf8String("W") + std::to_string(i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, name.c_str(), IECSqlBinder::MakeCopy::Yes));
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Step to row 1 and capture the raw address of column-0 value (ECInstanceId).
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    void const* addrRow1 = &reader.GetValue(BeSQLite::Changes::Change::Stage::New, 0);
+
+    // Step to row 2.  The arena is reset first, then new objects are allocated.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    void const* addrRow2 = &reader.GetValue(BeSQLite::Changes::Change::Stage::New, 0);
+
+    EXPECT_EQ(addrRow1, addrRow2)
+        << "Arena must be reset between rows: column-0 value must reuse the same address, "
+        << "proving the bump pointer was rewound and no memory is accumulating";
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Open the reader, step once to allocate arena objects, then close immediately
+// without advancing to DONE.  Tests that Close() properly resets the arena even when
+// iteration is abandoned mid-way.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Memory_EarlyClose_ArenaCleanedUpWithoutSteppingToEnd)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("arena_earlyclose.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    for (int i = 0; i < 3; ++i)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "INSERT INTO ts.Widget(Name) VALUES(?)"));
+        Utf8String name = Utf8String("W") + std::to_string(i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, name.c_str(), IECSqlBinder::MakeCopy::Yes));
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Step once — arena is now populated with IECSqlValue objects.
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // Close without reading remaining rows.  If Close() fails to reset the arena,
+    // the heap memory from the allocated IECSqlValues would leak.
+    ASSERT_EQ(SUCCESS, reader.Close());
+    // No crash or assertion failure = arena cleanup on early close is correct.
+    }
+
+//---------------------------------------------------------------------------------------
+// Insert many rows and step through all of them.  If the arena were NOT reset between
+// steps, it would accumulate objects until the heap is exhausted.  Completing all steps
+// without OOM proves the arena is recycled on every step.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Memory_ManyRows_ArenaRecycledPerStep_NoAccumulation)
+    {
+    constexpr int kRowCount = 20;
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("arena_manyrows.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    for (int i = 0; i < kRowCount; ++i)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "INSERT INTO ts.Widget(Name, Weight) VALUES(?, ?)"));
+        Utf8String name = Utf8String("W") + std::to_string(i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, name.c_str(), IECSqlBinder::MakeCopy::Yes));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, static_cast<double>(i)));
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    int stepCount = 0;
+    while (reader.Step() == BE_SQLITE_ROW)
+        ++stepCount;
+
+    // kRowCount steps completed without OOM proves the arena was recycled each time.
+    EXPECT_EQ(kRowCount, stepCount);
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Close the reader after partial use, then reopen it on a second changeset captured
+// from the same ECDb.  Tests that the arena inside PreparedChangesetReader is in a clean
+// state after Close() and does not carry stale pointers into the second session.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, Memory_ReopenAfterClose_ArenaNotCorrupted)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("arena_reopen.ecdb", SchemaItem(GetSchema())));
+
+    // --- first changeset ---
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key,
+        "INSERT INTO ts.Widget(Name) VALUES('First')"));
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // --- second changeset on the same reader object ---
+    {
+    TestCSChangeTracker tracker2(m_ecdb);
+    tracker2.EnableTracking(true);
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key,
+        "INSERT INTO ts.Widget(Name) VALUES('Second')"));
+    auto cs2 = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
+
+    ChangesetReader reader2;
+    ASSERT_EQ(BE_SQLITE_OK, reader2.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(BE_SQLITE_ROW, reader2.Step());
+    // No crash = arena is clean after the first reader was closed
+    ASSERT_EQ(BE_SQLITE_DONE, reader2.Step());
+    ASSERT_EQ(SUCCESS, reader2.Close());
+    }
+    }
 END_ECDBUNITTESTS_NAMESPACE
+

@@ -3,40 +3,11 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "ChangesetValue.h"
+#include "ChangesetValueArena.h"
 #include <ECDb/ChangesetReader.h>
-#include <memory_resource>
 #include <unordered_set>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-//=======================================================================================
-//! POD handle used to thread the PMR arena allocator + destructor registry from
-//! PreparedChangesetReader into ChangesetValueFactory without ownership.
-//! Call New<T>(...) instead of std::make_unique<T>(...) everywhere in the factory.
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct ChangesetValueAllocator final {
-    std::pmr::polymorphic_allocator<std::byte>           allocator;
-    std::vector<std::pair<void(*)(void*), void*>>&       dtors;
-
-    ChangesetValueAllocator(std::pmr::polymorphic_allocator<std::byte> alloc,
-                           std::vector<std::pair<void(*)(void*), void*>>& dtorsRef)
-        : allocator(alloc), dtors(dtorsRef) {}
-
-    ChangesetValueAllocator(ChangesetValueAllocator const&)            = delete;
-    ChangesetValueAllocator(ChangesetValueAllocator&&)                 = delete;
-    ChangesetValueAllocator& operator=(ChangesetValueAllocator const&) = delete;
-    ChangesetValueAllocator& operator=(ChangesetValueAllocator&&)      = delete;
-
-    template<typename T, typename... Args>
-    T* New(Args&&... args) {
-        T* p = allocator.allocate_object<T>();
-        ::new(p) T(std::forward<Args>(args)...);
-        dtors.push_back({ [](void* x){ static_cast<T*>(x)->~T(); }, p });
-        return p;
-    }
-};
 
 //=======================================================================================
 //! Creates IECSqlValue objects for each property of a changeset row.

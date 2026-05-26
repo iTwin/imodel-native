@@ -117,6 +117,7 @@
 #include "ECSql/NavigationPropertyECSqlField.h"
 #include "IECSqlValueHelper.h"
 #include "ChangesetValue.h"
+#include "ChangesetValueArena.h"
 #include "ChangesetValueFactory.h"
 #include "PreparedChangesetReader.h"
 
