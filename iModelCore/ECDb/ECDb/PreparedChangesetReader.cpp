@@ -424,6 +424,7 @@ void PreparedChangesetReader::ClearFields() {
     m_fields[Stage::New].clear();
     m_fields[Stage::Old].clear();
     m_changedPropNames.clear();
+    m_columnValuesScratch.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -467,8 +468,10 @@ DbResult PreparedChangesetReader::Step() {
     ClearFields();
     DbResult stat = m_iterator.StepRaw();
     bool isCurrentRowFilteredOut = false;
-    if (ReFetchValues(isCurrentRowFilteredOut) != SUCCESS)
+    if (ReFetchValues(isCurrentRowFilteredOut) != SUCCESS) {
+        ClearFields();
         return BE_SQLITE_ERROR;
+    }
     if (isCurrentRowFilteredOut) {
         LOG.infov("Current change is filtered out. Stepping to the next change.");
         return Step();
