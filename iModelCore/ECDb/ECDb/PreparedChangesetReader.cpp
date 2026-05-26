@@ -508,8 +508,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
             return StageProcessResult::Error;
         }
     }
-    auto alloc = m_valueArena.MakeAllocator();
-    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), alloc, m_propertyFilter, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), m_valueArena, m_propertyFilter, changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }

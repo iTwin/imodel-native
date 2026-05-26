@@ -36,7 +36,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
                 $(publicApiDir)InstanceRepository.h \
-                $(publicApiDir)ChangesetReader.h
+                $(publicApiDir)ChangesetReader.h \
+                $(publicApiDir)PmrObjectAllocator.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -145,7 +146,6 @@ ECDbAllHeaders = \
                 $(baseDir)ClassViews.h \
                 $(baseDir)ChangesetValue.h \
                 $(baseDir)IECSqlValueHelper.h \
-                $(baseDir)ChangesetValueArena.h \
                 $(baseDir)ChangesetValueFactory.h \
                 $(baseDir)PreparedChangesetReader.h
 

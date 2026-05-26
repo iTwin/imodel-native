@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../../ECDb/ChangesetValueArena.h"  // ChangesetValueArena, ChangesetValueAllocator
+#include <ECDb/PmrObjectAllocator.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -52,13 +52,13 @@ private:
 // test struct the required base without importing any production column info.
 // @bsiclass
 // ============================================================================
-struct TestChangesetValue : ChangesetValue
+struct TestChangesetValue
     {
-    TestChangesetValue() : ChangesetValue(ECSqlColumnInfo{}) {}
+   virtual ~TestChangesetValue() = default;
     };
 
 // ============================================================================
-// ChangesetValueArena and ChangesetValueAllocator — raw memory tests
+// PmrObjectAllocator<Base> — raw memory tests
 // These tests exercise the allocator machinery directly without involving the
 // full ChangesetReader pipeline.
 // @bsiclass
@@ -74,16 +74,18 @@ struct ChangesetArenaTests : ECDbTestFixture {};
 TEST_F(ChangesetArenaTests, Arena_DestructorWritesTombstoneAtCapturedAddress)
     {
     //! Object whose destructor stamps a sentinel so we can confirm it was called.
-    struct Sentinel : TestChangesetValue
+    struct Sentinel: TestChangesetValue
         {
         volatile int32_t data = 0x12345678;
-        ~Sentinel() { data = static_cast<int32_t>(0xDEADBEEF); }
+        ~Sentinel() 
+        { 
+            data = static_cast<int32_t>(0xDEADBEEF); 
+        }
         };
 
-    ChangesetValueArena arena;
-    auto alloc = arena.MakeAllocator();
-    Sentinel* p = alloc.New<Sentinel>();
-    void* rawAddr = static_cast<void*>(p);
+    PmrObjectAllocator<Sentinel> arena;
+    Sentinel* p = arena.New<Sentinel>();
+    volatile int32_t* dataAddr = &p->data;
 
     EXPECT_EQ(0x12345678, p->data) << "Object must hold initial value before Reset()";
     EXPECT_EQ(1u, arena.m_dtors.size());
@@ -92,7 +94,7 @@ TEST_F(ChangesetArenaTests, Arena_DestructorWritesTombstoneAtCapturedAddress)
 
     // Accessing memory through the raw address after destruction is technically UB,
     // but with volatile and no subsequent allocation this reliably verifies the dtor.
-    int32_t const tombstone = *reinterpret_cast<volatile int32_t*>(rawAddr);
+    int32_t const tombstone = *dataAddr;
     EXPECT_EQ(static_cast<int32_t>(0xDEADBEEF), tombstone)
         << "Destructor must have written the tombstone — dtor was not called if this fails";
     EXPECT_EQ(0u, arena.m_dtors.size()) << "Dtor registry must be empty after Reset()";
@@ -108,18 +110,16 @@ TEST_F(ChangesetArenaTests, Arena_BumpPointerRewound_SameAddressAfterReset)
     {
     struct Tag : TestChangesetValue { int id = 0; };
 
-    ChangesetValueArena arena;
+    PmrObjectAllocator<Tag> arena;
     void* addrCycle1;
     {
-    auto alloc = arena.MakeAllocator();
-    addrCycle1 = alloc.New<Tag>();
+    addrCycle1 = arena.New<Tag>();
     }
     arena.Reset();
 
     void* addrCycle2;
     {
-    auto alloc = arena.MakeAllocator();
-    addrCycle2 = alloc.New<Tag>();
+    addrCycle2 = arena.New<Tag>();
     }
     arena.Reset();
 
@@ -128,7 +128,7 @@ TEST_F(ChangesetArenaTests, Arena_BumpPointerRewound_SameAddressAfterReset)
     }
 
 //---------------------------------------------------------------------------------------
-// Construct a ChangesetValueArena with a TrackingUpstream so every heap allocation and
+// Construct a PmrObjectAllocator with a TrackingUpstream so every heap allocation and
 // deallocation is observed directly.  Allocate three 22 KiB blocks: the first two fit
 // in the 64 KiB inline buffer, the third spills to the heap.  After Reset() the
 // upstream must report that every byte it handed out has been returned — no heap leak.
@@ -137,19 +137,17 @@ TEST_F(ChangesetArenaTests, Arena_BumpPointerRewound_SameAddressAfterReset)
 TEST_F(ChangesetArenaTests, Arena_HeapAllocationsFreedAfterRelease_NoLeak)
     {
     TrackingUpstream upstream;
-
+    struct Block: TestChangesetValue { std::array<std::byte, 22 * 1024> data {}; };
     // Construct the arena with a custom upstream so we can observe its heap traffic.
     // This uses the @internal constructor added specifically for testing.
-    ChangesetValueArena arena { upstream };
-    auto alloc = arena.MakeAllocator();
+    PmrObjectAllocator<Block> arena { upstream };
 
     // Each block is 22 KiB.  Two blocks consume 44 KiB of the 64 KiB inline buffer;
     // the third (would need 22 KiB but only 20 KiB remain) forces the monotonic
     // resource to request a new heap block from the upstream.
-    struct Block : TestChangesetValue { std::array<std::byte, 22 * 1024> data {}; };
-    alloc.New<Block>();
-    alloc.New<Block>();
-    alloc.New<Block>();
+    arena.New<Block>();
+    arena.New<Block>();
+    arena.New<Block>();
 
     EXPECT_GT(upstream.allocCount, 0)   << "Inline buffer must be exhausted so heap is used";
     EXPECT_EQ(0, upstream.deallocCount) << "Nothing freed yet — Reset() not called";
@@ -172,19 +170,18 @@ TEST_F(ChangesetArenaTests, Arena_HeapAllocationsFreedAfterRelease_NoLeak)
 TEST_F(ChangesetArenaTests, Arena_DtorCalledExactlyOnce_NotDoubleNotMissed)
     {
     int callCount = 0;
-    struct Counter : TestChangesetValue
+    struct Counter: TestChangesetValue
         {
         int& count;
         explicit Counter(int& c) : TestChangesetValue(), count(c) {}
         ~Counter() { ++count; }
         };
 
-    ChangesetValueArena arena;
+    PmrObjectAllocator<Counter> arena;
     {
-    auto alloc = arena.MakeAllocator();
-    alloc.New<Counter>(callCount);
-    alloc.New<Counter>(callCount);
-    alloc.New<Counter>(callCount);
+    arena.New<Counter>(callCount);
+    arena.New<Counter>(callCount);
+    arena.New<Counter>(callCount);
     }
     EXPECT_EQ(0, callCount) << "No dtor must fire before Reset()";
 
@@ -204,17 +201,16 @@ TEST_F(ChangesetArenaTests, Arena_DtorCalledExactlyOnce_NotDoubleNotMissed)
 TEST_F(ChangesetArenaTests, Arena_MultipleResetCycles_NoDtorAccumulation)
     {
     int totalCalls = 0;
-    struct Counter : TestChangesetValue { int& count; explicit Counter(int& c) : TestChangesetValue(), count(c) {} ~Counter() { ++count; } };
+    struct Counter: TestChangesetValue { int& count; explicit Counter(int& c) : TestChangesetValue(), count(c) {} ~Counter() { ++count; } };
 
-    ChangesetValueArena arena;
+    PmrObjectAllocator<Counter> arena;
     for (int cycle = 0; cycle < 5; ++cycle)
         {
         EXPECT_EQ(0u, arena.m_dtors.size()) << "Registry must be empty at start of cycle " << cycle;
         int beforeCycle = totalCalls;
         {
-        auto alloc = arena.MakeAllocator();
-        alloc.New<Counter>(totalCalls);
-        alloc.New<Counter>(totalCalls);
+        arena.New<Counter>(totalCalls);
+        arena.New<Counter>(totalCalls);
         }
         EXPECT_EQ(2u, arena.m_dtors.size()) << "Exactly 2 entries per cycle";
         arena.Reset();
@@ -224,7 +220,7 @@ TEST_F(ChangesetArenaTests, Arena_MultipleResetCycles_NoDtorAccumulation)
     }
 
 // ============================================================================
-// ChangesetValueAllocator — targeted tests
+// PmrObjectAllocator — direct New() tests
 // ============================================================================
 
 //---------------------------------------------------------------------------------------
@@ -233,17 +229,16 @@ TEST_F(ChangesetArenaTests, Arena_MultipleResetCycles_NoDtorAccumulation)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetArenaTests, Allocator_EachNewCallRegistersExactlyOneDtor)
     {
-    struct Noop : TestChangesetValue { ~Noop() {} };
+    struct Noop: TestChangesetValue { ~Noop() {} };
 
-    ChangesetValueArena arena;
-    auto alloc = arena.MakeAllocator();
+    PmrObjectAllocator<Noop> arena;
 
     EXPECT_EQ(0u, arena.m_dtors.size());
-    alloc.New<Noop>();
+    arena.New<Noop>();
     EXPECT_EQ(1u, arena.m_dtors.size());
-    alloc.New<Noop>();
+    arena.New<Noop>();
     EXPECT_EQ(2u, arena.m_dtors.size());
-    alloc.New<Noop>();
+    arena.New<Noop>();
     EXPECT_EQ(3u, arena.m_dtors.size());
 
     arena.Reset();
@@ -256,11 +251,10 @@ TEST_F(ChangesetArenaTests, Allocator_EachNewCallRegistersExactlyOneDtor)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetArenaTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
     {
-    ChangesetValueArena arena;
-    auto alloc = arena.MakeAllocator();
+    struct Small: TestChangesetValue { int x = 0; };
+    PmrObjectAllocator<Small> arena;
 
-    struct Small : TestChangesetValue { int x = 0; };
-    Small* p = alloc.New<Small>();
+    Small* p = arena.New<Small>();
 
     auto const* storageBegin = reinterpret_cast<uint8_t const*>(arena.m_storage.data());
     auto const* storageEnd   = storageBegin + arena.m_storage.size();
@@ -279,12 +273,10 @@ TEST_F(ChangesetArenaTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetArenaTests, Allocator_OversizedAlloc_SpillsToHeap_AddressOutsideStorage)
     {
-    ChangesetValueArena arena;
-    auto alloc = arena.MakeAllocator();
-
     // Request more bytes than the entire inline buffer in one allocation.
-    struct Oversized : TestChangesetValue { std::array<std::byte, ChangesetValueArena::kBytes + 1> data {}; };
-    Oversized* p = alloc.New<Oversized>();
+    struct Oversized : TestChangesetValue { std::array<std::byte, 21> data {}; };
+    PmrObjectAllocator<Oversized, 20> arena;
+    Oversized* p = arena.New<Oversized>();
 
     auto const* storageBegin = reinterpret_cast<uint8_t const*>(arena.m_storage.data());
     auto const* storageEnd   = storageBegin + arena.m_storage.size();
@@ -298,25 +290,18 @@ TEST_F(ChangesetArenaTests, Allocator_OversizedAlloc_SpillsToHeap_AddressOutside
     }
 
 //---------------------------------------------------------------------------------------
-// Two allocator handles created from the same arena both reference the same underlying
-// m_dtors registry.  Allocations through either handle accumulate in one list.
+// Multiple New<T>() calls on the same arena all accumulate in a single m_dtors registry.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Allocator_MultipleHandles_ShareSingleDtorRegistry)
+TEST_F(ChangesetArenaTests, Arena_MultipleNewCalls_ShareSingleDtorRegistry)
     {
-    struct Noop : TestChangesetValue { ~Noop() {} };
+    struct Noop: TestChangesetValue { ~Noop() {} };
 
-    ChangesetValueArena arena;
-    {
-    auto alloc1 = arena.MakeAllocator();
-    alloc1.New<Noop>();
+    PmrObjectAllocator<Noop> arena;
+    arena.New<Noop>();
     EXPECT_EQ(1u, arena.m_dtors.size());
-    }
-    {
-    auto alloc2 = arena.MakeAllocator();
-    alloc2.New<Noop>();
-    EXPECT_EQ(2u, arena.m_dtors.size()) << "alloc2 must append to the same registry as alloc1";
-    }
+    arena.New<Noop>();
+    EXPECT_EQ(2u, arena.m_dtors.size()) << "Second New() must append to the same registry";
 
     arena.Reset();
     EXPECT_EQ(0u, arena.m_dtors.size());

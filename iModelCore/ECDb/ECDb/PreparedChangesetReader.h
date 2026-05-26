@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "ChangesetValueArena.h"
+#include <ECDb/PmrObjectAllocator.h>
 #include "ChangesetValueFactory.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -140,7 +140,7 @@ private:
     ChangesetTempFileManager m_tempFileManager;
     ChangesetSqliteIterator  m_iterator;
 
-    ChangesetValueArena      m_valueArena;
+    PmrObjectAllocator<ChangesetValue> m_valueArena;
 
     PropertyFilter           m_propertyFilter = PropertyFilter::All;
     std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;

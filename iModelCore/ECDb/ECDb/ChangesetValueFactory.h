@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "ChangesetValueArena.h"
+#include <ECDb/PmrObjectAllocator.h>
 #include <ECDb/ChangesetReader.h>
 #include <unordered_set>
 
@@ -27,9 +27,9 @@ private:
         ECDbCR                          conn;
         ColumnValueMap const&           columnValues;
         DbTable const&                  dbTable;
-        ChangesetValueAllocator&        alloc;
-        std::vector<ChangesetValue*>&   fields;
-        std::vector<Utf8String>&        changedProps;
+        PmrObjectAllocator<ChangesetValue>& alloc;
+        std::vector<ChangesetValue*>&   fields; // out param
+        std::vector<Utf8String>&        changedProps; // out param
     };
     // ------------------------------------------------------------------
     // Schema / mapping helpers
@@ -203,7 +203,7 @@ public:
                                 ColumnValueMap const& columnValues,
                                 ECClassId resolvedClassId, bool classIdFromChangeset,
                                 std::vector<ChangesetValue*>& fields,
-                                ChangesetValueAllocator& alloc,
+                                PmrObjectAllocator<ChangesetValue>& alloc,
                                 ChangesetReader::PropertyFilter propertyFilter,
                                 std::vector<Utf8String>& changedProps);
 };

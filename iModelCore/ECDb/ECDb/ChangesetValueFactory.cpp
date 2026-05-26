@@ -853,7 +853,7 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
-    std::vector<ChangesetValue*>& fields, ChangesetValueAllocator& alloc, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
+    std::vector<ChangesetValue*>& fields, PmrObjectAllocator<ChangesetValue>& alloc, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
 
     const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
