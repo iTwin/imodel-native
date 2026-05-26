@@ -1,5 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
-# Run the user-installed cargo with all arguments passed through. Our install-rust.sh script does not modify the PATH,
-# so we need to call cargo directly from the ~/.cargo/bin directory.
-~/.cargo/bin/cargo "$@"
+if type -P cargo >/dev/null 2>&1; then
+    cargo "$@"
+else
+    # Run the user-installed cargo with all arguments passed through.
+    ~/.cargo/bin/cargo "$@"
+fi

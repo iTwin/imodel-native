@@ -7,9 +7,14 @@
 o = $(OutputRootDir)build/rustls/
 vendorSrc = $(_MakeFilePath)vendor/
 
+# A developer can set INSTALL_RUST_CARGO to YES in order to have rustup and cargo-c installed at build time.
+%if defined(INSTALL_RUST_CARGO)
+
 always:
     !~@mkdir $(o)
     $(_MakeFilePath)install-rust.sh
+
+%endif
 
 %if $(TARGET_PLATFORM)=="iOS"
 
