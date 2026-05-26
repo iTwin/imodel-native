@@ -83,6 +83,40 @@ public:
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     bool JsonDeepEqual(BeJsDocument const& a, BeJsDocument const& b) const;
     bool JsonDeepEqual(Json::Value const& a, Json::Value const& b) const;
+
+    struct ReportedIssue
+        {
+        ECN::IssueSeverity severity;
+        ECN::IssueCategory category;
+        ECN::IssueType type;
+        ECN::IssueId id;
+        Utf8String message;
+        };
+
+    struct TestIssueListener : ECN::IIssueListener
+        {
+        mutable std::vector<ReportedIssue> m_issues;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+            {
+            m_issues.emplace_back(ReportedIssue{severity, category, type, id, message});
+            }
+
+        int GetReportedIssueCount() const { return static_cast<int>(m_issues.size()); }
+
+        std::vector<ReportedIssue>& GetAllReportedIssues() const { return m_issues; }
+
+        std::vector<ReportedIssue> GetFilteredIssuesBySeverity(const ECN::IssueSeverity severity) const
+            {
+            std::vector<ReportedIssue> filteredIssues;
+            for (const auto& issue : m_issues)
+                {
+                if (issue.severity == severity)
+                    filteredIssues.push_back(issue);
+                }
+
+            return filteredIssues;
+            }
+        };
 };
 
 
