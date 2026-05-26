@@ -454,6 +454,14 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
+    // File-based txn storage
+    bool IsFileBasedTxnEnabled() const;
+    BentleyStatus EnsureTxnDirectory() const;
+    BeSQLite::DbResult WriteTxnToFile(TxnId txnId, BeSQLite::ChangeSetCR changeset, Byte* outChecksum);
+    BeSQLite::DbResult ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, BeSQLite::ChangeSet& changeset);
+    void DeleteTxnFile(TxnId txnId);
+    bool ValidateFileBasedTxns() const;
+
     BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
     BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
@@ -629,6 +637,9 @@ public:
     TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
 
     DGNPLATFORM_EXPORT TxnId GetLastTxnId();
+
+    //! Get the file path for a file-based transaction's .txn file.
+    DGNPLATFORM_EXPORT BeFileName GetTxnFilePath(TxnId txnId) const;
 
     /** For readonly connections, new Txns may be added from other writeable connections while this session is active.
      * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
