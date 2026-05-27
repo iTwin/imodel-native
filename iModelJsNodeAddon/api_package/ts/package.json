@@ -17,10 +17,10 @@
     "test": "node ./lib/test/index.js"
   },
   "devDependencies": {
-    "@itwin/build-tools": "^5.10.0-dev",
-    "@itwin/core-bentley": "^5.10.0-dev",
-    "@itwin/core-common": "^5.10.0-dev",
-    "@itwin/core-geometry": "^5.10.0-dev",
+    "@itwin/build-tools": "^5.11.0-dev",
+    "@itwin/core-bentley": "^5.11.0-dev",
+    "@itwin/core-common": "^5.11.0-dev",
+    "@itwin/core-geometry": "^5.11.0-dev",
     "@itwin/eslint-plugin": "^5.0.0-dev.2",
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",
