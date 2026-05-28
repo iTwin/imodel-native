@@ -148,39 +148,42 @@ DbResult ChangesetSqliteIterator::StepRaw() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetSqliteIterator::GetTableName(Utf8StringR tableName) const {
-    tableName = m_currentChange.GetTableName();
-    return SUCCESS;
+Utf8StringCR ChangesetSqliteIterator::GetTableName() const {
+    if(!m_currentChange.IsValid())
+        LOG.error("Attempting to get table name from ChangesetSqliteIterator when there is no current change.");
+    return m_currentChange.GetTableName();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetSqliteIterator::GetOpcode(DbOpcode& opcode) const {
-    opcode = m_currentChange.GetOpcode();
-    return SUCCESS;
+DbOpcode ChangesetSqliteIterator::GetOpcode() const {
+    if(!m_currentChange.IsValid())
+        LOG.error("Attempting to get opcode from ChangesetSqliteIterator when there is no current change.");
+    return m_currentChange.GetOpcode();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetSqliteIterator::IsECTable(bool& isECTable) const {
-    Utf8String tableName;
-    if (GetTableName(tableName) != SUCCESS)
+    if(!m_currentChange.IsValid()) {
+        LOG.error("Attempting to check if table is an EC table from ChangesetSqliteIterator when there is no current change.");
         return ERROR;
+    }
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
     if (stmt == nullptr) {
-        LOG.errorv("Failed to prepare statement to check if table '%s' is an EC table.", tableName.c_str());
+        LOG.errorv("Failed to prepare statement to check if table '%s' is an EC table.", GetTableName().c_str());
         return ERROR;
     }
     stmt->Reset();
     stmt->ClearBindings();
-    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(1, GetTableName().c_str(), Statement::MakeCopy::No);
     DbResult rc = stmt->Step();
     stmt->Reset();
     stmt->ClearBindings();
     if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE) {
-        LOG.errorv("Failed to step statement to check if table '%s' is an EC table.", tableName.c_str());
+        LOG.errorv("Failed to step statement to check if table '%s' is an EC table.", GetTableName().c_str());
         return ERROR;
     }
     isECTable = (rc == BE_SQLITE_ROW);
@@ -190,9 +193,11 @@ BentleyStatus ChangesetSqliteIterator::IsECTable(bool& isECTable) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetSqliteIterator::IsIndirectChange(bool& isIndirect) const {
-    isIndirect = m_currentChange.IsIndirect();
-    return SUCCESS;
+bool ChangesetSqliteIterator::IsIndirectChange() const {
+    if(!m_currentChange.IsValid())
+        LOG.error("Attempting to check if change is indirect from ChangesetSqliteIterator when there is no current change.");
+    
+    return m_currentChange.IsIndirect();
 }
 
 //---------------------------------------------------------------------------------------
@@ -231,55 +236,6 @@ BentleyStatus ChangesetSqliteIterator::GetColumnCount(Utf8StringCR tableName, in
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetSqliteIterator::GetColumnValues(Stage stage, Utf8StringCR tableName, ColumnValueMap& outMap) const {
-    int columnCount = 0;
-    if (GetColumnCount(tableName, columnCount) != SUCCESS) {
-        LOG.errorv("Failed to get column count for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    int minimum = std::min(columnCount, m_currentChange.GetColumnCount());
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
-    if (stmt == nullptr) {
-        LOG.errorv("Failed to prepare statement to get column names for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    stmt->Reset();
-    stmt->ClearBindings();
-    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
-
-    outMap.clear();
-    int colIdx = 0;
-    DbResult stat = stmt->Step();
-    while (colIdx < minimum && stat == BE_SQLITE_ROW) {
-        Utf8CP colName = stmt->GetValueText(0);
-        DbValue val = m_currentChange.GetValue(colIdx, stage);
-        if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(colIdx))
-            val = m_currentChange.GetOldValue(colIdx);
-        if (val.IsValid())
-            outMap.emplace(colName, val);
-        ++colIdx;
-        stat = stmt->Step();
-    }
-    stmt->Reset();
-    stmt->ClearBindings();
-    if (colIdx != minimum) {
-        LOG.errorv("Failed to step through required column names for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetSqliteIterator::DumpColumnValues(ColumnValueMap const& map) const {
-    for (auto const& [key, val] : map)
-        LOG.debugv("%s = %s", key.c_str(), val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)"));
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ChangesetSqliteIterator::DbOpcodeToString(DbOpcode opcode) {
     switch (opcode) {
         case DbOpcode::Insert: return "Insert";
@@ -287,6 +243,21 @@ Utf8String ChangesetSqliteIterator::DbOpcodeToString(DbOpcode opcode) {
         case DbOpcode::Delete: return "Delete";
         default:               return "Unknown";
     }
+}
+
+DbValue ChangesetSqliteIterator::GetChangeValue(int columnIndex, Stage stage) const {
+    if(!m_currentChange.IsValid()) {
+        LOG.error("Attempting to get a change value when there is no current change.");
+        return DbValue(nullptr);
+    }
+    if(columnIndex < 0 || columnIndex >= GetChangeColumnCount()) {
+        LOG.errorv("Column index %d is out of bounds for current change with %d columns.", columnIndex, GetChangeColumnCount());
+        return DbValue(nullptr);
+    }
+    DbValue val = m_currentChange.GetValue(columnIndex, stage);
+    if (!val.IsValid() && m_currentChange.IsPrimaryKeyColumn(columnIndex))
+        val = m_currentChange.GetOldValue(columnIndex); // for updated rows, the "new" value of PK columns is often absent, so fall back to the "old" value which should always be present
+    return val;
 }
 
 //=============================================================================
@@ -297,7 +268,7 @@ Utf8String ChangesetSqliteIterator::DbOpcodeToString(DbOpcode opcode) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::PreparedChangesetReader(ECDbCR ecdb)
-    : m_ecdb(ecdb), m_tempFileManager(ecdb), m_iterator(ecdb)
+    : m_ecdb(ecdb), m_tempFileManager(ecdb), m_iterator(ecdb), m_valueFactory(ecdb, m_filter, m_iterator, m_valueArena)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -330,7 +301,7 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
     if (changeStream == nullptr)
         return BE_SQLITE_ERROR;
 
-    m_propertyFilter = propertyFilter;
+    m_filter.SetPropertyFilter(propertyFilter);
     m_iterator.Open(std::move(changeStream), invert);
     m_fields.try_emplace(Stage::New);
     m_fields.try_emplace(Stage::Old);
@@ -424,7 +395,7 @@ void PreparedChangesetReader::ClearFields() {
     m_fields[Stage::New].clear();
     m_fields[Stage::Old].clear();
     m_changedPropNames.clear();
-    m_columnValuesScratch.clear();
+    m_valueFactory.ClearColumnValues();
 }
 
 //---------------------------------------------------------------------------------------
@@ -453,8 +424,7 @@ void PreparedChangesetReader::ClearMembers() {
     m_filter.Reset();
     m_fields.clear();
     m_changedPropNames.clear();
-    m_columnValuesScratch.clear();
-    m_propertyFilter = PropertyFilter::All;
+    m_valueFactory.ClearColumnValues();
 }
 
 //---------------------------------------------------------------------------------------
@@ -483,11 +453,11 @@ DbResult PreparedChangesetReader::Step() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames) {
-    if (m_iterator.GetColumnValues(stage, dbTable.GetName(), m_columnValuesScratch) != SUCCESS)
+    if (m_valueFactory.PopulateColumnValues(stage, dbTable.GetName()) != SUCCESS)
         return StageProcessResult::Error;
     ECClassId classId;
     bool isClassIdFromChangeset = false;
-    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset) != SUCCESS)
+    if (m_valueFactory.ResolveClassId(dbTable, classId, isClassIdFromChangeset) != SUCCESS)
         return StageProcessResult::Error;
     ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
@@ -508,7 +478,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
             return StageProcessResult::Error;
         }
     }
-    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValuesScratch, classId, isClassIdFromChangeset, m_fields.at(stage), m_valueArena, m_propertyFilter, changedPropNames) != SUCCESS)
+    if (m_valueFactory.Create(dbTable, classId, isClassIdFromChangeset, m_fields.at(stage), changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
@@ -557,14 +527,14 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 
     if (opCode != DbOpcode::Delete) {
         auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
-        m_columnValuesScratch.clear(); // clear scratch map after processing New stage to free up memory
+        m_valueFactory.ClearColumnValues(); // clear scratch map after processing New stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
     if (opCode != DbOpcode::Insert) {
         std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
         auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
-        m_columnValuesScratch.clear(); // clear scratch map after processing Old stage to free up memory
+        m_valueFactory.ClearColumnValues(); // clear scratch map after processing Old stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
@@ -598,7 +568,8 @@ BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const
         LOG.errorv("Attempting to get table name from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return ERROR;
     }
-    return m_iterator.GetTableName(tableName);
+    tableName = m_iterator.GetTableName();
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -613,7 +584,8 @@ BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
         LOG.errorv("Attempting to get opcode from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return ERROR;
     }
-    return m_iterator.GetOpcode(opcode);
+    opcode = m_iterator.GetOpcode();
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -719,7 +691,8 @@ BentleyStatus PreparedChangesetReader::IsIndirectChange(bool& isIndirect) const 
         LOG.errorv("Attempting to check IsIndirectChange on a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return ERROR;
     }
-    return m_iterator.IsIndirectChange(isIndirect);
+    isIndirect = m_iterator.IsIndirectChange();
+    return SUCCESS;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

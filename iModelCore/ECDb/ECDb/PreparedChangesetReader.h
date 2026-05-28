@@ -16,10 +16,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ChangesetFilter final {
 private:
+    using PropertyFilter = ChangesetReader::PropertyFilter;
+
     std::vector<Utf8String> m_tableFilters;
     std::vector<DbOpcode>   m_opcodeFilters;
     std::vector<Utf8String> m_ecclassNameFilters;
     bool                    m_strictMode = false;
+    PropertyFilter           m_propertyFilter = PropertyFilter::All;
+
 
 public:
     bool IsTableAllowed(Utf8StringCR tableName) const;
@@ -35,9 +39,10 @@ public:
     void ClearECClassNameFilters() { m_ecclassNameFilters.clear(); }
     void EnableStrictMode()        { m_strictMode = true; }
     void DisableStrictMode()       { m_strictMode = false; }
-    void Reset()                   { ClearTableFilters(); ClearOpcodeFilters(); ClearECClassNameFilters(); DisableStrictMode(); }
+    void Reset()                   { ClearTableFilters(); ClearOpcodeFilters(); ClearECClassNameFilters(); DisableStrictMode(); m_propertyFilter = PropertyFilter::All; }
+    void SetPropertyFilter(PropertyFilter filter) { m_propertyFilter = filter; }
+    PropertyFilter GetPropertyFilter() const { return m_propertyFilter; }
 };
-
 //=======================================================================================
 //! Manages creation and cleanup of the temporary LZMA-compressed changeset file used
 //! when a merged changeset exceeds the configured spill threshold.
@@ -76,13 +81,8 @@ public:
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetSqliteIterator final {
-public:
-    //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
-    //! Only columns that are actually present (non-absent) in the changeset are included.
-    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
-    using Stage          = Changes::Change::Stage;
-
 private:
+    using Stage = Changes::Change::Stage;
     ECDbCR                        m_ecdb;
     bool                          m_invert = false;
     std::unique_ptr<ChangeStream> m_changeStream;
@@ -106,19 +106,15 @@ public:
     //! BE_SQLITE_DONE when exhausted. Initialises the Changes object on the first call.
     DbResult StepRaw();
 
-    BentleyStatus GetTableName(Utf8StringR tableName) const;
-    BentleyStatus GetOpcode(DbOpcode& opcode) const;
+    Utf8StringCR GetTableName() const;
+    DbOpcode GetOpcode() const;
     BentleyStatus IsECTable(bool& isECTable) const;
-    BentleyStatus IsIndirectChange(bool& isIndirect) const;
+    bool IsIndirectChange() const;
+    DbValue GetChangeValue(int colIndex, Stage stage) const;
     //! Raw column count reported by the changeset for the current change row.
     int GetChangeColumnCount() const;
     //! Column count for @p tableName via PRAGMA_TABLE_INFO.
     BentleyStatus GetColumnCount(Utf8StringCR tableName, int& columnCount) const;
-    //! Fills @p outMap with (columnName → DbValue) for the current row at @p stage.
-    //! Only non-absent values are included. PK columns missing from the stage slot are
-    //! back-filled from the Old slot.
-    BentleyStatus GetColumnValues(Stage stage, Utf8StringCR tableName, ColumnValueMap& outMap) const;
-    void DumpColumnValues(ColumnValueMap const& map) const;
     static Utf8String DbOpcodeToString(DbOpcode opcode);
 };
 
@@ -130,9 +126,9 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct PreparedChangesetReader final {
 private:
-    using Stage          = ChangesetSqliteIterator::Stage;
+    using Stage          = Changes::Change::Stage;
     using PropertyFilter = ChangesetReader::PropertyFilter;
-    using ColumnValueMap = ChangesetSqliteIterator::ColumnValueMap;
+    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
     enum class StageProcessResult { Success, Error, Filtered };
 
     ECDbCR                   m_ecdb;
@@ -142,10 +138,10 @@ private:
 
     PmrObjectAllocator<ChangesetValue> m_valueArena;
 
-    PropertyFilter           m_propertyFilter = PropertyFilter::All;
     std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;
     std::vector<Utf8String>  m_changedPropNames;
-    ColumnValueMap           m_columnValuesScratch;
+
+    ChangesetValueFactory m_valueFactory;
 
     PreparedChangesetReader(PreparedChangesetReader const&) = delete;
     PreparedChangesetReader& operator=(PreparedChangesetReader const&) = delete;

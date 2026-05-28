@@ -187,14 +187,13 @@ private:
         std::unique_ptr<IIteratorState> _Copy() const override { return std::unique_ptr<IIteratorState>(new IteratorState(*this)); }
         void              _MoveToNext(bool onInitializing) const override { if (!onInitializing) ++m_idx; }
         bool              _IsAtEnd()    const override { return m_idx >= m_owner.m_members.size(); }
-        IECSqlValue const& _GetCurrent() const override { return *m_owner.m_members[m_idx]; }
+        IECSqlValue const& _GetCurrent() const override { return m_owner.m_members[m_idx]; }
 
     public:
         explicit IteratorState(ChangesetStructValue const& owner) : m_idx(0), m_owner(owner) {}
     };
 
-    std::vector<ChangesetValue*> m_members;
-    std::vector<Utf8String>      m_names;   //!< parallel to m_members
+    std::vector<ChangesetValue const&> m_members;
 
     bool                       _IsNull() const override;
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;
@@ -202,8 +201,7 @@ private:
     const_iterator             _CreateIterator()       const override { return const_iterator(std::unique_ptr<IIteratorState>(new IteratorState(*this))); }
 
 public:
-    explicit ChangesetStructValue(ECSqlColumnInfo const& colInfo);
-    void AppendMember(Utf8StringCR name, ChangesetValue* member);
+    explicit ChangesetStructValue(ECSqlColumnInfo const& colInfo, std::vector<ChangesetValue*> const& members);
     ~ChangesetStructValue() {}
 };
 
@@ -235,16 +233,16 @@ private:
         explicit IteratorState(ChangesetNavValue const& owner) : m_owner(owner) {}
     };
 
-    ChangesetValue* m_id;
-    ChangesetValue* m_relClassId;
+    ChangesetValue const& m_id;
+    ChangesetValue const& m_relClassId;
 
-    bool                       _IsNull() const override { return m_id == nullptr || m_id->IsNull(); }
+    bool                       _IsNull() const override { return m_id.IsNull(); }
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;
     IECSqlValueIterable const& _GetStructIterable()   const override { return *this; }
     const_iterator             _CreateIterator()       const override { return const_iterator(std::unique_ptr<IIteratorState>(new IteratorState(*this))); }
 
 public:
-    ChangesetNavValue(ECSqlColumnInfo const& colInfo, ChangesetValue* id, ChangesetValue* relClassId);
+    ChangesetNavValue(ECSqlColumnInfo const& colInfo, ChangesetValue const& id, ChangesetValue const& relClassId);
     ~ChangesetNavValue() {}
 };
 

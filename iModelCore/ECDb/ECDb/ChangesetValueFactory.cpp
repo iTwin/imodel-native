@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl, ECDbCR conn) {
+const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl) {
     ECClassId rootClassId;
     if (tbl.GetType() == DbTable::Type::Overflow) {
         DbTable const& parentTbl = tbl.GetLinkNode().GetParent()->GetTable();
@@ -25,10 +25,10 @@ const ClassMap* ChangesetValueFactory::GetRootClassMap(DbTable const& tbl, ECDbC
         rootClassId = tbl.GetExclusiveRootECClassId();
     }
 
-    const auto rootClass = conn.Schemas().Main().GetClass(rootClassId);
+    const auto rootClass = m_conn.Schemas().Main().GetClass(rootClassId);
     if (rootClass == nullptr)
         return nullptr;
-    return conn.Schemas().Main().GetClassMap(*rootClass);
+    return m_conn.Schemas().Main().GetClassMap(*rootClass);
 }
 
 //---------------------------------------------------------------------------------------
@@ -65,16 +65,16 @@ DateTime::Info ChangesetValueFactory::GetDateTimeInfo(PropertyMap const& propert
 }
 
 //=============================================================================
-// ColumnValueMap accessors
+// ChangeValueMap accessors
 //=============================================================================
 
 //---------------------------------------------------------------------------------------
 // Returns true when @p colName is present in @p columnValues with a valid DbValue.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueFactory::IsInMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
-    auto it = columnValues.find(colName);
-    return it != columnValues.end() && it->second.IsValid();
+bool ChangesetValueFactory::IsInMap(Utf8StringCR colName) {
+    auto it = m_changeValueMap.find(colName);
+    return it != m_changeValueMap.end() && it->second.IsValid();
 }
 
 //---------------------------------------------------------------------------------------
@@ -82,10 +82,10 @@ bool ChangesetValueFactory::IsInMap(Utf8StringCR colName, ColumnValueMap const& 
 // returned true — asserts in debug if the key is absent.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbValue ChangesetValueFactory::GetFromMap(Utf8StringCR colName, ColumnValueMap const& columnValues) {
-    auto it = columnValues.find(colName);
-    BeAssert(it != columnValues.end() && "GetFromMap called but column absent from map");
-    return it != columnValues.end() ? it->second : DbValue(nullptr);
+DbValue ChangesetValueFactory::GetFromMap(Utf8StringCR colName) {
+    auto it = m_changeValueMap.find(colName);
+    BeAssert(it != m_changeValueMap.end() && "GetFromMap called but column absent from map");
+    return it != m_changeValueMap.end() ? it->second : DbValue(nullptr);
 }
 
 //---------------------------------------------------------------------------------------
@@ -111,17 +111,15 @@ BeInt64Id ChangesetValueFactory::CheckNullAndGetBeInt64IdValueFromDbValue(DbValu
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTable const& tbl,
-                                                              Utf8StringCR selectColName,
-                                                              ColumnValueMap const& columnValues) {
+CachedStatementPtr ChangesetValueFactory::PreparePkStatement(DbTable const& tbl, Utf8StringCR selectColName) {
     PrimaryKeyDbConstraint const* pk = tbl.GetPrimaryKeyConstraint();
     if (pk == nullptr || pk->GetColumns().empty())
         return nullptr;
 
     // Validate every PK column is present, valid, and non-null.
     for (DbColumn const* pkCol : pk->GetColumns()) {
-        auto it = columnValues.find(pkCol->GetName());
-        if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull())
+        auto it = m_changeValueMap.find(pkCol->GetName());
+        if (it == m_changeValueMap.end() || !it->second.IsValid() || it->second.IsNull())
             return nullptr;
     }
 
@@ -135,7 +133,7 @@ CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTabl
         whereClause.append("]=?");
     }
 
-    CachedStatementPtr stmt = conn.GetCachedStatement(
+    CachedStatementPtr stmt = m_conn.GetCachedStatement(
         Utf8PrintfString("SELECT [%s] FROM [%s] WHERE %s",
             selectColName.c_str(), tbl.GetName().c_str(), whereClause.c_str()).c_str());
     if (stmt == nullptr)
@@ -145,7 +143,7 @@ CachedStatementPtr ChangesetValueFactory::PreparePkStatement(ECDbCR conn, DbTabl
 
     int bindIdx = 1;
     for (DbColumn const* pkCol : pk->GetColumns())
-        stmt->BindUInt64(bindIdx++, columnValues.find(pkCol->GetName())->second.GetValueUInt64());
+        stmt->BindUInt64(bindIdx++, m_changeValueMap.find(pkCol->GetName())->second.GetValueUInt64());
 
     return stmt;
 }
@@ -163,10 +161,8 @@ void ChangesetValueFactory::ClearStatement(CachedStatementPtr stmt) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
-                                                 DbColumn const& col,
-                                                 ColumnValueMap const& columnValues) {
-    CachedStatementPtr stmt = PreparePkStatement(conn, col.GetTable(), col.GetName(), columnValues);
+bool ChangesetValueFactory::TryFetchDoubleFromDb(DbColumn const& col, double& outVal) {
+    CachedStatementPtr stmt = PreparePkStatement(col.GetTable(), col.GetName());
     if (stmt == nullptr)
         return false;
     DbResult rc = stmt->Step();
@@ -183,10 +179,8 @@ bool ChangesetValueFactory::TryFetchDoubleFromDb(double& outVal, ECDbCR conn,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueFactory::TryFetchBeInt64IdFromDb(BeInt64Id& outVal, ECDbCR conn,
-                                                DbColumn const& col,
-                                                ColumnValueMap const& columnValues) {
-    CachedStatementPtr stmt = PreparePkStatement(conn, col.GetTable(), col.GetName(), columnValues);
+bool ChangesetValueFactory::TryFetchBeInt64IdFromDb(DbColumn const& col, BeInt64Id& outVal) {
+    CachedStatementPtr stmt = PreparePkStatement(col.GetTable(), col.GetName());
     if (stmt == nullptr)
         return false;
     DbResult rc = stmt->Step();
@@ -295,8 +289,8 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(PropertyMap const& propertyMa
     const DbColumn& xCol = pt2dMap.GetX().GetColumn();
     const DbColumn& yCol = pt2dMap.GetY().GetColumn();
 
-    const bool xInCurrentTableAndChangeset = xCol.GetTable() == ctx.dbTable && IsInMap(xCol.GetName(), ctx.columnValues);
-    const bool yInCurrentTableAndChangeset = yCol.GetTable() == ctx.dbTable && IsInMap(yCol.GetName(), ctx.columnValues);
+    const bool xInCurrentTableAndChangeset = xCol.GetTable() == ctx.dbTable && IsInMap(xCol.GetName());
+    const bool yInCurrentTableAndChangeset = yCol.GetTable() == ctx.dbTable && IsInMap(yCol.GetName());
 
     if (!xInCurrentTableAndChangeset && !yInCurrentTableAndChangeset) {
         LOG.infov("Point2d property '%s': no data in changeset — skipping.",
@@ -307,9 +301,9 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(PropertyMap const& propertyMa
     double x = 0.0, y = 0.0;
 
     if (xInCurrentTableAndChangeset) {
-        x = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(xCol.GetName(), ctx.columnValues));
+        x = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(xCol.GetName()));
     } else {
-        if (!TryFetchDoubleFromDb(x, ctx.conn, xCol, ctx.columnValues)) {
+        if (!TryFetchDoubleFromDb(xCol, x)) {
             LOG.errorv("Point2d property '%s': X coordinate absent and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
@@ -317,16 +311,16 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(PropertyMap const& propertyMa
     }
 
     if (yInCurrentTableAndChangeset) {
-        y = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(yCol.GetName(), ctx.columnValues));
+        y = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(yCol.GetName()));
     } else {
-        if (!TryFetchDoubleFromDb(y, ctx.conn, yCol, ctx.columnValues)) {
+        if (!TryFetchDoubleFromDb(yCol, y)) {
             LOG.errorv("Point2d property '%s': Y coordinate absent and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
         }
     }
 
-    ctx.fields.push_back(ctx.alloc.New<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
+    ctx.fields.push_back(m_alloc.New<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInCurrentTableAndChangeset && yInCurrentTableAndChangeset) {
         ctx.changedProps.emplace_back(propName);
@@ -346,9 +340,9 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(PropertyMap const& propertyMa
     const DbColumn& yCol = pt3dMap.GetY().GetColumn();
     const DbColumn& zCol = pt3dMap.GetZ().GetColumn();
 
-    const bool xInCurrentTableAndChangeset = xCol.GetTable() == ctx.dbTable && IsInMap(xCol.GetName(), ctx.columnValues);
-    const bool yInCurrentTableAndChangeset = yCol.GetTable() == ctx.dbTable && IsInMap(yCol.GetName(), ctx.columnValues);
-    const bool zInCurrentTableAndChangeset = zCol.GetTable() == ctx.dbTable && IsInMap(zCol.GetName(), ctx.columnValues);
+    const bool xInCurrentTableAndChangeset = xCol.GetTable() == ctx.dbTable && IsInMap(xCol.GetName());
+    const bool yInCurrentTableAndChangeset = yCol.GetTable() == ctx.dbTable && IsInMap(yCol.GetName());
+    const bool zInCurrentTableAndChangeset = zCol.GetTable() == ctx.dbTable && IsInMap(zCol.GetName());
 
     if (!xInCurrentTableAndChangeset && !yInCurrentTableAndChangeset && !zInCurrentTableAndChangeset) {
         LOG.infov("Point3d property '%s': no data in changeset — skipping.",
@@ -359,9 +353,9 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(PropertyMap const& propertyMa
     double x = 0.0, y = 0.0, z = 0.0;
 
     if (xInCurrentTableAndChangeset) {
-        x = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(xCol.GetName(), ctx.columnValues));
+        x = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(xCol.GetName()));
     } else {
-        if (!TryFetchDoubleFromDb(x, ctx.conn, xCol, ctx.columnValues)) {
+        if (!TryFetchDoubleFromDb(xCol, x)) {
             LOG.errorv("Point3d property '%s': X coordinate absent and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
@@ -369,9 +363,9 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(PropertyMap const& propertyMa
     }
 
     if (yInCurrentTableAndChangeset) {
-        y = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(yCol.GetName(), ctx.columnValues));
+        y = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(yCol.GetName()));
     } else {
-        if (!TryFetchDoubleFromDb(y, ctx.conn, yCol, ctx.columnValues)) {
+        if (!TryFetchDoubleFromDb(yCol, y)) {
             LOG.errorv("Point3d property '%s': Y coordinate absent and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
@@ -379,16 +373,16 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(PropertyMap const& propertyMa
     }
 
     if (zInCurrentTableAndChangeset) {
-        z = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(zCol.GetName(), ctx.columnValues));
+        z = CheckNullAndGetDoubleValueFromDbValue(GetFromMap(zCol.GetName()));
     } else {
-        if (!TryFetchDoubleFromDb(z, ctx.conn, zCol, ctx.columnValues)) {
+        if (!TryFetchDoubleFromDb(zCol, z)) {
             LOG.errorv("Point3d property '%s': Z coordinate absent and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
         }
     }
 
-    ctx.fields.push_back(ctx.alloc.New<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
+    ctx.fields.push_back(m_alloc.New<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInCurrentTableAndChangeset && yInCurrentTableAndChangeset && zInCurrentTableAndChangeset) {
         ctx.changedProps.emplace_back(propName);
@@ -418,15 +412,15 @@ BentleyStatus ChangesetValueFactory::CreatePrimitive(PropertyMap const& property
                   propertyMap.GetProperty().GetName().c_str(), primMap.GetColumn().GetName().c_str());
         return SUCCESS;
     }
-    if (!IsInMap(primMap.GetColumn().GetName(), ctx.columnValues)) {
+    if (!IsInMap(primMap.GetColumn().GetName())) {
         LOG.infov("Primitive property '%s': no data in changeset — skipping.",
                   propertyMap.GetProperty().GetName().c_str());
         return SUCCESS;
     }
 
-    ctx.fields.push_back(ctx.alloc.New<ChangesetPrimitiveValue>(
+    ctx.fields.push_back(m_alloc.New<ChangesetPrimitiveValue>(
         MakePrimitiveColumnInfo(propertyMap),
-        GetFromMap(primMap.GetColumn().GetName(), ctx.columnValues),
+        GetFromMap(primMap.GetColumn().GetName()),
         GetDateTimeInfo(propertyMap)));
     ctx.changedProps.emplace_back(propertyMap.GetProperty().GetName());
     return SUCCESS;
@@ -456,14 +450,17 @@ BentleyStatus ChangesetValueFactory::CreateSystem(PropertyMap const& propertyMap
         return SUCCESS;
     }
 
-    if (!IsInMap(dataMap->GetColumn().GetName(), ctx.columnValues)) {
+    if (!IsInMap(dataMap->GetColumn().GetName())) {
         LOG.infov("System property '%s': no data in changeset — skipping.",
                   propertyMap.GetProperty().GetName().c_str());
         return SUCCESS;
     }
 
-    ctx.fields.push_back(ctx.alloc.New<ChangesetPrimitiveValue>(columnInfo, GetFromMap(dataMap->GetColumn().GetName(), ctx.columnValues)));
-    ctx.changedProps.emplace_back(propertyMap.GetProperty().GetName());
+    if(CreatePrimitive(*dataMap, ctx) != SUCCESS) {
+        LOG.errorv("Failed to create primitive value for system property '%s'.",
+                   propertyMap.GetProperty().GetName().c_str());
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -471,7 +468,7 @@ BentleyStatus ChangesetValueFactory::CreateSystem(PropertyMap const& propertyMap
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void ChangesetValueFactory::CreateFixedId(
-    PropertyMap const& propertyMap, BeInt64Id id, BuildCtx& ctx, ChangesetValue*& out) {
+    PropertyMap const& propertyMap, BeInt64Id id, ChangesetValue*& out) {
 
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long),
@@ -484,7 +481,7 @@ void ChangesetValueFactory::CreateFixedId(
         GetPropertyPath(propertyMap),
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), ""));
 
-    out = ctx.alloc.New<ChangesetFixedInt64Value>(columnInfo, id);
+    out = m_alloc.New<ChangesetFixedInt64Value>(columnInfo, id);
 }
 
 //---------------------------------------------------------------------------------------
@@ -496,9 +493,9 @@ BentleyStatus ChangesetValueFactory::CreateNav(PropertyMap const& propertyMap, B
     const DbColumn& idCol = idPropMap.GetAs<SingleColumnDataPropertyMap>().GetColumn();
     const auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
 
-    const bool hasIdInCurrentTableAndChangeset = idCol.GetTable() == ctx.dbTable && IsInMap(idCol.GetName(), ctx.columnValues);
+    const bool hasIdInCurrentTableAndChangeset = idCol.GetTable() == ctx.dbTable && IsInMap(idCol.GetName());
     const bool relClassIdIsVirtual = relClassIdMap.GetColumn().IsVirtual();
-    const bool hasPhysicalRelClassIdInCurrentTableAndChangeset = relClassIdMap.GetColumn().GetTable() == ctx.dbTable && IsInMap(relClassIdMap.GetColumn().GetName(), ctx.columnValues);
+    const bool hasPhysicalRelClassIdInCurrentTableAndChangeset = relClassIdMap.GetColumn().GetTable() == ctx.dbTable && IsInMap(relClassIdMap.GetColumn().GetName());
 
     if (!hasIdInCurrentTableAndChangeset && !hasPhysicalRelClassIdInCurrentTableAndChangeset) {
         LOG.infov("Nav property '%s': no data in changeset — skipping.",
@@ -509,38 +506,44 @@ BentleyStatus ChangesetValueFactory::CreateNav(PropertyMap const& propertyMap, B
     // --- Resolve id sub-component ---
     ChangesetValue* idVal = nullptr;
     if (hasIdInCurrentTableAndChangeset) {
-        CreateFixedId(idPropMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(idCol.GetName(), ctx.columnValues)), ctx, idVal);
+        CreateFixedId(idPropMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(idCol.GetName())), idVal);
     } else {
         BeInt64Id fetchedId;
-        if (!TryFetchBeInt64IdFromDb(fetchedId, ctx.conn, idCol, ctx.columnValues)) {
+        if (!TryFetchBeInt64IdFromDb( idCol, fetchedId)) {
             LOG.errorv("Nav property '%s': id absent from changeset and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
         }
-        CreateFixedId(idPropMap, BeInt64Id(fetchedId), ctx, idVal);
+        CreateFixedId(idPropMap, BeInt64Id(fetchedId), idVal);
     }
 
     LOG.infov("Nav property '%s'-> virtual: %s", propertyMap.GetProperty().GetName().c_str(), relClassIdIsVirtual ? "true" : "false");
     // --- Resolve relClassId sub-component ---
     ChangesetValue* relClassIdVal = nullptr;
     if (hasPhysicalRelClassIdInCurrentTableAndChangeset) {
-        CreateFixedId(relClassIdMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(relClassIdMap.GetColumn().GetName(), ctx.columnValues)), ctx, relClassIdVal);
+        CreateFixedId(relClassIdMap, CheckNullAndGetBeInt64IdValueFromDbValue(GetFromMap(relClassIdMap.GetColumn().GetName())), relClassIdVal);
     } else if (relClassIdIsVirtual) {
         const auto navProp = propertyMap.GetProperty().GetAsNavigationProperty();
         LOG.infov("Nav property '%s': relClassId is virtual; using default value based on relationship class '%s'.",
                    propertyMap.GetProperty().GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
-        CreateFixedId(relClassIdMap, navProp->GetRelationshipClass()->GetId(), ctx, relClassIdVal);
+        CreateFixedId(relClassIdMap, navProp->GetRelationshipClass()->GetId(), relClassIdVal);
     } else {
         BeInt64Id fetchedRelClassId;
-        if (!TryFetchBeInt64IdFromDb(fetchedRelClassId, ctx.conn, relClassIdMap.GetColumn(), ctx.columnValues)) {
+        if (!TryFetchBeInt64IdFromDb(relClassIdMap.GetColumn(), fetchedRelClassId)) {
             LOG.errorv("Nav property '%s': relClassId absent from changeset and could not be fetched from DB.",
                        propertyMap.GetProperty().GetName().c_str());
             return ERROR;
         }
-        CreateFixedId(relClassIdMap, fetchedRelClassId, ctx, relClassIdVal);
+        CreateFixedId(relClassIdMap, fetchedRelClassId, relClassIdVal);
     }
 
-    ctx.fields.push_back(ctx.alloc.New<ChangesetNavValue>(MakeNavColumnInfo(propertyMap), idVal, relClassIdVal));
+    if(idVal == nullptr || relClassIdVal == nullptr) {
+        LOG.errorv("Nav property '%s': failed to resolve id and/or relClassId.",
+                   propertyMap.GetProperty().GetName().c_str());
+        return ERROR;
+    }
+
+    ctx.fields.push_back(m_alloc.New<ChangesetNavValue>(MakeNavColumnInfo(propertyMap), *idVal, *relClassIdVal));
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (hasIdInCurrentTableAndChangeset &&  hasPhysicalRelClassIdInCurrentTableAndChangeset) {
         ctx.changedProps.emplace_back(propName);
@@ -564,16 +567,16 @@ BentleyStatus ChangesetValueFactory::CreateArray(PropertyMap const& propertyMap,
         return SUCCESS;
     }
 
-    if (!IsInMap(primMap.GetColumn().GetName(), ctx.columnValues)) {
+    if (!IsInMap(primMap.GetColumn().GetName())) {
         LOG.infov("Array property '%s': no data in changeset — skipping.",
                   propertyMap.GetProperty().GetName().c_str());
         return SUCCESS;
     }
 
-    ctx.fields.push_back(ctx.alloc.New<ChangesetArrayValue>(
+    ctx.fields.push_back(m_alloc.New<ChangesetArrayValue>(
         MakeArrayColumnInfo(propertyMap),
-        GetFromMap(primMap.GetColumn().GetName(), ctx.columnValues),
-        ctx.conn));
+        GetFromMap(primMap.GetColumn().GetName()),
+        m_conn));
     ctx.changedProps.emplace_back(propertyMap.GetProperty().GetName());
     return SUCCESS;
 }
@@ -582,23 +585,21 @@ BentleyStatus ChangesetValueFactory::CreateArray(PropertyMap const& propertyMap,
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateStruct(PropertyMap const& propertyMap, BuildCtx& ctx) {
-    ChangesetStructValue* structVal = ctx.alloc.New<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
-    Utf8StringCR structName = propertyMap.GetProperty().GetName();
+    Utf8StringCR structPropName = propertyMap.GetProperty().GetName();
     bool anyMember = false;
+    std::vector<ChangesetValue*> memberTemp;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
-        std::vector<ChangesetValue*> memberTemp;
         std::vector<Utf8String> memberChangedProps;
-        BuildCtx memberCtx { ctx.conn, ctx.columnValues, ctx.dbTable, ctx.alloc, memberTemp, memberChangedProps };
+        BuildCtx memberCtx { ctx.dbTable, memberTemp, memberChangedProps };
         BentleyStatus status = CreateValueForProperty(*memberMap, memberCtx);
         if (status != SUCCESS)
             return status;
         if (memberTemp.empty())
             continue; // not in changeset
         anyMember = true;
-        structVal->AppendMember(memberMap->GetProperty().GetName(), memberTemp.front());
         for (auto& name : memberChangedProps) {
             Utf8String path;
-            path.Sprintf("%s.%s", structName.c_str(), name.c_str());
+            path.Sprintf("%s.%s", structPropName.c_str(), name.c_str());
             ctx.changedProps.emplace_back(std::move(path));
         }
     }
@@ -606,6 +607,10 @@ BentleyStatus ChangesetValueFactory::CreateStruct(PropertyMap const& propertyMap
     if (!anyMember)
         return SUCCESS;
 
+    if(CheckInvalidPtr(memberTemp) != SUCCESS) // Sanity check to ensure we don't create a struct value with invalid members, which would cause crashes later when trying to access those members
+        return ERROR;
+
+    ChangesetStructValue* structVal = m_alloc.New<ChangesetStructValue>(MakeStructColumnInfo(propertyMap), memberTemp);
     ctx.fields.push_back(structVal);
     return SUCCESS;
 }
@@ -639,13 +644,12 @@ BentleyStatus ChangesetValueFactory::CreateValueForProperty(PropertyMap const& p
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryResolveClassIdFromChangeset(
-    DbTable const& dbTable, ColumnValueMap const& columnValues,
-    ECDbCR conn, ECClassId& classIdOut) {
+    DbTable const& dbTable, ECClassId& classIdOut) {
 
     DbColumn const& classIdCol = dbTable.GetECClassIdColumn();
 
-    auto it = columnValues.find(classIdCol.GetName());
-    if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull())
+    auto it = m_changeValueMap.find(classIdCol.GetName());
+    if (it == m_changeValueMap.end() || !it->second.IsValid() || it->second.IsNull())
         return false;
 
     ECClassId candidate(it->second.GetValueUInt64());
@@ -660,9 +664,7 @@ bool ChangesetValueFactory::TryResolveClassIdFromChangeset(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryResolveClassIdFromDbSeek(
-    DbTable const& dbTable,
-    ColumnValueMap const& columnValues,
-    ECDbCR conn, ECClassId& classIdOut) {
+    DbTable const& dbTable, ECClassId& classIdOut) {
 
     // A virtual class-id column has no physical storage — nothing to read from the DB.
     DbColumn const& classIdCol = dbTable.GetECClassIdColumn();
@@ -671,7 +673,7 @@ bool ChangesetValueFactory::TryResolveClassIdFromDbSeek(
 
     // Validate all PK columns, build and bind the statement via shared helper.
     ECClassId classId;
-    if(!TryFetchBeInt64IdFromDb(classId, conn, classIdCol, columnValues))
+    if(!TryFetchBeInt64IdFromDb(classIdCol, classId))
         return false;
 
     if (!classId.IsValid())
@@ -685,8 +687,7 @@ bool ChangesetValueFactory::TryResolveClassIdFromDbSeek(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::ResolveInstanceId(
-    ClassMap const& classMap, BuildCtx& ctx,
-    ECInstanceId& instanceIdOut, ChangesetValue*& fieldOut) {
+    ClassMap const& classMap, DbTable const& tbl, ChangesetValue*& fieldOut) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         if (!propertyMap->IsSystem())
@@ -701,45 +702,44 @@ BentleyStatus ChangesetValueFactory::ResolveInstanceId(
             continue;
 
         const auto& sysMap = propertyMap->GetAs<SystemPropertyMap>();
-        const SystemPropertyMap::PerTableIdPropertyMap* dataMap = sysMap.FindDataPropertyMap(ctx.dbTable);
-        if(dataMap == nullptr && ctx.dbTable.GetType() == DbTable::Type::Overflow) {
-            DbTable const& parentTable = ctx.dbTable.GetLinkNode().GetParent()->GetTable();
+        const SystemPropertyMap::PerTableIdPropertyMap* dataMap = sysMap.FindDataPropertyMap(tbl);
+        if(dataMap == nullptr && tbl.GetType() == DbTable::Type::Overflow) {
+            DbTable const& parentTable = tbl.GetLinkNode().GetParent()->GetTable();
             LOG.infov("ECInstanceId property map not found for overflow table '%s'; trying parent table '%s'.",
-                      ctx.dbTable.GetName().c_str(), parentTable.GetName().c_str());
+                      tbl.GetName().c_str(), parentTable.GetName().c_str());
             dataMap = sysMap.FindDataPropertyMap(parentTable);
         }
         if (dataMap == nullptr) {
             LOG.errorv("No ECInstanceId data property map found for table '%s'.",
-                       ctx.dbTable.GetName().c_str());
+                       tbl.GetName().c_str());
             return ERROR;
         }
         Utf8StringCR colName = dataMap->GetColumn().GetName();
-        auto it = ctx.columnValues.find(colName);
-        if (it == ctx.columnValues.end() || !it->second.IsValid() || it->second.IsNull()) {
+        auto it = m_changeValueMap.find(colName);
+        if (it == m_changeValueMap.end() || !it->second.IsValid() || it->second.IsNull()) {
             LOG.errorv("ECInstanceId is absent or null in changeset for table '%s'.",
-                       ctx.dbTable.GetName().c_str());
+                       tbl.GetName().c_str());
             return ERROR;
         }
 
         ECInstanceId instanceId(it->second.GetValueUInt64());
         if (!instanceId.IsValid()) {
             LOG.errorv("ECInstanceId resolved to an invalid (zero) id for table '%s'.",
-                       ctx.dbTable.GetName().c_str());
+                       tbl.GetName().c_str());
             return ERROR;
         }
 
         ChangesetValue* sysVal = nullptr;
-        CreateFixedId(*propertyMap, instanceId, ctx, sysVal);
+        CreateFixedId(*propertyMap, instanceId, sysVal);
 
-        instanceIdOut = instanceId;
         fieldOut      = sysVal;
         LOG.debugv("Table '%s': resolved ECInstanceId %" PRIu64 " from changeset.",
-                   ctx.dbTable.GetName().c_str(), instanceId.GetValueUnchecked());
+                   tbl.GetName().c_str(), instanceId.GetValueUnchecked());
         return SUCCESS;
     }
 
     LOG.errorv("ECInstanceId property not found in ClassMap for table '%s'.",
-               ctx.dbTable.GetName().c_str());
+               tbl.GetName().c_str());
     return ERROR;
 }
 
@@ -748,7 +748,7 @@ BentleyStatus ChangesetValueFactory::ResolveInstanceId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::ResolveClassIdField(
     ClassMap const& classMap, ECClassId resolvedClassId,
-    BuildCtx& ctx, ChangesetValue*& out) {
+    DbTable const& tbl, ChangesetValue*& out) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         if (!propertyMap->IsSystem())
@@ -762,12 +762,12 @@ BentleyStatus ChangesetValueFactory::ResolveClassIdField(
         if (!propertyMap->GetProperty().GetName().EqualsIAscii(ECDBSYS_PROP_ECClassId))
             continue;
 
-        CreateFixedId(*propertyMap, resolvedClassId, ctx, out);
+        CreateFixedId(*propertyMap, resolvedClassId, out);
         return SUCCESS;
     }
 
     LOG.errorv("ECClassId property not found in ClassMap for table '%s'.",
-               ctx.dbTable.GetName().c_str());
+               tbl.GetName().c_str());
     return ERROR;
 }
 
@@ -800,12 +800,12 @@ BentleyStatus ChangesetValueFactory::BuildPropertyFields(ClassMap const& classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId, ECDbCR conn) {
-    const ECClass* cls = conn.Schemas().Main().GetClass(classId);
+bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId) {
+    const ECClass* cls = m_conn.Schemas().Main().GetClass(classId);
     if (cls == nullptr)
         return false;
 
-    const ECClass* bisElementClass = conn.Schemas().Main().GetClass("BisCore", "Element", SchemaLookupMode::AutoDetect);
+    const ECClass* bisElementClass = m_conn.Schemas().Main().GetClass("BisCore", "Element", SchemaLookupMode::AutoDetect);
     if (bisElementClass == nullptr)
         return false;
 
@@ -819,20 +819,19 @@ bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId, ECDbCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetValueFactory::ResolveClassId(
-    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECClassId& resolvedClassIdOut, bool& classIdFromChangesetOut) {
+BentleyStatus ChangesetValueFactory::ResolveClassId(DbTable const& tbl, ECClassId& resolvedClassIdOut, bool& classIdFromChangesetOut) {
     resolvedClassIdOut.Invalidate();
     classIdFromChangesetOut = false;
 
-    if (TryResolveClassIdFromChangeset(tbl, columnValues, conn, resolvedClassIdOut)) {
+    if (TryResolveClassIdFromChangeset(tbl, resolvedClassIdOut)) {
         classIdFromChangesetOut = true;
         LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " from changeset.",
                    tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
-    } else if (TryResolveClassIdFromDbSeek(tbl, columnValues, conn, resolvedClassIdOut)) {
+    } else if (TryResolveClassIdFromDbSeek(tbl, resolvedClassIdOut)) {
         LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " via DB seek.",
                    tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
     } else {
-        const ClassMap* classMapOut = GetRootClassMap(tbl, conn);
+        const ClassMap* classMapOut = GetRootClassMap(tbl);
         if (classMapOut != nullptr) {
             resolvedClassIdOut = classMapOut->GetClass().GetId();
             LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " via GetRootClassMap.",
@@ -851,17 +850,16 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetValueFactory::Create(
-    ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
-    std::vector<ChangesetValue*>& fields, PmrObjectAllocator<ChangesetValue>& alloc, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
+BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
+    std::vector<ChangesetValue*>& fields, std::vector<Utf8String>& changedProps) {
 
-    const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
+    const ECClass* cls = m_conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
         LOG.errorv("Resolved ECClassId %" PRIu64 " could not be found in the schema.", resolvedClassId.GetValueUnchecked());
         return ERROR;
     }
 
-    const ClassMap* classMap  = conn.Schemas().Main().GetClassMap(*cls);
+    const ClassMap* classMap  = m_conn.Schemas().Main().GetClassMap(*cls);
     if (classMap == nullptr) {
         LOG.errorv("ClassMap for ECClassId %" PRIu64 " could not be found in the schema.", resolvedClassId.GetValueUnchecked());
         return ERROR;
@@ -873,14 +871,12 @@ BentleyStatus ChangesetValueFactory::Create(
     if (classIdFromChangeset)
         changedProps.emplace_back(ECDBSYS_PROP_ECClassId);
 
-    BuildCtx ctx { conn, columnValues, tbl, alloc, fields, changedProps };
 
     // -----------------------------------------------------------------------
     // Step 2: Resolve ECInstanceId (slot [0]).
     // -----------------------------------------------------------------------
-    ECInstanceId instanceId;
     ChangesetValue* instanceIdField = nullptr;
-    BentleyStatus status = ResolveInstanceId(*classMap, ctx, instanceId, instanceIdField);
+    BentleyStatus status = ResolveInstanceId(*classMap, tbl, instanceIdField);
     if (status != SUCCESS)
         return status;
 
@@ -888,30 +884,108 @@ BentleyStatus ChangesetValueFactory::Create(
     // Step 3: Build ECClassId field (slot [1]).
     // -----------------------------------------------------------------------
     ChangesetValue* classIdField = nullptr;
-    status = ResolveClassIdField(*classMap, resolvedClassId, ctx, classIdField);
+    status = ResolveClassIdField(*classMap, resolvedClassId, tbl, classIdField);
     if (status != SUCCESS)
         return status;
 
     // -----------------------------------------------------------------------
     // Step 4: Build remaining property fields (slots [2+]).
     // -----------------------------------------------------------------------
+    if(instanceIdField == nullptr || classIdField == nullptr) {
+        LOG.errorv("Failed to resolve ECInstanceId and/or ECClassId for table '%s'.", tbl.GetName().c_str());
+        return ERROR;
+    }
+
     fields.push_back(instanceIdField);
     fields.push_back(classIdField);
 
-    if (propertyFilter == ChangesetReader::PropertyFilter::InstanceKey)
+    if (m_filter.GetPropertyFilter() == ChangesetReader::PropertyFilter::InstanceKey)
         return SUCCESS; // caller only needs the instance key — skip user properties
 
-    if(propertyFilter == ChangesetReader::PropertyFilter::BisCoreElement && IsDerivedFromBisElement(resolvedClassId, conn) && !tbl.GetName().EqualsIAscii("bis_Element"))
+    if(m_filter.GetPropertyFilter() == ChangesetReader::PropertyFilter::BisCoreElement && IsDerivedFromBisElement(resolvedClassId) && !tbl.GetName().EqualsIAscii("bis_Element"))
         return SUCCESS; // caller only needs bis_element properties — skip rest   
 
+    BuildCtx ctx { tbl, fields, changedProps };
+    
     status = BuildPropertyFields(*classMap, ctx);
 
     if (status != SUCCESS) {
         fields.clear();
         return status;
     }
+    if (CheckInvalidPtr(fields) != SUCCESS) { // Sanity check to ensure we don't return a vector with invalid pointers, which would cause crashes later when trying to access those fields
+        fields.clear();
+        return ERROR;
+    }
 
     return SUCCESS;
 }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetValueFactory::PopulateChangeValueMap(Stage stage, Utf8StringCR tableName) {
+    int columnCount = 0;
+    if (m_iterator.GetColumnCount(tableName, columnCount) != SUCCESS) {
+        LOG.errorv("Failed to get column count for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    int minimum = std::min(columnCount, m_iterator.GetChangeColumnCount());
+    CachedStatementPtr stmt = m_conn.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
+    if (stmt == nullptr) {
+        LOG.errorv("Failed to prepare statement to get column names for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    stmt->Reset();
+    stmt->ClearBindings();
+    stmt->BindText(1, tableName.c_str(), Statement::MakeCopy::No);
+
+    m_changeValueMap.clear();
+    int colIdx = 0;
+    DbResult stat = stmt->Step();
+    while (colIdx < minimum && stat == BE_SQLITE_ROW) {
+        Utf8CP colName = stmt->GetValueText(0);
+        DbValue val = m_iterator.GetChangeValue(colIdx, stage);
+        if (val.IsValid())
+            m_changeValueMap.emplace(colName, val);
+        ++colIdx;
+        stat = stmt->Step();
+    }
+    stmt->Reset();
+    stmt->ClearBindings();
+    if (colIdx != minimum) {
+        LOG.errorv("Failed to step through required column names for table '%s'.", tableName.c_str());
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ChangesetValueFactory::DumpChangeValueMap() const {
+    for (auto const& [key, val] : m_changeValueMap)
+        LOG.debugv("%s = %s", key.c_str(), val.IsNull() ? "NULL" : (val.GetValueText() ? val.GetValueText() : "(blob)"));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ChangesetValueFactory::ClearChangeValueMap() {
+    m_changeValueMap.clear();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetValueFactory::CheckInvalidPtr(std::vector<ChangesetValue*> const& fields) const {
+    for (size_t i = 0; i < fields.size(); ++i) {
+        if (fields[i] == nullptr) {
+            LOG.errorv("Nullptr found in fields vector at index %zu.", i);
+            return ERROR;
+        }
+    }
+    return SUCCESS;
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE

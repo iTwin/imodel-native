@@ -376,17 +376,11 @@ IECSqlValueIterable const& ChangesetArrayValue::_GetArrayIterable() const
 
 //**** ChangesetStructValue ****
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo const& colInfo)
-    : ChangesetValue(colInfo), IECSqlValueIterable()
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void ChangesetStructValue::AppendMember(Utf8StringCR name, ChangesetValue* member)
+ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo const& colInfo, std::vector<ChangesetValue*> const& members)
+    : ChangesetValue(colInfo)
     {
-    m_names.push_back(name);
-    m_members.push_back(member);
+        for (auto member : members) 
+            m_members.push_back(*member);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -395,7 +389,7 @@ void ChangesetStructValue::AppendMember(Utf8StringCR name, ChangesetValue* membe
 bool ChangesetStructValue::_IsNull() const
     {
     for (auto const& member : m_members)
-        if (!member->IsNull())
+        if (!member.IsNull())
             return false;
     return true;
     }
@@ -405,10 +399,10 @@ bool ChangesetStructValue::_IsNull() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& ChangesetStructValue::_GetStructMemberValue(Utf8CP memberName) const
     {
-    for (size_t i = 0; i < m_names.size(); ++i)
+    for (size_t i = 0; i < m_members.size(); ++i)
         {
-        if (m_names[i].EqualsIAscii(memberName))
-            return *m_members[i];
+        if (m_members[i].GetColumnInfo().GetProperty()->GetName().EqualsIAscii(memberName))
+            return m_members[i];
         }
     return NoopECSqlValue::GetSingleton();
     }
@@ -419,7 +413,7 @@ IECSqlValue const& ChangesetStructValue::_GetStructMemberValue(Utf8CP memberName
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo const& colInfo, ChangesetValue* id, ChangesetValue* relClassId)
+ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo const& colInfo, ChangesetValue const& id, ChangesetValue const& relClassId)
     : ChangesetValue(colInfo), IECSqlValueIterable(),
       m_id(id), m_relClassId(relClassId)
     {}
@@ -429,7 +423,7 @@ ChangesetNavValue::ChangesetNavValue(ECSqlColumnInfo const& colInfo, ChangesetVa
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& ChangesetNavValue::_GetStructMemberValue(Utf8CP memberName) const
     {
-    return IECSqlValueHelper::GetNavMemberValue(memberName, m_id, m_relClassId);
+    return IECSqlValueHelper::GetNavMemberValue(memberName, &m_id, &m_relClassId);
     }
 
 
@@ -440,7 +434,7 @@ IECSqlValue const& ChangesetNavValue::_GetStructMemberValue(Utf8CP memberName) c
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& ChangesetNavValue::IteratorState::_GetCurrent() const
     {
-    return IECSqlValueHelper::GetNavIterCurrentByStateIndex((uint8_t) m_state, m_owner.m_id, m_owner.m_relClassId);
+    return IECSqlValueHelper::GetNavIterCurrentByStateIndex((uint8_t) m_state, &m_owner.m_id, &m_owner.m_relClassId);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
