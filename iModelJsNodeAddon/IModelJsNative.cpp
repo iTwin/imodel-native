@@ -2847,11 +2847,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
         REQUIRE_ARGUMENT_BOOL(1, fastForward);
 
+        bool noUpdateLoop = false;
+        if (info.Length() > 2 && info[2].IsBoolean())
+            noUpdateLoop = info[2].As<Napi::Boolean>().Value();
+
         auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
         auto currentId = db.Txns().GetParentChangesetId();
         ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Txns().MergeChangeset(*revision, fastForward);
+            stat = db.Txns().MergeChangeset(*revision, fastForward, noUpdateLoop);
         else if (revision->GetChangesetId() == currentId) //reverse
             db.Txns().ReverseChangeset(*revision);
         if (ChangesetStatus::Success != stat)

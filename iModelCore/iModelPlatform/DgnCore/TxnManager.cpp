@@ -1578,14 +1578,14 @@ bool TxnManager::HasPendingSchemaChanges() const {
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
+ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward, bool noUpdateLoop) {
     if (TrackChangesetHealthStats())
         Profiler::InitScope(*changeStream.GetDb(), "Apply Changeset", revision.GetChangesetId().c_str(), Profiler::Params(false, true));
     
     if(containsSchemaChanges)
         m_dgndb.ClearECDbCache(); // if changes contain schema changes ecdb cache to be cleared
     
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward, noUpdateLoop);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
             m_dgndb.ThrowException("failed to apply changes", result);
@@ -1821,7 +1821,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fastForward) {
+ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fastForward, bool noUpdateLoop) {
     ThrowIfChangesetInProgress();
 
     if (m_dgndb.IsReadonly())
@@ -1853,7 +1853,7 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fast
      * contains DDL changes or if the changeset type includes the Schema change type.
      */
     const bool hasEcOrDdlChanges = containsDDLChanges || changeset.ContainsEcChanges();
-    return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges, fastForward);
+    return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges, fastForward, noUpdateLoop);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -2146,7 +2146,7 @@ public:
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, bool invert, bool fastForward) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, bool invert, bool fastForward, bool noUpdateLoop) {
     if (invert && fastForward) {
          LOG.error("ApplyChanges() cannot be called with invert & fastForward flag both been set at same time");
         BeAssert(false);
@@ -2178,9 +2178,6 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
-        if(change.IsIndirect())
-            return ChangeStream::ConflictResolution::Replace;
-
         fastForwardEncounteredMergeConflict = true;
         return ChangeStream::ConflictResolution::Abort;
     };
@@ -2200,6 +2197,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             .SetInvert(invert)
             .SetIgnoreNoop(true)
             .SetFkNoAction(fkNoAction)
+            .SetNoUpdateLoop(noUpdateLoop)
             .ApplyOnlySchemaChanges();
 
         if (fastForward) {
@@ -2241,7 +2239,8 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     auto dataApplyArgs = ApplyChangesArgs::Default()
         .SetInvert(invert)
         .SetIgnoreNoop(ignoreNoop)
-        .SetFkNoAction(fkNoAction);
+        .SetFkNoAction(fkNoAction)
+        .SetNoUpdateLoop(noUpdateLoop);
 
     if (fastForward) {
         dataApplyArgs.SetConflictHandler(fastForwardConflictHandler);
