@@ -128,7 +128,6 @@ struct PreparedChangesetReader final {
 private:
     using Stage          = Changes::Change::Stage;
     using PropertyFilter = ChangesetReader::PropertyFilter;
-    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
     enum class StageProcessResult { Success, Error, Filtered };
 
     ECDbCR                   m_ecdb;

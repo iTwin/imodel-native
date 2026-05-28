@@ -395,7 +395,7 @@ void PreparedChangesetReader::ClearFields() {
     m_fields[Stage::New].clear();
     m_fields[Stage::Old].clear();
     m_changedPropNames.clear();
-    m_valueFactory.ClearColumnValues();
+    m_valueFactory.ClearChangeValueMap();
 }
 
 //---------------------------------------------------------------------------------------
@@ -424,7 +424,7 @@ void PreparedChangesetReader::ClearMembers() {
     m_filter.Reset();
     m_fields.clear();
     m_changedPropNames.clear();
-    m_valueFactory.ClearColumnValues();
+    m_valueFactory.ClearChangeValueMap();
 }
 
 //---------------------------------------------------------------------------------------
@@ -453,7 +453,7 @@ DbResult PreparedChangesetReader::Step() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames) {
-    if (m_valueFactory.PopulateColumnValues(stage, dbTable.GetName()) != SUCCESS)
+    if (m_valueFactory.PopulateChangeValueMap(stage, dbTable.GetName()) != SUCCESS)
         return StageProcessResult::Error;
     ECClassId classId;
     bool isClassIdFromChangeset = false;
@@ -527,14 +527,14 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 
     if (opCode != DbOpcode::Delete) {
         auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
-        m_valueFactory.ClearColumnValues(); // clear scratch map after processing New stage to free up memory
+        m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing New stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
     if (opCode != DbOpcode::Insert) {
         std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
         auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
-        m_valueFactory.ClearColumnValues(); // clear scratch map after processing Old stage to free up memory
+        m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing Old stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
