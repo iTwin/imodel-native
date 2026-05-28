@@ -187,13 +187,13 @@ private:
         std::unique_ptr<IIteratorState> _Copy() const override { return std::unique_ptr<IIteratorState>(new IteratorState(*this)); }
         void              _MoveToNext(bool onInitializing) const override { if (!onInitializing) ++m_idx; }
         bool              _IsAtEnd()    const override { return m_idx >= m_owner.m_members.size(); }
-        IECSqlValue const& _GetCurrent() const override { return m_owner.m_members[m_idx]; }
+        IECSqlValue const& _GetCurrent() const override { return m_owner.m_members[m_idx].get(); }
 
     public:
         explicit IteratorState(ChangesetStructValue const& owner) : m_idx(0), m_owner(owner) {}
     };
 
-    std::vector<ChangesetValue const&> m_members;
+    std::vector<std::reference_wrapper<ChangesetValue const>> m_members;
 
     bool                       _IsNull() const override;
     IECSqlValue const&         _GetStructMemberValue(Utf8CP memberName) const override;

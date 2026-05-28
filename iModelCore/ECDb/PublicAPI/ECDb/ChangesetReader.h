@@ -173,6 +173,22 @@ public:
     //! @return SUCCESS on success, or ERROR if the reader is not open.
     ECDB_EXPORT BentleyStatus DisableStrictMode();
 
+    //! Controls whether GetChangeFetchedPropertyNames() returns JS-style property names.
+    //! @param[in] v If true, property names are returned in JS format (e.g. camelCase, "id", "className").
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    //! @remarks This just controls how the property names are formatted in GetChangeFetchedPropertyNames() and has no effect on the actual property values
+    ECDB_EXPORT BentleyStatus SetUseJsNamesForChangedPropNames(bool v);
+
+    //! Controls whether GetChangeFetchedPropertyNames() uses the full class name string instead of just the class name string as property names.
+    //! Only has effect when UseJsNames is enabled.
+    //! @param[in] v If true, uses "classFullName" string instead of "className" string in GetChangeFetchedPropertyNames().
+    //! @return SUCCESS on success, or ERROR if the reader is not open.
+    //! @remarks This just controls how the property names are formatted in GetChangeFetchedPropertyNames() and has no effect on the actual property values
+    //! For example if both UseJsNames and UseClassFullNameInsteadofClassName are enabled, 
+    //! and the classId was fetched from the current row of the change record, then the property name for classId in GetChangeFetchedPropertyNames() will be "classFullName" instead of "className"
+    //! If just UseJsNames is enabled but UseClassFullNameInsteadofClassName is disabled, then the property name for classId will be "className"
+    ECDB_EXPORT BentleyStatus SetUseClassFullNameInsteadofClassNameForChangedPropNames(bool v);
+
 };
 
 

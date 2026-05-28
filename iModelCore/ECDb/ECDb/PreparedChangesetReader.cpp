@@ -268,7 +268,7 @@ DbValue ChangesetSqliteIterator::GetChangeValue(int columnIndex, Stage stage) co
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::PreparedChangesetReader(ECDbCR ecdb)
-    : m_ecdb(ecdb), m_tempFileManager(ecdb), m_iterator(ecdb), m_valueFactory(ecdb, m_filter, m_iterator, m_valueArena)
+    : m_ecdb(ecdb), m_tempFileManager(ecdb), m_iterator(ecdb), m_valueFactory(ecdb, m_filter, m_iterator, m_args, m_valueArena)
     {}
 
 //---------------------------------------------------------------------------------------

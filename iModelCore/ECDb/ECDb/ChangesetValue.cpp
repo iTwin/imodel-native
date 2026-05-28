@@ -379,7 +379,7 @@ IECSqlValueIterable const& ChangesetArrayValue::_GetArrayIterable() const
 ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo const& colInfo, std::vector<ChangesetValue*> const& members)
     : ChangesetValue(colInfo)
     {
-        for (auto member : members) 
+        for (auto* member : members)
             m_members.push_back(*member);
     }
 
@@ -388,7 +388,7 @@ ChangesetStructValue::ChangesetStructValue(ECSqlColumnInfo const& colInfo, std::
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetStructValue::_IsNull() const
     {
-    for (auto const& member : m_members)
+    for (ChangesetValue const& member : m_members)
         if (!member.IsNull())
             return false;
     return true;
@@ -401,8 +401,8 @@ IECSqlValue const& ChangesetStructValue::_GetStructMemberValue(Utf8CP memberName
     {
     for (size_t i = 0; i < m_members.size(); ++i)
         {
-        if (m_members[i].GetColumnInfo().GetProperty()->GetName().EqualsIAscii(memberName))
-            return m_members[i];
+        if (m_members[i].get().GetColumnInfo().GetProperty()->GetName().EqualsIAscii(memberName))
+            return m_members[i].get();
         }
     return NoopECSqlValue::GetSingleton();
     }

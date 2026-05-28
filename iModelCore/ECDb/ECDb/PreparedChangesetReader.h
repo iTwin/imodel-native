@@ -9,6 +9,22 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+//! Formatting options for changed property name output (JS name style and class name form).
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ChangedPropNameFormatArgs final {
+private:
+    JsReadOptions m_options;
+
+public:
+    bool UseJsNames() const { return m_options.UseJsNames(); }
+    bool UseClassFullNameInsteadofClassName() const { return m_options.UseJsNames() && m_options.UseClassFullNameInsteadofClassName(); }
+
+    void SetUseJsNames(bool v) { m_options.SetUseJsNames(v); }
+    void SetUseClassFullNameInsteadofClassName(bool v) { m_options.SetUseClassFullNameInsteadofClassName(v); }
+};
+
+//=======================================================================================
 //! Manages post-step filtering predicates for a changeset reader.
 //! Holds filter lists for table names, opcodes, and EC class names, as well as strict mode.
 //! No ECDb dependency — pure filter logic.
@@ -136,9 +152,10 @@ private:
     ChangesetSqliteIterator  m_iterator;
 
     PmrObjectAllocator<ChangesetValue> m_valueArena;
-
     std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;
+
     std::vector<Utf8String>  m_changedPropNames;
+    ChangedPropNameFormatArgs m_args;
 
     ChangesetValueFactory m_valueFactory;
 
@@ -184,6 +201,10 @@ public:
     void ClearECClassNameFilters() { m_filter.ClearECClassNameFilters(); }
     void EnableStrictMode()        { m_filter.EnableStrictMode(); }
     void DisableStrictMode()       { m_filter.DisableStrictMode(); }
+
+    // Expose Changed prop names formatting args
+    void SetUseJsNamesForChangedPropNames(bool v) { m_args.SetUseJsNames(v); }
+    void SetUseClassFullNameInsteadofClassNameForChangedPropNames(bool v) { m_args.SetUseClassFullNameInsteadofClassName(v); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -7,7 +7,13 @@
 #include <ECDb/ChangesetReader.h>
 #include <unordered_set>
 
+// Forward declarations to avoid circular include with PreparedChangesetReader.h
+// (PreparedChangesetReader.h already #includes this header).
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct ChangedPropNameFormatArgs;
+struct ChangesetFilter;
+struct ChangesetSqliteIterator;
 
 
 //=======================================================================================
@@ -22,6 +28,7 @@ private:
     ECDbCR                          m_conn;         //!< ECDb connection used for schema lookups and live DB queries.
     ChangesetFilter const&          m_filter;       //!< Controls which properties are included in the output.
     ChangesetSqliteIterator const&  m_iterator;     //!< Provides raw column data from the changeset.
+    ChangedPropNameFormatArgs const& m_args;         //!< Controls formatting of changed property names.
     PmrObjectAllocator<ChangesetValue>& m_alloc;    //!< Allocator for all ChangesetValue instances.
     ChangeValueMap         m_changeValueMap;          //!< Populated per-row by PopulateColumnValues(); maps column name to DbValue.
 
@@ -72,6 +79,16 @@ private:
 
     //! Fetches a single integer (BeInt64Id) column value from the live DB via PK lookup; returns false on failure.
     bool TryFetchBeInt64IdFromDb(DbColumn const& col, BeInt64Id& outVal);
+
+    // ------------------------------------------------------------------
+    // Name formatting helpers — respects m_args (UseJsNames, UseClassFullName).
+    // ------------------------------------------------------------------
+
+    //! Returns the formatted top-level property name for @p propertyMap, respecting m_args.
+    Utf8String FormatPropName(PropertyMap const& propertyMap);
+
+    //! Returns the formatted leaf name for a sub-property path segment, respecting m_args.
+    Utf8String FormatSubPropLeaf(Utf8StringCR leafName);
 
     // ------------------------------------------------------------------
     // ECSqlColumnInfo construction
@@ -166,8 +183,8 @@ public:
     void DumpChangeValueMap() const;
     
     //! Constructs the factory; all references must outlive this object.
-    ChangesetValueFactory(ECDbCR conn,  ChangesetFilter const& filter, ChangesetSqliteIterator const& iterator, PmrObjectAllocator<ChangesetValue>& allocator)
-        : m_conn(conn), m_filter(filter), m_iterator(iterator), m_alloc(allocator) {}
+    ChangesetValueFactory(ECDbCR conn,  ChangesetFilter const& filter, ChangesetSqliteIterator const& iterator, ChangedPropNameFormatArgs const& args, PmrObjectAllocator<ChangesetValue>& allocator)
+        : m_conn(conn), m_filter(filter), m_iterator(iterator), m_args(args), m_alloc(allocator) {}
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

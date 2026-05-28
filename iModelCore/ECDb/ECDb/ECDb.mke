@@ -411,6 +411,8 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECSqlPropertyNamer$(oext):                                 $(baseDir)ECSqlPropertyNamer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECSqlRowAdaptor$(oext):                                   $(baseDir)ECSqlRowAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}

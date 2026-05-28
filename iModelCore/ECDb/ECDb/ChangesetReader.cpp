@@ -276,4 +276,28 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
     return SUCCESS;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::SetUseJsNamesForChangedPropNames(bool v) {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->SetUseJsNamesForChangedPropNames(v);
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ChangesetReader::SetUseClassFullNameInsteadofClassNameForChangedPropNames(bool v) {
+    if (!IsOpen()) {
+        LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
+        return ERROR;
+    }
+    m_pimpl->SetUseClassFullNameInsteadofClassNameForChangedPropNames(v);
+    return SUCCESS;
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

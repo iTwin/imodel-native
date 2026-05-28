@@ -160,6 +160,32 @@ struct ChangesetReaderTests : ECDbTestFixture {
                         </ECEntityClass>
                         </ECSchema>)xml";
         }
+
+    //! Three-level nested struct schema.
+    //! Asset.Bounds (Zone) -> Zone.Area (Region) -> Region.Anchor (Anchor) -> Anchor.Origin (point2d)
+    //! Used to verify that JS-name and EC-name path formatting propagates through all nesting levels.
+    Utf8CP GetDeepNestedSchema() const {
+        return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestDeepCS" alias="tdc" version="01.00.00"
+                                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                        <ECStructClass typeName="Anchor" modifier="Sealed">
+                            <ECProperty propertyName="Origin" typeName="point2d"/>
+                        </ECStructClass>
+                        <ECStructClass typeName="Region" modifier="Sealed">
+                            <ECProperty propertyName="Name" typeName="string"/>
+                            <ECStructProperty propertyName="Anchor" typeName="Anchor"/>
+                        </ECStructClass>
+                        <ECStructClass typeName="Zone" modifier="Sealed">
+                            <ECProperty propertyName="Title" typeName="string"/>
+                            <ECStructProperty propertyName="Area" typeName="Region"/>
+                        </ECStructClass>
+                        <ECEntityClass typeName="Asset" modifier="Sealed">
+                            <ECProperty propertyName="Label" typeName="string"/>
+                            <ECStructProperty propertyName="Bounds" typeName="Zone"/>
+                        </ECEntityClass>
+                        </ECSchema>)xml";
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -3920,6 +3946,742 @@ TEST_F(ChangesetReaderTests, Memory_ReopenAfterClose_ArenaNotCorrupted)
     ASSERT_EQ(BE_SQLITE_DONE, reader2.Step());
     ASSERT_EQ(SUCCESS, reader2.Close());
     }
+    }
+
+// ============================================================================
+// JS-name tests for GetChangeFetchedPropertyNames() and ECSqlRowAdaptor rendering
+// Reuse the same Widget schema and setup patterns from existing tests; only the
+// naming-mode assertions are new.
+// ============================================================================
+
+//---------------------------------------------------------------------------------------
+// Full Widget INSERT with all property types.
+// With UseJsNames=true verifies that:
+//   (a) GetChangeFetchedPropertyNames() returns JS-style paths, and
+//   (b) ECSqlRowAdaptor renders the same row with JS-style keys and correct values.
+// Both checks are performed on the same reader row so there is no duplication of setup.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, JsNames_Insert_Widget_FullRow)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_jsnames_insert.ecdb", SchemaItem(GetSchema())));
+
+    ECInstanceKey containerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Box')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Weight, Cnt, Active, Pos2d, Pos3d, Details.Label, Details.Score, Tags, Owner) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "JsWidget", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, 1.5));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, 7));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(4, true));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(5, DPoint2d::From(3.0, 4.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(6, DPoint3d::From(1.0, 2.0, 3.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(7, "JsLabel", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(8, 42));
+    IECSqlBinder& tb = stmt.GetBinder(9);
+    ASSERT_EQ(ECSqlStatus::Success, tb.AddArrayElement().BindText("a", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, tb.AddArrayElement().BindText("b", IECSqlBinder::MakeCopy::No));
+    ECN::ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestReadCS", "ContainerOwnsWidgets");
+    ASSERT_TRUE(relClassId.IsValid());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(10, containerKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Create the adaptor first and set all rendering options through GetOptions().
+    // Then drive the reader's changed-prop naming from the same GetOptions() values
+    // so there is a single source of truth for the JS-names flag.
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // ---- (a) GetChangeFetchedPropertyNames ----------------------------------------
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    // System props: JS names
+    EXPECT_TRUE(hasName("id"));          // ECInstanceId -> "id"
+    EXPECT_TRUE(hasName("className"));   // ECClassId -> "className" (UseClassFullName=false)
+    EXPECT_FALSE(hasName("ECInstanceId"));
+    EXPECT_FALSE(hasName("ECClassId"));
+
+    // Regular props: first char lowercased
+    EXPECT_TRUE(hasName("name"));
+    EXPECT_TRUE(hasName("weight"));
+    EXPECT_TRUE(hasName("cnt"));
+    EXPECT_TRUE(hasName("active"));
+    EXPECT_FALSE(hasName("Name"));
+    EXPECT_FALSE(hasName("Weight"));
+
+    // Point2d: both coords present in INSERT -> full prop name, not sub-props
+    EXPECT_TRUE(hasName("pos2d"));
+    EXPECT_FALSE(hasName("Pos2d"));
+    EXPECT_FALSE(hasName("pos2d.x"));
+    EXPECT_FALSE(hasName("pos2d.y"));
+
+    // Point3d: all three coords -> full prop name
+    EXPECT_TRUE(hasName("pos3d"));
+    EXPECT_FALSE(hasName("Pos3d"));
+
+    // Struct members: lowercased struct.member paths; bare struct name never emitted
+    EXPECT_TRUE(hasName("details.label"));
+    EXPECT_TRUE(hasName("details.score"));
+    EXPECT_FALSE(hasName("Details.Label"));
+    EXPECT_FALSE(hasName("details"));
+
+    // Array
+    EXPECT_TRUE(hasName("tags"));
+    EXPECT_FALSE(hasName("Tags"));
+
+    // Nav prop: id sub-prop only; "Id" -> "id"
+    EXPECT_TRUE(hasName("owner.id"));
+    EXPECT_FALSE(hasName("Owner.Id"));
+    EXPECT_FALSE(hasName("owner"));
+
+    // ---- (b) ECSqlRowAdaptor rendering on the same row ----------------------------
+    // adaptor was configured above; no additional setup needed here.
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    // System props rendered with JS names
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestReadCS.Widget", rowJson["className"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_TRUE(rowJson["ECClassId"].isNull());
+
+    // Regular props: first-char-lowercased keys with correct values
+    EXPECT_STREQ("JsWidget", rowJson["name"].asString().c_str());
+    EXPECT_DOUBLE_EQ(1.5, rowJson["weight"].asDouble());
+    EXPECT_TRUE(rowJson["Name"].isNull());
+
+    // Point2d rendered as {"x":..., "y":...}
+    EXPECT_DOUBLE_EQ(3.0, rowJson["pos2d"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(4.0, rowJson["pos2d"]["y"].asDouble());
+
+    // Point3d rendered as {"x":..., "y":..., "z":...}
+    EXPECT_DOUBLE_EQ(1.0, rowJson["pos3d"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(2.0, rowJson["pos3d"]["y"].asDouble());
+    EXPECT_DOUBLE_EQ(3.0, rowJson["pos3d"]["z"].asDouble());
+
+    // Struct rendered as nested object with lowercased member keys
+    EXPECT_STREQ("JsLabel", rowJson["details"]["label"].asString().c_str());
+    EXPECT_EQ(42, rowJson["details"]["score"].asInt());
+    EXPECT_TRUE(rowJson["Details"].isNull());
+
+    // Array rendered as JSON array
+    EXPECT_TRUE(rowJson["tags"].isArray());
+    EXPECT_EQ(2, (int)rowJson["tags"].size());
+
+    // Navigation rendered as {"id":..., "relClassName":...}
+    EXPECT_FALSE(rowJson["owner"]["id"].asString().empty());
+    EXPECT_FALSE(rowJson["owner"]["relClassName"].asString().empty());
+    EXPECT_TRUE(rowJson["Owner"].isNull());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Same setup as JsNames_Insert_ChangedPropNames_UseJsNames but also enables
+// UseClassFullNameInsteadofClassName.
+// ECClassId must map to "classFullName" instead of "className".
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, JsNames_Insert_ChangedPropNames_ClassFullName)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_jsnames_classfull.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(widgetKey,
+        "INSERT INTO ts.Widget(Name) VALUES('CFTest')"));
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(true));
+    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangedPropNames(true));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    // classFullName flag: ECClassId -> "classFullName" not "className"
+    EXPECT_TRUE(hasName("classFullName"));
+    EXPECT_FALSE(hasName("className"));
+    EXPECT_FALSE(hasName("ECClassId"));
+
+    // ECInstanceId still -> "id"
+    EXPECT_TRUE(hasName("id"));
+
+    // Regular prop still lowercased
+    EXPECT_TRUE(hasName("name"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Reuses the Update_PartialFields_ChangesetAndDBFallback setup.
+// Updates Name, Pos2d.X (partial), and Details.Label (partial struct).
+// With JS names:
+//   ECInstanceId -> "id"
+//   Name         -> "name"
+//   Pos2d.X      -> "pos2d.x"  (only X changed; sub-prop "X" -> "x")
+//   Details.Label -> "details.label"
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, JsNames_Update_PartialPoint_And_Struct)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_jsnames_upd.ecdb", SchemaItem(GetSchema())));
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Pos2d, Details) VALUES('OldName', ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(1.0, 2.0)));
+    IECSqlBinder& d = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, d["Label"].BindText("OldLabel", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, d["Score"].BindInt(5));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Update Name + Pos2d.X only + Details.Label only
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE ts.Widget SET Name='NewName', Pos2d.X=9.0, Details.Label='NewLabel' WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // ---- (a) changed-prop names ----
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    EXPECT_TRUE(hasName("id"));           // ECInstanceId always present for UPDATE
+    EXPECT_TRUE(hasName("name"));
+    EXPECT_TRUE(hasName("pos2d.x"));      // partial Point2d: only X changed -> "pos2d.x"
+    EXPECT_TRUE(hasName("details.label")); // partial struct member
+
+    EXPECT_FALSE(hasName("ECInstanceId"));
+    EXPECT_FALSE(hasName("pos2d"));       // not both coords changed
+    EXPECT_FALSE(hasName("pos2d.y"));
+    EXPECT_FALSE(hasName("details.score")); // Score not changed
+    EXPECT_FALSE(hasName("Name"));
+    EXPECT_FALSE(hasName("Pos2d.X"));
+
+    // ---- (b) ECSqlRowAdaptor rendering ----
+    // Pos2d column carries X=9.0 (updated) and Y=2.0 (DB fallback).
+    // Details column carries Label="NewLabel" (updated) and Score=5 (DB fallback).
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestReadCS.Widget", rowJson["className"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_STREQ("NewName", rowJson["name"].asString().c_str());
+    EXPECT_DOUBLE_EQ(9.0, rowJson["pos2d"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(2.0, rowJson["pos2d"]["y"].asDouble());
+    EXPECT_STREQ("NewLabel", rowJson["details"]["label"].asString().c_str());
+    EXPECT_EQ(5, rowJson["details"]["score"].asInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Reuses the Update_NestedStruct_CoordOnly setup with JS names.
+// Updates Location.Coord.Lat and Location.Coord.Lon (2-level nested struct + scalars).
+// With JS names:
+//   ECInstanceId         -> "id"
+//   Location.Coord.Lat   -> "location.coord.lat"
+//   Location.Coord.Lon   -> "location.coord.lon"
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, JsNames_Update_NestedStruct_CoordOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_jsnames_nested_coord.ecdb", SchemaItem(GetExtendedSchema())));
+
+    ECInstanceKey placeKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO te.Place(Name, Location) VALUES('Berlin', ?)"));
+    IECSqlBinder& lb = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, lb["Street"].BindText("Unter den Linden", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, lb["Coord"]["Lat"].BindDouble(52.52));
+    ASSERT_EQ(ECSqlStatus::Success, lb["Coord"]["Lon"].BindDouble(13.40));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(placeKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE te.Place SET Location.Coord.Lat=53.0, Location.Coord.Lon=14.0 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, placeKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // ---- (a) changed-prop names ----
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    EXPECT_TRUE(hasName("id"));
+    EXPECT_TRUE(hasName("location.coord.lat"));
+    EXPECT_TRUE(hasName("location.coord.lon"));
+
+    EXPECT_FALSE(hasName("ECInstanceId"));
+    EXPECT_FALSE(hasName("Location.Coord.Lat"));
+    EXPECT_FALSE(hasName("location.coord"));   // struct never collapses
+    EXPECT_FALSE(hasName("location"));
+    EXPECT_FALSE(hasName("location.street"));
+
+    // ---- (b) ECSqlRowAdaptor rendering ----
+    // Location column carries only Coord (Lat=53.0, Lon=14.0); Street was not in the changeset.
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestExtCS.Place", rowJson["className"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_DOUBLE_EQ(53.0, rowJson["location"]["coord"]["lat"].asDouble());
+    EXPECT_DOUBLE_EQ(14.0, rowJson["location"]["coord"]["lon"].asDouble());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+
+
+//---------------------------------------------------------------------------------------
+// Uses GetDeepNestedSchema() to create Asset with a 3-level struct nesting:
+//   Asset.Bounds (Zone) -> .Area (Region) -> .Anchor (Anchor) -> .Origin (point2d)
+// INSERTs with all properties fully set and verifies:
+//   EC names: "Bounds.Area.Anchor.Origin", "Bounds.Title", "Bounds.Area.Name"
+//   JS names: "bounds.area.anchor.origin", "bounds.title", "bounds.area.name"
+// (Full Origin point2d -> collapses to the point prop name, not .x/.y)
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_deep_insert.ecdb", SchemaItem(GetDeepNestedSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey assetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tdc.Asset(Label, Bounds) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "DeepAsset", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& bnd = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("ZoneA", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("RegionX", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Anchor"]["Origin"].BindPoint2d(DPoint2d::From(10.0, 20.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(assetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    // --- EC names (default) ---
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto has = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    EXPECT_TRUE(has("ECInstanceId"));
+    EXPECT_TRUE(has("Label"));
+    EXPECT_TRUE(has("Bounds.Title"));
+    EXPECT_TRUE(has("Bounds.Area.Name"));
+    EXPECT_TRUE(has("Bounds.Area.Anchor.Origin")); // both X and Y present -> full point name
+    EXPECT_FALSE(has("Bounds.Area.Anchor.Origin.X"));
+    EXPECT_FALSE(has("Bounds.Area.Anchor.Origin.Y"));
+    EXPECT_FALSE(has("Bounds"));            // bare struct never emitted
+    EXPECT_FALSE(has("Bounds.Area"));
+    EXPECT_FALSE(has("Bounds.Area.Anchor"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Re-capture the changeset for JS-names pass
+    {
+    TestCSChangeTracker tracker2(m_ecdb);
+    tracker2.EnableTracking(true);
+    ECInstanceKey key2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tdc.Asset(Label, Bounds) VALUES(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "DeepAsset2", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& bnd = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("ZoneB", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("RegionY", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Anchor"]["Origin"].BindPoint2d(DPoint2d::From(5.0, 6.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key2));
+    }
+    auto cs2 = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
+
+    // --- JS names ---
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // ---- (a) changed-prop names ----
+    auto const* cp = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, cp);
+    auto hasJs = [&](Utf8CP n) {
+        return std::find(cp->begin(), cp->end(), n) != cp->end();
+    };
+
+    EXPECT_TRUE(hasJs("id"));
+    EXPECT_TRUE(hasJs("className"));
+    EXPECT_TRUE(hasJs("label"));
+    EXPECT_TRUE(hasJs("bounds.title"));
+    EXPECT_TRUE(hasJs("bounds.area.name"));
+    EXPECT_TRUE(hasJs("bounds.area.anchor.origin")); // full point2d -> prop name
+    EXPECT_FALSE(hasJs("bounds.area.anchor.origin.x"));
+    EXPECT_FALSE(hasJs("bounds.area.anchor.origin.y"));
+    EXPECT_FALSE(hasJs("bounds"));
+    EXPECT_FALSE(hasJs("bounds.area"));
+    EXPECT_FALSE(hasJs("bounds.area.anchor"));
+    EXPECT_FALSE(hasJs("ECInstanceId"));
+    EXPECT_FALSE(hasJs("Bounds.Area.Anchor.Origin")); // EC name must not appear
+
+    // ---- (b) ECSqlRowAdaptor rendering ----
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestDeepCS.Asset", rowJson["className"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_STREQ("DeepAsset2", rowJson["label"].asString().c_str());
+    EXPECT_STREQ("ZoneB", rowJson["bounds"]["title"].asString().c_str());
+    EXPECT_STREQ("RegionY", rowJson["bounds"]["area"]["name"].asString().c_str());
+    EXPECT_DOUBLE_EQ(5.0, rowJson["bounds"]["area"]["anchor"]["origin"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(6.0, rowJson["bounds"]["area"]["anchor"]["origin"]["y"].asDouble());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// Uses GetDeepNestedSchema().
+// INSERTs an Asset with full Bounds outside the tracker, then UPDATEs only
+// Bounds.Area.Anchor.Origin.Y (X unchanged -> DB fallback).
+// With JS names, changedProps must contain "bounds.area.anchor.origin.y" and nothing else
+// from the Bounds subtree.
+// Complements JsNames_DeepNested_Update_Point2d_XOnly to cover the Y component.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_deep_upd_y.ecdb", SchemaItem(GetDeepNestedSchema())));
+
+    ECInstanceKey assetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tdc.Asset(Label, Bounds) VALUES('AssetY', ?)"));
+    IECSqlBinder& bnd = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("Zt2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("R2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Anchor"]["Origin"].BindPoint2d(DPoint2d::From(5.0, 6.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(assetKey));
+    }
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "UPDATE tdc.Asset SET Bounds.Area.Anchor.Origin.Y=88.0 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, assetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // Value check: Origin.X falls back from DB (5.0), Origin.Y updated to 88.0
+    IECSqlValue const& bv = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Bounds", bv.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(5.0,  bv["Area"]["Anchor"]["Origin"].GetPoint2d().x);
+    EXPECT_DOUBLE_EQ(88.0, bv["Area"]["Anchor"]["Origin"].GetPoint2d().y);
+
+    // ---- (a) changed-prop names ----
+    auto const* cp = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, cp);
+    auto hasJs = [&](Utf8CP n) {
+        return std::find(cp->begin(), cp->end(), n) != cp->end();
+    };
+
+    EXPECT_TRUE(hasJs("id"));
+    EXPECT_TRUE(hasJs("bounds.area.anchor.origin.y")); // only Y changed
+    EXPECT_FALSE(hasJs("bounds.area.anchor.origin.x"));
+    EXPECT_FALSE(hasJs("bounds.area.anchor.origin"));  // not both coords
+    EXPECT_FALSE(hasJs("bounds"));
+    EXPECT_FALSE(hasJs("ECInstanceId"));
+
+    // ---- (b) ECSqlRowAdaptor rendering ----
+    // Bounds column carries only the Origin sub-path; Title and Area.Name are absent.
+    // Origin has X=5.0 (DB fallback) and Y=88.0 (updated).
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestDeepCS.Asset", rowJson["className"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_DOUBLE_EQ(5.0,  rowJson["bounds"]["area"]["anchor"]["origin"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(88.0, rowJson["bounds"]["area"]["anchor"]["origin"]["y"].asDouble());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+
+
+
+
+    //---------------------------------------------------------------------------------------
+// Full Widget INSERT with all property types.
+// With UseJsNames=true verifies that:
+//   (a) GetChangeFetchedPropertyNames() returns JS-style paths, and
+//   (b) ECSqlRowAdaptor renders the same row with JS-style keys and correct values.
+// Both checks are performed on the same reader row so there is no duplication of setup.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, MyTest)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_jsnames_insert.ecdb", SchemaItem(GetSchema())));
+
+    ECInstanceKey containerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Box')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Spec(Label, Score) VALUES('Soham', 1.5)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Create the adaptor first and set all rendering options through GetOptions().
+    // Then drive the reader's changed-prop naming from the same GetOptions() values
+    // so there is a single source of truth for the JS-names flag.
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
+    adaptor.GetOptions().SetUseJsNames(true);
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // ---- (a) GetChangeFetchedPropertyNames ----------------------------------------
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    // System props: JS names
+    EXPECT_TRUE(hasName("id"));          // ECInstanceId -> "id"
+    EXPECT_TRUE(hasName("className"));   // ECClassId -> "className" (UseClassFullName=false)
+    EXPECT_FALSE(hasName("ECInstanceId"));
+    EXPECT_FALSE(hasName("ECClassId"));
+
+    // Regular props: first char lowercased
+    EXPECT_TRUE(hasName("name"));
+    EXPECT_TRUE(hasName("weight"));
+    EXPECT_TRUE(hasName("cnt"));
+    EXPECT_TRUE(hasName("active"));
+    EXPECT_FALSE(hasName("Name"));
+    EXPECT_FALSE(hasName("Weight"));
+
+    // Point2d: both coords present in INSERT -> full prop name, not sub-props
+    EXPECT_TRUE(hasName("pos2d"));
+    EXPECT_FALSE(hasName("Pos2d"));
+    EXPECT_FALSE(hasName("pos2d.x"));
+    EXPECT_FALSE(hasName("pos2d.y"));
+
+    // Point3d: all three coords -> full prop name
+    EXPECT_TRUE(hasName("pos3d"));
+    EXPECT_FALSE(hasName("Pos3d"));
+
+    // Struct members: lowercased struct.member paths; bare struct name never emitted
+    EXPECT_TRUE(hasName("details.label"));
+    EXPECT_TRUE(hasName("details.score"));
+    EXPECT_FALSE(hasName("Details.Label"));
+    EXPECT_FALSE(hasName("details"));
+
+    // Array
+    EXPECT_TRUE(hasName("tags"));
+    EXPECT_FALSE(hasName("Tags"));
+
+    // Nav prop: id sub-prop only; "Id" -> "id"
+    EXPECT_TRUE(hasName("owner.id"));
+    EXPECT_FALSE(hasName("Owner.Id"));
+    EXPECT_FALSE(hasName("owner"));
+
+    // ---- (b) ECSqlRowAdaptor rendering on the same row ----------------------------
+    // adaptor was configured above; no additional setup needed here.
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    // System props rendered with JS names
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestReadCS.Widget", rowJson["className"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_TRUE(rowJson["ECClassId"].isNull());
+
+    // Regular props: first-char-lowercased keys with correct values
+    EXPECT_STREQ("JsWidget", rowJson["name"].asString().c_str());
+    EXPECT_DOUBLE_EQ(1.5, rowJson["weight"].asDouble());
+    EXPECT_TRUE(rowJson["Name"].isNull());
+
+    // Point2d rendered as {"x":..., "y":...}
+    EXPECT_DOUBLE_EQ(3.0, rowJson["pos2d"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(4.0, rowJson["pos2d"]["y"].asDouble());
+
+    // Point3d rendered as {"x":..., "y":..., "z":...}
+    EXPECT_DOUBLE_EQ(1.0, rowJson["pos3d"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(2.0, rowJson["pos3d"]["y"].asDouble());
+    EXPECT_DOUBLE_EQ(3.0, rowJson["pos3d"]["z"].asDouble());
+
+    // Struct rendered as nested object with lowercased member keys
+    EXPECT_STREQ("JsLabel", rowJson["details"]["label"].asString().c_str());
+    EXPECT_EQ(42, rowJson["details"]["score"].asInt());
+    EXPECT_TRUE(rowJson["Details"].isNull());
+
+    // Array rendered as JSON array
+    EXPECT_TRUE(rowJson["tags"].isArray());
+    EXPECT_EQ(2, (int)rowJson["tags"].size());
+
+    // Navigation rendered as {"id":..., "relClassName":...}
+    EXPECT_FALSE(rowJson["owner"]["id"].asString().empty());
+    EXPECT_FALSE(rowJson["owner"]["relClassName"].asString().empty());
+    EXPECT_TRUE(rowJson["Owner"].isNull());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 END_ECDBUNITTESTS_NAMESPACE
 

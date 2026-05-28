@@ -194,6 +194,29 @@ bool ChangesetValueFactory::TryFetchBeInt64IdFromDb(DbColumn const& col, BeInt64
 }
 
 //=============================================================================
+// Name formatting helpers
+//=============================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ChangesetValueFactory::FormatPropName(PropertyMap const& propertyMap) {
+    Utf8StringCR ecName = propertyMap.GetProperty().GetName();
+    if (!m_args.UseJsNames())
+        return ecName;
+    return ECSqlPropertyNamer::GetJsNameForProp(&propertyMap.GetProperty(), m_args.UseClassFullNameInsteadofClassName());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ChangesetValueFactory::FormatSubPropLeaf(Utf8StringCR leafName) {
+    if (!m_args.UseJsNames())
+        return leafName;
+    return ECSqlPropertyNamer::GetSubPropertyLeafJsName(leafName);
+}
+
+//=============================================================================
 // ColumnInfo factory helpers
 //=============================================================================
 
@@ -321,12 +344,12 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(PropertyMap const& propertyMa
     }
 
     ctx.fields.push_back(m_alloc.New<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
-    Utf8StringCR propName = propertyMap.GetProperty().GetName();
+    Utf8String propName = FormatPropName(propertyMap);
     if (xInCurrentTableAndChangeset && yInCurrentTableAndChangeset) {
         ctx.changedProps.emplace_back(propName);
     } else {
-        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetX().GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s)); }
-        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetY().GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s)); }
+        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(pt2dMap.GetX().GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s)); }
+        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(pt2dMap.GetY().GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s)); }
     }
     return SUCCESS;
 }
@@ -383,13 +406,13 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(PropertyMap const& propertyMa
     }
 
     ctx.fields.push_back(m_alloc.New<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
-    Utf8StringCR propName = propertyMap.GetProperty().GetName();
+    Utf8String propName = FormatPropName(propertyMap);
     if (xInCurrentTableAndChangeset && yInCurrentTableAndChangeset && zInCurrentTableAndChangeset) {
         ctx.changedProps.emplace_back(propName);
     } else {
-        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetX().GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s)); }
-        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetY().GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s)); }
-        if (zInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetZ().GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s)); }
+        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(pt3dMap.GetX().GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s)); }
+        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(pt3dMap.GetY().GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s)); }
+        if (zInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(pt3dMap.GetZ().GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s)); }
     }
     return SUCCESS;
 }
@@ -422,7 +445,7 @@ BentleyStatus ChangesetValueFactory::CreatePrimitive(PropertyMap const& property
         MakePrimitiveColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName()),
         GetDateTimeInfo(propertyMap)));
-    ctx.changedProps.emplace_back(propertyMap.GetProperty().GetName());
+    ctx.changedProps.emplace_back(FormatPropName(propertyMap));
     return SUCCESS;
 }
 
@@ -544,13 +567,13 @@ BentleyStatus ChangesetValueFactory::CreateNav(PropertyMap const& propertyMap, B
     }
 
     ctx.fields.push_back(m_alloc.New<ChangesetNavValue>(MakeNavColumnInfo(propertyMap), *idVal, *relClassIdVal));
-    Utf8StringCR propName = propertyMap.GetProperty().GetName();
+    Utf8String propName = FormatPropName(propertyMap);
     if (hasIdInCurrentTableAndChangeset &&  hasPhysicalRelClassIdInCurrentTableAndChangeset) {
         ctx.changedProps.emplace_back(propName);
     } else if (hasIdInCurrentTableAndChangeset) {
-        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), idPropMap.GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(idPropMap.GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s));
     } else if (hasPhysicalRelClassIdInCurrentTableAndChangeset) {
-        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), relClassIdMap.GetProperty().GetName().c_str()); ctx.changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), FormatSubPropLeaf(relClassIdMap.GetProperty().GetName()).c_str()); ctx.changedProps.emplace_back(std::move(s));
     }
     return SUCCESS;
 }
@@ -577,7 +600,7 @@ BentleyStatus ChangesetValueFactory::CreateArray(PropertyMap const& propertyMap,
         MakeArrayColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName()),
         m_conn));
-    ctx.changedProps.emplace_back(propertyMap.GetProperty().GetName());
+    ctx.changedProps.emplace_back(FormatPropName(propertyMap));
     return SUCCESS;
 }
 
@@ -585,7 +608,7 @@ BentleyStatus ChangesetValueFactory::CreateArray(PropertyMap const& propertyMap,
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateStruct(PropertyMap const& propertyMap, BuildCtx& ctx) {
-    Utf8StringCR structPropName = propertyMap.GetProperty().GetName();
+    Utf8String structPropName = FormatPropName(propertyMap);
     bool anyMember = false;
     std::vector<ChangesetValue*> memberTemp;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
@@ -852,6 +875,8 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(DbTable const& tbl, ECClassI
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
     std::vector<ChangesetValue*>& fields, std::vector<Utf8String>& changedProps) {
+    fields.clear();
+    changedProps.clear();
 
     const ECClass* cls = m_conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
@@ -864,13 +889,6 @@ BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId r
         LOG.errorv("ClassMap for ECClassId %" PRIu64 " could not be found in the schema.", resolvedClassId.GetValueUnchecked());
         return ERROR;
     }
-
-    // ECInstanceId and ECClassId name collection — handled here since they are
-    // emitted as fixed slots and skipped by the BuildPropertyFields loop.
-    changedProps.emplace_back(ECDBSYS_PROP_ECInstanceId);
-    if (classIdFromChangeset)
-        changedProps.emplace_back(ECDBSYS_PROP_ECClassId);
-
 
     // -----------------------------------------------------------------------
     // Step 2: Resolve ECInstanceId (slot [0]).
@@ -899,6 +917,12 @@ BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId r
     fields.push_back(instanceIdField);
     fields.push_back(classIdField);
 
+    // ECInstanceId and ECClassId name collection — handled here since they are
+    // emitted as fixed slots and skipped by the BuildPropertyFields loop.
+    changedProps.emplace_back(ECSqlPropertyNamer::GetJsNameForProp(instanceIdField->GetColumnInfo().GetProperty(), m_args.UseClassFullNameInsteadofClassName()));
+    if (classIdFromChangeset)
+        changedProps.emplace_back(ECSqlPropertyNamer::GetJsNameForProp(classIdField->GetColumnInfo().GetProperty(), m_args.UseClassFullNameInsteadofClassName()));
+
     if (m_filter.GetPropertyFilter() == ChangesetReader::PropertyFilter::InstanceKey)
         return SUCCESS; // caller only needs the instance key — skip user properties
 
@@ -911,10 +935,12 @@ BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId r
 
     if (status != SUCCESS) {
         fields.clear();
+        changedProps.clear();
         return status;
     }
     if (CheckInvalidPtr(fields) != SUCCESS) { // Sanity check to ensure we don't return a vector with invalid pointers, which would cause crashes later when trying to access those fields
         fields.clear();
+        changedProps.clear();
         return ERROR;
     }
 

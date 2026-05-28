@@ -48,6 +48,7 @@
 #include "PropertyMap.h"
 #include "SystemPropertyMap.h"
 #include "PropertyMapVisitor.h"
+#include "ECSqlPropertyNamer.h"
 #include "RelationshipClassMap.h"
 #include "ClassMappingInfo.h"
 #include "ClassMapPersistenceManager.h"
