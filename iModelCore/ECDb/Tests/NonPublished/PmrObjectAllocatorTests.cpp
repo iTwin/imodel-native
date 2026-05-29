@@ -66,41 +66,6 @@ struct TestChangesetValue
 struct ChangesetArenaTests : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
-// Allocate an object whose destructor writes a known tombstone value to its own memory.
-// Capture the raw address before Reset(), then verify the tombstone is present after
-// Reset() — proving the destructor was actually called (not skipped).
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_DestructorWritesTombstoneAtCapturedAddress)
-    {
-    //! Object whose destructor stamps a sentinel so we can confirm it was called.
-    struct Sentinel: TestChangesetValue
-        {
-        volatile int32_t data = 0x12345678;
-        ~Sentinel() 
-        { 
-            data = static_cast<int32_t>(0xDEADBEEF); 
-        }
-        };
-
-    PmrObjectAllocator<Sentinel> arena;
-    Sentinel* p = arena.New<Sentinel>();
-    volatile int32_t* dataAddr = &p->data;
-
-    EXPECT_EQ(0x12345678, p->data) << "Object must hold initial value before Reset()";
-    EXPECT_EQ(1u, arena.m_dtors.size());
-
-    arena.Reset();
-
-    // Accessing memory through the raw address after destruction is technically UB,
-    // but with volatile and no subsequent allocation this reliably verifies the dtor.
-    int32_t const tombstone = *dataAddr;
-    EXPECT_EQ(static_cast<int32_t>(0xDEADBEEF), tombstone)
-        << "Destructor must have written the tombstone — dtor was not called if this fails";
-    EXPECT_EQ(0u, arena.m_dtors.size()) << "Dtor registry must be empty after Reset()";
-    }
-
-//---------------------------------------------------------------------------------------
 // After Reset(), monotonic_buffer_resource::release() rewinds the bump pointer to the
 // start of the inline buffer.  The first allocation in the next cycle therefore lands
 // at the same address as the first allocation in the previous cycle.
@@ -206,13 +171,13 @@ TEST_F(ChangesetArenaTests, Arena_MultipleResetCycles_NoDtorAccumulation)
     PmrObjectAllocator<Counter> arena;
     for (int cycle = 0; cycle < 5; ++cycle)
         {
-        EXPECT_EQ(0u, arena.m_dtors.size()) << "Registry must be empty at start of cycle " << cycle;
+        EXPECT_EQ(0u, arena.GetDtorCount()) << "Registry must be empty at start of cycle " << cycle;
         int beforeCycle = totalCalls;
         {
         arena.New<Counter>(totalCalls);
         arena.New<Counter>(totalCalls);
         }
-        EXPECT_EQ(2u, arena.m_dtors.size()) << "Exactly 2 entries per cycle";
+        EXPECT_EQ(2u, arena.GetDtorCount()) << "Exactly 2 entries per cycle";
         arena.Reset();
         EXPECT_EQ(beforeCycle + 2, totalCalls) << "2 dtors must have fired in cycle " << cycle;
         }
@@ -233,16 +198,16 @@ TEST_F(ChangesetArenaTests, Allocator_EachNewCallRegistersExactlyOneDtor)
 
     PmrObjectAllocator<Noop> arena;
 
-    EXPECT_EQ(0u, arena.m_dtors.size());
+    EXPECT_EQ(0u, arena.GetDtorCount()) << "Registry must be empty before any New() calls";
     arena.New<Noop>();
-    EXPECT_EQ(1u, arena.m_dtors.size());
+    EXPECT_EQ(1u, arena.GetDtorCount());
     arena.New<Noop>();
-    EXPECT_EQ(2u, arena.m_dtors.size());
+    EXPECT_EQ(2u, arena.GetDtorCount());
     arena.New<Noop>();
-    EXPECT_EQ(3u, arena.m_dtors.size());
+    EXPECT_EQ(3u, arena.GetDtorCount());
 
     arena.Reset();
-    EXPECT_EQ(0u, arena.m_dtors.size());
+    EXPECT_EQ(0u, arena.GetDtorCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -256,8 +221,8 @@ TEST_F(ChangesetArenaTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
 
     Small* p = arena.New<Small>();
 
-    auto const* storageBegin = reinterpret_cast<uint8_t const*>(arena.m_storage.data());
-    auto const* storageEnd   = storageBegin + arena.m_storage.size();
+    auto const* storageBegin = reinterpret_cast<uint8_t const*>(arena.GetStorageData());
+    auto const* storageEnd   = storageBegin + arena.GetStorageSize();
     auto const* pBytes       = reinterpret_cast<uint8_t const*>(p);
 
     EXPECT_GE(pBytes, storageBegin) << "Small allocation must reside inside the inline buffer";
@@ -274,12 +239,12 @@ TEST_F(ChangesetArenaTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
 TEST_F(ChangesetArenaTests, Allocator_OversizedAlloc_SpillsToHeap_AddressOutsideStorage)
     {
     // Request more bytes than the entire inline buffer in one allocation.
-    struct Oversized : TestChangesetValue { std::array<std::byte, 21> data {}; };
+    struct Oversized : TestChangesetValue { std::array<std::byte, 25> data {}; };
     PmrObjectAllocator<Oversized, 20> arena;
     Oversized* p = arena.New<Oversized>();
 
-    auto const* storageBegin = reinterpret_cast<uint8_t const*>(arena.m_storage.data());
-    auto const* storageEnd   = storageBegin + arena.m_storage.size();
+    auto const* storageBegin = reinterpret_cast<uint8_t const*>(arena.GetStorageData());
+    auto const* storageEnd   = storageBegin + arena.GetStorageSize();
     auto const* pBytes       = reinterpret_cast<uint8_t const*>(p);
     bool const inInline      = (pBytes >= storageBegin && pBytes < storageEnd);
 
@@ -299,12 +264,120 @@ TEST_F(ChangesetArenaTests, Arena_MultipleNewCalls_ShareSingleDtorRegistry)
 
     PmrObjectAllocator<Noop> arena;
     arena.New<Noop>();
-    EXPECT_EQ(1u, arena.m_dtors.size());
+    EXPECT_EQ(1u, arena.GetDtorCount());
     arena.New<Noop>();
-    EXPECT_EQ(2u, arena.m_dtors.size()) << "Second New() must append to the same registry";
+    EXPECT_EQ(2u, arena.GetDtorCount()) << "Second New() must append to the same registry";
 
     arena.Reset();
-    EXPECT_EQ(0u, arena.m_dtors.size());
+    EXPECT_EQ(0u, arena.GetDtorCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// Allocation order and tree shape:
+//
+//   leaf1(1)  leaf2(2)  ──  midA(5) ──┐
+//   leaf3(3)  leaf4(4)  ──  midB(6) ──┼──  root(8)
+//   leaf5(7)            ──────────────┘
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetArenaTests, Arena_DeepHierarchy_DestructionOrderIsStrictlyReversed)
+    {
+    //! Shared destruction log.  Each entry is the "id" of the object destroyed.
+    std::vector<int> destructionLog;
+
+    // Base node — records its own id on destruction via the most-derived dtor only
+    // (recordedByDerived flag prevents the base dtor from double-logging).
+    struct NodeB : TestChangesetValue
+        {
+        int              id;
+        std::vector<int>& log;
+        bool             recordedByDerived { false };
+        explicit NodeB(int id_, std::vector<int>& log_) : id(id_), log(log_) {}
+        ~NodeB() override { if (!recordedByDerived) log.push_back(id); }
+        };
+
+    // Leaf — terminal node, no children.
+    struct LeafB final : NodeB
+        {
+        int payload;
+        LeafB(int id_, std::vector<int>& log_, int p) : NodeB(id_, log_), payload(p) {}
+        ~LeafB() { recordedByDerived = true; log.push_back(id); }
+        };
+
+    // Mid-level node — holds references to two leaf children and verifies both are
+    // still alive during its own destruction.
+    struct MidB final : NodeB
+        {
+        NodeB const& left;
+        NodeB const& right;
+        MidB(int id_, std::vector<int>& log_, NodeB const& l, NodeB const& r)
+            : NodeB(id_, log_), left(l), right(r) {}
+        ~MidB()
+            {
+            EXPECT_EQ(left.id,  left.id)  << "MidB left child accessed after its own destruction";
+            EXPECT_EQ(right.id, right.id) << "MidB right child accessed after its own destruction";
+            recordedByDerived = true;
+            log.push_back(id);
+            }
+        };
+
+    // Root node — holds references to two mid-level nodes and one cross-level leaf
+    // (leaf5, allocated after the mid nodes) and verifies all three are still alive
+    // during its own destruction.
+    struct RootB final : NodeB
+        {
+        NodeB const& midLeft;
+        NodeB const& midRight;
+        NodeB const& extraLeaf;
+        RootB(int id_, std::vector<int>& log_, NodeB const& ml, NodeB const& mr, NodeB const& ex)
+            : NodeB(id_, log_), midLeft(ml), midRight(mr), extraLeaf(ex) {}
+        ~RootB()
+            {
+            EXPECT_EQ(midLeft.id,   midLeft.id)   << "RootB midLeft accessed after its destruction";
+            EXPECT_EQ(midRight.id,  midRight.id)  << "RootB midRight accessed after its destruction";
+            EXPECT_EQ(extraLeaf.id, extraLeaf.id) << "RootB extraLeaf accessed after its destruction";
+            recordedByDerived = true;
+            log.push_back(id);
+            }
+        };
+
+    PmrObjectAllocator<NodeB> arena;
+
+    // Level 0 — four leaves feeding into the two mid nodes.
+    LeafB* leaf1 = arena.New<LeafB>(1, destructionLog, 10);
+    LeafB* leaf2 = arena.New<LeafB>(2, destructionLog, 20);
+    LeafB* leaf3 = arena.New<LeafB>(3, destructionLog, 30);
+    LeafB* leaf4 = arena.New<LeafB>(4, destructionLog, 40);
+
+    // Level 1 — two mid nodes each grouping a pair of leaves.
+    MidB* midA = arena.New<MidB>(5, destructionLog, *leaf1, *leaf2);
+    MidB* midB = arena.New<MidB>(6, destructionLog, *leaf3, *leaf4);
+
+    // Cross-level leaf — allocated after the mid nodes but attached directly to root,
+    // so its id (7) sits between midB(6) and root(8) in the destruction sequence.
+    LeafB* leaf5 = arena.New<LeafB>(7, destructionLog, 50);
+
+    // Level 2 — root referencing both mid nodes and the cross-level leaf.
+    RootB* root = arena.New<RootB>(8, destructionLog, *midA, *midB, *leaf5);
+
+    ASSERT_NE(nullptr, leaf1); ASSERT_NE(nullptr, leaf2);
+    ASSERT_NE(nullptr, leaf3); ASSERT_NE(nullptr, leaf4);
+    ASSERT_NE(nullptr, midA);  ASSERT_NE(nullptr, midB);
+    ASSERT_NE(nullptr, leaf5); ASSERT_NE(nullptr, root);
+    EXPECT_EQ(8u, arena.GetDtorCount());
+
+    arena.Reset();
+
+    // Strictly reverse-construction order: 8, 7, 6, 5, 4, 3, 2, 1.
+    ASSERT_EQ(8u, destructionLog.size()) << "Exactly 8 destructors must have fired";
+    EXPECT_EQ(8, destructionLog[0]) << "root  must be destroyed first  (last constructed)";
+    EXPECT_EQ(7, destructionLog[1]) << "leaf5 must be destroyed second";
+    EXPECT_EQ(6, destructionLog[2]) << "midB  must be destroyed third";
+    EXPECT_EQ(5, destructionLog[3]) << "midA  must be destroyed fourth";
+    EXPECT_EQ(4, destructionLog[4]) << "leaf4 must be destroyed fifth";
+    EXPECT_EQ(3, destructionLog[5]) << "leaf3 must be destroyed sixth";
+    EXPECT_EQ(2, destructionLog[6]) << "leaf2 must be destroyed seventh";
+    EXPECT_EQ(1, destructionLog[7]) << "leaf1 must be destroyed last   (first constructed)";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

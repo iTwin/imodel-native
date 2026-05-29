@@ -52,21 +52,23 @@ struct PmrObjectAllocator final {
     static_assert(std::has_virtual_destructor<Base>::value,
                   "PmrObjectAllocator<Base>: Base must have a virtual destructor "
                   "so that std::destroy_at(Base*) dispatches to the derived destructor.");
-
+private:
     static constexpr size_t bytes = InlineBytes;
 
-    std::array<std::byte, bytes>       m_storage {};
-    std::pmr::monotonic_buffer_resource m_resource { m_storage.data(), bytes };
+    std::array<std::byte, bytes>       m_storage;
+    std::pmr::monotonic_buffer_resource m_resource;
     std::vector<Base*>                  m_dtors;
 
-    PmrObjectAllocator() = default;
+public:
+
+    PmrObjectAllocator(): m_storage{}, m_resource(m_storage.data(), bytes), m_dtors{} {};
 
     //! @internal For unit-testing only.
     //! Constructs the arena with a custom PMR upstream so tests can observe every
     //! heap allocation and deallocation via a TrackingUpstream or similar shim.
     //! Not for production use.
     explicit PmrObjectAllocator(std::pmr::memory_resource& upstream)
-        : m_resource { m_storage.data(), bytes, &upstream } {}
+        : m_storage{}, m_resource { m_storage.data(), bytes, &upstream }, m_dtors{} {}
 
     PmrObjectAllocator(PmrObjectAllocator const&)            = delete;
     PmrObjectAllocator(PmrObjectAllocator&&)                 = delete;
@@ -112,6 +114,18 @@ struct PmrObjectAllocator final {
         ::new (std::addressof(m_resource))
             std::pmr::monotonic_buffer_resource(m_storage.data(), bytes, upstream);
     }
+
+    //! @internal For unit-testing only.
+    //! Gets the number of registered destructors currently in the arena.  Should be zero after Reset().
+    size_t GetDtorCount() const { return m_dtors.size(); }
+
+    //! @internal For unit-testing only.
+    //! Gets the size of the inline storage buffer.
+    size_t GetStorageSize() const { return m_storage.size(); }
+
+    //! @internal For unit-testing only.
+    //! Gets the address of the inline storage buffer.
+    void const* GetStorageData() const { return m_storage.data(); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
