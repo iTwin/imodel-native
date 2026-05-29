@@ -334,7 +334,7 @@ BentleyStatus ECSqlRowAdaptor::RenderStructProperty(BeJsValue out, IECSqlValue c
 
         auto memberProp = structMemberValue.GetColumnInfo().GetProperty();
         if (m_options.UseJsNames()) {
-            Utf8String memberName =  ECSqlPropertyNamer::GetJsNameForProp(memberProp, m_options.UseClassFullNameInsteadofClassName());
+            Utf8String memberName =  ECSqlPropertyNamer::GetJsNameForStructMemberProp(memberProp);
             if (SUCCESS != RenderProperty(out[memberName], structMemberValue))
                 return ERROR;
         } else {

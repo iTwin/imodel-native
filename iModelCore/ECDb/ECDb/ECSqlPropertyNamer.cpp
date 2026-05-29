@@ -64,18 +64,22 @@ Utf8CP ECSqlPropertyNamer::GetSubPropertyLeafJsName(Utf8StringCR leafName) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ECSqlPropertyNamer::GetJsNameForProp(ECN::ECPropertyCP prop, bool useClassFullName) {
     BeAssert(prop != nullptr);
-    if(prop->GetClass().IsStructClass()) {
-        // For struct properties we want to return the name with the first char lower-cased
-        auto name = prop->GetName();
-        ECN::ECJsonUtilities::LowerFirstChar(name);
-        return name;
-    }
 
     const auto prim = prop->GetAsPrimitiveProperty();
     const auto extendTypeId = (prim && !prim->GetExtendedTypeName().empty())
         ? ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName())
         : ExtendedTypeHelper::ExtendedType::Unknown;
     return GetJsNameForProp(extendTypeId, prop->GetName(), useClassFullName);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECSqlPropertyNamer::GetJsNameForStructMemberProp(ECN::ECPropertyCP prop) {
+    BeAssert(prop != nullptr && prop->GetClass().IsStructClass());
+    auto name = prop->GetName();
+    ECN::ECJsonUtilities::LowerFirstChar(name);
+    return name;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

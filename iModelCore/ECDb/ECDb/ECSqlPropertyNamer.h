@@ -49,6 +49,11 @@ public:
     //! @return                 JS name string.
     static Utf8String GetJsNameForProp(ECN::ECPropertyCP prop, bool useClassFullName);
 
+    //! Maps a struct member property name to its canonical JS name.
+    //! @param prop          Property whose name is to be mapped; must not be null and its class must be a struct class.
+    //! @return                 JS name string.
+    static Utf8String GetJsNameForStructMemberProp(ECN::ECPropertyCP prop);
+
     //! Maps a sub-property leaf name to its JS equivalent.
     //!
     //! Covers the standard sub-properties that appear in path-length > 1 system

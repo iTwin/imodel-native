@@ -204,7 +204,10 @@ Utf8String ChangesetValueFactory::FormatPropName(PropertyMap const& propertyMap)
     Utf8StringCR ecName = propertyMap.GetProperty().GetName();
     if (!m_args.UseJsNames())
         return ecName;
-    return ECSqlPropertyNamer::GetJsNameForProp(&propertyMap.GetProperty(), m_args.UseClassFullNameInsteadofClassName());
+    ECPropertyCP prop = &propertyMap.GetProperty();
+    if(prop->GetClass().IsStructClass())
+        return ECSqlPropertyNamer::GetJsNameForStructMemberProp(prop);
+    return ECSqlPropertyNamer::GetJsNameForProp(prop, m_args.UseClassFullNameInsteadofClassName());
 }
 
 //---------------------------------------------------------------------------------------
