@@ -78,36 +78,47 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
-    BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
-    while(!ecdbMutex.try_lock()) {
-        if(queue.GetState() == RunnableRequestQueue::State::Stop) {
-            status = ECSqlStatus::Error;
-            isShutDownInProgress = true;
-            ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+
+    if (usePrimaryConn) {
+        // When using primary connection, we must hold the ECDb mutex to serialize access
+        // to the primary's issue listener and schema manager.
+        BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
+        while(!ecdbMutex.try_lock()) {
+            if(queue.GetState() == RunnableRequestQueue::State::Stop) {
+                status = ECSqlStatus::Error;
+                isShutDownInProgress = true;
+                ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+                return nullptr;
+            }
+            std::this_thread::yield();
+        }
+        ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
+        if (status != ECSqlStatus::Success) {
+            ecsql_error = err_scope.GetLastError();
+            ecdbMutex.unlock();
             return nullptr;
         }
-        std::this_thread::yield();
-    }
-    ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
-    if (usePrimaryConn)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    else {
-        if (m_doNotUsePrimaryConnToPrepare) {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
-        } else {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+        ecdbMutex.unlock();
+    } else {
+        // For worker connections, prepare using the worker's own ECDb to avoid holding
+        // the primary's ECDb mutex while resolving schemas. Previously, holding the
+        // primary's ECDb mutex here and then accessing the primary's SQLite during schema
+        // resolution (SchemaPersistenceHelper::GetClassId) caused a deadlock with the main
+        // thread which holds the primary SQLite mutex (via sqlite3_step) and then needs the
+        // ECDb mutex (via Dispatcher::GetIterable in ExtractInstFunc).
+        // The worker's ECDb has its own SchemaManager and SQLite connection (synced via
+        // SyncAttachDbs), so it can resolve schemas independently.
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+        if (status != ECSqlStatus::Success) {
+            return nullptr;
         }
     }
-    if (status != ECSqlStatus::Success) {
-        ecsql_error = err_scope.GetLastError();
-        ecdbMutex.unlock();
-        return nullptr;
-    }
+
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
-    ecdbMutex.unlock();
     return newCachedAdaptor;
 
 
