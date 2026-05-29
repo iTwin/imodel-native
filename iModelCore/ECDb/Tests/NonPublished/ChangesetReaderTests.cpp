@@ -161,9 +161,11 @@ struct ChangesetReaderTests : ECDbTestFixture {
                         </ECSchema>)xml";
         }
 
-    //! Three-level nested struct schema.
+    //! Three-level nested struct schema with a TablePerHierarchy base class.
+    //! Asset (base, TablePerHierarchy) and SpecialAsset (subclass) share the same SQLite table (tdc_Asset).
     //! Asset.Bounds (Zone) -> Zone.Area (Region) -> Region.Anchor (Anchor) -> Anchor.Origin (point2d)
-    //! Used to verify that JS-name and EC-name path formatting propagates through all nesting levels.
+    //! Used to verify that JS-name and EC-name path formatting propagates through all nesting levels
+    //! and that the ChangesetReader correctly identifies rows from different classes in the same table.
     Utf8CP GetDeepNestedSchema() const {
         return R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestDeepCS" alias="tdc" version="01.00.00"
@@ -180,9 +182,18 @@ struct ChangesetReaderTests : ECDbTestFixture {
                             <ECProperty propertyName="Title" typeName="string"/>
                             <ECStructProperty propertyName="Area" typeName="Region"/>
                         </ECStructClass>
-                        <ECEntityClass typeName="Asset" modifier="Sealed">
+                        <ECEntityClass typeName="Asset">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00.00">
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                </ClassMap>
+                            </ECCustomAttributes>
                             <ECProperty propertyName="Label" typeName="string"/>
                             <ECStructProperty propertyName="Bounds" typeName="Zone"/>
+                        </ECEntityClass>
+                        <ECEntityClass typeName="SpecialAsset" modifier="Sealed">
+                            <BaseClass>Asset</BaseClass>
+                            <ECProperty propertyName="Tag" typeName="string"/>
                         </ECEntityClass>
                         </ECSchema>)xml";
         }
@@ -4184,7 +4195,7 @@ TEST_F(ChangesetReaderTests, JsNames_Update_PartialPoint_And_Struct)
     EXPECT_DOUBLE_EQ(9.0, rowJson["pos2d"]["x"].asDouble());
     EXPECT_DOUBLE_EQ(2.0, rowJson["pos2d"]["y"].asDouble());
     EXPECT_STREQ("NewLabel", rowJson["details"]["label"].asString().c_str());
-    EXPECT_EQ(5, rowJson["details"]["score"].asInt());
+    EXPECT_TRUE(rowJson["details"]["score"].isNull());
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(SUCCESS, reader.Close());
@@ -4275,11 +4286,15 @@ TEST_F(ChangesetReaderTests, JsNames_Update_NestedStruct_CoordOnly)
 
 
 //---------------------------------------------------------------------------------------
-// Uses GetDeepNestedSchema() to create Asset with a 3-level struct nesting:
-//   Asset.Bounds (Zone) -> .Area (Region) -> .Anchor (Anchor) -> .Origin (point2d)
-// INSERTs with all properties fully set and verifies:
-//   EC names: "Bounds.Area.Anchor.Origin", "Bounds.Title", "Bounds.Area.Name"
-//   JS names: "bounds.area.anchor.origin", "bounds.title", "bounds.area.name"
+// Uses GetDeepNestedSchema() — Asset (base, TablePerHierarchy) and SpecialAsset (subclass).
+// Both classes share the same SQLite table (tdc_Asset).
+// EC-names pass: INSERTs one Asset and one SpecialAsset in the same changeset and verifies:
+//   - Both rows report the same table name ("tdc_Asset").
+//   - EC names: "Bounds.Area.Anchor.Origin", "Bounds.Title", "Bounds.Area.Name"
+//   - SpecialAsset additionally reports "Tag".
+// JS-names pass: INSERTs a SpecialAsset and verifies:
+//   - Table name is still "tdc_Asset".
+//   - JS names: "bounds.area.anchor.origin", "bounds.title", "bounds.area.name", "tag"
 // (Full Origin point2d -> collapses to the point prop name, not .x/.y)
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -4287,6 +4302,8 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_deep_insert.ecdb", SchemaItem(GetDeepNestedSchema())));
 
+    // --- EC names (default): insert one Asset and one SpecialAsset in the same changeset ---
+    {
     TestCSChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
@@ -4303,16 +4320,34 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(assetKey));
     }
 
+    // SpecialAsset subclass — shares the same tdc_Asset table as the base class.
+    ECInstanceKey specialKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tdc.SpecialAsset(Label, Bounds, Tag) VALUES(?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "SpecialDeepAsset", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& bnd = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("ZoneS", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("RegionS", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Anchor"]["Origin"].BindPoint2d(DPoint2d::From(3.0, 4.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "urgent", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(specialKey));
+    }
+
     auto cs = std::make_unique<TestCSChangeSet>();
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
-    // --- EC names (default) ---
-    {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
+    // Row 1: base Asset
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    {
+    Utf8String tableName;
+    ASSERT_EQ(SUCCESS, reader.GetTableName(tableName));
+    EXPECT_STREQ("tdc_Asset", tableName.c_str());
 
     auto const* changedProps = reader.GetChangeFetchedPropertyNames();
     ASSERT_NE(nullptr, changedProps);
@@ -4330,12 +4365,38 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     EXPECT_FALSE(has("Bounds"));            // bare struct never emitted
     EXPECT_FALSE(has("Bounds.Area"));
     EXPECT_FALSE(has("Bounds.Area.Anchor"));
+    EXPECT_FALSE(has("Tag"));               // base Asset has no Tag
+    }
+
+    // Row 2: SpecialAsset — same table (tdc_Asset), extra Tag property
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+    {
+    Utf8String tableName;
+    ASSERT_EQ(SUCCESS, reader.GetTableName(tableName));
+    EXPECT_STREQ("tdc_Asset", tableName.c_str()); // same table as base class
+
+    auto const* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto has = [&](Utf8CP n) {
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
+    };
+
+    EXPECT_TRUE(has("ECInstanceId"));
+    EXPECT_TRUE(has("Label"));
+    EXPECT_TRUE(has("Bounds.Title"));
+    EXPECT_TRUE(has("Bounds.Area.Name"));
+    EXPECT_TRUE(has("Bounds.Area.Anchor.Origin"));
+    EXPECT_TRUE(has("Tag"));               // subclass-only property
+    EXPECT_FALSE(has("Bounds"));
+    EXPECT_FALSE(has("Bounds.Area"));
+    EXPECT_FALSE(has("Bounds.Area.Anchor"));
+    }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(SUCCESS, reader.Close());
     }
 
-    // Re-capture the changeset for JS-names pass
+    // --- JS names: insert a SpecialAsset and verify JS-style names and rendering ---
     {
     TestCSChangeTracker tracker2(m_ecdb);
     tracker2.EnableTracking(true);
@@ -4343,12 +4404,13 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
-        "INSERT INTO tdc.Asset(Label, Bounds) VALUES(?, ?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "DeepAsset2", IECSqlBinder::MakeCopy::No));
+        "INSERT INTO tdc.SpecialAsset(Label, Bounds, Tag) VALUES(?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "DeepSpecial2", IECSqlBinder::MakeCopy::No));
     IECSqlBinder& bnd = stmt.GetBinder(2);
     ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("ZoneB", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("RegionY", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Anchor"]["Origin"].BindPoint2d(DPoint2d::From(5.0, 6.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "premium", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key2));
     }
     auto cs2 = std::make_unique<TestCSChangeSet>();
@@ -4365,6 +4427,10 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
+    Utf8String tableName;
+    ASSERT_EQ(SUCCESS, reader.GetTableName(tableName));
+    EXPECT_STREQ("tdc_Asset", tableName.c_str()); // SpecialAsset also maps to tdc_Asset
+
     // ---- (a) changed-prop names ----
     auto const* cp = reader.GetChangeFetchedPropertyNames();
     ASSERT_NE(nullptr, cp);
@@ -4373,10 +4439,12 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     };
 
     EXPECT_TRUE(hasJs("id"));
+    EXPECT_TRUE(hasJs("className"));
     EXPECT_TRUE(hasJs("label"));
     EXPECT_TRUE(hasJs("bounds.title"));
     EXPECT_TRUE(hasJs("bounds.area.name"));
     EXPECT_TRUE(hasJs("bounds.area.anchor.origin")); // full point2d -> prop name
+    EXPECT_TRUE(hasJs("tag"));                       // subclass property, JS-cased
     EXPECT_FALSE(hasJs("bounds.area.anchor.origin.x"));
     EXPECT_FALSE(hasJs("bounds.area.anchor.origin.y"));
     EXPECT_FALSE(hasJs("bounds"));
@@ -4384,6 +4452,7 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     EXPECT_FALSE(hasJs("bounds.area.anchor"));
     EXPECT_FALSE(hasJs("ECInstanceId"));
     EXPECT_FALSE(hasJs("Bounds.Area.Anchor.Origin")); // EC name must not appear
+    EXPECT_FALSE(hasJs("Tag"));                       // EC name must not appear
 
     // ---- (b) ECSqlRowAdaptor rendering ----
     BeJsDocument rowDoc;
@@ -4391,9 +4460,10 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
 
     EXPECT_FALSE(rowJson["id"].asString().empty());
-    EXPECT_STREQ("TestDeepCS.Asset", rowJson["className"].asString().c_str());
+    EXPECT_STREQ("TestDeepCS.SpecialAsset", rowJson["className"].asString().c_str());
     EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
-    EXPECT_STREQ("DeepAsset2", rowJson["label"].asString().c_str());
+    EXPECT_STREQ("DeepSpecial2", rowJson["label"].asString().c_str());
+    EXPECT_STREQ("premium", rowJson["tag"].asString().c_str());
     EXPECT_STREQ("ZoneB", rowJson["bounds"]["title"].asString().c_str());
     EXPECT_STREQ("RegionY", rowJson["bounds"]["area"]["name"].asString().c_str());
     EXPECT_DOUBLE_EQ(5.0, rowJson["bounds"]["area"]["anchor"]["origin"]["x"].asDouble());
@@ -4402,12 +4472,91 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(SUCCESS, reader.Close());
     }
+    // --- JS names: insert a SpecialAsset and verify JS-style names and rendering with classFullName ---
+    {
+    TestCSChangeTracker tracker2(m_ecdb);
+    tracker2.EnableTracking(true);
+    ECInstanceKey key2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO tdc.SpecialAsset(Label, Bounds, Tag) VALUES(?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "DeepSpecial3", IECSqlBinder::MakeCopy::No));
+    IECSqlBinder& bnd = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("ZoneH", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("RegionH", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Anchor"]["Origin"].BindPoint2d(DPoint2d::From(13.0, 62.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "free", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key2));
+    }
+    auto cs2 = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
+
+    // --- JS names ---
+    ECSqlRowAdaptor adaptor(m_ecdb);
+    adaptor.GetOptions().SetUseJsNames(true);
+    adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(true);
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangedPropNames(adaptor.GetOptions().UseClassFullNameInsteadofClassName()));
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    Utf8String tableName;
+    ASSERT_EQ(SUCCESS, reader.GetTableName(tableName));
+    EXPECT_STREQ("tdc_Asset", tableName.c_str()); // SpecialAsset also maps to tdc_Asset
+
+    // ---- (a) changed-prop names ----
+    auto const* cp = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, cp);
+    auto hasJs = [&](Utf8CP n) {
+        return std::find(cp->begin(), cp->end(), n) != cp->end();
+    };
+
+    EXPECT_TRUE(hasJs("id"));
+    EXPECT_TRUE(hasJs("classFullName"));
+    EXPECT_TRUE(hasJs("label"));
+    EXPECT_TRUE(hasJs("bounds.title"));
+    EXPECT_TRUE(hasJs("bounds.area.name"));
+    EXPECT_TRUE(hasJs("bounds.area.anchor.origin")); // full point2d -> prop name
+    EXPECT_TRUE(hasJs("tag"));                       // subclass property, JS-cased
+    EXPECT_FALSE(hasJs("bounds.area.anchor.origin.x"));
+    EXPECT_FALSE(hasJs("bounds.area.anchor.origin.y"));
+    EXPECT_FALSE(hasJs("bounds"));
+    EXPECT_FALSE(hasJs("bounds.area"));
+    EXPECT_FALSE(hasJs("bounds.area.anchor"));
+    EXPECT_FALSE(hasJs("ECInstanceId"));
+    EXPECT_FALSE(hasJs("Bounds.Area.Anchor.Origin")); // EC name must not appear
+    EXPECT_FALSE(hasJs("Tag"));                       // EC name must not appear
+
+    // ---- (b) ECSqlRowAdaptor rendering ----
+    BeJsDocument rowDoc;
+    BeJsValue rowJson(rowDoc);
+    ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
+
+    EXPECT_FALSE(rowJson["id"].asString().empty());
+    EXPECT_STREQ("TestDeepCS:SpecialAsset", rowJson["classFullName"].asString().c_str());
+    EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
+    EXPECT_STREQ("DeepSpecial3", rowJson["label"].asString().c_str());
+    EXPECT_STREQ("free", rowJson["tag"].asString().c_str());
+    EXPECT_STREQ("ZoneH", rowJson["bounds"]["title"].asString().c_str());
+    EXPECT_STREQ("RegionH", rowJson["bounds"]["area"]["name"].asString().c_str());
+    EXPECT_DOUBLE_EQ(13.0, rowJson["bounds"]["area"]["anchor"]["origin"]["x"].asDouble());
+    EXPECT_DOUBLE_EQ(62.0, rowJson["bounds"]["area"]["anchor"]["origin"]["y"].asDouble());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
     }
 
 //---------------------------------------------------------------------------------------
-// Uses GetDeepNestedSchema().
-// INSERTs an Asset with full Bounds outside the tracker, then UPDATEs only
-// Bounds.Area.Anchor.Origin.Y (X unchanged -> DB fallback).
+// Uses GetDeepNestedSchema() — Asset (base, TablePerHierarchy) and SpecialAsset (subclass).
+// INSERTs a SpecialAsset with full Bounds outside the tracker, then UPDATEs only
+// Bounds.Area.Anchor.Origin.Y via the base-class query (X unchanged -> DB fallback).
+// Both Asset and SpecialAsset share the same SQLite table (tdc_Asset).
 // With JS names, changedProps must contain "bounds.area.anchor.origin.y" and nothing else
 // from the Bounds subtree.
 // Complements JsNames_DeepNested_Update_Point2d_XOnly to cover the Y component.
@@ -4417,11 +4566,12 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_deep_upd_y.ecdb", SchemaItem(GetDeepNestedSchema())));
 
+    // Insert a SpecialAsset outside the tracker — both Asset and SpecialAsset share tdc_Asset.
     ECInstanceKey assetKey;
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
-        "INSERT INTO tdc.Asset(Label, Bounds) VALUES('AssetY', ?)"));
+        "INSERT INTO tdc.SpecialAsset(Label, Bounds, Tag) VALUES('AssetY', ?, 'test-tag')"));
     IECSqlBinder& bnd = stmt.GetBinder(1);
     ASSERT_EQ(ECSqlStatus::Success, bnd["Title"].BindText("Zt2", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, bnd["Area"]["Name"].BindText("R2", IECSqlBinder::MakeCopy::No));
@@ -4432,6 +4582,7 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
     TestCSChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
+    // Update via base-class query — polymorphically updates the SpecialAsset instance.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
@@ -4444,15 +4595,21 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ECSqlRowAdaptor adaptor(m_ecdb);
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
     adaptor.GetOptions().SetUseJsNames(true);
+    adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(true);
 
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
     ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangedPropNames(adaptor.GetOptions().UseClassFullNameInsteadofClassName()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    // SpecialAsset shares the tdc_Asset table with the base Asset class.
+    Utf8String tableName;
+    ASSERT_EQ(SUCCESS, reader.GetTableName(tableName));
+    EXPECT_STREQ("tdc_Asset", tableName.c_str());
 
     // Value check: Origin.X falls back from DB (5.0), Origin.Y updated to 88.0
     IECSqlValue const& bv = reader.GetValue(Changes::Change::Stage::New, 2);
@@ -4468,10 +4625,14 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
     };
 
     EXPECT_TRUE(hasJs("id"));
+    EXPECT_FALSE(hasJs("classFullName")); // classId not updated so will nit be read from changeset so will not be contained in GetChangeFetchedPropertyNames()
+    EXPECT_FALSE(hasJs("className")); // classId not updated so will nit be read from changeset so will not be contained in GetChangeFetchedPropertyNames()
+    EXPECT_FALSE(hasJs("ECClassId")); // classId not updated so will nit be read from changeset so will not be contained in GetChangeFetchedPropertyNames()
     EXPECT_TRUE(hasJs("bounds.area.anchor.origin.y")); // only Y changed
     EXPECT_FALSE(hasJs("bounds.area.anchor.origin.x"));
     EXPECT_FALSE(hasJs("bounds.area.anchor.origin"));  // not both coords
     EXPECT_FALSE(hasJs("bounds"));
+    EXPECT_FALSE(hasJs("tag"));            // Tag not updated
     EXPECT_FALSE(hasJs("ECInstanceId"));
 
     // ---- (b) ECSqlRowAdaptor rendering ----
@@ -4482,7 +4643,7 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
     ASSERT_EQ(SUCCESS, adaptor.RenderRowAsObject(rowJson, ChangesetRow(reader, Changes::Change::Stage::New)));
 
     EXPECT_FALSE(rowJson["id"].asString().empty());
-    EXPECT_STREQ("TestDeepCS.Asset", rowJson["className"].asString().c_str());
+    EXPECT_STREQ("TestDeepCS:SpecialAsset", rowJson["classFullName"].asString().c_str());
     EXPECT_TRUE(rowJson["ECInstanceId"].isNull());
     EXPECT_DOUBLE_EQ(5.0,  rowJson["bounds"]["area"]["anchor"]["origin"]["x"].asDouble());
     EXPECT_DOUBLE_EQ(88.0, rowJson["bounds"]["area"]["anchor"]["origin"]["y"].asDouble());
