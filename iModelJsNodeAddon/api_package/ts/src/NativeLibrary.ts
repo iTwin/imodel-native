@@ -1582,6 +1582,8 @@ export declare namespace IModelJsNative {
     public clearClassNameFilters(): void;
     public enableStrictMode(): void;
     public disableStrictMode(): void;
+    public setUseJsNamesForChangeFetchedPropertyNames(useJsNames: boolean): void;
+    public setUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(useClassFullName: boolean): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

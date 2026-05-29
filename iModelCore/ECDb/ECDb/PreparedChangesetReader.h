@@ -151,25 +151,25 @@ private:
     ChangesetTempFileManager m_tempFileManager;
     ChangesetSqliteIterator  m_iterator;
 
-    PmrObjectAllocator<ChangesetValue> m_valueArena;
-    std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;
-
-    std::vector<Utf8String>  m_changedPropNames;
     ChangedPropNameFormatArgs m_args;
+    std::vector<Utf8String>  m_changeFetchedPropertyNames;
+
+    std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;
+    PmrObjectAllocator<ChangesetValue> m_fieldAllocator;
 
     ChangesetValueFactory m_valueFactory;
 
     PreparedChangesetReader(PreparedChangesetReader const&) = delete;
     PreparedChangesetReader& operator=(PreparedChangesetReader const&) = delete;
 
-    void ClearFields();
+    void ClearValuesOnStep();
     BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
     bool IsOpen() const { return m_iterator.IsOpen(); }
     //! Stores @p changeStream directly via the iterator without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
-    void ClearMembers();
-    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
+    void ClearMembersBeforeClose();
+    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changeFetchedPropNames);
 
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
@@ -203,8 +203,8 @@ public:
     void DisableStrictMode()       { m_filter.DisableStrictMode(); }
 
     // Expose Changed prop names formatting args
-    void SetUseJsNamesForChangedPropNames(bool v) { m_args.SetUseJsNames(v); }
-    void SetUseClassFullNameInsteadofClassNameForChangedPropNames(bool v) { m_args.SetUseClassFullNameInsteadofClassName(v); }
+    void SetUseJsNamesForChangeFetchedPropertyNames(bool v) { m_args.SetUseJsNames(v); }
+    void SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(bool v) { m_args.SetUseClassFullNameInsteadofClassName(v); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

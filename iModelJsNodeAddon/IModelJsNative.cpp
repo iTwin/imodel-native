@@ -5221,6 +5221,8 @@ public:
             InstanceMethod("clearClassNameFilters", &NativeChangesetReader::ClearClassNameFilters),
             InstanceMethod("enableStrictMode",      &NativeChangesetReader::EnableStrictMode),
             InstanceMethod("disableStrictMode",     &NativeChangesetReader::DisableStrictMode),
+            InstanceMethod("setUseJsNamesForChangeFetchedPropertyNames",      &NativeChangesetReader::SetUseJsNamesForChangeFetchedPropertyNames),
+            InstanceMethod("setUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames",     &NativeChangesetReader::SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames),
 
         });
         exports.Set("ChangesetReader", t);
@@ -5463,6 +5465,20 @@ public:
         BentleyStatus rc = m_reader.DisableStrictMode();
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "disableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void SetUseJsNamesForChangeFetchedPropertyNames(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_BOOL(0, useJsNames);
+        BentleyStatus rc = m_reader.SetUseJsNamesForChangeFetchedPropertyNames(useJsNames);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setUseJsNamesForChangeFetchedPropertyNames() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_BOOL(0, useClassFullName);
+        BentleyStatus rc = m_reader.SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(useClassFullName);
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "setUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
 };
 

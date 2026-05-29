@@ -63,7 +63,7 @@ struct TestChangesetValue
 // full ChangesetReader pipeline.
 // @bsiclass
 // ============================================================================
-struct ChangesetArenaTests : ECDbTestFixture {};
+struct PmrObjectAllocatorTests : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // After Reset(), monotonic_buffer_resource::release() rewinds the bump pointer to the
@@ -71,7 +71,7 @@ struct ChangesetArenaTests : ECDbTestFixture {};
 // at the same address as the first allocation in the previous cycle.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_BumpPointerRewound_SameAddressAfterReset)
+TEST_F(PmrObjectAllocatorTests, Arena_BumpPointerRewound_SameAddressAfterReset)
     {
     struct Tag : TestChangesetValue { int id = 0; };
 
@@ -99,7 +99,7 @@ TEST_F(ChangesetArenaTests, Arena_BumpPointerRewound_SameAddressAfterReset)
 // upstream must report that every byte it handed out has been returned — no heap leak.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_HeapAllocationsFreedAfterRelease_NoLeak)
+TEST_F(PmrObjectAllocatorTests, Arena_HeapAllocationsFreedAfterRelease_NoLeak)
     {
     TrackingUpstream upstream;
     struct Block: TestChangesetValue { std::array<std::byte, 22 * 1024> data {}; };
@@ -132,7 +132,7 @@ TEST_F(ChangesetArenaTests, Arena_HeapAllocationsFreedAfterRelease_NoLeak)
 // (missed) and not twice (double-free).
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_DtorCalledExactlyOnce_NotDoubleNotMissed)
+TEST_F(PmrObjectAllocatorTests, Arena_DtorCalledExactlyOnce_NotDoubleNotMissed)
     {
     int callCount = 0;
     struct Counter: TestChangesetValue
@@ -163,7 +163,7 @@ TEST_F(ChangesetArenaTests, Arena_DtorCalledExactlyOnce_NotDoubleNotMissed)
 // new cycle — proving there is no accumulation of stale registrations across resets.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_MultipleResetCycles_NoDtorAccumulation)
+TEST_F(PmrObjectAllocatorTests, Arena_MultipleResetCycles_NoDtorAccumulation)
     {
     int totalCalls = 0;
     struct Counter: TestChangesetValue { int& count; explicit Counter(int& c) : TestChangesetValue(), count(c) {} ~Counter() { ++count; } };
@@ -192,7 +192,7 @@ TEST_F(ChangesetArenaTests, Arena_MultipleResetCycles_NoDtorAccumulation)
 // Every call to New<T>() must append exactly one entry to m_dtors.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Allocator_EachNewCallRegistersExactlyOneDtor)
+TEST_F(PmrObjectAllocatorTests, Allocator_EachNewCallRegistersExactlyOneDtor)
     {
     struct Noop: TestChangesetValue { ~Noop() {} };
 
@@ -214,7 +214,7 @@ TEST_F(ChangesetArenaTests, Allocator_EachNewCallRegistersExactlyOneDtor)
 // A small allocation must come from the 64 KiB inline buffer (address inside m_storage).
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
+TEST_F(PmrObjectAllocatorTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
     {
     struct Small: TestChangesetValue { int x = 0; };
     PmrObjectAllocator<Small> arena;
@@ -236,7 +236,7 @@ TEST_F(ChangesetArenaTests, Allocator_SmallAlloc_AddressWithinInlineStorage)
 // (address outside m_storage).
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Allocator_OversizedAlloc_SpillsToHeap_AddressOutsideStorage)
+TEST_F(PmrObjectAllocatorTests, Allocator_OversizedAlloc_SpillsToHeap_AddressOutsideStorage)
     {
     // Request more bytes than the entire inline buffer in one allocation.
     struct Oversized : TestChangesetValue { std::array<std::byte, 25> data {}; };
@@ -258,7 +258,7 @@ TEST_F(ChangesetArenaTests, Allocator_OversizedAlloc_SpillsToHeap_AddressOutside
 // Multiple New<T>() calls on the same arena all accumulate in a single m_dtors registry.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_MultipleNewCalls_ShareSingleDtorRegistry)
+TEST_F(PmrObjectAllocatorTests, Arena_MultipleNewCalls_ShareSingleDtorRegistry)
     {
     struct Noop: TestChangesetValue { ~Noop() {} };
 
@@ -280,7 +280,7 @@ TEST_F(ChangesetArenaTests, Arena_MultipleNewCalls_ShareSingleDtorRegistry)
 //   leaf5(7)            ──────────────┘
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangesetArenaTests, Arena_DeepHierarchy_DestructionOrderIsStrictlyReversed)
+TEST_F(PmrObjectAllocatorTests, Arena_DeepHierarchy_DestructionOrderIsStrictlyReversed)
     {
     //! Shared destruction log.  Each entry is the "id" of the object destroyed.
     std::vector<int> destructionLog;

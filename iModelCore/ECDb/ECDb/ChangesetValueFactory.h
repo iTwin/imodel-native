@@ -37,7 +37,7 @@ private:
     struct BuildCtx {
         DbTable const&                  dbTable;
         std::vector<ChangesetValue*>&   fields; // out param
-        std::vector<Utf8String>&        changedProps; // out param
+        std::vector<Utf8String>&        changeFetchedPropNames; // out param
     };
     // ------------------------------------------------------------------
     // Schema / mapping helpers
@@ -172,8 +172,8 @@ public:
                                         ECClassId& resolvedClassIdOut,
                                         bool& classIdFromChangesetOut);
 
-    //! Builds IECSqlValue fields for one changeset row; fills @p changedProps with access paths of all changed properties (e.g. "Pos2d.X", "Owner.Id").
-    BentleyStatus Create(DbTable const& tbl,ECClassId resolvedClassId, bool classIdFromChangeset,std::vector<ChangesetValue*>& fields,std::vector<Utf8String>& changedProps);
+    //! Builds IECSqlValue fields for one changeset row; fills @p changeFetchedPropNames with access paths of all changed properties (e.g. "Pos2d.X", "Owner.Id").
+    BentleyStatus Create(DbTable const& tbl,ECClassId resolvedClassId, bool classIdFromChangeset,std::vector<ChangesetValue*>& fields,std::vector<Utf8String>& changeFetchedPropNames);
     
     //! Clears m_changeValueMap; call before processing a new changeset row.
     void ClearChangeValueMap();

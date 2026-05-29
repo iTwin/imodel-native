@@ -268,7 +268,7 @@ DbValue ChangesetSqliteIterator::GetChangeValue(int columnIndex, Stage stage) co
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PreparedChangesetReader::PreparedChangesetReader(ECDbCR ecdb)
-    : m_ecdb(ecdb), m_tempFileManager(ecdb), m_iterator(ecdb), m_valueFactory(ecdb, m_filter, m_iterator, m_args, m_valueArena)
+    : m_ecdb(ecdb), m_tempFileManager(ecdb), m_iterator(ecdb), m_valueFactory(ecdb, m_filter, m_iterator, m_args, m_fieldAllocator)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -389,20 +389,19 @@ DbResult PreparedChangesetReader::OpenChangeGroup(T_Utf8StringVector const& file
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedChangesetReader::ClearFields() {
-    m_valueArena.Reset();
-    // Clear the index vectors (regular std::vector, NOT pmr-backed, so they survive arena reset).
+void PreparedChangesetReader::ClearValuesOnStep() {
+    m_valueFactory.ClearChangeValueMap();
+    m_changeFetchedPropertyNames.clear();
     m_fields[Stage::New].clear();
     m_fields[Stage::Old].clear();
-    m_changedPropNames.clear();
-    m_valueFactory.ClearChangeValueMap();
+    m_fieldAllocator.Reset();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::Close() {
-    ClearMembers();
+    ClearMembersBeforeClose();
     return m_tempFileManager.Cleanup();
 }
 
@@ -410,21 +409,20 @@ BentleyStatus PreparedChangesetReader::Close() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::CloseInfallible() {
-    ClearMembers();
+    ClearMembersBeforeClose();
     m_tempFileManager.CleanupInfallible();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PreparedChangesetReader::ClearMembers() {
-    // Drain the arena before destroying the map — raw ptrs in m_fields have no owned destructors.
-    m_valueArena.Reset();
+void PreparedChangesetReader::ClearMembersBeforeClose() {
+    m_valueFactory.ClearChangeValueMap();
+    m_changeFetchedPropertyNames.clear();
+    m_fields.clear();
+    m_fieldAllocator.Reset();
     m_iterator.Close();          // stream destroyed here — safe to delete any temp file afterwards
     m_filter.Reset();
-    m_fields.clear();
-    m_changedPropNames.clear();
-    m_valueFactory.ClearChangeValueMap();
 }
 
 //---------------------------------------------------------------------------------------
@@ -435,11 +433,11 @@ DbResult PreparedChangesetReader::Step() {
         LOG.errorv("Attempting to step a closed PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    ClearFields();
+    ClearValuesOnStep();
     DbResult stat = m_iterator.StepRaw();
     bool isCurrentRowFilteredOut = false;
     if (ReFetchValues(isCurrentRowFilteredOut) != SUCCESS) {
-        ClearFields();
+        ClearValuesOnStep();
         return BE_SQLITE_ERROR;
     }
     if (isCurrentRowFilteredOut) {
@@ -452,7 +450,7 @@ DbResult PreparedChangesetReader::Step() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames) {
+PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changeFetchedPropNames) {
     if (m_valueFactory.PopulateChangeValueMap(stage, dbTable.GetName()) != SUCCESS)
         return StageProcessResult::Error;
     ECClassId classId;
@@ -478,7 +476,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
             return StageProcessResult::Error;
         }
     }
-    if (m_valueFactory.Create(dbTable, classId, isClassIdFromChangeset, m_fields.at(stage), changedPropNames) != SUCCESS)
+    if (m_valueFactory.Create(dbTable, classId, isClassIdFromChangeset, m_fields.at(stage), changeFetchedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
@@ -526,14 +524,14 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
     }
 
     if (opCode != DbOpcode::Delete) {
-        auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
+        auto result = ProcessStageValues(Stage::New, *dbTable, m_changeFetchedPropertyNames);
         m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing New stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
     if (opCode != DbOpcode::Insert) {
         std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-        auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
+        auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changeFetchedPropertyNames);
         m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing Old stage to free up memory
         if (result == StageProcessResult::Error) return ERROR;
         if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
@@ -676,7 +674,7 @@ std::vector<Utf8String> const* PreparedChangesetReader::GetChangeFetchedProperty
         LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return nullptr;
     }
-    return &m_changedPropNames;
+    return &m_changeFetchedPropertyNames;
 }
 
 //---------------------------------------------------------------------------------------

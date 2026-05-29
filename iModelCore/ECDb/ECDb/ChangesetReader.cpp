@@ -279,24 +279,24 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetReader::SetUseJsNamesForChangedPropNames(bool v) {
+BentleyStatus ChangesetReader::SetUseJsNamesForChangeFetchedPropertyNames(bool v) {
     if (!IsOpen()) {
         LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
         return ERROR;
     }
-    m_pimpl->SetUseJsNamesForChangedPropNames(v);
+    m_pimpl->SetUseJsNamesForChangeFetchedPropertyNames(v);
     return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetReader::SetUseClassFullNameInsteadofClassNameForChangedPropNames(bool v) {
+BentleyStatus ChangesetReader::SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(bool v) {
     if (!IsOpen()) {
         LOG.error("A file or a group of files or a txn or in memory changes or local changes must be opened before accessing values.");
         return ERROR;
     }
-    m_pimpl->SetUseClassFullNameInsteadofClassNameForChangedPropNames(v);
+    m_pimpl->SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(v);
     return SUCCESS;
 }
 
