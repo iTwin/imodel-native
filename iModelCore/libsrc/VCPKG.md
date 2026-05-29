@@ -4,19 +4,21 @@ This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select
 
 ## Setup
 
-### All Platforms
+### macOS/Linux
 
 1. Clone vcpkg:
-   ```bash
-   git clone https://github.com/microsoft/vcpkg.git ~/src/vcpkg
-   cd ~/src/vcpkg
-   ./bootstrap-vcpkg.sh   # or bootstrap-vcpkg.bat on Windows
-   ```
+
+    ```bash
+    git clone https://github.com/microsoft/vcpkg.git ~/src/vcpkg
+    cd ~/src/vcpkg
+    ./bootstrap-vcpkg.sh
+    ```
 
 2. Set `VCPKG_ROOT` (optional — defaults to `~/src/vcpkg`):
-   ```bash
-   export VCPKG_ROOT=~/src/vcpkg
-   ```
+
+    ```bash
+    export VCPKG_ROOT=~/src/vcpkg
+    ```
 
 ### macOS
 
@@ -31,11 +33,25 @@ brew install cmake pkg-config
 
 ### Linux
 
-_TODO: Document required packages (cmake, pkg-config, build-essential, etc.)_
+__TODO:__ Document required packages (cmake, pkg-config, build-essential, etc.)
 
 ### Windows
 
-_TODO: Document required tooling_
+1. Clone vcpkg:
+
+    ```bat
+    git clone https://github.com/microsoft/vcpkg.git %USERPROFILE%\src\vcpkg
+    cd %USERPROFILE%\src\vcpkg
+    .\bootstrap-vcpkg.bat
+    ```
+
+2. Set `VCPKG_ROOT` (optional — defaults to `%USERPROFILE%\src\vcpkg`):
+
+    ```bat
+    set VCPKG_ROOT=%USERPROFILE%\src\vcpkg
+    ```
+
+__TODO:__ Document remaining required tooling
 
 ## How It Works
 
