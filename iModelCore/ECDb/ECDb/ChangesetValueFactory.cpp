@@ -922,9 +922,9 @@ BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId r
 
     // ECInstanceId and ECClassId name collection — handled here since they are
     // emitted as fixed slots and skipped by the BuildPropertyFields loop.
-    changedProps.emplace_back(ECSqlPropertyNamer::GetJsNameForProp(instanceIdField->GetColumnInfo().GetProperty(), m_args.UseClassFullNameInsteadofClassName()));
+    changedProps.emplace_back(m_args.UseJsNames() ? ECSqlPropertyNamer::GetJsNameForProp(instanceIdField->GetColumnInfo().GetProperty(), m_args.UseClassFullNameInsteadofClassName()) : instanceIdField->GetColumnInfo().GetProperty()->GetName());
     if (classIdFromChangeset)
-        changedProps.emplace_back(ECSqlPropertyNamer::GetJsNameForProp(classIdField->GetColumnInfo().GetProperty(), m_args.UseClassFullNameInsteadofClassName()));
+        changedProps.emplace_back(m_args.UseJsNames() ? ECSqlPropertyNamer::GetJsNameForProp(classIdField->GetColumnInfo().GetProperty(), m_args.UseClassFullNameInsteadofClassName()) : classIdField->GetColumnInfo().GetProperty()->GetName());
 
     if (m_filter.GetPropertyFilter() == ChangesetReader::PropertyFilter::InstanceKey)
         return SUCCESS; // caller only needs the instance key — skip user properties

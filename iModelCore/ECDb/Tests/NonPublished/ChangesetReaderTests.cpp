@@ -4197,7 +4197,6 @@ TEST_F(ChangesetReaderTests, JsNames_Update_PartialPoint_And_Struct)
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ECSqlRowAdaptor adaptor(m_ecdb);
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
     adaptor.GetOptions().SetUseJsNames(true);
     ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
 
@@ -4286,7 +4285,6 @@ TEST_F(ChangesetReaderTests, JsNames_Update_NestedStruct_CoordOnly)
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ECSqlRowAdaptor adaptor(m_ecdb);
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
     adaptor.GetOptions().SetUseJsNames(true);
     ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
 
@@ -4409,7 +4407,6 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
 
     // --- JS names ---
     ECSqlRowAdaptor adaptor(m_ecdb);
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(true);
     adaptor.GetOptions().SetUseJsNames(true);
 
     ChangesetReader reader;
@@ -4427,7 +4424,6 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     };
 
     EXPECT_TRUE(hasJs("id"));
-    EXPECT_TRUE(hasJs("className"));
     EXPECT_TRUE(hasJs("label"));
     EXPECT_TRUE(hasJs("bounds.title"));
     EXPECT_TRUE(hasJs("bounds.area.name"));
