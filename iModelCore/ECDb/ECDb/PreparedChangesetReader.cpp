@@ -227,6 +227,19 @@ void PreparedChangesetReader::ClearMembers() {
     DisableStrictMode();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PreparedChangesetReader::DoStep() {
+    if (m_changes == nullptr) {
+        ClearFields();
+        m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
+        m_currentChange = m_changes->begin();
+    } else if(m_currentChange.IsValid()) {
+        ClearFields();
+        ++m_currentChange;
+    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -240,16 +253,7 @@ DbResult PreparedChangesetReader::Step() {
     DbResult stat = BE_SQLITE_OK;
     do {
         isCurrentRowFilteredOut = false;
-        if (m_changes == nullptr) {
-            ClearFields();
-            m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
-            m_currentChange = m_changes->begin();
-        } else {
-            if(m_currentChange.IsValid()) {
-                ClearFields();
-                ++m_currentChange;
-            }
-        }
+        DoStep();
         stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
         if(stat == BE_SQLITE_DONE) return stat;
         if(ReFetchValues(isCurrentRowFilteredOut) != SUCCESS) {
@@ -257,9 +261,8 @@ DbResult PreparedChangesetReader::Step() {
             return BE_SQLITE_ERROR;
         }
 
-        if(isCurrentRowFilteredOut) {
+        if(isCurrentRowFilteredOut)
             LOG.infov("Current change is filtered out. Stepping to the next change.");
-        }
     } while(isCurrentRowFilteredOut);
     
     return stat;

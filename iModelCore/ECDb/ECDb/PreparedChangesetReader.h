@@ -67,6 +67,7 @@ private:
     void ClearMembers();
     BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
     StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
+    void DoStep();
 
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
