@@ -115,6 +115,33 @@ struct ChangesetReaderTests : ECDbTestFixture {
                             </ECEntityClass>
                         </ECSchema>)xml";
         }
+
+        //! V1 schema: Item with Name (string) and Value (int).
+        Utf8CP GetStrictModeV1Schema() const {
+            return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                            <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.00"
+                                    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Item" modifier="Sealed">
+                                <ECProperty propertyName="Name" typeName="string"/>
+                                <ECProperty propertyName="Val" typeName="int"/>
+                            </ECEntityClass>
+                            </ECSchema>)xml";
+        }
+
+        //! V2 schema: Item with Name, Value, and Extra (string) — one column wider than V1.
+        Utf8CP GetStrictModeV2Schema() const {
+            return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                            <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.01"
+                                    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Item" modifier="Sealed">
+                                <ECProperty propertyName="Name" typeName="string"/>
+                                <ECProperty propertyName="Val" typeName="int"/>
+                                <ECProperty propertyName="Extra" typeName="string"/>
+                            </ECEntityClass>
+                            </ECSchema>)xml";
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -2738,6 +2765,124 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClass
     EXPECT_EQ(personKey.GetClassId(),     stmt.GetValue(2).GetId<ECClassId>());
     EXPECT_EQ(projectKey.GetClassId(),    stmt.GetValue(3).GetId<ECClassId>());
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OlderChangesetOnNewerDb)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_cs.ecdb", SchemaItem(GetStrictModeV1Schema())));
+
+    // Capture a V1 INSERT changeset (table has 3 columns: Id, Name, Value).
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey itemKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(itemKey,
+        "INSERT INTO tsi.Item(Name, Val) VALUES('Foo', 42)"));
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    tracker.EnableTracking(false);
+
+    // Upgrade the DB to V2 — the tsi_Item table now has 4 columns (Id, Name, Value, Extra).
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage is empty for an INSERT.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Foo", v2.GetText());
+
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Val", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(42, v3.GetInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, NewerChangesetOnOlderDb)
+    {
+    // Build a V2 changeset using a separate ECDb upgraded to V2 (4 columns).
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ECInstanceKey itemKey;
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_newer_src.ecdb", SchemaItem(GetStrictModeV1Schema())));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(itemKey,
+        "INSERT INTO tsi.Item(Name, Val, Extra) VALUES('Bar', 99, 'bonus')"));
+
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+    }   // End source-db setup scope; m_ecdb is reinitialized by the SetupECDb() call below.
+
+    // m_ecdb is the reader DB — it carries only the V1 schema (3 columns).
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
+        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage is empty for an INSERT.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Bar", v2.GetText());
+
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Val", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(99, v3.GetInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    reader.Close();
+    
     }
 
 END_ECDBUNITTESTS_NAMESPACE
