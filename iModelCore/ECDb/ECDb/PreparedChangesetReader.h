@@ -50,8 +50,25 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
+<<<<<<< HEAD
+=======
+    //! Writes @p changeGroup to a temporary LZMA-compressed changeset file, preserving @p ddlChanges
+    //! and @p containsSchemaChanges in the file header. Sets @p outPath to the written path.
+    //! The file is written with fast compression (level 1) since it is ephemeral.
+    DbResult WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
+    //! Stores @p changeStream directly in m_changeStream without any size-based spill logic.
+    //! Kept private so callers are steered toward the appropriate Open* methods.
+    //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
+    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    void ClearMembers();
+    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
+    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
+    void DoStep();
+    bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
+>>>>>>> 65e7e9fc ([Changeset Reader] Fixing probable stack overflow in `Step` (#1446))
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
+    ~PreparedChangesetReader() { CloseInfallible(); }
 
     DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
