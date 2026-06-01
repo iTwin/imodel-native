@@ -4016,7 +4016,7 @@ TEST_F(ChangesetReaderTests, JsNames_Insert_Widget_FullRow)
     // so there is a single source of truth for the JS-names flag.
     ECSqlRowAdaptor adaptor(m_ecdb);
     adaptor.GetOptions().SetUseJsNames(true);
-    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangeFetchedPropertyNames(adaptor.GetOptions().UseJsNames()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -4156,7 +4156,7 @@ TEST_F(ChangesetReaderTests, JsNames_Update_PartialPoint_And_Struct)
 
     ECSqlRowAdaptor adaptor(m_ecdb);
     adaptor.GetOptions().SetUseJsNames(true);
-    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangeFetchedPropertyNames(adaptor.GetOptions().UseJsNames()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -4244,7 +4244,7 @@ TEST_F(ChangesetReaderTests, JsNames_Update_NestedStruct_CoordOnly)
 
     ECSqlRowAdaptor adaptor(m_ecdb);
     adaptor.GetOptions().SetUseJsNames(true);
-    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangeFetchedPropertyNames(adaptor.GetOptions().UseJsNames()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -4421,7 +4421,7 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
-    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangeFetchedPropertyNames(adaptor.GetOptions().UseJsNames()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -4498,8 +4498,8 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Insert_AllLevels)
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
-    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
-    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangedPropNames(adaptor.GetOptions().UseClassFullNameInsteadofClassName()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangeFetchedPropertyNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(adaptor.GetOptions().UseClassFullNameInsteadofClassName()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -4599,8 +4599,8 @@ TEST_F(ChangesetReaderTests, JsNames_DeepNested_Update_Point2d_YOnly)
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
         std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
-    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangedPropNames(adaptor.GetOptions().UseJsNames()));
-    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangedPropNames(adaptor.GetOptions().UseClassFullNameInsteadofClassName()));
+    ASSERT_EQ(SUCCESS, reader.SetUseJsNamesForChangeFetchedPropertyNames(adaptor.GetOptions().UseJsNames()));
+    ASSERT_EQ(SUCCESS, reader.SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(adaptor.GetOptions().UseClassFullNameInsteadofClassName()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
