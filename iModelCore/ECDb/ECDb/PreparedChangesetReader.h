@@ -107,6 +107,8 @@ private:
 
     ChangesetSqliteIterator(ChangesetSqliteIterator const&) = delete;
     ChangesetSqliteIterator& operator=(ChangesetSqliteIterator const&) = delete;
+    DbResult FirstStep();
+    DbResult NextStep();
 
 public:
     explicit ChangesetSqliteIterator(ECDbCR ecdb) : m_ecdb(ecdb), m_currentChange(nullptr, false) {}
@@ -163,7 +165,8 @@ private:
     PreparedChangesetReader& operator=(PreparedChangesetReader const&) = delete;
 
     void ClearValuesOnStep();
-    BentleyStatus ReFetchValues(bool& isCurrentRowFilteredOut);
+    BentleyStatus DoRefetchValues(bool& isCurrentRowFilteredOut);
+    BentleyStatus RefetchValues(bool& isCurrentRowFilteredOut);
     bool IsOpen() const { return m_iterator.IsOpen(); }
     //! Stores @p changeStream directly via the iterator without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.

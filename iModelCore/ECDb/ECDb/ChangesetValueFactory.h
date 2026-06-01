@@ -178,7 +178,7 @@ public:
     //! Clears m_changeValueMap; call before processing a new changeset row.
     void ClearChangeValueMap();
     //! Reads column values for @p tableName at @p stage from the iterator and populates m_changeValueMap.
-    BentleyStatus PopulateChangeValueMap(Stage stage, Utf8StringCR tableName);
+    BentleyStatus PopulateChangeValueMap(Stage stage, Utf8StringCR tableName, int columnCountInDb);
     //! Logs all entries in m_changeValueMap at debug verbosity.
     void DumpChangeValueMap() const;
     

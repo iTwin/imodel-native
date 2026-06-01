@@ -954,13 +954,8 @@ BentleyStatus ChangesetValueFactory::Create(DbTable const& tbl, ECN::ECClassId r
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangesetValueFactory::PopulateChangeValueMap(Stage stage, Utf8StringCR tableName) {
-    int columnCount = 0;
-    if (m_iterator.GetColumnCount(tableName, columnCount) != SUCCESS) {
-        LOG.errorv("Failed to get column count for table '%s'.", tableName.c_str());
-        return ERROR;
-    }
-    int minimum = std::min(columnCount, m_iterator.GetChangeColumnCount());
+BentleyStatus ChangesetValueFactory::PopulateChangeValueMap(Stage stage, Utf8StringCR tableName, int columnCountInDb) {
+    int minimum = std::min(columnCountInDb, m_iterator.GetChangeColumnCount());
     CachedStatementPtr stmt = m_conn.GetCachedStatement("SELECT [name] FROM PRAGMA_TABLE_INFO(?) ORDER BY [cid]");
     if (stmt == nullptr) {
         LOG.errorv("Failed to prepare statement to get column names for table '%s'.", tableName.c_str());
