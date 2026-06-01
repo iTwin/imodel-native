@@ -39,7 +39,8 @@ stages:
             set -euo pipefail
 
             commitMsg="$(Build.SourceVersionMessage)"
-            echo "Commit message: $commitMsg"
+            safeCommitMsg="${commitMsg//'##vso'/'## vso'}"
+            echo "Commit message: $safeCommitMsg"
 
             if [[ "$commitMsg" == "bump @itwin/* dev dependencies to next minor version" ]]; then
               echo "Skipping patch bump for the automation-generated dev dependency update."
