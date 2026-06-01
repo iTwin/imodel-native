@@ -173,7 +173,11 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, Ddl
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearFields() {
-    m_fields.clear();
+    if (auto it = m_fields.find(Stage::New); it != m_fields.end())
+        it->second.clear();
+     if (auto it = m_fields.find(Stage::Old); it != m_fields.end())
+        it->second.clear();
+
     m_changedPropNames.clear();
 }
 
@@ -183,7 +187,7 @@ void PreparedChangesetReader::ClearFields() {
 BentleyStatus PreparedChangesetReader::Close() {
     ClearMembers();
 
-    if (m_tempGroupFile.DoesPathExist()) {
+    if (!m_tempGroupFile.IsEmpty() && m_tempGroupFile.DoesPathExist()) {
         if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
             LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
             return ERROR;
@@ -199,7 +203,7 @@ BentleyStatus PreparedChangesetReader::Close() {
 void PreparedChangesetReader::CloseInfallible() {
     ClearMembers();
 
-    if (m_tempGroupFile.DoesPathExist()) {
+    if (!m_tempGroupFile.IsEmpty() && m_tempGroupFile.DoesPathExist()) {
         if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
             LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
         }
@@ -216,12 +220,26 @@ void PreparedChangesetReader::ClearMembers() {
     m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
     m_invert = false;
     ClearFields();
+    m_fields.clear();
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
     DisableStrictMode();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PreparedChangesetReader::DoStep() {
+    if (m_changes == nullptr) {
+        ClearFields();
+        m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
+        m_currentChange = m_changes->begin();
+    } else if(m_currentChange.IsValid()) {
+        ClearFields();
+        ++m_currentChange;
+    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -231,25 +249,22 @@ DbResult PreparedChangesetReader::Step() {
         LOG.errorv("Attempting to step a closed PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    if (m_changes == nullptr) {
-        ClearFields();
-        m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
-        m_currentChange = m_changes->begin();
-    } else {
-        if(m_currentChange.IsValid()) {
-            ClearFields();
-            ++m_currentChange;
-        }
-    }
-    auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
     bool isCurrentRowFilteredOut = false;
-    if(ReFetchValues(isCurrentRowFilteredOut) != SUCCESS)
-        return BE_SQLITE_ERROR;
+    DbResult stat = BE_SQLITE_OK;
+    do {
+        isCurrentRowFilteredOut = false;
+        DoStep();
+        stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
+        if(stat == BE_SQLITE_DONE) return stat;
+        if(ReFetchValues(isCurrentRowFilteredOut) != SUCCESS) {
+            ClearFields();
+            return BE_SQLITE_ERROR;
+        }
 
-    if(isCurrentRowFilteredOut) {
-        LOG.infov("Current change is filtered out. Stepping to the next change.");
-        return Step();
-    }
+        if(isCurrentRowFilteredOut)
+            LOG.infov("Current change is filtered out. Stepping to the next change.");
+    } while(isCurrentRowFilteredOut);
+    
     return stat;
 }
 
@@ -289,52 +304,54 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
     isCurrentRowFilteredOut = false;
     m_fields.try_emplace(Stage::New);
     m_fields.try_emplace(Stage::Old);
-    if (m_currentChange.IsValid()) {
-        DbOpcode opCode;
-        if(GetOpcode(opCode) != SUCCESS)
-            return ERROR;
-        
-        if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
-            LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
-            isCurrentRowFilteredOut = true;
-            return SUCCESS;
-        }
-        
-        Utf8String tableName;
-        if(GetTableName(tableName) != SUCCESS)
-            return ERROR;
-        
-        if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
-            LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
-            isCurrentRowFilteredOut = true;
-            return SUCCESS;
-        }
+    if (!m_currentChange.IsValid()) {
+        LOG.errorv("Attempting to re-fetch values for an invalid change.");
+        return ERROR;
+    }
+    DbOpcode opCode;
+    if(GetOpcode(opCode) != SUCCESS)
+        return ERROR;
+    
+    if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
+        LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
+        isCurrentRowFilteredOut = true;
+        return SUCCESS;
+    }
+    
+    Utf8String tableName;
+    if(GetTableName(tableName) != SUCCESS)
+        return ERROR;
+    
+    if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
+        LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
+        isCurrentRowFilteredOut = true;
+        return SUCCESS;
+    }
 
-        bool isECTable = false;
-        if(IsECTable(isECTable) != SUCCESS)
-            return ERROR;
-        if(!isECTable) {
-            LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
-            return SUCCESS;
-        }
+    bool isECTable = false;
+    if(IsECTable(isECTable) != SUCCESS)
+        return ERROR;
+    if(!isECTable) {
+        LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
+        return SUCCESS;
+    }
 
-        DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
-        if (dbTable == nullptr) {
-            LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-            return ERROR;
-        }
+    DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
+    if (dbTable == nullptr) {
+        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+        return ERROR;
+    }
 
-        if(opCode != DbOpcode::Delete) {
-            auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
-            if (result == StageProcessResult::Error) return ERROR;
-            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
-        }
-        if(opCode != DbOpcode::Insert) {
-            std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
-            if (result == StageProcessResult::Error) return ERROR;
-            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
-        }
+    if(opCode != DbOpcode::Delete) {
+        auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
+        if (result == StageProcessResult::Error) return ERROR;
+        if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
+    }
+    if(opCode != DbOpcode::Insert) {
+        std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
+        auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
+        if (result == StageProcessResult::Error) return ERROR;
+        if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
     return SUCCESS;
 }
@@ -343,12 +360,8 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueMap& outMap) const {
-    if (!IsOpen()) {
-        LOG.errorv("Attempting to get column values from a closed PreparedChangesetReader.");
-        return ERROR;
-    }
-    if (!IsStepped()) {
-        LOG.errorv("Attempting to get column values from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get column values from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
     }
     Utf8String tableName;
@@ -436,14 +449,8 @@ void PreparedChangesetReader::DumpColumnValues(ColumnValueMap const& map) const 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 int PreparedChangesetReader::GetColumnCount(Stage stage) const {
-    if(!IsOpen())
-    {
-        LOG.warningv("Attempting to get column count from a closed PreparedChangesetReader.");
-        return 0;
-    }
-    if(!IsStepped())
-    {
-        LOG.warningv("Attempting to get column count from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get column count from a PreparedChangesetReader that is either not open or not stepped.");
         return 0;
     }
     return m_fields.find(stage) != m_fields.end() ? static_cast<int>(m_fields.at(stage).size()) : 0;
@@ -453,16 +460,10 @@ int PreparedChangesetReader::GetColumnCount(Stage stage) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to get table name from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get table name from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to get table name from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     tableName = m_currentChange.GetTableName();
     return SUCCESS;
 }
@@ -471,16 +472,10 @@ BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to get opcode from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get opcode from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to get opcode from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     opcode = m_currentChange.GetOpcode();
     return SUCCESS;
 }
@@ -489,19 +484,13 @@ BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnIndex) const {
-    if (!IsOpen())
-        {
-        LOG.warningv("Attempting to get value from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get value from a PreparedChangesetReader that is either not open or not stepped.");
         return NoopECSqlValue::GetSingleton();
-        }
-    if (!IsStepped())
-        {
-        LOG.warningv("Attempting to get value from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return NoopECSqlValue::GetSingleton();
-        }
+    }
     int size = GetColumnCount(stage);
     if (columnIndex < 0 || columnIndex >= size) {
-        LOG.warningv("Column index %d is out of range for table.", columnIndex);
+        LOG.errorv("Column index %d is out of range for table.", columnIndex);
         return NoopECSqlValue::GetSingleton();
     }
     return *m_fields.at(stage).at(columnIndex);
@@ -511,16 +500,10 @@ IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnInde
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to get instance key from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get instance key from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to get instance key from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     const int count = GetColumnCount(stage);
     Utf8String instanceId;
     Utf8String classId;
@@ -556,17 +539,10 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to check IsECTable on a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to check IsECTable on a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to check IsECTable on a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
-    
+    }
     Utf8String tableName;
     if(GetTableName(tableName) != SUCCESS)
         return ERROR;
@@ -593,16 +569,10 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
-    if(!IsOpen())
-        {
-        LOG.errorv("Attempting to get changed property names from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if(!IsStepped())
-        {
-        LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     out.clear();
     out = m_changedPropNames;
     return SUCCESS;
@@ -612,16 +582,10 @@ BentleyStatus PreparedChangesetReader::GetChangeFetchedPropertyNames(std::vector
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::IsIndirectChange(bool& isIndirect) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to check IsIndirectChange on a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to check IsIndirectChange on a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to check IsIndirectChange on a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     isIndirect = m_currentChange.IsIndirect();
     return SUCCESS;
 }
