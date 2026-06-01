@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/Profiler.h>
+#include <Bentley/SHA1.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -172,6 +173,26 @@ struct ChangesBlobHeader {
     ChangesBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*)this, sizeof(*this), actuallyRead);}
 };
 
+//=======================================================================================
+// Header stored in dgn_Txns.Change column when file-based txn storage is enabled.
+// The actual changeset data is in a separate .txn file on disk.
+// @bsiclass
+//=======================================================================================
+struct FileBasedTxnHeader {
+    enum { DB_Signature07 = 0x0700 };
+    uint32_t m_signature;                // 0x0700 to distinguish from ChangesBlobHeader
+    uint32_t m_uncompressedSize;         // Original uncompressed changeset size
+    Byte m_checksum[SHA1::HashBytes];    // SHA1 hash of the .txn file on disk
+
+    FileBasedTxnHeader() { memset(this, 0, sizeof(*this)); m_signature = DB_Signature07; }
+    FileBasedTxnHeader(uint32_t uncompressedSize, Byte const* checksum) {
+        m_signature = DB_Signature07;
+        m_uncompressedSize = uncompressedSize;
+        memcpy(m_checksum, checksum, SHA1::HashBytes);
+    }
+    bool IsValid() const { return m_signature == DB_Signature07; }
+};
+
 enum : uint64_t {
      K = 1024,
      MEG = K * K,
@@ -268,10 +289,251 @@ static DbResult ApplySchemaChangesInOrder(ChangeStreamCR changeset, DbR db, Appl
 
 END_UNNAMED_NAMESPACE
 
+#define FILE_BASED_TXN_PROP "fileBasedTxns"
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 uint64_t TxnManager::GetMaxReasonableTxnSize() { return MAX_REASONABLE_TXN_SIZE; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::IsFileBasedTxnEnabled() const {
+    Utf8String val;
+    if (m_dgndb.QueryBriefcaseLocalValue(val, FILE_BASED_TXN_PROP) != BE_SQLITE_ROW)
+        return false;
+    return val == "1";
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName TxnManager::GetTxnFilePath(TxnId txnId) const {
+    BeFileName dbFile(m_dgndb.GetDbFileName(), true);
+    BeFileName dir = dbFile.GetDirectoryName();
+    dir.AppendToPath(L"txns");
+
+    Utf8String hexId;
+    hexId.Sprintf("%08" PRIx64, txnId.GetValue());
+    WString fileName;
+    fileName.AssignUtf8(hexId.c_str());
+    fileName.append(L".txn");
+
+    BeFileName filePath(dir);
+    filePath.AppendToPath(fileName.c_str());
+    return filePath;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TxnManager::EnsureTxnDirectory() const {
+    BeFileName dbFile(m_dgndb.GetDbFileName(), true);
+    BeFileName dir = dbFile.GetDirectoryName();
+    dir.AppendToPath(L"txns");
+
+    if (dir.DoesPathExist())
+        return SUCCESS;
+
+    BeFileNameStatus status = BeFileName::CreateNewDirectory(dir.GetName());
+    return (status == BeFileNameStatus::Success || status == BeFileNameStatus::AlreadyExists) ? SUCCESS : ERROR;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Compute SHA1 checksum of a file using streaming reads in fixed-size chunks.
+* Avoids loading the entire file into memory to support large files (2+ GB).
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult ComputeFileChecksumStreaming(BeFileNameCR filePath, Byte* outChecksum) {
+    static constexpr uint32_t CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB chunks
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read)) {
+        return BE_SQLITE_ERROR;
+    }
+
+    uint64_t fileSize = 0;
+    file.GetSize(fileSize);
+
+    SHA1 sha1;
+    bvector<Byte> buffer(CHUNK_SIZE);
+    uint64_t remaining = fileSize;
+
+    while (remaining > 0) {
+        uint32_t toRead = (uint32_t)std::min((uint64_t)CHUNK_SIZE, remaining);
+        uint32_t bytesRead = 0;
+        if (BeFileStatus::Success != file.Read(buffer.data(), &bytesRead, toRead)) {
+            file.Close();
+            return BE_SQLITE_ERROR;
+        }
+        if (bytesRead == 0)
+            break;
+        sha1.Add(buffer.data(), bytesRead);
+        remaining -= bytesRead;
+    }
+    file.Close();
+
+    SHA1::HashVal hashVal = sha1.GetHashVal();
+    memcpy(outChecksum, hashVal.m_buffer, SHA1::HashBytes);
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Parse a FileBasedTxnHeader from a SQLite blob safely (using memcpy to avoid unaligned access).
+* Returns true if the blob contains a valid file-based txn header.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ParseFileBasedTxnHeader(FileBasedTxnHeader& outHeader, void const* blobData, int blobSize) {
+    if (blobSize < (int)sizeof(FileBasedTxnHeader))
+        return false;
+
+    memcpy(&outHeader, blobData, sizeof(FileBasedTxnHeader));
+    return outHeader.m_signature == FileBasedTxnHeader::DB_Signature07;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Write a changeset to a .txn file using LZMA compression. Computes SHA1 checksum of
+* the written file and returns it via outChecksum.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::WriteTxnToFile(TxnId txnId, ChangeSetCR changeset, Byte* outChecksum) {
+    if (EnsureTxnDirectory() != SUCCESS) {
+        LOG.error("WriteTxnToFile: failed to create txns directory");
+        return BE_SQLITE_ERROR;
+    }
+
+    BeFileName filePath = GetTxnFilePath(txnId);
+
+    // Write changeset to file using ChangesetFileWriter with LZMA compression.
+    // Use a scope block so the writer destructor finalizes the file before we read it back for checksumming.
+    {
+        DdlChanges emptyDdl;
+        ChangesetFileWriter writer(filePath, false /*containsEcSchemaChanges*/, emptyDdl, &m_dgndb);
+        DbResult rc = writer.Initialize();
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("WriteTxnToFile: failed to initialize writer: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+
+        auto reader = changeset._GetReader();
+        rc = writer.ReadFrom(*reader);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("WriteTxnToFile: failed to write changeset: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+    }
+
+    // Compute SHA1 checksum of the file using streaming reads
+    DbResult checksumRc = ComputeFileChecksumStreaming(filePath, outChecksum);
+    if (checksumRc != BE_SQLITE_OK) {
+        LOG.error("WriteTxnToFile: failed to compute checksum");
+        return checksumRc;
+    }
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Read a changeset from a .txn file, validating SHA1 checksum before loading.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, ChangeSet& changeset) {
+    BeFileName filePath = GetTxnFilePath(txnId);
+
+    if (!filePath.DoesPathExist()) {
+        LOG.errorv("ReadTxnFromFile: file not found: %s", filePath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    // Validate SHA1 checksum using streaming reads
+    Byte computedChecksum[SHA1::HashBytes];
+    DbResult checksumRc = ComputeFileChecksumStreaming(filePath, computedChecksum);
+    if (checksumRc != BE_SQLITE_OK) {
+        LOG.errorv("ReadTxnFromFile: failed to compute checksum for file: %s", filePath.GetNameUtf8().c_str());
+        return checksumRc;
+    }
+
+    if (0 != memcmp(computedChecksum, expectedChecksum, SHA1::HashBytes)) {
+        LOG.errorv("ReadTxnFromFile: checksum mismatch for file: %s", filePath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    // Read changeset from LZMA-compressed file using ChangesetFileReaderBase
+    bvector<BeFileName> files;
+    files.push_back(filePath);
+    ChangesetFileReaderBase reader(files, &m_dgndb);
+    changeset.Clear();
+    auto fileReader = reader.MakeReader();
+    DbResult rc = changeset.ReadFrom(*fileReader);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("ReadTxnFromFile: failed to read changeset from file: %s", filePath.GetNameUtf8().c_str());
+        return rc;
+    }
+
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Delete the .txn file for a given txn if it exists.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::DeleteTxnFile(TxnId txnId) {
+    BeFileName filePath = GetTxnFilePath(txnId);
+    if (filePath.DoesPathExist()) {
+        auto status = filePath.BeDeleteFile();
+        if (status != BeFileNameStatus::Success)
+            LOG.warningv("DeleteTxnFile: failed to delete .txn file for txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Validate all file-based txns: ensure each has a corresponding .txn file and that
+* the SHA1 checksum matches the one stored in the header.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::ValidateFileBasedTxns() const {
+    Statement stmt(m_dgndb, "SELECT [Id], [Change] FROM " DGN_TABLE_Txns);
+    bool valid = true;
+
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        int blobSize = stmt.GetColumnBytes(1);
+        void const* blobData = stmt.GetValueBlob(1);
+
+        FileBasedTxnHeader fileHeader;
+        if (!ParseFileBasedTxnHeader(fileHeader, blobData, blobSize))
+            continue;
+
+        // This is a file-based txn — validate it
+        TxnId txnId = stmt.GetValueId<TxnId>(0);
+        BeFileName filePath = GetTxnFilePath(txnId);
+
+        if (!filePath.DoesPathExist()) {
+            LOG.errorv("ValidateFileBasedTxns: missing .txn file for txnId %s: %s",
+                BeInt64Id(txnId.GetValue()).ToHexStr().c_str(), filePath.GetNameUtf8().c_str());
+            valid = false;
+            continue;
+        }
+
+        // Verify SHA1 checksum using streaming reads
+        Byte computedChecksum[SHA1::HashBytes];
+        DbResult checksumRc = ComputeFileChecksumStreaming(filePath, computedChecksum);
+        if (checksumRc != BE_SQLITE_OK) {
+            LOG.errorv("ValidateFileBasedTxns: failed to read .txn file for txnId %s: %s",
+                BeInt64Id(txnId.GetValue()).ToHexStr().c_str(), filePath.GetNameUtf8().c_str());
+            valid = false;
+            continue;
+        }
+
+        if (0 != memcmp(computedChecksum, fileHeader.m_checksum, SHA1::HashBytes)) {
+            LOG.errorv("ValidateFileBasedTxns: SHA1 checksum mismatch for txnId %s: %s",
+                BeInt64Id(txnId.GetValue()).ToHexStr().c_str(), filePath.GetNameUtf8().c_str());
+            valid = false;
+            continue;
+        }
+    }
+
+    return valid;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -315,15 +577,19 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         return BE_SQLITE_ERROR;
     }
 
-    if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE) {
-        //BeAssert(changeSet.GetSize() < MAX_REASONABLE_TXN_SIZE); // if you hit this, something is wrong in your application. You should call commit more frequently.
-        LOG.warningv("changeset size %" PRIu64 " exceeds recommended limit. Please investigate.", changeSet.GetSize());
-    }
+    if (!IsFileBasedTxnEnabled()) {
+        // These limits protect the in-DB blob column from growing too large.
+        // File-based txns write to separate .txn files, so the limits do not apply.
+        if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE) {
+            //BeAssert(changeSet.GetSize() < MAX_REASONABLE_TXN_SIZE); // if you hit this, something is wrong in your application. You should call commit more frequently.
+            LOG.warningv("changeset size %" PRIu64 " exceeds recommended limit. Please investigate.", changeSet.GetSize());
+        }
 
-    if (changeSet.GetSize() > MAX_TXN_SIZE) {
-        LOG.fatalv("changeset size %" PRIu64 " exceeds maximum. Panic stop to avoid loss! You must now abandon this briefcase.", changeSet.GetSize());
-        // return error so besqlite StopSavepoint() can deal with it cleanly and throw exception.
-        return BE_SQLITE_ERROR;
+        if (changeSet.GetSize() > MAX_TXN_SIZE) {
+            LOG.fatalv("changeset size %" PRIu64 " exceeds maximum. Panic stop to avoid loss! You must now abandon this briefcase.", changeSet.GetSize());
+            // return error so besqlite StopSavepoint() can deal with it cleanly and throw exception.
+            return BE_SQLITE_ERROR;
+        }
     }
 
     // Note: column in Db is named "IsSchemaChange", but we store TxnType there.
@@ -342,57 +608,85 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
     stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.front()));
 
-    m_snappyTo.Init();
-    uint32_t csetSize = (uint32_t) changeSet.GetSize();
-    ChangesBlobHeader header(csetSize);
-    m_snappyTo.Write((Byte const*) &header, sizeof(header));
-    for (auto const& chunk : changeSet.m_data.m_chunks)
-        m_snappyTo.Write(chunk.data(), (uint32_t) chunk.size());
-
-    uint32_t zipSize = m_snappyTo.GetCompressedSize();
     DbResult rc;
-    if (0 < zipSize)
-        {
-        if (1 == m_snappyTo.GetCurrChunk())
-            rc = stmt->BindBlob(Column::Change, m_snappyTo.GetChunkData(0), zipSize, Statement::MakeCopy::No);
-        else
-            rc = stmt->BindZeroBlob(Column::Change, zipSize); // more than one chunk
+    if (IsFileBasedTxnEnabled()) {
+        // File-based txn: write changeset to .txn file, store only header in Change column
+        Byte checksum[SHA1::HashBytes];
+        rc = WriteTxnToFile(m_curr, changeSet, checksum);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SaveTxn: WriteTxnToFile failed: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
 
-        if (BE_SQLITE_OK != rc)
+        FileBasedTxnHeader fileHeader((uint32_t)changeSet.GetSize(), checksum);
+        rc = stmt->BindBlob(Column::Change, &fileHeader, sizeof(fileHeader), Statement::MakeCopy::Yes);
+        if (rc != BE_SQLITE_OK) {
+            DeleteTxnFile(m_curr);
+            BeAssert(false);
+            return rc;
+        }
+
+        rc = stmt->Step();
+        if (BE_SQLITE_DONE != rc) {
+            LOG.errorv("SaveChangeSet failed: %s", BeSQLiteLib::GetErrorName(rc));
+            DeleteTxnFile(m_curr);
+            BeAssert(false);
+            return rc;
+        }
+
+        m_curr.Increment();
+    } else {
+        // Legacy path: compress with Snappy and store in blob
+        m_snappyTo.Init();
+        uint32_t csetSize = (uint32_t) changeSet.GetSize();
+        ChangesBlobHeader header(csetSize);
+        m_snappyTo.Write((Byte const*) &header, sizeof(header));
+        for (auto const& chunk : changeSet.m_data.m_chunks)
+            m_snappyTo.Write(chunk.data(), (uint32_t) chunk.size());
+
+        uint32_t zipSize = m_snappyTo.GetCompressedSize();
+        if (0 < zipSize)
             {
+            if (1 == m_snappyTo.GetCurrChunk())
+                rc = stmt->BindBlob(Column::Change, m_snappyTo.GetChunkData(0), zipSize, Statement::MakeCopy::No);
+            else
+                rc = stmt->BindZeroBlob(Column::Change, zipSize); // more than one chunk
+
+            if (BE_SQLITE_OK != rc)
+                {
+                BeAssert(false);
+                return rc;
+                }
+            }
+
+        if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE/2)
+            LOG.infov("Saving large changeset. Size=%" PRIuPTR ", Compressed size=%" PRIu32, changeSet.GetSize(), m_snappyTo.GetCompressedSize());
+
+        rc = stmt->Step();
+        if (BE_SQLITE_DONE != rc)
+            {
+            LOG.errorv("SaveChangeSet failed: %s", BeSQLiteLib::GetErrorName(rc));
             BeAssert(false);
             return rc;
             }
+
+        m_curr.Increment();
+        if (1 != m_snappyTo.GetCurrChunk()) {
+            rc = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", m_dgndb.GetLastInsertRowId());
+            if (BE_SQLITE_OK != rc)
+                {
+                LOG.errorv("SaveChangeSet failed to save to row: %s", BeSQLiteLib::GetErrorName(rc));
+                BeAssert(false);
+                return rc;
+                }
         }
-
-    if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE/2)
-        LOG.infov("Saving large changeset. Size=%" PRIuPTR ", Compressed size=%" PRIu32, changeSet.GetSize(), m_snappyTo.GetCompressedSize());
-
-    rc = stmt->Step();
-    if (BE_SQLITE_DONE != rc)
-        {
-        LOG.errorv("SaveChangeSet failed: %s", BeSQLiteLib::GetErrorName(rc));
-        BeAssert(false);
-        return rc;
-        }
-
-    m_curr.Increment();
-    if (1 == m_snappyTo.GetCurrChunk())
-        return BE_SQLITE_OK;
-
-    rc = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", m_dgndb.GetLastInsertRowId());
-    if (BE_SQLITE_OK != rc)
-        {
-        LOG.errorv("SaveChangeSet failed to save to row: %s", BeSQLiteLib::GetErrorName(rc));
-        BeAssert(false);
-        return rc;
-        }
+    }
 
     if (txnType != TxnType::Data)
         Initialize(SessionOption::New); 
 
     TXN_DEBUG(">> Saved txn with operation: %s, size: %" PRIu64, operation ? operation : "null", changeSet.GetSize());
-    return rc;
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1189,6 +1483,10 @@ void TxnManager::StashRestore(BeFileNameCR stashFile) {
         m_dgndb.ThrowException("not a briefcase db", BE_SQLITE_ERROR);
     }
 
+    if (IsFileBasedTxnEnabled()) {
+        m_dgndb.ThrowException("stash restore is not supported when file-based txn storage is enabled", BE_SQLITE_ERROR);
+    }
+
     if (HasChanges()) {
         m_dgndb.ThrowException("there are uncommitted changes", BE_SQLITE_ERROR);
     }
@@ -1327,6 +1625,10 @@ void TxnManager::Stash(BeFileNameCR stashRootDir, Utf8StringCR description, Utf8
 
     if (!m_dgndb.IsBriefcase()) {
         m_dgndb.ThrowException("not a briefcase db", BE_SQLITE_ERROR);
+    }
+
+    if (IsFileBasedTxnEnabled()) {
+        m_dgndb.ThrowException("stash is not supported when file-based txn storage is enabled", BE_SQLITE_ERROR);
     }
 
     if (HasChanges()) {
@@ -1756,15 +2058,21 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
     if (IsChangesetInProgress())
         m_dgndb.ThrowException("changeset creation is in progress", (int) ChangesetStatus::IsCreatingChangeset);
 
-    if(!skipSchemaChanges){
-        // If we have changes in progress, we can't revert changesets
-        if (HasPendingTxns())
-            m_dgndb.ThrowException("pending transactions present", (int) ChangesetStatus::HasLocalChanges);
+    // Ensure no pending txns regardless of skipSchemaChanges
+    if (HasPendingTxns())
+        m_dgndb.ThrowException("pending transactions present", (int) ChangesetStatus::HasLocalChanges);
 
-        // If we have changes in progress, we can't revert changesets
-        if (HasChanges())
-            m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
-    }
+    if (HasChanges())
+        m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
+
+    // Enable file-based txn storage for the revert operation
+    DbResult saveRc = m_dgndb.SaveBriefcaseLocalValue(FILE_BASED_TXN_PROP, "1");
+    if (saveRc != BE_SQLITE_DONE)
+        m_dgndb.ThrowException("failed to enable file-based txns", (int)saveRc);
+
+    saveRc = m_dgndb.SaveChanges();
+    if (saveRc != BE_SQLITE_OK)
+        m_dgndb.ThrowException("failed to save file-based txn flag", (int)saveRc);
 
     constexpr auto invert = true;
 
@@ -1782,11 +2090,37 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
         }
         currentChangesetId = changesetProp->GetParentId();
+        auto changesetIndex = changesetProp->GetChangesetIndex();
+
+        LOG.infov("RevertTimelineChanges: reverting changeset [%d] id=%s desc='%s' size=%" PRIuPTR,
+            changesetIndex, changesetProp->GetChangesetId().c_str(),
+            changesetProp->GetSummary().c_str(), changesetProp->GetUncompressedSize());
+
+        StopWatch timer(true);
+
+        // Conflict handler for data changes during revert.
+        auto revertConflictHandler = [&](ChangeStream::ConflictCause cause, Changes::Change iter) -> ChangeStream::ConflictResolution {
+            if (cause == ChangeStream::ConflictCause::ForeignKey) {
+                int nConflicts = iter.GetForeignKeyConflicts();
+                LOG.errorv("RevertTimelineChanges: Detected %d foreign key conflict(s). Aborting.", nConflicts);
+                return ChangeStream::ConflictResolution::Abort;
+            }
+
+            if (cause == ChangeStream::ConflictCause::NotFound)
+                return ChangeStream::ConflictResolution::Skip;
+
+            if (cause == ChangeStream::ConflictCause::Constraint)
+                return ChangeStream::ConflictResolution::Skip;
+            
+            return ChangeStream::ConflictResolution::Replace;
+        };
+
         auto dataApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
             .SetIgnoreNoop(true)
             .SetFkNoAction(true)
-            .ApplyOnlyDataChanges();
+            .ApplyOnlyDataChanges()
+            .SetConflictHandler(revertConflictHandler);
 
         auto rc = changeStream.ApplyChanges(m_dgndb, dataApplyArgs);
         if (rc != BE_SQLITE_OK) {
@@ -1816,6 +2150,18 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             }
             m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         }
+
+        Utf8String saveDesc;
+        saveDesc.Sprintf("reverted changeset %d", changesetIndex);
+        auto saveResult = m_dgndb.SaveChanges(saveDesc.c_str());
+        if (saveResult != BE_SQLITE_OK) {
+            m_dgndb.AbandonChanges();
+            m_dgndb.ThrowException("failed to save reverted changeset", (int)saveResult);
+        }
+
+        timer.Stop();
+        LOG.infov("RevertTimelineChanges: reverted changeset [%d] in %.3fs, size=%" PRIuPTR,
+            changesetIndex, timer.GetElapsedSeconds(), changesetProp->GetUncompressedSize());
     }
 }
 /*---------------------------------------------------------------------------------**/ /**
@@ -2497,6 +2843,25 @@ DbResult TxnManager::ReadDataChanges(ChangeSet& dataChangeSet, TxnId rowId, TxnA
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ZipErrors TxnManager::ReadChanges(ChangeSet& changeset, TxnId rowId) {
+    // First, read the raw blob to check if this is a file-based txn
+    {
+        CachedStatementPtr peekStmt = GetTxnStatement("SELECT [Change] FROM " DGN_TABLE_Txns " WHERE [Id]=?");
+        peekStmt->BindInt64(1, rowId.GetValue());
+        if (peekStmt->Step() != BE_SQLITE_ROW)
+            return ZIP_ERROR_BAD_DATA;
+
+        int blobSize = peekStmt->GetColumnBytes(0);
+        void const* blobData = peekStmt->GetValueBlob(0);
+
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            // File-based txn: read from file
+            DbResult rc = ReadTxnFromFile(rowId, fileHeader.m_checksum, changeset);
+            return (rc == BE_SQLITE_OK) ? ZIP_SUCCESS : ZIP_ERROR_BAD_DATA;
+        }
+    }
+
+    // Legacy path: Snappy-compressed blob
     ZipErrors status = m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId.GetValue());
     if (ZIP_SUCCESS != status)
         return status;
@@ -2842,6 +3207,19 @@ void TxnManager::DeleteAllTxns() {
     }
 
     m_dgndb.SaveChanges(); // in case there are outstanding changes that will create a new Txn
+
+    // Delete all .txn files for file-based txns
+    Statement queryStmt(m_dgndb, "SELECT [Id], [Change] FROM " DGN_TABLE_Txns);
+    while (queryStmt.Step() == BE_SQLITE_ROW) {
+        int blobSize = queryStmt.GetColumnBytes(1);
+        void const* blobData = queryStmt.GetValueBlob(1);
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            TxnId txnId = queryStmt.GetValueId<TxnId>(0);
+            DeleteTxnFile(txnId);
+        }
+    }
+
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
     m_dgndb.SaveChanges();
     Initialize(SessionOption::New);
@@ -2853,6 +3231,19 @@ void TxnManager::DeleteAllTxns() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::DeleteReversedTxns() {
     m_reversedTxn.clear(); // do this even if this is already empty - there may be reversed txns from a previous session
+
+    // Delete .txn files for any file-based reversed txns before removing rows
+    Statement queryStmt(m_dgndb, "SELECT [Id], [Change] FROM " DGN_TABLE_Txns " WHERE Deleted=1");
+    while (queryStmt.Step() == BE_SQLITE_ROW) {
+        int blobSize = queryStmt.GetColumnBytes(1);
+        void const* blobData = queryStmt.GetValueBlob(1);
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            TxnId txnId = queryStmt.GetValueId<TxnId>(0);
+            DeleteTxnFile(txnId);
+        }
+    }
+
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1"); // these transactions are no longer reinstateable. Throw them away.
 }
 
@@ -2863,6 +3254,19 @@ void TxnManager::DeleteReversedTxns() {
 void TxnManager::DeleteFromStartTo(TxnId lastId) {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
+    }
+
+    // Delete .txn files for any file-based txns before removing rows
+    Statement queryStmt(m_dgndb, "SELECT [Id], [Change] FROM " DGN_TABLE_Txns " WHERE Id < ?");
+    queryStmt.BindInt64(1, lastId.GetValue());
+    while (queryStmt.Step() == BE_SQLITE_ROW) {
+        int blobSize = queryStmt.GetColumnBytes(1);
+        void const* blobData = queryStmt.GetValueBlob(1);
+        FileBasedTxnHeader fileHeader;
+        if (ParseFileBasedTxnHeader(fileHeader, blobData, blobSize)) {
+            TxnId txnId = queryStmt.GetValueId<TxnId>(0);
+            DeleteTxnFile(txnId);
+        }
     }
 
     Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE_Txns " WHERE Id < ?");
@@ -3740,13 +4144,17 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
         return BE_SQLITE_ERROR;
     }
 
-    if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE) {
-        LOG.warningv("changeset size %" PRIu64 " exceeds recommended limit. Please investigate.", changeSet.GetSize());
-    }
+    if (!IsFileBasedTxnEnabled()) {
+        // These limits protect the in-DB blob column from growing too large.
+        // File-based txns write to separate .txn files, so the limits do not apply.
+        if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE) {
+            LOG.warningv("changeset size %" PRIu64 " exceeds recommended limit. Please investigate.", changeSet.GetSize());
+        }
 
-    if (changeSet.GetSize() > MAX_TXN_SIZE) {
-        LOG.fatalv("changeset size %" PRIu64 " exceeds maximum. Panic stop to avoid loss! You must now abandon this briefcase.", changeSet.GetSize());
-        return BE_SQLITE_ERROR;
+        if (changeSet.GetSize() > MAX_TXN_SIZE) {
+            LOG.fatalv("changeset size %" PRIu64 " exceeds maximum. Panic stop to avoid loss! You must now abandon this briefcase.", changeSet.GetSize());
+            return BE_SQLITE_ERROR;
+        }
     }
 
     CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET [Change]=?, [Deleted]=? WHERE [Id]=?");
@@ -3754,51 +4162,144 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
     stmt->BindInt64(Column::Id, id.GetValue());
     stmt->BindInt(Column::Deleted, false);
 
-    m_snappyTo.Init();
-    uint32_t csetSize = (uint32_t) changeSet.GetSize();
-    ChangesBlobHeader header(csetSize);
-    m_snappyTo.Write((Byte const*) &header, sizeof(header));
-    for (auto const& chunk : changeSet.m_data.m_chunks) {
-        m_snappyTo.Write(chunk.data(), (uint32_t) chunk.size());
-    }
-
     DbResult rc = BE_SQLITE_OK;
-    const uint32_t zipSize = m_snappyTo.GetCompressedSize();
-    if (0 < zipSize ) {
-        if (1 == m_snappyTo.GetCurrChunk())
-            rc = stmt->BindBlob(Column::Change, m_snappyTo.GetChunkData(0), zipSize, Statement::MakeCopy::No);
-        else
-            rc = stmt->BindZeroBlob(Column::Change, zipSize); // more than one chunk
 
+    if (IsFileBasedTxnEnabled()) {
+        // File-based txn: write new content to a temp file, update the DB row,
+        // then replace the old file. This avoids data loss if the UPDATE fails.
+        if (EnsureTxnDirectory() != SUCCESS) {
+            LOG.error("PullMergeUpdateTxn: failed to create txns directory");
+            return BE_SQLITE_ERROR;
+        }
+
+        BeFileName finalPath = GetTxnFilePath(id);
+        BeFileName tempPath = finalPath;
+        tempPath.append(L".tmp");
+
+        // Write changeset to the temp file
+        {
+            DdlChanges emptyDdl;
+            ChangesetFileWriter writer(tempPath, false /*containsEcSchemaChanges*/, emptyDdl, &m_dgndb);
+            rc = writer.Initialize();
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("PullMergeUpdateTxn: failed to initialize writer: %s", BeSQLiteLib::GetErrorName(rc));
+                return rc;
+            }
+            auto reader = changeSet._GetReader();
+            rc = writer.ReadFrom(*reader);
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("PullMergeUpdateTxn: failed to write changeset to temp file: %s", BeSQLiteLib::GetErrorName(rc));
+                tempPath.BeDeleteFile();
+                return rc;
+            }
+        }
+
+        // Compute checksum of the temp file
+        Byte checksum[SHA1::HashBytes];
+        rc = ComputeFileChecksumStreaming(tempPath, checksum);
+        if (rc != BE_SQLITE_OK) {
+            LOG.error("PullMergeUpdateTxn: failed to compute checksum of temp file");
+            tempPath.BeDeleteFile();
+            return rc;
+        }
+
+        // Update the DB row
+        FileBasedTxnHeader fileHeader((uint32_t)changeSet.GetSize(), checksum);
+        rc = stmt->BindBlob(Column::Change, &fileHeader, sizeof(fileHeader), Statement::MakeCopy::Yes);
+        if (rc != BE_SQLITE_OK) {
+            tempPath.BeDeleteFile();
+            BeAssert(false);
+            return rc;
+        }
+
+        rc = stmt->Step();
+        if (BE_SQLITE_DONE != rc) {
+            LOG.errorv("PullMergeUpdateTxn failed: %s", BeSQLiteLib::GetErrorName(rc));
+            tempPath.BeDeleteFile();
+            BeAssert(false);
+            return rc;
+        }
+
+        // DB update succeeded — now safely replace the old file using backup-then-move-then-delete
+        if (finalPath.DoesPathExist()) {
+            BeFileName backupPath = finalPath;
+            backupPath.append(L".bak");
+
+            auto moveStatus = BeFileName::BeMoveFile(finalPath, backupPath);
+            if (moveStatus != BeFileNameStatus::Success) {
+                LOG.error("PullMergeUpdateTxn: failed to backup existing .txn file before replacement");
+                tempPath.BeDeleteFile();
+                return BE_SQLITE_ERROR;
+            }
+
+            moveStatus = BeFileName::BeMoveFile(tempPath, finalPath);
+            if (moveStatus != BeFileNameStatus::Success) {
+                LOG.error("PullMergeUpdateTxn: failed to move temp file to final path, restoring backup");
+                BeFileName::BeMoveFile(backupPath, finalPath); // best-effort restore
+                tempPath.BeDeleteFile();
+                return BE_SQLITE_ERROR;
+            }
+
+            auto deleteStatus = backupPath.BeDeleteFile();
+            if (deleteStatus != BeFileNameStatus::Success)
+                LOG.warningv("PullMergeUpdateTxn: failed to delete backup file after successful replacement");
+        } else {
+            auto moveStatus = BeFileName::BeMoveFile(tempPath, finalPath);
+            if (moveStatus != BeFileNameStatus::Success) {
+                LOG.error("PullMergeUpdateTxn: failed to move temp file to final path");
+                tempPath.BeDeleteFile();
+                return BE_SQLITE_ERROR;
+            }
+        }
+    } else {
+        // Legacy path: compress with Snappy and store in blob
+        m_snappyTo.Init();
+        uint32_t csetSize = (uint32_t) changeSet.GetSize();
+        ChangesBlobHeader header(csetSize);
+        m_snappyTo.Write((Byte const*) &header, sizeof(header));
+        for (auto const& chunk : changeSet.m_data.m_chunks) {
+            m_snappyTo.Write(chunk.data(), (uint32_t) chunk.size());
+        }
+
+        const uint32_t zipSize = m_snappyTo.GetCompressedSize();
+        if (0 < zipSize ) {
+            if (1 == m_snappyTo.GetCurrChunk())
+                rc = stmt->BindBlob(Column::Change, m_snappyTo.GetChunkData(0), zipSize, Statement::MakeCopy::No);
+            else
+                rc = stmt->BindZeroBlob(Column::Change, zipSize); // more than one chunk
+
+            if (BE_SQLITE_OK != rc) {
+                BeAssert(false);
+                return rc;
+            }
+        }
+
+        if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE/2) {
+            LOG.infov("Updating large changeset. Size=%" PRIuPTR ", Compressed size=%" PRIu32, changeSet.GetSize(), m_snappyTo.GetCompressedSize());
+        }
+
+        rc = stmt->Step();
+        if (BE_SQLITE_DONE != rc) {
+            LOG.errorv("SaveChangeSet failed: %s", BeSQLiteLib::GetErrorName(rc));
+            BeAssert(false);
+            return rc;
+        }
+
+        if (1 == m_snappyTo.GetCurrChunk()) {
+            TXN_DEBUG(">> PullMergeUpdateTxn() txnId=%s", BeInt64Id(id.GetValue()).ToHexStr().c_str());
+            return BE_SQLITE_OK;
+        }
+
+        rc = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", id.GetValue());
         if (BE_SQLITE_OK != rc) {
+            LOG.errorv("UpdateTxn failed to save to row: %s", BeSQLiteLib::GetErrorName(rc));
             BeAssert(false);
             return rc;
         }
     }
 
-    if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE/2) {
-        LOG.infov("Updating large changeset. Size=%" PRIuPTR ", Compressed size=%" PRIu32, changeSet.GetSize(), m_snappyTo.GetCompressedSize());
-    }
-
-    rc = stmt->Step();
-    if (BE_SQLITE_DONE != rc) {
-        LOG.errorv("SaveChangeSet failed: %s", BeSQLiteLib::GetErrorName(rc));
-        BeAssert(false);
-        return rc;
-    }
-
-    if (1 == m_snappyTo.GetCurrChunk()) {
-        return BE_SQLITE_OK;
-    }
-
-    rc = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", id.GetValue());
-    if (BE_SQLITE_OK != rc) {
-        LOG.errorv("UpdateTxn failed to save to row: %s", BeSQLiteLib::GetErrorName(rc));
-        BeAssert(false);
-        return rc;
-    }
     TXN_DEBUG(">> PullMergeUpdateTxn() txnId=%s", BeInt64Id(id.GetValue()).ToHexStr().c_str());
-    return rc;
+    return BE_SQLITE_OK;
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -3916,6 +4417,9 @@ bool TxnManager::PullMergeEraseTxn(TxnId txnId) {
         LOG.error("cannot delete a null Txn");
         return false;
     }
+
+    // Delete .txn file if this was a file-based txn
+    DeleteTxnFile(txnId);
 
     auto stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Id=?");
     if (stmt == nullptr) {

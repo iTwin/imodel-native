@@ -5181,6 +5181,25 @@ private:
         return static_cast<ChangesetReader::PropertyFilter>(modeInt);
         }
 
+    size_t ParseSpillThreshold(NapiInfoCR info, int argIndex)
+        {
+        if (ARGUMENT_IS_NOT_NUMBER(argIndex))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be a number");
+        double val = info[argIndex].As<Napi::Number>().DoubleValue();
+        if (std::isnan(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must not be NaN");
+        if (std::isinf(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must not be infinite");
+        if (val < 0)
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be a non-negative number");
+        if (val != std::floor(val))
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes must be an integer (no decimal part)");
+        const double kUpperBound = static_cast<double>(std::numeric_limits<size_t>::max());
+        if (val >= kUpperBound) // This depends on the node add on binary (32 bit or 64 bit)
+            THROW_JS_TYPE_EXCEPTION("spillThresholdBytes exceeds the maximum allowed value");
+        return static_cast<size_t>(val);
+        }
+
 public:
     NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
     ~NativeChangesetReader() { SetInDestructor(); }
@@ -5204,6 +5223,8 @@ public:
             InstanceMethod("clearTableNameFilters", &NativeChangesetReader::ClearTableNameFilters),
             InstanceMethod("clearOpCodeFilters",   &NativeChangesetReader::ClearOpCodeFilters),
             InstanceMethod("clearClassNameFilters", &NativeChangesetReader::ClearClassNameFilters),
+            InstanceMethod("enableStrictMode",      &NativeChangesetReader::EnableStrictMode),
+            InstanceMethod("disableStrictMode",     &NativeChangesetReader::DisableStrictMode),
 
         });
         exports.Set("ChangesetReader", t);
@@ -5217,7 +5238,7 @@ public:
         REQUIRE_ARGUMENT_STRING(1, fileName);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
-        DbResult rc = m_reader.OpenFile(*ecdb, fileName, invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenChangesetFile(*ecdb, fileName, invert, GetPropertyFilter(info, propFilterInt));
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openFile() failed", rc);
         }
@@ -5229,7 +5250,8 @@ public:
         REQUIRE_ARGUMENT_STRING_ARRAY(1, fileNames);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
-        DbResult rc = m_reader.OpenGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt));
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
+        DbResult rc = m_reader.OpenChangeGroup(*ecdb, fileNames, invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openGroup() failed", rc);
         }
@@ -5240,6 +5262,7 @@ public:
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5248,7 +5271,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenInMemoryChangeset(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openLocalChanges() failed", rc);
         }
@@ -5258,6 +5281,7 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
         REQUIRE_ARGUMENT_INTEGER(2, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 3);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5266,7 +5290,7 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenInMemoryChangeset(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openInMemoryChanges() failed", rc);
         }
@@ -5277,6 +5301,7 @@ public:
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
         REQUIRE_ARGUMENT_INTEGER(3, propFilterInt);
+        size_t spillThresholdBytes = ParseSpillThreshold(info, 4);
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
@@ -5288,14 +5313,15 @@ public:
         auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
-        DbResult rc = m_reader.OpenChangeStream(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt));
+        DbResult rc = m_reader.OpenInMemoryChangeset(nativeDgnDb->GetDgnDb(), std::move(changeset), invert, GetPropertyFilter(info, propFilterInt), spillThresholdBytes);
         if (rc != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "openTxn() failed", rc);
         }
 
     void Close(NapiInfoCR info)
         {
-        m_reader.Close();
+        if(m_reader.Close() != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "close() failed", IModelJsNativeErrorKey::ChangesetError);
         }
 
     Napi::Value GetChangeMetadata(NapiInfoCR info)
@@ -5429,6 +5455,18 @@ public:
         BentleyStatus rc = m_reader.ClearECClassNameFilters();
         if (rc != SUCCESS)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "clearClassNameFilters() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void EnableStrictMode(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.EnableStrictMode();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "enableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
+        }
+    void DisableStrictMode(NapiInfoCR info)
+        {
+        BentleyStatus rc = m_reader.DisableStrictMode();
+        if (rc != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "disableStrictMode() failed, possible reason can be that no change stream is open", IModelJsNativeErrorKey::NotOpen);
         }
 };
 

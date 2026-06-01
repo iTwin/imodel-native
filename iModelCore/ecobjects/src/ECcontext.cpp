@@ -413,13 +413,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaReadContextR context, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
     {
-    // Callers historically passed *nullptr through this overload when they had no fallback to
-    // provide (relying on the reference never being dereferenced). That pattern is undefined
-    // behaviour; assert it loudly in debug builds and steer callers to the no-fallback
-    // overload below.
-    PUSH_CLANG_IGNORE(tautological-undefined-compare)
-    BeAssert(&fallBackSchema != nullptr && "Use CreateContext(ECSchemaReadContextR, ECSchemaPtr*) when no fallback schema is available");
-    POP_CLANG_IGNORE
     return new ECSchemaReadContextBackedInstanceReadContext (context, &fallBackSchema, foundSchema);
     }
 
