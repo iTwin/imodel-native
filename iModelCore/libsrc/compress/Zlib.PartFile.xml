@@ -9,10 +9,8 @@
         <SubPart PartName="_prewire_VendorAPI" />
         <Bindings>
             <VendorAPI Domain="zlib" />
-            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">
-                Delivery/$(stlibprefix)BeZlib$(stlibext)
-                Delivery/$(stlibprefix)BeZlib$(stlibdebugext)
-            </Libs>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeZlib$(stlibext)</Libs>
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false" IfNotPresent="Continue">Delivery/$(stlibprefix)BeZlib$(stlibdebugext)</Libs>
             <VendorNotices>
                 Delivery/minizip-license.txt
                 Delivery/zlib-license.txt
