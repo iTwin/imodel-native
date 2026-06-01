@@ -71,24 +71,6 @@ g++ --version
 
 ### Windows
 
-1. Clone vcpkg:
-
-    ```bat
-    git clone https://github.com/microsoft/vcpkg.git %USERPROFILE%\src\vcpkg
-    cd %USERPROFILE%\src\vcpkg
-    .\bootstrap-vcpkg.bat
-    ```
-
-2. Set `VCPKG_ROOT` (optional — defaults to `%USERPROFILE%\src\vcpkg`):
-
-    ```bat
-    set VCPKG_ROOT=%USERPROFILE%\src\vcpkg
-    ```
-
-__TODO:__ Document remaining required tooling
-
-### Windows
-
 On Windows, the build wrapper supports a project-specific override variable named `IMODEL_VCPKG_ROOT`. Use this instead of `VCPKG_ROOT` when you want deterministic selection of a standalone vcpkg checkout in environments where Visual Studio tools may inject `VCPKG_ROOT`.
 
 Install the following prerequisites **before running vcpkg**:
