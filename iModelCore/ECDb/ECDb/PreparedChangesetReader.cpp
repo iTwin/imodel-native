@@ -360,12 +360,8 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage, ColumnValueMap& outMap) const {
-    if (!IsOpen()) {
-        LOG.errorv("Attempting to get column values from a closed PreparedChangesetReader.");
-        return ERROR;
-    }
-    if (!IsStepped()) {
-        LOG.errorv("Attempting to get column values from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get column values from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
     }
     Utf8String tableName;
@@ -453,14 +449,8 @@ void PreparedChangesetReader::DumpColumnValues(ColumnValueMap const& map) const 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 int PreparedChangesetReader::GetColumnCount(Stage stage) const {
-    if(!IsOpen())
-    {
-        LOG.warningv("Attempting to get column count from a closed PreparedChangesetReader.");
-        return 0;
-    }
-    if(!IsStepped())
-    {
-        LOG.warningv("Attempting to get column count from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get column count from a PreparedChangesetReader that is either not open or not stepped.");
         return 0;
     }
     return m_fields.find(stage) != m_fields.end() ? static_cast<int>(m_fields.at(stage).size()) : 0;
@@ -470,16 +460,10 @@ int PreparedChangesetReader::GetColumnCount(Stage stage) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to get table name from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get table name from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to get table name from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     tableName = m_currentChange.GetTableName();
     return SUCCESS;
 }
@@ -488,16 +472,10 @@ BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to get opcode from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get opcode from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to get opcode from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     opcode = m_currentChange.GetOpcode();
     return SUCCESS;
 }
@@ -506,19 +484,13 @@ BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnIndex) const {
-    if (!IsOpen())
-        {
-        LOG.warningv("Attempting to get value from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get value from a PreparedChangesetReader that is either not open or not stepped.");
         return NoopECSqlValue::GetSingleton();
-        }
-    if (!IsStepped())
-        {
-        LOG.warningv("Attempting to get value from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return NoopECSqlValue::GetSingleton();
-        }
+    }
     int size = GetColumnCount(stage);
     if (columnIndex < 0 || columnIndex >= size) {
-        LOG.warningv("Column index %d is out of range for table.", columnIndex);
+        LOG.errorv("Column index %d is out of range for table.", columnIndex);
         return NoopECSqlValue::GetSingleton();
     }
     return *m_fields.at(stage).at(columnIndex);
@@ -528,16 +500,10 @@ IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnInde
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to get instance key from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get instance key from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to get instance key from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     const int count = GetColumnCount(stage);
     Utf8String instanceId;
     Utf8String classId;
@@ -573,17 +539,10 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to check IsECTable on a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to check IsECTable on a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to check IsECTable on a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
-    
+    }
     Utf8String tableName;
     if(GetTableName(tableName) != SUCCESS)
         return ERROR;
@@ -610,16 +569,10 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const {
-    if(!IsOpen())
-        {
-        LOG.errorv("Attempting to get changed property names from a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if(!IsStepped())
-        {
-        LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     out.clear();
     out = m_changedPropNames;
     return SUCCESS;
@@ -629,16 +582,10 @@ BentleyStatus PreparedChangesetReader::GetChangeFetchedPropertyNames(std::vector
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::IsIndirectChange(bool& isIndirect) const {
-    if (!IsOpen())
-        {
-        LOG.errorv("Attempting to check IsIndirectChange on a closed PreparedChangesetReader.");
+    if(!IsOpenAndStepped()) {
+        LOG.errorv("Attempting to check IsIndirectChange on a PreparedChangesetReader that is either not open or not stepped.");
         return ERROR;
-        }
-    if (!IsStepped())
-        {
-        LOG.errorv("Attempting to check IsIndirectChange on a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-        }
+    }
     isIndirect = m_currentChange.IsIndirect();
     return SUCCESS;
 }
