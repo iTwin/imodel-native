@@ -173,7 +173,12 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, Ddl
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearFields() {
-    m_fields.clear();
+    if(m_fields.find(Stage::New) != m_fields.end())
+        m_fields.at(Stage::New).clear();
+    
+    if(m_fields.find(Stage::Old) != m_fields.end())
+        m_fields.at(Stage::Old).clear();
+
     m_changedPropNames.clear();
 }
 
@@ -216,6 +221,7 @@ void PreparedChangesetReader::ClearMembers() {
     m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
     m_invert = false;
     ClearFields();
+    m_fields.clear();
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
@@ -231,25 +237,32 @@ DbResult PreparedChangesetReader::Step() {
         LOG.errorv("Attempting to step a closed PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
-    if (m_changes == nullptr) {
+    bool isCurrentRowFilteredOut = false;
+    auto stat = BE_SQLITE_OK;
+    do {
+        isCurrentRowFilteredOut = false;
+        if (m_changes == nullptr) {
         ClearFields();
         m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
         m_currentChange = m_changes->begin();
-    } else {
-        if(m_currentChange.IsValid()) {
-            ClearFields();
-            ++m_currentChange;
+        } else {
+            if(m_currentChange.IsValid()) {
+                ClearFields();
+                ++m_currentChange;
+            }
         }
-    }
-    auto stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
-    bool isCurrentRowFilteredOut = false;
-    if(ReFetchValues(isCurrentRowFilteredOut) != SUCCESS)
-        return BE_SQLITE_ERROR;
+        stat = m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
+        if(stat == BE_SQLITE_DONE) return stat;
+        if(ReFetchValues(isCurrentRowFilteredOut) != SUCCESS) {
+            ClearFields();
+            return BE_SQLITE_ERROR;
+        }
 
-    if(isCurrentRowFilteredOut) {
-        LOG.infov("Current change is filtered out. Stepping to the next change.");
-        return Step();
-    }
+        if(isCurrentRowFilteredOut) {
+            LOG.infov("Current change is filtered out. Stepping to the next change.");
+        }
+    } while(isCurrentRowFilteredOut);
+    
     return stat;
 }
 
@@ -289,52 +302,54 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
     isCurrentRowFilteredOut = false;
     m_fields.try_emplace(Stage::New);
     m_fields.try_emplace(Stage::Old);
-    if (m_currentChange.IsValid()) {
-        DbOpcode opCode;
-        if(GetOpcode(opCode) != SUCCESS)
-            return ERROR;
-        
-        if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
-            LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
-            isCurrentRowFilteredOut = true;
-            return SUCCESS;
-        }
-        
-        Utf8String tableName;
-        if(GetTableName(tableName) != SUCCESS)
-            return ERROR;
-        
-        if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
-            LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
-            isCurrentRowFilteredOut = true;
-            return SUCCESS;
-        }
+    if (!m_currentChange.IsValid()) {
+        LOG.errorv("Attempting to re-fetch values for an invalid change.");
+        return ERROR;
+    }
+    DbOpcode opCode;
+    if(GetOpcode(opCode) != SUCCESS)
+        return ERROR;
+    
+    if(!IsOpcodeAllowedPostFilter(opCode)) { // First is opCode filter
+        LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", DbOpcodeToString(opCode).c_str());
+        isCurrentRowFilteredOut = true;
+        return SUCCESS;
+    }
+    
+    Utf8String tableName;
+    if(GetTableName(tableName) != SUCCESS)
+        return ERROR;
+    
+    if(!IsTableAllowedPostFilter(tableName)) { // second is table filter
+        LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
+        isCurrentRowFilteredOut = true;
+        return SUCCESS;
+    }
 
-        bool isECTable = false;
-        if(IsECTable(isECTable) != SUCCESS)
-            return ERROR;
-        if(!isECTable) {
-            LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
-            return SUCCESS;
-        }
+    bool isECTable = false;
+    if(IsECTable(isECTable) != SUCCESS)
+        return ERROR;
+    if(!isECTable) {
+        LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
+        return SUCCESS;
+    }
 
-        DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
-        if (dbTable == nullptr) {
-            LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-            return ERROR;
-        }
+    DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
+    if (dbTable == nullptr) {
+        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+        return ERROR;
+    }
 
-        if(opCode != DbOpcode::Delete) {
-            auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
-            if (result == StageProcessResult::Error) return ERROR;
-            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
-        }
-        if(opCode != DbOpcode::Insert) {
-            std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-            auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
-            if (result == StageProcessResult::Error) return ERROR;
-            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
-        }
+    if(opCode != DbOpcode::Delete) {
+        auto result = ProcessStageValues(Stage::New, *dbTable, m_changedPropNames);
+        if (result == StageProcessResult::Error) return ERROR;
+        if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
+    }
+    if(opCode != DbOpcode::Insert) {
+        std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
+        auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changedPropNames);
+        if (result == StageProcessResult::Error) return ERROR;
+        if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
     }
     return SUCCESS;
 }
