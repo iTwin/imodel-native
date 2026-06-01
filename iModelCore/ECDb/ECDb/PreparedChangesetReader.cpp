@@ -522,6 +522,11 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
         LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
         return ERROR;
     }
+    DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
+    if (dbTable == nullptr) {
+        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+        return ERROR;
+    }
 
     if (opCode != DbOpcode::Delete) {
         auto result = ProcessStageValues(Stage::New, *dbTable, m_changeFetchedPropertyNames);
@@ -598,6 +603,7 @@ IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnInde
         LOG.errorv("Attempting to get value from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return NoopECSqlValue::GetSingleton();
     }
+    }
     int size = GetColumnCount(stage);
     if (columnIndex < 0 || columnIndex >= size) {
         LOG.errorv("Column index %d is out of range for current row of change record for stage %s.", columnIndex, stage == Stage::New ? "New" : "Old");
@@ -617,6 +623,7 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
     if (!IsStepped()) {
         LOG.errorv("Attempting to get instance key from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
         return ERROR;
+    }
     }
     const int count = GetColumnCount(stage);
     Utf8String instanceId;
