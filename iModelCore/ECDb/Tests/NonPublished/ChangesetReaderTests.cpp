@@ -170,8 +170,6 @@ struct ChangesetReaderTests : ECDbTestFixture {
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_insert.ecdb", SchemaItem(GetSchema())));
 
     // Container inserted BEFORE tracking — must not appear in the changeset.
