@@ -71,6 +71,7 @@ private:
 
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
+    ~PreparedChangesetReader() { CloseInfallible(); }
 
     DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     //! Opens a pre-built in-memory ChangeSet for reading.
