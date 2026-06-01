@@ -158,13 +158,17 @@ DbResult ChangesetSqliteIterator::FirstStep() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetSqliteIterator::NextStep() {
+    // TODO: Improve this logic somehow if possible as this is a copy
+    auto tempCurrentChange = m_currentChange; // hold a copy in case incrementing current change throws, so we don't lose our place in the iteration
     try {
         ++m_currentChange;
         return m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
     } catch (std::exception const& ex) {
+        m_currentChange = tempCurrentChange;
         LOG.errorv("Exception in ChangesetSqliteIterator::NextStep: %s", ex.what());
         return BE_SQLITE_ERROR;
     } catch (...) {
+        m_currentChange = tempCurrentChange;
         LOG.error("Unknown exception in ChangesetSqliteIterator::NextStep.");
         return BE_SQLITE_ERROR;
     }
@@ -560,11 +564,6 @@ BentleyStatus PreparedChangesetReader::DoRefetchValues(bool& isCurrentRowFiltere
         return SUCCESS;
     }
 
-    DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
-    if (dbTable == nullptr) {
-        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-        return ERROR;
-    }
     DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
     if (dbTable == nullptr) {
         LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
