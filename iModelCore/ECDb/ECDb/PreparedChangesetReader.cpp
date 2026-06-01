@@ -173,11 +173,10 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, Ddl
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearFields() {
-    if(m_fields.find(Stage::New) != m_fields.end())
-        m_fields.at(Stage::New).clear();
-    
-    if(m_fields.find(Stage::Old) != m_fields.end())
-        m_fields.at(Stage::Old).clear();
+    if (auto it = m_fields.find(Stage::New); it != m_fields.end())
+        it->second.clear();
+     if (auto it = m_fields.find(Stage::Old); it != m_fields.end())
+        it->second.clear();
 
     m_changedPropNames.clear();
 }
@@ -238,13 +237,13 @@ DbResult PreparedChangesetReader::Step() {
         return BE_SQLITE_ERROR;
     }
     bool isCurrentRowFilteredOut = false;
-    auto stat = BE_SQLITE_OK;
+    DbResult stat = BE_SQLITE_OK;
     do {
         isCurrentRowFilteredOut = false;
         if (m_changes == nullptr) {
-        ClearFields();
-        m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
-        m_currentChange = m_changes->begin();
+            ClearFields();
+            m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
+            m_currentChange = m_changes->begin();
         } else {
             if(m_currentChange.IsValid()) {
                 ClearFields();
