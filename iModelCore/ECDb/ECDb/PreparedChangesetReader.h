@@ -50,8 +50,13 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
+    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
+
+    void DoStep();
+    bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
+    ~PreparedChangesetReader() { Close(); }
 
     DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
