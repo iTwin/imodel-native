@@ -170,8 +170,6 @@ struct ChangesetReaderTests : ECDbTestFixture {
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_insert.ecdb", SchemaItem(GetSchema())));
 
     // Container inserted BEFORE tracking — must not appear in the changeset.
@@ -3594,7 +3592,7 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_cs.ecdb", SchemaItem(GetStrictModeV1Schema())));
 
-    // Capture a V1 INSERT changeset (table has 4 columns: Id, ECClassId, Name, Value).
+    // Capture a V1 INSERT changeset (table has 3 columns: Id, Name, Value).
     TestCSChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
@@ -3606,10 +3604,10 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
     ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
     BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "strict_older_cs.changeset");
 
-    // Upgrade the DB to V2 — the tsi_Item table now has 5 columns (Id, ECClassId, Name, Value, Extra).
+    // Upgrade the DB to V2 — the tsi_Item table now has 4 columns (Id, Name, Value, Extra).
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
 
-    // Strict mode ON: column-count mismatch (4 in changeset vs 5 in table) must be an error.
+    // Strict mode ON: column-count mismatch (3 in changeset vs 4 in table) must be an error.
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
@@ -3633,7 +3631,6 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
     // Old stage is empty for an INSERT.
     EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
 
-    // Only the 4 V1 columns are readable; the V2 Extra column is not present in the changeset.
     EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
     IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
@@ -3667,11 +3664,10 @@ TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     {
-    // Build a V2 changeset using a separate ECDb upgraded to V2 (5 columns).
+    // Build a V2 changeset using a separate ECDb upgraded to V2 (4 columns).
     BeFileName csFile;
     ECInstanceKey itemKey;
     {
-    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_newer_src.ecdb", SchemaItem(GetStrictModeV1Schema())));
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
 
@@ -3686,10 +3682,10 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     csFile = WriteChangesetToFile(m_ecdb, cs, "strict_newer_cs.changeset");
     }   // End source-db setup scope; m_ecdb is reinitialized by the SetupECDb() call below.
 
-    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    // m_ecdb is the reader DB — it carries only the V1 schema (3 columns).
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
 
-    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4 → error.
+    // Strict mode ON: changeset has 4 columns but the V1 reader DB table has only 3 → error.
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
@@ -3699,8 +3695,8 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     ASSERT_EQ(SUCCESS, reader.Close());
     }
 
-    // Strict mode OFF: reader must read the first min(5,4)=4 columns and succeed.
-    // The Extra column (index 4 in the changeset) is beyond the minimum and not surfaced.
+    // Strict mode OFF: reader must read the first min(4,3)=3 columns and succeed.
+    // The Extra column (index 3 in the changeset) is beyond the minimum and not surfaced.
     {
     ChangesetReader reader;
     ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
@@ -3714,7 +3710,6 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     // Old stage is empty for an INSERT.
     EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
 
-    // Only the 4 V1 columns are resolved; Extra (5th changeset column) is beyond the minimum.
     EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
 
     IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
