@@ -187,7 +187,7 @@ void PreparedChangesetReader::ClearFields() {
 BentleyStatus PreparedChangesetReader::Close() {
     ClearMembers();
 
-    if (m_tempGroupFile.DoesPathExist()) {
+    if (!m_tempGroupFile.IsEmpty() && m_tempGroupFile.DoesPathExist()) {
         if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
             LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
             return ERROR;
@@ -203,7 +203,7 @@ BentleyStatus PreparedChangesetReader::Close() {
 void PreparedChangesetReader::CloseInfallible() {
     ClearMembers();
 
-    if (m_tempGroupFile.DoesPathExist()) {
+    if (!m_tempGroupFile.IsEmpty() && m_tempGroupFile.DoesPathExist()) {
         if(m_tempGroupFile.BeDeleteFile() != BeFileNameStatus::Success) {
             LOG.errorv("Failed to delete temporary changeset file '%s'.", m_tempGroupFile.GetNameUtf8().c_str());
         }
