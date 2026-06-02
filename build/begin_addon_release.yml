@@ -80,7 +80,10 @@ stages:
         name: getItwinjsPr
 
       - bash: |
-          az pipelines run             --branch $(Build.SourceBranch)             --id 8467             --parameters "BumpType=patch" "iTwinjsPrNum=$(getItwinjsPr.ITWINJS_PR_NUM)"
+          az pipelines run \
+            --branch $(Build.SourceBranch) \
+            --id 8467 \
+            --parameters "BumpType=patch" "iTwinjsPrNum=$(getItwinjsPr.ITWINJS_PR_NUM)"
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
