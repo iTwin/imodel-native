@@ -685,4 +685,124 @@ BentleyStatus PreparedChangesetReader::IsIndirectChange(bool& isIndirect) const 
     return SUCCESS;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to set table filters on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.SetTableFilters(tableFilters);
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to set opcode filters on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.SetOpcodeFilters(opcodeFilters);
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to set EC class name filters on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.SetECClassNameFilters(ecclassNameFilters);
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::ClearTableFilters() {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to clear table filters on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.ClearTableFilters();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::ClearOpcodeFilters() {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to clear opcode filters on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.ClearOpcodeFilters();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::ClearECClassNameFilters() {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to clear EC class name filters on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.ClearECClassNameFilters();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::EnableStrictMode() {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to enable strict mode on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.EnableStrictMode();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::DisableStrictMode() {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to disable strict mode on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_filter.DisableStrictMode();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::SetUseJsNamesForChangeFetchedPropertyNames(bool v) {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to set use of JS names for change fetched property names on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_args.SetUseJsNames(v);
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PreparedChangesetReader::SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(bool v) {
+    if (!IsOpen()) {
+        LOG.errorv("Attempting to set use of class full name instead of class name for change fetched property names on a PreparedChangesetReader that is not open.");
+        return ERROR;
+    }
+    m_args.SetUseClassFullNameInsteadofClassName(v);
+    return SUCCESS;
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

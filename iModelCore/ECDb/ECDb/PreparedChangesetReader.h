@@ -197,18 +197,18 @@ public:
     BentleyStatus IsIndirectChange(bool& isIndirect) const;
 
     // filtering APIs — delegate to m_filter
-    void SetTableFilters(std::vector<Utf8String> const& tableFilters)             { m_filter.SetTableFilters(tableFilters); }
-    void SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters)             { m_filter.SetOpcodeFilters(opcodeFilters); }
-    void SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) { m_filter.SetECClassNameFilters(ecclassNameFilters); }
-    void ClearTableFilters()       { m_filter.ClearTableFilters(); }
-    void ClearOpcodeFilters()      { m_filter.ClearOpcodeFilters(); }
-    void ClearECClassNameFilters() { m_filter.ClearECClassNameFilters(); }
-    void EnableStrictMode()        { m_filter.EnableStrictMode(); }
-    void DisableStrictMode()       { m_filter.DisableStrictMode(); }
+    BentleyStatus SetTableFilters(std::vector<Utf8String> const& tableFilters);
+    BentleyStatus SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);     
+    BentleyStatus SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters);
+    BentleyStatus ClearTableFilters();
+    BentleyStatus ClearOpcodeFilters();
+    BentleyStatus ClearECClassNameFilters();
+    BentleyStatus EnableStrictMode();
+    BentleyStatus DisableStrictMode();
 
     // Expose Changed prop names formatting args
-    void SetUseJsNamesForChangeFetchedPropertyNames(bool v) { m_args.SetUseJsNames(v); }
-    void SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(bool v) { m_args.SetUseClassFullNameInsteadofClassName(v); }
+    BentleyStatus SetUseJsNamesForChangeFetchedPropertyNames(bool v);
+    BentleyStatus SetUseClassFullNameInsteadofClassNameForChangeFetchedPropertyNames(bool v);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
