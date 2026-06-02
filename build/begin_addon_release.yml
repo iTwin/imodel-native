@@ -38,28 +38,28 @@ stages:
       - bash: |
             set -euo pipefail
 
+            skipPatchBump() {
+              echo "$1"
+              echo "##vso[task.setvariable variable=ITWINJS_PR_NUM;isoutput=true]0"
+              echo "##vso[task.setvariable variable=SHOULD_QUEUE_PATCH;isoutput=true]false"
+              exit 0
+            }
+
             commitMsg="$(Build.SourceVersionMessage)"
-            echo "Commit message: $commitMsg"
 
             if [[ "$commitMsg" == "bump @itwin/* dev dependencies to next minor version" ]]; then
-              echo "Skipping patch bump for the automation-generated dev dependency update."
-              echo "##vso[task.setvariable variable=ITWINJS_PR_NUM;isoutput=true]0"
-              echo "##vso[task.setvariable variable=QUEUE_PATCH;isoutput=true]false"
-              exit 0
+              skipPatchBump "Skipping patch bump for the automation-generated dev dependency update."
             fi
 
             # Use grep to parse commit message for PR number attached to end of the commit.
-            nativePrNum=$(echo "$commitMsg" | grep -oE '\(#([0-9]+)\)$' | grep -o '[0-9]\+' || true)
-            if [[ -z "$nativePrNum" ]]; then
-              echo "Skipping patch bump because no PR number could be parsed from the commit message."
-              echo "##vso[task.setvariable variable=ITWINJS_PR_NUM;isoutput=true]0"
-              echo "##vso[task.setvariable variable=QUEUE_PATCH;isoutput=true]false"
-              exit 0
+            nativePrNumber=$(echo "$commitMsg" | grep -oE '\(#([0-9]+)\)$' | grep -o '[0-9]\+' || true)
+            if [[ -z "$nativePrNumber" ]]; then
+              skipPatchBump "Skipping patch bump because no PR number could be parsed from the commit message."
             fi
-            echo "Native PR Num: $nativePrNum"
+            echo "Native PR Num: $nativePrNumber"
 
             # Store PR description in txt file because vars behave strangely with multi line comments.
-            gh pr view $nativePrNum --json body --repo iTwin/imodel-native -q '.body' > body.txt
+            gh pr view $nativePrNumber --json body --repo iTwin/imodel-native -q '.body' > body.txt
 
             # Parse body.txt, searching for the itwinjs-core PR URL and extract its pull number.
             itwinjsPR=$(grep -o '^itwinjs-core: https://github.com/iTwin/itwinjs-core/pull/[0-9]\+' body.txt | grep -o '[0-9]\+' || true)
@@ -72,7 +72,7 @@ stages:
             fi
 
             echo "##vso[task.setvariable variable=ITWINJS_PR_NUM;isoutput=true]$itwinjsPR"
-            echo "##vso[task.setvariable variable=QUEUE_PATCH;isoutput=true]true"
+            echo "##vso[task.setvariable variable=SHOULD_QUEUE_PATCH;isoutput=true]true"
 
         env:
           GITHUB_TOKEN: $(GH_TOKEN)
@@ -87,4 +87,4 @@ stages:
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-        condition: eq(variables['getItwinjsPr.QUEUE_PATCH'], 'true')
+        condition: eq(variables['getItwinjsPr.SHOULD_QUEUE_PATCH'], 'true')
