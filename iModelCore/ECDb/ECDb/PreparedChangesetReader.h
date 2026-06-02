@@ -156,7 +156,8 @@ private:
     ChangedPropNameFormatArgs m_args;
     std::vector<Utf8String>  m_changeFetchedPropertyNames;
 
-    std::unordered_map<Stage, std::vector<ChangesetValue*>> m_fields;
+    std::vector<ChangesetValue*> m_oldFields;
+    std::vector<ChangesetValue*> m_newFields;
     PmrObjectAllocator<ChangesetValue> m_fieldAllocator;
 
     ChangesetValueFactory m_valueFactory;
@@ -165,7 +166,6 @@ private:
     PreparedChangesetReader& operator=(PreparedChangesetReader const&) = delete;
 
     void ClearValuesOnStep();
-    BentleyStatus DoRefetchValues(bool& isCurrentRowFilteredOut);
     BentleyStatus RefetchValues(bool& isCurrentRowFilteredOut);
     bool IsOpen() const { return m_iterator.IsOpen(); }
     //! Stores @p changeStream directly via the iterator without any size-based spill logic.

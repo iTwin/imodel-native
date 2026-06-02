@@ -135,43 +135,17 @@ void ChangesetSqliteIterator::Close() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetSqliteIterator::FirstStep() {
-    const auto reset = [&]() {
-        m_currentChange = Changes::Change(nullptr, false);
-        m_changes = nullptr;
-    };
-    try {
-        m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
-        m_currentChange = m_changes->begin();
-        return m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
-    } catch (std::exception const& ex) {
-        reset();
-        LOG.errorv("Exception in ChangesetSqliteIterator::FirstStep: %s", ex.what());
-        return BE_SQLITE_ERROR;
-    } catch (...) {
-        reset();
-        LOG.error("Unknown exception in ChangesetSqliteIterator::FirstStep.");
-        return BE_SQLITE_ERROR;
-    }
+    m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
+    m_currentChange = m_changes->begin();
+    return m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ChangesetSqliteIterator::NextStep() {
-    // TODO: Improve this logic somehow if possible as this is a copy
-    auto tempCurrentChange = m_currentChange; // hold a copy in case incrementing current change throws, so we don't lose our place in the iteration
-    try {
-        ++m_currentChange;
-        return m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
-    } catch (std::exception const& ex) {
-        m_currentChange = tempCurrentChange;
-        LOG.errorv("Exception in ChangesetSqliteIterator::NextStep: %s", ex.what());
-        return BE_SQLITE_ERROR;
-    } catch (...) {
-        m_currentChange = tempCurrentChange;
-        LOG.error("Unknown exception in ChangesetSqliteIterator::NextStep.");
-        return BE_SQLITE_ERROR;
-    }
+    ++m_currentChange;
+    return m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
 }
 
 //---------------------------------------------------------------------------------------
@@ -180,9 +154,9 @@ DbResult ChangesetSqliteIterator::NextStep() {
 DbResult ChangesetSqliteIterator::StepRaw() {
     if (m_changes == nullptr)
         return FirstStep();
-    else if(m_currentChange.IsValid())
+    if(m_currentChange.IsValid())
         return NextStep();
-    return m_currentChange.IsValid() ? BE_SQLITE_ROW : BE_SQLITE_DONE;
+    return BE_SQLITE_DONE;
 }
 
 //---------------------------------------------------------------------------------------
@@ -343,8 +317,6 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
 
     m_filter.SetPropertyFilter(propertyFilter);
     m_iterator.Open(std::move(changeStream), invert);
-    m_fields.try_emplace(Stage::New);
-    m_fields.try_emplace(Stage::Old);
     return BE_SQLITE_OK;
 }
 
@@ -432,8 +404,8 @@ DbResult PreparedChangesetReader::OpenChangeGroup(T_Utf8StringVector const& file
 void PreparedChangesetReader::ClearValuesOnStep() {
     m_valueFactory.ClearChangeValueMap();
     m_changeFetchedPropertyNames.clear();
-    m_fields[Stage::New].clear();
-    m_fields[Stage::Old].clear();
+    m_newFields.clear();
+    m_oldFields.clear();
     m_fieldAllocator.Reset();
 }
 
@@ -457,10 +429,7 @@ void PreparedChangesetReader::CloseInfallible() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearMembersBeforeClose() {
-    m_valueFactory.ClearChangeValueMap();
-    m_changeFetchedPropertyNames.clear();
-    m_fields.clear();
-    m_fieldAllocator.Reset();
+    ClearValuesOnStep();
     m_iterator.Close();          // stream destroyed here — safe to delete any temp file afterwards
     m_filter.Reset();
 }
@@ -521,7 +490,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
             return StageProcessResult::Error;
         }
     }
-    if (m_valueFactory.Create(dbTable, classId, isClassIdFromChangeset, m_fields.at(stage), changeFetchedPropNames) != SUCCESS)
+    if (m_valueFactory.Create(dbTable, classId, isClassIdFromChangeset, stage == Stage::New ? m_newFields : m_oldFields, changeFetchedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
@@ -529,69 +498,62 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PreparedChangesetReader::DoRefetchValues(bool& isCurrentRowFilteredOut) {
-    isCurrentRowFilteredOut = false;
-    if (!IsStepped()) {
-        LOG.errorv("Attempting to re-fetch values from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
-        return ERROR;
-    }
-
-    DbOpcode opCode;
-    if (GetOpcode(opCode) != SUCCESS)
-        return ERROR;
-
-    if (!m_filter.IsOpcodeAllowed(opCode)) {
-        LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", ChangesetSqliteIterator::DbOpcodeToString(opCode).c_str());
-        isCurrentRowFilteredOut = true;
-        return SUCCESS;
-    }
-
-    Utf8String tableName;
-    if (GetTableName(tableName) != SUCCESS)
-        return ERROR;
-
-    if (!m_filter.IsTableAllowed(tableName)) {
-        LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
-        isCurrentRowFilteredOut = true;
-        return SUCCESS;
-    }
-
-    bool isECTable = false;
-    if (IsECTable(isECTable) != SUCCESS)
-        return ERROR;
-    if (!isECTable) {
-        LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
-        return SUCCESS;
-    }
-
-    DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
-    if (dbTable == nullptr) {
-        LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
-        return ERROR;
-    }
-
-    if (opCode != DbOpcode::Delete) {
-        auto result = ProcessStageValues(Stage::New, *dbTable, m_changeFetchedPropertyNames);
-        m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing New stage to free up memory
-        if (result == StageProcessResult::Error) return ERROR;
-        if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
-    }
-    if (opCode != DbOpcode::Insert) {
-        std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
-        auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changeFetchedPropertyNames);
-        m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing Old stage to free up memory
-        if (result == StageProcessResult::Error) return ERROR;
-        if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
-    }
-    return SUCCESS;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::RefetchValues(bool& isCurrentRowFilteredOut) {
     try {
-        return DoRefetchValues(isCurrentRowFilteredOut);
+        isCurrentRowFilteredOut = false;
+        if (!IsStepped()) {
+            LOG.errorv("Attempting to re-fetch values from a PreparedChangesetReader that has not been stepped or is on an invalid change.");
+            return ERROR;
+        }
+
+        DbOpcode opCode;
+        if (GetOpcode(opCode) != SUCCESS)
+            return ERROR;
+
+        if (!m_filter.IsOpcodeAllowed(opCode)) {
+            LOG.infov("Opcode '%s' is not allowed by filters. Skipping creating fields", ChangesetSqliteIterator::DbOpcodeToString(opCode).c_str());
+            isCurrentRowFilteredOut = true;
+            return SUCCESS;
+        }
+
+        Utf8String tableName;
+        if (GetTableName(tableName) != SUCCESS)
+            return ERROR;
+
+        if (!m_filter.IsTableAllowed(tableName)) {
+            LOG.infov("Table '%s' is not allowed by filters. Skipping creating fields", tableName.c_str());
+            isCurrentRowFilteredOut = true;
+            return SUCCESS;
+        }
+
+        bool isECTable = false;
+        if (IsECTable(isECTable) != SUCCESS)
+            return ERROR;
+        if (!isECTable) {
+            LOG.infov("Table '%s' is not an EC table. Skipping creating fields", tableName.c_str());
+            return SUCCESS;
+        }
+
+        DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
+        if (dbTable == nullptr) {
+            LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
+            return ERROR;
+        }
+
+        if (opCode != DbOpcode::Delete) {
+            auto result = ProcessStageValues(Stage::New, *dbTable, m_changeFetchedPropertyNames);
+            m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing New stage to free up memory
+            if (result == StageProcessResult::Error) return ERROR;
+            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
+        }
+        if (opCode != DbOpcode::Insert) {
+            std::vector<Utf8String> ignored; // For update operation we have already filled m_changedProps in the above ChangesetValueFactory::Create call
+            auto result = ProcessStageValues(Stage::Old, *dbTable, (opCode == DbOpcode::Update) ? ignored : m_changeFetchedPropertyNames);
+            m_valueFactory.ClearChangeValueMap(); // clear scratch map after processing Old stage to free up memory
+            if (result == StageProcessResult::Error) return ERROR;
+            if (result == StageProcessResult::Filtered) { isCurrentRowFilteredOut = true; return SUCCESS; }
+        }
+        return SUCCESS;
     } catch (std::exception const& ex) {
         LOG.errorv("Exception occurred while refetching values: %s", ex.what());
         return ERROR;
@@ -609,7 +571,7 @@ int PreparedChangesetReader::GetColumnCount(Stage stage) const {
         LOG.errorv("Attempting to get column count from a PreparedChangesetReader that is either not open or not stepped to a valid change.");
         return 0;
     }
-    return m_fields.find(stage) != m_fields.end() ? static_cast<int>(m_fields.at(stage).size()) : 0;
+    return stage == Stage::New ? static_cast<int>(m_newFields.size()) : static_cast<int>(m_oldFields.size());
 }
 
 //---------------------------------------------------------------------------------------
@@ -649,7 +611,7 @@ IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnInde
         LOG.errorv("Column index %d is out of range for current row of change record for stage %s.", columnIndex, stage == Stage::New ? "New" : "Old");
         return NoopECSqlValue::GetSingleton();
     }
-    return *m_fields.at(stage).at(columnIndex);
+    return stage == Stage::New ? *m_newFields.at(columnIndex) : *m_oldFields.at(columnIndex);
 }
 
 //---------------------------------------------------------------------------------------
