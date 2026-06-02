@@ -1,0 +1,48 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg.mke - Check out and install vcpkg from GitHub
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+# To update vcpkg, set VCPKG_TAG to the new tag from https://github.com/microsoft/vcpkg/tags
+# and set VCPKG_COMMIT to the full commit hash shown on that tag's page.
+# You can also get the commit hash by running:
+#   git ls-remote --tags https://github.com/microsoft/vcpkg.git <tag>^{}
+
+# What version of vcpkg to use
+VCPKG_TAG=2026.05.25
+# The commit hash for the above version.
+VCPKG_COMMIT=d015e31e90838a4c9dfa3eed45979bc70d9357fc
+
+%if $(TARGET_PLATFORM)=="Windows"
+    %if defined (IMODEL_VCPKG_ROOT)
+        # If IMODEL_VCPKG_ROOT is set, use that vcpkg instead of installing a local one.
+        %warn Using vcpkg from $(IMODEL_VCPKG_ROOT).
+        %return
+    %endif
+%else
+    %if defined (VCPKG_ROOT)
+        # If VCPKG_ROOT is set, use that vcpkg instead of installing a local one.
+        %warn Using vcpkg from $(VCPKG_ROOT).
+        %return
+    %endif
+%endif
+
+%if !exists($(_MakeFilePath)/vcpkg)
+    always:
+        git clone https://github.com/microsoft/vcpkg.git $(_MakeFilePath)/vcpkg
+%endif
+
+always:
+    ~chdir $(_MakeFilePath)/vcpkg
+    git fetch --tags
+    git checkout $(VCPKG_TAG)
+    git rev-parse HEAD | grep -q $(VCPKG_COMMIT) || (echo "ERROR: vcpkg tag $(VCPKG_TAG) does not match expected commit $(VCPKG_COMMIT)" && exit 1)
+    %if $(TARGET_PLATFORM)=="Windows"
+        ./bootstrap-vcpkg.bat
+    %else
+        ./bootstrap-vcpkg.sh
+    %endif

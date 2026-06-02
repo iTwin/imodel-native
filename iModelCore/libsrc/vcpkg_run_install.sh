@@ -4,7 +4,7 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # Wrapper script for vcpkg install, invoked from .mke build files.
-# Customize VCPKG_ROOT for developer or CI environments.
+# Customize IMODEL_VCPKG_ROOT for developer or CI environments.
 #
 # Usage: vcpkg_install.sh <manifest_dir> <install_root> <triplet>
 #   manifest_dir: Directory containing vcpkg.json
@@ -18,14 +18,20 @@ MANIFEST_DIR="$1"
 INSTALL_ROOT="$2"
 TRIPLET="$3"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
     echo "Usage: $0 <manifest_dir> <install_root> <triplet>"
     exit 1
 fi
 
-# Locate vcpkg. Override with VCPKG_ROOT environment variable.
-if [ -z "$VCPKG_ROOT" ]; then
-    VCPKG_ROOT="$HOME/src/vcpkg"
+# Locate vcpkg. Override with IMODEL_VCPKG_ROOT environment variable.
+# Use IMODEL_VCPKG_ROOT instead of VCPKG_ROOT to avoid conflicts with
+# tooling that may set VCPKG_ROOT to an undesired location.
+if [ -n "$IMODEL_VCPKG_ROOT" ]; then
+    VCPKG_ROOT="$IMODEL_VCPKG_ROOT"
+elif [ -z "$VCPKG_ROOT" ]; then
+    VCPKG_ROOT="$SCRIPT_DIR/vcpkg"
 fi
 
 # Local binary caching is enabled by default, but can be disabled by setting VCPKG_BINARY_SOURCES to "clear".
@@ -39,7 +45,7 @@ VCPKG_EXE="$VCPKG_ROOT/vcpkg"
 
 if [ ! -x "$VCPKG_EXE" ]; then
     echo "Error: vcpkg not found at $VCPKG_EXE"
-    echo "Set VCPKG_ROOT to the vcpkg installation directory."
+    echo "Set IMODEL_VCPKG_ROOT to the vcpkg installation directory."
     exit 1
 fi
 

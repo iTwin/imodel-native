@@ -1,24 +1,10 @@
 # vcpkg Integration
 
-This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select third-party library builds. vcpkg fetches source and builds libraries locally; the resulting headers and static libraries are delivered to Bentley Build via `.mke` files.
+This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select third-party library builds. vcpkg fetches source and builds libraries locally; the resulting headers and static libraries are delivered to Bentley Build via `.mke` files. The Bentley Build process installs the required version of vcpkg automatically, but the prerequisites listed below must be installed separately.
+
+> **Note:** On all platforms, use `IMODEL_VCPKG_ROOT` (not `VCPKG_ROOT`) if you need to override the vcpkg location. The build wrappers check `IMODEL_VCPKG_ROOT` first, avoiding conflicts with tooling that may set `VCPKG_ROOT` to an undesired location. Since the build system installs the required version of vcpkg automatically, setting `IMODEL_VCPKG_ROOT` is not recommended.
 
 ## Setup
-
-### macOS/Linux
-
-1. Clone vcpkg:
-
-    ```bash
-    git clone https://github.com/microsoft/vcpkg.git ~/src/vcpkg
-    cd ~/src/vcpkg
-    ./bootstrap-vcpkg.sh
-    ```
-
-2. Set `VCPKG_ROOT` (optional — defaults to `~/src/vcpkg`):
-
-    ```bash
-    export VCPKG_ROOT=~/src/vcpkg
-    ```
 
 ### macOS
 
@@ -55,11 +41,13 @@ RHEL/CentOS/Fedora (dnf):
 sudo dnf install -y gcc gcc-c++ make cmake pkgconf-pkg-config zip unzip tar curl git
 ```
 
-Set `VCPKG_ROOT` (optional — defaults to `~/src/vcpkg`):
+Set `IMODEL_VCPKG_ROOT` to override the vcpkg location (optional, not recommended):
 
 ```bash
-export VCPKG_ROOT=~/src/vcpkg
+export IMODEL_VCPKG_ROOT=~/src/vcpkg
 ```
+
+Do not set `VCPKG_ROOT` directly; use `IMODEL_VCPKG_ROOT` instead.
 
 Verify tooling is available:
 
@@ -71,7 +59,7 @@ g++ --version
 
 ### Windows
 
-On Windows, the build wrapper supports a project-specific override variable named `IMODEL_VCPKG_ROOT`. Use this instead of `VCPKG_ROOT` when you want deterministic selection of a standalone vcpkg checkout in environments where Visual Studio tools may inject `VCPKG_ROOT`.
+As on all platforms, the build wrapper uses `IMODEL_VCPKG_ROOT` as the override variable for specifying a standalone vcpkg checkout. Do not set `VCPKG_ROOT` directly — on Windows, Visual Studio tools may inject their own value for it. Since a specific version of vcpkg is installed as part of the Bentley Build, it is not recommended that you set `IMODEL_VCPKG_ROOT`.
 
 Install the following prerequisites **before running vcpkg**:
 
@@ -98,45 +86,28 @@ Install the following prerequisites **before running vcpkg**:
    - Install a current Windows x64 release
    - Verify: `cmake --version`
 
-3. **Clone and Bootstrap vcpkg:**
-
-   In a Developer Command Prompt or PowerShell:
-
-   ```bat
-   git clone https://github.com/microsoft/vcpkg.git %USERPROFILE%\src\vcpkg
-   cd %USERPROFILE%\src\vcpkg
-   bootstrap-vcpkg.bat
-   ```
-
-4. **Manually install 7-Zip portable:**
+3. **Manually install 7-Zip portable:**
    - Download: https://www.7-zip.org/a/7z2107-extra.7z
    - Create directory: `%USERPROFILE%\src\vcpkg\downloads\tools`
    - Extract `7z2107-extra.7z` to a temporary location
    - Copy the extracted folder to: `%USERPROFILE%\src\vcpkg\downloads\tools\7zip\21.07`
    - Verify: `%USERPROFILE%\src\vcpkg\downloads\tools\7zip\21.07\7zr.exe` should exist
 
-5. **Manually install PowerShell Core portable:**
+4. **Manually install PowerShell Core portable:**
    - Download from: https://github.com/PowerShell/PowerShell/releases (v7.2.11 release, PowerShell-7.2.11-win-x64.zip)
    - Extract to: `%USERPROFILE%\src\vcpkg\downloads\tools\powershell-core\7.2.11`
    - Verify: `%USERPROFILE%\src\vcpkg\downloads\tools\powershell-core\7.2.11\pwsh.exe` should exist
 
-6. **Set `IMODEL_VCPKG_ROOT` to your standalone checkout (recommended):**
+5. **Set `IMODEL_VCPKG_ROOT` to your standalone checkout (not recommended):**
 
    ```bat
    setx IMODEL_VCPKG_ROOT "%USERPROFILE%\src\vcpkg"
    set IMODEL_VCPKG_ROOT=%USERPROFILE%\src\vcpkg
    ```
 
-   You may still set `VCPKG_ROOT`, but `IMODEL_VCPKG_ROOT` has higher priority in `vcpkg_run_install.bat`.
+   Do not set `VCPKG_ROOT` directly. The build wrapper checks `IMODEL_VCPKG_ROOT` first, and if it is not set, the vcpkg inside the build tree is used.
 
-7. **Optional: also set `VCPKG_ROOT` for direct shell usage of vcpkg:**
-
-   ```bat
-   setx VCPKG_ROOT "%USERPROFILE%\src\vcpkg"
-   set VCPKG_ROOT=%USERPROFILE%\src\vcpkg
-   ```
-
-8. **Verify your setup:**
+6. **Verify your setup:**
 
    ```bat
    cmake --version
@@ -150,12 +121,20 @@ Install the following prerequisites **before running vcpkg**:
 `vcpkg_run_install.bat` resolves roots in this order:
 
 1. `IMODEL_VCPKG_ROOT` (if set and contains `vcpkg.exe`)
-2. `VCPKG_ROOT` (if set, valid, and not the Visual Studio bundled root)
-3. `D:\src\vcpkg`
+2. `<imodel-native>\iModelCore\libsrc\vcpkg`
+3. `VCPKG_ROOT` (if set, valid, not the Visual Studio bundled root, and something causes the one above to fail to install)
 4. `%USERPROFILE%\src\vcpkg`
 5. Visual Studio bundled vcpkg (`%VCINSTALLDIR%\vcpkg`)
 
 This avoids accidental use of the bundled root when `vcvars` or Developer Command Prompt modifies `VCPKG_ROOT`.
+
+#### macOS/Linux vcpkg selection order used by the wrapper
+
+`vcpkg_run_install.sh` resolves roots in this order:
+
+1. `IMODEL_VCPKG_ROOT` (if set, not recommended)
+2. `VCPKG_ROOT` (if already set in the environment, very not recommended)
+3. `<imodel-native>/iModelCore/libsrc/vcpkg` (default)
 
 ## How It Works
 

@@ -16,6 +16,8 @@ echo vcpkg_run_install.bat %*
 
 setlocal EnableExtensions
 
+set "SCRIPT_DIR=%~dp0"
+
 set "MANIFEST_DIR=%~1"
 set "INSTALL_ROOT=%~2"
 set "TRIPLET=%~3"
@@ -56,6 +58,10 @@ if not "%VCPKG_ROOT%"=="" (
         set "VCPKG_ROOT=%VCPKG_ROOT:~0,-1%"
         goto :trim_vcpkg_root
     )
+)
+
+if "%IMODEL_VCPKG_ROOT%"=="" (
+    set "IMODEL_VCPKG_ROOT=%SCRIPT_DIR%\vcpkg"
 )
 
 :trim_imodel_vcpkg_root
