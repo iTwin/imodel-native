@@ -155,9 +155,10 @@ private:
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
     void ClearMembers();
     StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
-
+    bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
+    ~PreparedChangesetReader() { CloseInfallible(); }
 
     DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
