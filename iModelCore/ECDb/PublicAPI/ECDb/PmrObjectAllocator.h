@@ -4,8 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <array>
+#include <cstddef>
+#include <memory>
 #include <memory_resource>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
