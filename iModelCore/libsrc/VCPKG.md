@@ -68,11 +68,11 @@ Install the following prerequisites **before running vcpkg**:
 - Git
 - CMake
 
-**vcpkg Tool Dependencies:**
+<!-- **vcpkg Tool Dependencies:**
 - **7-Zip** (v21.7.0) — must be manually downloaded and extracted to `<vcpkg root>/downloads/tools/`
   - Download: https://www.7-zip.org/a/7z2107-extra.7z
 - **PowerShell Core** (v7.2.11) — must be manually downloaded and extracted to `<vcpkg root>/downloads/tools/`
-  - Download: https://github.com/PowerShell/PowerShell/releases (look for v7.2.11 release, Windows x64 zip)
+  - Download: https://github.com/PowerShell/PowerShell/releases (look for v7.2.11 release, Windows x64 zip) -->
 
 **Installation Steps:**
 
@@ -86,7 +86,7 @@ Install the following prerequisites **before running vcpkg**:
    - Install a current Windows x64 release
    - Verify: `cmake --version`
 
-3. **Manually install 7-Zip portable:**
+<!-- 3. **Manually install 7-Zip portable:**
    - Download: https://www.7-zip.org/a/7z2107-extra.7z
    - Create directory: `%USERPROFILE%\src\vcpkg\downloads\tools`
    - Extract `7z2107-extra.7z` to a temporary location
@@ -96,9 +96,9 @@ Install the following prerequisites **before running vcpkg**:
 4. **Manually install PowerShell Core portable:**
    - Download from: https://github.com/PowerShell/PowerShell/releases (v7.2.11 release, PowerShell-7.2.11-win-x64.zip)
    - Extract to: `%USERPROFILE%\src\vcpkg\downloads\tools\powershell-core\7.2.11`
-   - Verify: `%USERPROFILE%\src\vcpkg\downloads\tools\powershell-core\7.2.11\pwsh.exe` should exist
+   - Verify: `%USERPROFILE%\src\vcpkg\downloads\tools\powershell-core\7.2.11\pwsh.exe` should exist -->
 
-5. **Set `IMODEL_VCPKG_ROOT` to your standalone checkout (not recommended):**
+3. **Set `IMODEL_VCPKG_ROOT` to your standalone checkout (not recommended):**
 
    ```bat
    setx IMODEL_VCPKG_ROOT "%USERPROFILE%\src\vcpkg"
@@ -107,7 +107,7 @@ Install the following prerequisites **before running vcpkg**:
 
    Do not set `VCPKG_ROOT` directly. The build wrapper checks `IMODEL_VCPKG_ROOT` first, and if it is not set, the vcpkg inside the build tree is used.
 
-6. **Verify your setup:**
+4. **Verify your setup:**
 
    ```bat
    cmake --version
