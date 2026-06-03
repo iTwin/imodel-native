@@ -17,6 +17,7 @@ private:
     //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
     //! Only columns that are actually present (non-absent) in the changeset are included.
     using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
+    enum class StageProcessResult { Success, Error, Filtered };
     ECDbCR                         m_ecdb;
 
     // change mappings
@@ -30,7 +31,12 @@ private:
     std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
     std::vector<Utf8String> m_changedPropNames;
 
+    //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
+    //! Deleted in Close().
+    BeFileName m_tempGroupFile;
+
     //filters
+    bool m_strictMode = false;
     std::vector<Utf8String> m_tableFilters;
     std::vector<DbOpcode> m_opcodeFilters;
     std::vector<Utf8String> m_ecclassNameFilters;
@@ -50,13 +56,32 @@ private:
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
     Utf8String DbOpcodeToString(DbOpcode const& opcode) const;
+    //! Writes @p changeGroup to a temporary LZMA-compressed changeset file, preserving @p ddlChanges
+    //! and @p containsSchemaChanges in the file header. Sets @p outPath to the written path.
+    //! The file is written with fast compression (level 1) since it is ephemeral.
+    DbResult WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
+    //! Stores @p changeStream directly in m_changeStream without any size-based spill logic.
+    //! Kept private so callers are steered toward the appropriate Open* methods.
+    //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
+    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    void ClearMembers();
+    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
+    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
+    void DoStep();
+    bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
+    ~PreparedChangesetReader() { CloseInfallible(); }
 
-    DbResult OpenFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
-    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
-    DbResult OpenGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter);
-    void Close();
+    DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
+    //! Opens a pre-built in-memory ChangeSet for reading.
+    //! If the changeset size exceeds the spill threshold it is transparently written to a
+    //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
+    //! single copy at a time.
+    DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    BentleyStatus Close();
+    void CloseInfallible();
     DbResult Step();
     ECDbCR GetECDb() const { return m_ecdb; }
 
@@ -76,6 +101,8 @@ public:
     void ClearTableFilters() { m_tableFilters.clear(); }
     void ClearOpcodeFilters() { m_opcodeFilters.clear(); }
     void ClearECClassNameFilters() { m_ecclassNameFilters.clear(); }
+    void EnableStrictMode() { m_strictMode = true; }
+    void DisableStrictMode() { m_strictMode = false; }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

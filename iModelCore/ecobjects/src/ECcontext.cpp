@@ -344,7 +344,7 @@ private:
     SchemaKey m_key;
 public:
     ECSchemaBackedInstanceReadContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
-        : m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
+        : m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, &schema, typeResolver), m_key(schema.GetSchemaKey())
         { }
 
     virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
@@ -386,7 +386,7 @@ private:
     ECSchemaReadContextR    m_schemaReadContext;
     ECSchemaPtr*            m_foundSchema;
 public:
-    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
+    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext, ECSchemaCP fallBackSchema, ECSchemaPtr* foundSchema)
         :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema, nullptr)
         { }
 
@@ -413,7 +413,15 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaReadContextR context, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
     {
-    return new ECSchemaReadContextBackedInstanceReadContext (context, fallBackSchema, foundSchema);
+    return new ECSchemaReadContextBackedInstanceReadContext (context, &fallBackSchema, foundSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaReadContextR context, ECSchemaPtr* foundSchema)
+    {
+    return new ECSchemaReadContextBackedInstanceReadContext (context, nullptr, foundSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -428,7 +436,7 @@ private:
     ECSchemaReadContextR  m_schemaContext;
 public:
     CustomAttributeInstanceReadContext(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext)
-        :m_containerSchema(containerSchema), m_schemaContext(schemaContext), ECInstanceReadContext(schemaContext.GetStandaloneEnablerLocater(), containerSchema, nullptr)
+        :m_containerSchema(containerSchema), m_schemaContext(schemaContext), ECInstanceReadContext(schemaContext.GetStandaloneEnablerLocater(), &containerSchema, nullptr)
         {
         // Share the issue reporter from the schema context so issues can be reported across instances and avoid possible duplicates
         SetSharedIssueReporter(schemaContext.Issues());

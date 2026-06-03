@@ -118,6 +118,12 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stl
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
 
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    BeSQLiteRequiredLibs + -framework Security
+    BeSQLiteRequiredLibs + -framework Foundation
+    BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
+%endif
+
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
 %endif
