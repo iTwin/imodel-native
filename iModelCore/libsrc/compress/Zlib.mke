@@ -60,11 +60,26 @@ always:
 #--------------------------------------------------------------------------------------
 vcpkgStaging = $(o)vcpkg_headers/
 
+# minizip headers use #include "zlib.h" expecting it in the same directory.
+# On macOS, clang resolves symlinks and finds zlib.h via the vcpkg include dir.
+# On Windows, MSVC does not resolve junctions the same way, so instead of
+# symlinking the entire minizip directory, we link each header individually
+# along with zlib.h and zconf.h so they are co-located.
+vcpkgMinizipDir = $(vcpkgIncludeDir)minizip/
+vcpkgStagingZip = $(vcpkgStaging)zip/
+
 always:
     !~@mkdir $(vcpkgStaging)
     ~linkfile "$(vcpkgStaging)zlib.h=$(vcpkgIncludeDir)zlib.h"
     ~linkfile "$(vcpkgStaging)zconf.h=$(vcpkgIncludeDir)zconf.h"
-    ~linkdir "$(vcpkgStaging)zip=$(vcpkgIncludeDir)minizip/"
+    !~@mkdir $(vcpkgStagingZip)
+    ~linkfile "$(vcpkgStagingZip)zlib.h=$(vcpkgIncludeDir)zlib.h"
+    ~linkfile "$(vcpkgStagingZip)zconf.h=$(vcpkgIncludeDir)zconf.h"
+    ~linkfile "$(vcpkgStagingZip)zip.h=$(vcpkgMinizipDir)zip.h"
+    ~linkfile "$(vcpkgStagingZip)unzip.h=$(vcpkgMinizipDir)unzip.h"
+    ~linkfile "$(vcpkgStagingZip)ioapi.h=$(vcpkgMinizipDir)ioapi.h"
+    ~linkfile "$(vcpkgStagingZip)crypt.h=$(vcpkgMinizipDir)crypt.h"
+    ~linkfile "$(vcpkgStagingZip)mztools.h=$(vcpkgMinizipDir)mztools.h"
     ~linkdir "$(BuildContext)VendorAPI/zlib=$(vcpkgStaging)"
 
 #--------------------------------------------------------------------------------------
