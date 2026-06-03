@@ -1,0 +1,40 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+o = $(OutputRootDir)build/rustls/
+vendorSrc = $(_MakeFilePath)vendor/
+
+# A developer can set INSTALL_RUST_CARGO to YES in order to have rustup and cargo-c installed at build time.
+%if defined(INSTALL_RUST_CARGO)
+
+always:
+    !~@mkdir $(o)
+    $(_MakeFilePath)install-rust.sh
+
+%endif
+
+%if $(TARGET_PLATFORM)=="iOS"
+
+rust_target=--target aarch64-apple-ios
+
+always:
+    ~putenv IPHONEOS_DEPLOYMENT_TARGET=$(IOS_DEPLOYMENT_TARGET)
+
+%endif
+
+$(o)$(stlibprefix)rustls$(stlibext) :
+    ~chdir $(vendorSrc)
+    CARGO_TARGET_DIR=$(o)/target $(_MakeFilePath)cargo.sh capi install $(rust_target) --release --prefix=$(o)
+
+# Vendor API
+always:
+    ~linkdir "$(BuildContext)VendorAPI/rustls=$(o)/include"
+
+$(BuildContext)Delivery/$(stlibprefix)rustls$(stlibext) : $(o)lib/$(stlibprefix)rustls$(stlibext)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/rustls-license.txt : $(vendorSrc)LICENSE-MIT
+    $(LinkFirstDepToFirstTarget)
