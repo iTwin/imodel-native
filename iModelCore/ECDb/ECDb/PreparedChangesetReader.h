@@ -67,9 +67,11 @@ private:
     void ClearMembers();
     BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
     StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
-
+    void DoStep();
+    bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
+    ~PreparedChangesetReader() { CloseInfallible(); }
 
     DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     //! Opens a pre-built in-memory ChangeSet for reading.
