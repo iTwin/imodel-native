@@ -2524,6 +2524,8 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
+        if(change.IsIndirect())
+            return ChangeStream::ConflictResolution::Replace;
         fastForwardEncounteredMergeConflict = true;
         return ChangeStream::ConflictResolution::Abort;
     };
