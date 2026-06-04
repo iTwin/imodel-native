@@ -3066,6 +3066,84 @@ TEST_F(SchemaMergerTests, AddReferenceToNewSchema)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
+* Two brand-new (right-only) schemas where one references the other. This exercises the
+* ECChange::OpCode::New path in MergeSchemas and ensures a new schema and its new
+* referenced schema are both copied into the result with the cross-schema reference
+* intact, regardless of dependency ordering.
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, AddNewSchemaReferencingAnotherNewSchema)
+    {
+    // The left side only contains an unrelated, pre-existing schema.
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="ExistingSchema" alias="ex" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="ExistingEntity">
+            <ECProperty propertyName="A" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    // The right side introduces two new schemas: NewDerivedSchema references and derives from NewBaseSchema.
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewBaseSchema" alias="nbs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseEntity">
+            <ECProperty propertyName="A" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewDerivedSchema" alias="nds" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="NewBaseSchema" version="01.00.00" alias="nbs"/>
+          <ECEntityClass typeName="DerivedEntity">
+            <BaseClass>nbs:BaseEntity</BaseClass>
+            <ECProperty propertyName="B" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    //merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // The existing schema is kept and both new schemas are added with the reference intact.
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="ExistingSchema" alias="ex" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="ExistingEntity">
+            <ECProperty propertyName="A" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewBaseSchema" alias="nbs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseEntity">
+            <ECProperty propertyName="A" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewDerivedSchema" alias="nds" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="NewBaseSchema" version="01.00.00" alias="nbs"/>
+          <ECEntityClass typeName="DerivedEntity">
+            <BaseClass>nbs:BaseEntity</BaseClass>
+            <ECProperty propertyName="B" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, AddReferenceToExistingSchema)
     {
