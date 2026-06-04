@@ -500,7 +500,7 @@ TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values)
     db1->SaveChanges();
 
     // Verify the changeset contains exactly 2 UPDATE operations with the net swap values.
-    // The session extension collapses the 3 intermediate UPDATEs into 2 net changes per row.
+    // The session extension collapses the 3 intermediate UPDATEs into 2 net changes, one per row.
     {
     int updateCount = 0;
     for (auto const& change : cs->GetChanges())
