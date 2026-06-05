@@ -308,7 +308,7 @@ struct ApplyChangesArgs {
         ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
 
     public:
-        ApplyChangesArgs() :m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_noUpdateLoop(false), m_filterChange(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
+        ApplyChangesArgs() : m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_noUpdateLoop(false), m_abortOnAnyConflict(false), m_filterRowCount(0), m_conflictRowCount(0), m_filterChange(nullptr), m_conflictHandler(nullptr) {}
         ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) { m_abortOnAnyConflict = abortOnAnyConflict; return *this; }
         ApplyChangesArgs& SetInvert(bool invert) { m_invert = invert; return *this; }
         ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) { m_ignoreNoop = ignoreNoop; return *this; }
