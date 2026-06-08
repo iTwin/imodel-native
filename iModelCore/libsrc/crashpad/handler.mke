@@ -26,7 +26,7 @@ o                   = $(OutputRootDir)build/$(appName)/
 #--------------------------------------------------------------------------------------
 %include $(libsrcDir)vcpkg.mki
 
-vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad/crashpad_handler$(exeext)
 handlerOut          = $(o)$(appName)$(exeext)
