@@ -411,7 +411,37 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
 
         }
 
-    auto* column = ReuseOrCreateSharedColumn(ctx);
+    /*
+     * POC-No-Remap
+     * 
+     * If this class already has a column override for this property (written by SchemaWriter::DeleteProperty before the cascade during an upgrade), use that column directly.
+     * This is because UpdateColumnResolutionScope pre-fills inherited entries that would otherwise allocate the new canonical column, but we must stay on the original physical column.
+     */
+    if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping))
+        {
+        BeInt64Id classId = m_classMap.GetSchemaManager().GetClassId(m_classMap.GetClass());
+        ECDbCR ecdb = ctx.GetECDb();
+        CachedStatementPtr overrideStmt = ecdb.GetImpl().GetCachedSqliteStatement(
+            "SELECT col.Name, tab.Name "
+            "FROM main.ec_PropertyMap_Overrides o "
+            "JOIN main.ec_Column col ON col.Id = o.ColumnId "
+            "JOIN main.ec_Table  tab ON tab.Id = col.TableId "
+            "WHERE o.ClassId = ? AND o.AccessString = ? LIMIT 1");
+        if (overrideStmt.IsValid()
+            && overrideStmt->BindId(1, classId) == BE_SQLITE_OK
+            && overrideStmt->BindText(2, accessString, Statement::MakeCopy::No) == BE_SQLITE_OK
+            && overrideStmt->Step() == BE_SQLITE_ROW)
+            {
+            const DbTable* table = m_classMap.GetSchemaManager().GetDbSchema().FindTable(overrideStmt->GetValueText(1));
+            if (table != nullptr)
+                {
+                if (DbColumn* col = table->FindColumnP(overrideStmt->GetValueText(0)))
+                    return RegisterColumnMap(accessString, col);
+                }
+            }
+        }
+
+    auto* column = ReuseOrCreateSharedColumn(ctx, accessString);
     return RegisterColumnMap(accessString, column);
     }
     
@@ -444,13 +474,13 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(Utf8StringCR proper
             }
 
     const uint32_t columnsRequired = MaxColumnsRequiredToPersistProperty(*property);
-    EvaluateIfPropertyGoesToOverflow(columnsRequired, ctx);
+    EvaluateIfPropertyGoesToOverflow(columnsRequired, ctx, &propertyName);
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
-void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const
+void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx, Utf8StringCP accessString) const
     {
     if (m_putCurrentPropertyToOverflow)
         {
@@ -476,20 +506,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
 
       const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
       
-      uint32_t nSharedColumns;
-      if (!ctx.RemapManager().HasFreedColumns())
-          {
-          nSharedColumns = (uint32_t) sharedColumns.size();
-          }
-      else
-          {
-          nSharedColumns = 0;
-          for (DbColumn const* col : sharedColumns)
-              {
-              if (!ctx.RemapManager().IsColumnFreed(*col))
-                  nSharedColumns++;
-              }
-          }
+      const uint32_t nSharedColumns = (uint32_t) sharedColumns.size();
 
       //Determine how many shared columns can be created
       uint32_t sharedColumnThatCanBeCreated = 0;
@@ -499,7 +516,13 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
           }
       else
           {
-          sharedColumnThatCanBeCreated = (nSharedColumns < m_maxSharedColumnCount.Value()) ? m_maxSharedColumnCount.Value() - nSharedColumns : 0;
+          if (nSharedColumns > m_maxSharedColumnCount.Value())
+              {
+              BeAssert(false && "SharedColumnCount bypassed the limit set in CA");
+              return;
+              }
+
+          sharedColumnThatCanBeCreated = m_maxSharedColumnCount.Value() - (uint32_t) sharedColumns.size();
           if (sharedColumnThatCanBeCreated > nAvaliablePhysicalColumns)
               sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns; //restrict available shared columns to available physical columns
           }
@@ -514,14 +537,26 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         return;
         }
 
-    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     for (DbColumn const* sharedColumn : sharedColumns)
         {
-        if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*sharedColumn))
-            continue;
-
         if (!IsColumnInUse(*sharedColumn) && !IsColumnUsedByAnyDerivedClass(*sharedColumn, ctx))
+            {
+            /*
+             * POC-No-Remap
+             * 
+             * We must also skip columns that are claimed for a different access string in ec_PropertyMap or ec_PropertyMap_Overrides.
+             * This mirrors the check in ReuseOrCreateSharedColumn so that the overflow decision here is consistent with which columns ReuseOrCreateSharedColumn will actually accept.
+             * Without this check, EvaluateIfPropertyGoesToOverflow may conclude that a column is reusable (because its ec_PropertyMap entry was deleted during the cascade),
+             * while ReuseOrCreateSharedColumn then rejects it (because an override entry still claims it for a different property), forcing a call to AddSharedColumn() and bypassing the
+             * MaxSharedColumnsBeforeOverflow limit.
+             */
+            if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping)
+                && accessString != nullptr
+                && IsColumnUsedForDifferentAccessString(*sharedColumn, ctx, *accessString))
+                continue; // column is reserved for a different property - not reusable
+
             requiredRemainingColumns--; //column can be reused
+            }
 
         if(requiredRemainingColumns <= 0)
             return;
@@ -572,7 +607,14 @@ DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPrope
         {
         if (IsCompatible(*column, type, param))
             {
-            if (!ctx.RemapManager().IsColumnFreed(*column))
+            /*
+             * POC-No-Remap
+             *
+             * The column maps may be pre-filled with a column from a stale derived-class ClassMap entry (via UpdateColumnResolutionScope::Full).
+             * If that column is still used in ec_PropertyMap for a DIFFERENT access string (i.e. a sibling property) we must not use it as the 
+             * canonical base-class column or we would create a "column used by multiple properties" conflict.
+             */ 
+            if (!Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping) || !IsColumnUsedForDifferentAccessString(*column, ctx, accessString))
                 return HandleOverflowColumn(column);
             }
         }
@@ -651,18 +693,27 @@ ColumnMaps* ClassMapColumnFactory::GetColumnMaps() const
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& ctx) const
+DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& ctx, Utf8StringCR accessString) const
     {
-    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
+    const bool skipRemap = Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping);
     for (DbColumn const* column : GetEffectiveTable(ctx)->GetColumns())
         {
         if (column->IsShared() && !GetColumnMaps()->IsColumnInUse(*column))
             {
-            if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*column))
-                continue;
+            if (!IsColumnUsedByAnyDerivedClass(*column, ctx))
+                {
+                /*
+                 * POC-No-Remap
+                 *
+                 * Avoid any column that is currently used by an ec_PropertyMap entry with a DIFFERENT access string.
+                 * That entry belongs to a sibling / derived class property and must not be displaced by the new canonical base-class property.
+                 * When ALL ec_PropertyMap entries for a column were deleted (same access string, now in overrides only), the column is safely reusable as the canonical slot.
+                 */
+                if (skipRemap && IsColumnUsedForDifferentAccessString(*column, ctx, accessString))
+                    continue;
 
-            if(!IsColumnUsedByAnyDerivedClass(*column, ctx))
                 return const_cast<DbColumn*>(column);
+                }
             }
         }
 
@@ -725,6 +776,46 @@ bool ClassMapColumnFactory::IsColumnUsedByAnyDerivedClass(DbColumn const& column
 
     bool result = stmt->GetValueBoolean(0);
     return result;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod
+//-----------------------------------------------------------------------------------------
+bool ClassMapColumnFactory::IsColumnUsedForDifferentAccessString(DbColumn const& column, SchemaImportContext& ctx, Utf8StringCR accessString) const
+    {
+    /*
+     * POC-No-Remap
+     *
+     * Returns true if ec_PropertyMap or ec_PropertyMap_Overrides has any row that maps this physical column to an access string OTHER than the one being allocated.
+     * When such a row exists, the column is "claimed" by a different property of some class in the hierarchy.
+     * Assigning it as the canonical column for `accessString` would produce a "column used by multiple properties" conflict.
+     *
+     * We must check both tables:
+     *  - ec_PropertyMap: for properties still canonically mapped to this column.
+     *  - ec_PropertyMap_Overrides: for properties whose canonical ec_PropertyMap entry was
+     *    deleted, but whose physical column is still reserved for the original property's data.
+     *    Without this check, a sibling property's override column could be reused as the
+     *    canonical slot for a different property, causing stale data to appear in queries.
+     */
+    if (!column.HasId())
+        return false; // not yet persisted - no ec_PropertyMap entries can reference it
+
+    CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement(
+        "SELECT 1 FROM ("
+        "  SELECT pp.AccessString FROM main." TABLE_PropertyMap " pm "
+        "  JOIN main." TABLE_PropertyPath " pp ON pp.Id = pm.PropertyPathId "
+        "  WHERE pm.ColumnId = ? "
+        "  UNION ALL "
+        "  SELECT o.AccessString FROM main." TABLE_PropertyMap_Overrides " o "
+        "  WHERE o.ColumnId = ? "
+        ") sub WHERE sub.AccessString != ? LIMIT 1");
+    if (!stmt.IsValid())
+        return false;
+
+    stmt->BindId(1, column.GetId());
+    stmt->BindId(2, column.GetId());
+    stmt->BindText(3, accessString.c_str(), Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
     }
 
 //***************************************************************************************

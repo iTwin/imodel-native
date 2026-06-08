@@ -481,6 +481,18 @@ DbResult ProfileManager::CreateProfileTables() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    /*
+     * POC-No-Remap
+     * A new system table that is a first-class home for per-class column deviations, separate from ec_PropertyMap
+     */
+    stat = m_ecdb.GetImpl().ExecuteDDL("CREATE Table " TABLE_PropertyMap_Overrides 
+                            "(ClassId   INTEGER NOT NULL REFERENCES " TABLE_Class "(Id), "
+                            "AccessString TEXT NOT NULL COLLATE NOCASE, "
+                            "ColumnId INTEGER NOT NULL REFERENCES " TABLE_Column "(Id), "
+                            "PRIMARY KEY (ClassId, AccessString))");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     stat = m_ecdb.GetImpl().ExecuteDDL("CREATE UNIQUE INDEX uix_ec_PropertyMap_ClassId_PropertyPathId_ColumnId ON " TABLE_PropertyMap "(ClassId,PropertyPathId,ColumnId);"
                            "CREATE INDEX ix_ec_PropertyMap_PropertyPathId ON " TABLE_PropertyMap "(PropertyPathId);"
                            "CREATE INDEX ix_ec_PropertyMap_ColumnId ON " TABLE_PropertyMap "(ColumnId);");

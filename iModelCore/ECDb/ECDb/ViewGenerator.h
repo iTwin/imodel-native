@@ -183,6 +183,18 @@ struct ViewGenerator final
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMap const* castAs = nullptr);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
+
+        // SkipRemapping support: divergent column rendering
+        // Collects all non-mixin concrete entity ClassMaps mapped to the given table in DFS order
+        static void CollectConcreteEntityClassMapsInTable(std::vector<const ClassMap*>& result, const ClassMap& classMap, const DbTable& table);
+        // Collects all non-abstract concrete RelationshipLinkTable ClassMaps mapped to the given table in DFS order.
+        static void CollectConcreteRelationshipClassMapsInTable(std::vector<const ClassMap*>& result, const ClassMap& classMap, const DbTable& table);
+        // Returns true if any concrete class in the hierarchy maps a shared-column property to a different
+        // physical column than the given tableRootClassMap does.
+        // Drives the UNION ALL rendering path.
+        static bool HasDivergentColumnAssignments(ClassMap const& queryClassMap, ClassMap const& tableRootClassMap, DbTable const& table);
+        // Renders a UNION ALL SELECT for the given queryClassMap over the given table.
+        static BentleyStatus RenderDivergentEntityPartition(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& queryClassMap, ClassMap const& tableRootClassMap, DbTable const& table);
         static BentleyStatus RenderMixinClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, PolymorphicInfo const& polymorphic);

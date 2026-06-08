@@ -113,6 +113,11 @@ struct ClassMap
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bvector<ECN::ECPropertyCP> m_failedToLoadProperties;
+        /*
+         * POC-No-Remap
+         * Tracks property names that were freshly column-assigned by ClassMap::Update
+         */
+        std::set<Utf8String, CompareIUtf8Ascii> m_newlyMappedPropertyNames;
         ObjectState m_state;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
         BentleyStatus AddOrUpdateTableList(DataPropertyMap const& propertyThatIsNotYetAdded);

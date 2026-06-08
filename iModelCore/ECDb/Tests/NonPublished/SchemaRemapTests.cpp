@@ -117,7 +117,7 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
     )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
-      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade
+      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping
     ));
 
     SchemaItem schema3(R"xml(
@@ -162,7 +162,7 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
     )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema3,
-                           SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+                           SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     m_ecdb.SaveChanges();
 }
 
@@ -524,7 +524,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify we can insert and select
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.BAFFLE_SILENCERS (MovingProperty) VALUES ('SECOND')");
@@ -596,7 +596,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify we can insert and select
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('SECOND')");
@@ -641,6 +641,8 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal)
 
     auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
     ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+
+    m_ecdb.SaveChanges();
     }
 
     //import edited schema with some changes.
@@ -667,7 +669,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
@@ -739,7 +741,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
@@ -885,7 +887,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUpInHierarchy)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
@@ -1017,7 +1019,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
@@ -1063,7 +1065,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
     auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    EXPECT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
 
     //import edited schema with some changes.
@@ -1096,12 +1098,12 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT MovingProperty FROM TestSchema.A");
-    ASSERT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
+    EXPECT_EQ(JsonValue(R"json([{"MovingProperty":"FIRST"}])json"), result);
     }
     }
 
@@ -1170,7 +1172,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
@@ -1243,7 +1245,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify the instance is still intact
     {
@@ -1392,7 +1394,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (4,5,6)");
 
@@ -1502,7 +1504,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
@@ -1884,7 +1886,7 @@ TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (4,5,6)");
 
@@ -2099,7 +2101,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyOnRelationshipClass)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify old and new instances
     {
@@ -2480,7 +2482,7 @@ TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario)
     </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify old and new instances
     {
@@ -3014,7 +3016,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify instances are still intact
     {
@@ -3097,7 +3099,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflow)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
@@ -3180,7 +3182,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2,A3 FROM TestSchema.A");
@@ -3267,7 +3269,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Peanut (A,B,C) VALUES ('PA','PB','PC')");
@@ -3428,7 +3430,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.A");
@@ -3528,7 +3530,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class1");
@@ -3617,7 +3619,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Base2,Base3,A1,A2 FROM TestSchema.A");
@@ -3895,7 +3897,7 @@ TEST_F(SchemaRemapTestFixture, CivilProblemMay21)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     //Verify our instances are still intact
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT Name, GeometryClass FROM ONLY TestSchema.Alignment");
@@ -4261,7 +4263,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21)
 </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     }
 
 //---------------------------------------------------------------------------------------
@@ -4460,7 +4462,7 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClass)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify instances are intact
     {
@@ -4575,7 +4577,7 @@ TEST_F(SchemaRemapTestFixture, DerivedMixinToBaseClass)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify instances are intact
     {
@@ -4682,7 +4684,7 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClassTwoLevels)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     // Verify instances are intact
     {
@@ -5121,7 +5123,7 @@ TEST_F(SchemaRemapTestFixture, BuildingUSMappingProblem)
     </ECEntityClass>
 </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     }
 
 
@@ -5204,7 +5206,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy)
     </ECEntityClass>
 </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
@@ -5309,7 +5311,7 @@ TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy)
             </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT A FROM TestSchema.Building");
@@ -5407,7 +5409,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
     ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
@@ -5500,7 +5502,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
     ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
@@ -5594,7 +5596,7 @@ TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA FROM TestSchema.A");
     ASSERT_EQ(JsonValue(R"json([{"PropA":{"blue":1,"green":2,"red":3}}])json"), result);
@@ -5677,7 +5679,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassTwice)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
     ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
@@ -5766,7 +5768,7 @@ TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropE FROM TestSchema.E");
     ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropE":"E"}])json"), result);
@@ -5867,7 +5869,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT f, g FROM ONLY TestSchema.A");
     ASSERT_EQ(JsonValue(R"json([{"f":{"c":{"a":"f.c.a","b":"f.c.b"},"d":"f.d"},"g":"g"}])json"), result);
@@ -5967,7 +5969,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c FROM TestSchema.A");
@@ -6079,7 +6081,7 @@ TEST_F(SchemaRemapTestFixture, PutBaseClassTurnPropertiesIntoOverrides)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
     ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
@@ -6177,7 +6179,7 @@ TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT a, b, c, d, e, f, g, h FROM TestSchema.Leaf");
     ASSERT_EQ(JsonValue(R"json([{"a":"A","b":"B","c":"C","d":"D","e":"E","f":"F","g":"G","h":"H"}])json"), result);
@@ -6275,7 +6277,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy)
     </ECEntityClass>
 </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT name, description FROM TestSchema.Duck");
     ASSERT_EQ(JsonValue(R"json([{"name":"Nemo","description":"Nemo the Clownfish"},{"name":"Donald","description":"Donald the Duck"}])json"), result);
@@ -6365,7 +6367,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
     ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
@@ -6468,7 +6470,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
     ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
@@ -6552,7 +6554,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3)
           </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(s1v2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT PropA, PropC, PropD1, PropD2 FROM Schema2.D");
     ASSERT_EQ(JsonValue(R"json([{"PropA":"A","PropC":"C","PropD1":"D1","PropD2":"D2"}])json"), result);
@@ -6684,7 +6686,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4)
           </ECEntityClass>
       </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(spCompV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(spCompV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM IFCDynamic.IfcBuilding");
     ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
@@ -6837,7 +6839,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified)
             </ECEntityClass>
         </ECSchema>
         )schema");
-    ASSERT_EQ(SUCCESS, ImportSchema(spCompV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(spCompV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT ifcCompositionType FROM TestSchema.IfcBuilding");
     ASSERT_EQ(JsonValue(R"json([{"ifcCompositionType":"A"}])json"), result);
@@ -6973,7 +6975,7 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
     //import edited schema with some changes.
     Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart");
     SchemaItem schemaV2(schemaV2Xml);
-    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Level (Description,RevitId) VALUES ('D','RevitId2')");
 
@@ -7133,7 +7135,7 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     //import edited schema with some changes.
     Utf8PrintfString schemaV2Xml(schemaBaseline, "01.00.01", "FacilityPart", "Facility");
     SchemaItem schemaV2(schemaV2Xml);
-    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade | SchemaManager::SchemaImportOptions::SkipRemapping));
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT RevitId,Label,ELEM_CATEGORY_PARAM,IFC_GUID,PHASE_CREATED,LEVEL_IS_STRUCTURAL FROM TestSchema.Level");
     ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","PHASE_CREATED":"PHASE_CREATED","LEVEL_IS_STRUCTURAL":"LEVEL_IS_STRUCTURAL"}])json"), result);
@@ -7160,4 +7162,180 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     }
     }
 
+//=============================================================================
+// POC: SkipRemapping tests
+// These tests verify that the SkipRemapping import option correctly
+// avoids data movement while still returning the right data through queries,
+// thanks to the UNION ALL ViewGenerator path for divergent columns.
+//=============================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Scenario 6.1 from the design doc: "Move Property Up" without data transform.
+// A.age (new base property) gets a new column; subclass B.age keeps its old column.
+// A polymorphic query on A must return data from both columns correctly.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, SkipRemapping_MovePropertyUp_PolymorphicQueryCorrect)
+    {
+    SchemaItem schemaV1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("skipRemap_movePropertyUp.ecdb", schemaV1));
+
+    // Insert rows for both subclasses BEFORE the upgrade
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (Prop) VALUES ('B_BEFORE')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Prop) VALUES ('C_BEFORE')");
+
+    // V2: promote Prop to the base class A; subclasses keep their overrides to simulate
+    //     the state after SkipRemapping (no column cleanup occurred).
+    SchemaItem schemaV2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::SkipRemapping));
+
+    // After import, old rows for B and C must still be readable via B-specific queries.
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Prop FROM TestSchema.B");
+    ASSERT_EQ(JsonValue(R"json([{"Prop":"B_BEFORE"}])json"), result) << "B row should survive upgrade";
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Prop FROM TestSchema.C");
+    ASSERT_EQ(JsonValue(R"json([{"Prop":"C_BEFORE"}])json"), result) << "C row should survive upgrade";
+    }
+
+    // Insert new rows AFTER the upgrade – they go through A's (new) column assignment.
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (Prop) VALUES ('B_AFTER')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.C (Prop) VALUES ('C_AFTER')");
+
+    // Polymorphic query on A must return all 4 rows with correct Prop values despite
+    // the divergent physical column assignments.
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Prop FROM TestSchema.A ORDER BY Prop");
+    ASSERT_EQ(JsonValue(R"json([{"Prop":"B_AFTER"},{"Prop":"B_BEFORE"},{"Prop":"C_AFTER"},{"Prop":"C_BEFORE"}])json"), result)
+        << "Polymorphic query on A should return all rows via UNION ALL";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Scenario 6.2: Insert new class in middle of hierarchy without remapping.
+// Before: D -> A.  After: D -> B -> A (B inserted, B has its own Prop).
+// Querying A polymorphically must still return D's data via the UNION ALL path.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, SkipRemapping_InsertBaseClass_PolymorphicQueryCorrect)
+    {
+    SchemaItem schemaV1(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="D">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("skipRemap_insertBaseClass.ecdb", schemaV1));
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.D (Prop) VALUES ('D_BEFORE')");
+
+    // Insert B between A and D without remapping column assignments.
+    SchemaItem schemaV2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+              </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="D">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="Prop" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(schemaV2, SchemaManager::SchemaImportOptions::SkipRemapping));
+
+    // Pre-upgrade D row must still be readable.
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Prop FROM TestSchema.D");
+    ASSERT_EQ(JsonValue(R"json([{"Prop":"D_BEFORE"}])json"), result) << "D row should survive upgrade";
+    }
+
+    // Insert a new D row and a new B row after upgrade.
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.D (Prop) VALUES ('D_AFTER')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (Prop) VALUES ('B_AFTER')");
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Prop FROM TestSchema.D ORDER BY Prop");
+    ASSERT_EQ(JsonValue(R"json([{"Prop":"D_AFTER"},{"Prop":"D_BEFORE"}])json"), result);
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT Prop FROM TestSchema.B ORDER BY Prop");
+    ASSERT_EQ(JsonValue(R"json([{"Prop":"B_AFTER"},{"Prop":"D_AFTER"},{"Prop":"D_BEFORE"}])json"), result);
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
+

@@ -554,6 +554,227 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(NativeSqlBuilder& viewSql, Cont
     return SUCCESS;
     }
 
+/*
+ * POC-No-Remap
+ */
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+void ViewGenerator::CollectConcreteRelationshipClassMapsInTable(std::vector<const ClassMap*>& result, const ClassMap& classMap, const DbTable& table)
+    {
+    Nullable<std::vector<const ClassMap*>> derivedMaps = classMap.GetDerivedClassMaps();
+    if (!derivedMaps.IsNull())
+        {
+        for (const ClassMap* derivedMap : derivedMaps.Value())
+            {
+            if (!derivedMap->IsMappedTo(table))
+                continue;
+            CollectConcreteRelationshipClassMapsInTable(result, *derivedMap, table);
+            }
+        }
+
+    ECRelationshipClassCP relClass = classMap.GetClass().GetRelationshipClassCP();
+    // Include this class if it is a non-abstract, non-mixin relationship class
+    if (relClass != nullptr && relClass->GetClassModifier() != ECClassModifier::Abstract && classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
+        result.push_back(&classMap);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+void ViewGenerator::CollectConcreteEntityClassMapsInTable(std::vector<const ClassMap*>& result, const ClassMap& classMap, const DbTable& table)
+    {
+    Nullable<std::vector<const ClassMap*>> derivedMaps = classMap.GetDerivedClassMaps();
+    if (!derivedMaps.IsNull())
+        {
+        for (const ClassMap* derivedMap : derivedMaps.Value())
+            {
+            if (derivedMap->IsMixin() || !derivedMap->IsMappedTo(table))
+                continue;
+            CollectConcreteEntityClassMapsInTable(result, *derivedMap, table);
+            }
+        }
+
+    ECEntityClassCP entityClass = classMap.GetClass().GetEntityClassCP();
+    // Include this class if it is a non-abstract, non-mixin entity class
+    if (entityClass != nullptr && !entityClass->IsMixin() && entityClass->GetClassModifier() != ECClassModifier::Abstract)
+        result.push_back(&classMap);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+bool ViewGenerator::HasDivergentColumnAssignments(const ClassMap& queryClassMap, const ClassMap& tableRootClassMap, const DbTable& table)
+    {
+    // Only TPH + ShareColumns hierarchies can have per-class column divergence
+    if (!queryClassMap.GetMapStrategy().IsTablePerHierarchy() || queryClassMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::No)
+        return false;
+
+    std::vector<const ClassMap*> concretes;
+
+    // Relationship classes are not entity classes, so GetEntityClassCP() returns nullptr for them.
+    // We must use the relationship-specific collector instead.
+    if (queryClassMap.GetClass().GetRelationshipClassCP() != nullptr)
+        CollectConcreteRelationshipClassMapsInTable(concretes, queryClassMap, table);
+    else
+        CollectConcreteEntityClassMapsInTable(concretes, queryClassMap, table);
+
+    SearchPropertyMapVisitor rootVisitor(PropertyMap::Type::SingleColumnData);
+    tableRootClassMap.GetPropertyMaps().AcceptVisitor(rootVisitor);
+    std::map<Utf8CP, const DbColumn*, CompareIUtf8Ascii> rootColumns;
+    for (const PropertyMap* pm : rootVisitor.Results())
+        rootColumns[pm->GetAccessString().c_str()] = &pm->GetAs<SingleColumnDataPropertyMap>().GetColumn();
+
+    for (const ClassMap* concreteMap : concretes)
+        {
+        if (concreteMap == &tableRootClassMap)
+            continue;
+
+        SearchPropertyMapVisitor concreteVisitor(PropertyMap::Type::SingleColumnData);
+        concreteMap->GetPropertyMaps().AcceptVisitor(concreteVisitor);
+        for (const PropertyMap* pm : concreteVisitor.Results())
+            {
+            auto it = rootColumns.find(pm->GetAccessString().c_str());
+            if (it == rootColumns.end())
+                continue; // property not on root class, no divergence for this access string
+            if (&pm->GetAs<SingleColumnDataPropertyMap>().GetColumn() != it->second)
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ViewGenerator::RenderDivergentEntityPartition(NativeSqlBuilder& viewSql, Context& ctx,
+    const ClassMap& queryClassMap, const ClassMap& tableRootClassMap, const DbTable& table)
+    {
+    std::vector<const ClassMap*> concretes;
+    CollectConcreteEntityClassMapsInTable(concretes, queryClassMap, table);
+    if (concretes.empty())
+        {
+        BeAssert(false && "RenderDivergentEntityPartition: no concrete classes found");
+        return ERROR;
+        }
+
+    // For SelectFromView queries with ONLY semantics, restrict the arms to the single queried class.
+    // Without this, the UNION ALL would contain arms for all derived classes, whose rows would pass through even when the caller issued "SELECT FROM ONLY B".
+    if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic())
+        {
+        const TableSpaceSchemaManager& sm = ctx.GetSchemaManager();
+        ECClassId queryClassId = sm.GetClassId(queryClassMap.GetClass());
+        concretes.erase(std::remove_if(concretes.begin(), concretes.end(), [queryClassId, &sm](const ClassMap* cm) { return sm.GetClassId(cm->GetClass()) != queryClassId; }), concretes.end());
+        if (concretes.empty())
+            {
+            // The exact class is abstract or not in this table, nothing to render.
+            viewSql.Append("SELECT 1 WHERE 0");
+            return SUCCESS;
+            }
+        }
+
+    // Get the physical ECClassId column
+    const ECClassIdPropertyMap* ecClassIdPropMap = tableRootClassMap.GetECClassIdPropertyMap();
+    if (ecClassIdPropMap == nullptr)
+        return ERROR;
+    const SystemPropertyMap::PerTableIdPropertyMap* classIdDataPropMap = ecClassIdPropMap->FindDataPropertyMap(table);
+    if (classIdDataPropMap == nullptr || classIdDataPropMap->GetColumn().GetPersistenceType() != PersistenceType::Physical)
+        return ERROR;
+
+    Utf8String classIdColRef;
+    classIdColRef.Sprintf("[%s].[%s]", table.GetName().c_str(), classIdDataPropMap->GetColumn().GetName().c_str());
+
+    const TableSpaceSchemaManager& schemaManager = ctx.GetSchemaManager();
+
+    // Build UNION ALL arms. Each arm groups concrete classes that share an identical SELECT body.
+    struct Arm
+        {
+        Utf8String selectSql;
+        std::vector<ECClassId> classIds;
+
+        // Prevent merging a base class into the same arm as one of its derived classes.
+        // Ensure the results are in the expected order.
+        bool HasAncestorArm(ECClassCR cls, const TableSpaceSchemaManager& sm) const
+            {
+            for (ECClassId id : classIds)
+                {
+                ECClassCP other = sm.GetClass(id);
+                if (other != nullptr && cls.Is(other))
+                    return true;
+                }
+            return false;
+            }
+        };
+    std::vector<Arm> arms;
+
+    for (const ClassMap* concreteMap : concretes)
+        {
+        NativeSqlBuilder armSelect;
+        if (RenderEntityClassMap(armSelect, ctx, *concreteMap, table, &queryClassMap) != SUCCESS)
+            return ERROR;
+
+        ECClassId classId = schemaManager.GetClassId(concreteMap->GetClass());
+        Utf8String selectStr = armSelect.GetSql();
+
+        bool merged = false;
+        for (Arm& arm : arms)
+            {
+            if (arm.HasAncestorArm(concreteMap->GetClass(), schemaManager))
+                continue; // keep derived and ancestor in separate arms for ordering
+            if (arm.selectSql == selectStr)
+                {
+                arm.classIds.push_back(classId);
+                merged = true;
+                break;
+                }
+            }
+
+        if (!merged)
+            {
+            Arm newArm;
+            newArm.selectSql = std::move(selectStr);
+            newArm.classIds.push_back(classId);
+            arms.push_back(std::move(newArm));
+            }
+        }
+
+    NativeSqlBuilder::List unionList;
+    for (const Arm& arm : arms)
+        {
+        NativeSqlBuilder armView;
+        armView.Append(arm.selectSql.c_str());
+
+        if (arm.classIds.size() == 1)
+            {
+            armView.AppendFormatted(" WHERE %s=%lld", classIdColRef.c_str(), arm.classIds[0].GetValue());
+            }
+        else
+            {
+            armView.AppendFormatted(" WHERE %s IN (", classIdColRef.c_str());
+            for (size_t i = 0; i < arm.classIds.size(); i++)
+                {
+                if (i > 0)
+                    armView.Append(",");
+                armView.AppendFormatted("%lld", arm.classIds[i].GetValue());
+                }
+            armView.Append(")");
+            }
+
+        unionList.push_back(armView);
+        }
+
+    if (unionList.empty())
+        return ERROR;
+
+    viewSql.Append(unionList, " UNION ALL ");
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -608,33 +829,58 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
             }
 
         ClassMap const* castInto = tableRootClassMap == &classMap ? nullptr : &classMap;
-        if (RenderEntityClassMap(view, ctx, *tableRootClassMap, partition->GetTable(), castInto) != SUCCESS)
-            return ERROR;
+
+        /*
+         * POC-No-Remap
+         *
+         * When any concrete class in the hierarchy stores a shared-column property at a different physical column than the table root, a single
+         * SELECT cannot serve all classes.
+         * Generate a UNION ALL with one arm per column-layout group so each class reads from its own correct physical column.
+         */
+        const bool divergent = HasDivergentColumnAssignments(classMap, *tableRootClassMap, partition->GetTable());
+        if (divergent)
+            {
+            if (RenderDivergentEntityPartition(view, ctx, classMap, *tableRootClassMap, partition->GetTable()) != SUCCESS)
+                return ERROR;
+            }
+        else
+            {
+            if (RenderEntityClassMap(view, ctx, *tableRootClassMap, partition->GetTable(), castInto) != SUCCESS)
+                return ERROR;
+            }
 
         //capture view column names only for the first class, all other classes will be unioned together and therefore
         //have the same select clause
         if (ctx.GetViewType() == ViewType::ECClassView)
             ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
-        if (const auto ecClassIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap())
+        /*
+         * POC-No-Remap
+         *
+         * When the divergent path was used, the UNION ALL arms already carry per-arm WHERE ECClassId filters, so we can skip the normal GenerateECClassIdFilter join entirely.
+         */
+        if (!divergent)
             {
-            if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = ecClassIdPropertyMap->FindDataPropertyMap(partition->GetTable()))
+            if (const auto ecClassIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap())
                 {
-                const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-                if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
-                    (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
+                if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = ecClassIdPropertyMap->FindDataPropertyMap(partition->GetTable()))
                     {
-                    const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
-                    Utf8String filterSQL;
-                    if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
-                        return ERROR;
-
-                    if (!filterSQL.empty())
+                    const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
+                    if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
+                        (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                         {
-                        if (polymorphicInfo.IsOnly())
-                            view.Append(" WHERE ").Append(filterSQL.c_str());
-                        else
-                            view.Append(" ").Append(filterSQL.c_str());
+                        const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
+                        Utf8String filterSQL;
+                        if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
+                            return ERROR;
+
+                        if (!filterSQL.empty())
+                            {
+                            if (polymorphicInfo.IsOnly())
+                                view.Append(" WHERE ").Append(filterSQL.c_str());
+                            else
+                                view.Append(" ").Append(filterSQL.c_str());
+                            }
                         }
                     }
                 }
@@ -782,42 +1028,99 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
         ConstraintECClassIdJoinInfo sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), partition.GetTable(), isSourceClassIdSelected);
         ConstraintECClassIdJoinInfo targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), partition.GetTable(), isTargetClassIdSelected);
 
-        if (DoRenderRelationshipClassMap(view, ctx, contextRelationship, partition.GetTable(), sourceECClassIdJoinInfo, targetECClassIdJoinInfo, castInto) != SUCCESS)
-            return ERROR;
+        /*
+         * POC-No-Remap
+         *
+         * When any concrete relationship subclass stores a shared-column property at a different physical column than the table root, a single SELECT cannot serve all classes.
+         * Generate a UNION ALL with one arm per concrete subclass so each reads from its own correct physical column.
+         */
+        std::vector<const ClassMap*> concretes;
+        CollectConcreteRelationshipClassMapsInTable(concretes, contextRelationship, partition.GetTable());
+        const bool divergent = !concretes.empty() && HasDivergentColumnAssignments(relationMap, contextRelationship, partition.GetTable());
 
-        //capture view column names only for the first table, all other tables will be unioned together and therefore
-        //have the same select clause
-        if (ctx.GetViewType() == ViewType::ECClassView)
-            ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
-
-        if (sourceECClassIdJoinInfo.IsClassIdSelected() && sourceECClassIdJoinInfo.RequiresJoin())
-            view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
-
-        if (targetECClassIdJoinInfo.IsClassIdSelected() && targetECClassIdJoinInfo.RequiresJoin())
-            view.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
-
-        ECClassIdPropertyMap const* classIdPropMap = relationMap.GetECClassIdPropertyMap();
-        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdDataPropertyMap = classIdPropMap->FindDataPropertyMap(partition.GetTable()))
+        if (divergent)
             {
-            const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if (classIdDataPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
+            // Get ECClassId column reference for the per-arm WHERE filter
+            const ECClassIdPropertyMap* ecClassIdPropMap = contextRelationship.GetECClassIdPropertyMap();
+            if (ecClassIdPropMap == nullptr)
+                return ERROR;
+            const SystemPropertyMap::PerTableIdPropertyMap* classIdDataPropMap = ecClassIdPropMap->FindDataPropertyMap(partition.GetTable());
+            if (classIdDataPropMap == nullptr || classIdDataPropMap->GetColumn().GetPersistenceType() != PersistenceType::Physical)
+                return ERROR;
+
+            Utf8String classIdColRef;
+            classIdColRef.Sprintf("[%s].[%s]", partition.GetTable().GetName().c_str(), classIdDataPropMap->GetColumn().GetName().c_str());
+
+            const TableSpaceSchemaManager& schemaManager = ctx.GetSchemaManager();
+            bool capturedColumnNames = false;
+            for (const ClassMap* concreteClassMap : concretes)
                 {
-                Utf8String filterSQL;
-                const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
-                if (SUCCESS != GenerateECClassIdFilter(filterSQL, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), polymorphicInfo))
+                const RelationshipClassLinkTableMap& concreteRelMap = concreteClassMap->GetAs<RelationshipClassLinkTableMap>();
+                const RelationshipClassLinkTableMap* castIntoForConcrete = (&concreteRelMap == &relationMap) ? nullptr : &relationMap;
+
+                NativeSqlBuilder armView;
+                if (DoRenderRelationshipClassMap(armView, ctx, concreteRelMap, partition.GetTable(), sourceECClassIdJoinInfo, targetECClassIdJoinInfo, castIntoForConcrete) != SUCCESS)
                     return ERROR;
 
-                if (!filterSQL.empty())
+                // Capture view column names only for the first arm
+                if (!capturedColumnNames && ctx.GetViewType() == ViewType::ECClassView)
                     {
-                    if (polymorphicInfo.IsOnly())
-                        view.Append(" WHERE ").Append(filterSQL.c_str());
-                    else
-                        view.Append(" ").Append(filterSQL.c_str());
+                    ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
+                    capturedColumnNames = true;
                     }
+
+                if (sourceECClassIdJoinInfo.IsClassIdSelected() && sourceECClassIdJoinInfo.RequiresJoin())
+                    armView.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
+
+                if (targetECClassIdJoinInfo.IsClassIdSelected() && targetECClassIdJoinInfo.RequiresJoin())
+                    armView.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
+
+                ECClassId concreteClassId = schemaManager.GetClassId(concreteRelMap.GetClass());
+                armView.AppendFormatted(" WHERE %s = %lld",
+                    classIdColRef.c_str(), concreteClassId.GetValue());
+
+                unionList.push_back(armView);
                 }
             }
+        else
+            {
+            if (DoRenderRelationshipClassMap(view, ctx, contextRelationship, partition.GetTable(), sourceECClassIdJoinInfo, targetECClassIdJoinInfo, castInto) != SUCCESS)
+                return ERROR;
 
-        unionList.push_back(view);
+            //capture view column names only for the first table, all other tables will be unioned together and therefore
+            //have the same select clause
+            if (ctx.GetViewType() == ViewType::ECClassView)
+                ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
+
+            if (sourceECClassIdJoinInfo.IsClassIdSelected() && sourceECClassIdJoinInfo.RequiresJoin())
+                view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
+
+            if (targetECClassIdJoinInfo.IsClassIdSelected() && targetECClassIdJoinInfo.RequiresJoin())
+                view.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
+
+            const ECClassIdPropertyMap* classIdPropMap = relationMap.GetECClassIdPropertyMap();
+            if (const SystemPropertyMap::PerTableIdPropertyMap* classIdDataPropertyMap = classIdPropMap->FindDataPropertyMap(partition.GetTable()))
+                {
+                const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
+                if (classIdDataPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
+                    {
+                    Utf8String filterSQL;
+                    const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
+                    if (SUCCESS != GenerateECClassIdFilter(filterSQL, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), polymorphicInfo))
+                        return ERROR;
+
+                    if (!filterSQL.empty())
+                        {
+                        if (polymorphicInfo.IsOnly())
+                            view.Append(" WHERE ").Append(filterSQL.c_str());
+                        else
+                            view.Append(" ").Append(filterSQL.c_str());
+                        }
+                    }
+                }
+
+            unionList.push_back(view);
+            }
         }
 
     if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
@@ -1219,7 +1522,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
     NativeSqlBuilder dataPropertySql;
     bset<DbTable const*> requireJoinTo;
     bool sourceOrTargetRequiresJoin = (sourceJoinInfo.IsClassIdSelected() && sourceJoinInfo.RequiresJoin()) || (targetJoinInfo.IsClassIdSelected() && targetJoinInfo.RequiresJoin());
-    if (RenderPropertyMaps(dataPropertySql, ctx, requireJoinTo, relationMap, contextTable, nullptr, PropertyMap::Type::Data, sourceOrTargetRequiresJoin) != SUCCESS)
+    if (RenderPropertyMaps(dataPropertySql, ctx, requireJoinTo, relationMap, contextTable, castInto, PropertyMap::Type::Data, sourceOrTargetRequiresJoin) != SUCCESS)
         return ERROR;
 
     if (!requireJoinTo.empty())

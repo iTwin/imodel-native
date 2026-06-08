@@ -26,6 +26,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_Property "ec_Property"
 #define TABLE_PropertyCategory "ec_PropertyCategory"
 #define TABLE_PropertyMap "ec_PropertyMap"
+#define TABLE_PropertyMap_Overrides "ec_PropertyMap_Overrides"
 #define TABLE_PropertyPath "ec_PropertyPath"
 #define TABLE_RelationshipConstraint "ec_RelationshipConstraint"
 #define TABLE_RelationshipConstraintClass "ec_RelationshipConstraintClass"

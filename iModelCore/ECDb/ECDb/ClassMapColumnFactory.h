@@ -125,8 +125,9 @@ struct ClassMapColumnFactory final
         DbColumn* HandleOverflowColumn(DbColumn* column) const;
         DbTable* GetEffectiveTable(SchemaImportContext&) const;
         DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
-        DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&) const;
+        DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&, Utf8StringCR accessString) const;
         bool IsColumnUsedByAnyDerivedClass(DbColumn const&, SchemaImportContext&) const;
+        bool IsColumnUsedForDifferentAccessString(DbColumn const&, SchemaImportContext&, Utf8StringCR accessString) const;
         ColumnMaps* GetColumnMaps() const;
         DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
@@ -153,7 +154,7 @@ struct ClassMapColumnFactory final
             }
             void EnsurePropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
             void EvaluateIfPropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
-            void EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const;
+            void EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx, Utf8StringCP accessString = nullptr) const;
             void ResetCurrentPropertyOverflowFlag() const { m_putCurrentPropertyToOverflow = false; }
             void Debug() const { GetColumnMaps()->Debug(); }
             DbColumn* Allocate(SchemaImportContext&, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;

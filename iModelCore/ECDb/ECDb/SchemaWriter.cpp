@@ -1665,6 +1665,41 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
       return result;
       }
 
+    /*
+     * POC-No-Remap
+     *
+     * Problem:
+     * When a new property is added to a class any subclass that already has the same property name mapped via a mixin or other inheritance path stores its data in the OLD column.
+     * With the SkipRemapping flag, CleanModifiedMappings is skipped, so CopyModifiedBasePropertyMaps would overwrite the subclass's column assignment to point at the new 
+     * base-class column, thus silently losing access to the pre-upgrade data.
+     *
+     * Fix:
+     * Write ec_PropertyMap_Overrides entries for every subclass of the owning class that currently has this property name in ec_PropertyMap under a DIFFERENT property Id (i.e. from a mixin or sibling class).
+     * The override causes _Load to remap the cloned base-class column back to the original physical column, and CopyModifiedBasePropertyMaps will see the override and skip the overwrite.
+     */
+    if (Enum::Contains(ctx.ImportCtx().GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping) && ctx.GetECDb().TableExists(TABLE_PropertyMap_Overrides))
+        {
+        const Utf8String owningClassIdStr = ecProperty.GetClass().GetId().ToString();
+        stat = ctx.GetECDb().ExecuteSql(SqlPrintfString(
+            "INSERT OR IGNORE INTO " TABLE_PropertyMap_Overrides " (ClassId, AccessString, ColumnId) "
+            "SELECT pm.ClassId, pp.AccessString, pm.ColumnId "
+            "FROM " TABLE_PropertyMap " pm "
+            "JOIN " TABLE_PropertyPath " pp ON pm.PropertyPathId = pp.Id "
+            "JOIN main." TABLE_Property " p ON pp.RootPropertyId = p.Id "
+            "WHERE p.Name = '%s' "
+            "  AND p.ClassId != %s "
+            "  AND EXISTS ("
+            "    SELECT 1 FROM main." TABLE_ClassHierarchyCache " h "
+            "    WHERE h.ClassId = pm.ClassId AND h.BaseClassId = %s"
+            "  )",
+            ecProperty.GetName().c_str(),
+            owningClassIdStr.c_str(),
+            owningClassIdStr.c_str()).GetUtf8CP());
+
+        if (BE_SQLITE_OK != stat)
+            return ERROR;
+        }
+
     ctx.ImportCtx().RemapManager().CollectRemapInfosFromNewProperty(ecProperty.GetClass(), ecProperty.GetName(), ecProperty.GetId());
     return result;
     }
@@ -3848,7 +3883,48 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
         }
 
     if(isOverriddenProperty)
-        ctx.ImportCtx().RemapManager().CollectRemapInfosFromDeletedPropertyOverride(deletedProperty.GetId());
+        {
+        if (Enum::Contains(ctx.ImportCtx().GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping) && ctx.GetECDb().TableExists(TABLE_PropertyMap_Overrides))
+            {
+            /*
+             * POC-No-Remap
+             *
+             * Capture overrides for the directly-owning class AND all transitive subclasses that
+             * inherited this property without their own ec_PropertyMap row.
+             * Those subclasses also stored their data in the same physical column (eg: ps1), and they likewise need an override entry so ClassMap::_Load can remap them correctly after the upgrade.
+             * The recursive CTE stops descending through a subclass that has its own explicit ec_PropertyMap entry (it has its own mapping and therefore its own override row).
+             */
+            const auto result = ctx.GetECDb().ExecuteSql(SqlPrintfString(
+                "WITH RECURSIVE overridden_classes(ClassId, AccessString, ColumnId) AS ( "
+                "  SELECT pm.ClassId, pp.AccessString, pm.ColumnId "
+                "  FROM " TABLE_PropertyMap " pm JOIN " TABLE_PropertyPath " pp ON pm.PropertyPathId = pp.Id "
+                "  WHERE pp.RootPropertyId = %s "
+                "  UNION ALL "
+                "  SELECT h.ClassId, oc.AccessString, oc.ColumnId "
+                "  FROM main.ec_ClassHasBaseClasses h "
+                "  JOIN overridden_classes oc ON h.BaseClassId = oc.ClassId "
+                "  WHERE NOT EXISTS ( "
+                "    SELECT 1 FROM " TABLE_PropertyMap " pm2 "
+                "    JOIN " TABLE_PropertyPath " pp2 ON pm2.PropertyPathId = pp2.Id "
+                "    WHERE pm2.ClassId = h.ClassId AND pp2.RootPropertyId = %s "
+                "  ) "
+                ") "
+                "INSERT OR IGNORE INTO " TABLE_PropertyMap_Overrides " (ClassId, AccessString, ColumnId) "
+                "SELECT ClassId, AccessString, ColumnId FROM overridden_classes",
+                deletedProperty.GetId().ToString().c_str(),
+                deletedProperty.GetId().ToString().c_str()).GetUtf8CP());
+
+            if (result != BE_SQLITE_DONE && result != BE_SQLITE_OK)
+                {
+                BeAssert(false && "Failed to delete ecproperty");
+                return ERROR;
+                }
+            }
+        else
+            {
+            ctx.ImportCtx().RemapManager().CollectRemapInfosFromDeletedPropertyOverride(deletedProperty.GetId());
+            }
+        }
     
     LOG.infov("ECClass %s: ECProperty '%s' is being deleted.", ecClass.GetFullName(), deletedProperty.GetName().c_str());
     //Delete ECProperty entry make sure ec_Column is already deleted or set to null

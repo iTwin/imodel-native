@@ -127,7 +127,6 @@ public:
 //Clear Modified Mappings
 private:
     std::map<ECN::ECClassId, std::vector<CleanedMappingInfo>> m_cleanedMappingInfo;
-    std::set<Utf8String> m_allFreedColumnIdentifiers;
 
     std::vector<CleanedMappingInfo>& GetOrAddCleanedMappingInfo(ECN::ECClassId id)
         {
@@ -139,7 +138,7 @@ private:
     BentleyStatus CleanAddedBaseClass(RemapInfosForClass& remapInfo, AddedBaseClass& addedBaseClass, std::set<ECN::ECPropertyId>& cleanedPropertyIds);
     
 public:
-    BentleyStatus CleanModifiedMappings();
+    BentleyStatus CleanModifiedMappings(SchemaImportContext& ctx);
     BentleyStatus EnsureInvolvedSchemasAreLoaded(bvector<ECN::ECSchemaCP> const& schemasToMap);
     BentleyStatus RestoreAndProcessCleanedPropertyMaps(SchemaImportContext& ctx);
     void DiscardCleanedMappingInfoForClass(ECN::ECClassId classId)
@@ -174,21 +173,6 @@ public:
         {
         Utf8PrintfString idStr("%s:%s", tableName.c_str(), columnName.c_str());
         return idStr;
-        }
-
-    // Returns true if any columns were freed during CleanModifiedMappings on a table whose linked primary/overflow table also freed columns.
-    // Only such columns are tracked because they carry a risk of cross-table circular remaps.
-    // Columns freed on tables without a linked freed table are safe to reuse immediately and are NOT reflected here.
-    bool HasFreedColumns() const
-        {
-        return !m_allFreedColumnIdentifiers.empty();
-        }
-
-    // Returns true if the given column was freed during CleanModifiedMappings AND its table's linked primary/overflow table also freed columns in the same import.
-    // Such a column cannot be immediately reused due to the risk of a cross-table circular remap.
-    bool IsColumnFreed(const DbColumn& column) const
-        {
-        return m_allFreedColumnIdentifiers.count(RemapManager::GetFullColumnIdentifier(column.GetTable().GetName(), column.GetName())) > 0;
         }
     };
 

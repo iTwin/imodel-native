@@ -459,7 +459,55 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (m_propertyMaps.Insert(ecClassIdPropertyMap, 1) != SUCCESS)
         return ERROR;
 
-    return LoadPropertyMaps(ctx, dbLoadCtx);
+    if (SUCCESS != LoadPropertyMaps(ctx, dbLoadCtx))
+        return ERROR;
+
+    /*
+     * POC-No-Remap
+     * Apply per-class column overrides from ec_PropertyMap_Overrides when a property is promoted to a base class without physically moving data.
+     * The canonical ec_PropertyMap now points to a fresh base-class column, but instances of this class still have their data at the original column.
+     * Remapping each property map to the override column makes the in-memory ClassMap reflect the actual storage layout, so HasDivergentColumnAssignments can detect the divergence at query time.
+     */
+    if (m_ecdb.TableExists(TABLE_PropertyMap_Overrides))
+        {
+        const ECClassId classId = GetSchemaManager().GetClassId(m_ecClass);
+        CachedStatementPtr overrideStmt = m_ecdb.GetCachedStatement(
+            "SELECT o.AccessString, col.Name, tab.Name "
+            "FROM " TABLE_PropertyMap_Overrides " o "
+            "JOIN ec_Column col ON col.Id = o.ColumnId "
+            "JOIN ec_Table  tab ON tab.Id = col.TableId "
+            "WHERE o.ClassId = ?");
+
+        if (overrideStmt != nullptr && overrideStmt->BindId(1, classId) == BE_SQLITE_OK)
+            {
+            std::map<Utf8String, DbColumn*, CompareIUtf8Ascii> overrides;
+            while (overrideStmt->Step() == BE_SQLITE_ROW)
+                {
+                Utf8CP accessString = overrideStmt->GetValueText(0);
+                Utf8CP colName      = overrideStmt->GetValueText(1);
+                Utf8CP tableName    = overrideStmt->GetValueText(2);
+                if (const DbTable* table = GetSchemaManager().GetDbSchema().FindTable(tableName))
+                    {
+                    if (DbColumn* col = table->FindColumnP(colName))
+                        overrides.emplace(Utf8String(accessString), col);
+                    }
+                }
+
+            if (!overrides.empty())
+                {
+                SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
+                m_propertyMaps.AcceptVisitor(visitor);
+                for (const PropertyMap* pm : visitor.Results())
+                    {
+                    auto it = overrides.find(pm->GetAccessString().c_str());
+                    if (it != overrides.end())
+                        pm->GetAs<SingleColumnDataPropertyMap>().Remap(*it->second);
+                    }
+                }
+            }
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -482,22 +530,74 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         }
 
+    /*
+     * POC-No-Remap
+     * First pass: Load all properties that the class has into m_propertyMaps while skipping the inherited properties.
+     */
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         if (dbCtx.IsPropertyIgnored(property->GetName()) && m_ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
             continue;
 
-        DataPropertyMap const*  tphBaseClassPropMap = nullptr;
-        if (&property->GetClass() != &m_ecClass && inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::Clone)
+        if (&property->GetClass() != &m_ecClass)
+            continue; // skip inherited properties for now
+
+        if (DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property) == nullptr)
+            m_failedToLoadProperties.push_back(property);
+        }
+
+    /*
+     * POC-No-Remap
+     * Second pass: Load every INHERITED property from ec_PropertyMap for this class which already have a row in the table.
+     * Use case: SchemaRemapTestFixture.RevitStoryScenario
+     * When a class's base changes (e.g. Story: CompositeElement -> FacilityPart), the derived concrete class (Level) inherits a new property
+     *  (Description) whose canonical shared column (ps2) was already assigned in an earlier schema version, to a mixin property (RevitId) of the same concrete class.
+     * GetProperties(true) may return Description before RevitId, so the Pass 3 conflict check would not yet see RevitId -> ps2 in m_propertyMaps, allowing Description to be cloned onto ps2 and creating a conflict
+     * By pre-loading all canonically-mapped inherited properties in Pass 2, we ensure that the complete set of occupied columns is visible to the conflict check in Pass 3.
+     */
+    for (ECPropertyCP property : m_ecClass.GetProperties(true))
+        {
+        if (dbCtx.IsPropertyIgnored(property->GetName()) && m_ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            continue;
+
+        if (&property->GetClass() == &m_ecClass)
+            continue; // own property which is already handled in Pass 1
+
+        DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property);
+        }
+
+    /*
+     * POC-No-Remap
+     * Third pass: Process inherited properties not yet in m_propertyMaps.
+     * At this point m_propertyMaps contains ALL own-class columns (Pass 1) plus ALL canonically-mapped inherited columns (Pass 2), giving the conflict check a complete view of occupied columns.
+     */
+    for (ECPropertyCP property : m_ecClass.GetProperties(true))
+        {
+        if (dbCtx.IsPropertyIgnored(property->GetName()) && m_ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            continue;
+
+        if (&property->GetClass() == &m_ecClass)
+            continue; // already handled in Pass 1
+
+        // Skip properties already inserted into m_propertyMaps during Pass 2.
+        if (m_propertyMaps.Find(property->GetName().c_str()) != nullptr)
+            continue;
+
+        if (inheritanceMode != DbMappingManager::Classes::PropertyMapInheritanceMode::Clone)
             {
-            for (ClassMap const* baseClassMap : tphBaseClassMaps)
+            if (DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property) == nullptr)
+                m_failedToLoadProperties.push_back(property);
+            continue;
+            }
+
+        DataPropertyMap const* tphBaseClassPropMap = nullptr;
+        for (ClassMap const* baseClassMap : tphBaseClassMaps)
+            {
+            PropertyMap const* propMap = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str());
+            if (propMap != nullptr && propMap->IsData())
                 {
-                PropertyMap const* propMap = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str());
-                if (propMap != nullptr && propMap->IsData())
-                    {
-                    tphBaseClassPropMap = &propMap->GetAs<DataPropertyMap>();
-                    break;
-                    }
+                tphBaseClassPropMap = &propMap->GetAs<DataPropertyMap>();
+                break;
                 }
             }
 
@@ -505,7 +605,59 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             {
             if (DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property) == nullptr)
                 m_failedToLoadProperties.push_back(property);
+            continue;
+            }
 
+        /*
+         * POC-No-Remap
+         * Unlikely but Defensive early-out: if this property somehow has an ec_PropertyMap entry that Pass 2 missed, load it now and skip the conflict check. 
+         */
+        if (DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property) != nullptr)
+            continue;
+
+        /*
+         * POC-No-Remap
+         * Column Conflict check
+         * 
+         * Before cloning the inherited property's column assignment, check whether any column it uses is already occupied by any property already in m_propertyMaps.
+         * Own properties from Pass 1 OR canonically-mapped inherited properties from Pass 2 such as mixin properties.
+         *
+         * Encountered in tests:
+         * 1. SchemaRemapTestFixture.PutSiblingsIntoHierarchy / SchemaRemapTestFixture.InjectBaseClassInBaseSchema: 
+         *     The class's direct base changes to a former sibling that already owns a property mapped to the same shared column as an OWN property of this class.
+         *
+         * 2. SchemaRemapTestFixture.RevitStoryScenario / SchemaRemapTestFixture.RevitStoryScenarioWithSiblingAndMixins:
+         *     A mixin property (e.g. RevitId) was mapped in a previous schema version to a shared column (ps2) that is now also the canonical column for a newly-inherited base-class property (e.g. Description).
+         *     Because RevitId and Description belong to different class branches that were unrelated in the previous hierarchy, their ps2 assignments were both valid then; but after the base-class change they now collide.
+         *
+         * In both cases CleanModifiedMappings would normally resolve the conflict using remapping.
+         * We now defer resolution to ClassMap::Update (which allocates a fresh column), which is safe because the conflicting property retains its original ec_PropertyMap entry, while the inherited property gets a new canonical column.
+         */
+        bool inheritedColumnConflicts = false;
+        {
+        SearchPropertyMapVisitor baseColumnVisitor(PropertyMap::Type::SingleColumnData);
+        tphBaseClassPropMap->AcceptVisitor(baseColumnVisitor);
+        for (const PropertyMap* basePm : baseColumnVisitor.Results())
+            {
+            const DbColumn& baseCol = basePm->GetAs<SingleColumnDataPropertyMap>().GetColumn();
+            SearchPropertyMapVisitor ownVisitor(PropertyMap::Type::SingleColumnData);
+            m_propertyMaps.AcceptVisitor(ownVisitor);
+            for (const PropertyMap* ownPm : ownVisitor.Results())
+                {
+                if (&ownPm->GetAs<SingleColumnDataPropertyMap>().GetColumn() == &baseCol)
+                    {
+                    inheritedColumnConflicts = true;
+                    break;
+                    }
+                }
+            if (inheritedColumnConflicts)
+                break;
+            }
+        }
+
+        if (inheritedColumnConflicts)
+            {
+            m_failedToLoadProperties.push_back(property);
             continue;
             }
 
@@ -568,6 +720,37 @@ BentleyStatus ClassMap::CopyModifiedBasePropertyMaps(SchemaImportContext& ctx){
         localPropertyMap->AcceptVisitor(localPropertyMapHash);
 
         if (localPropertyMapHash.GetHashCode() != basePropertyHash.GetHashCode()) {
+            /*
+             * POC-No-Remap
+             * If this class has an override entry in ec_PropertyMap_Overrides for this property, the override mechanism in ClassMap::_Load will wire the correct old column at query time.
+             * We must NOT copy the base class's new column here.
+             */
+            if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::SkipRemapping) && m_ecdb.TableExists(TABLE_PropertyMap_Overrides))
+                {
+                /*
+                 * POC-No-Remap
+                 * Encountered in test SchemaRemapTestFixture.PutSiblingsIntoHierarchy (A property is a newly-inherited property that was deferred in _Load due to a conflict with an own
+                 *   property, then assigned a fresh shared column).
+                 * 
+                 * If this property was assigned a fresh column by a prior Update() call in this import, do NOT copy the base class's column.
+                 * The fresh assignment is intentionally different from the base and must be preserved to avoid a "column used by multiple properties" conflict.
+                 */
+                if (m_newlyMappedPropertyNames.count(property->GetName()) > 0)
+                    continue;
+
+                ECClassId classId = m_ecClass.GetId();
+                Utf8StringCR propName = property->GetName();
+                CachedStatementPtr skipStmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
+                    "SELECT 1 FROM main." TABLE_PropertyMap_Overrides
+                    " WHERE ClassId = ? AND (AccessString = ? OR AccessString LIKE ? || '.%') LIMIT 1");
+                if (skipStmt.IsValid()
+                    && skipStmt->BindId(1, classId) == BE_SQLITE_OK
+                    && skipStmt->BindText(2, propName.c_str(), Statement::MakeCopy::No) == BE_SQLITE_OK
+                    && skipStmt->BindText(3, propName.c_str(), Statement::MakeCopy::No) == BE_SQLITE_OK
+                    && skipStmt->Step() == BE_SQLITE_ROW)
+                    continue;
+                }
+
             // Base property have modified
             auto idx = m_propertyMaps.IndexOf(*localPropertyMap);
             m_propertyMaps.Remove(localPropertyMap->GetName().c_str());
@@ -598,33 +781,6 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         return ERROR;
     }
 
-    if (ctx.RemapManager().HasFreedColumns())
-        {
-        for (ECPropertyCP property : m_ecClass.GetProperties(true))
-            {
-            const auto propMap = m_propertyMaps.Find(property->GetName().c_str());
-            if (propMap == nullptr || !propMap->IsData() || propMap->GetType() == PropertyMap::Type::Navigation)
-                continue;
-
-            GetColumnsPropertyMapVisitor colVisitor;
-            propMap->AcceptVisitor(colVisitor);
-
-            // If the property has been mapped to a column that has been freed in this schema import, avoid its reuse and force a re-load to allocate a new column
-            for (const DbColumn* column : colVisitor.GetColumns())
-                {
-                if (column->IsShared() && ctx.RemapManager().IsColumnFreed(*column))
-                    {
-                    m_propertyMaps.Remove(property->GetName().c_str());
-
-                    if (std::find(m_failedToLoadProperties.begin(), m_failedToLoadProperties.end(), property) == m_failedToLoadProperties.end())
-                        m_failedToLoadProperties.push_back(property);
-
-                    break;
-                    }
-                }
-            }
-        }
-
     //Follow can change ECInstanceId, ECClassId by optionally adding
     if (m_failedToLoadProperties.empty())
         return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
@@ -644,6 +800,13 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             BeAssert(false);
             return ERROR;
             }
+
+        /*
+         * POC-No-Remap
+         * 
+         * Track this property so CopyModifiedBasePropertyMaps won't overwrite the freshly assigned column when this class is encountered a second time as a transitive derived class.
+         */
+        m_newlyMappedPropertyNames.insert(property->GetName());
 
         //Nav property maps cannot be saved here as they are not yet mapped.
         if (propMap->GetType() == PropertyMap::Type::Navigation)

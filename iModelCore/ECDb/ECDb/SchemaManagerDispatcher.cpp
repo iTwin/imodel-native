@@ -1429,7 +1429,10 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
     DataChangeSqlListener dataChangeListener(ctx.GetECDb());
 #endif
 
-    if (SUCCESS != ctx.RemapManager().CleanModifiedMappings()) {
+    /*
+     * POC-No-Remap
+     */
+    if (SUCCESS != ctx.RemapManager().CleanModifiedMappings(ctx)) {
         return failedToMap();
     }
 
