@@ -1162,7 +1162,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         RelatedClassPath const& GetPathFromSelectToContentClass() const {return m_pathFromSelectClassToContentClass;}
         void SetPathFromSelectToContentClass(RelatedClassPath path) {m_pathFromSelectClassToContentClass = path;}
 
-        //! Actual source subclasses of source in 'path from select to content class'
+        //! Actual source classes of the primary class that leads to this field.
+        //! 
+        //! The same relationship can be represented in two ways:
+        //! 1. A -> Related content field [A -> B] -> Related content field [B -> C].
+        //! 2. A -> Related content field [A -> B -> C].
+        //! `GetActualSourceClasses` of all three related content fields would return the same result - class A or its subclasses.
         std::unordered_set<ECClassCP> const* GetActualSourceClasses() const {return m_actualSourceClasses.get();}
         std::unordered_set<ECClassCP>* GetActualSourceClasses() {return m_actualSourceClasses.get();}
         void SetActualSourceClasses(std::unique_ptr<std::unordered_set<ECClassCP>> classes) {m_actualSourceClasses = std::move(classes);}

@@ -1212,10 +1212,7 @@ public:
 
         relatedContentField->SetSpecificationIdentifier(relatedPropertySpecsStack.back()->GetHash());
         relatedContentField->SetRelationshipMeaning(relatedPropertySpecsStack.back()->GetRelationshipMeaning());
-
-        // only set actual source classes if the field is not nested - they're pointing to nesting field's source otherwise
-        if (!mergeResult.nestingField)
-            relatedContentField->SetActualSourceClasses(std::make_unique<std::unordered_set<ECClassCP>>(actualSourceClasses));
+        relatedContentField->SetActualSourceClasses(std::make_unique<std::unordered_set<ECClassCP>>(actualSourceClasses));
 
         if (fieldAttributes.GetRenderer())
             relatedContentField->SetRenderer(new ContentFieldRenderer(*fieldAttributes.GetRenderer()));
@@ -1628,7 +1625,14 @@ public:
         {
         for (ContentDescriptor::Field const* field : contentField.GetFields())
             {
-            m_descriptor->AddRootField(*field->Clone());
+            auto clone = field->Clone();
+            if (clone->GetParent() && clone->AsNestedContentField() && clone->AsNestedContentField()->AsRelatedContentField())
+                {
+                // if the field has a parent and we place it into descriptor as the root field, the "Actual source classes" become
+                // invalid in the context of the descriptor
+                clone->AsNestedContentField()->AsRelatedContentField()->SetActualSourceClasses(nullptr);
+                }
+            m_descriptor->AddRootField(*clone);
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Cloned nested field `%s` into descriptor.", field->GetUniqueName().c_str()));
             }
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Total fields: %" PRIu64, (uint64_t)m_descriptor->GetAllFields().size()));

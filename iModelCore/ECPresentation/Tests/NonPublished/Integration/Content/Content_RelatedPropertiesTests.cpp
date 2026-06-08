@@ -6287,6 +6287,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsActualSourceClassesOnRe
     EXPECT_STREQ("PropB", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField());
+    EXPECT_EQ(classC, &descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetContentClass());
+    EXPECT_TRUE(ContainsAll(*descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classA3 }, true));
     EXPECT_EQ(1, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropC", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
 
@@ -6388,6 +6390,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesValidDescriptorWhenD
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField());
     EXPECT_EQ(classS, &descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField()->GetContentClass());
+    EXPECT_TRUE(ContainsAll(*descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classB, classC }, true));
     EXPECT_EQ(1, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropS", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
     }
