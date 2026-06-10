@@ -15,6 +15,10 @@
 
 %include mdl.mki
 
+%if $(TARGET_PLATFORM)=="Windows"
+	%error Need to comment out this line to make it compile
+%endif
+
 appName             = CrashpadHandler
 crashpadDir         = $(_MakeFilePath)
 libsrcDir           = $(crashpadDir)../
