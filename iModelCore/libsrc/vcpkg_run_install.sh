@@ -25,6 +25,34 @@ if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
     exit 1
 fi
 
+# BentleyBuild uses LLVM_DIR as the LLVM install root. If present, put that
+# toolchain first so vcpkg ports and GN/Ninja builds use the same compiler.
+if [ -n "${LLVM_DIR:-}" ]; then
+    LLVM_BIN="$LLVM_DIR/bin"
+    if [ ! -x "$LLVM_BIN/clang" ] || [ ! -x "$LLVM_BIN/clang++" ]; then
+        echo "Error: LLVM_DIR is set, but clang/clang++ were not found under $LLVM_BIN"
+        exit 1
+    fi
+
+    echo "Using LLVM toolchain from LLVM_DIR: $LLVM_DIR"
+    export PATH="$LLVM_BIN:$PATH"
+    export CC="$LLVM_BIN/clang"
+    export CXX="$LLVM_BIN/clang++"
+
+    if [ -x "$LLVM_BIN/llvm-ar" ]; then
+        export AR="$LLVM_BIN/llvm-ar"
+    fi
+    if [ -x "$LLVM_BIN/llvm-ranlib" ]; then
+        export RANLIB="$LLVM_BIN/llvm-ranlib"
+    fi
+    if [ -x "$LLVM_BIN/llvm-nm" ]; then
+        export NM="$LLVM_BIN/llvm-nm"
+    fi
+    if [ -x "$LLVM_BIN/llvm-strip" ]; then
+        export STRIP="$LLVM_BIN/llvm-strip"
+    fi
+fi
+
 # Locate vcpkg. Override with IMODEL_VCPKG_ROOT environment variable.
 # Use IMODEL_VCPKG_ROOT instead of VCPKG_ROOT to avoid conflicts with
 # tooling that may set VCPKG_ROOT to an undesired location.
