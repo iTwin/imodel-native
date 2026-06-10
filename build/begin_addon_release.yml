@@ -82,12 +82,12 @@ stages:
         displayName: get itwinjs pr
         name: getItwinjsPr
 
-      - bash: |
-          az pipelines run \
-            --branch $(Build.SourceBranch) \
-            --id 8467 \
-            --parameters "BumpType=patch" "iTwinjsPrNum=$(getItwinjsPr.ITWINJS_PR_NUM)"
-        displayName: queue bump-version.yml
-        env:
-          AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-        condition: eq(variables['getItwinjsPr.SHOULD_QUEUE_PATCH'], 'true')
+      # - bash: |
+      #     az pipelines run \
+      #       --branch $(Build.SourceBranch) \
+      #       --id 8467 \
+      #       --parameters "BumpType=patch" "iTwinjsPrNum=$(getItwinjsPr.ITWINJS_PR_NUM)"
+      #   displayName: queue bump-version.yml
+      #   env:
+      #     AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+      #   condition: eq(variables['getItwinjsPr.SHOULD_QUEUE_PATCH'], 'true')
