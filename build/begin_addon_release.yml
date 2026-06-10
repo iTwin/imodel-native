@@ -45,8 +45,8 @@ stages:
               exit 0
             }
 
-            # Read the Azure-expanded commit message from env so bash does not
-            # treat titles like "foo (#1234)" as command substitution.
+            # Read the Azure-expanded commit message from env so bash treats it as data
+            # (prevents `$()` command substitution/backticks in the message from being executed).
             commitMsg="$BUILD_SOURCE_VERSION_MESSAGE"
 
             if [[ "$commitMsg" == "bump @itwin/* dev dependencies to next minor version" ]]; then
