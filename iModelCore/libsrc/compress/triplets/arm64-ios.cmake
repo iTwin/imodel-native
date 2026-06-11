@@ -4,6 +4,7 @@ set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CMAKE_SYSTEM_NAME iOS)
 set(VCPKG_OSX_ARCHITECTURES arm64)
+set(VCPKG_OSX_SYSROOT iphoneos)
 set(VCPKG_OSX_DEPLOYMENT_TARGET 13.0)
 
 # Match our previous build: minizip without crypt/uncrypt support

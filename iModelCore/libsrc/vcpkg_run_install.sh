@@ -25,10 +25,17 @@ if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
     exit 1
 fi
 
+# For cross-compilation triplets (iOS, Android), vcpkg/CMake manages its own
+# toolchain (Xcode SDK via xcrun for iOS, NDK for Android). Unset any compiler
+# env vars that might have been set at the pipeline level so CMake's platform
+# modules can discover the correct tools via xcrun.
+if [[ "$TRIPLET" == *-ios ]] || [[ "$TRIPLET" == *-android ]]; then
+    unset CC CXX AR RANLIB NM STRIP
+fi
+
 # BentleyBuild uses LLVM_DIR as the LLVM install root. If present, put that
 # toolchain first so vcpkg ports and GN/Ninja builds use the same compiler.
-# Skip for cross-compilation triplets (iOS, Android) where vcpkg manages its own
-# toolchain via CMake platform support or NDK toolchain files.
+# Skip for cross-compilation triplets handled above.
 if [ -n "${LLVM_DIR:-}" ] && [[ "$TRIPLET" != *-ios ]] && [[ "$TRIPLET" != *-android ]]; then
     LLVM_BIN="$LLVM_DIR/bin"
     if [ ! -x "$LLVM_BIN/clang" ] || [ ! -x "$LLVM_BIN/clang++" ]; then
