@@ -17,7 +17,7 @@ VCPKG_TAG=2026.05.25
 # The commit hash for the above version.
 VCPKG_COMMIT=d015e31e90838a4c9dfa3eed45979bc70d9357fc
 
-%if $(TARGET_PLATFORM)=="Windows"
+%if defined (winNT)
     %if defined (IMODEL_VCPKG_ROOT)
         # If IMODEL_VCPKG_ROOT is set, use that vcpkg instead of installing a local one.
         %warn Using vcpkg from $(IMODEL_VCPKG_ROOT).
@@ -39,9 +39,10 @@ VCPKG_COMMIT=d015e31e90838a4c9dfa3eed45979bc70d9357fc
 always:
     ~chdir $(_MakeFilePath)/vcpkg
     git fetch --tags
+    git checkout -- .
     git checkout $(VCPKG_TAG)
     $(BBPYTHONCMD) $(_MakeFilePath)git_helper.py verify-commit $(VCPKG_TAG) $(VCPKG_COMMIT)
-    %if $(TARGET_PLATFORM)=="Windows"
+    %if defined (winNT)
         ./bootstrap-vcpkg.bat
     %else
         ./bootstrap-vcpkg.sh

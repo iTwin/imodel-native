@@ -151,6 +151,14 @@ if "%VCPKG_BINARY_SOURCES%"=="" (
     set "VCPKG_BINARY_SOURCES=clear;files,%VCPKG_DEFAULT_BINARY_CACHE%,readwrite"
 )
 
+rem For Android cross-compilation, vcpkg needs ANDROID_NDK_HOME.
+rem Our build system sets ANDROID_NDK_ROOT; map it if ANDROID_NDK_HOME is not set.
+if "%ANDROID_NDK_HOME%"=="" (
+    if not "%ANDROID_NDK_ROOT%"=="" (
+        set "ANDROID_NDK_HOME=%ANDROID_NDK_ROOT%"
+    )
+)
+
 set "OVERLAY_TRIPLETS=%MANIFEST_DIR%\triplets"
 set "OVERLAY_ARG="
 if exist "%OVERLAY_TRIPLETS%" set "OVERLAY_ARG=--overlay-triplets=%OVERLAY_TRIPLETS%"
@@ -163,9 +171,9 @@ echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
 echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 
 if "%OVERLAY_ARG%"=="" (
-    "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%"
+    "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages"
 ) else (
-    "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" %OVERLAY_ARG%
+    "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages" %OVERLAY_ARG%
 )
 if errorlevel 1 exit /b %errorlevel%
 
