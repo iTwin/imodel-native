@@ -91,4 +91,6 @@ fi
     --triplet "$TRIPLET" \
     --x-install-root="$INSTALL_ROOT" \
     --x-manifest-root="$MANIFEST_DIR" \
+    --x-buildtrees-root="$INSTALL_ROOT/buildtrees" \
+    --x-packages-root="$INSTALL_ROOT/packages" \
     "${OVERLAY_ARGS[@]}"

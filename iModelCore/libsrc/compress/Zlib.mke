@@ -83,6 +83,8 @@ vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
 always:
 %if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
     libtool -static -o $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%elif $(TARGET_PLATFORM) == "Android"
+    $(BENTLEY_ANDROID_TOOLCHAIN_ar) qcL $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
 %elif $(TARGET_PLATFORM) == "Linux"
     $(libsrcDir)merge_static_libs.sh $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
 %elif $(TARGET_PLATFORM) == "Windows"
