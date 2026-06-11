@@ -27,7 +27,9 @@ fi
 
 # BentleyBuild uses LLVM_DIR as the LLVM install root. If present, put that
 # toolchain first so vcpkg ports and GN/Ninja builds use the same compiler.
-if [ -n "${LLVM_DIR:-}" ]; then
+# Skip for cross-compilation triplets (iOS, Android) where vcpkg manages its own
+# toolchain via CMake platform support or NDK toolchain files.
+if [ -n "${LLVM_DIR:-}" ] && [[ "$TRIPLET" != *-ios ]] && [[ "$TRIPLET" != *-android ]]; then
     LLVM_BIN="$LLVM_DIR/bin"
     if [ ! -x "$LLVM_BIN/clang" ] || [ ! -x "$LLVM_BIN/clang++" ]; then
         echo "Error: LLVM_DIR is set, but clang/clang++ were not found under $LLVM_BIN"
