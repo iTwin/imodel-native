@@ -14,6 +14,10 @@
     vcpkgTriplet = x64-osx
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64"
     vcpkgTriplet = arm64-ios
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+    vcpkgTriplet = arm64-android
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidX64"
+    vcpkgTriplet = x64-android
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
     vcpkgTriplet = x64-linux
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
