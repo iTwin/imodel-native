@@ -31,6 +31,7 @@ vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 vcpkgIncludeDir     = $(vcpkgTripletDir)include/
 vcpkgCrashpadIncDir = $(vcpkgIncludeDir)crashpad/
 vcpkgLibDir         = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 
 #--------------------------------------------------------------------------------------
 #   Run vcpkg to build crashpad
@@ -63,10 +64,17 @@ always:
 #   Merge vcpkg crashpad component archives into one output expected by downstream.
 #--------------------------------------------------------------------------------------
 CrashpadClientOut      = $(o)$(stlibprefix)$(appName)$(stlibext)
-vcpkgCrashpadClient    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
-vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
-vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
-vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+%if defined (DEBUG)
+    vcpkgCrashpadClient    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
+    vcpkgCrashpadCommon    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
+    vcpkgCrashpadUtil      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
+    vcpkgCrashpadBase      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+%else
+    vcpkgCrashpadClient    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
+    vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
+    vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
+    vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+%endif
 
 always:
 %if $(TARGET_PLATFORM) == "Linux"
