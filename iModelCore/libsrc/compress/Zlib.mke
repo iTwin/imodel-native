@@ -73,11 +73,20 @@ always:
 #   Merge both vcpkg-built static libs into a single BeZlib archive.
 #--------------------------------------------------------------------------------------
 BeZlibOut = $(o)$(stlibprefix)$(appName)$(stlibext)
-vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizip$(stlibext)
-%if $(TARGET_PLATFORM) == "Windows"
-vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)zs$(stlibext)
+%if defined (DEBUG)
+    vcpkgMinizip = $(vcpkgDbgLibDir)$(stlibprefix)minizip$(stlibext)
+    %if $(TARGET_PLATFORM) == "Windows"
+        vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)zsd$(stlibext)
+    %else
+        vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)z$(stlibext)
+    %endif
 %else
-vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
+    vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizip$(stlibext)
+    %if $(TARGET_PLATFORM) == "Windows"
+        vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)zs$(stlibext)
+    %else
+        vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
+    %endif
 %endif
 
 always:
