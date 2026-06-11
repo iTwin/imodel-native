@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-
+#include <map>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -25,8 +25,6 @@ GEOMAPI_VIRTUAL ~CurveCurveProcessor (){}
 protected:
     //! Number of calls to base class stubs
     size_t m_numProcessedByBaseClass;
-    //! distance tolerance
-    double m_tol;
     //! placement transform
     DMatrix4dCP m_pWorldToLocal;
     //! control flag for extended geometry
@@ -43,8 +41,11 @@ protected:
             }
         return m_strokeOptions.get ();
         }
-
-    static bool IsLinear (ICurvePrimitiveP curve)
+    void SetStrokeOptions(IFacetOptionsCR strokeOptions)
+        {
+        m_strokeOptions = strokeOptions.Clone();
+        }
+    static bool IsLinear (ICurvePrimitiveCP curve)
         {
         ICurvePrimitive::CurvePrimitiveType type = curve->GetCurvePrimitiveType ();
         if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
@@ -58,17 +59,16 @@ protected:
         return false;
         }
 
-
 //! processor called by default implementations.
 //! Implementors can trap here to apply generic curve logic in absence of special cases.
 //! Base class increments counters.
 GEOMAPI_VIRTUAL void ProcessPrimitivePrimitive (ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverseOrder);
 
-explicit CurveCurveProcessor (DMatrix4dCP pWorldToLocal, double tol);
+explicit CurveCurveProcessor (DMatrix4dCP pWorldToLocal);
 
 // Return true if the a fractional position within an edge is internal to the linestring.
 //    (false for extensions of internal edges)
-bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
+bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
     {
     static double s_lineFractionTol = 1.0e-8;
     // interior fractions are always ok ...
@@ -89,10 +89,9 @@ bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPo
     return false;
     }
 
-
 // Return true if the a fractional position within an edge is internal to the linestring.
 //    (false for extensions of internal edges)
-bool validArcAngle (double theta, DEllipse3d const &ellipse)
+bool ValidArcAngle (double theta, DEllipse3d const &ellipse)
     {
     if (m_extend)
         return true;
@@ -100,8 +99,6 @@ bool validArcAngle (double theta, DEllipse3d const &ellipse)
         return true;
     return false;
     }
-
-
 
 void SetExtend (bool b) {m_extend=b;}
 
@@ -156,105 +153,46 @@ void Transform (DSegment4dR hSeg,DSegment3dCR cSeg);
 void Transform (DConic4d &hConic, DEllipse3d const &cEllipse);
 };
 
+// Comparator for sorting segments by their points
+struct CompareDSegment3d
+    {
+    // absolute and relative tolerance for coordinate comparisons
+    double m_coordTol;
 
-// CurveCurveProcessor with CurveVectorR members to capture results as announced
-// by derived classes.
-struct CurveCurveProcessAndCollect : public CurveCurveProcessor
+    CompareDSegment3d(double coordTol) : m_coordTol (coordTol) {}
+
+    // lexicographical point comparison: x first, then y, then z
+    int compareXYZ(DPoint3dCR p0, DPoint3dCR p1) const;
+
+    // lexicographical segment "less" operator: compare first points of each segment, then the second points
+    bool operator()(DSegment3dCR a, DSegment3dCR b) const;
+    };
+
+// CurveCurveProcessor to capture 3D close approach results.
+struct CurveCurveProcessAndCollectCloseApproaches : public CurveCurveProcessor
 {
 
-CurveVectorR m_resultA;
-CurveVectorR m_resultB;
+typedef std::multimap<DSegment3d, CurveLocationDetailPair, CompareDSegment3d> SegmentPairMultiMap;
+static inline auto s_segmentPairLess = [](SegmentPairMultiMap::value_type const& entry0, SegmentPairMultiMap::value_type const& entry1) -> bool { return entry0.second.detailA.a < entry1.second.detailA.a; };
 
-CurveCurveProcessAndCollect (CurveVectorR intersectionA, CurveVectorR intersectionB,
-            DMatrix4dCP worldToLocal, double tol) :
-    CurveCurveProcessor (worldToLocal, tol),
-    m_resultA (intersectionA),
-    m_resultB (intersectionB)
+double m_maxDistance;
+SegmentPairMultiMap m_pairs; // stores close approach equivalence classes
+
+public:
+CurveCurveProcessAndCollectCloseApproaches (double maxDistance, DMatrix4dCP worldToLocal, double coordTol) :
+    CurveCurveProcessor(worldToLocal), m_maxDistance(maxDistance), m_pairs(CompareDSegment3d(coordTol))
     {
     }
 
-void CollectPair (
-        ICurvePrimitiveP curve0,
-        ICurvePrimitiveP curve1,
-        double fraction0,
-        double fraction1,
-        bool bReverseCurveOrder
-        )
-    {
-    if (!bReverseCurveOrder)
-        {
-        m_resultA.push_back(ICurvePrimitive::CreatePartialCurve (curve0, fraction0, fraction0, 0));
-        m_resultB.push_back(ICurvePrimitive::CreatePartialCurve (curve1, fraction1, fraction1, 0));
-        }
-    else
-        {
-        m_resultB.push_back(ICurvePrimitive::CreatePartialCurve (curve0, fraction0, fraction0, 0));
-        m_resultA.push_back(ICurvePrimitive::CreatePartialCurve (curve1, fraction1, fraction1, 0));
-        }
-    }
+// Whether the instance collects only the closest approach, or all approaches up to m_maxDistance in length.
+bool ClosestOnly() const { return m_maxDistance < 0.0; }
+// Add a close approach pair to the collection.
+void CollectPair (ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse);
+// Announce the collected, deduplicated close approach(es).
+bool GetResults(CurveCurve::ICloseApproachAnnouncer& announce) const;
 
-void CollectPairs (
-        ICurvePrimitiveP curve0,
-        ICurvePrimitiveP curve1,
-        bvector<double> const & fraction0,
-        bvector<double> const & fraction1,
-        bool bReverseCurveOrder
-        )
-    {
-    for (size_t i = 0; i < fraction0.size (); i++)
-        {
-        CollectPair (curve0, curve1, fraction0[i], fraction1[i], bReverseCurveOrder);
-        }
-    }
-
+// Retrieve the closest approach.
+bool GetResult(CurveLocationDetailPairR result) const;
 };
-
-
-// CurveCurveProcessor with members of type T to test and capture results as announced by derived classes.
-template <typename T>
-struct CurveCurveProcessAndSelectMinimum : public CurveCurveProcessor
-{
-double m_minWeight;
-T m_dataA;
-T m_dataB;
-int m_numCandidates;
-
-CurveCurveProcessAndSelectMinimum (DMatrix4dCP worldToLocal, double tol) :
-    CurveCurveProcessor (worldToLocal, tol), m_numCandidates(0)
-    {
-    m_minWeight = DBL_MAX;
-    }
-
-bool GetResult (double &weight, T &dataA, T &dataB) const
-    {
-    if (m_numCandidates > 0)
-        {
-        dataA = m_dataA;
-        dataB = m_dataB;
-        return true;
-        }
-    return false;
-    }
-
-void TestAndCollectMin (double weight, T const &dataA, T const &dataB, bool bReverseOrder)
-    {
-    m_numCandidates++;
-    if (weight < m_minWeight)
-        {
-        m_minWeight = weight;
-        if (!bReverseOrder)
-            {
-            m_dataA = dataA;
-            m_dataB = dataB;
-            }
-        else
-            {
-            m_dataB = dataA;
-            m_dataA = dataB;
-            }
-        }
-    }
-};
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE

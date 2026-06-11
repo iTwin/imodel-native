@@ -47,8 +47,8 @@ struct CCIProcessor : public CurveCurveProcessor
 CurveVectorR m_intersectionA;
 CurveVectorR m_intersectionB;
 
-CCIProcessor (CurveVectorR intersectionA, CurveVectorR intersectionB, DMatrix4dCP pWorldToLocal, double tol, bool extend = false) :
-    CurveCurveProcessor (pWorldToLocal, tol),
+CCIProcessor (CurveVectorR intersectionA, CurveVectorR intersectionB, DMatrix4dCP pWorldToLocal = nullptr, bool extend = false) :
+    CurveCurveProcessor (pWorldToLocal),
     m_intersectionA (intersectionA),
     m_intersectionB (intersectionB)
     {
@@ -196,7 +196,7 @@ void CollectPairs(
 
 // Return true if the a fractional position within an edge is internal to the linestring.
 //    (false for extensions of internal edges)
-bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
+bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
     {
     // interior fractions are always ok ...
     if (f >= -s_lineFractionTol && f <= 1.0 + s_lineFractionTol)
@@ -225,7 +225,7 @@ double EdgeFractionToLinestringFraction (double f, size_t index, size_t numPoint
 
 // Return true if the a fractional position within an edge is internal to the linestring.
 //    (false for extensions of internal edges)
-bool validArcAngle (double theta, DEllipse3d const &ellipse)
+bool ValidArcAngle (double theta, DEllipse3d const &ellipse)
     {
     if (m_extend)
         return true;
@@ -305,8 +305,8 @@ void ProcessLineLine(
             }
         }
     else  if (DSegment4d::IntersectXY(hPointA, fractionA, hPointB, fractionB, hSegA, hSegB)
-        && validEdgeFractionWithinLinestring (fractionA, indexA, numA)
-        && validEdgeFractionWithinLinestring (fractionB, indexB, numB)
+        && ValidEdgeFractionWithinLinestring (fractionA, indexA, numA)
+        && ValidEdgeFractionWithinLinestring (fractionB, indexB, numB)
         )
         {
         CollectPair (curveA, curveB,
@@ -396,8 +396,8 @@ void ProcessLineArc(
                 );
     for (int i = 0; i < numIntersection; i++)
         {
-        if (validEdgeFractionWithinLinestring (fractionA[i], 0, 2)
-            && validArcAngle (thetaB[i], ellipseB)
+        if (ValidEdgeFractionWithinLinestring (fractionA[i], 0, 2)
+            && ValidArcAngle (thetaB[i], ellipseB)
             )
             CollectPair (curveA, curveB,
                 fractionA[i],
@@ -435,8 +435,8 @@ void ProcessLinestringArc(
                     );
         for (int i = 0; i < numIntersection; i++)
             {
-            if (validEdgeFractionWithinLinestring (fractionA[i], iA - 1, nXYZA)
-                && validArcAngle (thetaB[i], ellipseB)
+            if (ValidEdgeFractionWithinLinestring (fractionA[i], iA - 1, nXYZA)
+                && ValidArcAngle (thetaB[i], ellipseB)
                 )
                 {
                 CollectPair (curveA, curveB,
@@ -502,8 +502,8 @@ void ProcessArcArc(
             (&hConicA, hPointA, thetaA, hPointB, thetaB, &hConicB);
     for (int i = 0; i < numIntersection; i++)
         {
-        if (   validArcAngle (thetaA[i], ellipseA)
-            && validArcAngle (thetaB[i], ellipseB))
+        if (   ValidArcAngle (thetaA[i], ellipseA)
+            && ValidArcAngle (thetaB[i], ellipseB))
             {
             CollectPair (curveA, curveB,
                     ellipseA.AngleToFraction (thetaA[i]),
@@ -707,10 +707,9 @@ CurveVectorR chainB,
 DMatrix4dCP    pWorldToLocal
 )
     {
-    double tol = 0.0;
     intersectionA.clear ();
     intersectionB.clear ();
-    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, tol);
+    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal);
     bvector<DRange3d> rangeA, rangeB;
     CollectRanges (chainA, rangeA);
     CollectRanges (chainB, rangeB);
@@ -734,10 +733,9 @@ CurveVectorR chain,
 DMatrix4dCP    pWorldToLocal
 )
     {
-    double tol = 0.0;
     intersectionA.clear ();
     intersectionB.clear ();
-    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, tol);
+    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal);
     bvector<DRange3d> ranges;
     CollectRanges (chain, ranges);
     for (size_t iA = 0, n = chain.size (); iA < n; iA++)
@@ -780,8 +778,7 @@ CurveVectorR chainB,
 DMatrix4dCP    pWorldToLocal
 )
     {
-    double tol = 0.0;
-    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, tol);
+    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal);
     for(ICurvePrimitivePtr &curveB : chainB)
         processor.Process (&curveA, curveB.get ());
     PurgeRedundantIntersections (intersectionA, intersectionB);
@@ -800,10 +797,9 @@ DMatrix4dCP    pWorldToLocal,
 bool           extend
 )
     {
-    double tol = 0.0;
     intersectionA.clear ();
     intersectionB.clear ();
-    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, tol, extend);
+    CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, extend);
     processor.Process (curveA, curveB);
     PurgeRedundantIntersections (intersectionA, intersectionB);
     }
@@ -836,16 +832,12 @@ CurveVectorPtr m_results;
 bool m_primitivesOnly;
 CCIProcessor *m_CCIProcessor;
 CurveVector::InOutClassification m_targetClassification;
-CCSplitProcessor (
-    CurveVectorCR splitter,
-    double tol,
-    bool primitivesOnly
-    )
+CCSplitProcessor(CurveVectorCR splitter, bool primitivesOnly)
     : m_splitter (splitter),
       m_intersectionsA (CurveVector::Create(CurveVector::BOUNDARY_TYPE_None)),
       m_intersectionsB (CurveVector::Create(CurveVector::BOUNDARY_TYPE_None)),
       m_results (CurveVector::Create (CurveVector::BOUNDARY_TYPE_None)),
-      m_CCIProcessor (new CCIProcessor (*m_intersectionsA, *m_intersectionsB, NULL, tol, false)),
+      m_CCIProcessor (new CCIProcessor (*m_intersectionsA, *m_intersectionsB)),
       m_primitivesOnly (primitivesOnly)
     {
     }
@@ -946,8 +938,7 @@ CurveVectorPtr CCSplitProcessor::CloneWithSplits (CurveVectorCR source)
 +--------------------------------------------------------------------------------------*/
 CurveVectorPtr CurveVector::CloneWithSplits (CurveVectorCR splittersA, bool primitivesOnly) const
     {
-    double tol = 0.0;
-    CCSplitProcessor processor (splittersA, tol, primitivesOnly);
+    CCSplitProcessor processor (splittersA, primitivesOnly);
     return processor.CloneWithSplits (*this);
     }
 

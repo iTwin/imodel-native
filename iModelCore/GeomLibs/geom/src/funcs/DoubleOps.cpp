@@ -214,16 +214,17 @@ double DoubleOps::Magnitude (double a, double b)
     return sqrt (a*a + b*b);
     }
 
-//! return -1,0,1 for comparison, but with toleranced equal case
 int DoubleOps::TolerancedComparison(double a, double b)
     {
-    if (AlmostEqual (a, b))
-        return 0;
-    if (a < b)
-        return -1;
-    return 1;
+        return TolerancedComparison(a, b, DoubleOps::SmallCoordinateRelTol());
     }
 
+int DoubleOps::TolerancedComparison(double a, double b, double relTol)
+    {
+    if (fabs(a - b) <= relTol * (1.0 + fabs(a) + fabs(b))) // Manhattan
+        return 0;
+    return a < b ? -1 : 1;
+    }
 
 bool DoubleOps::AlmostEqualFraction (double a, double b)
     {

@@ -149,22 +149,21 @@ protected:
     int    mSuccessiveConvergenceTarget;
     double mMinStepU;
     double mMinStepV;
+    double mSize;
 public:
 
-// Default constructor sets up arbitrary tolerances.
-NewtonIterationsRRToRR ();
-
 // Detailed setup with same tolerances for both vars ...
-// @param [in] abstol  absolute tolerance (required, to distinguish this from default constructor)
-// @param [in] reltol  relative tolerance.
-// @param [in] maxIterations  maximum number of iterations.
+// @param [in] abstol  absolute tolerance. Default is 1.0e-12.
+// @param [in] reltol  relative tolerance. Default is 1.0e-12.
+// @param [in] maxIterations  maximum number of iterations. Default is 20.
 // @param [in] successiveConvergenceTarget  number of successive iterations which must be converged to
-//              accept.  A common strategy is to set tolerances to some "medium" level -- e.g. about
-//              12 digits -- but require 2 successive iterations to converge.  This will "usually"
-//              lead to full 16 digit accuracy but allow ornery functions to quit at the medium convergence
+// accept.  A common strategy is to set tolerances to some "medium" level -- e.g. about 12 digits --
+// but require 2 successive iterations to converge.  This will "usually" lead to full 16 digit accuracy
+// but allow ornery functions to quit at the medium convergence. Default is 2.
+// @param [in] minStep minimum parametric step size for computing approximate derivatives. Default is 1.0e-11.
 NewtonIterationsRRToRR
 (
-double abstol,
+double abstol = 1.0e-12,
 double reltol = 1.0e-12,
 int    maxIterations = 20,
 int    successiveConvergenceTarget = 2,
@@ -174,6 +173,17 @@ double minStep = 1.0e-11
 // Set a tolerance for convergence in cases that get close and have a failed step.
 void SetSoftTolerance (double abstolU, double absTolV);
 
+// Set the iteration limit and return the prior limit.
+int SetMaxIterations (int maxIterations);
+
+// Return the size of the solution in function space.
+// Normally this is 0.0, indicating convergence.
+// When bivariate RunNewton fails to converge, it updates its inputs from the best approximation encountered, and
+// this method returns its max-norm size = maxAbs(f(u), g(v)).
+double GetSolutionSize() const
+    {
+    return mSize;
+    }
 
 // Convergence tester.
 // Returns true if FULLY CONVERGED.
@@ -215,17 +225,6 @@ DVec3dCR dU,
 int &numConverged
 );
 
-// Run Newton stesp for a function represented by a FunctionRRToRR, ignoring off-diagonal parts.
-// This is invoked as an emergency backup internally when regular Newton fails.
-// @param [in,out] u  first  variable.
-// @param [in,out] v  second variable.
-// @param [in] evaluator  evaluator object.
-// @param [in] factor to apply to steps
-bool RunDiagonalNewton (
-        double &u, double &v,
-        FunctionRRToRRD &evaluator
-        );
-
 // Test if an iteration can be started.
 // @param [in,out] u  first  variable.  Usually left unchanged, but may be adjusted (e.g. forced to limits) by the implementation.
 // @param [in,out] v  second variable.  Usually left unchanged, but may be adjusted (e.g. forced to limits) by the implementation.
@@ -246,7 +245,7 @@ DVec3dCR uvw,
 int numIterations
 );
 
-// Run Newton stesp for a function represented by a FunctionRRToRRD
+// Run Newton steps for a function represented by a FunctionRRToRR, evaluating derivatives numerically.
 // @param [in,out] u  first  variable.
 // @param [in,out] v  second variable.
 // @param [in] evaluator  evaluator object.
@@ -254,38 +253,29 @@ int numIterations
 // @param [in] maxdv  max step for v
 bool RunApproximateNewton (double &u, double &v, FunctionRRToRR &evaluator, double maxdu, double maxdv);
 
-// Run Newton stesp for a function represented by a FunctionRRToRRD
+// Run Newton steps for a function represented by a FunctionRRRToRRR, evaluating derivatives numerically.
 // @param [in,out] uvw independent variable
 // @param [in] evaluator  evaluator object.
 // @param [in] maxDuvw max allowed steps for u,v,w
 bool RunApproximateNewton (DVec3dR uvw, FunctionRRRToRRR &evaluator, DVec3dCR maxDuvw);
 
-
-// Run Newton stesp for a function represented by a FunctionRRToRR,
-//    evaluating derivatives numerically.
+// Run Newton steps for a function represented by a FunctionRRToRRD.
 // @param [in,out] u  first  variable.
 // @param [in,out] v  second variable.
 // @param [in] evaluator  evaluator object.
-bool RunNewton (
-        double &u, double &v,
-        FunctionRRToRRD &evaluator
-        );
+bool RunNewton (double &u, double &v, FunctionRRToRRD &evaluator);
 
-
-// Run Newton stesp for a function represented by two FunctionRToRRD
+// Run Newton steps for a function represented by two FunctionRToRRD evaluators.
 // @param [in,out] u  first  variable.
 // @param [in,out] v  second variable.
 // @param [in] evaluatorA  first evaluator object
 // @param [in] evaluatorB  second evaluator object
-bool RunNewtonDifference (double &u, double &v,
-            FunctionRToRRD &evaluatorA, FunctionRToRRD &evaluatorB);
+bool RunNewtonDifference (double &u, double &v, FunctionRToRRD &evaluatorA, FunctionRToRRD &evaluatorB);
 
-//! Run Newton stesp for a function represented by a FunctionRToRRD
-bool RunNewton (
-double &u,                  //!< [in,out] u  variable.
-FunctionRToRD &evaluator    //!< [in] evaluator  evaluator object.
-);
-
+//! Run Newton steps for a function represented by a FunctionRToRD.
+//! @param [in,out] u  variable.
+//! @param [in] evaluator  evaluator object.
+bool RunNewton (double &u, FunctionRToRD &evaluator);
 };
 
 //!

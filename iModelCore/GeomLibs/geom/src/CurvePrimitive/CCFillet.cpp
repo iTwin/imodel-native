@@ -14,9 +14,7 @@ struct CCFilletProcessor : public CurveCurveProcessor
 {
 double m_radius;
 bvector<CurveCurve::FilletDetail> m_arcs;
-CCFilletProcessor (double radius, bool extend = false) :
-    CurveCurveProcessor (NULL, 0.0),
-    m_radius(radius)
+CCFilletProcessor (double radius, bool extend = false) : CurveCurveProcessor(nullptr), m_radius(radius)
     {
     SetExtend (extend);
     }
@@ -77,7 +75,7 @@ bool       bReverseOrder
         m_arcs.push_back (detail);
         }
     }
-bool validArcAngle (DEllipse3d ellipse, double theta)
+bool ValidArcAngle (DEllipse3d ellipse, double theta)
     {
     if (m_extend)
         return true;
@@ -85,7 +83,7 @@ bool validArcAngle (DEllipse3d ellipse, double theta)
     }
 
 
-bool validFraction (CurveLocationDetailCR detail, double fraction)
+bool ValidFraction (CurveLocationDetailCR detail, double fraction)
     {
     bool extensible0 = true;
     bool extensible1 = true;
@@ -147,8 +145,8 @@ bool bReverseOrder
                                 centerPointA, centerPointB,
                                 offsetA, offsetB
                                 )
-                && validFraction (detailA0, paramA)
-                && validFraction (detailB0, paramB)
+                && ValidFraction (detailA0, paramA)
+                && ValidFraction (detailB0, paramB)
                )
                 {
                 tangentPointA.SumOf (centerPointA, perpA, -signA);
@@ -306,8 +304,8 @@ void ProcessLineArc(
                 //   could decide to change parameterization.   So map to fraction.
                 double fractionB = Angle::NormalizeToSweep (ellipseAngle[i], theta0, sweep);
                 double angleB = ellipseB.FractionToAngle (fractionB);
-                if (validFraction (detailA, lineFraction[i])
-                    && validArcAngle (ellipseB, angleB)
+                if (ValidFraction (detailA, lineFraction[i])
+                    && ValidArcAngle (ellipseB, angleB)
                     )
                     {
                     DPoint3d localPointA, localPointB;
@@ -433,8 +431,8 @@ void ProcessArcArc(
                 double thetaB = atan2 (paramB[k].y, paramB[k].x);
                 double fractionA = ellipseA.AngleToFraction (thetaA);
                 double fractionB = ellipseB.AngleToFraction (thetaB);
-                if (   validArcAngle (ellipseA, thetaA)
-                    && validArcAngle (ellipseB, thetaB)
+                if (   ValidArcAngle (ellipseA, thetaA)
+                    && ValidArcAngle (ellipseB, thetaB)
                     )
                     {
                     DPoint3d center, tangencyA, tangencyB;

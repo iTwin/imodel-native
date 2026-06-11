@@ -1327,6 +1327,55 @@ CurveVectorCR chainA,
 CurveVectorCR chainB
 );
 
+//! Callback for AnnounceCloseApproaches
+struct ICloseApproachAnnouncer
+    {
+    virtual void operator()(CurveLocationDetailPairCR approach) = 0;
+    };
+
+//! Compute close approaches or closest approach between two chains, and report them through a callback.
+//! @param [in] chainA first chain
+//! @param [in] chainB second chain
+//! @param [in] announce callback to receive details of each close approach
+//! @param [in] maxDistance announce all approaches closer than this distance. Pass a negative value (default) to announce only the closest approach.
+//! @param [in] strokeOptions optional stroking parameters to use for nonlinear curves. Default is nullptr (use default stroking parameters).
+//! @param [in] maxIterations maximum number of Newton iterations to run per seed for nonlinear curves. Default/negative is 20.
+//! @param [in] fractionTol parametric (fractional) convergence tolerance for Newton iteration. Default is 1.0e-12.
+//! @param [in] coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default is 1.0e-4.
+//! @return true if and only if announce was called at least once.
+static GEOMDLLIMPEXP bool AnnounceCloseApproaches
+(
+CurveVectorCR chainA,
+CurveVectorCR chainB,
+ICloseApproachAnnouncer& announce,
+double maxDistance = -1,
+IFacetOptionsCP strokeOptions = nullptr,
+int maxIterations = 20,
+double fractionTol = 1.0e-12,
+double coordTol = 1.0e-4
+);
+
+//! Compute close approaches or closest approach between two curves, and report them through a callback.
+//! @param [in] curveA first curve
+//! @param [in] curveB second curve
+//! @param [in] announce callback to receive details of each close approach
+//! @param [in] maxDistance announce all approaches closer than this distance. Pass a negative value (default) to announce only the closest approach.
+//! @param [in] strokeOptions optional stroking parameters to use for nonlinear curves. Default is nullptr (use default stroking parameters).
+//! @param [in] maxIterations maximum number of Newton iterations to run per seed for nonlinear curves. Default/negative is 20.
+//! @param [in] fractionTol parametric (fractional) convergence tolerance for Newton iteration. Default is 1.0e-12.
+//! @param [in] coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default is 1.0e-4.
+//! @return true if and only if announce was called at least once.
+static GEOMDLLIMPEXP bool AnnounceCloseApproaches
+(
+ICurvePrimitiveCR curveA,
+ICurvePrimitiveCR curveB,
+ICloseApproachAnnouncer& announce,
+double maxDistance = -1,
+IFacetOptionsCP strokeOptions = nullptr,
+int maxIterations = 20,
+double fractionTol = 1.0e-12,
+double coordTol = 1.0e-4
+);
 
 //! Convenience function for extracting single point intersection from the output of CurveCurveIntersectionsXY.
 //! Specifically, test if the specified index in the CurveVectors are both PartialCurve with a degenerate

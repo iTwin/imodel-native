@@ -17,9 +17,7 @@ double                  m_distanceA;
 double                  m_distanceB;
 bvector<BlendDetail> m_blends;
 
-CCBlendProcessor (BlendType blendType, double distanceA, double distanceB, bool extend = false) :
-    CurveCurveProcessor (NULL, 0.0),
-    m_blendType (blendType), m_distanceA (distanceA), m_distanceB (distanceB)
+CCBlendProcessor (BlendType blendType, double distanceA, double distanceB, bool extend = false) : CurveCurveProcessor(nullptr), m_blendType (blendType), m_distanceA (distanceA), m_distanceB (distanceB)
     {
     SetExtend (extend);
     }

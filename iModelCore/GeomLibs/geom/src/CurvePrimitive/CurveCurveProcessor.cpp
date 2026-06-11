@@ -20,11 +20,10 @@ void CurveCurveProcessor::ProcessPrimitivePrimitive (ICurvePrimitiveP curveA, IC
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-CurveCurveProcessor::CurveCurveProcessor(DMatrix4dCP pWorldToLocal, double tol)
+CurveCurveProcessor::CurveCurveProcessor(DMatrix4dCP pWorldToLocal)
     : m_pWorldToLocal (pWorldToLocal)
     {
     m_numProcessedByBaseClass = 0;
-    m_tol = 0.0;
     m_extend = false;
     }
 
@@ -252,6 +251,78 @@ DEllipse3d const &cEllipse
     bsiDConic4d_initFromDEllipse3d (&hConic, &cEllipse);
     if (m_pWorldToLocal)
         bsiDConic4d_applyDMatrix4d (&hConic, m_pWorldToLocal, &hConic);
+    }
+
+// lexicographical point comparison: x first, then y, then z
+int CompareDSegment3d::compareXYZ(DPoint3dCR p0, DPoint3dCR p1) const
+    {
+    auto xCompare = DoubleOps::TolerancedComparison(p0.x, p1.x, m_coordTol);
+    auto yCompare = DoubleOps::TolerancedComparison(p0.y, p1.y, m_coordTol);
+    auto zCompare = DoubleOps::TolerancedComparison(p0.z, p1.z, m_coordTol);
+    if (!xCompare && !yCompare && !zCompare)
+        return 0;
+    if (xCompare)
+        return xCompare;
+    if (yCompare)
+        return yCompare;
+    return zCompare;
+    }
+// lexicographical segment "less" operator: compare first points of each segment, then the second points
+bool CompareDSegment3d::operator()(DSegment3dCR a, DSegment3dCR b) const
+    {
+    int compareA = compareXYZ(a.point[0], b.point[0]);
+    int compareB = compareXYZ(a.point[1], b.point[1]);
+    if (compareA != 0)
+        return compareA < 0;
+    return compareB < 0;
+    }
+void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse)
+    {
+    DSegment3d seg;
+    curve0->FractionToPoint(fraction0, seg.point[0]);
+    curve1->FractionToPoint(fraction1, seg.point[1]);
+    CurveLocationDetailPair pair(curve0, fraction0, seg.point[0], curve1, fraction1, seg.point[1]);
+    pair.detailA.a = pair.detailB.a = seg.Length();
+    if (bReverse)
+        pair.SwapDetails();
+    if (ClosestOnly())
+        {
+        if (!m_pairs.empty())
+            {
+            if (m_pairs.begin()->second.detailA.a < pair.detailA.a)
+                return; // we already have a closer approach
+            m_pairs.erase(m_pairs.begin());
+            }
+        }
+    else if (pair.detailA.a > m_maxDistance)
+        {
+        return;
+        }
+    m_pairs.emplace(seg, pair);
+    }
+bool CurveCurveProcessAndCollectCloseApproaches::GetResults(CurveCurve::ICloseApproachAnnouncer& announce) const
+    {
+    // for each range of equivalent close approaches, announce the closest
+    bool announcedAtLeastOne = false;
+    for (auto rangeBegin = m_pairs.begin(), rangeEnd = m_pairs.end(); rangeBegin != m_pairs.end(); rangeBegin = rangeEnd)
+        {
+        rangeEnd = m_pairs.upper_bound(rangeBegin->first);
+        auto least = std::min_element(rangeBegin, rangeEnd, s_segmentPairLess);
+        if (least != rangeEnd)
+            {
+            announce(least->second);
+            announcedAtLeastOne = true;
+            }
+        }
+    return announcedAtLeastOne;
+    }
+ bool CurveCurveProcessAndCollectCloseApproaches::GetResult(CurveLocationDetailPairR result) const
+    {
+    auto least = std::min_element(m_pairs.begin(), m_pairs.end(), s_segmentPairLess);
+    if (least == m_pairs.end())
+        return false;
+    result = least->second;
+    return true;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
