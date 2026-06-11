@@ -141,6 +141,14 @@ if not exist "%VCPKG_EXE%" (
 
 set "VCPKG_DOWNLOADS=%VCPKG_ROOT%\downloads"
 
+rem For Android cross-compilation, vcpkg needs ANDROID_NDK_HOME.
+rem Our build system sets ANDROID_NDK_ROOT; map it if ANDROID_NDK_HOME is not set.
+if "%ANDROID_NDK_HOME%"=="" (
+    if not "%ANDROID_NDK_ROOT%"=="" (
+        set "ANDROID_NDK_HOME=%ANDROID_NDK_ROOT%"
+    )
+)
+
 set "OVERLAY_TRIPLETS=%MANIFEST_DIR%\triplets"
 set "OVERLAY_ARG="
 if exist "%OVERLAY_TRIPLETS%" set "OVERLAY_ARG=--overlay-triplets=%OVERLAY_TRIPLETS%"
