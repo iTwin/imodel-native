@@ -40,3 +40,7 @@ This is a **multi-layered C++ codebase** exposed to TypeScript via N-API:
 - `iModelJsNodeAddon/IModelJsNative.h` - N-API macro definitions and type aliases
 - `iModelJsNodeAddon/IModelJsNative.cpp` - Main N-API glue code to calling into C++ codebase
 - `iModelJsNodeAddon/JsInterop.cpp` - Additional N-API helper functions
+
+## Instructions for GitHub Copilot
+
+Project context is pre-generated in .codesight/. Consult CODESIGHT.md for full architecture.
