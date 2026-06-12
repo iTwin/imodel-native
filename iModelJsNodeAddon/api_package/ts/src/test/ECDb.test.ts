@@ -5,6 +5,7 @@ import {
   DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus,
   ECSqlReader, IModelError, QueryBinder, QueryOptions,
 } from "@itwin/core-common";
+import { DbResult } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { openDgnDb } from "./";
 /*---------------------------------------------------------------------------------------------
@@ -21,7 +22,7 @@ class ConcurrentQueryHelper {
   public static async executeQueryRequest(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, request: DbQueryRequest): Promise<DbQueryResponse> {
     return new Promise<DbQueryResponse>((resolve) => {
       request.kind = DbRequestKind.ECSql;
-      conn.concurrentQueryExecute(request as any, (response: any) => {
+      conn.concurrentQueryExecute(request, (response: any) => {
         resolve(response as DbQueryResponse);
       });
     });
@@ -29,7 +30,7 @@ class ConcurrentQueryHelper {
   public static async executeBlobRequest(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, request: DbBlobRequest): Promise<DbBlobResponse> {
     return new Promise<DbBlobResponse>((resolve) => {
       request.kind = DbRequestKind.BlobIO;
-      conn.concurrentQueryExecute(request as any, (response: any) => {
+      conn.concurrentQueryExecute(request, (response: any) => {
         resolve(response as DbBlobResponse);
       });
     });
@@ -43,7 +44,7 @@ class ConcurrentQueryHelper {
         return ConcurrentQueryHelper.executeQueryRequest(conn, request);
       },
     };
-    return new ECSqlReader(executor, ecsql, params, config as QueryOptions);
+    return new ECSqlReader(executor, ecsql, params, config);
   }
   public static async * query(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, ecsql: string, params?: QueryBinder, options?: QueryOptions & { delay?: number }): AsyncIterableIterator<any> {
     const reader = this.createQueryReader(conn, ecsql, params, options);
@@ -110,7 +111,7 @@ describe("concurrent query tests", () => {
       kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 5000,
-    } as DbQueryRequest);
+    });
 
     expect(rc.status).eq(DbResponseStatus.Timeout);
   });
@@ -122,7 +123,7 @@ describe("concurrent query tests", () => {
     const rc = await ConcurrentQueryHelper.executeQueryRequest(conn, {
       kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
-    } as DbQueryRequest);
+    });
 
     expect(rc.status).eq(DbResponseStatus.Partial);
   });
@@ -145,7 +146,7 @@ describe("concurrent query tests", () => {
         memory: 64000,
         time: 15,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc1.stats.memLimit).eq(64000);
     expect(rc1.stats.timeLimit).eq(15000);
@@ -155,7 +156,7 @@ describe("concurrent query tests", () => {
       kind: DbRequestKind.ECSql,
       query:
         "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
-    } as DbQueryRequest);
+    });
 
     expect(rc2.stats.memLimit).eq(0x800000);
     expect(rc2.stats.timeLimit).eq(60000);
@@ -169,7 +170,7 @@ describe("concurrent query tests", () => {
         memory: 85464865465,
         time: 20,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc3.stats.memLimit).eq(0x800000);
     expect(rc3.stats.timeLimit).eq(20000);
@@ -183,7 +184,7 @@ describe("concurrent query tests", () => {
         memory: 64000,
         time: 6198,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc4.stats.memLimit).eq(64000);
     expect(rc4.stats.timeLimit).eq(60000);
@@ -197,7 +198,7 @@ describe("concurrent query tests", () => {
         memory: 85464865465,
         time: 6198,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc5.stats.memLimit).eq(0x800000);
     expect(rc5.stats.timeLimit).eq(60000);
@@ -222,7 +223,7 @@ describe("concurrent query tests", () => {
       quota: {
         memory: 64000,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc1.stats.memLimit).eq(64000);
     expect(rc1.stats.timeLimit).eq(30000);
@@ -235,7 +236,7 @@ describe("concurrent query tests", () => {
       quota: {
         time: 12,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc2.stats.memLimit).eq(100000);
     expect(rc2.stats.timeLimit).eq(12000);
@@ -262,7 +263,7 @@ describe("concurrent query tests", () => {
         memory: 0,
         time: 0,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc1.stats.memLimit).eq(100000);
     expect(rc1.stats.timeLimit).eq(30000);
@@ -276,7 +277,7 @@ describe("concurrent query tests", () => {
         time: 9,
         memory: 31000,
       },
-    } as DbQueryRequest);
+    });
 
     expect(rc2.stats.memLimit).eq(100000);
     expect(rc2.stats.timeLimit).eq(30000);
@@ -291,14 +292,14 @@ describe("concurrent query tests", () => {
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 5000,
       restartToken: "token1",
-    } as DbQueryRequest);
+    });
 
     const q1 = ConcurrentQueryHelper.executeQueryRequest(conn, {
       kind: DbRequestKind.ECSql,
       query: "with cnt(x) as (values(0) union select x+1 from cnt where x < 10 ) select x from cnt",
       delay: 0,
       restartToken: "token1",
-    } as DbQueryRequest);
+    });
 
     const r0 = await q0;
     const r1 = await q1;
