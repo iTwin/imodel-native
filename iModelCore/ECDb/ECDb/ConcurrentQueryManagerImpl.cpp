@@ -78,6 +78,8 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
+    // Acquire ECDb mutex with shutdown check to avoid blocking forever during teardown.
+    // ErrorListenerScope re-acquires the same recursive mutex (instant) for RAII listener cleanup.
     BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
     while(!ecdbMutex.try_lock()) {
         if(queue.GetState() == RunnableRequestQueue::State::Stop) {
@@ -88,29 +90,29 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
         }
         std::this_thread::yield();
     }
-    ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
-    if (usePrimaryConn)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    else {
-        if (m_doNotUsePrimaryConnToPrepare) {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
-        } else {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+    {
+        ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
+        if (usePrimaryConn)
+            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
+        else {
+            if (m_doNotUsePrimaryConnToPrepare) {
+                status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+            } else {
+                status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+            }
+        }
+        if (status != ECSqlStatus::Success) {
+            ecsql_error = err_scope.GetLastError();
+            ecdbMutex.unlock();
+            return nullptr;
         }
     }
-    if (status != ECSqlStatus::Success) {
-        ecsql_error = err_scope.GetLastError();
-        ecdbMutex.unlock();
-        return nullptr;
-    }
+    ecdbMutex.unlock();
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
-    ecdbMutex.unlock();
     return newCachedAdaptor;
-
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -143,7 +145,8 @@ void CachedQueryAdaptor::CachedQueryAdaptor::ReleaseMemory() {
 //---------------------------------------------------------------------------------------
 void CachedConnection::SyncAttachDbs() {
     recursive_guard_t lock(m_mutexReq);
-    if (m_request != nullptr || !m_db.IsDbOpen()) {
+    auto& db = m_conn->GetDb();
+    if (m_request != nullptr || !db.IsDbOpen()) {
         // cannot sync attach dbs if request is pending.
         return;
     }
@@ -154,7 +157,7 @@ void CachedConnection::SyncAttachDbs() {
     std::once_flag cachedClearFlag;
     auto reset = [&]() {
         m_adaptorCache.Reset();
-        m_db.ClearECDbCache();
+        db.ClearECDbCache();
     };
 
     // detach dbs that does not exist on primary connection
@@ -174,9 +177,9 @@ void CachedConnection::SyncAttachDbs() {
         if (it == primaryAttachDbs.end()) {
             std::call_once(cachedClearFlag, reset);
             if (attachFile.m_type == AttachFileType::ECChangeCache)
-                m_db.DetachChangeCache();
+                db.DetachChangeCache();
             else
-                m_db.DetachDb(attachFile.m_alias.c_str());
+                db.DetachDb(attachFile.m_alias.c_str());
         }
     }
 
@@ -194,9 +197,9 @@ void CachedConnection::SyncAttachDbs() {
         if (it == thisAttachDbs.end()) {
             std::call_once(cachedClearFlag, reset);
             if (attachFile.m_type == AttachFileType::ECChangeCache)
-                m_db.AttachChangeCache(BeFileName(attachFile.m_fileName.c_str()));
+                db.AttachChangeCache(BeFileName(attachFile.m_fileName.c_str()));
             else
-                m_db.AttachDb(attachFile.m_fileName.c_str(), attachFile.m_alias.c_str());
+                db.AttachDb(attachFile.m_fileName.c_str(), attachFile.m_alias.c_str());
         }
     }
 }
@@ -205,13 +208,14 @@ void CachedConnection::SyncAttachDbs() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
-    if (m_db.IsDbOpen()) {
+    auto& db = m_conn->GetDb();
+    if (db.IsDbOpen()) {
         // Check if the primary file data version has changed
         uint32_t dataVersion;
         if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion)) {
             if (dataVersion != m_primaryFileDataVer) {
-                m_db.ClearECDbCache();
-                m_db.ClearDbCache();
+                db.ClearECDbCache();
+                db.ClearDbCache();
                 m_primaryFileDataVer = dataVersion;
             }
         }
@@ -254,9 +258,9 @@ void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&
 // @bsimethod
 //---------------------------------------------------------------------------------------
 CachedConnection::~CachedConnection() {
-    UpdateSqlFunctions(ConnectionAction::Closing);
     m_adaptorCache.Reset();
-    m_db.CloseDb();
+    if (m_conn)
+        m_conn->GetDb().CloseDb();
 }
 
 //---------------------------------------------------------------------------------------
@@ -272,47 +276,11 @@ void CachedConnection::SetAdaptorCacheSize(uint32_t newSize) {
 void CachedConnection::Reset(bool detachDbs) {
     recursive_guard_t lock(m_mutexReq);
     m_adaptorCache.Reset();
-    m_db.ClearECDbCache();
+    m_conn->GetDb().ClearECDbCache();
     if (detachDbs) {
-        m_db.DetachChangeCache();
+        m_conn->GetDb().DetachChangeCache();
     }
 }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void CachedConnection::UpdateSqlFunctions(ConnectionAction action) {
-    if (action == ConnectionAction::Opening) {
-        for (auto& info : GetPrimaryDbSqlFunctions()) {
-            DbFunction *tmpFunc;
-            if (!m_db.TryGetSqlFunction(tmpFunc, info.GetName().c_str(), info.GetNumArgs())) {
-                if (auto rtreeFunc = dynamic_cast<RTreeMatchFunction*>(info.GetFunction()))
-                    m_db.AddRTreeMatchFunction(*rtreeFunc);
-                else
-                    m_db.AddFunction(*info.GetFunction());
-            }
-        }
-    }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-std::vector<CachedConnection::FunctionInfo> CachedConnection::GetPrimaryDbSqlFunctions() const {
-    std::vector<FunctionInfo> funcs;
-    std::regex funcFilter("^imodel_\\w*", std::regex_constants::ECMAScript | std::regex_constants::icase);
-    if (!m_cache.GetPrimaryDb().IsDbOpen())
-        return funcs;
-
-    for(auto func : m_cache.GetPrimaryDb().GetSqlFunctions()) {
-        FunctionInfo info(func->GetName(), func->GetNumArgs(), func);
-        if (std::regex_match(info.GetName(), funcFilter)) {
-            funcs.push_back(info);
-        }
-    }
-    return funcs;
-}
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -320,15 +288,18 @@ std::vector<CachedConnection::FunctionInfo> CachedConnection::GetPrimaryDbSqlFun
 std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache, uint16_t id) {
     auto newConn = std::make_shared<CachedConnection>(cache, id);
     if (id > 0) {
-        if (BE_SQLITE_OK != cache.GetPrimaryDb().OpenSecondaryConnection(newConn->m_db,
-        ECDb::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, newConn->m_retryHandler.get()))) {
+        auto openParams = ECDb::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, newConn->m_retryHandler.get());
+        if (BE_SQLITE_OK != cache.GetPrimaryDb()._CreateSecondaryConnection(newConn->m_conn, openParams)) {
             return nullptr;
         }
-        newConn->UpdateSqlFunctions(ConnectionAction::Opening);
+        for (auto* func : ConcurrentQueryMgr::Config::Get().GetFunctions())
+            newConn->m_conn->GetDb().AddFunction(*func);
+    } else {
+        newConn->m_conn = std::make_unique<TypedSecondaryConnection<ECDb>>();
     }
     const auto mmsize = ConcurrentQueryMgr::Config::Get().GetMemoryMapFileSize();
     if (mmsize > 0) {
-        newConn->m_db.ExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
+        newConn->m_conn->GetDb().ExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
     }
 
     cache.GetPrimaryDb().GetFileDataVersion(newConn->m_primaryFileDataVer);
@@ -391,15 +362,23 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection() {
     if (!m_primaryDb.IsDbOpen())
         throw std::runtime_error("primary db connection must be open");
 
-    recursive_guard_t lock(m_mutex);
-    for (auto& it : m_conns) {
-        if (it.use_count() == 1)  {
-            return it;
+    std::unique_lock<recursive_mutex_t> lock(m_mutex);
+    while (!m_stopped) {
+        for (auto& it : m_conns) {
+            if (!it->m_inUse)  {
+                it->m_inUse = true;
+                return it;
+            }
         }
-    }
-    if (m_conns.size() < m_poolSize) {
-        m_conns.push_back(CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1));
-        return m_conns.back();
+        if (m_conns.size() < m_poolSize) {
+            auto newConn = CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1);
+            if (newConn) {
+                newConn->m_inUse = true;
+                m_conns.push_back(newConn);
+                return m_conns.back();
+            }
+        }
+        m_connAvailable.wait(lock);
     }
 
     return nullptr;
@@ -417,24 +396,45 @@ CachedConnection& ConnectionCache::GetSyncConnection() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
-    recursive_guard_t lock(m_mutex);
-    uint32_t used_count = 0;
-    while (used_count != m_conns.size()) {
-        used_count = 0;
-        for (auto& it : m_conns) {
-            if (it.use_count() == 1)  {
-                ++used_count;
-            } else {
-                it->InterruptIf(
-                    [](RunnableRequestBase const& request) {
-                        return true;
-                    },
-                    true);
-            }
-        }
-        std::this_thread::yield();
+void ConnectionCache::ReleaseConnection(std::shared_ptr<CachedConnection> const& conn) {
+    {
+        recursive_guard_t lock(m_mutex);
+        conn->m_inUse = false;
     }
+    m_connAvailable.notify_one();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ConnectionCache::StopWaiting() {
+    {
+        recursive_guard_t lock(m_mutex);
+        m_stopped = true;
+    }
+    m_connAvailable.notify_all();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
+    std::unique_lock<recursive_mutex_t> lock(m_mutex);
+    // Interrupt all active connections
+    for (auto& it : m_conns) {
+        if (it->m_inUse) {
+            it->InterruptIf(
+                [](RunnableRequestBase const& request) {
+                    return true;
+                },
+                true);
+        }
+    }
+    // Wait until all connections are free
+    m_connAvailable.wait(lock, [this]() {
+        for (auto& it : m_conns) {
+            if (it->m_inUse) return false;
+        }
+        return true;
+    });
     if (reset_conn) {
         if(m_syncConn)
             m_syncConn->Reset(detach_dbs);
@@ -672,12 +672,14 @@ void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<
             return false;
         }, true);
     }
-    const auto priority = request->GetRequest().GetPriority();
-    for (auto it = m_requests.begin(); it != m_requests.end(); ++ it) {
-        auto cur_priority = it->get()->GetRequest().GetPriority();
-        if (cur_priority > priority) {
-             m_requests.insert( it, std::move(request));
-             return;
+    if (!ConcurrentQueryMgr::Config::Get().GetIgnorePriority()) {
+        const auto priority = request->GetRequest().GetPriority();
+        for (auto it = m_requests.begin(); it != m_requests.end(); ++ it) {
+            auto cur_priority = it->get()->GetRequest().GetPriority();
+            if (cur_priority > priority) {
+                 m_requests.insert( it, std::move(request));
+                 return;
+            }
         }
     }
     log_trace("%s enqueuing request [id=%" PRIu32 "] complete", GetTimestamp().c_str(), request->GetId());
@@ -752,9 +754,9 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
 QueryQuota RunnableRequestQueue::AdjustQuota(QueryQuota const& requestedQuota) const {
     auto maxMem = requestedQuota.MaxMemoryAllowed();
     auto maxTime = requestedQuota.MaxTimeAllowed();
-    if (m_quota.MaxMemoryAllowed() < maxMem || maxMem <= 32000)
+    if (m_quota.MaxMemoryAllowed() < maxMem || maxMem <= MIN_QUOTA_MEMORY_BYTES)
         maxMem = m_quota.MaxMemoryAllowed() ;
-    if (m_quota.MaxTimeAllowed() < maxTime || maxTime <= std::chrono::seconds(10))
+    if (m_quota.MaxTimeAllowed() < maxTime || maxTime <= MIN_QUOTA_TIME_SECONDS)
         maxTime = m_quota.MaxTimeAllowed();
 
     return QueryQuota(maxTime, maxMem);
@@ -776,37 +778,45 @@ void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::uni
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request) {
-    // Put a upper limit on query delay to make it safe.
+void RunnableRequestQueue::AdjustDelay(QueryRequest& request) const {
     const auto& conf = ConcurrentQueryMgr::Config::Get();
     if (conf.GetIgnoreDelay()) {
-        request->SetDelay(0ms);
+        request.SetDelay(0ms);
     } else {
         const auto maxDelayAllowed = (std::chrono::milliseconds)DEFAULT_QUERY_DELAY_MAX_TIME;
-        if (request->GetDelay() >  maxDelayAllowed) {
-            request->SetDelay(maxDelayAllowed);
+        if (request.GetDelay() > maxDelayAllowed) {
+            request.SetDelay(maxDelayAllowed);
         }
     }
+}
 
-    auto adjustedQuota = AdjustQuota(request->GetQuota());
-    auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithPromise(*this, std::move(request), adjustedQuota, GetNextId()));
-    auto future = ((RunnableRequestWithPromise*)runnableReq.get())->GetFuture();
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RunnableRequestQueue::DispatchOrEnqueue(ConnectionCache& conns, std::unique_ptr<RunnableRequestBase> runnableReq) {
     if (m_requests.size() >= m_maxQueueSize) {
         log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
         runnableReq->SetResponse(RunnableRequestBase::CreateQueueFullResponse());
-    } else  {
-        if (m_state.load()==State::Stop) {
-            log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
-        } else {
-            if (runnableReq->GetRequest().UsePrimaryConnection()) {
-                ExecuteSynchronously(conns, std::move(runnableReq));
-            } else {
-                InsertSorted(conns, std::move(runnableReq));
-                m_cond.notify_one();
-            }
-        }
+    } else if (m_state.load() == State::Stop) {
+        log_error("%s concurrent query shutting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
+        runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
+    } else if (runnableReq->GetRequest().UsePrimaryConnection()) {
+        ExecuteSynchronously(conns, std::move(runnableReq));
+    } else {
+        InsertSorted(conns, std::move(runnableReq));
+        m_cond.notify_one();
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request) {
+    AdjustDelay(*request);
+    auto adjustedQuota = AdjustQuota(request->GetQuota());
+    auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithPromise(*this, std::move(request), adjustedQuota, GetNextId()));
+    auto future = static_cast<RunnableRequestWithPromise*>(runnableReq.get())->GetFuture();
+    DispatchOrEnqueue(conns, std::move(runnableReq));
     return future;
 }
 
@@ -814,35 +824,10 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request, ConcurrentQueryMgr::OnCompletion onComplete) {
-    // Put a upper limit on query delay to make it safe.
-    const auto& conf = ConcurrentQueryMgr::Config::Get();
-    if (conf.GetIgnoreDelay()) {
-        request->SetDelay(0ms);
-    } else {
-        const auto maxDelayAllowed = (std::chrono::milliseconds)DEFAULT_QUERY_DELAY_MAX_TIME;
-        if (request->GetDelay() >  maxDelayAllowed) {
-            request->SetDelay(maxDelayAllowed);
-        }
-    }
-
+    AdjustDelay(*request);
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithCallback(*this, std::move(request), adjustedQuota, GetNextId(), onComplete));
-    if (m_requests.size() >= m_maxQueueSize) {
-        log_warn("%s queue is full, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-        runnableReq->SetResponse(RunnableRequestBase::CreateQueueFullResponse());
-    } else  {
-        if (m_state.load()==State::Stop) {
-            log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
-        } else {
-            if (runnableReq->GetRequest().UsePrimaryConnection()) {
-                ExecuteSynchronously(conns, std::move(runnableReq));
-            } else {
-                InsertSorted(conns, std::move(runnableReq));
-                m_cond.notify_one();
-            }
-        }
-    }
+    DispatchOrEnqueue(conns, std::move(runnableReq));
 }
 
 //---------------------------------------------------------------------------------------
@@ -868,6 +853,7 @@ bool RunnableRequestQueue::Stop() {
         log_error("%s cancelling request [id=%" PRIu32 "] due to shutdown.", GetTimestamp().c_str(), request->GetId());
         request->SetResponse(request->CreateShutDownResponse());
     }
+    m_requests.clear();
     m_cond.notify_all();
     log_trace("%s request queue stopped.", GetTimestamp().c_str());
     return true;
@@ -921,7 +907,7 @@ void RunnableRequestBase::SetResponse(QueryResponse::Ptr response) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryResponse::Future RunnableRequestWithPromise::GetFuture() {
-   return QueryResponse::Future( new QueryResponse::Future::Impl([&](){
+   return QueryResponse::Future(std::make_unique<QueryResponse::Future::Impl>([&](){
        GetQueue().CancelRequest(GetId());
    }, m_promise.get_future()));
 }
@@ -929,22 +915,20 @@ QueryResponse::Future RunnableRequestWithPromise::GetFuture() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Future::Future(Future&& rhs){
-    m_impl = std::move(rhs.m_impl);
-    rhs.m_impl= nullptr;
-}
+QueryResponse::Future::Future(std::unique_ptr<Impl> imp): m_impl(std::move(imp)){}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Future::~Future(){
-    if (m_impl != nullptr)
-        delete m_impl;
-}
+QueryResponse::Future::Future(Future&& rhs) = default;
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryResponse::Future::~Future() = default;
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void QueryResponse::Future::Cancel(){
-    if (m_impl == nullptr)
+    if (!m_impl)
         throw std::runtime_error("query response future impl is null");
 
     return m_impl->Cancel();
@@ -953,7 +937,7 @@ void QueryResponse::Future::Cancel(){
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryResponse::Ptr QueryResponse::Future::Get(){
-    if (m_impl == nullptr)
+    if (!m_impl)
         throw std::runtime_error("query response future impl is null");
 
     return m_impl->GetFuture().get();
@@ -962,30 +946,24 @@ QueryResponse::Ptr QueryResponse::Future::Get(){
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void QueryResponse::Future::Wait(){
-    if (m_impl == nullptr)
+    if (!m_impl)
         throw std::runtime_error("query response future impl is null");
 
-    return m_impl->GetFuture().wait();;
+    return m_impl->GetFuture().wait();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool QueryResponse::Future::Valid(){
-    if (m_impl == nullptr)
+    if (!m_impl)
         throw std::runtime_error("query response future impl is null");
 
-    return m_impl->GetFuture().valid();;
+    return m_impl->GetFuture().valid();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) {
-    if(this != &rhs){
-        m_impl = std::move(rhs.m_impl);
-        rhs.m_impl = nullptr;
-    }
-    return *this;
-}
+QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) = default;
 namespace {
     // This function has been brought over from delComment() in the parser which deletes the comments from an ECSql statement.
     // delComment has an early exit check when no comments are found.
@@ -1398,13 +1376,9 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                 auto runnableQuery = m_queue.WaitForDequeue();
                 if (runnableQuery != nullptr) {
                     log_trace("%s executor [id=%" PRIu32 "] dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), execId, runnableQuery->GetId());
-                    std::shared_ptr<CachedConnection> conn;
-                    conn = m_connCache.GetConnection();
-                    while (conn == nullptr) {
-                        std::this_thread::yield();
-                        std::this_thread::sleep_for(1s);
-                        conn = m_connCache.GetConnection();
-                    }
+                    auto conn = m_connCache.GetConnection();
+                    if (conn == nullptr)
+                        continue; // shutdown in progress
                     runnableQuery->SetExecutorContext(execId, conn->Id());
                     log_trace("%s executor [id=%" PRIu32 "] with request [id=%" PRIu32 "] is assigned connection [id=%" PRIu32 "]",
                         GetTimestamp().c_str(),
@@ -1432,6 +1406,7 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             runnableQuery.GetId());
 
                     },std::move(runnableQuery));
+                    m_connCache.ReleaseConnection(conn);
                 }
             } while(m_queue.GetState() != RunnableRequestQueue::State::Stop);
             m_threadCount.fetch_sub(1);
@@ -1447,6 +1422,7 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryExecutor::~QueryExecutor() {
+    m_connCache.StopWaiting();
     for (auto& th : m_threads) {
         if (th.joinable())
             th.join();
@@ -1670,9 +1646,8 @@ void ConcurrentQueryMgr::WithInstance(ECDbCR ecdb, std::function<void(Concurrent
 // static
 //---------------------------------------------------------------------------------------
 void ConcurrentQueryMgr::Shutdown(ECDbCR ecdb) {
-    if (!ecdb.IsDbOpen()) {
-        throw std::runtime_error("ecdb is closed or not open");
-    }
+    if (!ecdb.IsDbOpen())
+        return;
 
     BeMutexHolder lock (ecdb.GetImpl().GetMutex());
     const auto& appKey = ConcurrentQueryAppData::GetKey();
@@ -2301,7 +2276,7 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
     size_t count;
     // {"globalQuota": {"memory": 123, "time":123}, "workerThreads": 2, "requestQueueSize":233,"ignorePriority": false}
     _dupenv_s(&buffer, &count, "CONCURRENT_QUERY_CONFIG");
-    if (buffer != nullptr || count == 0) {
+    if (buffer != nullptr && count > 0) {
         std::string str(buffer, count);
         free(buffer);
         return Config::From(str);

@@ -254,6 +254,8 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged) override;
 
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _CreateSecondaryConnection(std::unique_ptr<BeSQLite::EC::SecondaryConnection>& secondary, BeSQLite::Db::OpenParams const& params) const override;
+
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() override;
 
