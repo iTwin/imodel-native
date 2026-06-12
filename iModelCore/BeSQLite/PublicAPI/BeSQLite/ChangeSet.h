@@ -294,6 +294,7 @@ struct ApplyChangesArgs {
         bool m_invert;
         bool m_ignoreNoop;
         bool m_fkNoAction;
+        bool m_noUpdateLoop;
         bool m_abortOnAnyConflict;
         mutable int64_t m_filterRowCount;
         mutable int64_t m_conflictRowCount;
@@ -307,11 +308,12 @@ struct ApplyChangesArgs {
         ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
 
     public:
-        ApplyChangesArgs() :m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterChange(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
+        ApplyChangesArgs() : m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_noUpdateLoop(false), m_abortOnAnyConflict(false), m_filterRowCount(0), m_conflictRowCount(0), m_filterChange(nullptr), m_conflictHandler(nullptr) {}
         ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) { m_abortOnAnyConflict = abortOnAnyConflict; return *this; }
         ApplyChangesArgs& SetInvert(bool invert) { m_invert = invert; return *this; }
         ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) { m_ignoreNoop = ignoreNoop; return *this; }
         ApplyChangesArgs& SetFkNoAction(bool fkNoAction) { m_fkNoAction = fkNoAction; return *this; }
+        ApplyChangesArgs& SetNoUpdateLoop(bool noUpdateLoop) { m_noUpdateLoop = noUpdateLoop; return *this; }
         ApplyChangesArgs& SetFilterChange(std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> filterChange) { m_filterChange = filterChange; return *this; }
         BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlySchemaChanges();
         BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlyDataChanges();
@@ -321,6 +323,7 @@ struct ApplyChangesArgs {
         bool GetAbortOnAnyConflict() const { return m_abortOnAnyConflict; }
         bool GetIgnoreNoop() const { return m_ignoreNoop; }
         bool GetFkNoAction() const { return m_fkNoAction; }
+        bool GetNoUpdateLoop() const { return m_noUpdateLoop; }
         int64_t GetFilterRowCount() const { return m_filterRowCount; }
         int64_t GetConflictRowCount() const { return m_conflictRowCount; }
         bool HasFilterChange() const { return m_filterChange != nullptr; }

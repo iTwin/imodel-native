@@ -463,7 +463,7 @@ private:
     bool ValidateFileBasedTxns() const;
 
     BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false, bool noUpdateLoop = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -481,7 +481,7 @@ private:
     void ClearSavedChangesetValues();
     void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup);
     ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
-    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward);
+    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward, bool noUpdateLoop = false);
     ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
@@ -507,9 +507,9 @@ public:
     DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(Utf8CP extension = nullptr);
     DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
-    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward);
+    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward, bool noUpdateLoop = false);
     DGNPLATFORM_EXPORT void RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesets, bool skipSchemaChanges);
-    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
+    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision, bool noUpdateLoop = false);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromInMemoryChanges();
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
