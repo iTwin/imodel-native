@@ -5,6 +5,7 @@
     >
 
     <Part Name="vcpkg" BentleyBuildMakeFile="vcpkg.mke">
+        <RequiredRepository>vcpkg</RequiredRepository>
     </Part>
 
 </BuildContext>
