@@ -11,7 +11,7 @@
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64"
     vcpkgTriplet = arm64-osx
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
-    vcpkgTriplet = x64-osx
+    %error MacOSX64 is not a supported platform.
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64"
     vcpkgTriplet = arm64-ios
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
