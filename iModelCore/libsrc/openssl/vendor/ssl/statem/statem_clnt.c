@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2026 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -27,6 +27,7 @@
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
 #include "internal/cryptlib.h"
+#include "internal/comp.h"
 
 static MSG_PROCESS_RETURN tls_process_as_hello_retry_request(SSL_CONNECTION *s,
     PACKET *pkt);
@@ -1885,7 +1886,7 @@ err:
 
 MSG_PROCESS_RETURN tls_process_server_rpk(SSL_CONNECTION *sc, PACKET *pkt)
 {
-    EVP_PKEY *peer_rpk;
+    EVP_PKEY *peer_rpk = NULL;
 
     if (!tls_process_rpk(sc, pkt, &peer_rpk)) {
         /* SSLfatal() already called */
@@ -2583,8 +2584,10 @@ MSG_PROCESS_RETURN tls_process_certificate_request(SSL_CONNECTION *s,
         s->s3.tmp.valid_flags = OPENSSL_zalloc(s->ssl_pkey_num * sizeof(uint32_t));
 
     /* Give up for good if allocation didn't work */
-    if (s->s3.tmp.valid_flags == NULL)
-        return 0;
+    if (s->s3.tmp.valid_flags == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_CRYPTO_LIB);
+        return MSG_PROCESS_ERROR;
+    }
 
     if (SSL_CONNECTION_IS_TLS13(s)) {
         PACKET reqctx, extensions;
@@ -2847,7 +2850,7 @@ MSG_PROCESS_RETURN tls_process_new_session_ticket(SSL_CONNECTION *s,
             0x70, 0x74, 0x69, 0x6F, 0x6E };
 
         /* Ensure cast to size_t is safe */
-        if (!ossl_assert(hashleni >= 0)) {
+        if (!ossl_assert(hashleni > 0)) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
             goto err;
         }
@@ -4087,8 +4090,9 @@ int ssl_cipher_list_to_bytes(SSL_CONNECTION *s, STACK_OF(SSL_CIPHER) *sk,
     int i;
     size_t totlen = 0, len, maxlen, maxverok = 0;
     int empty_reneg_info_scsv = !s->renegotiate
-        && (SSL_CONNECTION_IS_DTLS(s)
-            || s->min_proto_version < TLS1_3_VERSION);
+        && !SSL_CONNECTION_IS_DTLS(s)
+        && ssl_security(s, SSL_SECOP_VERSION, 0, TLS1_VERSION, NULL)
+        && s->min_proto_version <= TLS1_VERSION;
     SSL *ssl = SSL_CONNECTION_GET_SSL(s);
 
     /* Set disabled masks for this session */
