@@ -628,7 +628,7 @@ export declare namespace IModelJsNative {
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
     public invalidateFontMap(): void;
-    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean, noUpdateLoop?: boolean): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
