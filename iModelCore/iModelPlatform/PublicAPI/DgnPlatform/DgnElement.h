@@ -3958,6 +3958,7 @@ private:
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
+    DgnDbStatus ChangeElementModel(DgnElementId elementId, DgnModelId newModelId, bool isChild);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -4094,6 +4095,24 @@ public:
         *stat = UpdateElement(modifiedElement);
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
+
+    //! Change the parent of an element. If the new parent is in a different model, the element
+    //! and all its children will be moved to that model as well.
+    //! @param[in] elementId The element to reparent
+    //! @param[in] newParentId The new parent element. If this element has a sub-model, the element becomes a root in that sub-model.
+    //! @return DgnDbStatus::Success if the element was reparented, error status otherwise.
+    //! @note If the element has a model-scoped code and the model changes, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementParent(DgnElementId elementId, DgnElementId newParentId);
+
+    //! Change the model of an element and all its children, making it a root element in the new model.
+    //! The element must not have a parent (must already be a root element).
+    //! All children are recursively moved to the new model.
+    //! @param[in] elementId The element to move (must be a root element with no parent)
+    //! @param[in] newModelId The target model
+    //! @return DgnDbStatus::Success if the element and its children were moved, error status otherwise.
+    //! @note If the element has a parent, this will fail with BadRequest. Use ChangeElementParent to reparent first.
+    //! @note If the element has a model-scoped code, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementId elementId, DgnModelId newModelId);
 
 
     //! Delete a DgnElement from this DgnDb.

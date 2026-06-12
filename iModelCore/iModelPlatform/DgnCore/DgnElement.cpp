@@ -893,9 +893,13 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId, DgnClassId parentRel
     if (parentId.IsValid() && !parentRelClassId.IsValid())
         return DgnDbStatus::InvalidId;
 
-    ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
-    if (relClass == nullptr || !relClass->IsRelationshipClass())
-        return DgnDbStatus::WrongClass;
+    // Clearing parent (both invalid) is always allowed - skip relClass validation
+    if (parentRelClassId.IsValid())
+        {
+        ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
+        if (relClass == nullptr || !relClass->IsRelationshipClass())
+            return DgnDbStatus::WrongClass;
+        }
 
     m_parent.m_id = parentId;
     m_parent.m_relClassId = parentRelClassId;
@@ -1094,7 +1098,10 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel));
 
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), GetParentId(), GetParentRelClassId());
+    if (GetParentId().IsValid())
+        statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), GetParentId(), GetParentRelClassId());
+    else
+        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent));
 
     if (m_federationGuid.IsValid())
         statement.BindBlob(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);

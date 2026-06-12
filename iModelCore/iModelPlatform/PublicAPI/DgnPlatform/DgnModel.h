@@ -309,6 +309,13 @@ protected:
 
     /** @name Events associated with DgnElements of a DgnModel */
     /** @{ */
+    //! Validate that an element is type-compatible with this model, without side effects.
+    //! Used by ChangeElementParent/ChangeElementModel to check compatibility before performing the operation.
+    //! @param[in] element The element to validate
+    //! @return DgnDbStatus::Success if element is compatible with this model type.
+    //! @note Subclasses should override to enforce model-specific type constraints.
+    virtual DgnDbStatus _ValidateElementForModel(DgnElementCR element) const {return DgnDbStatus::Success;}
+
     //! Called when a DgnElement in this DgnModel is about to be inserted.
     //! @param[in] element The element about to be inserted into the DgnDb
     //! @return DgnDbStatus::Success to allow the element to be added. Any other status will block the insert and will be
@@ -970,6 +977,7 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ValidateElementForModel(DgnElementCR element) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
@@ -1004,6 +1012,7 @@ protected:
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ValidateElementForModel(DgnElementCR element) const override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 
     bool Is3d() const final { return false; }
@@ -1104,6 +1113,7 @@ private:
 protected:
     SpatialLocationModelCP _ToSpatialLocationModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ValidateElementForModel(DgnElementCR element) const override;
     explicit SpatialLocationModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -1144,6 +1154,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationModel : DgnModel
 protected:
     InformationModelCP _ToInformationModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ValidateElementForModel(DgnElementCR element) const override;
     explicit InformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1205,6 +1216,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ValidateElementForModel(DgnElementCR element) const override;
     explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1221,6 +1233,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationRecordModel : InformationModel
 protected:
     InformationRecordModelCP _ToInformationRecordModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ValidateElementForModel(DgnElementCR element) const override;
 
     explicit InformationRecordModel(CreateParams const& params) : T_Super(params) {}
     static InformationRecordModelPtr Create(CreateParams const& params) {return new InformationRecordModel(params);}
