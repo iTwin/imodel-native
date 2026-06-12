@@ -26,20 +26,24 @@ static void SortPropertiesByOverridePriority(PropertySpecificationsList& propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool AllPropertiesIncluded(PropertySpecificationsList const& properties)
     {
-    return ContainerHelpers::Contains(properties, [](auto const& propertySpec)
+    for (auto const& propertySpec : properties)
         {
         if (!propertySpec->GetPropertyName().Equals(INCLUDE_ALL_PROPERTIES_SPEC))
-            return false;
+            continue;
 
-        if (propertySpec->IsDisplayed() == false)
-            return false;
+        // Note: avoid `== false` comparison on BoolOrString as `false` (= integer 0) is a null pointer
+        // constant in C++, which causes Clang to call operator==(std::nullptr_t) instead of the bool overload.
+        if (propertySpec->IsDisplayed().IsBoolean() && !propertySpec->IsDisplayed().GetBoolean())
+            continue;
 
-        if (propertySpec->IsDisplayed() == nullptr)
+        if (!propertySpec->IsDisplayed().IsValid())
             return true;
 
         // if we get here, `IsDisplayed` is either `true` or a string
-        return propertySpec->DoNotHideOtherPropertiesOnDisplayOverride();
-        });
+        if (propertySpec->DoNotHideOtherPropertiesOnDisplayOverride())
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

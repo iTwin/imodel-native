@@ -298,8 +298,8 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
     DbTable& effectiveTable = *effectiveTableP;
 
     DbColumn* existingColumn = effectiveTable.FindColumnP(params.GetColumnName().c_str());
-    if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
-        DbColumn::IsCompatible(existingColumn->GetType(), colType))
+    if (existingColumn != nullptr && !IsColumnInUse(*existingColumn)
+        && DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
         if (effectiveTable.GetType() == DbTable::Type::Existing ||
             (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
@@ -475,7 +475,21 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
       const uint32_t nAvaliablePhysicalColumns = maxColumnInBaseTable - (uint32_t) physicalColumns.size();
 
       const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
-      const uint32_t nSharedColumns = (uint32_t) sharedColumns.size();
+      
+      uint32_t nSharedColumns;
+      if (!ctx.RemapManager().HasFreedColumns())
+          {
+          nSharedColumns = (uint32_t) sharedColumns.size();
+          }
+      else
+          {
+          nSharedColumns = 0;
+          for (DbColumn const* col : sharedColumns)
+              {
+              if (!ctx.RemapManager().IsColumnFreed(*col))
+                  nSharedColumns++;
+              }
+          }
 
       //Determine how many shared columns can be created
       uint32_t sharedColumnThatCanBeCreated = 0;
@@ -485,13 +499,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
           }
       else
           {
-          if (nSharedColumns > m_maxSharedColumnCount.Value())
-              {
-              BeAssert(false && "SharedColumnCount bypassed the limit set in CA");
-              return;
-              }
-
-          sharedColumnThatCanBeCreated = m_maxSharedColumnCount.Value() - (uint32_t) sharedColumns.size();
+          sharedColumnThatCanBeCreated = (nSharedColumns < m_maxSharedColumnCount.Value()) ? m_maxSharedColumnCount.Value() - nSharedColumns : 0;
           if (sharedColumnThatCanBeCreated > nAvaliablePhysicalColumns)
               sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns; //restrict available shared columns to available physical columns
           }
@@ -506,8 +514,12 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         return;
         }
 
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     for (DbColumn const* sharedColumn : sharedColumns)
         {
+        if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*sharedColumn))
+            continue;
+
         if (!IsColumnInUse(*sharedColumn) && !IsColumnUsedByAnyDerivedClass(*sharedColumn, ctx))
             requiredRemainingColumns--; //column can be reused
 
@@ -559,7 +571,10 @@ DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPrope
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
-            return HandleOverflowColumn(column);
+            {
+            if (!ctx.RemapManager().IsColumnFreed(*column))
+                return HandleOverflowColumn(column);
+            }
         }
 
     if (m_useSharedColumnStrategy && !forcePhysicalColum)
@@ -638,10 +653,14 @@ ColumnMaps* ClassMapColumnFactory::GetColumnMaps() const
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& ctx) const
     {
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     for (DbColumn const* column : GetEffectiveTable(ctx)->GetColumns())
         {
         if (column->IsShared() && !GetColumnMaps()->IsColumnInUse(*column))
             {
+            if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*column))
+                continue;
+
             if(!IsColumnUsedByAnyDerivedClass(*column, ctx))
                 return const_cast<DbColumn*>(column);
             }

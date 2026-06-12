@@ -153,7 +153,7 @@ void CreateCachedCurve() const
     m_localFraction.clear ();
     m_trueDistance.clear ();
     m_cachedStrokeFraction = 1.0 / (double)iNumStroke;
-    NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
+    ::NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
     integrand.Integrate (m_placement.fractionA, m_placement.fractionB, m_placement.frame, iNumStroke);
     for (auto d : integrand.m_summedDistance)
         m_trueDistance.push_back (fabs (d));
@@ -286,7 +286,7 @@ bool _Length(RotMatrixCP worldToLocal, double &length) const override
 bool _SignedDistanceBetweenFractions(RotMatrixCP worldToLocal, double startFraction, double endFraction, double &signedDistance) const override
     {
     RotMatrix placementMatrix = m_placement.frame.Matrix ();
-    NominalLengthSpiralArcLengthIntegrands integrand(*m_directSpiral, worldToLocal, &placementMatrix);
+    ::NominalLengthSpiralArcLengthIntegrands integrand(*m_directSpiral, worldToLocal, &placementMatrix);
     auto globalFractionA = m_placement.ActiveFractionToGlobalFraction(startFraction);
     auto globalFractionB = m_placement.ActiveFractionToGlobalFraction(endFraction);
     uint32_t iNumStroke = 9;
@@ -310,7 +310,7 @@ bool _PointAtSignedDistanceFromFraction(double localStartFraction, double signed
 bool _PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double localStartFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const override
     {
     RotMatrix axes = m_placement.frame.Matrix();
-    NominalLengthSpiralArcLengthIntegrands integrand(*m_directSpiral, worldToLocal, &axes);
+    ::NominalLengthSpiralArcLengthIntegrands integrand(*m_directSpiral, worldToLocal, &axes);
     double startFraction = m_placement.ActiveFractionToGlobalFraction(localStartFraction);
     double vectorIntegrand[10];
     integrand.EvaluateVectorIntegrand(startFraction, vectorIntegrand);
@@ -369,7 +369,7 @@ bool _PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double localSt
 +--------------------------------------------------------------------------------------*/
 bool _SignedDistanceBetweenFractions (double startFraction, double endFraction, double &signedDistance) const override
     {
-    NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
+    ::NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
     uint32_t numStroke = StrokeCountBetweenLocalFractions (0, 0, 0, startFraction, endFraction);
     double globalA = m_placement.ActiveFractionToGlobalFraction (startFraction);
     double globalB = m_placement.ActiveFractionToGlobalFraction (endFraction);
@@ -543,7 +543,7 @@ bool _AddStrokes (bvector <PathLocationDetail> &points, IFacetOptionsCR options,
     BSIQuadraturePoints quadraturePoints;
     quadraturePoints.InitGauss (5);
 
-    NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
+    ::NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
     double localError;
 
     double currDistance = 0.0;      // NO!!! SHOULD BE DISTANCE FROM activeFration = 0 !

@@ -117,12 +117,12 @@ struct LsJsonHelpers
 {
     static Utf8CP CompId;
 
-    static double GetDouble(JsonValueCR json, CharCP fieldName, double defaultValue);
-    static uint32_t GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue);
-    static int32_t GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue);
-    static uint64_t GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue);
-    static Utf8String GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue);
-    static LsComponentId GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType = LsComponentType::Internal);
+    static double GetDouble(BeJsConst json, CharCP fieldName, double defaultValue);
+    static uint32_t GetUInt32(BeJsConst json, CharCP fieldName, uint32_t defaultValue);
+    static int32_t GetInt32(BeJsConst json, CharCP fieldName, int32_t defaultValue);
+    static uint64_t GetUInt64(BeJsConst json, CharCP fieldName, uint64_t defaultValue);
+    static Utf8String GetString(BeJsConst json, CharCP fieldName, CharCP defaultValue);
+    static LsComponentId GetComponentId(BeJsConst json, CharCP typeName, CharCP idName, LsComponentType defaultType = LsComponentType::Internal);
 };
 
 #pragma pack(push)
@@ -283,7 +283,7 @@ public:
 
     LsLocationCP    GetSource()     {return m_source;}
     DgnDbR          GetDgnDb ()     {return m_dgndb; }
-    void            GetJsonValue(JsonValueR componentDef);
+    void            GetJsonValue(BeJsDocument& componentDef);
     LsComponentType GetComponentType()  {return m_componentId.GetType();}
 };
 
@@ -307,10 +307,10 @@ protected:
     void      CopyDescription (Utf8CP buffer);
     static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
     virtual LsComponentPtr _Import(DgnImportContext& importer) const = 0;
-    void SaveToJson(Json::Value& result) const;
+    void SaveToJson(BeJsValue result) const;
 
 public:
-    void ExtractDescription(JsonValueCR result);
+    void ExtractDescription(BeJsConst result);
     LsComponent (DgnDbR, LsComponentId componentId);
     LsComponent (LsLocationCP location);
     LsComponent (LsComponent const* base) : m_isDirty (false)
@@ -320,8 +320,8 @@ public:
         }
 
     DGNPLATFORM_EXPORT static void GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, BeJsConst jsonValue);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, BeJsConst jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
     LsLocationCP        GetLocation() const {return &m_location;}
     virtual             ~LsComponent() {};
@@ -419,8 +419,8 @@ protected:
     virtual bool        _HasRasterImageComponent () const override {return true;}
 
 public:
-    void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const;
-    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, LsLocationCP location);
+    void SaveToJson(BeJsValue result, bvector<uint8_t>& imageData) const;
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, BeJsConst jsonDef, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
@@ -461,8 +461,8 @@ protected:
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
-    void SaveToJson(Json::Value& result) const;
-    static LineStyleStatus CreateFromJson(LsSymbolComponentP*, Json::Value const & jsonDef, LsLocationCP location);
+    void SaveToJson(BeJsValue result) const;
+    static LineStyleStatus CreateFromJson(LsSymbolComponentP*, BeJsConst jsonDef, LsLocationCP location);
 
     double              GetMuDef            () const {return m_muDef;}
     DPoint3dCP          GetSymSize          () const {return &m_symSize;}
@@ -486,7 +486,7 @@ public:
     LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     void _StartTextureGeneration() const override {}
-    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale);
+    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(BeJsValue result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale);
 
 public:
     //!  Retrieves the range that is stored with the LsSymbolComponent.  This range is computed
@@ -665,8 +665,8 @@ public:
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       ();
 
-    void SaveToJson(Json::Value& result) const;
-    static LineStyleStatus CreateFromJson(LsCompoundComponentP*, Json::Value const & jsonDef, LsLocationCP location);
+    void SaveToJson(BeJsValue result) const;
+    static LineStyleStatus CreateFromJson(LsCompoundComponentP*, BeJsConst jsonDef, LsLocationCP location);
 
     void    _PostProcessLoad            () override;
     void    _ClearPostProcess           () override;
@@ -877,8 +877,8 @@ protected:
 
 public:
 
-    void SaveToJson(Json::Value& result) const;
-    static LineStyleStatus CreateFromJson(LsStrokePatternComponentP*, Json::Value const & jsonDef, LsLocationCP location);
+    void SaveToJson(BeJsValue result) const;
+    static LineStyleStatus CreateFromJson(LsStrokePatternComponentP*, BeJsConst jsonDef, LsLocationCP location);
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
 
@@ -1086,10 +1086,10 @@ public:
     LsOkayForTextureGeneration VerifySymbols() const;
     LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
-    void SaveToJson(Json::Value& result) const;
-    static LineStyleStatus CreateFromJson(LsPointComponentP*, Json::Value const & jsonDef, LsLocationCP location);
-    DGNPLATFORM_EXPORT static void SaveLineCodeIdToJson(JsonValueR result, LsComponentId patternId);
-    DGNPLATFORM_EXPORT static void SaveSymbolIdToJson(JsonValueR result, LsComponentId symbolId);
+    void SaveToJson(BeJsValue result) const;
+    static LineStyleStatus CreateFromJson(LsPointComponentP*, BeJsConst jsonDef, LsLocationCP location);
+    DGNPLATFORM_EXPORT static void SaveLineCodeIdToJson(BeJsValue result, LsComponentId patternId);
+    DGNPLATFORM_EXPORT static void SaveSymbolIdToJson(BeJsValue result, LsComponentId symbolId);
 
 public:
     DGNPLATFORM_EXPORT size_t                   GetNumberSymbols        () const;
@@ -1227,18 +1227,18 @@ private:
     Render::TexturePtr  m_rasterTexture;
     ParamsToTexture_t   m_geometryTextures; // Geometry textures...raster component uses m_rasterTexture
 
-    void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
+    void Init (CharCP nName, BeJsConst lsDefinition, DgnStyleId styleId);
     void SetHWStyle(LsComponentId componentID);
     int GetUnits() const {return m_attributes & LSATTR_UNITMASK;}
     StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
     StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
 
 public:
-    LsDefinition(Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
+    LsDefinition(Utf8CP name, DgnDbR project, BeJsConst lsDefinition, DgnStyleId styleId);
 
-    DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
+    DGNPLATFORM_EXPORT static double GetUnitDef (BeJsConst lsDefinition);
+    DGNPLATFORM_EXPORT static uint32_t GetAttributes (BeJsConst lsDefinition);
+    DGNPLATFORM_EXPORT static LsComponentId GetComponentId (BeJsConst lsDefinition);
 
     DGNPLATFORM_EXPORT LsDefinition* Clone ();
     DGNPLATFORM_EXPORT static void Destroy (LsDefinitionP);
@@ -1280,8 +1280,8 @@ public:
     void MarkDirty (bool value = true) { m_isDirty = value; }
     StatusInt Commit ();
 
-    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition);
-    void InitializeJsonObject (Json::Value& jsonObj);
+    static void InitializeJsonObject (BeJsValue jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition);
+    void InitializeJsonObject (BeJsValue jsonObj);
 
 public:
     //!  Defines a scaling factor to be applied to the components.

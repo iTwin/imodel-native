@@ -473,6 +473,7 @@ struct JsInterop {
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
+    BE_JSON_NAME(skipWriteLockCheck)
     BE_JSON_NAME(startFromId)
     BE_JSON_NAME(state)
     BE_JSON_NAME(storageType)
@@ -488,6 +489,7 @@ struct JsInterop {
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
     BE_JSON_NAME(uncompressedSize)
+    BE_JSON_NAME(skipFKConstraintValidations)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -511,7 +513,7 @@ public:
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
-    static DgnElementIdSet DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
+    static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
@@ -639,18 +641,19 @@ struct CRSListResponseProps
     Utf8String m_description;
     bool m_deprecated;
     DRange2d m_crsExtent;
+    Utf8String m_unit;    
     };
 
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
-    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter = nullptr);
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NativeChangeset {
+struct SqliteChangesetReader {
     private:
 
         bool m_invert;
@@ -675,7 +678,7 @@ struct NativeChangeset {
         bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
 
     public:
-        NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
+        SqliteChangesetReader():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
         void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);

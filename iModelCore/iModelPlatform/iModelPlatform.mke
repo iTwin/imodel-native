@@ -442,11 +442,17 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)iTwinBentley$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)\
-                            $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinPugixml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinFreetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext) \
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
+
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework Foundation
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
+%endif
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)proxyres$(stlibext)

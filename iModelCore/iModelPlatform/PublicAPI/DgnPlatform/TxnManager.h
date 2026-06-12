@@ -446,6 +446,7 @@ private:
     void OnBeforeUndoRedo(bool isUndo);
     void OnUndoRedo(TxnAction action);
     void OnRollback(BeSQLite::ChangeStreamCR);
+    void CaptureInstanceChanges(TxnId txnId);
 
     void OnValidateChanges(BeSQLite::ChangeStreamCR);
     BeSQLite::DbResult SaveTxn(BeSQLite::ChangeSetCR changeset, Utf8CP operation, TxnType);
@@ -453,8 +454,16 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
+    // File-based txn storage
+    bool IsFileBasedTxnEnabled() const;
+    BentleyStatus EnsureTxnDirectory() const;
+    BeSQLite::DbResult WriteTxnToFile(TxnId txnId, BeSQLite::ChangeSetCR changeset, Byte* outChecksum);
+    BeSQLite::DbResult ReadTxnFromFile(TxnId txnId, Byte const* expectedChecksum, BeSQLite::ChangeSet& changeset);
+    void DeleteTxnFile(TxnId txnId);
+    bool ValidateFileBasedTxns() const;
+
     BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false, bool noUpdateLoop = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -472,7 +481,7 @@ private:
     void ClearSavedChangesetValues();
     void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup);
     ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
-    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward);
+    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward, bool noUpdateLoop = false);
     ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
@@ -498,9 +507,9 @@ public:
     DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(Utf8CP extension = nullptr);
     DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
-    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward);
+    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward, bool noUpdateLoop = false);
     DGNPLATFORM_EXPORT void RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesets, bool skipSchemaChanges);
-    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
+    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision, bool noUpdateLoop = false);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromInMemoryChanges();
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
@@ -529,7 +538,7 @@ public:
     DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
-    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges(bool captureInstanceChanges = false);
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
     DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
@@ -628,6 +637,9 @@ public:
     TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
 
     DGNPLATFORM_EXPORT TxnId GetLastTxnId();
+
+    //! Get the file path for a file-based transaction's .txn file.
+    DGNPLATFORM_EXPORT BeFileName GetTxnFilePath(TxnId txnId) const;
 
     /** For readonly connections, new Txns may be added from other writeable connections while this session is active.
      * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of

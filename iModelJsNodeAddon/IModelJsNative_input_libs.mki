@@ -12,14 +12,12 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinIcu4c.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJpeg.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJsonCpp.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeLibJpegTurbo.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinLibxml2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinBentley.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeom.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeomSerialization.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBePng.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinSQLite.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinSQLiteEC.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinXml.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeZlib.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPlatform.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECObjects.a
@@ -31,6 +29,10 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinUnits.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinOpenSSL.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_google_re2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPugixml.a
+
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)librustls.a
+%endif
 
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libproxyres.a

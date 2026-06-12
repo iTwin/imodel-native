@@ -2689,7 +2689,7 @@ struct  InstanceXmlReader
                 schemaStatus = GetSchema(schema);
                 }
             else
-                schema = &(m_context.GetFallBackSchema());
+                schema = m_context.HasFallBackSchema() ? &m_context.GetFallBackSchema() : nullptr;
             }
 
             if (ECObjectsStatus::SchemaIsPruned == schemaStatus)
@@ -2860,9 +2860,10 @@ struct  InstanceXmlReader
         ECUnitCP findOldUnit(ECClassCR ecClass, const PrimitivePropertyType primitiveProperty)
             {
             auto oldUnitName = m_context.GetOldUnitName(ecClass, *primitiveProperty);
+            Utf8String propertyKey = ecClass.GetFullName() + Utf8String(".") + primitiveProperty->GetName();
             if (Utf8String::IsNullOrEmpty(oldUnitName.c_str()))
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0002,
+                m_context.Issues().ReportOnceV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0002, propertyKey,
                     "No old unit name resolved for property '%s.%s'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -2870,7 +2871,7 @@ struct  InstanceXmlReader
             auto ecUnitName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnitName.c_str());
             if (Utf8String::IsNullOrEmpty(ecUnitName))
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0003,
+                m_context.Issues().ReportOnceV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0003, propertyKey,
                     "An ECUnit name could not be found for the old unit '%s' for property '%s.%s'.  Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -2878,7 +2879,7 @@ struct  InstanceXmlReader
             auto oldUnit = primitiveProperty->GetKindOfQuantity()->GetSchema().LookupUnit(ecUnitName, true);
             if (!oldUnit)
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0004,
+                m_context.Issues().ReportOnceV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0004, propertyKey,
                     "Failed to lookup unit '%s' for property '%s.%s'. Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -3750,14 +3751,14 @@ ICustomAttributeDeserializerP                      CustomAttributeDeserializerMa
 struct  InstanceXmlWriter
     {
     private:
-        BeXmlWriter*     m_xmlWriter;
+        BePugiXmlWriter*     m_xmlWriter;
 
 
     public:
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        InstanceXmlWriter(BeXmlWriter *writer)
+        InstanceXmlWriter(BePugiXmlWriter *writer)
             : m_xmlWriter(writer)
             {
             writer->SetIndentation(4);
@@ -3960,7 +3961,7 @@ struct  InstanceXmlWriter
                 if (ECObjectsStatus::Success != ecInstance.GetValue(ecValue, accessString.c_str(), index))
                     break;
 
-                if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString))
+                if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(typeString))
                     return InstanceWriteStatus::XmlWriteError;
 
                 // write the primitive value
@@ -4003,7 +4004,7 @@ struct  InstanceXmlWriter
                 typeString = typeString.append(":");
                 typeString = typeString.append(SchemaParseUtils::PrimitiveTypeToString(navigationProperty.GetType()));
 
-                if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
+                if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
                     return InstanceWriteStatus::XmlWriteError;
                 char outString[512];
 
@@ -4016,7 +4017,7 @@ struct  InstanceXmlWriter
                 // Write either the relationship class name or class id
                 if (nullptr != ecValue.GetNavigationInfo().GetRelationshipClass())
                     {
-                    if (BEXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE))
+                    if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE))
                         return InstanceWriteStatus::XmlWriteError;
                     Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass()->GetSchema(), *ecValue.GetNavigationInfo().GetRelationshipClass());
                     m_xmlWriter->WriteRaw(className.c_str());
@@ -4024,7 +4025,7 @@ struct  InstanceXmlWriter
                     }
                 else if (ecValue.GetNavigationInfo().GetRelationshipClassId().IsValid())
                     {
-                    if (BEXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
+                    if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
                         return InstanceWriteStatus::XmlWriteError;
 
                     char classId[512];
@@ -4174,7 +4175,7 @@ struct  InstanceXmlWriter
 
             uint32_t nElements = ecValue.GetArrayInfo().GetCount();
 
-            if (BEXML_Success != m_xmlWriter->WriteElementStart(arrayProperty.GetName().c_str()))
+            if (BEPUGIXML_Success != m_xmlWriter->WriteElementStart(arrayProperty.GetName().c_str()))
                 return InstanceWriteStatus::XmlWriteError;
 
             if (ARRAYKIND_Primitive == arrayKind)
@@ -4266,7 +4267,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile(IECInstancePtr& ecInstance, WC
         LOG.errorv("Failed to read ECInstance from XML File %ls: %s", ecInstanceFile, status.description());
         return InstanceReadStatus::XmlParseError;
         }
-    return ReadFromBeXmlDom(ecInstance, xmldoc, context);
+    return ReadFromXmlDom(ecInstance, xmldoc, context);
     }
 
 //--------------------------------------------------------------------------------------
@@ -4285,7 +4286,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString(IECInstancePtr& ecInstance, 
         LOG.errorv("Failed to read ECInstance from XML %s", status.description());
         return InstanceReadStatus::XmlParseError;
         }
-    return ReadFromBeXmlDom(ecInstance, xmldoc, context);
+    return ReadFromXmlDom(ecInstance, xmldoc, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4312,13 +4313,13 @@ InstanceReadStatus   IECInstance::ReadFromXmlString(IECInstancePtr& ecInstance, 
         return InstanceReadStatus::XmlParseError;
         }
 
-    return ReadFromBeXmlDom(ecInstance, xmldoc, context);
+    return ReadFromXmlDom(ecInstance, xmldoc, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus  IECInstance::ReadFromBeXmlDom(IECInstancePtr& ecInstance, pugi::xml_document& xmlDom, ECInstanceReadContextR context)
+InstanceReadStatus  IECInstance::ReadFromXmlDom(IECInstancePtr& ecInstance, pugi::xml_document& xmlDom, ECInstanceReadContextR context)
     {
     ecInstance = NULL;
 
@@ -4330,13 +4331,13 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom(IECInstancePtr& ecInstance, pu
         return InstanceReadStatus::BadElement;
         }
 
-    return ReadFromBeXmlNode(ecInstance, instanceNode, context);
+    return ReadFromXmlNode(ecInstance, instanceNode, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromBeXmlNode(IECInstancePtr& ecInstance, pugi::xml_node instanceNode, ECInstanceReadContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlNode(IECInstancePtr& ecInstance, pugi::xml_node instanceNode, ECInstanceReadContextR context)
     {
     InstanceXmlReader   reader(context, instanceNode);
     return reader.ReadInstance(ecInstance);
@@ -4347,10 +4348,10 @@ InstanceReadStatus   IECInstance::ReadFromBeXmlNode(IECInstancePtr& ecInstance, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToXmlFile(WCharCP fileName, bool writeInstanceId, bool utf16)
     {
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(fileName);
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::CreateFileWriter(fileName);
     InstanceXmlWriter   instanceWriter(xmlWriter.get());
 
-    xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    xmlWriter->WriteDocumentStart(utf16 ? BEPUGIXML_CHAR_ENCODING_Utf16LE : BEPUGIXML_CHAR_ENCODING_Utf8);
     return instanceWriter.WriteInstance(*this, writeInstanceId);
     }
 
@@ -4360,10 +4361,10 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile(WCharCP fileName, bool write
 template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString(T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance, bool useLatestXml)
     {
     ecInstanceXml.clear();
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
     InstanceXmlWriter   instanceWriter(xmlWriter.get());
     if (isStandAlone)
-        xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+        xmlWriter->WriteDocumentStart(BEPUGIXML_CHAR_ENCODING_Utf8);
 
     InstanceWriteStatus status;
     if (useLatestXml)
@@ -4413,17 +4414,17 @@ InstanceWriteStatus     IECInstance::WriteToXmlStringLatestVersion(WString & ecI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter)
+InstanceWriteStatus     IECInstance::WriteToXmlNode(BePugiXmlWriterR xmlWriter)
     {
     Utf8CP className = this->GetClass().GetName().c_str();
 
-    return WriteToBeXmlNode(xmlWriter, className);
+    return WriteToXmlNode(xmlWriter, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Utf8CP className)
+InstanceWriteStatus     IECInstance::WriteToXmlNode(BePugiXmlWriterR xmlWriter, Utf8CP className)
     {
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
@@ -4433,7 +4434,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BeXmlWriterR xmlWriter, Utf8CP className)
+InstanceWriteStatus     IECInstance::WriteToXmlNodeLatestVersion(BePugiXmlWriterR xmlWriter, Utf8CP className)
     {
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
@@ -4443,7 +4444,7 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BeXmlWriterR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus IECInstance::WriteToBeXmlDom(BeXmlWriterR xmlWriter, bool writeInstanceId)
+InstanceWriteStatus IECInstance::WriteToXmlDom(BePugiXmlWriterR xmlWriter, bool writeInstanceId)
     {
     InstanceXmlWriter writer(&xmlWriter);
     return writer.WriteInstance(*this, writeInstanceId);
@@ -4470,7 +4471,7 @@ ECObjectsStatus ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatch
         return status;
 
     if (ECObjectsStatus::Success != status)
-        schema = &m_fallBackSchema;
+        schema = m_fallBackSchema;
 
     return status;
     }
