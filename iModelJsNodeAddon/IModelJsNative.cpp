@@ -2857,7 +2857,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (revision->GetParentId() == currentId)  // merge
             stat = db.Txns().MergeChangeset(*revision, fastForward, noUpdateLoop);
         else if (revision->GetChangesetId() == currentId) //reverse
-            db.Txns().ReverseChangeset(*revision);
+            db.Txns().ReverseChangeset(*revision, noUpdateLoop);
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
     }

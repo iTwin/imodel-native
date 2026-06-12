@@ -1994,7 +1994,7 @@ void TxnManager::ThrowIfChangesetInProgress() {
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
+void TxnManager::ReverseChangeset(ChangesetPropsCR changeset, bool noUpdateLoop) {
     ThrowIfChangesetInProgress();
 
     if (m_dgndb.IsReadonly())
@@ -2019,7 +2019,7 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (hasSchemaOrEcChanges)
         m_dgndb.ClearECDbCache();
 
-    result = ApplyChanges(changeStream, TxnAction::Reverse, hasSchemaOrEcChanges, true);
+    result = ApplyChanges(changeStream, TxnAction::Reverse, hasSchemaOrEcChanges, true, false, noUpdateLoop);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
