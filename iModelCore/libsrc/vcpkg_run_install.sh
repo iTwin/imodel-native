@@ -18,8 +18,6 @@ MANIFEST_DIR="$1"
 INSTALL_ROOT="$2"
 TRIPLET="$3"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
     echo "Usage: $0 <manifest_dir> <install_root> <triplet>"
     exit 1
@@ -68,7 +66,7 @@ fi
 if [ -n "$IMODEL_VCPKG_ROOT" ]; then
     VCPKG_ROOT="$IMODEL_VCPKG_ROOT"
 elif [ -z "$VCPKG_ROOT" ]; then
-    VCPKG_ROOT="$SCRIPT_DIR/vcpkg"
+    VCPKG_ROOT="$SrcRoot/vcpkg"
 fi
 
 # Local binary caching is enabled by default, but can be disabled by setting VCPKG_BINARY_SOURCES to "clear".
