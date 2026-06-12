@@ -33,7 +33,7 @@ o                   = $(OutputRootDir)build/$(appName)/
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 %if defined (DEBUG)
-	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad/debug/crashpad_handler$(exeext)
+	vcpkgHandlerExe     = $(vcpkgTripletDir)debug/tools/crashpad_handler$(exeext)
 %else
 	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad/crashpad_handler$(exeext)
 %endif
