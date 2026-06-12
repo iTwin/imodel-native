@@ -7489,6 +7489,21 @@ static void setMaxTileCacheSize(NapiInfoCR info) {
   JsInterop::GetNativeLogger().error("Invalid argument for setMaxTileCacheSize: expected an unsigned integer");
 }
 
+static Napi::Value getMaxGeomStreamVTabBytes(NapiInfoCR info) {
+  return Napi::Number::New(info.Env(), static_cast<double>(JsInterop::GetMaxGeomStreamVTabBytes()));
+}
+
+static void setMaxGeomStreamVTabBytes(NapiInfoCR info) {
+  if (info.Length() == 1 && info[0].IsNumber()) {
+    auto bytes = info[0].As<Napi::Number>().DoubleValue();
+    if (std::isfinite(bytes) && bytes >= 1 && bytes <= static_cast<double>(std::numeric_limits<size_t>::max())) {
+      JsInterop::SetMaxGeomStreamVTabBytes(static_cast<size_t>(bytes));
+      return;
+    }
+  }
+  JsInterop::GetNativeLogger().error("Invalid argument for setMaxGeomStreamVTabBytes: expected a positive finite number");
+}
+
 static Napi::Value getLogger(NapiInfoCR info) {
   return s_jsLogger.GetJsLogger();
 }
@@ -7852,6 +7867,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
+        Napi::PropertyDescriptor::Function(env, exports, "getMaxGeomStreamVTabBytes", &getMaxGeomStreamVTabBytes),
+        Napi::PropertyDescriptor::Function(env, exports, "setMaxGeomStreamVTabBytes", &setMaxGeomStreamVTabBytes),
         Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
         Napi::PropertyDescriptor::Function(env, exports, "isRscFontData", &isRscFontData),
         Napi::PropertyDescriptor::Function(env, exports, "imageBufferFromImageSource", &imageBufferFromImageSource),

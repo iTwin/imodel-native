@@ -583,6 +583,8 @@ public:
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);
+    static size_t GetMaxGeomStreamVTabBytes();
+    static void SetMaxGeomStreamVTabBytes(size_t bytes);
 
     [[noreturn]] static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
