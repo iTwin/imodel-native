@@ -6,7 +6,7 @@
 
 # 0x0A00 corresponds to Windows 10. Crashpad uses some methods only available there.
 # Note that this is not a good idea to hide down here because it really changes the minimum version for the entire application that delivers crashpad.
-%error Need to uncomment this line to make it compile
+%error Need to comment out this line to make it compile
 _WIN32_WINNT    = 0x0A00
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------

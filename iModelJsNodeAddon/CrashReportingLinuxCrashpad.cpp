@@ -38,6 +38,9 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     //.............................................................................................
     // WIP: Update or replace MaintainCrashDumpDir to be able to prune crashpad's dump directory layout.
     // MaintainCrashDumpDir(s_nextNativeCrashTxtFileNo, cfg);
+
+    for (auto const& annotation : GetCrashReportPropertiesFromConfig(cfg))
+        SetCrashReportProperty(annotation.first.c_str(), annotation.second.c_str());
     
     //.............................................................................................
     // WIP: Check whether the user wants dumps at all via CrashReportingConfig.
@@ -124,11 +127,6 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         return;
         }
 
-    for (auto const& annotation : GetCrashReportPropertiesFromConfig(cfg))
-        {
-        SetCrashReportProperty(annotation.first.c_str(), annotation.second.c_str());
-        }
-    
     }
 
 /*---------------------------------------------------------------------------------**//**
