@@ -20,6 +20,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <string>
+#include <cmath>
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
 #include <unordered_map>
@@ -6746,6 +6747,119 @@ DbResult Db::VacuumInto(Utf8CP newFileName) {
 DbResult Db::Analyze() {
     SuspendDefaultTxn noDefault(*this);
     return TryExecuteSql("analyze");
+}
+
+/** Check if query planner statistics are stale and, if so, recompute them.
+ *  In Full mode, breaks on the first stale table and reanalyzes everything.
+ *  In PerTable mode, collects all stale tables and reanalyzes each individually.
+ *  Does NOT clear any caches — caller is responsible for that when didAnalyze is true. */
+DbResult Db::ReanalyzeIfStale(double threshold, ReanalyzeMode mode, bool* didAnalyze) {
+    if (didAnalyze)
+        *didAnalyze = false;
+
+    if (!std::isfinite(threshold) || threshold <= 0.0)
+        return BE_SQLITE_ERROR;
+
+    // If sqlite_stat1 doesn't exist or is empty, the database has never been meaningfully analyzed.
+    if (!TableExists("sqlite_stat1")) {
+        auto rc = Analyze();
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        if (didAnalyze)
+            *didAnalyze = true;
+        return BE_SQLITE_OK;
+    }
+
+    // Check if sqlite_stat1 has any rows at all. CreateNewDb creates the table but empties it.
+    Statement emptyCheck;
+    auto rc = emptyCheck.TryPrepare(*this, "SELECT 1 FROM sqlite_stat1 LIMIT 1");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    if (emptyCheck.Step() != BE_SQLITE_ROW) {
+        emptyCheck.Finalize();
+        rc = Analyze();
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        if (didAnalyze)
+            *didAnalyze = true;
+        return BE_SQLITE_OK;
+    }
+    emptyCheck.Finalize();
+
+    // For each table-level row in sqlite_stat1, compare its recorded row count with the actual count.
+    // The stat column format is "N d1 d2 ..." where N is the total row count;
+
+    // CAST(stat AS INTEGER) extracts N. Restrict to idx IS NULL so we read the table row,
+    // not an arbitrary index row for the table.
+    Statement statStmt;
+
+    rc = statStmt.TryPrepare(*this, "SELECT tbl, CAST(stat AS INTEGER) FROM sqlite_stat1 WHERE idx IS NULL");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    bool anyStale = false;
+    bvector<Utf8String> staleTables;
+    while (statStmt.Step() == BE_SQLITE_ROW) {
+        Utf8CP tableName = statStmt.GetValueText(0);
+        int64_t recordedCount = statStmt.GetValueInt64(1);
+
+        Statement countStmt;
+        auto countRc = countStmt.TryPrepare(*this, SqlPrintfString("SELECT count(*) FROM %w", tableName));
+        if (countRc != BE_SQLITE_OK) {
+            if (!TableExists(tableName))
+                continue; // table was dropped since last ANALYZE — skip it
+            return countRc;
+        }
+
+        auto stepRc = countStmt.Step();
+        if (stepRc != BE_SQLITE_ROW)
+            return (stepRc == BE_SQLITE_DONE) ? BE_SQLITE_ERROR : stepRc;
+
+        int64_t actualCount = countStmt.GetValueInt64(0);
+
+        bool isStale = false;
+        if (recordedCount == 0) {
+            isStale = (actualCount > 0);
+        } else {
+            int64_t diff = actualCount - recordedCount;
+            if (diff < 0)
+                diff = -diff;
+            isStale = (static_cast<double>(diff) / static_cast<double>(recordedCount) >= threshold);
+        }
+
+        if (!isStale)
+            continue;
+
+        anyStale = true;
+        if (mode == ReanalyzeMode::Full)
+            break; // one stale table is enough — reanalyze everything
+
+        staleTables.push_back(tableName);
+    }
+    statStmt.Finalize();
+
+    if (!anyStale)
+        return BE_SQLITE_OK;
+
+    if (mode == ReanalyzeMode::Full) {
+        rc = Analyze();
+        if (rc != BE_SQLITE_OK)
+            return rc;
+    } else {
+        for (auto const& table : staleTables) {
+            rc = TryExecuteSql(SqlPrintfString("ANALYZE %w", table.c_str()));
+            if (rc != BE_SQLITE_OK)
+                return rc;
+            if (didAnalyze)
+                *didAnalyze = true;
+        }
+        return BE_SQLITE_OK;
+    }
+
+    if (didAnalyze)
+        *didAnalyze = true;
+    return BE_SQLITE_OK;
 }
 
 /**

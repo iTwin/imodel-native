@@ -491,6 +491,10 @@ export declare namespace IModelJsNative {
     saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal: Uint8Array | undefined): void;
     vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     analyze(): void;
+    /** Check if query planner statistics are stale and recompute them if needed.
+     * @returns true if ANALYZE was performed and caches should be cleared, false otherwise.
+     */
+    reanalyzeIfStale(arg?: { threshold?: number, mode?: "full" | "perTable" }): boolean;
     enableWalMode(yesNo?: boolean): void;
     /** perform a checkpoint if this db is in WAL mode. Otherwise this function does nothing.
      * @param mode the checkpoint mode. Default is `Truncate`.
@@ -811,6 +815,10 @@ export declare namespace IModelJsNative {
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public analyze(): void;
+    /** Check if query planner statistics are stale and recompute them if needed.
+     * @returns true if ANALYZE was performed and caches should be cleared, false otherwise.
+     */
+    public reanalyzeIfStale(arg?: { threshold?: number, mode?: "full" | "perTable" }): boolean;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
@@ -1076,6 +1084,10 @@ export declare namespace IModelJsNative {
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public analyze(): void;
+    /** Check if query planner statistics are stale and recompute them if needed.
+     * @returns true if ANALYZE was performed and caches should be cleared, false otherwise.
+     */
+    public reanalyzeIfStale(arg?: { threshold?: number, mode?: "full" | "perTable" }): boolean;
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;

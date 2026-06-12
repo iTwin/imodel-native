@@ -555,6 +555,173 @@ TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_NeverAnalyzed)
+    {
+    // When sqlite_stat1 has no rows (freshly created DB), ReanalyzeIfStale should run ANALYZE unconditionally.
+    auto db = Create("reanalyze_never.db");
+    ASSERT_TRUE(db != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, a, b)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE INDEX idx_t1_a ON t1(a)"));
+    for (int i = 0; i < 100; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+
+    db->SaveChanges();
+
+    // sqlite_stat1 exists (created during CreateNewDb) but is empty
+    ASSERT_EQ(0, GetRowCount(*db, "sqlite_stat1"));
+
+    bool didAnalyze = false;
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::Full, &didAnalyze));
+    ASSERT_TRUE(didAnalyze) << "didAnalyze should be true when DB had never been analyzed";
+
+    // After ReanalyzeIfStale, sqlite_stat1 should have rows
+    ASSERT_NE(0, GetRowCount(*db, "sqlite_stat1"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_NotStale)
+    {
+    // When stats are current, ReanalyzeIfStale should not re-run ANALYZE.
+    auto db = Create("reanalyze_fresh.db");
+    ASSERT_TRUE(db != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, a, b)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE INDEX idx_t1_a ON t1(a)"));
+    for (int i = 0; i < 100; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+
+    db->SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, db->Analyze());
+
+    // Record the stat content before
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String statBefore = stmt.GetValueText(0);
+    stmt.Finalize();
+
+    // Add only a few rows (well under 30% threshold)
+    for (int i = 100; i < 105; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+    db->SaveChanges();
+
+    // Stats should remain unchanged since 5% change < 30% threshold
+    bool didAnalyze = true; // start true to confirm it gets set false
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::Full, &didAnalyze));
+    ASSERT_FALSE(didAnalyze) << "didAnalyze should be false when stats are not stale";
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String statAfter = stmt.GetValueText(0);
+    stmt.Finalize();
+    ASSERT_TRUE(statBefore.Equals(statAfter));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_Stale)
+    {
+    // When stats are stale, ReanalyzeIfStale should re-run ANALYZE and update stats.
+    auto db = Create("reanalyze_stale.db");
+    ASSERT_TRUE(db != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, a, b)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE INDEX idx_t1_a ON t1(a)"));
+    for (int i = 0; i < 100; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+
+    db->SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, db->Analyze());
+
+    int statRowsBefore = GetRowCount(*db, "sqlite_stat1");
+    ASSERT_NE(0, statRowsBefore);
+
+    // Record the stat content before
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String statBefore = stmt.GetValueText(0);
+    stmt.Finalize();
+
+    // Double the rows - 100% increase well above 30% threshold
+    for (int i = 100; i < 300; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+    db->SaveChanges();
+
+    bool didAnalyze = false;
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::Full, &didAnalyze));
+    ASSERT_TRUE(didAnalyze) << "didAnalyze should be true when stats are stale";
+
+    // Stats should have been updated
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String statAfter = stmt.GetValueText(0);
+    stmt.Finalize();
+    ASSERT_FALSE(statBefore.Equals(statAfter)) << "Stats should have been updated after adding 200% more rows";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, ReanalyzeIfStale_PerTable)
+    {
+    // In PerTable mode, only the stale table should be reanalyzed, not the fresh one.
+    auto db = Create("reanalyze_pertable.db");
+    ASSERT_TRUE(db != nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE TABLE t1(id INTEGER PRIMARY KEY, a, b)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE TABLE t2(id INTEGER PRIMARY KEY, x, y)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE INDEX idx_t1_a ON t1(a)"));
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE INDEX idx_t2_x ON t2(x)"));
+
+    for (int i = 0; i < 100; i++)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t2(x, y) VALUES(%d, %d)", i, i * 3)));
+        }
+
+    db->SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, db->Analyze());
+
+    // Record t2 stat before (t2 won't change)
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t2' AND idx='idx_t2_x'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String t2StatBefore = stmt.GetValueText(0);
+    stmt.Finalize();
+
+    // Record t1 stat before
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' AND idx='idx_t1_a'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String t1StatBefore = stmt.GetValueText(0);
+    stmt.Finalize();
+
+    // Make t1 stale (double its rows) but leave t2 unchanged
+    for (int i = 100; i < 300; i++)
+        ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql(SqlPrintfString("INSERT INTO t1(a, b) VALUES(%d, %d)", i, i * 2)));
+    db->SaveChanges();
+
+    bool didAnalyze = false;
+    ASSERT_EQ(BE_SQLITE_OK, db->ReanalyzeIfStale(0.3, Db::ReanalyzeMode::PerTable, &didAnalyze));
+    ASSERT_TRUE(didAnalyze) << "didAnalyze should be true when stats are stale";
+
+    // t1 stats should have been updated
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t1' AND idx='idx_t1_a'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String t1StatAfter = stmt.GetValueText(0);
+    stmt.Finalize();
+    ASSERT_FALSE(t1StatBefore.Equals(t1StatAfter)) << "t1 stats should have been updated";
+
+    // t2 stats should remain unchanged since it was not stale
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "SELECT stat FROM sqlite_stat1 WHERE tbl='t2' AND idx='idx_t2_x'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    Utf8String t2StatAfter = stmt.GetValueText(0);
+    stmt.Finalize();
+    ASSERT_TRUE(t2StatBefore.Equals(t2StatAfter)) << "t2 stats should NOT have been updated";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, variable_limit)
     {
     auto db1 = Create("first.db");
