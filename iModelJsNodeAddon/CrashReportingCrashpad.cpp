@@ -103,6 +103,8 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             }
         }
     
+    printf("JsInterop::InitializeCrashReporting: Initializing crashpad database in %s\n", Utf8String(dbPathW).c_str());
+    fflush(stdout);
     base::FilePath dbPath;
     InitFilePath(dbPath, dbPathW);
     unique_ptr<CrashReportDatabase> database = CrashReportDatabase::Initialize(dbPath);
@@ -133,6 +135,8 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         return;
         }
 
+    printf("JsInterop::InitializeCrashReporting: Handler path: %s\n", Utf8String(handlerPathW).c_str());
+    fflush(stdout);
     base::FilePath handlerPath;
     InitFilePath(handlerPath, handlerPathW);
 
@@ -154,7 +158,9 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     args.push_back("--no-rate-limit"); // don't restrict to once per-hour
     // args.push_back("--no-upload-gzip"); // don't compress HTTP request (for debugging purposes)
 
-    CrashpadClient client;
+    printf("JsInterop::InitializeCrashReporting: Starting handler...\n");
+    fflush(stdout);
+    static CrashpadClient client;
     // @todo: Decide if we want to pass true for restartable and asynchronous_start on macOS and maybe Windows.
     if (!client.StartHandler(
             handlerPath,        // handler
@@ -163,15 +169,22 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             reportingUrl,       // url
             processAnnotations, // annotations
             args,               // arguments
-            false,              // restartable (not supported on Linux)
-            false               // asynchronous_start (not supported on Linux)
-            ))
+#if defined(BENTLEYCONFIG_OS_LINUX)
+            false,  // restartable (not supported on Linux)
+            false   // asynchronous_start (not supported on Linux)
+#else
+            true,   // restartable
+            true    // asynchronous_start
+#endif
+        ))
         {
         // BeAssert(false);
         printf("JsInterop::InitializeCrashReporting: Failed to start the crashpad handler.\n");
         return;
         }
 
+    printf("JsInterop::InitializeCrashReporting: Handler started successfully.\n");
+    fflush(stdout);
     }
 
 /*---------------------------------------------------------------------------------**//**

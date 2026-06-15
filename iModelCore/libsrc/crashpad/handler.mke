@@ -56,3 +56,8 @@ always:
 always:
 	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
 	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
+%if !defined (winNT)
+	chmod +x "$(vcpkgHandlerExe)"
+	chmod +x "$(handlerOut)"
+	chmod +x "$(BuildContext)Delivery/$(appName)$(exeext)"
+%endif
