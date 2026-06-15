@@ -916,6 +916,8 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
         flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
     if(args.GetFkNoAction())
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
+    if(args.GetNoUpdateLoop())
+        flags |= SQLITE_CHANGESETAPPLY_NOUPDATELOOP;
     auto reader = _GetReader();
     m_args = &args;
 
