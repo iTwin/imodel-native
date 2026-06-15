@@ -166,13 +166,6 @@ static int pkcs7_decrypt_rinfo(unsigned char **pek, int *peklen,
     if (EVP_PKEY_decrypt_init(pctx) <= 0)
         goto err;
 
-    if (EVP_PKEY_is_a(pkey, "RSA"))
-        /* upper layer pkcs7 code incorrectly assumes that a successful RSA
-         * decryption means that the key matches ciphertext (which never
-         * was the case, implicit rejection or not), so to make it work
-         * disable implicit rejection for RSA keys */
-        EVP_PKEY_CTX_ctrl_str(pctx, "rsa_pkcs1_implicit_rejection", "0");
-
     ret = evp_pkey_decrypt_alloc(pctx, &ek, &eklen, fixlen,
         ri->enc_key->data, ri->enc_key->length);
     if (ret <= 0)
@@ -931,7 +924,7 @@ int PKCS7_SIGNER_INFO_sign(PKCS7_SIGNER_INFO *si)
 
     alen = ASN1_item_i2d((ASN1_VALUE *)si->auth_attr, &abuf,
         ASN1_ITEM_rptr(PKCS7_ATTR_SIGN));
-    if (!abuf)
+    if (alen < 0 || abuf == NULL)
         goto err;
     if (EVP_DigestSignUpdate(mctx, abuf, alen) <= 0)
         goto err;
@@ -1112,7 +1105,7 @@ int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
 
         alen = ASN1_item_i2d((ASN1_VALUE *)sk, &abuf,
             ASN1_ITEM_rptr(PKCS7_ATTR_VERIFY));
-        if (alen <= 0) {
+        if (alen <= 0 || abuf == NULL) {
             ERR_raise(ERR_LIB_PKCS7, ERR_R_ASN1_LIB);
             ret = -1;
             goto err;

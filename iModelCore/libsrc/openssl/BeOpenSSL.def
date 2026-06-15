@@ -777,8 +777,6 @@ EXPORTS
   SSL_write_early_data
   SSL_write_ex
   _vsnprintf_l
-  _vsprintf_l
-  sprintf
   ssl3_undef_enc_method
   ssl_cache_cipherlist
   ssl_check_srvr_ecc_cert_and_alg
@@ -850,7 +848,6 @@ EXPORTS
   ssl_cipher_get_evp
   ssl_cipher_get_evp_cipher
   ssl_cipher_get_overhead
-  ssl_comp_free_compression_methods_int
   ssl_create_cipher_list
   ssl_get_cipher_by_char
   ssl_handshake_md
@@ -1097,10 +1094,6 @@ EXPORTS
   ossl_prov_drbg_uninstantiate
   ossl_rand_drbg_free
   ossl_rand_drbg_new
-  ossl_crngt_cleanup_entropy
-  ossl_crngt_get_entropy
-  ossl_rand_crng_ctx_free
-  ossl_rand_crng_ctx_new
   ossl_siphash_functions
   ossl_poly1305_functions
   ossl_kmac128_functions
@@ -1673,13 +1666,8 @@ EXPORTS
   ossl_rsa_asym_cipher_functions
   ossl_default_provider_init
   ossl_digest_rsa_sign_get_md_nid
-  ossl_securitycheck_enabled
   ossl_dh_check_key
-  ossl_digest_get_approved_nid_with_sha1
-  ossl_digest_is_allowed
   ossl_dsa_check_key
-  ossl_ec_check_key
-  ossl_rsa_check_key
   ossl_prov_cache_exported_algorithms
   ossl_prov_cipher_cipher
   ossl_prov_cipher_copy
@@ -3421,7 +3409,6 @@ EXPORTS
   SHA512_Update
   sha512_224_init
   sha512_256_init
-  ossl_keccak_kmac_init
   ossl_sha3_final
   ossl_sha3_init
   ossl_sha3_reset

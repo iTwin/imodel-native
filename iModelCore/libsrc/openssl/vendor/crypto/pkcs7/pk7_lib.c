@@ -418,7 +418,7 @@ err:
     return NULL;
 }
 
-static STACK_OF(X509) *pkcs7_get_signer_certs(const PKCS7 *p7)
+STACK_OF(X509) *pkcs7_get0_certificates(const PKCS7 *p7)
 {
     if (p7->d.ptr == NULL)
         return NULL;
@@ -459,7 +459,7 @@ void ossl_pkcs7_resolve_libctx(PKCS7 *p7)
 
     rinfos = pkcs7_get_recipient_info(p7);
     sinfos = PKCS7_get_signer_info(p7);
-    certs = pkcs7_get_signer_certs(p7);
+    certs = pkcs7_get0_certificates(p7);
 
     for (i = 0; i < sk_X509_num(certs); i++)
         ossl_x509_set0_libctx(sk_X509_value(certs, i), libctx, propq);

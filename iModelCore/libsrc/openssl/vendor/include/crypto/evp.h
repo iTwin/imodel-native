@@ -725,32 +725,27 @@ struct evp_pkey_st {
         int security_bits;
         int size;
     } cache;
-} /* EVP_PKEY */;
+}; /* EVP_PKEY */
 
-#define EVP_PKEY_CTX_IS_SIGNATURE_OP(ctx)            \
-    ((ctx)->operation == EVP_PKEY_OP_SIGN            \
-        || (ctx)->operation == EVP_PKEY_OP_SIGNCTX   \
-        || (ctx)->operation == EVP_PKEY_OP_VERIFY    \
-        || (ctx)->operation == EVP_PKEY_OP_VERIFYCTX \
-        || (ctx)->operation == EVP_PKEY_OP_VERIFYRECOVER)
+/* The EVP_PKEY_OP_TYPE_ macros are found in include/openssl/evp.h */
+
+#define EVP_PKEY_CTX_IS_SIGNATURE_OP(ctx) \
+    (((ctx)->operation & EVP_PKEY_OP_TYPE_SIG) != 0)
 
 #define EVP_PKEY_CTX_IS_DERIVE_OP(ctx) \
-    ((ctx)->operation == EVP_PKEY_OP_DERIVE)
+    (((ctx)->operation & EVP_PKEY_OP_TYPE_DERIVE) != 0)
 
-#define EVP_PKEY_CTX_IS_ASYM_CIPHER_OP(ctx)  \
-    ((ctx)->operation == EVP_PKEY_OP_ENCRYPT \
-        || (ctx)->operation == EVP_PKEY_OP_DECRYPT)
+#define EVP_PKEY_CTX_IS_ASYM_CIPHER_OP(ctx) \
+    (((ctx)->operation & EVP_PKEY_OP_TYPE_CRYPT) != 0)
 
-#define EVP_PKEY_CTX_IS_GEN_OP(ctx)           \
-    ((ctx)->operation == EVP_PKEY_OP_PARAMGEN \
-        || (ctx)->operation == EVP_PKEY_OP_KEYGEN)
+#define EVP_PKEY_CTX_IS_GEN_OP(ctx) \
+    (((ctx)->operation & EVP_PKEY_OP_TYPE_GEN) != 0)
 
 #define EVP_PKEY_CTX_IS_FROMDATA_OP(ctx) \
-    ((ctx)->operation == EVP_PKEY_OP_FROMDATA)
+    (((ctx)->operation & EVP_PKEY_OP_TYPE_DATA) != 0)
 
-#define EVP_PKEY_CTX_IS_KEM_OP(ctx)              \
-    ((ctx)->operation == EVP_PKEY_OP_ENCAPSULATE \
-        || (ctx)->operation == EVP_PKEY_OP_DECAPSULATE)
+#define EVP_PKEY_CTX_IS_KEM_OP(ctx) \
+    (((ctx)->operation & EVP_PKEY_OP_TYPE_KEM) != 0)
 
 void openssl_add_all_ciphers_int(void);
 void openssl_add_all_digests_int(void);
@@ -824,6 +819,8 @@ int evp_keymgmt_gen_set_template(const EVP_KEYMGMT *keymgmt, void *genctx,
     void *templ);
 int evp_keymgmt_gen_set_params(const EVP_KEYMGMT *keymgmt, void *genctx,
     const OSSL_PARAM params[]);
+int evp_keymgmt_gen_get_params(const EVP_KEYMGMT *keymgmt,
+    void *genctx, OSSL_PARAM params[]);
 void *evp_keymgmt_gen(const EVP_KEYMGMT *keymgmt, void *genctx,
     OSSL_CALLBACK *cb, void *cbarg);
 void evp_keymgmt_gen_cleanup(const EVP_KEYMGMT *keymgmt, void *genctx);
@@ -967,5 +964,8 @@ int evp_signature_get_number(const EVP_SIGNATURE *signature);
 int evp_pkey_decrypt_alloc(EVP_PKEY_CTX *ctx, unsigned char **outp,
     size_t *outlenp, size_t expected_outlen,
     const unsigned char *in, size_t inlen);
+
+int ossl_md2hmacnid(int mdnid);
+int ossl_hmac2mdnid(int hmac_nid);
 
 #endif /* OSSL_CRYPTO_EVP_H */

@@ -47,8 +47,12 @@
                 }                                                                   \
     }
 
-static const unsigned char bitmask_start_values[] = { 0xff, 0xfe, 0xfc, 0xf8, 0xf0, 0xe0, 0xc0, 0x80 };
-static const unsigned char bitmask_end_values[] = { 0xff, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f };
+static const unsigned char bitmask_start_values[] = {
+    0xff, 0xfe, 0xfc, 0xf8, 0xf0, 0xe0, 0xc0, 0x80
+};
+static const unsigned char bitmask_end_values[] = {
+    0xff, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f
+};
 
 static void dtls1_fix_message_header(SSL_CONNECTION *s, size_t frag_off,
     size_t frag_len);

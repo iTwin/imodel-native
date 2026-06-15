@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2023-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -223,7 +223,7 @@ static int port_update_poll_desc(QUIC_PORT *port, BIO *net_bio, int for_write)
      * single pollable currently. In the future, once complete polling
      * infrastructure has been implemented, this limitation can be removed.
      *
-     * For now, just update the descriptor on the the engine's reactor as we are
+     * For now, just update the descriptor on the engine's reactor as we are
      * guaranteed to be the only port under it.
      */
     if (for_write)
@@ -529,6 +529,13 @@ static void port_default_packet_handler(QUIC_URXE *e, void *arg,
      * in this case.
      */
     if (port->tserver_ch == NULL)
+        goto undesirable;
+
+    /*
+     * packet without destination connection id is invalid/corrupted here.
+     * stop wasting CPU cycles now.
+     */
+    if (dcid == NULL)
         goto undesirable;
 
     /*
