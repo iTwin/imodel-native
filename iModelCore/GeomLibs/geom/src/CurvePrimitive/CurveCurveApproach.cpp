@@ -112,7 +112,8 @@ bool bReverseOrder
 )
     {
     double d = pointA.Distance (pointB);
-    if (d < m_maxDistance)
+    double maxDistance = ClosestOnly() ? DBL_MAX : m_maxDistance;
+    if (d < maxDistance)
         {
         CollectPair (curveA, curveB, fractionA, fractionB, bReverseOrder);
         }
@@ -266,7 +267,8 @@ void ProcessLineArc(
                     bReverseOrder);
 
                 }
-            return;
+            if (numIntersection > 0)
+                return;
             }
         }
     RotMatrix localToWorldMatrix = RotMatrix::From1Vector(segmentDirection, 2, true);
