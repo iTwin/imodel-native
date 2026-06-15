@@ -79,6 +79,8 @@ CrashpadClientOut      = $(o)$(stlibprefix)$(appName)$(stlibext)
 always:
 %if $(TARGET_PLATFORM) == "Linux"
     $(libsrcDir)merge_static_libs.sh $(CrashpadClientOut) $(vcpkgCrashpadClient) $(vcpkgCrashpadCommon) $(vcpkgCrashpadUtil) $(vcpkgCrashpadBase)
+%elif $(TARGET_PLATFORM) == "MacOS"
+    libtool -static -o $(CrashpadClientOut) $(vcpkgCrashpadClient) $(vcpkgCrashpadCommon) $(vcpkgCrashpadUtil) $(vcpkgCrashpadBase)
 %elif $(TARGET_PLATFORM) == "Windows"
     lib "-OUT:$(CrashpadClientOut)" "$(vcpkgCrashpadClient)" "$(vcpkgCrashpadCommon)" "$(vcpkgCrashpadUtil)" "$(vcpkgCrashpadBase)"
 %endif

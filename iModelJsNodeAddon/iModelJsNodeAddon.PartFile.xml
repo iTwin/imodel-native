@@ -155,7 +155,7 @@
 
   </Part>
 
-  <Part Name="CrashpadShim" OnlyPlatforms="Linux*">
+  <Part Name="CrashpadShim" OnlyPlatforms="Linux*,MacOS*,x*">
     <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
   </Part>
 

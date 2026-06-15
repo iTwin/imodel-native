@@ -44,6 +44,12 @@ USING_BREAKPAD = 0
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+# Note: bsicommon/InternalPlatformSetup.mki sets this for Linux. We may want to move this setting
+# there also, but we also may not.
+%if $(TARGET_PLATFORM) == "MacOS"
+    BENTLEYCONFIG_CRASHPAD = 1
+%endif
+
 #
 # Burn the package version # into the code
 #
@@ -128,7 +134,7 @@ $(o)SchemaUtil$(oext) : $(baseDir)SchemaUtil.cpp $(baseDir)SchemaUtil.h ${MultiC
 
 %elif defined(BENTLEYCONFIG_CRASHPAD)
 
-    $(o)CrashReportingLinuxCrashpad$(oext) : $(baseDir)CrashReportingLinuxCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+    $(o)CrashReportingCrashpad$(oext) : $(baseDir)CrashReportingCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 %endif
 

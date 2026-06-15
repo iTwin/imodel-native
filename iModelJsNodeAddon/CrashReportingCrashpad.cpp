@@ -6,8 +6,12 @@
 #include <Bentley/BentleyConfig.h>
 #include <Bentley/Desktop/FileSystem.h>
 
-#ifndef BENTLEYCONFIG_OS_LINUX
-    #error This file is for Linux only
+#ifdef BENTLEY_WIN32
+    #include <windows.h>
+#endif
+
+#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEY_WIN32)
+    #error This file is for Linux, macOS, and Windows only
 #endif
 
 #include <crashpad/client/crash_report_database.h>
@@ -21,6 +25,18 @@
 using namespace std;
 using namespace crashpad;
 using namespace IModelJsNative;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void InitFilePath(base::FilePath& filePath, BeFileNameCR fileName)
+    {
+#ifdef BENTLEY_WIN32
+    filePath = base::FilePath(fileName.c_str());
+#else
+    filePath = base::FilePath(Utf8String(fileName).c_str());
+#endif
+    }
 
 // WIP: See comments about MaintainCrashDumpDir below.
 // static int s_nextNativeCrashTxtFileNo;
@@ -46,14 +62,36 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     // WIP: Check whether the user wants dumps at all via CrashReportingConfig.
     // if (!cfg.m_enableCrashDumps)
     //     return;
+#if defined(BENTLEYCONFIG_OS_LINUX)
+    // The old environment variable for enabling crash dumps on Linux was "LINUX_MINIDUMP_ENABLED". We only want to
+    // support that on Linux. However, even on Linux we want to allow users to switch to the new
+    // "IMODEL_ADDON_MINIDUMP_ENABLED" variable, so we check for both and require at least one of them to be set. On
+    // other platforms, only check for "IMODEL_ADDON_MINIDUMP_ENABLED". 
     if (NULL == getenv("LINUX_MINIDUMP_ENABLED"))
+        return;
+#endif
+    if (NULL == getenv("IMODEL_ADDON_MINIDUMP_ENABLED"))
         return;
     
     //.............................................................................................
     // WIP: solely rely on configuration for crash path.
     BeFileName dbPathW = cfg.m_crashDir;
     if (0 == dbPathW.size())
+        {
+#ifdef BENTLEY_WIN32
+        wchar_t tempPath[MAX_PATH];
+        DWORD len = GetTempPath2W(MAX_PATH, tempPath);
+        if (len == 0 || len >= MAX_PATH)
+            dbPathW.assign(L"C:\\temp\\crash");
+        else
+            {
+            dbPathW.assign(tempPath);
+            dbPathW.AppendToPath(L"crash");
+            }
+#else
         dbPathW.assign(L"/tmp/crash");
+#endif
+        }
 
     if (!dbPathW.DoesPathExist())
         {
@@ -65,7 +103,8 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             }
         }
     
-    base::FilePath dbPath(Utf8String(dbPathW).c_str());
+    base::FilePath dbPath;
+    InitFilePath(dbPath, dbPathW);
     unique_ptr<CrashReportDatabase> database = CrashReportDatabase::Initialize(dbPath);
     if (nullptr == database || nullptr == database->GetSettings())
         {
@@ -82,7 +121,11 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
 
     //.............................................................................................
     BeFileName handlerPathW = Desktop::FileSystem::GetLibraryDir();
+#ifdef BENTLEY_WIN32
+    handlerPathW.AppendToPath(L"CrashpadHandler.exe");
+#else
     handlerPathW.AppendToPath(L"CrashpadHandler");
+#endif
     if (!handlerPathW.DoesPathExist())
         {
         // BeAssert(false);
@@ -90,8 +133,9 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         return;
         }
 
-    base::FilePath handlerPath(Utf8String(handlerPathW).c_str());
-    
+    base::FilePath handlerPath;
+    InitFilePath(handlerPath, handlerPathW);
+
     // WIP: Get the URL from configuration.
     string reportingUrl;
     if (hasReportingUrlEnv)
@@ -111,6 +155,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     // args.push_back("--no-upload-gzip"); // don't compress HTTP request (for debugging purposes)
 
     CrashpadClient client;
+    // @todo: Decide if we want to pass true for restartable and asynchronous_start on macOS and maybe Windows.
     if (!client.StartHandler(
             handlerPath,        // handler
             dbPath,             // database
