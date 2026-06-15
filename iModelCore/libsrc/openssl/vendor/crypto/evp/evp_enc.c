@@ -1042,8 +1042,7 @@ legacy:
         for (i = 0; i < n; i++)
             out[i] = ctx->final[i];
         *outl = n;
-    } else
-        *outl = 0;
+    }
     return 1;
 }
 
