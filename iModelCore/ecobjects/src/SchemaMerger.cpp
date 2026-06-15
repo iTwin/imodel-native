@@ -310,10 +310,6 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
     if (rawRight.empty())
         return ECObjectsStatus::Success;
 
-    status = fillSchemasToResult("right", right);
-    if (status != ECObjectsStatus::Success)
-        return status;
-
     SchemaComparer comparer;
     SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
     SchemaDiff diff;
@@ -327,6 +323,40 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
         return ECObjectsStatus::Error;
         }
 
+    // First pass: copy any incoming-only (New) schemas into the result. This must happen
+    // before merging the Modified schemas below, because a Modified schema may add a new
+    // reference to one of these New schemas and would otherwise fail to resolve it.
+    for (auto schemaChange : diff.Changes())
+        {
+        if (!schemaChange->IsChanged() || schemaChange->GetOpCode() != ECChange::OpCode::New)
+            continue;
+
+        if (result.ContainsSchema(schemaChange->GetChangeName()))
+            continue; // already brought in as a referenced schema while copying an earlier new schema
+
+        ECSchemaCP rawRightSchema = FindSchemaByName(right, schemaChange->GetChangeName());
+        if (rawRightSchema == nullptr)
+            {
+            result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0024,
+                "Failed to find new schema %s in the right schemas list. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided.", schemaChange->GetChangeName());
+            return ECObjectsStatus::Error;
+            }
+
+        ECSchemaPtr copiedSchema;
+        auto copyStatus = rawRightSchema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation());
+        if (copyStatus != ECObjectsStatus::Success)
+            {
+            result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
+                "Schema '%s' from right side failed to be copied.", rawRightSchema->GetFullSchemaName().c_str());
+            return copyStatus;
+            }
+        if (copiedSchema.IsValid())
+            {
+            copiedSchema->SetOriginalECXmlVersion(rawRightSchema->GetOriginalECXmlVersionMajor(), rawRightSchema->GetOriginalECXmlVersionMinor());
+            result.GetSchemaCache().AddSchema(*copiedSchema);
+            }
+        }
+
     for (auto schemaChange : diff.Changes())
         {
         if (!schemaChange->IsChanged())
@@ -334,7 +364,7 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
 
         auto opCode = schemaChange->GetOpCode();
         if (opCode == ECChange::OpCode::Deleted || opCode == ECChange::OpCode::New)
-            continue; // skip schemas missing on one side as this was already handled above
+            continue; // Deleted: left-only, already in the result so kept as-is. New: copied in the first pass above.
 
         Utf8CP schemaName = schemaChange->GetChangeName(); // naming not intuitive, but the most reliable way to extract the schema name
         ECSchemaP leftSchema = result.GetSchema(schemaName);

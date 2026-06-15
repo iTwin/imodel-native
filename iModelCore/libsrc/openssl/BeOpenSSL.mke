@@ -70,6 +70,9 @@ dirToSearch = $(vendorSrc)providers/common/include/
 dirToSearch = $(vendorSrc)providers/implementations/include/
 %include cincapnd.mki
 
+dirToSearch = $(vendorSrc)providers/fips/include/
+%include cincapnd.mki
+
 #----------------------------------------------------------------------------------------
 #   Platform-agnostic settings
 #----------------------------------------------------------------------------------------
@@ -285,6 +288,14 @@ $(o)time$(oext) : $(vendorSrc)crypto/time.c ${MultiCompileDepends}
 $(o)trace$(oext) : $(vendorSrc)crypto/trace.c ${MultiCompileDepends}
 
 $(o)quic_vlint$(oext) : $(vendorSrc)crypto/quic_vlint.c ${MultiCompileDepends}
+
+$(o)comp_methods$(oext) : $(vendorSrc)crypto/comp_methods.c ${MultiCompileDepends}
+
+$(o)defaults$(oext) : $(vendorSrc)crypto/defaults.c ${MultiCompileDepends}
+
+$(o)indicator_core$(oext) : $(vendorSrc)crypto/indicator_core.c ${MultiCompileDepends}
+
+$(o)hashtable$(oext) : $(vendorSrc)crypto/hashtable/hashtable.c ${MultiCompileDepends}
 
 #$(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
 
@@ -928,6 +939,8 @@ $(o)err_prn$(oext) : $(vendorSrc)crypto/err/err_prn.c ${MultiCompileDepends}
 
 $(o)err_save$(oext) : $(vendorSrc)crypto/err/err_save.c ${MultiCompileDepends}
 
+$(o)ssl_err$(oext) : $(vendorSrc)crypto/ssl_err.c ${MultiCompileDepends}
+
 $(o)ess_asn1$(oext) : $(vendorSrc)crypto/ess/ess_asn1.c ${MultiCompileDepends}
 
 $(o)ess_err$(oext) : $(vendorSrc)crypto/ess/ess_err.c ${MultiCompileDepends}
@@ -1502,6 +1515,8 @@ $(o)by_store$(oext) : $(vendorSrc)crypto/x509/by_store.c ${MultiCompileDepends}
 
 $(o)t_crl$(oext) : $(vendorSrc)crypto/x509/t_crl.c ${MultiCompileDepends}
 
+$(o)t_acert$(oext) : $(vendorSrc)crypto/x509/t_acert.c ${MultiCompileDepends}
+
 $(o)t_req$(oext) : $(vendorSrc)crypto/x509/t_req.c ${MultiCompileDepends}
 
 $(o)t_x509$(oext) : $(vendorSrc)crypto/x509/t_x509.c ${MultiCompileDepends}
@@ -1517,6 +1532,24 @@ $(o)v3_no_rev_avail$(oext) : $(vendorSrc)crypto/x509/v3_no_rev_avail.c ${MultiCo
 $(o)v3_single_use$(oext) : $(vendorSrc)crypto/x509/v3_single_use.c ${MultiCompileDepends}
 
 $(o)v3_soa_id$(oext) : $(vendorSrc)crypto/x509/v3_soa_id.c ${MultiCompileDepends}
+
+$(o)v3_ac_tgt$(oext) : $(vendorSrc)crypto/x509/v3_ac_tgt.c ${MultiCompileDepends}
+
+$(o)v3_audit_id$(oext) : $(vendorSrc)crypto/x509/v3_audit_id.c ${MultiCompileDepends}
+
+$(o)v3_battcons$(oext) : $(vendorSrc)crypto/x509/v3_battcons.c ${MultiCompileDepends}
+
+$(o)v3_iobo$(oext) : $(vendorSrc)crypto/x509/v3_iobo.c ${MultiCompileDepends}
+
+$(o)v3_sda$(oext) : $(vendorSrc)crypto/x509/v3_sda.c ${MultiCompileDepends}
+
+$(o)v3_usernotice$(oext) : $(vendorSrc)crypto/x509/v3_usernotice.c ${MultiCompileDepends}
+
+$(o)x509_acert$(oext) : $(vendorSrc)crypto/x509/x509_acert.c ${MultiCompileDepends}
+
+$(o)x509aset$(oext) : $(vendorSrc)crypto/x509/x509aset.c ${MultiCompileDepends}
+
+$(o)x_ietfatt$(oext) : $(vendorSrc)crypto/x509/x_ietfatt.c ${MultiCompileDepends}
 
 $(o)x509_att$(oext) : $(vendorSrc)crypto/x509/x509_att.c ${MultiCompileDepends}
 
@@ -1690,8 +1723,6 @@ $(o)d1_msg$(oext) : $(vendorSrc)ssl/d1_msg.c ${MultiCompileDepends}
 
 $(o)d1_srtp$(oext) : $(vendorSrc)ssl/d1_srtp.c ${MultiCompileDepends}
 
-$(o)event_queue$(oext) : $(vendorSrc)ssl/event_queue.c ${MultiCompileDepends}
-
 $(o)methods$(oext) : $(vendorSrc)ssl/methods.c ${MultiCompileDepends}
 
 $(o)pqueue$(oext) : $(vendorSrc)ssl/pqueue.c ${MultiCompileDepends}
@@ -1735,8 +1766,6 @@ $(o)ssl_cert_comp$(oext) : $(vendorSrc)ssl/ssl_cert_comp.c ${MultiCompileDepends
 $(o)ssl_ciph$(oext) : $(vendorSrc)ssl/ssl_ciph.c ${MultiCompileDepends}
 
 $(o)ssl_conf$(oext) : $(vendorSrc)ssl/ssl_conf.c ${MultiCompileDepends}
-
-$(o)ssl_err$(oext) : $(vendorSrc)ssl/ssl_err.c ${MultiCompileDepends}
 
 $(o)ssl_init$(oext) : $(vendorSrc)ssl/ssl_init.c ${MultiCompileDepends}
 
@@ -2201,7 +2230,7 @@ $(o)poly1305_prov$(oext) : $(vendorSrc)providers/implementations/macs/poly1305_p
 
 $(o)siphash_prov$(oext) : $(vendorSrc)providers/implementations/macs/siphash_prov.c ${MultiCompileDepends}
 
-$(o)crngt$(oext) : $(vendorSrc)providers/implementations/rands/crngt.c ${MultiCompileDepends}
+$(o)fips_crng_test$(oext) : $(vendorSrc)providers/implementations/rands/fips_crng_test.c ${MultiCompileDepends}
 
 $(o)drbg$(oext) : $(vendorSrc)providers/implementations/rands/drbg_ctr.c ${MultiCompileDepends}
 
