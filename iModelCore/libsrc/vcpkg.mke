@@ -29,9 +29,4 @@
 %endif
 
 always:
-    ~chdir $(SrcRoot)/vcpkg
-    %if $(TARGET_PLATFORM)=="Windows"
-        ./bootstrap-vcpkg.bat
-    %else
-        ./bootstrap-vcpkg.sh
-    %endif
+    python3 $(_MakeFilePath)bootstrap_vcpkg_with_timeout.py $(SrcRoot)/vcpkg
