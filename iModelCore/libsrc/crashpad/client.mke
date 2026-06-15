@@ -38,7 +38,7 @@ vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-%if $(TARGET_PLATFORM) == "Windows"
+%if defined (winNT)
     $(libsrcDir)vcpkg_run_install.bat $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
 %else
     $(libsrcDir)vcpkg_run_install.sh $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
