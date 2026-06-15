@@ -457,6 +457,103 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+// Tests that the SQLite session extension's deferred constraint retry mechanism
+// (sessionRetryConstraints) correctly handles swapping unique index values between
+// two rows. The changeset tracker records net per-row changes:
+//   UPDATE row 1: name 'foo' -> 'goo'
+//   UPDATE row 2: name 'goo' -> 'foo'
+// When applied, both UPDATEs initially hit SQLITE_CONSTRAINT (unique violation) and
+// are deferred to the constraints buffer (bDeferConstraints=1). The retry logic in
+// sessionRetryConstraints step 2 resolves this by temporarily deleting one row,
+// applying the other update, then reinserting with the correct value.
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, apply_changeset_swap_unique_index_values)
+    {
+    auto db1 = Create("first.db");
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE TABLE test_swap(id INTEGER PRIMARY KEY, name TEXT)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("CREATE UNIQUE INDEX uidx_test_swap_name ON test_swap(name)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("INSERT INTO test_swap(id, name) VALUES(1, 'foo')"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("INSERT INTO test_swap(id, name) VALUES(2, 'goo')"));
+    db1->SaveChanges();
+    db1->CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, Clone("first.db", "second.db"));
+
+    db1 = OpenReadWrite("first.db");
+    auto db2 = OpenReadWrite("second.db");
+    ASSERT_TRUE(db1 != nullptr);
+    ASSERT_TRUE(db2 != nullptr);
+
+    // Capture changeset: the session tracker records net per-row changes despite
+    // the intermediate temp value used to avoid constraint violations during mutation.
+    std::unique_ptr<BeSQLite::ChangeSet> cs = Capture(*db1, [](DbR db, void*) {
+        if (BE_SQLITE_OK != db.ExecuteSql("UPDATE test_swap SET name='__temp__' WHERE id=1"))
+            return false;
+        if (BE_SQLITE_OK != db.ExecuteSql("UPDATE test_swap SET name='foo' WHERE id=2"))
+            return false;
+        if (BE_SQLITE_OK != db.ExecuteSql("UPDATE test_swap SET name='goo' WHERE id=1"))
+            return false;
+        return true;
+        }, nullptr);
+
+    ASSERT_TRUE(cs != nullptr);
+    db1->SaveChanges();
+
+    // Verify the changeset contains exactly 2 UPDATE operations with the net swap values.
+    // The session extension collapses the 3 intermediate UPDATEs into 2 net changes, one per row.
+    {
+    int updateCount = 0;
+    for (auto const& change : cs->GetChanges())
+        {
+        ASSERT_STREQ("test_swap", change.GetTableName().c_str());
+        ASSERT_TRUE(change.IsUpdate());
+        DbValue oldVal = change.GetOldValue(1); // column 1 = name
+        DbValue newVal = change.GetNewValue(1);
+        ASSERT_TRUE(oldVal.IsValid());
+        ASSERT_TRUE(newVal.IsValid());
+
+        Utf8CP oldName = oldVal.GetValueText();
+        Utf8CP newName = newVal.GetValueText();
+        // Each row's net change should be foo->goo or goo->foo
+        bool isFooToGoo = (strcmp(oldName, "foo") == 0 && strcmp(newName, "goo") == 0);
+        bool isGooToFoo = (strcmp(oldName, "goo") == 0 && strcmp(newName, "foo") == 0);
+        ASSERT_TRUE(isFooToGoo || isGooToFoo) << "old=" << oldName << " new=" << newName;
+        updateCount++;
+        }
+    ASSERT_EQ(2, updateCount);
+    }
+
+    // Apply changeset to db2 using ApplyChangesArgs with a conflict handler that counts
+    // invocations. The session extension's deferred constraint retry (sessionRetryConstraints)
+    // should resolve the circular unique constraint dependency without invoking the handler.
+    int conflictCount = 0;
+    BeSQLite::ApplyChangesArgs args;
+    args.SetConflictHandler([&conflictCount](BeSQLite::ChangeStream::ConflictCause cause, BeSQLite::Changes::Change change) {
+        conflictCount++;
+        return BeSQLite::ChangeStream::ConflictResolution::Abort;
+        });
+
+    ASSERT_EQ(BE_SQLITE_OK, cs->ApplyChanges(*db2, args));
+    db2->SaveChanges();
+
+    // The deferred constraint mechanism resolved the swap internally - no conflicts reported
+    ASSERT_EQ(0, conflictCount);
+
+    // Verify the swap was applied correctly to db2
+    {
+    auto stmt = db2->GetCachedStatement("SELECT name FROM test_swap WHERE id=1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_STREQ("goo", stmt->GetValueText(0));
+    }
+    {
+    auto stmt = db2->GetCachedStatement("SELECT name FROM test_swap WHERE id=2");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_STREQ("foo", stmt->GetValueText(0));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, variable_limit)
     {

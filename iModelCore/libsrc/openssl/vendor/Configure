@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # -*- mode: perl; -*-
-# Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2026 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -77,6 +77,10 @@ EOF
 #               Generic OpenSSL-style methods relating to this support
 #               are always compiled but return NULL if the hardware
 #               support isn't compiled.
+#
+# enable-demos  Enable the building of the example code in the demos directory
+# enable-h3demo Enable the http3 demo, which currently only links to the
+#               external nghttp3 library on unix platforms
 # no-hw         do not compile support for any crypto hardware.
 # [no-]threads  [don't] try to create a library that is suitable for
 #               multithreaded applications (default is "threads" if we
@@ -212,16 +216,9 @@ our $BSDthreads="-pthread -D_THREAD_SAFE -D_REENTRANT";
 #
 # API compatibility name to version number mapping.
 #
+
+# This table expresses when API additions or changes can occur
 my $apitable = {
-    # This table expresses when API additions or changes can occur.
-    # The numbering used changes from 3.0 and on because we updated
-    # (solidified) our version numbering scheme at that point.
-
-    # From 3.0 and on, we internalise the given version number in decimal
-    # as MAJOR * 10000 + MINOR * 100 + 0
-    "3.0.0" => 30000,
-    "3.0"   => 30000,
-
     # Note that before 3.0, we didn't have the same version number scheme.
     # Still, the numbering we use here covers what we need.
     "1.1.1" => 10101,
@@ -231,6 +228,18 @@ my $apitable = {
     "1.0.0" => 10000,
     "0.9.8" =>   908,
 };
+
+# From 3.0 and on, we internalise the given version number in decimal
+# as MAJOR * 10000 + MINOR * 100 + 0
+my @post30_versions = ([3, 0], [3, 1], [3, 2], [3, 3], [3, 4],
+                       );
+
+# The numbering used changes from 3.0 and on because we updated
+# (solidified) our version numbering scheme at that point.
+foreach (@post30_versions) {
+    my ($x, $y) = @{$_};
+    $apitable->{"$x.$y.0"} = $apitable->{"$x.$y"} = $x * 10000 + $y * 100;
+}
 
 # For OpenSSL::config::get_platform
 my %guess_opts = ();
@@ -443,6 +452,8 @@ my @disablables = (
     "crypto-mdebug",
     "ct",
     "default-thread-pool",
+    "demos",
+    "h3demo",
     "deprecated",
     "des",
     "devcryptoeng",
@@ -466,11 +477,13 @@ my @disablables = (
     "filenames",
     "fips",
     "fips-securitychecks",
+    "fips-post",
     "fuzz-afl",
     "fuzz-libfuzzer",
     "gost",
     "http",
     "idea",
+    "jitter",
     "ktls",
     "legacy",
     "loadereng",
@@ -486,6 +499,7 @@ my @disablables = (
     "ocsp",
     "padlockeng",
     "pic",
+    "pie",
     "pinshared",
     "poly1305",
     "posix-io",
@@ -522,6 +536,7 @@ my @disablables = (
     "thread-pool",
     "threads",
     "tls",
+    "integrity-only-ciphers",
     "trace",
     "ts",
     "ubsan",
@@ -570,12 +585,16 @@ our %disabled = ( # "what"         => "comment"
                   "buildtest-c++"       => "default",
                   "crypto-mdebug"       => "default",
                   "crypto-mdebug-backtrace" => "default",
+                  "demos"               => "default",
+                  "h3demo"              => "default",
                   "devcryptoeng"        => "default",
                   "ec_nistp_64_gcc_128" => "default",
                   "egd"                 => "default",
                   "external-tests"      => "default",
                   "fuzz-afl"            => "default",
                   "fuzz-libfuzzer"      => "default",
+                  "pie"                 => "default",
+                  "jitter"              => "default",
                   "ktls"                => "default",
                   "md2"                 => "default",
                   "msan"                => "default",
@@ -676,7 +695,7 @@ my @disable_cascades = (
 
     "cmp"               => [ "crmf" ],
 
-    "fips"              => [ "fips-securitychecks", "acvp-tests" ],
+    "fips"              => [ "fips-securitychecks", "fips-post", "acvp-tests" ],
 
     "threads"           => [ "thread-pool" ],
     "thread-pool"       => [ "default-thread-pool" ],
@@ -745,6 +764,7 @@ my %user = (
     RANLIB      => env('RANLIB'),
     RC          => env('RC') || env('WINDRES'),
     RCFLAGS     => [ env('RCFLAGS') || () ],
+    OBJCOPY     => undef,
     RM          => undef,
    );
 # Info about what "make variables" may be prefixed with the cross compiler
@@ -805,7 +825,7 @@ my %cmdvars = ();               # Stores FOO='blah' type arguments
 my %unsupported_options = ();
 my %deprecated_options = ();
 # If you change this, update apps/version.c
-my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu librandom);
+my @known_seed_sources = qw(getrandom devrandom os egd none rdcpu);
 my @seed_sources = ();
 while (@argvcopy)
         {
@@ -935,6 +955,10 @@ while (@argvcopy)
                         {
                         delete $disabled{"brotli"};
                         }
+                elsif ($1 eq "pie")
+                        {
+                        delete $disabled{"pie"};
+                        }
                 elsif ($1 eq "zstd-dynamic")
                         {
                         delete $disabled{"zstd"};
@@ -1004,6 +1028,14 @@ while (@argvcopy)
                 elsif (/^--openssldir=(.*)$/)
                         {
                         $config{openssldir}=$1;
+                        }
+                elsif (/^--with-jitter-include=(.*)$/)
+                        {
+                        $withargs{jitter_include}=$1;
+                        }
+                elsif (/^--with-jitter-lib=(.*)$/)
+                        {
+                        $withargs{jitter_lib}=$1;
                         }
                 elsif (/^--with-zlib-lib=(.*)$/)
                         {
@@ -1297,10 +1329,14 @@ if (scalar(grep { $_ eq 'none' } @seed_sources) > 0) {
 
 ============================== WARNING ===============================
 You have selected the --with-rand-seed=none option, which effectively
-disables automatic reseeding of the OpenSSL random generator.
+disables automatic reseeding of the OpenSSL SEED-SRC random generator.
 All operations depending on the random generator such as creating keys
 will not work unless the random generator is seeded manually by the
 application.
+
+Instead of manually seeding, a different random generator can be set
+at runtime in openssl.cnf or configured at build time with
+-DOPENSSL_DEFAULT_SEED_SRC.
 
 Please read the 'Note on random number generation' section in the
 INSTALL.md instructions and the RAND_DRBG(7) manual page for more
@@ -1312,6 +1348,11 @@ _____
 push @{$config{openssl_feature_defines}},
      map { (my $x = $_) =~ tr|[\-a-z]|[_A-Z]|; "OPENSSL_RAND_SEED_$x" }
         @seed_sources;
+
+my $provider_string = $disabled{"fips-post"} ? "non-compliant FIPS Provider" : "FIPS Provider";
+
+$config{FIPS_VENDOR} =
+    (defined $version{FIPS_VENDOR} ? "$version{FIPS_VENDOR} $provider_string for OpenSSL" : "OpenSSL $provider_string");
 
 # Backward compatibility?
 if ($target =~ m/^CygWin32(-.*)$/) {
