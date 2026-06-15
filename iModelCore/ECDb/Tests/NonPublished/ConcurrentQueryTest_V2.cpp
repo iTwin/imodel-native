@@ -1352,4 +1352,138 @@ TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
     });
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Reproduces the deadlock from https://github.com/iTwin/itwinjs-backlog/issues/2113
+// Thread A (main): sqlite3_step holds primary SQLite mutex, ExtractInstFunc fires,
+//   calls InstanceReader::GetOrAddClass -> Dispatcher::GetIterable -> needs ECDb mutex.
+// Thread B (worker): QueryAdaptorCache::TryGet holds ECDb mutex, ECSqlStatement::Prepare
+//   resolves schemas via SchemaPersistenceHelper::GetClassId -> sqlite3_bind_text on
+//   primary db -> needs primary SQLite mutex.
+// Without the fix, this test deadlocks (times out). With the fix, the worker uses its
+// own ECDb for schema resolution, avoiding the AB-BA lock ordering violation.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
+    // Use a schema with a class hierarchy to ensure polymorphic queries trigger extract_inst
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("deadlock_repro.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECProperty propertyName="Value" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="DerivedA">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="ExtraA" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="DerivedB">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="ExtraB" typeName="double" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // Insert enough rows to keep the main thread stepping for a while
+    const int rowCount = 200;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.DerivedA(Name,[Value],ExtraA) VALUES(?,?,?)"));
+        for (int i = 0; i < rowCount; ++i) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindText(1, SqlPrintfString("NameA_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            stmt.BindInt(2, i);
+            stmt.BindText(3, SqlPrintfString("ExtraA_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.DerivedB(Name,[Value],ExtraB) VALUES(?,?,?)"));
+        for (int i = 0; i < rowCount; ++i) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindText(1, SqlPrintfString("NameB_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            stmt.BindInt(2, i + rowCount);
+            stmt.BindDouble(3, i * 1.5);
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+    m_ecdb.SaveChanges();
+
+    // Thread A: main thread steps through a polymorphic query using "$" syntax
+    // which triggers extract_inst -> InstanceReader::Seek -> GetOrAddClass -> Dispatcher::GetIterable (needs ECDb mutex)
+    // while holding the primary SQLite mutex (via sqlite3_step).
+    //
+    // Thread B: concurrent query workers prepare ECSQL on the same polymorphic class
+    // which, before the fix, would hold the ECDb mutex and then need the primary SQLite
+    // mutex for schema resolution.
+
+    std::atomic<bool> mainThreadDone{false};
+    std::atomic<int> mainThreadRows{0};
+    std::atomic<bool> workerError{false};
+
+    // Start the concurrent query manager
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        // Launch a thread that simulates "Thread A" - stepping through extract_inst on main connection
+        auto mainStepThread = std::thread([&]() {
+            ECSqlStatement stmt;
+            // SELECT $ triggers extract_inst for each row (polymorphic - reads full instance)
+            auto status = stmt.Prepare(m_ecdb, "SELECT $ FROM ts.Base");
+            if (status != ECSqlStatus::Success) {
+                workerError = true;
+                mainThreadDone = true;
+                return;
+            }
+            while (stmt.Step() == BE_SQLITE_ROW) {
+                mainThreadRows++;
+                // Small yield to increase interleaving chances
+                if (mainThreadRows % 10 == 0)
+                    std::this_thread::yield();
+            }
+            mainThreadDone = true;
+        });
+
+        // Meanwhile, enqueue multiple concurrent queries that require fresh prepare
+        // (use unique queries to avoid cache hits and force prepare on worker threads)
+        const int numConcurrentQueries = 20;
+        std::vector<QueryResponse::Future> futures;
+        for (int i = 0; i < numConcurrentQueries; ++i) {
+            // Each query is slightly different to bypass the statement cache and force a Prepare
+            auto ecsql = SqlPrintfString("SELECT Name, [Value] FROM ts.Base WHERE [Value] >= %d", i);
+            auto req = ECSqlRequest::MakeRequest(ecsql.GetUtf8CP());
+            futures.push_back(mgr.Enqueue(std::move(req)));
+        }
+
+        // Also enqueue polymorphic $ queries on the worker to maximize contention
+        for (int i = 0; i < numConcurrentQueries; ++i) {
+            auto ecsql = SqlPrintfString("SELECT $ FROM ts.Base WHERE [Value] >= %d", i);
+            auto req = ECSqlRequest::MakeRequest(ecsql.GetUtf8CP());
+            futures.push_back(mgr.Enqueue(std::move(req)));
+        }
+
+        // Wait for main thread (with timeout to detect deadlock)
+        mainStepThread.join();
+
+        // Collect all concurrent query results (with timeout detection)
+        for (auto& future : futures) {
+            auto response = future.Get();
+            // All queries should succeed (not deadlock/timeout)
+            EXPECT_TRUE(response->GetStatus() == QueryResponse::Status::Done ||
+                        response->GetStatus() == QueryResponse::Status::Partial)
+                << "Concurrent query failed with status: " << (int)response->GetStatus()
+                << " error: " << response->GetError();
+        }
+
+        // Verify main thread read all rows
+        EXPECT_FALSE(workerError);
+        EXPECT_EQ(mainThreadRows.load(), rowCount * 2);
+    });
+}
+
 END_ECDBUNITTESTS_NAMESPACE
