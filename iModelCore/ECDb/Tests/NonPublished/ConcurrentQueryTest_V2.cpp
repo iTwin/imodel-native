@@ -1467,10 +1467,13 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
             futures.push_back(mgr.Enqueue(std::move(req)));
         }
 
-        // Wait for main thread (with timeout to detect deadlock)
+        // Wait for the main step thread to finish. If the deadlock regresses, this join
+        // blocks forever and the test harness kills the run as a timeout (which is the
+        // intended failure signal for this reproduction).
         mainStepThread.join();
 
-        // Collect all concurrent query results (with timeout detection)
+        // Collect all concurrent query results. Future::Get() blocks until each request
+        // completes; a regressed deadlock surfaces here (or in the join above) as a hang.
         for (auto& future : futures) {
             auto response = future.Get();
             // All queries should succeed (not deadlock/timeout)
@@ -1480,7 +1483,8 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
                 << " error: " << response->GetError();
         }
 
-        // Verify main thread read all rows
+        // Verify main thread completed and read all rows
+        EXPECT_TRUE(mainThreadDone.load());
         EXPECT_FALSE(workerError);
         EXPECT_EQ(mainThreadRows.load(), rowCount * 2);
     });

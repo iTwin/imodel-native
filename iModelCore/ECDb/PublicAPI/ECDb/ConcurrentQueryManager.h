@@ -490,6 +490,8 @@ struct ConcurrentQueryMgr final {
          uint32_t m_requestQueueSize;
          bool m_ignorePriority;
          bool m_ignoreDelay;
+         // Deprecated/no-op: worker connections always prepare on their own ECDb now (see
+         // QueryAdaptorCache::TryGet). Retained only for backward-compatible config (de)serialization.
          bool m_doNotUsePrimaryConnToPrepare;
          uint32_t m_statementCacheSizePerWorker;
          std::chrono::milliseconds m_monitorPollInterval;
@@ -530,6 +532,9 @@ struct ConcurrentQueryMgr final {
         Config& SetWorkerThreadCount(uint32_t workerThreadCount) { m_workerThreadCount = workerThreadCount; return *this;}
         Config& SetRequestQueueSize(uint32_t requestQueueSize) { m_requestQueueSize = requestQueueSize; return *this;}
         Config& SetIgnorePriority(bool ignorePriority) { m_ignorePriority = ignorePriority; return *this;}
+        //! @deprecated No longer consulted. Worker connections always prepare on their own ECDb
+        //! to avoid an AB-BA lock ordering deadlock with the primary connection. Kept for
+        //! backward-compatible config serialization only; calling it has no effect on behavior.
         Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
         Config& SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds autoShutdownWhenIdleForSeconds) { m_autoShutdownWhenIdleForSeconds = autoShutdownWhenIdleForSeconds; return *this;}
         Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}

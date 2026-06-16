@@ -109,8 +109,10 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
         // ECDb mutex (via Dispatcher::GetIterable in ExtractInstFunc).
         // The worker's ECDb has its own SchemaManager and SQLite connection (synced via
         // SyncAttachDbs), so it can resolve schemas independently.
+        ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
         status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
         if (status != ECSqlStatus::Success) {
+            ecsql_error = err_scope.GetLastError();
             return nullptr;
         }
     }
@@ -2300,7 +2302,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
 QueryAdaptorCache::QueryAdaptorCache(CachedConnection& conn):m_conn(conn){
     auto config = ConcurrentQueryMgr::Config::Get();
     m_maxEntries = config.GetStatementCacheSizePerWorker();
-    m_doNotUsePrimaryConnToPrepare = config.GetDoNotUsePrimaryConnToPrepare();
 }
 
 //---------------------------------------------------------------------------------------

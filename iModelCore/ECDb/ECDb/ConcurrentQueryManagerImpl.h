@@ -101,7 +101,6 @@ struct QueryAdaptorCache final {
             recursive_mutex_t m_mutex;
             CachedConnection& m_conn;
             uint32_t m_maxEntries;
-            bool m_doNotUsePrimaryConnToPrepare;
     public:
         QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
