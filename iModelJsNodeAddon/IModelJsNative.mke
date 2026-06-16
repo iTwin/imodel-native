@@ -46,7 +46,7 @@ USING_BREAKPAD = 0
 
 # Note: bsicommon/InternalPlatformSetup.mki sets this for Linux. We may want to move this setting
 # there also, but we also may not.
-%if $(TARGET_PLATFORM) == "MacOS"
+%if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "Windows"
     BENTLEYCONFIG_CRASHPAD = 1
 %endif
 
