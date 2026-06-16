@@ -88,7 +88,7 @@ int m_maxIterations;
 double m_newtonFractionTol;
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod
 +--------------------------------------------------------------------------------------*/
 CCAXYZProcessor (double maxDistance = -1, IFacetOptionsCP strokeOptions = nullptr, int maxIterations = 20, double fractionTol = 1.0e-12, double coordTol = 1.0e-4) :
     CurveCurveProcessAndCollectCloseApproaches(maxDistance, nullptr, coordTol), m_newtonFractionTol (fractionTol)
@@ -99,7 +99,7 @@ CCAXYZProcessor (double maxDistance = -1, IFacetOptionsCP strokeOptions = nullpt
     }
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
+* @bsimethod
 +--------------------------------------------------------------------------------------*/
 void CollectApproach(
 ICurvePrimitiveP curveA,
