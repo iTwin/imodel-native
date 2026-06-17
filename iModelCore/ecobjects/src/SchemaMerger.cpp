@@ -351,17 +351,15 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
 
             ECSchemaPtr copiedSchema;
             auto copyStatus = rightSchema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation());
-            if (copyStatus != ECObjectsStatus::Success)
+            if (copyStatus != ECObjectsStatus::Success || !copiedSchema.IsValid())
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                     "Schema '%s' from right side failed to be copied.", rightSchema->GetFullSchemaName().c_str());
-                return copyStatus;
+                return copyStatus != ECObjectsStatus::Success ? copyStatus : ECObjectsStatus::Error;
                 }
-            if (copiedSchema.IsValid())
-                {
-                copiedSchema->SetOriginalECXmlVersion(rightSchema->GetOriginalECXmlVersionMajor(), rightSchema->GetOriginalECXmlVersionMinor());
-                result.GetSchemaCache().AddSchema(*copiedSchema);
-                }
+
+            copiedSchema->SetOriginalECXmlVersion(rightSchema->GetOriginalECXmlVersionMajor(), rightSchema->GetOriginalECXmlVersionMinor());
+            result.GetSchemaCache().AddSchema(*copiedSchema);
             continue;
             }
 
