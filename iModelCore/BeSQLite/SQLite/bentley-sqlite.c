@@ -84,7 +84,7 @@ int checkNoActiveStatements(sqlite3* db)
     // The casts cross that public/private boundary and mirror what SQLite does internally.
     for (stmt = db->pVdbe; stmt != NULL; stmt = (Vdbe*)sqlite3_next_stmt(db, (sqlite3_stmt*)stmt))
         {
-        if (stmt->eVdbeState != VDBE_RUN_STATE)
+        if (stmt->eVdbeState == VDBE_RUN_STATE)
             {
             sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
             //assert(0);
