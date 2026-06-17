@@ -3488,7 +3488,7 @@ TEST_F(SchemaMergerTests, LeftOnlyAndNewSchemaReferenceUpgradedReference)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Regression guard for the inverse ordering constraint (the case PR #1450 fixed): a
+* Regression guard for the inverse ordering constraint: a
 * Modified schema gains a NEW reference to a brand-new (right-only) schema and uses a CA
 * class defined in it. This must keep passing after the hydration loop is reordered, since
 * the new schema has to be hydrated before the modified schema is merged.
