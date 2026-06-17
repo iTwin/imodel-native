@@ -459,6 +459,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
 %endif
 
 %if $(TARGET_PLATFORM)=="Windows"
+    DLM_SPECIAL_LINKOPT = -NODEFAULTLIB:msvcrtd.lib
     LINKER_LIBRARIES + iphlpapi.lib
     LINKER_LIBRARIES + winhttp.lib
 %endif
