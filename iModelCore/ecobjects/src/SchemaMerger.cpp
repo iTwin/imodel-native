@@ -337,20 +337,10 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
     //    Modified reference is merged in-place before the New schema is copied.
     //  - A Modified schema that adds a new reference to a New schema finds that New schema
     //    already hydrated, because the New schema precedes it in dependency order.
-    auto findSchemaChange = [&](ECSchemaCP schema) -> RefCountedPtr<SchemaChange>
-        {
-        for (auto schemaChange : diff.Changes())
-            {
-            if (schemaChange->IsChanged() && schema->GetName().EqualsI(schemaChange->GetChangeName()))
-                return schemaChange;
-            }
-        return nullptr;
-        };
-
     for (ECSchemaCP rightSchema : right)
         {
-        auto schemaChange = findSchemaChange(rightSchema);
-        if (schemaChange == nullptr)
+        SchemaChange* schemaChange = diff.GetSchemaChange(rightSchema->GetName());
+        if (schemaChange == nullptr || !schemaChange->IsChanged())
             continue; // unchanged - nothing to hydrate
 
         auto opCode = schemaChange->GetOpCode();
