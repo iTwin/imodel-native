@@ -357,10 +357,11 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             uint32_t m_memLimit;
             uint32_t m_memUsed;
         public:
-            Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_memLimit(0), m_memUsed(0),m_prepareTime(0){}
+            Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_prepareTime(0),m_memLimit(0), m_memUsed(0){}
             Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime):
-                m_cpuTime(cpuTime), m_totalTime(totalTime),m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed),
-                m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime){}
+                m_cpuTime(cpuTime), m_totalTime(totalTime),
+                m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime),
+                m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed){}
             virtual ~Stats(){}
             std::chrono::microseconds CpuTime() const { return m_cpuTime;}
             std::chrono::milliseconds TotalTime() const { return m_totalTime;}
@@ -543,8 +544,8 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT static Config const& GetDefault();
         ECDB_EXPORT static Config GetFromEnv();
 
-        ECDB_EXPORT static const Config& Get();
-        ECDB_EXPORT static const Config& Reset(std::optional<Config> conf);
+        ECDB_EXPORT static Config Get();
+        ECDB_EXPORT static Config Reset(std::optional<Config> conf);
 
         ECDB_EXPORT static Config From(BeJsValue);
         ECDB_EXPORT void To(BeJsValue) const;

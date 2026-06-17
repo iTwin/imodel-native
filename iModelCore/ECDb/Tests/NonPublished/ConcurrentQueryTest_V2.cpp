@@ -11,6 +11,7 @@ USING_NAMESPACE_BENTLEY_EC
 #include <queue>
 #include <thread>
 #include <memory>
+#include <mutex>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -40,6 +41,28 @@ struct CountFunc : BeSQLite::ScalarFunction {
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override { _rowCount++; }
     void Reset() { _rowCount = 0; }
     static CountFunc& Instance() {static CountFunc countFunc; return countFunc;}
+};
+
+// Records the id of the thread that executes it. The "imodel_" name prefix is required so that
+// the function is propagated to concurrent query worker connections (see
+// CachedConnection::GetPrimaryDbSqlFunctions).
+struct ThreadIdFunc : BeSQLite::ScalarFunction {
+    std::mutex m_mutex;
+    std::thread::id m_lastThreadId;
+    bool m_invoked = false;
+    ThreadIdFunc() : ScalarFunction("imodel_thread_id", 0){}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override {
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            m_lastThreadId = std::this_thread::get_id();
+            m_invoked = true;
+        }
+        ctx.SetResultInt(1);
+    }
+    void Reset() { std::lock_guard<std::mutex> lk(m_mutex); m_invoked = false; m_lastThreadId = std::thread::id(); }
+    std::thread::id LastThreadId() { std::lock_guard<std::mutex> lk(m_mutex); return m_lastThreadId; }
+    bool Invoked() { std::lock_guard<std::mutex> lk(m_mutex); return m_invoked; }
+    static ThreadIdFunc& Instance() { static ThreadIdFunc f; return f; }
 };
 
 struct StressTest {
@@ -1487,6 +1510,69 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
         EXPECT_TRUE(mainThreadDone.load());
         EXPECT_FALSE(workerError);
         EXPECT_EQ(mainThreadRows.load(), rowCount * 2);
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Primary-connection requests must be executed synchronously on the caller thread (see
+// RunnableRequestQueue::Enqueue -> ExecuteSynchronously). They must NOT be dispatched to a
+// worker thread, because a worker preparing/executing against the primary connection while
+// holding the primary ECDb mutex reintroduces the worker/main-thread deadlock guarded against
+// in QueryExecutor's worker loop. This test pins down that routing invariant.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, PrimaryConnectionRequestRunsOnCallerThread) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("primary_conn_thread.ecdb"));
+    m_ecdb.AddFunction(ThreadIdFunc::Instance());
+
+    const auto callerThreadId = std::this_thread::get_id();
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        // Primary-connection request: runs synchronously on the caller thread, never queued.
+        ThreadIdFunc::Instance().Reset();
+        {
+            auto req = ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT imodel_thread_id() FROM cnt");
+            req->SetUsePrimaryConnection(true);
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+            ASSERT_TRUE(ThreadIdFunc::Instance().Invoked());
+            EXPECT_EQ(ThreadIdFunc::Instance().LastThreadId(), callerThreadId)
+                << "primary-connection request must execute on the caller thread, not a worker thread";
+        }
+
+        // Non-primary request: dispatched to the worker queue and executed on a worker thread.
+        ThreadIdFunc::Instance().Reset();
+        {
+            auto req = ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT imodel_thread_id() FROM cnt");
+            ASSERT_FALSE(req->UsePrimaryConnection()); // default routes to a worker thread
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+            ASSERT_TRUE(ThreadIdFunc::Instance().Invoked());
+            EXPECT_NE(ThreadIdFunc::Instance().LastThreadId(), callerThreadId)
+                << "non-primary request must execute on a worker thread";
+        }
+    });
+
+    m_ecdb.RemoveFunction(ThreadIdFunc::Instance());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// Regression test: calling Future::Cancel() after the query has already completed must be a safe
+// no-op. The RunnableRequest backing the query is destroyed as soon as it completes
+// (CachedConnection::ClearRequest), but the Future (and its cancel callback) can outlive it. The
+// cancel callback must not dereference the freed request - it should look the request up by id and
+// find it already gone. Before the fix the callback captured the request by reference, so this was
+// a use-after-free.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, CancelAfterCompletionIsSafe) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cancel_after_complete.ecdb"));
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto future = mgr.Enqueue(ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT x FROM cnt"));
+        auto r = future.Get(); // block until the request completes and is destroyed
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        // Must not crash / use-after-free; the request id is no longer in the queue so this is a no-op.
+        future.Cancel();
     });
 }
 

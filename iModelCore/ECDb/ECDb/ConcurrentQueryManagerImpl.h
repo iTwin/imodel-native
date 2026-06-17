@@ -95,7 +95,6 @@ struct RunnableRequestQueue;
 //! @bsiclass
 //=======================================================================================
 struct QueryAdaptorCache final {
-    const static uint32_t kDefaultCacheSize = DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER;
     private:
             std::vector<std::shared_ptr<CachedQueryAdaptor>> m_cache;
             recursive_mutex_t m_mutex;
@@ -106,7 +105,6 @@ struct QueryAdaptorCache final {
         ~QueryAdaptorCache(){}
         std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
         void Reset() { m_cache.clear(); }
-        void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}
 };
 
@@ -181,7 +179,6 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         uint16_t Id() const { return m_id; }
         std::shared_ptr<CachedConnection> Shared() { return  shared_from_this(); }
         static std::shared_ptr<CachedConnection> Make(ConnectionCache&,uint16_t);
-        void SetAdaptorCacheSize(uint32_t newSize);
 };
 
 //=======================================================================================
@@ -202,7 +199,6 @@ struct ConnectionCache final {
         CachedConnection& GetSyncConnection();
         void Interrupt(bool reset_conn, bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
-        void SetMaxPoolSize(uint32_t newSize)  {m_poolSize = newSize; }
         void SyncAttachDbs();
 };
 
@@ -217,7 +213,6 @@ struct RunnableRequestBase {
         bool m_isDequeued;
         std::chrono::time_point<std::chrono::steady_clock> m_dequeuedOn;
         std::chrono::time_point<std::chrono::steady_clock> m_submittedOn;
-        bool m_requestCancel;
         RunnableRequestQueue& m_queue;
         QueryQuota m_quota;
         std::atomic_bool m_cancelled;
@@ -358,7 +353,6 @@ struct QueryHelper final {
     private:
         static std::string FormatQuery(const char* query);
         static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
-        static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
     public:

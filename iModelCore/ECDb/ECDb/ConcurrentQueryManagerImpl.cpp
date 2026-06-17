@@ -10,6 +10,7 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <optional>
+#include <mutex>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -232,7 +233,20 @@ void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableReq
 
     SyncAttachDbs();
     SetRequest(std::move(request));
-    cb(m_adaptorCache, *m_request);
+    // A query executor thread must never let an exception escape: an unhandled exception on a worker
+    // thread terminates the process, and the request's promise would never be satisfied, so callers
+    // blocked in Future::Get()/Wait() would hang forever. Convert any failure into an error response.
+    try {
+        cb(m_adaptorCache, *m_request);
+    } catch (std::exception const& ex) {
+        if (m_request != nullptr && !m_request->IsCompleted())
+            m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
+        log_error("%s unhandled exception while executing query: %s", GetTimestamp().c_str(), ex.what());
+    } catch (...) {
+        if (m_request != nullptr && !m_request->IsCompleted())
+            m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
+        log_error("%s unhandled non-standard exception while executing query.", GetTimestamp().c_str());
+    }
     ClearRequest();
 }
 //---------------------------------------------------------------------------------------
@@ -272,13 +286,6 @@ CachedConnection::~CachedConnection() {
     m_db.CloseDb();
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void CachedConnection::SetAdaptorCacheSize(uint32_t newSize) {
-    recursive_guard_t lock(m_mutexReq);
-    m_adaptorCache.SetMaxCacheSize(newSize);
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -934,8 +941,14 @@ void RunnableRequestBase::SetResponse(QueryResponse::Ptr response) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryResponse::Future RunnableRequestWithPromise::GetFuture() {
-   return QueryResponse::Future( new QueryResponse::Future::Impl([&](){
-       GetQueue().CancelRequest(GetId());
+   // Capture the queue pointer and request id by value rather than `this`. The RunnableRequest
+   // is destroyed as soon as the query completes (CachedConnection::ClearRequest), but the Future
+   // (and this cancel callback) can outlive it. Dereferencing the request here would be a
+   // use-after-free; CancelRequest(id) is a safe no-op once the request has left the queue.
+   auto* queue = &GetQueue();
+   const auto id = GetId();
+   return QueryResponse::Future( new QueryResponse::Future::Impl([queue, id](){
+       queue->CancelRequest(id);
    }, m_promise.get_future()));
 }
 
@@ -1109,15 +1122,6 @@ std::string IJsSerializable::Stringify(StringifyFormat format) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlRowProperty::List QueryHelper::GetMetaInfo(CachedQueryAdaptor& adp, bool classIdToClassNames) {
-    ECSqlRowProperty::List props;
-
-    return props;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 void ECSqlRowProperty::ToJs(BeJsValue& val) const {
     val.toObject();
     val[JClass]=m_className;
@@ -1183,6 +1187,20 @@ Utf8CP QueryResponse::StatusToString(QueryResponse::Status status) {
     return "Unknow QueryResponse::Status code";
 }
 
+//=======================================================================================
+//! Minimal rapidjson output stream that writes serialized characters directly into a
+//! std::string. Used to serialize each row's JSON straight into the shared result buffer,
+//! avoiding the per-row rapidjson::StringBuffer allocation and the temporary Utf8String
+//! (and the extra full-buffer copy) that BeJsValue::Stringify() would otherwise produce.
+//=======================================================================================
+struct StdStringOutputStream final {
+    using Ch = char;
+    std::string& m_str;
+    explicit StdStringOutputStream(std::string& str) : m_str(str) {}
+    void Put(Ch c) { m_str.push_back(c); }
+    void Flush() {}
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1197,6 +1215,14 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
     auto& options = adaptor.GetOptions();
     auto conn = cachedAdaptor.GetWorkerConn();
+    // RAII: guarantees the progress handler installed below (which captures this stack frame and the
+    // request by reference) is removed on every exit path - normal completion, error, or exception.
+    // If it were left installed, it would fire the next time this connection is reused and dereference
+    // freed memory (a production crash).
+    struct ProgressHandlerGuard final {
+        Db const* m_conn;
+        ~ProgressHandlerGuard() { if (m_conn != nullptr && m_conn->IsDbOpen()) m_conn->SetProgressHandler(nullptr); }
+    } progressHandlerGuard{ conn };
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
@@ -1215,9 +1241,6 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
         else
             runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done));
-    
-        if (conn->IsDbOpen())
-            conn->SetProgressHandler(nullptr);
     };
     auto setError = [&] (QueryResponse::Status status, std::string err) {
         runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
@@ -1248,11 +1271,15 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             return;
         } else {
             row_count = row_count + 1;
-            if (row_count == 1) {
-                result.append(rows.Stringify());
-            } else {
-                result.append(",").append(rows.Stringify());
+            if (row_count != 1) {
+                result.append(",");
             }
+            // Serialize the row's JSON directly into the result buffer. This avoids the
+            // intermediate rapidjson::StringBuffer and the temporary Utf8String (plus the
+            // extra full-buffer copy) that rows.Stringify() would create for every row.
+            StdStringOutputStream stream(result);
+            rapidjson::Writer<StdStringOutputStream> writer(stream);
+            rowsDoc.Accept(writer);
         }
 
         if (result.size() > V8_MAX_STRING_SIZE) {
@@ -1433,7 +1460,18 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             runnableQuery.GetId());
 
                         if (runnableQuery.GetRequest().UsePrimaryConnection()) {
-                            QueryHelper::Execute(adaptorCache, runnableQuery);
+                            // Primary-connection requests must run synchronously on the caller thread
+                            // (see RunnableRequestQueue::Enqueue -> ExecuteSynchronously). Executing them
+                            // here on a worker thread would prepare against the primary connection while
+                            // holding the primary ECDb mutex, reintroducing the worker/main-thread deadlock
+                            // fixed in QueryAdaptorCache::TryGet (primary ECDb mutex held while accessing
+                            // primary SQLite, vs. main thread holding primary SQLite and needing the ECDb mutex).
+                            BeAssert(false && "primary-connection request must not run on a worker thread");
+                            log_error("%s primary-connection request [id=%" PRIu32 "] reached worker thread; refusing to avoid deadlock.",
+                                GetTimestamp().c_str(), runnableQuery.GetId());
+                            runnableQuery.SetResponse(runnableQuery.CreateErrorResponse(
+                                QueryResponse::Status::Error,
+                                "primary-connection request must be executed synchronously on the caller thread"));
                         } else {
                             Savepoint txn(adaptorCache.GetConnection().GetDbR(), "concurrent_query");
                             QueryHelper::Execute(adaptorCache, runnableQuery);
@@ -1642,7 +1680,16 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::s_config = ConcurrentQuer
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Get() {
+// Serializes access to the global s_config snapshot. Config can be reset at runtime from the JS
+// main thread (ConcurrentQueryResetConfig) while worker threads read it during query execution, so
+// Get() returns a copy taken under this lock rather than a reference into the shared global.
+static std::mutex& GetConfigMutex() {
+    static std::mutex s_configMutex;
+    return s_configMutex;
+}
+
+ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::Get() {
+    std::lock_guard<std::mutex> lock(GetConfigMutex());
     return s_config;
 }
 
@@ -1650,8 +1697,11 @@ const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Get() {
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Reset(std::optional<Config> conf) {
-    s_config = conf.value_or(ConcurrentQueryMgr::Config::GetFromEnv());
+ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::Reset(std::optional<Config> conf) {
+    // Compute the (possibly env-derived) new config outside the lock; only the swap needs protection.
+    Config newConf = conf.value_or(ConcurrentQueryMgr::Config::GetFromEnv());
+    std::lock_guard<std::mutex> lock(GetConfigMutex());
+    s_config = newConf;
     return s_config;
 }
 
