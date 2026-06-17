@@ -3142,6 +3142,414 @@ TEST_F(SchemaMergerTests, AddNewSchemaReferencingAnotherNewSchema)
     CompareResults(expectedSchemasXml, result);
     }
 
+// The following family of tests targets the dependency-ordering problem in the merge
+// hydration loop: a brand-new (right-only) schema that references a *newer* version of a
+// schema which already exists on the left (so the referenced schema is "Modified", not
+// "New"). The left pre-fill copies the referenced schema into the result at its OLD
+// content; if the new schema is copied before the referenced schema has been merged up to
+// its new content, CopySchema resolves the reference (by name, SchemaMatchType::Latest) to
+// the stale copy and fails to find the item it needs. This is the production failure seen
+// in the connector framework ("Schema '...' from right side failed to be copied." together
+// with "Multiple copies of schemas were found."). Each case below exercises a different
+// hydration sub-path (base class, custom attribute class, property type, transitive chain,
+// and a left-only consumer of the same upgraded schema).
+
+/*---------------------------------------------------------------------------------**//**
+* A new schema derives a class from a base class that only exists in the upgraded
+* (Modified) version of an existing referenced schema.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, NewSchemaReferencesUpgradedReference_BaseClass)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+          <ECEntityClass typeName="BaseB" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="NewClass">
+            <BaseClass>ref:BaseB</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+          <ECEntityClass typeName="BaseB" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="NewClass">
+            <BaseClass>ref:BaseB</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A new schema applies a custom attribute whose CA class only exists in the upgraded
+* (Modified) version of an existing referenced schema. This is the closest mirror of the
+* production IfcApplicationDomain failure.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, NewSchemaReferencesUpgradedReference_CustomAttribute)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="IsSpecial" appliesTo="Any" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECCustomAttributes>
+              <IsSpecial xmlns="RefSchema.02.00.00" />
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="IsSpecial" appliesTo="Any" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECCustomAttributes>
+              <IsSpecial xmlns="RefSchema.02.00.00" />
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A new schema declares a struct property whose struct type only exists in the upgraded
+* (Modified) version of an existing referenced schema.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, NewSchemaReferencesUpgradedReference_PropertyType)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECStructClass typeName="MyStruct">
+            <ECProperty propertyName="x" typeName="int" />
+          </ECStructClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECStructProperty propertyName="s" typeName="ref:MyStruct" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECStructClass typeName="MyStruct">
+            <ECProperty propertyName="x" typeName="int" />
+          </ECStructClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECStructProperty propertyName="s" typeName="ref:MyStruct" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A transitive chain of two new schemas built on top of an upgraded (Modified) referenced
+* schema: NewMid references the upgraded RefSchema and NewTop references NewMid. Forces a
+* correct bottom-up ordering across two levels of new schemas on a modified base.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, NewSchemaChainReferencesUpgradedReference)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+          <ECEntityClass typeName="BaseB" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewMid" alias="mid" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="MidClass">
+            <BaseClass>ref:BaseB</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewTop" alias="top" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="NewMid" version="01.00.00" alias="mid"/>
+          <ECEntityClass typeName="TopClass">
+            <BaseClass>mid:MidClass</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+          <ECEntityClass typeName="BaseB" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewMid" alias="mid" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="MidClass">
+            <BaseClass>ref:BaseB</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewTop" alias="top" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="NewMid" version="01.00.00" alias="mid"/>
+          <ECEntityClass typeName="TopClass">
+            <BaseClass>mid:MidClass</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A left-only (Deleted) consumer and a new (right-only) consumer both reference the same
+* schema that is being upgraded in place. Verifies the in-place upgrade keeps the left-only
+* consumer's reference valid (its serialized reference version follows the live upgraded
+* schema to 02.00.00) while the new consumer resolves the newly added item.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, LeftOnlyAndNewSchemaReferenceUpgradedReference)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="LeftConsumer" alias="lc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
+          <ECEntityClass typeName="LeftClass">
+            <BaseClass>ref:BaseA</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+          <ECEntityClass typeName="BaseB" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="NewClass">
+            <BaseClass>ref:BaseB</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseA" />
+          <ECEntityClass typeName="BaseB" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="LeftConsumer" alias="lc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="LeftClass">
+            <BaseClass>ref:BaseA</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewConsumer" alias="nc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="02.00.00" alias="ref"/>
+          <ECEntityClass typeName="NewClass">
+            <BaseClass>ref:BaseB</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Regression guard for the inverse ordering constraint (the case PR #1450 fixed): a
+* Modified schema gains a NEW reference to a brand-new (right-only) schema and uses a CA
+* class defined in it. This must keep passing after the hydration loop is reordered, since
+* the new schema has to be hydrated before the modified schema is merged.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, ModifiedSchemaAddsReferenceToNewSchema)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MainSchema" alias="main" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A" />
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewRef" alias="nref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="IsSpecial" appliesTo="Any" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MainSchema" alias="main" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="NewRef" version="01.00.00" alias="nref"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <IsSpecial xmlns="NewRef.01.00.00" />
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="NewRef" alias="nref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="IsSpecial" appliesTo="Any" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MainSchema" alias="main" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="NewRef" version="01.00.00" alias="nref"/>
+          <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+              <IsSpecial xmlns="NewRef.01.00.00" />
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
