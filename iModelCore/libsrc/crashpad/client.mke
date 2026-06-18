@@ -5,14 +5,6 @@
 # client.mke - Build crashpad client via vcpkg, deliver as CrashpadClient.
 #---------------------------------------------------------------------------------------------
 
-# Toggle for rollout/testing:
-#   - default: build crashpad client via vcpkg (this file)
-#   - legacy:  pass -dUSE_LEGACY_CRASHPAD_CLIENT_MKE=1 to build via client_legacy.mke
-%if defined (USE_LEGACY_CRASHPAD_CLIENT_MKE)
-    %include $(_MakeFilePath)client_legacy.mke
-    %return
-%endif
-
 %include mdl.mki
 
 appName             = CrashpadClient
