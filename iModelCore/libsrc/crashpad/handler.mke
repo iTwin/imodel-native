@@ -15,10 +15,6 @@
 
 %include mdl.mki
 
-%if $(TARGET_PLATFORM)=="Windows"
-	%error Need to comment out this line to make it compile
-%endif
-
 appName             = CrashpadHandler
 crashpadDir         = $(_MakeFilePath)
 libsrcDir           = $(crashpadDir)../
@@ -32,7 +28,9 @@ o                   = $(OutputRootDir)build/$(appName)/
 
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
-%if defined (DEBUG)
+%if $(TARGET_PLATFORM)=="Windows"
+	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
+%elif defined (DEBUG)
 	vcpkgHandlerExe     = $(vcpkgTripletDir)debug/tools/crashpad_handler$(exeext)
 %else
 	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad/crashpad_handler$(exeext)

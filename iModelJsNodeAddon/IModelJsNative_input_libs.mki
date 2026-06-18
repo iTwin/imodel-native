@@ -48,14 +48,6 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libpskernel.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinVisualization.a
 %endif
 
-%if defined (USING_BREAKPAD)
-%if $(USING_BREAKPAD) == 1
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad_client.a
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad.a
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libdisasm.a
-%endif
-%endif
-
 %if defined(BENTLEYCONFIG_CRASHPAD)
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libCrashpadClient.a
 %endif
@@ -91,14 +83,6 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBRepCore$(libext)
 
 %if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinVisualization$(libext)
-%endif
-
-%if defined (USING_BREAKPAD)
-%if $(USING_BREAKPAD) == 1
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libbreakpad.lib
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libbreakpad_client.lib
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libdisasm.lib
-%endif
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)

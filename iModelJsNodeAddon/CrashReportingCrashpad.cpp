@@ -2,17 +2,11 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <Bentley/BentleyConfig.h>
+
+#define NOMINMAX
+
+#include "IModelJsNative.h"
 #include <Bentley/Desktop/FileSystem.h>
-
-#ifdef BENTLEY_WIN32
-    #include <windows.h>
-#endif
-
-#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEY_WIN32)
-    #error This file is for Linux, macOS, and Windows only
-#endif
 
 #include <crashpad/client/crash_report_database.h>
 #include <crashpad/client/settings.h>
@@ -20,7 +14,6 @@
 #include <crashpad/client/crashpad_info.h>
 
 #undef MAP_TYPE // linux.h #define's this, while ECSchema.h uses it as a template parameter name
-#include "IModelJsNative.h"
 
 using namespace std;
 using namespace crashpad;
@@ -35,6 +28,33 @@ static void InitFilePath(base::FilePath& filePath, BeFileNameCR fileName)
     filePath = base::FilePath(fileName.c_str());
 #else
     filePath = base::FilePath(Utf8String(fileName).c_str());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetEnvironmentVariable(std::string& value, const char* variableName)
+    {
+    value.clear();
+#ifdef BENTLEY_WIN32
+    char* buf = nullptr;
+    size_t len = 0;
+    if (_dupenv_s(&buf, &len, variableName) == 0 && buf != nullptr)
+        {
+        value.assign(buf);
+        free(buf);
+        return true;
+        }
+    return false;
+#else
+    const char* env = getenv(variableName);
+    if (env != nullptr)
+        {
+        value.assign(env);
+        return true;
+        }
+    return false;
 #endif
     }
 
@@ -70,7 +90,9 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     if (NULL == getenv("LINUX_MINIDUMP_ENABLED"))
         return;
 #endif
-    if (NULL == getenv("IMODEL_ADDON_MINIDUMP_ENABLED"))
+    
+    std::string minidumpEnabledStr;
+    if (!GetEnvironmentVariable(minidumpEnabledStr, "IMODEL_ADDON_MINIDUMP_ENABLED"))
         return;
     
     //.............................................................................................
@@ -114,8 +136,8 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         }
 
     // WIP: Check for presence of upload URL and/or config option to determine whether to attempt uploads.
-    Utf8CP reportingUrlEnv = getenv("MINIDUMP_UPLOAD_URL");
-    bool hasReportingUrlEnv = !Utf8String::IsNullOrEmpty(reportingUrlEnv);
+    std::string reportingUrlEnv;
+    bool hasReportingUrlEnv = GetEnvironmentVariable(reportingUrlEnv, "MINIDUMP_UPLOAD_URL");
     
     database->GetSettings()->SetUploadsEnabled(hasReportingUrlEnv);
 
@@ -143,8 +165,8 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     
     // backtrace.io requires some manual annotations.
     std::map<std::string, std::string> processAnnotations;
-    Utf8CP backtraceToken = getenv("MINIDUMP_UPLOAD_BACKTRACE_TOKEN");
-    if (!Utf8String::IsNullOrEmpty(backtraceToken))
+    std::string backtraceToken;
+    if (GetEnvironmentVariable(backtraceToken, "MINIDUMP_UPLOAD_BACKTRACE_TOKEN"))
         {
         processAnnotations["format"] = "minidump";
         processAnnotations["token"] = backtraceToken;

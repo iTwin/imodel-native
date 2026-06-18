@@ -64,7 +64,13 @@ always:
 #   Merge vcpkg crashpad component archives into one output expected by downstream.
 #--------------------------------------------------------------------------------------
 CrashpadClientOut      = $(o)$(stlibprefix)$(appName)$(stlibext)
-%if defined (DEBUG)
+%if $(TARGET_PLATFORM) == "Windows"
+    vcpkgCrashpadClient    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
+    vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
+    vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
+    vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+    vcpkgMigOutput         = $(vcpkgLibDir)$(stlibprefix)mig_output$(stlibext)
+%elif defined (DEBUG)
     vcpkgCrashpadClient    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
     vcpkgCrashpadCommon    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
     vcpkgCrashpadUtil      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
