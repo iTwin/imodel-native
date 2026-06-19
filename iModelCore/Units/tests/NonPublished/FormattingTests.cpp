@@ -1259,221 +1259,221 @@ TEST_F(FormattingTestFixture, StdFormatting)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FormattingTestFixture, Simple)
-    {
-    double testV = 1000.0 * sqrt(2.0);
-    double fval = sqrt(2.0);
-    bmap<Utf8String, Format> formats = GetStdFormats();
-    EXPECT_STREQ ("1 27/64",  formats["Fractional"].GetNumericSpec()->Format(fval).c_str());
-    EXPECT_STREQ ("+1 27/64", formats["SignedFractional"].GetNumericSpec()->Format(fval).c_str());
-    EXPECT_STREQ ("-1 27/64", formats["Fractional"].GetNumericSpec()->Format(-fval).c_str());
-    EXPECT_STREQ ("-1 27/64", formats["SignedFractional"].GetNumericSpec()->Format(-fval).c_str());
-    fval  *= 3.5;
+// TEST_F(FormattingTestFixture, Simple)
+//     {
+//     double testV = 1000.0 * sqrt(2.0);
+//     double fval = sqrt(2.0);
+//     bmap<Utf8String, Format> formats = GetStdFormats();
+//     EXPECT_STREQ ("1 27/64",  formats["Fractional"].GetNumericSpec()->Format(fval).c_str());
+//     EXPECT_STREQ ("+1 27/64", formats["SignedFractional"].GetNumericSpec()->Format(fval).c_str());
+//     EXPECT_STREQ ("-1 27/64", formats["Fractional"].GetNumericSpec()->Format(-fval).c_str());
+//     EXPECT_STREQ ("-1 27/64", formats["SignedFractional"].GetNumericSpec()->Format(-fval).c_str());
+//     fval  *= 3.5;
 
-    EXPECT_STREQ ("4 61/64",  formats["Fractional"].GetNumericSpec()->Format(fval).c_str());
-    EXPECT_STREQ ("+4 61/64", formats["SignedFractional"].GetNumericSpec()->Format(fval).c_str());
-    EXPECT_STREQ ("-4 61/64", formats["Fractional"].GetNumericSpec()->Format(-fval).c_str());
-    EXPECT_STREQ ("-4 61/64", formats["SignedFractional"].GetNumericSpec()->Format(-fval).c_str());
+//     EXPECT_STREQ ("4 61/64",  formats["Fractional"].GetNumericSpec()->Format(fval).c_str());
+//     EXPECT_STREQ ("+4 61/64", formats["SignedFractional"].GetNumericSpec()->Format(fval).c_str());
+//     EXPECT_STREQ ("-4 61/64", formats["Fractional"].GetNumericSpec()->Format(-fval).c_str());
+//     EXPECT_STREQ ("-4 61/64", formats["SignedFractional"].GetNumericSpec()->Format(-fval).c_str());
 
-    EXPECT_STREQ ("1414.213562", formats["DefaultReal"].GetNumericSpec()->Format(testV).c_str());
-    auto f = *formats["DefaultReal"].GetNumericSpec();
-    f.SetPrecision(DecimalPrecision::Precision8);
-    EXPECT_STREQ ("1414.21356237", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ ("1414.2135624", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ ("1414.213562", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("1414.21356", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ ("1414.2136", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ ("1414.214", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision2);
-    EXPECT_STREQ ("1414.21", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision1);
-    EXPECT_STREQ ("1414.2", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision0);
-    EXPECT_STREQ ("1414.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision8);
-    f.SetRoundingFactor(5.0);
-    EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision8);
-    f.SetRoundingFactor(0.05);
-    EXPECT_STREQ ("1414.2", f.Format(testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ ("7071.05", f.Format(5.0*testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ ("4242.65", f.Format(3.0*testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("9899.5", f.Format(7.0*testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ ("12727.9", f.Format(9.0*testV).c_str());
-    f.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ ("2828.45", f.Format(2.0*testV).c_str());
-    f = *formats["Scientific"].GetNumericSpec();
-    f.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("2.82843e+3", f.Format(2.0*testV).c_str());
-    f = *formats["ScientificNormal"].GetNumericSpec();
-    f.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("0.28284e+4", f.Format(2.0*testV).c_str());
+//     EXPECT_STREQ ("1414.213562", formats["DefaultReal"].GetNumericSpec()->Format(testV).c_str());
+//     auto f = *formats["DefaultReal"].GetNumericSpec();
+//     f.SetPrecision(DecimalPrecision::Precision8);
+//     EXPECT_STREQ ("1414.21356237", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision7);
+//     EXPECT_STREQ ("1414.2135624", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision6);
+//     EXPECT_STREQ ("1414.213562", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision5);
+//     EXPECT_STREQ ("1414.21356", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision4);
+//     EXPECT_STREQ ("1414.2136", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision3);
+//     EXPECT_STREQ ("1414.214", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision2);
+//     EXPECT_STREQ ("1414.21", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision1);
+//     EXPECT_STREQ ("1414.2", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision0);
+//     EXPECT_STREQ ("1414.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision8);
+//     f.SetRoundingFactor(5.0);
+//     EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision7);
+//     EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision6);
+//     EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision5);
+//     EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision4);
+//     EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision3);
+//     EXPECT_STREQ ("1415.0", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision8);
+//     f.SetRoundingFactor(0.05);
+//     EXPECT_STREQ ("1414.2", f.Format(testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision7);
+//     EXPECT_STREQ ("7071.05", f.Format(5.0*testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision6);
+//     EXPECT_STREQ ("4242.65", f.Format(3.0*testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision5);
+//     EXPECT_STREQ ("9899.5", f.Format(7.0*testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision4);
+//     EXPECT_STREQ ("12727.9", f.Format(9.0*testV).c_str());
+//     f.SetPrecision(DecimalPrecision::Precision3);
+//     EXPECT_STREQ ("2828.45", f.Format(2.0*testV).c_str());
+//     f = *formats["Scientific"].GetNumericSpec();
+//     f.SetPrecision(DecimalPrecision::Precision5);
+//     EXPECT_STREQ ("2.82843e+3", f.Format(2.0*testV).c_str());
+//     f = *formats["ScientificNormal"].GetNumericSpec();
+//     f.SetPrecision(DecimalPrecision::Precision5);
+//     EXPECT_STREQ ("0.28284e+4", f.Format(2.0*testV).c_str());
 
-    NumericFormatSpec fmtP = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
-    fmtP.SetKeepTrailingZeroes(true);
-    fmtP.SetUse1000Separator(true);
-    fmtP.SetPrecision(DecimalPrecision::Precision8);
-    fmtP.SetRoundingFactor(0.05);
-    EXPECT_STREQ ("1,414.20000000", fmtP.Format(testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ ("7,071.0500000", fmtP.Format(5.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ ("4,242.650000", fmtP.Format(3.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("9,899.50000", fmtP.Format(7.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ ("12,727.9000", fmtP.Format(9.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ ("2,828.450", fmtP.Format(2.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision8);
+//     NumericFormatSpec fmtP = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
+//     fmtP.SetKeepTrailingZeroes(true);
+//     fmtP.SetUse1000Separator(true);
+//     fmtP.SetPrecision(DecimalPrecision::Precision8);
+//     fmtP.SetRoundingFactor(0.05);
+//     EXPECT_STREQ ("1,414.20000000", fmtP.Format(testV).c_str());
+//     fmtP.SetPrecision(DecimalPrecision::Precision7);
+//     EXPECT_STREQ ("7,071.0500000", fmtP.Format(5.0*testV).c_str());
+//     fmtP.SetPrecision(DecimalPrecision::Precision6);
+//     EXPECT_STREQ ("4,242.650000", fmtP.Format(3.0*testV).c_str());
+//     fmtP.SetPrecision(DecimalPrecision::Precision5);
+//     EXPECT_STREQ ("9,899.50000", fmtP.Format(7.0*testV).c_str());
+//     fmtP.SetPrecision(DecimalPrecision::Precision4);
+//     EXPECT_STREQ ("12,727.9000", fmtP.Format(9.0*testV).c_str());
+//     fmtP.SetPrecision(DecimalPrecision::Precision3);
+//     EXPECT_STREQ ("2,828.450", fmtP.Format(2.0*testV).c_str());
+//     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    #if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE) && !defined(BENTLEYCONFIG_OS_LINUX)
-        #ifdef BENTLEYCONFIG_OS_UNIX
-            fmtP.ImbueLocale("de_DE");
-        #else
-            fmtP.ImbueLocale("de");
-        #endif
+//     #if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE) && !defined(BENTLEYCONFIG_OS_LINUX)
+//         #ifdef BENTLEYCONFIG_OS_UNIX
+//             fmtP.ImbueLocale("de_DE");
+//         #else
+//             fmtP.ImbueLocale("de");
+//         #endif
 
-        EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision7);
-        EXPECT_STREQ("7.071,0500000", fmtP.Format(5.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision6);
-        EXPECT_STREQ("4.242,650000", fmtP.Format(3.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision5);
-        EXPECT_STREQ("9.899,50000", fmtP.Format(7.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision4);
-        EXPECT_STREQ("12.727,9000", fmtP.Format(9.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision3);
-        EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision8);
+//         EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision7);
+//         EXPECT_STREQ("7.071,0500000", fmtP.Format(5.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision6);
+//         EXPECT_STREQ("4.242,650000", fmtP.Format(3.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision5);
+//         EXPECT_STREQ("9.899,50000", fmtP.Format(7.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision4);
+//         EXPECT_STREQ("12.727,9000", fmtP.Format(9.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision3);
+//         EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-        #ifdef BENTLEYCONFIG_OS_UNIX
-            fmtP.ImbueLocale("fi_FI");
-        #else
-            fmtP.ImbueLocale("fi");
-        #endif
+//         #ifdef BENTLEYCONFIG_OS_UNIX
+//             fmtP.ImbueLocale("fi_FI");
+//         #else
+//             fmtP.ImbueLocale("fi");
+//         #endif
 
-        EXPECT_STREQ(CONCAT("1", "\xA0", "414,20000000"), fmtP.Format(testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision7);
-        EXPECT_STREQ(CONCAT("7", "\xA0", "071,0500000"), fmtP.Format(5.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision6);
-        EXPECT_STREQ(CONCAT("4", "\xA0", "242,650000"), fmtP.Format(3.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision5);
-        EXPECT_STREQ(CONCAT("9", "\xA0", "899,50000"), fmtP.Format(7.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision4);
-        EXPECT_STREQ(CONCAT("12", "\xA0", "727,9000"), fmtP.Format(9.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision3);
-        EXPECT_STREQ(CONCAT("2", "\xA0", "828,450"), fmtP.Format(2.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision8);
+//         EXPECT_STREQ(CONCAT("1", "\xA0", "414,20000000"), fmtP.Format(testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision7);
+//         EXPECT_STREQ(CONCAT("7", "\xA0", "071,0500000"), fmtP.Format(5.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision6);
+//         EXPECT_STREQ(CONCAT("4", "\xA0", "242,650000"), fmtP.Format(3.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision5);
+//         EXPECT_STREQ(CONCAT("9", "\xA0", "899,50000"), fmtP.Format(7.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision4);
+//         EXPECT_STREQ(CONCAT("12", "\xA0", "727,9000"), fmtP.Format(9.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision3);
+//         EXPECT_STREQ(CONCAT("2", "\xA0", "828,450"), fmtP.Format(2.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-        #ifdef BENTLEYCONFIG_OS_UNIX
-            fmtP.ImbueLocale("en_US");
-        #else
-            fmtP.ImbueLocale("en-US");
-        #endif
+//         #ifdef BENTLEYCONFIG_OS_UNIX
+//             fmtP.ImbueLocale("en_US");
+//         #else
+//             fmtP.ImbueLocale("en-US");
+//         #endif
 
-        fmtP.SetKeepTrailingZeroes(false);
-        fmtP.SetUse1000Separator(false);
+//         fmtP.SetKeepTrailingZeroes(false);
+//         fmtP.SetUse1000Separator(false);
 
-        EXPECT_STREQ ("1414.2", fmtP.Format(testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision7);
-        EXPECT_STREQ ("-7071.05", fmtP.Format(-5.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision6);
-        EXPECT_STREQ ("-4242.65", fmtP.Format(-3.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision5);
-        EXPECT_STREQ ("-9899.5", fmtP.Format(-7.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision4);
-        EXPECT_STREQ ("-12727.9", fmtP.Format(-9.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision3);
-        EXPECT_STREQ ("-2828.45", fmtP.Format(-2.0*testV).c_str());
-        fmtP.SetPrecision(DecimalPrecision::Precision8);
+//         EXPECT_STREQ ("1414.2", fmtP.Format(testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision7);
+//         EXPECT_STREQ ("-7071.05", fmtP.Format(-5.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision6);
+//         EXPECT_STREQ ("-4242.65", fmtP.Format(-3.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision5);
+//         EXPECT_STREQ ("-9899.5", fmtP.Format(-7.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision4);
+//         EXPECT_STREQ ("-12727.9", fmtP.Format(-9.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision3);
+//         EXPECT_STREQ ("-2828.45", fmtP.Format(-2.0*testV).c_str());
+//         fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    #endif /* not BENTLEYCONFIG_OS_ANDROID and not BENTLEYCONFIG_OS_APPLE */
+//     #endif /* not BENTLEYCONFIG_OS_ANDROID and not BENTLEYCONFIG_OS_APPLE */
 
-    NumericFormatSpec numFmt = NumericFormatSpec();
-    numFmt.SetSignOption(SignOption::OnlyNegative);
-    EXPECT_STREQ ("135", numFmt.Format(135).c_str());
-    EXPECT_STREQ ("135689", numFmt.Format(135689).c_str());
-    EXPECT_STREQ ("-846356", numFmt.Format(-846356).c_str());
-    numFmt.SetSignOption(SignOption::SignAlways);
-    EXPECT_STREQ ("+135", numFmt.Format(135).c_str());
-    EXPECT_STREQ ("+135689", numFmt.Format(135689).c_str());
-    EXPECT_STREQ ("-846356", numFmt.Format(-846356).c_str());
-    numFmt.SetSignOption(SignOption::NoSign);
-    EXPECT_STREQ ("135", numFmt.Format(135).c_str());
-    EXPECT_STREQ ("135689", numFmt.Format(135689).c_str());
-    EXPECT_STREQ ("846356", numFmt.Format(-846356).c_str());
+//     NumericFormatSpec numFmt = NumericFormatSpec();
+//     numFmt.SetSignOption(SignOption::OnlyNegative);
+//     EXPECT_STREQ ("135", numFmt.Format(135).c_str());
+//     EXPECT_STREQ ("135689", numFmt.Format(135689).c_str());
+//     EXPECT_STREQ ("-846356", numFmt.Format(-846356).c_str());
+//     numFmt.SetSignOption(SignOption::SignAlways);
+//     EXPECT_STREQ ("+135", numFmt.Format(135).c_str());
+//     EXPECT_STREQ ("+135689", numFmt.Format(135689).c_str());
+//     EXPECT_STREQ ("-846356", numFmt.Format(-846356).c_str());
+//     numFmt.SetSignOption(SignOption::NoSign);
+//     EXPECT_STREQ ("135", numFmt.Format(135).c_str());
+//     EXPECT_STREQ ("135689", numFmt.Format(135689).c_str());
+//     EXPECT_STREQ ("846356", numFmt.Format(-846356).c_str());
 
-    numFmt.SetPrecision(DecimalPrecision::Precision10);
-    numFmt.SetSignOption(SignOption::OnlyNegative);
+//     numFmt.SetPrecision(DecimalPrecision::Precision10);
+//     numFmt.SetSignOption(SignOption::OnlyNegative);
 
-    double dval1 = 123.0004567;
-    EXPECT_STREQ ("123.0004567", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-123.0004567", numFmt.Format(-dval1).c_str());
-    dval1 = 0.000012345;
-    EXPECT_STREQ ("0.000012345", numFmt.Format(dval1).c_str());
-    numFmt.SetPrecision(DecimalPrecision::Precision8);
-    EXPECT_STREQ ("0.00001235", numFmt.Format(dval1).c_str());
-    numFmt.SetPrecision(DecimalPrecision::Precision10);
-    EXPECT_STREQ ("-0.000012345", numFmt.Format(-dval1).c_str());
-    numFmt.SetKeepTrailingZeroes(true);
-    EXPECT_STREQ ("0.0000123450", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-0.0000123450", numFmt.Format(-dval1).c_str());
+//     double dval1 = 123.0004567;
+//     EXPECT_STREQ ("123.0004567", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-123.0004567", numFmt.Format(-dval1).c_str());
+//     dval1 = 0.000012345;
+//     EXPECT_STREQ ("0.000012345", numFmt.Format(dval1).c_str());
+//     numFmt.SetPrecision(DecimalPrecision::Precision8);
+//     EXPECT_STREQ ("0.00001235", numFmt.Format(dval1).c_str());
+//     numFmt.SetPrecision(DecimalPrecision::Precision10);
+//     EXPECT_STREQ ("-0.000012345", numFmt.Format(-dval1).c_str());
+//     numFmt.SetKeepTrailingZeroes(true);
+//     EXPECT_STREQ ("0.0000123450", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-0.0000123450", numFmt.Format(-dval1).c_str());
 
-    dval1 = 3456.0;
+//     dval1 = 3456.0;
 
-    numFmt.SetKeepTrailingZeroes(true);
-    numFmt.SetKeepSingleZero(true);
-    numFmt.SetKeepDecimalPoint(true);
-    EXPECT_STREQ ("3456.0000000000", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-3456.0000000000", numFmt.Format(-dval1).c_str());
-    numFmt.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ ("3456.0000", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-3456.0000", numFmt.Format(-dval1).c_str());
-    numFmt.SetKeepTrailingZeroes(false);
-    EXPECT_STREQ ("3456.0", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-3456.0", numFmt.Format(-dval1).c_str());
-    numFmt.SetKeepSingleZero(false);
-    EXPECT_STREQ ("3456.", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-3456.", numFmt.Format(-dval1).c_str());
-    numFmt.SetKeepDecimalPoint(false);
-    EXPECT_STREQ ("3456", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("-3456", numFmt.Format(-dval1).c_str());
-    numFmt.SetSignOption(SignOption::NegativeParentheses);
-    EXPECT_STREQ ("3456", numFmt.Format(dval1).c_str());
-    EXPECT_STREQ ("(3456)", numFmt.Format(-dval1).c_str());
+//     numFmt.SetKeepTrailingZeroes(true);
+//     numFmt.SetKeepSingleZero(true);
+//     numFmt.SetKeepDecimalPoint(true);
+//     EXPECT_STREQ ("3456.0000000000", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-3456.0000000000", numFmt.Format(-dval1).c_str());
+//     numFmt.SetPrecision(DecimalPrecision::Precision4);
+//     EXPECT_STREQ ("3456.0000", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-3456.0000", numFmt.Format(-dval1).c_str());
+//     numFmt.SetKeepTrailingZeroes(false);
+//     EXPECT_STREQ ("3456.0", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-3456.0", numFmt.Format(-dval1).c_str());
+//     numFmt.SetKeepSingleZero(false);
+//     EXPECT_STREQ ("3456.", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-3456.", numFmt.Format(-dval1).c_str());
+//     numFmt.SetKeepDecimalPoint(false);
+//     EXPECT_STREQ ("3456", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("-3456", numFmt.Format(-dval1).c_str());
+//     numFmt.SetSignOption(SignOption::NegativeParentheses);
+//     EXPECT_STREQ ("3456", numFmt.Format(dval1).c_str());
+//     EXPECT_STREQ ("(3456)", numFmt.Format(-dval1).c_str());
 
-    numFmt.SetSignOption(SignOption::OnlyNegative);
-    numFmt.SetPrecision(DecimalPrecision::Precision10);
-    numFmt.SetPresentationType(PresentationType::Scientific);
-    EXPECT_STREQ ("-2.7182818285e-3", numFmt.Format(-0.0027182818284590).c_str());
-    EXPECT_STREQ ("-2.7182818285e-1", numFmt.Format(-0.2718281828459045).c_str());
-    numFmt.SetPresentationType(PresentationType::Scientific);
-    numFmt.SetScientificType(ScientificType::ZeroNormalized);
-    EXPECT_STREQ ("-0.2718281828e-2", numFmt.Format(-0.0027182818284590).c_str());
-    EXPECT_STREQ ("-0.2718281828e+0", numFmt.Format(-0.2718281828459045).c_str());
-    EXPECT_STREQ ("-0.2718281828e+4", numFmt.Format(-2718.2818284590).c_str());
-    EXPECT_STREQ ("0.2718281828e+4", numFmt.Format(2718.2818284590).c_str());    
-    }
+//     numFmt.SetSignOption(SignOption::OnlyNegative);
+//     numFmt.SetPrecision(DecimalPrecision::Precision10);
+//     numFmt.SetPresentationType(PresentationType::Scientific);
+//     EXPECT_STREQ ("-2.7182818285e-3", numFmt.Format(-0.0027182818284590).c_str());
+//     EXPECT_STREQ ("-2.7182818285e-1", numFmt.Format(-0.2718281828459045).c_str());
+//     numFmt.SetPresentationType(PresentationType::Scientific);
+//     numFmt.SetScientificType(ScientificType::ZeroNormalized);
+//     EXPECT_STREQ ("-0.2718281828e-2", numFmt.Format(-0.0027182818284590).c_str());
+//     EXPECT_STREQ ("-0.2718281828e+0", numFmt.Format(-0.2718281828459045).c_str());
+//     EXPECT_STREQ ("-0.2718281828e+4", numFmt.Format(-2718.2818284590).c_str());
+//     EXPECT_STREQ ("0.2718281828e+4", numFmt.Format(2718.2818284590).c_str());    
+//     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

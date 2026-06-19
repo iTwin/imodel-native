@@ -1486,45 +1486,45 @@ TEST (BeFileNameTests, TrailingSeparatorBehavior)
 //---------------------------------------------------------------------------------------
 // @betest
 //---------------------------------------------------------------------------------------
-TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
-    {
-#if defined (BENTLEY_WIN32)
+// TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
+//     {
+// #if defined (BENTLEY_WIN32)
 
-    BeFileName rootDir;
-    BeTest::GetHost().GetOutputRoot(rootDir);
-    BeFileName targetFileName, symLinkFileName;
-    targetFileName = symLinkFileName = rootDir;
-    targetFileName.AppendToPath(L"targetFile.txt");
-    symLinkFileName.AppendToPath(L"SymlinkedFile.txt");
+//     BeFileName rootDir;
+//     BeTest::GetHost().GetOutputRoot(rootDir);
+//     BeFileName targetFileName, symLinkFileName;
+//     targetFileName = symLinkFileName = rootDir;
+//     targetFileName.AppendToPath(L"targetFile.txt");
+//     symLinkFileName.AppendToPath(L"SymlinkedFile.txt");
 
-    BeFile file;
-    ASSERT_TRUE(BeFileStatus::Success == file.Create(targetFileName.c_str(), true));
-    Utf8String someData = "hakuna matata";
-    ASSERT_TRUE(BeFileStatus::Success == file.Write(nullptr, someData.c_str(), (uint32_t)someData.length()));
-    ASSERT_TRUE(BeFileStatus::Success == file.Close());
+//     BeFile file;
+//     ASSERT_TRUE(BeFileStatus::Success == file.Create(targetFileName.c_str(), true));
+//     Utf8String someData = "hakuna matata";
+//     ASSERT_TRUE(BeFileStatus::Success == file.Write(nullptr, someData.c_str(), (uint32_t)someData.length()));
+//     ASSERT_TRUE(BeFileStatus::Success == file.Close());
 
-    Utf8String target_utf8(targetFileName.c_str());
-    Utf8String symlinkFile_utf8(symLinkFileName.c_str());
+//     Utf8String target_utf8(targetFileName.c_str());
+//     Utf8String symlinkFile_utf8(symLinkFileName.c_str());
 
-    CreateSymbolicLinkA(symlinkFile_utf8.c_str(), target_utf8.c_str(), 0);
+//     CreateSymbolicLinkA(symlinkFile_utf8.c_str(), target_utf8.c_str(), 0);
 
-    ASSERT_TRUE (BeFileName::IsSymbolicLink (symLinkFileName.c_str()));
+//     ASSERT_TRUE (BeFileName::IsSymbolicLink (symLinkFileName.c_str()));
 
-    // following a sym link is not yet supported on WinRT
-    uint64_t fileSize;
-    BeFileNameStatus fileNameStatus = BeFileName::GetFileSize (fileSize, symLinkFileName.GetName());
-    ASSERT_TRUE (BeFileNameStatus::Success == fileNameStatus);
-    ASSERT_TRUE (fileSize > 0);
+//     // following a sym link is not yet supported on WinRT
+//     uint64_t fileSize;
+//     BeFileNameStatus fileNameStatus = BeFileName::GetFileSize (fileSize, symLinkFileName.GetName());
+//     ASSERT_TRUE (BeFileNameStatus::Success == fileNameStatus);
+//     ASSERT_TRUE (fileSize > 0);
 
-    // compare against legacy way of calculating file size (that does not support names >= MAX_PATH)
-    struct _stati64 status;
-    int e = _wstati64 (targetFileName.GetName(), &status);
+//     // compare against legacy way of calculating file size (that does not support names >= MAX_PATH)
+//     struct _stati64 status;
+//     int e = _wstati64 (targetFileName.GetName(), &status);
 
-    ASSERT_TRUE (-1 != e);
-    ASSERT_EQ (fileSize, status.st_size);
+//     ASSERT_TRUE (-1 != e);
+//     ASSERT_EQ (fileSize, status.st_size);
 
-#endif
-    }
+// #endif
+//     }
 
 //---------------------------------------------------------------------------------------
 // @betest

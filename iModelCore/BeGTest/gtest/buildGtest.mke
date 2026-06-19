@@ -105,6 +105,14 @@ GUNITTEST_SYMB      = $(o)
 GUNITTEST_NOEXEC    = 1
 GTEST_MAIN_IS_SUPPLIED = 1
 
+# Some 3rd-party static libs (iTwinSQLite, iTwinOpenSSL, iTwinIcu4c, ...) embed a
+# #pragma comment(lib, "msvcrtd.lib") which triggers LNK4098 (promoted to LNK1218
+# by -WX) when linked against the release CRT (-MD). Match the workaround already
+# used by BeSQLite.mke / iModelPlatform.mke.
+%if $(TARGET_PLATFORM)=="Windows"
+    EXE_LOPT1 + -NODEFAULTLIB:msvcrtd.lib
+%endif
+
 %include $(SharedMki)gunittest.mki
 
 # Make the program executable
