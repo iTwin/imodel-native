@@ -173,6 +173,26 @@ struct PragmaSchemaView : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+// @bsiclass PragmaSchemaViewFragment
+// Returns a chosen subset of schemas as a single binary blob, in the same format as
+// schema_view, for incremental SchemaView loading.
+// The single string argument is a comma-separated list of decimal ec_Schema ids, optionally
+// prefixed with a 'v<N>;' format-version token. The id list must be dependency-closed (the
+// caller computes the reference closure; the pragma does not expand references).
+// Usage: PRAGMA schema_view_fragment('131,145,150')      -- latest format version
+//        PRAGMA schema_view_fragment('v1;131,145,150')   -- explicit format version 1
+// Result: single row, same columns as schema_view: format, formatVersion, data, schemaToken.
+//+===============+===============+===============+===============+===============+======
+struct PragmaSchemaViewFragment : PragmaManager::GlobalHandler {
+    static constexpr uint8_t CURRENT_FORMAT_VERSION = 1;
+    PragmaSchemaViewFragment():GlobalHandler("schema_view_fragment", "schema_view_fragment('[v<N>;]id,id,...') - returns the given subset of schemas as a base64-encoded binary blob string for incremental loading. Optional leading 'v<N>;' selects the format version (default: latest)."){}
+    ~PragmaSchemaViewFragment(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaSchemaViewFragment>(); }
+};
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SHA3Helper final {

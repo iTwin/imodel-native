@@ -730,6 +730,164 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
 }
 
 //---------------------------------------------------------------------------------------
+// Note on fragment testing scope: the schema_view / schema_view_fragment blob is an internal
+// contract between this C++ writer and the TypeScript reader, and it flows in one direction only.
+// Re-implementing the reader here to peek at the blob's internals would duplicate that contract and
+// rot. So the native tests stay rough - they assert the pragma produces a well-formed row and that
+// bad input is rejected. The content-level guarantees (no-leakage, exactly which schemas/classes
+// land in a view, cross-schema reference resolution) are verified in TypeScript against a live
+// iModel, where the blob is consumed by its real reader:
+//   itwinjs-core/core/backend/src/test/schema/SchemaViewFragmentLoading.test.ts
+//+---------------+---------------+---------------+---------------+---------------+------
+
+//---------------------------------------------------------------------------------------
+// Returns the ec_Schema.Id (== meta.ECSchemaDef.ECInstanceId) of a schema by name, or 0 if absent.
+//+---------------+---------------+---------------+---------------+---------------+------
+static int64_t GetSchemaIdByName(ECDbR ecdb, Utf8CP name) {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef WHERE Name=?"))
+        return 0;
+    stmt.BindText(1, name, IECSqlBinder::MakeCopy::Yes);
+    if (BE_SQLITE_ROW != stmt.Step())
+        return 0;
+    return stmt.GetValueInt64(0);
+}
+
+//---------------------------------------------------------------------------------------
+// Rough end-to-end check that the fragment pragma emits a single well-formed binary row for a
+// requested subset, and that asking for more schemas carries at least as much data. Exactly which
+// schemas/classes land in the blob, and the no-leakage guarantee, are verified in TypeScript (see
+// the scope note above) - we do not decode the blob here.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_returns_blob) {
+    // SchemaA references SchemaB and derives AClass from b:BBase; SchemaB also owns an unreferenced
+    // class. The mix gives the two-vs-one size comparison something to measure.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_fragment.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaB' alias='b' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='BBase' modifier='Abstract' />"
+        "  <ECEntityClass typeName='BOther' modifier='None'>"
+        "    <ECProperty propertyName='BOtherProp' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaA' alias='a' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECSchemaReference name='SchemaB' version='1.0.0' alias='b' />"
+        "  <ECEntityClass typeName='AClass' modifier='None'>"
+        "    <BaseClass>b:BBase</BaseClass>"
+        "    <ECProperty propertyName='AProp' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    int64_t const idA = GetSchemaIdByName(m_ecdb, "SchemaA");
+    int64_t const idB = GetSchemaIdByName(m_ecdb, "SchemaB");
+    ASSERT_GT(idA, 0);
+    ASSERT_GT(idB, 0);
+
+    // Returns the length of the (base64 text) "data" column for a fragment request, asserting it is
+    // a single well-formed binary row along the way.
+    auto fragmentDataLen = [&](Utf8StringCR idList) -> size_t {
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", idList.c_str());
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql.c_str();
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ("binary", stmt.GetValueText(0));
+        EXPECT_EQ(1, stmt.GetValueInt(1)); // formatVersion
+        Utf8CP const data = stmt.GetValueText(2);
+        EXPECT_TRUE(data != nullptr && *data != '\0') << "fragment blob must be non-empty";
+        size_t const len = data == nullptr ? 0 : strlen(data);
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "fragment pragma must return exactly one row";
+        return len;
+    };
+
+    // Asking for both schemas must carry at least as much data as asking for one - a coarse proxy
+    // that the request set actually drives what the blob holds. Exact contents are a TS concern.
+    size_t const lenA = fragmentDataLen(Utf8PrintfString("%lld", (long long)idA));
+    size_t const lenAB = fragmentDataLen(Utf8PrintfString("%lld,%lld", (long long)idA, (long long)idB));
+    EXPECT_GE(lenAB, lenA);
+}
+
+//---------------------------------------------------------------------------------------
+// The optional leading 'v<N>;' token selects the blob format version; omitting it means latest.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_version_prefix) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_fragment_ver.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    int64_t const id = GetSchemaIdByName(m_ecdb, "TestSchema");
+    ASSERT_GT(id, 0);
+
+    { // explicit 'v1;' prefix succeeds and reports format version 1
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('v1;%lld')", (long long)id);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("binary", stmt.GetValueText(0));
+        ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion
+        Utf8CP const data = stmt.GetValueText(2);
+        ASSERT_TRUE(data != nullptr && *data != '\0') << "fragment blob must be non-empty";
+    }
+
+    { // no prefix defaults to latest, also version 1
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%lld')", (long long)id);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(1));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// Malformed argument strings fail the pragma rather than emitting a partial or wrong blob.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_invalid_arguments) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_fragment_invalid.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    int64_t const id = GetSchemaIdByName(m_ecdb, "TestSchema");
+    ASSERT_GT(id, 0);
+    Utf8String const validId = Utf8PrintfString("%lld", (long long)id);
+
+    auto expectPrepareFails = [&](Utf8CP sql) {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, sql)) << sql;
+    };
+
+    expectPrepareFails("PRAGMA schema_view_fragment('')");        // empty list
+    expectPrepareFails("PRAGMA schema_view_fragment('abc')");     // non-integer id
+    expectPrepareFails("PRAGMA schema_view_fragment('v1;')");     // version present, empty list
+    expectPrepareFails("PRAGMA schema_view_fragment('v;1')");     // malformed version token (no digits)
+    expectPrepareFails("PRAGMA schema_view_fragment('vx;1')");    // malformed version token (non-digit)
+    expectPrepareFails("PRAGMA schema_view_fragment('v99;1')");   // unsupported version
+    expectPrepareFails("PRAGMA schema_view_fragment('999999999')"); // non-existent schema id
+    expectPrepareFails("PRAGMA schema_view_fragment(1)");         // integer argument, not a string
+    expectPrepareFails("PRAGMA schema_view_fragment=2");          // assignment form is read-only
+    expectPrepareFails(Utf8PrintfString("PRAGMA schema_view_fragment('%s,%s')", validId.c_str(), validId.c_str()).c_str()); // duplicate id
+
+    { // sanity: the valid id alone prepares and returns a row
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", validId.c_str());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+}
+
+//---------------------------------------------------------------------------------------
 // Regression test against the 4.0.0.1 benchmark fixture. Profile 4.0.0.1 predates the
 // EC3.2 Units/Formats migration (introduced in 4.0.0.2, ~2018). SchemaViewWriter does
 // not query any of the tables/columns added in 4.0.0.2, so the pragma must succeed

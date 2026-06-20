@@ -1034,6 +1034,115 @@ DbResult PragmaSchemaView::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pra
 	return BE_SQLITE_READONLY;
 }
 
+//=======================================================================================
+// PragmaSchemaViewFragment
+//=======================================================================================
+namespace {
+// True only for a non-empty run of ASCII decimal digits.
+bool IsAllDigits(Utf8StringCR s) {
+	if (s.empty())
+		return false;
+	for (char c : s) {
+		if (c < '0' || c > '9')
+			return false;
+	}
+	return true;
+}
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
+	auto reportError = [&](Utf8StringCR message) -> DbResult {
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0601,
+			"PRAGMA %s: %s", GetName().c_str(), message.c_str());
+		rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+		rowSet->FreezeSchemaChanges();
+		return BE_SQLITE_ERROR;
+	};
+
+	if (!val.IsString())
+		return reportError("expects a single string argument: a comma-separated list of decimal ec_Schema ids, optionally prefixed with a 'v<N>;' format-version token.");
+
+	Utf8String arg(val.GetString().c_str());
+
+	// Optional leading 'v<N>;' format-version token. The version is carried inside the one string
+	// argument because the pragma grammar allows only a single value; see the schema_view_fragment
+	// reference doc for the rationale.
+	uint8_t requestedVersion = CURRENT_FORMAT_VERSION;
+	Utf8String idList = arg;
+	size_t const semicolon = arg.find(';');
+	if (semicolon != Utf8String::npos) {
+		Utf8String versionToken = arg.substr(0, semicolon);
+		idList = arg.substr(semicolon + 1);
+		if (versionToken.size() < 2 || (versionToken[0] != 'v' && versionToken[0] != 'V'))
+			return reportError("malformed version prefix; expected 'v<N>;' (for example 'v1;').");
+		Utf8String digits = versionToken.substr(1);
+		if (!IsAllDigits(digits))
+			return reportError("malformed version prefix; expected 'v<N>;' with N a positive integer.");
+		int64_t v = (int64_t)strtoll(digits.c_str(), nullptr, 10);
+		if (v < 1 || v > CURRENT_FORMAT_VERSION)
+			return reportError(Utf8PrintfString("unsupported format version %" PRId64 ". Supported versions: 1-%d.", v, (int)CURRENT_FORMAT_VERSION));
+		requestedVersion = (uint8_t)v;
+	}
+
+	// Parse the comma-separated decimal id list into a de-duplicated set; reject any malformed or
+	// repeated id rather than silently emit a partial fragment.
+	bvector<Utf8String> tokens;
+	BeStringUtilities::Split(idList.c_str(), ",", tokens);
+	std::unordered_set<int64_t> schemaIds;
+	for (Utf8StringR token : tokens) {
+		token.Trim();
+		if (!IsAllDigits(token))
+			return reportError(Utf8PrintfString("invalid schema id '%s'; ids must be positive decimal integers.", token.c_str()));
+		int64_t id = (int64_t)strtoll(token.c_str(), nullptr, 10);
+		if (!schemaIds.insert(id).second)
+			return reportError(Utf8PrintfString("duplicate schema id %" PRId64 " in the request.", id));
+	}
+	if (schemaIds.empty())
+		return reportError("the schema id list is empty.");
+
+	SchemaViewWriter writer;
+	DbResult writeResult = writer.WriteSchemas(ecdb, schemaIds);
+	if (writeResult == BE_SQLITE_NOTFOUND)
+		return reportError("one or more requested schema ids do not exist in this connection.");
+	if (writeResult != BE_SQLITE_OK)
+		return writeResult;
+	auto const& output = writer.GetOutput();
+
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("format", PRIMITIVETYPE_String);
+	result->AppendProperty("formatVersion", PRIMITIVETYPE_Integer);
+	result->AppendProperty("data", PRIMITIVETYPE_String);
+	result->AppendProperty("schemaToken", PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+
+	// schemaToken is the whole-connection schema hash, identical to schema_view's, so a fragment and
+	// the manifest it was planned from share one cache-invalidation key.
+	Utf8String schemaToken;
+	SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA, "main", SHA3Helper::HashSize::SHA3_256);
+
+	auto row = result->AppendRow();
+	row.appendValue() = "binary";
+	row.appendValue() = (int64_t)requestedVersion;
+	row.appendValue().SetBinary(output.data(), output.size());
+	row.appendValue() = schemaToken.c_str();
+
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaSchemaViewFragment::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
+	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+	rowSet->FreezeSchemaChanges();
+	return BE_SQLITE_READONLY;
+}
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

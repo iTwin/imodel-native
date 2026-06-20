@@ -232,19 +232,8 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
             "AND hp_ca.ClassId=%" PRIi64 " ",
             (int)ECN::CustomAttributeContainerType::AnyProperty,
             m_hiddenPropertyCAClassId.value()));
-    if (!m_excludedSchemaIds.empty())
-        {
-        sql.append("WHERE c.SchemaId NOT IN (");
-        bool first = true;
-        for (auto id : m_excludedSchemaIds)
-            {
-            if (!first) sql.append(",");
-            sql.append(Utf8PrintfString("%" PRIi64, id));
-            first = false;
-            }
-        sql.append(") ");
-        }
-    sql.append("ORDER BY c.Id, p.Ordinal");
+    AppendSchemaFilter(sql, "c.SchemaId");
+    sql.append(" ORDER BY c.Id, p.Ordinal");
 
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, sql.c_str());
@@ -443,23 +432,46 @@ DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
     }
 
 //---------------------------------------------------------------------------------------
-// Helper: append WHERE <col> NOT IN (...) for excluded schemas.
+// Helper: append a leading-space " WHERE ..." schema filter for `column`. Always excludes the
+// standard/internal schemas; for a fragment, additionally restricts to the requested set. The two
+// conditions combine with AND, so a requested id that is also an excluded schema is still dropped -
+// matching the whole-schema blob, where a reference into an excluded schema resolves to "absent".
 //---------------------------------------------------------------------------------------
-static void AppendExcludedSchemaFilter(Utf8StringR sql, Utf8CP column, std::unordered_set<int64_t> const& ids)
+void SchemaViewWriter::AppendSchemaFilter(Utf8StringR sql, Utf8CP column) const
     {
-    if (ids.empty())
-        return;
-    sql.append(" WHERE ");
-    sql.append(column);
-    sql.append(" NOT IN (");
-    bool first = true;
-    for (auto id : ids)
+    auto appendIdList = [&sql](std::unordered_set<int64_t> const& ids)
         {
-        if (!first) sql.append(",");
-        sql.append(Utf8PrintfString("%" PRIi64, id));
-        first = false;
+        bool first = true;
+        for (auto id : ids)
+            {
+            if (!first) sql.append(",");
+            sql.append(Utf8PrintfString("%" PRIi64, id));
+            first = false;
+            }
+        };
+
+    bool const hasExclusion = !m_excludedSchemaIds.empty();
+    bool const hasRequest = m_isFragment;
+    if (!hasExclusion && !hasRequest)
+        return;
+
+    sql.append(" WHERE ");
+    if (hasExclusion)
+        {
+        sql.append(column);
+        sql.append(" NOT IN (");
+        appendIdList(m_excludedSchemaIds);
+        sql.append(")");
         }
-    sql.append(")");
+    if (hasRequest)
+        {
+        if (hasExclusion)
+            sql.append(" AND ");
+        sql.append(column);
+        sql.append(" IN (");
+        appendIdList(m_requestedSchemaIds);
+        sql.append(")");
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -496,7 +508,7 @@ DbResult SchemaViewWriter::WritePropertyDefTable()
 DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
     {
     Utf8String sql("SELECT Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM [main].[ec_Schema]");
-    AppendExcludedSchemaFilter(sql, "Id", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "Id");
     sql.append(" ORDER BY Id");
 
     Statement stmt;
@@ -533,7 +545,7 @@ DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
 DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
     {
     Utf8String sql("SELECT e.Id,e.Name,e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues,e.SchemaId FROM [main].[ec_Enumeration] e");
-    AppendExcludedSchemaFilter(sql, "e.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "e.SchemaId");
     sql.append(" ORDER BY e.SchemaId, e.Id");
 
     Statement stmt;
@@ -568,7 +580,7 @@ DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
 DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
     {
     Utf8String sql("SELECT k.Id,k.Name,k.DisplayLabel,k.Description,k.PersistenceUnit,k.RelativeError,k.PresentationUnits,k.SchemaId FROM [main].[ec_KindOfQuantity] k");
-    AppendExcludedSchemaFilter(sql, "k.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "k.SchemaId");
     sql.append(" ORDER BY k.SchemaId, k.Id");
 
     Statement stmt;
@@ -604,7 +616,7 @@ DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
 DbResult SchemaViewWriter::WritePropCatTable(DbCR db)
     {
     Utf8String sql("SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Priority,c.SchemaId FROM [main].[ec_PropertyCategory] c");
-    AppendExcludedSchemaFilter(sql, "c.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "c.SchemaId");
     sql.append(" ORDER BY c.SchemaId, c.Id");
 
     Statement stmt;
@@ -641,7 +653,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
         "SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Type,c.Modifier,"
         "c.RelationshipStrength,c.RelationshipStrengthDirection,c.SchemaId "
         "FROM [main].[ec_Class] c");
-    AppendExcludedSchemaFilter(sql, "c.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "c.SchemaId");
     sql.append(" ORDER BY c.SchemaId, c.Id");
 
     Statement classStmt;
@@ -826,9 +838,62 @@ void SchemaViewWriter::WriteStringTable(size_t stOffsetPos)
     }
 
 //---------------------------------------------------------------------------------------
-// Main orchestration - pre-collects metadata, then writes flat tables top-down.
+// Verify every requested fragment schema id is a real ec_Schema row, so a typo or stale id
+// fails the request cleanly instead of silently producing an empty/partial fragment.
+//---------------------------------------------------------------------------------------
+DbResult SchemaViewWriter::ValidateRequestedSchemaIds(DbCR db)
+    {
+    std::unordered_set<int64_t> existing;
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db, "SELECT Id FROM [main].[ec_Schema]");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        existing.insert(stmt.GetValueInt64(0));
+    for (auto id : m_requestedSchemaIds)
+        {
+        if (existing.find(id) == existing.end())
+            {
+            ECDbLogger::Get().errorv("SchemaViewWriter::ValidateRequestedSchemaIds: requested schema id %" PRIi64 " does not exist", id);
+            return BE_SQLITE_NOTFOUND;
+            }
+        }
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// Public entry: write every non-excluded schema (the whole-schema blob).
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WriteAllSchemas(DbCR db)
+    {
+    m_isFragment = false;
+    m_requestedSchemaIds.clear();
+    return WriteBlob(db);
+    }
+
+//---------------------------------------------------------------------------------------
+// Public entry: write a fragment - only the requested schemas' owned rows.
+//---------------------------------------------------------------------------------------
+DbResult SchemaViewWriter::WriteSchemas(DbCR db, std::unordered_set<int64_t> const& requestedSchemaIds)
+    {
+    if (requestedSchemaIds.empty())
+        {
+        ECDbLogger::Get().error("SchemaViewWriter::WriteSchemas: requested schema id set is empty");
+        return BE_SQLITE_ERROR;
+        }
+    m_isFragment = true;
+    m_requestedSchemaIds = requestedSchemaIds;
+    if (auto rc = ValidateRequestedSchemaIds(db); rc != BE_SQLITE_OK)
+        return rc;
+    return WriteBlob(db);
+    }
+
+//---------------------------------------------------------------------------------------
+// Main orchestration - pre-collects metadata, then writes flat tables top-down. The
+// AppendSchemaFilter calls inside the table writers honor m_isFragment / m_requestedSchemaIds,
+// so this body is shared by the whole-schema and fragment entry points.
+//---------------------------------------------------------------------------------------
+DbResult SchemaViewWriter::WriteBlob(DbCR db)
     {
     m_output.clear();
     m_output.reserve(2 * 1024 * 1024);
