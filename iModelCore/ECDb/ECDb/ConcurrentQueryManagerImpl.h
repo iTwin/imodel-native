@@ -176,6 +176,13 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         ECDb const& GetPrimaryDb() const;
         ECDb const& GetDb() const {return m_db; }
         ECDb& GetDbR() {return m_db; }
+        // Returns the shared schema-source connection used to parse/resolve schemas for worker
+        // prepares (lazily created), or nullptr if it cannot be opened. See ConnectionCache.
+        CachedConnection* GetSchemaSourceConnection();
+        // Clears this (worker) connection's cached schemas and statements if the primary's file data
+        // version changed (e.g. after a changeset apply), so the next request re-prepares against
+        // current state. Called once per request from Execute, before the request runs.
+        void RefreshIfPrimaryChanged();
         uint16_t Id() const { return m_id; }
         std::shared_ptr<CachedConnection> Shared() { return  shared_from_this(); }
         static std::shared_ptr<CachedConnection> Make(ConnectionCache&,uint16_t);
@@ -188,6 +195,11 @@ struct ConnectionCache final {
     private:
         std::vector<std::shared_ptr<CachedConnection>> m_conns;
         std::shared_ptr<CachedConnection> m_syncConn;
+        // Dedicated read-only connection used ONLY to parse/resolve schemas for worker prepares.
+        // All workers share its warm schema cache while binding/stepping against their own connection.
+        // It is never used to step user queries, so the main thread's primary locks are never involved
+        // here, breaking the worker/main-thread deadlock without losing the shared-cache performance.
+        std::shared_ptr<CachedConnection> m_schemaConn;
         ECDb const& m_primaryDb;
         recursive_mutex_t m_mutex;
         uint32_t m_poolSize;
@@ -197,6 +209,9 @@ struct ConnectionCache final {
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
         std::shared_ptr<CachedConnection> GetConnection();
         CachedConnection& GetSyncConnection();
+        // Lazily creates and returns the shared schema-source connection, or nullptr if it cannot be
+        // opened (callers then fall back to preparing against the worker's own connection).
+        CachedConnection* GetSchemaSourceConnection();
         void Interrupt(bool reset_conn, bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
         void SyncAttachDbs();

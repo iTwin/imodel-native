@@ -36,6 +36,11 @@ static Utf8String GetTimestamp() {
     return DateTime::GetCurrentTime().ToTimestampString();
 }
 
+// Reserved connection id for the shared schema-source connection. Worker connections are numbered
+// 1..poolSize and the synchronous connection is 0, so UINT16_MAX never collides with either and the
+// schema-source connection is never handed out by ConnectionCache::GetConnection().
+static constexpr uint16_t SCHEMA_SOURCE_CONN_ID = UINT16_MAX;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -102,19 +107,70 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
         }
         ecdbMutex.unlock();
     } else {
-        // For worker connections, prepare using the worker's own ECDb to avoid holding
-        // the primary's ECDb mutex while resolving schemas. Previously, holding the
-        // primary's ECDb mutex here and then accessing the primary's SQLite during schema
-        // resolution (SchemaPersistenceHelper::GetClassId) caused a deadlock with the main
-        // thread which holds the primary SQLite mutex (via sqlite3_step) and then needs the
-        // ECDb mutex (via Dispatcher::GetIterable in ExtractInstFunc).
-        // The worker's ECDb has its own SchemaManager and SQLite connection (synced via
-        // SyncAttachDbs), so it can resolve schemas independently.
-        ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
-        if (status != ECSqlStatus::Success) {
-            ecsql_error = err_scope.GetLastError();
-            return nullptr;
+        // For worker connections, parse/resolve schemas against a dedicated, shared schema-source
+        // connection (a warm cache shared by all workers) while binding/stepping against the worker's
+        // own read-only connection. This restores the shared-cache performance of the old design
+        // without the deadlock: the schema-source connection has its own ECDb impl mutex and its own
+        // SQLite handle, both disjoint from the primary's. The main thread's deadlock partner
+        // (primary SQLite mutex held by sqlite3_step + primary ECDb mutex needed by ExtractInstFunc)
+        // therefore never shares a lock with this prepare path. The schema-source connection is never
+        // stepped with ExtractInstFunc, so it has no SQLite->ECDb ordering of its own either.
+        //
+        // Invalidation invariant: the shared schema cache must only be cleared when no worker is
+        // stepping against it (in-flight row adaptors hold raw references into it). All schema changes
+        // on the primary go through ECDb::ClearECDbCache, which calls ConcurrentQueryMgr::Shutdown --
+        // draining/joining all workers and tearing down this whole connection cache (including the
+        // schema-source connection) -- before the primary's own schema manager is cleared. The
+        // schema-source connection is therefore rebuilt fresh on the next query, and we never clear its
+        // cache here. (Pure data-version changes that do NOT touch schema go through the per-request
+        // CachedConnection::Execute refresh on the worker connection; the shared schema cache stays
+        // valid because the schema is unchanged.) The schema-source connection also carries no attached
+        // table spaces, so queries that target one (or are otherwise invalid against it) fall back to
+        // the worker's own connection below.
+        bool preparedAgainstSchemaSource = false;
+        if (CachedConnection* schemaSource = m_conn.GetSchemaSourceConnection()) {
+            ECDb const& schemaDb = schemaSource->GetDb();
+            // Serialize access to the shared schema cache on the schema-source connection's OWN ECDb
+            // impl mutex (a std::recursive_mutex, so the dispatcher's inner locks on the same thread are
+            // fine). This is a different mutex than the primary's, so it cannot form an AB-BA cycle with
+            // the main thread. Hold it across the whole prepare so concurrent worker prepares can't
+            // interleave their lazy schema loads.
+            BeMutex& schemaMutex = schemaDb.GetImpl().GetMutex();
+            while (!schemaMutex.try_lock()) {
+                if (queue.GetState() == RunnableRequestQueue::State::Stop) {
+                    status = ECSqlStatus::Error;
+                    isShutDownInProgress = true;
+                    ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+                    return nullptr;
+                }
+                std::this_thread::yield();
+            }
+            {
+                // RAII unlock so the shared schema mutex is released on every exit path, including an
+                // exception thrown from schema loading (which would otherwise leak the lock and wedge
+                // all future worker prepares).
+                struct SchemaLockGuard final { BeMutex& m_mutex; ~SchemaLockGuard() { m_mutex.unlock(); } } guard{ schemaMutex };
+                // Suppress logging on this attempt: a failure is expected for queries targeting an
+                // attached table space (the schema-source connection has none) or for genuinely invalid
+                // ECSQL; both are retried against the worker's own connection below, which reports
+                // errors normally.
+                status = newCachedAdaptor->GetStatement().Prepare(schemaDb.Schemas(), m_conn.GetDb(), ecsql, false);
+            }
+            preparedAgainstSchemaSource = status == ECSqlStatus::Success;
+        }
+
+        if (!preparedAgainstSchemaSource) {
+            // Either the shared schema-source connection is unavailable, or the ECSQL could not be
+            // prepared against it (attached table space, or a genuine error). Prepare against the
+            // worker's own connection, which has the synced attachments and reports errors normally.
+            // This never touches the primary's locks, so it remains deadlock-free. (Slower than the
+            // shared path, but only for these uncommon queries, and the result is then cached.)
+            ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
+            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+            if (status != ECSqlStatus::Success) {
+                ecsql_error = err_scope.GetLastError();
+                return nullptr;
+            }
         }
     }
 
@@ -219,17 +275,9 @@ void CachedConnection::SyncAttachDbs() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
-    if (m_db.IsDbOpen()) {
-        // Check if the primary file data version has changed
-        uint32_t dataVersion;
-        if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion)) {
-            if (dataVersion != m_primaryFileDataVer) {
-                m_db.ClearECDbCache();
-                m_db.ClearDbCache();
-                m_primaryFileDataVer = dataVersion;
-            }
-        }
-    }
+    // Drop this connection's caches if the primary's file data version changed (schema import /
+    // changeset apply) so the worker re-prepares against current schemas.
+    RefreshIfPrimaryChanged();
 
     SyncAttachDbs();
     SetRequest(std::move(request));
@@ -297,6 +345,26 @@ void CachedConnection::Reset(bool detachDbs) {
         m_db.DetachChangeCache();
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void CachedConnection::RefreshIfPrimaryChanged() {
+    if (!m_db.IsDbOpen())
+        return;
+
+    uint32_t dataVersion;
+    if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion) && dataVersion != m_primaryFileDataVer) {
+        m_db.ClearECDbCache();
+        m_db.ClearDbCache();
+        m_primaryFileDataVer = dataVersion;
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+CachedConnection* CachedConnection::GetSchemaSourceConnection() { return m_cache.GetSchemaSourceConnection(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -437,6 +505,28 @@ CachedConnection& ConnectionCache::GetSyncConnection() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+CachedConnection* ConnectionCache::GetSchemaSourceConnection() {
+    if (!m_primaryDb.IsDbOpen())
+        return nullptr;
+
+    recursive_guard_t lock(m_mutex);
+    if (m_schemaConn == nullptr) {
+        m_schemaConn = CachedConnection::Make(*this, SCHEMA_SOURCE_CONN_ID);
+        if (m_schemaConn == nullptr)
+            return nullptr;
+
+        // The schema-source connection deliberately carries NO attached table spaces: it is used only
+        // to resolve main-table-space schemas (the common, performance-critical case). Queries that
+        // target an attached table space fail to prepare against it and fall back to the worker's own
+        // connection (see QueryAdaptorCache::TryGet). Not syncing attachments here is what lets us
+        // avoid ever clearing this shared cache mid-flight (which would be a use-after-free for
+        // in-flight row adaptors).
+    }
+    return m_schemaConn.get();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
     recursive_guard_t lock(m_mutex);
     uint32_t used_count = 0;
@@ -461,6 +551,13 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
 
         for (auto& it : m_conns) {
             it->Reset(detach_dbs);
+        }
+        // Reset the shared schema-source connection's cache too. Guard with its ECDb impl mutex so we
+        // never clear it while a worker is mid-prepare against it. (Workers have already been drained
+        // above, but the guard keeps the invariant unconditional.)
+        if (m_schemaConn != nullptr) {
+            BeMutexHolder schemaLock(m_schemaConn->GetDbR().GetImpl().GetMutex());
+            m_schemaConn->Reset(detach_dbs);
         }
     }
 }

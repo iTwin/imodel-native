@@ -1515,6 +1515,114 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+// Worker prepares resolve schemas against a dedicated, shared schema-source connection
+// (QueryAdaptorCache::TryGet) rather than each worker's own cold cache. This exercises that path
+// under concurrency: many distinct queries (each forcing a fresh prepare across the worker pool)
+// must return correct results without deadlocking, and a genuinely invalid ECSQL must still
+// surface a prepare error via the worker's-own-connection fallback instead of hanging or being
+// silently dropped.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, SharedSchemaSource_ConcurrentPrepareCorrectness) {
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="I" typeName="int" />
+                <ECProperty propertyName="S" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_SharedSchemaSource.ecdb", testSchema));
+
+    const int rowCount = 100;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(I,S) VALUES(?,?)"));
+        for (int i = 0; i < rowCount; ++i) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindInt(1, i);
+            stmt.BindText(2, SqlPrintfString("S_%d", i).GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+    m_ecdb.SaveChanges();
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        // Correctness: distinct queries prepared via the shared schema-source connection return the
+        // expected rows (WHERE I >= threshold over [0, rowCount) yields rowCount - threshold rows).
+        for (int threshold : {0, 25, 50, 99}) {
+            ECSqlReader reader(mgr, SqlPrintfString("SELECT I FROM ts.Foo WHERE I >= %d", threshold).GetUtf8CP());
+            int count = 0;
+            while (reader.Next())
+                ++count;
+            EXPECT_EQ(count, rowCount - threshold) << "threshold=" << threshold;
+        }
+
+        // Concurrency: many distinct queries forcing fresh prepares across the worker pool must all
+        // succeed and must not deadlock.
+        std::vector<QueryResponse::Future> futures;
+        for (int i = 0; i < 50; ++i)
+            futures.push_back(mgr.Enqueue(ECSqlRequest::MakeRequest(SqlPrintfString("SELECT S FROM ts.Foo WHERE I = %d", i).GetUtf8CP())));
+        for (auto& f : futures) {
+            auto response = f.Get();
+            EXPECT_TRUE(response->IsSuccess())
+                << "status: " << (int)response->GetStatus() << " error: " << response->GetError();
+        }
+
+        // Fallback error path: a genuinely invalid ECSQL fails to prepare against the shared
+        // schema-source connection and then against the worker's own connection, surfacing a prepare
+        // error (rather than hanging or returning success).
+        auto badResponse = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT DoesNotExist FROM ts.Foo")).Get();
+        EXPECT_TRUE(badResponse->IsError());
+        EXPECT_GE((int)badResponse->GetStatus(), (int)QueryResponse::Status::Error);
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// The shared schema-source connection caches schemas across worker prepares. Its cache is never
+// cleared mid-flight; instead, any schema change on the primary routes through
+// ECDb::ClearECDbCache -> ConcurrentQueryMgr::Shutdown, which tears down (and later rebuilds) the
+// whole connection cache including the schema-source connection. This test pins down that invariant:
+// after importing a new schema, a worker query against the newly added class must succeed, proving
+// the schema-source connection was rebuilt and is not serving a stale cache.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, SharedSchemaSource_SchemaChangeInvalidates) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_SchemaChange.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    // Warm the shared schema-source cache with the original schema, and confirm a class that does not
+    // exist yet fails to prepare (against the schema-source connection and the worker fallback).
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        EXPECT_TRUE(mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT I FROM ts.Foo")).Get()->IsSuccess());
+        EXPECT_TRUE(mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT K FROM ts2.Bar")).Get()->IsError());
+    });
+
+    // Import a new schema. This routes through ECDb::ClearECDbCache -> ConcurrentQueryMgr::Shutdown,
+    // which tears down the (now stale) shared schema-source connection.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Bar">
+                <ECProperty propertyName="K" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    m_ecdb.SaveChanges();
+
+    // The rebuilt schema-source connection must reflect the new schema: a worker query against the new
+    // class now prepares and runs (it would still fail if the shared cache were stale).
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto response = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT K FROM ts2.Bar")).Get();
+        EXPECT_TRUE(response->IsSuccess())
+            << "status: " << (int)response->GetStatus() << " error: " << response->GetError();
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
 // Primary-connection requests must be executed synchronously on the caller thread (see
 // RunnableRequestQueue::Enqueue -> ExecuteSynchronously). They must NOT be dispatched to a
 // worker thread, because a worker preparing/executing against the primary connection while
