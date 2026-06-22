@@ -28,7 +28,7 @@ using namespace IModelJsNative;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
+bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     {
     // https://docs.sentry.io/platforms/minidump/
     // https://docs.sentry.io/platforms/minidump/crashpad/
@@ -39,15 +39,12 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     // WIP: Update or replace MaintainCrashDumpDir to be able to prune crashpad's dump directory layout.
     // MaintainCrashDumpDir(s_nextNativeCrashTxtFileNo, cfg);
 
-    for (auto const& annotation : GetCrashReportPropertiesFromConfig(cfg))
-        SetCrashReportProperty(annotation.first.c_str(), annotation.second.c_str());
-    
     //.............................................................................................
     // WIP: Check whether the user wants dumps at all via CrashReportingConfig.
     // if (!cfg.m_enableCrashDumps)
-    //     return;
+    //     return true;
     if (NULL == getenv("LINUX_MINIDUMP_ENABLED"))
-        return;
+        return true;
     
     //.............................................................................................
     // WIP: solely rely on configuration for crash path.
@@ -61,7 +58,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             {
             // BeAssert(false);
             printf("JsInterop::InitializeCrashReporting: Failed to create crashpad database directory %s\n", Utf8String(dbPathW).c_str());
-            return;
+            return false;
             }
         }
     
@@ -71,7 +68,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         {
         // BeAssert(false);
         printf("JsInterop::InitializeCrashReporting: Failed to initialize crashpad database in path %s\n", Utf8String(dbPathW).c_str());
-        return;
+        return false;
         }
 
     // WIP: Check for presence of upload URL and/or config option to determine whether to attempt uploads.
@@ -87,7 +84,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         {
         // BeAssert(false);
         printf("JsInterop::InitializeCrashReporting: 'CrashpadHandler' application not found: %s\n", Utf8String(handlerPathW).c_str());
-        return;
+        return false;
         }
 
     base::FilePath handlerPath(Utf8String(handlerPathW).c_str());
@@ -124,9 +121,13 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         {
         // BeAssert(false);
         printf("JsInterop::InitializeCrashReporting: Failed to start the crashpad handler.\n");
-        return;
+        return false;
         }
 
+    for (auto const& annotation : GetCrashReportPropertiesFromConfig(cfg))
+        SetCrashReportProperty(annotation.first.c_str(), annotation.second.c_str());
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

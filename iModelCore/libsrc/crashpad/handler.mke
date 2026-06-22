@@ -46,5 +46,8 @@ always:
 #   Deliver handler executable with expected product name.
 #--------------------------------------------------------------------------------------
 always:
+	chmod +x $(vcpkgHandlerExe)
 	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
+	chmod +x $(handlerOut)
 	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
+	chmod +x $(BuildContext)Delivery/$(appName)$(exeext)
