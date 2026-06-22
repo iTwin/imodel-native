@@ -38,15 +38,17 @@ static bool GetEnvironmentVariable(std::string& value, const char* variableName)
     {
     value.clear();
 #ifdef BENTLEY_WIN32
-    char* buf = nullptr;
-    size_t len = 0;
-    if (_dupenv_s(&buf, &len, variableName) == 0 && buf != nullptr)
-        {
-        value.assign(buf);
-        free(buf);
-        return true;
-        }
-    return false;
+    DWORD size = GetEnvironmentVariableA(variableName, nullptr, 0);
+    if (size == 0)
+        return false;
+    
+    std::vector<char> buffer(size);
+    DWORD result = GetEnvironmentVariableA(variableName, buffer.data(), size);
+    if (result == 0 || result >= size)
+        return false;
+    
+    value.assign(buffer.data(), result);
+    return true;
 #else
     const char* env = getenv(variableName);
     if (env != nullptr)
@@ -79,18 +81,18 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     // WIP: Check whether the user wants dumps at all via CrashReportingConfig.
     // if (!cfg.m_enableCrashDumps)
     //     return;
+    std::string minidumpEnabledStr;
 #if defined(BENTLEYCONFIG_OS_LINUX)
     // The old environment variable for enabling crash dumps on Linux was "LINUX_MINIDUMP_ENABLED". We only want to
     // support that on Linux. However, even on Linux we want to allow users to switch to the new
     // "IMODEL_ADDON_MINIDUMP_ENABLED" variable, so we check for both and require at least one of them to be set. On
     // other platforms, only check for "IMODEL_ADDON_MINIDUMP_ENABLED". 
-    if (NULL == getenv("LINUX_MINIDUMP_ENABLED"))
+    if (!GetEnvironmentVariable(minidumpEnabledStr, "IMODEL_ADDON_MINIDUMP_ENABLED") && !GetEnvironmentVariable(minidumpEnabledStr, "LINUX_MINIDUMP_ENABLED"))
         return true;
-#endif
-    
-    std::string minidumpEnabledStr;
+#else
     if (!GetEnvironmentVariable(minidumpEnabledStr, "IMODEL_ADDON_MINIDUMP_ENABLED"))
         return true;
+#endif
     
     //.............................................................................................
     // WIP: solely rely on configuration for crash path.
