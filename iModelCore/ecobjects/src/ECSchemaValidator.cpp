@@ -206,9 +206,9 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
     // RULE: The schema must be valid and convertible to the latest ECVersion.
     // TODO: const_cast is evil, but the Validate method is const iff called with the argument of false.
     //       An enhancement should go towards making a const correct Validate in the future.
-    if (!const_cast<ECSchemaR>(schema).Validate(false) || !schema.IsECVersion(ECVersion::Latest))
+    if (!const_cast<ECSchemaR>(schema).Validate(false) || schema.GetECVersion() < ECVersion::Latest)
         {
-        LOG.errorv("Schema '%s' does not pass EC validation required to convert to the latest ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
+        LOG.errorv("Schema '%s' does not pass EC validation required for ECVersion %s or higher.", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
         status = ECObjectsStatus::Error;
         }
 

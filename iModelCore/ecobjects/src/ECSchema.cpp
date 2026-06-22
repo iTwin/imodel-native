@@ -591,6 +591,8 @@ ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajor
         ecVersion = ECVersion::V3_1;
     else if (ecMajorVersion == 3 && ecMinorVersion == 2)
         ecVersion = ECVersion::V3_2;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 3)
+        ecVersion = ECVersion::V3_3;
     else
         return ECObjectsStatus::InvalidECVersion;
 
@@ -623,6 +625,18 @@ ECObjectsStatus ECSchema::ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecV
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+int ECSchema::CompareECVersions(ECVersion ecVersion1, ECVersion ecVersion2)
+    {
+    if (ecVersion1 < ecVersion2)
+        return -1;
+    if (ecVersion1 > ecVersion2)
+        return 1;
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
     {
     switch (ecVersion)
@@ -635,6 +649,8 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
             return "3.1";
         case ECVersion::V3_2:
             return "3.2";
+        case ECVersion::V3_3:
+            return "3.3";
         }
     return nullptr;
     }
@@ -717,7 +733,14 @@ bool ECSchema::Validate(bool resolveIssues)
             LOG.warningv("ECSchema did not pass EC3.1 validation.");
         }
     else
-        m_ecVersion = ECVersion::Latest;
+        {
+        ECVersion originalECXmlVersion;
+        const auto status = CreateECVersion(originalECXmlVersion, m_originalECXmlVersionMajor, m_originalECXmlVersionMinor);
+        if (status == ECObjectsStatus::Success && originalECXmlVersion > ECVersion::Latest)
+            m_ecVersion = originalECXmlVersion;
+        else
+            m_ecVersion = ECVersion::Latest;
+        }
 
     return true;
     }
@@ -1491,6 +1514,7 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
         case ECVersion::V3_0:
         case ECVersion::V3_1:
         case ECVersion::V3_2:
+        case ECVersion::V3_3:
             m_ecVersion = ecVersion;
             break;
         default:

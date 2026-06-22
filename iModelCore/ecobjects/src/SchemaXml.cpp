@@ -852,6 +852,13 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
+    // Truly unknown versions
+    if (ECSchema::CompareECVersions(ECSchema::ECVersionToWrite(ecXmlMajorVersion, ecXmlMinorVersion), ECVersion::MaxKnown) > 0)
+        {
+        LOG.errorv("Unsupported ecXml version %d.%d", ecXmlMajorVersion, ecXmlMinorVersion);
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+
     // schemaName is a REQUIRED attribute in order to create the schema
     auto nameAttr = schemaNode.attribute(ECXML_SCHEMA_NAME_ATTRIBUTE);
     if (!nameAttr)
@@ -1220,7 +1227,7 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     {
-    // Checks to make sure the schema is not of a lower version than it's to be written to.
+    // Checks to make sure the schema is not written to a format newer than its declared ECVersion.
     if (m_ecSchema.GetECVersion() < m_ecXmlVersion)
         {
         LOG.errorv("Schema Serialization Violation: The ECVersion %s provided is higher than the ECVersion of the schema, %s.",

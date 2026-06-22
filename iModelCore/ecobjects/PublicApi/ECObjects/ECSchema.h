@@ -4133,6 +4133,8 @@ public:
     //! @return A status code indicating whether the ECVersion was successfully parsed into the a major and minor version.
     ECOBJECTS_EXPORT static ECObjectsStatus ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion);
 
+    ECOBJECTS_EXPORT static int CompareECVersions(ECVersion ecVersion1, ECVersion ecVersion2);
+
     //! Reads an ECSchema from an ECSchemaXML-formatted file
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
