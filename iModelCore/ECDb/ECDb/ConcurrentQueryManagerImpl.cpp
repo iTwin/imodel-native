@@ -1284,20 +1284,6 @@ Utf8CP QueryResponse::StatusToString(QueryResponse::Status status) {
     return "Unknow QueryResponse::Status code";
 }
 
-//=======================================================================================
-//! Minimal rapidjson output stream that writes serialized characters directly into a
-//! std::string. Used to serialize each row's JSON straight into the shared result buffer,
-//! avoiding the per-row rapidjson::StringBuffer allocation and the temporary Utf8String
-//! (and the extra full-buffer copy) that BeJsValue::Stringify() would otherwise produce.
-//=======================================================================================
-struct StdStringOutputStream final {
-    using Ch = char;
-    std::string& m_str;
-    explicit StdStringOutputStream(std::string& str) : m_str(str) {}
-    void Put(Ch c) { m_str.push_back(c); }
-    void Flush() {}
-};
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1368,15 +1354,11 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             return;
         } else {
             row_count = row_count + 1;
-            if (row_count != 1) {
-                result.append(",");
+            if (row_count == 1) {
+                result.append(rows.Stringify());
+            } else {
+                result.append(",").append(rows.Stringify());
             }
-            // Serialize the row's JSON directly into the result buffer. This avoids the
-            // intermediate rapidjson::StringBuffer and the temporary Utf8String (plus the
-            // extra full-buffer copy) that rows.Stringify() would create for every row.
-            StdStringOutputStream stream(result);
-            rapidjson::Writer<StdStringOutputStream> writer(stream);
-            rowsDoc.Accept(writer);
         }
 
         if (result.size() > V8_MAX_STRING_SIZE) {
