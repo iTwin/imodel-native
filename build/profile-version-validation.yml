@@ -28,6 +28,7 @@ resources:
       type: github
       endpoint: imodel-native
       name: iTwin/profileversion-tests
+      ref: 'naveed/pv-validation-failure'
 
     - repository: imodel-native-internal
       type: github
