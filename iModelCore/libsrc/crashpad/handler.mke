@@ -24,7 +24,9 @@ o                   = $(OutputRootDir)build/$(appName)/
 
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
-%if defined (DEBUG)
+%if $(TARGET_PLATFORM)=="Windows"
+	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
+%elif defined (DEBUG)
 	vcpkgHandlerExe     = $(vcpkgTripletDir)debug/tools/crashpad_handler$(exeext)
 %else
 	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad/crashpad_handler$(exeext)
@@ -46,8 +48,10 @@ always:
 #   Deliver handler executable with expected product name.
 #--------------------------------------------------------------------------------------
 always:
-	chmod +x $(vcpkgHandlerExe)
 	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
-	chmod +x $(handlerOut)
 	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
-	chmod +x $(BuildContext)Delivery/$(appName)$(exeext)
+%if !defined (winNT)
+	chmod +x "$(vcpkgHandlerExe)"
+	chmod +x "$(handlerOut)"
+	chmod +x "$(BuildContext)Delivery/$(appName)$(exeext)"
+%endif
