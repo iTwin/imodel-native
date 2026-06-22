@@ -1,0 +1,31 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Shared vcpkg helpers for libsrc .mke files.
+#---------------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64"
+    vcpkgTriplet = arm64-osx
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
+    %error MacOSX64 is not a supported platform.
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64"
+    vcpkgTriplet = arm64-ios
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+    vcpkgTriplet = arm64-android
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidX64"
+    vcpkgTriplet = x64-android
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
+    vcpkgTriplet = x64-linux
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    %if defined (IS_VERACODE_BUILD)
+        vcpkgTriplet = x64-windows-static-veracode
+    %else
+        vcpkgTriplet = x64-windows-static
+    %endif
+%else
+    %error Unsupported TARGET_PROCESSOR_ARCHITECTURE for vcpkg: $(TARGET_PROCESSOR_ARCHITECTURE)
+%endif
