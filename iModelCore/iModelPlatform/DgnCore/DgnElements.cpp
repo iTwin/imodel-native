@@ -1503,7 +1503,7 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementId newParentId, bool allowChildren)
+DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementId newParentId)
     {
     DgnDb::VerifyClientThread();
 
@@ -1518,32 +1518,17 @@ DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementI
     DgnElementCR element = *orig;
     DgnModelId oldModelId = element.GetModelId();
 
-    // 2. If element has children, reject unless allowChildren is set
-    if (!allowChildren)
-        {
-        DgnElementIdSet children = element.QueryChildren();
-        if (!children.empty())
-            return DgnDbStatus::BadRequest;
-        }
-
-    // 3. Resolve the target model and effective parent from newParentId
+    // 2. Load and validate the new parent element
     DgnElementCPtr parentElem = GetElement(newParentId);
     if (!parentElem.IsValid())
         return DgnDbStatus::InvalidId;
 
-    DgnModelId newModelId;
-    DgnElementId effectiveParentId = newParentId;
-
-    // Check if parent element has a sub-model (modeled element case)
-    DgnModelId subModelId = parentElem->GetSubModelId();
-    if (subModelId.IsValid())
+    // 3. The new parent must be in the same model as the element. Reparenting across models is
+    // not allowed here; use ChangeElementModel to move an element to a different model.
+    if (parentElem->GetModelId() != oldModelId)
         {
-        newModelId = subModelId;
-        effectiveParentId = DgnElementId(); // becomes root in that model
-        }
-    else
-        {
-        newModelId = parentElem->GetModelId();
+        LOG.errorv("ChangeElementParent: Cannot change parent of element %s because the new parent %s is in a different model. Use ChangeElementModel instead.", elementId.ToHexStr().c_str(), newParentId.ToHexStr().c_str());
+        return DgnDbStatus::WrongModel;
         }
 
     // 4. If element has a parent-element-scoped code, block the operation
@@ -1558,164 +1543,18 @@ DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementI
             }
         }
 
-    // 5. If model didn't change, just update the parent
-    if (oldModelId == newModelId)
-        {
-        DgnElementPtr editCopy = element.CopyForEdit();
-        DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
-            : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-        editCopy->SetParentId(effectiveParentId, relClassId);
-        return UpdateElement(*editCopy);
-        }
-
-    // 6. Model is changing - validate destination model
-    DgnModelPtr newModel = m_dgndb.Models().GetModel(newModelId);
-    if (!newModel.IsValid())
-        return DgnDbStatus::InvalidId;
-
-    DgnDbStatus stat = newModel->_ValidateElementForModel(element);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    // 7. Code handling - block if element has a model-scoped code (ParentElement scope already blocked above)
-    if (code.IsValid() && !code.IsEmpty())
-        {
-        CodeSpecCPtr codeSpec = m_dgndb.CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
-        if (codeSpec.IsValid() && codeSpec->IsModelScope())
-            {
-            LOG.errorv("ChangeElementParent: Cannot reparent element %s across models because it has a model-scoped code. Use delete+insert instead.", elementId.ToHexStr().c_str());
-            return DgnDbStatus::InvalidCode;
-            }
-
-        // Check for code uniqueness in new scope
-        DgnElementId existingElem = QueryElementIdByCode(code);
-        if (existingElem.IsValid() && existingElem != elementId)
-            return DgnDbStatus::DuplicateCode;
-        }
-
-    // 8. Prepare the edit copy with model and parent changes
+    // 5. Update the parent (model is unchanged)
     DgnElementPtr editCopy = element.CopyForEdit();
-    editCopy->m_modelId = newModelId;
-
-    if (effectiveParentId.IsValid())
-        {
-        DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
-            : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-        editCopy->SetParentId(effectiveParentId, relClassId);
-        }
-    else if (element.GetParentId().IsValid())
-        {
-        editCopy->SetParentId(DgnElementId(), DgnClassId()); // clear parent
-        }
-
-    // 9. Call pre-update handler
-    stat = editCopy->_OnUpdate(element);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    // 10. Handle parent change notifications (pre)
-    bool parentChanged = false;
-    DgnElementId prevParent = element.m_parent.m_id;
-    if (prevParent != editCopy->m_parent.m_id)
-        {
-        parentChanged = true;
-        DgnElementCPtr originalParent = GetElement(element.m_parent.m_id);
-        if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element)))
-            return stat;
-
-        DgnElementCPtr replacementParent = GetElement(editCopy->m_parent.m_id);
-        if (replacementParent.IsValid() && DgnDbStatus::Success != (stat = replacementParent->_OnChildAdd(*editCopy)))
-            return stat;
-        }
-
-    // 11. Load old model and remove from range index
-    DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
-    if (oldModel.IsValid())
-        {
-        auto oldGeomModel = oldModel->ToGeometricModelP();
-        if (nullptr != oldGeomModel)
-            oldGeomModel->RemoveFromRangeIndex(elementId);
-        }
-
-    // 12. Perform the model change via direct SQL
-    {
-    CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-    stmt->BindId(1, newModelId);
-    stmt->BindId(2, elementId);
-    auto sqlResult = stmt->Step();
-    if (BE_SQLITE_DONE != sqlResult)
-        {
-        if (oldModel.IsValid())
-            {
-            auto oldGeomModel = oldModel->ToGeometricModelP();
-            if (nullptr != oldGeomModel)
-                {
-                GeometrySourceCP geom = element.ToGeometrySource();
-                if (nullptr != geom && geom->HasGeometry())
-                    oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                }
-            }
-        return DgnDbStatus::WriteError;
-        }
-    }
-
-    // 13. Write parent/other properties via normal update path
-    stat = editCopy->_UpdateInDb();
-    if (DgnDbStatus::Success != stat)
-        {
-        CachedStatementPtr rollbackStmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-        rollbackStmt->BindId(1, oldModelId);
-        rollbackStmt->BindId(2, elementId);
-        rollbackStmt->Step();
-        if (oldModel.IsValid())
-            {
-            auto oldGeomModel = oldModel->ToGeometricModelP();
-            if (nullptr != oldGeomModel)
-                {
-                GeometrySourceCP geom = element.ToGeometrySource();
-                if (nullptr != geom && geom->HasGeometry())
-                    oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                }
-            }
-        return stat;
-        }
-
-    // 14. Post-update handler notification
-    editCopy->_OnUpdated(element);
-
-    if (parentChanged)
-        {
-        DgnElementCPtr originalParent = GetElement(prevParent);
-        if (originalParent.IsValid())
-            originalParent->_OnChildDropped(element);
-
-        DgnElementCPtr replacementParent = GetElement(editCopy->m_parent.m_id);
-        if (replacementParent.IsValid())
-            replacementParent->_OnChildAdded(*editCopy);
-        }
-
-    // 15. Drop stale cached element, add to new model's range index
-    DropFromPool(element);
-
-    auto newGeomModel = newModel->ToGeometricModelP();
-    if (nullptr != newGeomModel)
-        {
-        DgnElementCPtr finalElem = GetElement(elementId);
-        if (finalElem.IsValid())
-            {
-            GeometrySourceCP geom = finalElem->ToGeometrySource();
-            if (nullptr != geom && geom->HasGeometry())
-                newGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-            }
-        }
-
-    return DgnDbStatus::Success;
+    DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
+        : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    editCopy->SetParentId(newParentId, relClassId);
+    return UpdateElement(*editCopy);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId newModelId, bool allowChildren)
+DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId newModelId)
     {
     DgnDb::VerifyClientThread();
 
@@ -1734,12 +1573,11 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
     if (oldModelId == newModelId)
         return DgnDbStatus::Success;
 
-    // 2. If element has children, reject unless allowChildren is set
-    if (!allowChildren)
+    // 2. The element must not have a parent. Use ChangeElementParent to reparent first.
+    if (element.GetParentId().IsValid())
         {
-        DgnElementIdSet children = element.QueryChildren();
-        if (!children.empty())
-            return DgnDbStatus::BadRequest;
+        LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a parent element. Use ChangeElementParent instead.", elementId.ToHexStr().c_str());
+        return DgnDbStatus::InvalidParent;
         }
 
     // 3. Load and validate destination model
@@ -1773,30 +1611,16 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
             return DgnDbStatus::DuplicateCode;
         }
 
-    // 5. Prepare the edit copy - change model, clear parent (becomes root in new model)
+    // 5. Prepare the edit copy - change model (element has no parent, so it is a root in the new model)
     DgnElementPtr editCopy = element.CopyForEdit();
     editCopy->m_modelId = newModelId;
-
-    if (element.GetParentId().IsValid())
-        editCopy->SetParentId(DgnElementId(), DgnClassId());
 
     // 6. Call pre-update handler
     stat = editCopy->_OnUpdate(element);
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    // 7. Handle parent change notifications (pre) if parent is being cleared
-    bool parentChanged = false;
-    DgnElementId prevParent = element.m_parent.m_id;
-    if (prevParent != editCopy->m_parent.m_id)
-        {
-        parentChanged = true;
-        DgnElementCPtr originalParent = GetElement(element.m_parent.m_id);
-        if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element)))
-            return stat;
-        }
-
-    // 8. Load old model and remove from range index
+    // 7. Load old model and remove from range index
     DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
     if (oldModel.IsValid())
         {
@@ -1805,7 +1629,7 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
             oldGeomModel->RemoveFromRangeIndex(elementId);
         }
 
-    // 9. Perform the model change via direct SQL
+    // 8. Perform the model change via direct SQL
     {
     CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
     stmt->BindId(1, newModelId);
@@ -1827,7 +1651,7 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
         }
     }
 
-    // 10. Write parent/other properties via normal update path
+    // 9. Write other properties via normal update path
     stat = editCopy->_UpdateInDb();
     if (DgnDbStatus::Success != stat)
         {
@@ -1848,17 +1672,10 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
         return stat;
         }
 
-    // 11. Post-update handler notification
+    // 10. Post-update handler notification
     editCopy->_OnUpdated(element);
 
-    if (parentChanged)
-        {
-        DgnElementCPtr originalParent = GetElement(prevParent);
-        if (originalParent.IsValid())
-            originalParent->_OnChildDropped(element);
-        }
-
-    // 12. Drop stale cached element, add to new model's range index
+    // 11. Drop stale cached element, add to new model's range index
     DropFromPool(element);
 
     auto newGeomModel = newModel->ToGeometricModelP();

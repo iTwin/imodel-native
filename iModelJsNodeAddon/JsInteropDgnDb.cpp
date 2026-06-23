@@ -560,9 +560,7 @@ void JsInterop::ChangeElementParent(DgnDbR dgndb, Napi::Object obj) {
     if (!newParentId.IsValid())
         throwInvalidId();
 
-    bool allowChildren = props["allowChildren"].GetBoolean(false);
-
-    DgnDbStatus status = dgndb.Elements().ChangeElementParent(elementId, newParentId, allowChildren);
+    DgnDbStatus status = dgndb.Elements().ChangeElementParent(elementId, newParentId);
     if (DgnDbStatus::Success != status)
         throwDgnDbStatus(status);
 }
@@ -581,9 +579,7 @@ void JsInterop::ChangeElementModel(DgnDbR dgndb, Napi::Object obj) {
     if (!newModelId.IsValid())
         throwInvalidId();
 
-    bool allowChildren = props["allowChildren"].GetBoolean(false);
-
-    DgnDbStatus status = dgndb.Elements().ChangeElementModel(elementId, newModelId, allowChildren);
+    DgnDbStatus status = dgndb.Elements().ChangeElementModel(elementId, newModelId);
     if (DgnDbStatus::Success != status)
         throwDgnDbStatus(status);
 }

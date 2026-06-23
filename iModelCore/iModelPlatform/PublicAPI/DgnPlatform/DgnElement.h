@@ -4095,23 +4095,23 @@ public:
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
 
-    //! Change the parent of an element. If the new parent is in a different model, the element
-    //! will be moved to that model as well.
+    //! Change the parent of an element. The new parent must be in the same model as the element;
+    //! reparenting across models is not allowed (use ChangeElementModel for that).
     //! @param[in] elementId The element to reparent
-    //! @param[in] newParentId The new parent element. If this element has a sub-model, the element becomes a root in that sub-model.
-    //! @param[in] allowChildren If true, skip the children check (caller handles children from TypeScript side)
+    //! @param[in] newParentId The new parent element. Must be in the same model as the element.
     //! @return DgnDbStatus::Success if the element was reparented, error status otherwise.
-    //! @note If the element has a model-scoped code and the model changes, this will fail with InvalidCode. Use delete+insert instead.
-    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementParent(DgnElementId elementId, DgnElementId newParentId, bool allowChildren = false);
+    //! @note If the new parent is in a different model, this will fail with WrongModel. Use ChangeElementModel instead.
+    //! @note If the element has a parent-element-scoped code, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementParent(DgnElementId elementId, DgnElementId newParentId);
 
     //! Change the model of an element, making it a root element in the new model.
-    //! The element's parent is cleared.
+    //! The element must not have a parent.
     //! @param[in] elementId The element to move
     //! @param[in] newModelId The target model
-    //! @param[in] allowChildren If true, skip the children check (caller handles children from TypeScript side)
     //! @return DgnDbStatus::Success if the element was moved, error status otherwise.
+    //! @note If the element has a parent, this will fail with InvalidParent. Use ChangeElementParent instead.
     //! @note If the element has a model-scoped code, this will fail with InvalidCode. Use delete+insert instead.
-    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementId elementId, DgnModelId newModelId, bool allowChildren = false);
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementId elementId, DgnModelId newModelId);
 
 
     //! Delete a DgnElement from this DgnDb.
