@@ -32,6 +32,7 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
     const Utf8String kECDbSchema = "ecdb_schema";
 	const Utf8String kECDbMap = "ecdb_map";
 	const Utf8String kSQLiteSchema = "sqlite_schema";
+	const Utf8String kSchemaToken = "schema_token";
 
     if (kECDbSchema.EqualsIAscii(val.GetString())) {
         Utf8String sha3;
@@ -87,13 +88,35 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 		rowSet = std::move(result);
 		return BE_SQLITE_OK;
     }
+	// Unlike the other keys, schema_token hashes schema *identity* only (every schema's name and
+	// version, one tiny row each), NOT schema contents. It is the cheap cache-invalidation key for
+	// SchemaView - see PRAGMA checksum docs / SchemaViewBinaryFormat.md. Limitation: a same-version
+	// content change (which ECDb only allows for dynamic schemas) does not change this value.
+    if (kSchemaToken.EqualsIAscii(val.GetString())) {
+        Utf8String sha3;
+		if (SHA3Helper::ComputeHash(sha3, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA_TOKEN, "main", SHA3Helper::HashSize::SHA3_256) != BE_SQLITE_OK) {
+			ecdb.GetImpl().Issues().Report(
+				IssueSeverity::Error,
+				IssueCategory::BusinessProperties,
+				IssueType::ECSQL,
+				ECDbIssueId::ECDb_0593,
+				"Unable to compute schema token.");
+
+			rowSet = std::move(result);
+            return BE_SQLITE_ERROR;
+        }
+		auto row = result->AppendRow();
+        row.appendValue() = sha3;
+		rowSet = std::move(result);
+		return BE_SQLITE_OK;
+    }
 
 	ecdb.GetImpl().Issues().ReportV(
 		IssueSeverity::Error,
 		IssueCategory::BusinessProperties,
 		IssueType::ECSQL,
 		ECDbIssueId::ECDb_0596,
-		"Unable checksum val '%s'. Valid values are ecdb_schema|ecdb_map|sqlite_schema", val.GetString().c_str());
+		"Unable checksum val '%s'. Valid values are ecdb_schema|ecdb_map|sqlite_schema|schema_token", val.GetString().c_str());
 
 	rowSet = std::move(result);
 	return BE_SQLITE_ERROR;
@@ -403,6 +426,8 @@ DbResult SHA3Helper::ComputeHash(Utf8StringR hash, DbCR db, SourceType type, Utf
 		}, dbAlias, hashSize, skipTableThatDoesNotExists);
 	} else if (type == SourceType::SQLITE_SCHEMA) {
         rc = ComputeSQLiteSchemaHash(hash, db, dbAlias, hashSize);
+    } else if (type == SourceType::ECDB_SCHEMA_TOKEN) {
+        rc = ComputeSchemaTokenHash(hash, db, dbAlias, hashSize);
     }
 	if (rc != BE_SQLITE_OK) {
 		return rc;
@@ -410,6 +435,32 @@ DbResult SHA3Helper::ComputeHash(Utf8StringR hash, DbCR db, SourceType type, Utf
 
     hash.ToLower();
     return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// Cheap schema-identity hash: hashes only the name and version of every schema (one row per
+// schema in ec_Schema), NOT their contents. Backs PRAGMA checksum(schema_token) and the schemaToken
+// column of schema_view / schema_view_fragment. Ordered by Name for a session-stable digest.
+// Limitation: a same-version content change (which ECDb only allows for dynamic schemas) does
+// not change this hash. See the PRAGMA checksum(schema_token) docs.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SHA3Helper::ComputeSchemaTokenHash(Utf8String& hash, DbCR db, Utf8CP dbAlias, HashSize hashSize) {
+	Statement stmt;
+	auto rc = stmt.Prepare(db, SqlPrintfString(
+		"select hex(sha3_query(\"select Name,VersionDigit1,VersionDigit2,VersionDigit3 from [%s].ec_Schema order by Name\", %d))", dbAlias, (int)hashSize));
+
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+    rc = stmt.Step();
+    if (rc != BE_SQLITE_ROW) {
+        return rc;
+    }
+
+    hash = stmt.GetValueText(0);
+    return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1010,9 +1061,10 @@ DbResult PragmaSchemaView::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Prag
 		return writeResult;
 	auto const& output = writer.GetOutput();
 
-	// Compute schema token for cache invalidation
+	// Compute schema token for cache invalidation. This is the cheap schema-identity hash
+	// (ec_Schema names + versions only), NOT the full ecdb_schema checksum - see PRAGMA checksum(schema_token).
 	Utf8String schemaToken;
-	SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA, "main", SHA3Helper::HashSize::SHA3_256);
+	SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA_TOKEN, "main", SHA3Helper::HashSize::SHA3_256);
 
 	auto row = result->AppendRow();
 	row.appendValue() = "binary";
@@ -1118,10 +1170,11 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 	result->AppendProperty("schemaToken", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
-	// schemaToken is the whole-connection schema hash, identical to schema_view's, so a fragment and
-	// the manifest it was planned from share one cache-invalidation key.
+	// schemaToken is the cheap schema-identity hash (ec_Schema names + versions), identical to
+	// schema_view's and PRAGMA checksum(schema_token), so a fragment and the manifest it was planned from share
+	// one cache-invalidation key.
 	Utf8String schemaToken;
-	SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA, "main", SHA3Helper::HashSize::SHA3_256);
+	SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA_TOKEN, "main", SHA3Helper::HashSize::SHA3_256);
 
 	auto row = result->AppendRow();
 	row.appendValue() = "binary";

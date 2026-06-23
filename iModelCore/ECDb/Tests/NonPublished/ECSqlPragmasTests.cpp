@@ -669,13 +669,14 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_token_determinism_and_checksum_match
     }
     ASSERT_STREQ(token1.c_str(), token2.c_str()) << "schema_view token must be deterministic across calls";
 
-    // Get checksum from PRAGMA checksum(ecdb_schema) - must match schema_view's schemaToken
+    // schema_view's schemaToken column is the cheap schema-identity hash, so it must match
+    // PRAGMA checksum(schema_token) (and NOT PRAGMA checksum(ecdb_schema), which hashes full schema contents).
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        Utf8CP checksumVal = stmt.GetValueText(0);
-        ASSERT_STREQ(token1.c_str(), checksumVal) << "schema_view schemaToken must match checksum(ecdb_schema)";
+        Utf8CP schemaTokenVal = stmt.GetValueText(0);
+        ASSERT_STREQ(token1.c_str(), schemaTokenVal) << "schema_view schemaToken must match PRAGMA checksum(schema_token)";
     }
 }
 
@@ -720,12 +721,78 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
     }
     ASSERT_STRNE(tokenBefore.c_str(), tokenAfter.c_str()) << "schema_view token must change after schema import";
 
-    // checksum(ecdb_schema) must still match the new schema_view token
+    // PRAGMA checksum(schema_token) must still match the new schema_view token (both are the cheap
+    // schema-identity hash; the import bumped TestSchema 1.0.0 -> 1.0.1, so the hash changed).
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "checksum(ecdb_schema) must match schema_view token after import";
+        ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "PRAGMA checksum(schema_token) must match schema_view token after import";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// PRAGMA checksum(schema_token) is the cheap cache-invalidation key: a hash of every schema's name
+// and version only. It must be deterministic across repeated calls, change whenever a schema is added
+// or its version bumped, and be read-only. This walks a small series of imports / minor-version
+// bumps, asking for the token repeatedly along the way.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, schema_token_reflects_schema_changes) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_token.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaOne' alias='s1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Foo' modifier='None'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    // Reads PRAGMA checksum(schema_token), asserting a single well-formed non-empty string row.
+    auto readToken = [&]() -> Utf8String {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        Utf8CP const t = stmt.GetValueText(0);
+        EXPECT_TRUE(t != nullptr && *t != '\0') << "schema_token must be a non-empty string";
+        Utf8String const token(t == nullptr ? "" : t);
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "schema_token must return exactly one row";
+        return token;
+    };
+
+    // Deterministic: two back-to-back reads with no schema change are identical.
+    Utf8String const t0 = readToken();
+    ASSERT_STREQ(t0.c_str(), readToken().c_str()) << "schema_token must be deterministic across calls";
+
+    // Adding a new schema changes the token.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaTwo' alias='s2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Bar' modifier='None'>"
+        "    <ECProperty propertyName='Value' typeName='int' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+    Utf8String const t1 = readToken();
+    ASSERT_STRNE(t0.c_str(), t1.c_str()) << "schema_token must change when a schema is added";
+    ASSERT_STREQ(t1.c_str(), readToken().c_str()) << "schema_token must be stable when nothing changed";
+
+    // Bumping a schema's minor version changes the token.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaTwo' alias='s2' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "  <ECEntityClass typeName='Bar' modifier='None'>"
+        "    <ECProperty propertyName='Value' typeName='int' />"
+        "    <ECProperty propertyName='Extra' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+    Utf8String const t2 = readToken();
+    ASSERT_STRNE(t1.c_str(), t2.c_str()) << "schema_token must change when a schema's version is bumped";
+
+    // Read-only: schema_token is a checksum key (func-style argument), so there is no valid
+    // assignment syntax for it - the grammar's '(val)' and '=val' forms are mutually exclusive,
+    // making 'checksum(schema_token)=1' a parse error rather than a reachable write.
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Status::InvalidECSql, stmt.Prepare(m_ecdb, "PRAGMA checksum(schema_token)=1"));
     }
 }
 

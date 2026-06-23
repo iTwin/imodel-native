@@ -83,7 +83,7 @@ struct PragmaSqliteSql : PragmaManager::GlobalHandler {
 // @bsiclass PragmaChecksum
 //+===============+===============+===============+===============+===============+======
 struct PragmaChecksum : PragmaManager::GlobalHandler {
-    PragmaChecksum():GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data."){}
+    PragmaChecksum():GlobalHandler("checksum", "checksum([ecdb_schema|ecdb_map|sqlite_schema|schema_token]) return sha3 checksum for data. 'schema_token' is a cheap schema-identity hash (names+versions only) for SchemaView cache invalidation."){}
     ~PragmaChecksum(){}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
@@ -206,6 +206,7 @@ struct SHA3Helper final {
         ECDB_SCHEMA,
         ECDB_MAP,
         SQLITE_SCHEMA,
+        ECDB_SCHEMA_TOKEN, // schema identity only (ec_Schema name + version), cheap; backs PRAGMA checksum(schema_token)
     };
 
 
@@ -213,6 +214,7 @@ private:
     static bool TableExists(DbCR, Utf8CP, Utf8CP);
     static DbResult ComputeHash(Utf8String&, DbCR, std::vector<std::string> const &, Utf8CP, HashSize, bool);
     static DbResult ComputeSQLiteSchemaHash(Utf8String&, DbCR, Utf8CP, HashSize);
+    static DbResult ComputeSchemaTokenHash(Utf8String&, DbCR, Utf8CP, HashSize);
 public:
     static DbResult ComputeHash(Utf8StringR, DbCR, SourceType, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
 };
