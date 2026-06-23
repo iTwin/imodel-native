@@ -562,7 +562,7 @@ DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
         {
         PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaEcId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
-        PutU8((uint8_t)stmt.GetValueInt(4));        // primitiveType
+        PutU16((uint16_t)stmt.GetValueInt(4));      // primitiveType (full ECN::PrimitiveType, e.g. 0x501 Integer / 0x901 String - does not fit in a byte)
         PutU8(stmt.GetValueInt(5) != 0 ? 1 : 0);  // isStrict
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
