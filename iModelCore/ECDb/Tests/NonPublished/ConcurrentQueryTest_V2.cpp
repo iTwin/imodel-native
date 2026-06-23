@@ -12,6 +12,8 @@ USING_NAMESPACE_BENTLEY_EC
 #include <thread>
 #include <memory>
 #include <mutex>
+#include <cstdio>
+#include <cstdlib>
 BEGIN_ECDBUNITTESTS_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -1449,7 +1451,7 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
 
     std::atomic<bool> mainThreadDone{false};
     std::atomic<int> mainThreadRows{0};
-    std::atomic<bool> workerError{false};
+    std::atomic<bool> mainThreadPrepareFailed{false};
 
     // Start the concurrent query manager
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
@@ -1459,7 +1461,7 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
             // SELECT $ triggers extract_inst for each row (polymorphic - reads full instance)
             auto status = stmt.Prepare(m_ecdb, "SELECT $ FROM ts.Base");
             if (status != ECSqlStatus::Success) {
-                workerError = true;
+                mainThreadPrepareFailed = true;
                 mainThreadDone = true;
                 return;
             }
@@ -1490,9 +1492,28 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
             futures.push_back(mgr.Enqueue(std::move(req)));
         }
 
-        // Wait for the main step thread to finish. If the deadlock regresses, this join
-        // blocks forever and the test harness kills the run as a timeout (which is the
-        // intended failure signal for this reproduction).
+        // Watchdog: if the deadlock regresses, the worker threads stay stuck holding locks, so
+        // mainStepThread.join() (and the result collection below) would block forever. The only
+        // signal would then be the whole test run timing out -- slow and easy to blame on the wrong
+        // thing. The watchdog instead fails fast with a clear message. abort() is heavy-handed, but
+        // stuck threads can't be joined, so it is the only way out. On the success path testCompleted
+        // is set at the end of this block, after which the watchdog exits cleanly and is joined.
+        std::atomic<bool> testCompleted{false};
+        auto watchdog = std::thread([&]() {
+            const auto deadline = std::chrono::steady_clock::now() + 60s;
+            while (!testCompleted.load()) {
+                if (std::chrono::steady_clock::now() > deadline) {
+                    fprintf(stderr, "DEADLOCK DETECTED: main step vs worker prepare did not "
+                                    "complete within 60s (itwinjs-backlog#2113 regression).\n");
+                    fflush(stderr);
+                    std::abort();
+                }
+                std::this_thread::sleep_for(100ms);
+            }
+        });
+
+        // Wait for the main step thread to finish. If the deadlock regresses, this join blocks
+        // until the watchdog above aborts the process with a clear diagnostic.
         mainStepThread.join();
 
         // Collect all concurrent query results. Future::Get() blocks until each request
@@ -1508,8 +1529,12 @@ TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
 
         // Verify main thread completed and read all rows
         EXPECT_TRUE(mainThreadDone.load());
-        EXPECT_FALSE(workerError);
+        EXPECT_FALSE(mainThreadPrepareFailed);
         EXPECT_EQ(mainThreadRows.load(), rowCount * 2);
+
+        // No deadlock: disarm the watchdog and join it cleanly while testCompleted is still in scope.
+        testCompleted = true;
+        watchdog.join();
     });
 }
 
