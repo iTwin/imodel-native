@@ -3736,4 +3736,134 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// Verifies the TableColumnCache consistency on cache hits.
+// Steps through 8 rows that all belong to the same SQLite table (ts_Widget).
+// The first Step() triggers a PRAGMA_TABLE_INFO query (cache miss); the remaining seven
+// are served from the cache (cache hits).  Column count must be identical on every row.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, TableColumnCache_HitReturnsConsistentColumns)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cache_consistent.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert 8 Widgets under tracking — they all map to the same SQLite table ts_Widget.
+    constexpr int kRowCount = 8;
+    for (int i = 0; i < kRowCount; ++i)
+        {
+        ECSqlStatement stmt;
+        Utf8String sql;
+        sql.Sprintf("INSERT INTO ts.Widget(Name, Weight) VALUES('W%d', %d.5)", i, i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Walk all 8 rows.  The first step is a cache miss (PRAGMA_TABLE_INFO is queried);
+    // steps 2-8 are cache hits.  Any discrepancy in column count indicates a bug where
+    // the cached result differs from the freshly queried result.
+    int expectedColumnCount = -1;
+    int rowsSeen = 0;
+    while (reader.Step() == BE_SQLITE_ROW)
+        {
+        int colCount = reader.GetColumnCount(Changes::Change::Stage::New);
+        ASSERT_GT(colCount, 0);
+        if (expectedColumnCount < 0)
+            expectedColumnCount = colCount;
+        else
+            EXPECT_EQ(expectedColumnCount, colCount)
+                << "column count changed between rows (cache inconsistency on row " << rowsSeen << ")";
+        ++rowsSeen;
+        }
+    EXPECT_EQ(kRowCount, rowsSeen);
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies that the LRU eviction in TableColumnCache is transparent and correct.
+// A schema with 26 sealed EC classes (T01..T26) is created — one more than the cache's
+// MAX_ENTRIES limit of 25.  One row is inserted per class, so the reader accesses 26
+// distinct SQLite tables in sequence.  When the 26th table is first seen the cache is
+// full and must evict the least-recently-used entry before inserting the new one.
+// Every row must still be returned with correct column metadata (3 columns: ECInstanceId,
+// ECClassId, Name) regardless of whether its table entry was evicted.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, TableColumnCache_Eviction_26TablesAllCorrect)
+    {
+    static constexpr int kTableCount = 26;
+
+    // Build a schema string containing 26 sealed EC classes T01..T26, each with a single
+    // string property Name.  Each class maps to a distinct SQLite table (tc_T01..tc_T26).
+    Utf8String schemaXml;
+    schemaXml.append(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestCache" alias="tc" version="01.00.00"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">)xml");
+    for (int i = 1; i <= kTableCount; ++i)
+        {
+        Utf8String classDef;
+        classDef.Sprintf(
+            R"xml(<ECEntityClass typeName="T%02d" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string"/>
+            </ECEntityClass>)xml", i);
+        schemaXml.append(classDef);
+        }
+    schemaXml.append("</ECSchema>");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cache_26tables.ecdb", SchemaItem(schemaXml.c_str())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert one row per class in order T01 → T26.
+    for (int i = 1; i <= kTableCount; ++i)
+        {
+        ECSqlStatement stmt;
+        Utf8String sql;
+        sql.Sprintf("INSERT INTO tc.T%02d(Name) VALUES('Row%02d')", i, i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Each row must report 3 New-stage columns: ECInstanceId, ECClassId, Name.
+    // The 26th distinct table causes an LRU eviction; its row and any re-queried rows
+    // must still be resolved correctly.
+    int rowsSeen = 0;
+    while (reader.Step() == BE_SQLITE_ROW)
+        {
+        EXPECT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New))
+            << "unexpected column count on row " << rowsSeen;
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_TRUE(v0.GetId<ECInstanceId>().IsValid())
+            << "ECInstanceId must be valid on row " << rowsSeen;
+
+        DbOpcode opcode;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+
+        ++rowsSeen;
+        }
+    EXPECT_EQ(kTableCount, rowsSeen) << "all 26 rows must be returned despite LRU eviction";
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
