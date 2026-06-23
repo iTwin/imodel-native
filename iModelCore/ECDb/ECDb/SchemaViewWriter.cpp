@@ -22,6 +22,25 @@ static uint32_t SafeU32Id(int64_t val)
     return UINT32_MAX;
     }
 
+// Narrow a small int field (an ordinal, or a version digit) read from an ec_ table to a
+// byte / 16-bit value for the binary format. These values are tiny by construction, so a value that
+// does not fit signals data corruption. Like SafeU32Id, log and saturate.
+static uint8_t SafeU8(int val, Utf8CP field)
+    {
+    if (val >= 0 && val <= (int)UINT8_MAX)
+        return (uint8_t)val;
+    ECDbLogger::Get().warningv("SchemaViewWriter: %s value %d does not fit in a uint8_t; saturating", field, val);
+    return val < 0 ? (uint8_t)0 : (uint8_t)UINT8_MAX;
+    }
+
+static uint16_t SafeU16(int val, Utf8CP field)
+    {
+    if (val >= 0 && val <= (int)UINT16_MAX)
+        return (uint16_t)val;
+    ECDbLogger::Get().warningv("SchemaViewWriter: %s value %d does not fit in a uint16_t; saturating", field, val);
+    return val < 0 ? (uint16_t)0 : (uint16_t)UINT16_MAX;
+    }
+
 // Helper: prepare a statement and return error on failure.
 static DbResult PrepareStmt(Statement& stmt, DbCR db, Utf8CP sql)
     {
@@ -248,8 +267,8 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
         PropertyDefRecord def;
         def.nameSid       = Intern(Safe(stmt.GetValueText(2)));
         def.descriptionSid= Intern(Safe(stmt.GetValueText(4)));
-        def.kind          = (uint8_t)stmt.GetValueInt(5);
-        def.primitiveType = (uint16_t)stmt.GetValueInt(6);
+        def.kind          = SafeU8(stmt.GetValueInt(5), "property kind");
+        def.primitiveType = SafeU16(stmt.GetValueInt(6), "property primitiveType");
         def.extTypeSid    = Intern(Safe(stmt.GetValueText(7)));
         // FK columns are NULL when absent; GetValueInt64 returns 0 for NULL.
         // EC metadata IDs are 1-based, so 0 is a safe "no reference" sentinel.
@@ -262,7 +281,7 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
         def.arrayMinOccurs= stmt.IsColumnNull(12) ? UINT32_MAX : (uint32_t)stmt.GetValueInt(12);
         def.arrayMaxOccurs= stmt.IsColumnNull(13) ? UINT32_MAX : (uint32_t)stmt.GetValueInt(13);
         def.navRelClassRowId = SafeU32Id(stmt.GetValueInt64(14));
-        def.navDirection  = (uint8_t)stmt.GetValueInt(15);
+        def.navDirection  = SafeU8(stmt.GetValueInt(15), "navigation direction");
         def.isReadonly    = stmt.GetValueInt(16) != 0 ? (uint8_t)1 : (uint8_t)0;
         // HiddenProperty CA: if the JOIN is present, column 17 is hp_ca.Instance
         if (hasHiddenJoin)
@@ -524,9 +543,9 @@ DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         PutSRef(Safe(stmt.GetValueText(1))); // name
-        PutU16((uint16_t)stmt.GetValueInt(5));
-        PutU16((uint16_t)stmt.GetValueInt(6));
-        PutU16((uint16_t)stmt.GetValueInt(7));
+        PutU16(SafeU16(stmt.GetValueInt(5), "schema read version"));
+        PutU16(SafeU16(stmt.GetValueInt(6), "schema write version"));
+        PutU16(SafeU16(stmt.GetValueInt(7), "schema minor version"));
         PutSRef(Safe(stmt.GetValueText(4))); // alias
         PutSRef(Safe(stmt.GetValueText(2))); // label
         PutSRef(Safe(stmt.GetValueText(3))); // description
@@ -560,9 +579,9 @@ DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaEcId
+        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaECId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
-        PutU16((uint16_t)stmt.GetValueInt(4));      // primitiveType (full ECN::PrimitiveType, e.g. 0x501 Integer / 0x901 String - does not fit in a byte)
+        PutU16(SafeU16(stmt.GetValueInt(4), "enumeration primitiveType")); // full ECN::PrimitiveType, e.g. 0x501 Integer / 0x901 String - does not fit in a byte
         PutU8(stmt.GetValueInt(5) != 0 ? 1 : 0);  // isStrict
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
@@ -595,7 +614,7 @@ DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaEcId
+        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaECId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
@@ -631,7 +650,7 @@ DbResult SchemaViewWriter::WritePropCatTable(DbCR db)
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        PutU32(SafeU32Id(stmt.GetValueInt64(5))); // schemaEcId
+        PutU32(SafeU32Id(stmt.GetValueInt64(5))); // schemaECId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
@@ -704,16 +723,16 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
         if (m_queryViewClassIds.count(classId))
             classType = 5; // View
 
-        PutU32(SafeU32Id(schemaId));                  // schemaEcId
+        PutU32(SafeU32Id(schemaId));                  // schemaECId
         PutSRef(Safe(classStmt.GetValueText(1)));     // name
-        PutU8((uint8_t)classType);
-        PutU8((uint8_t)classStmt.GetValueInt(5));     // modifier
+        PutU8(SafeU8(classType, "class type"));
+        PutU8(SafeU8(classStmt.GetValueInt(5), "class modifier"));     // modifier
         PutSRef(Safe(classStmt.GetValueText(2)));     // label
         PutSRef(Safe(classStmt.GetValueText(3)));     // description
         if (classType == 1) // Relationship
             {
-            PutU8((uint8_t)classStmt.GetValueInt(6)); // strength
-            PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
+            PutU8(SafeU8(classStmt.GetValueInt(6), "relationship strength"));           // strength
+            PutU8(SafeU8(classStmt.GetValueInt(7), "relationship strength direction")); // strengthDirection
             }
         PutU32(SafeU32Id(classId));                   // ecInstanceId
         // Class hidden flag (tri-state):
@@ -740,7 +759,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
             {
             PutSRef(Safe(baseStmt.GetValueText(0))); // schema name
             PutSRef(Safe(baseStmt.GetValueText(1))); // class name
-            PutU8((uint8_t)baseStmt.GetValueInt(2));  // ordinal
+            PutU8(SafeU8(baseStmt.GetValueInt(2), "base class ordinal")); // ordinal
             if (++baseCount == UINT16_MAX)
                 {
                 ECDbLogger::Get().errorv("SchemaViewWriter: class %" PRIi64 " has too many base classes", classId);
@@ -778,7 +797,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
             while (constrStmt.Step() == BE_SQLITE_ROW)
                 {
                 int64_t constraintId = constrStmt.GetValueInt64(0);
-                PutU8((uint8_t)constrStmt.GetValueInt(1));  // relEnd
+                PutU8(SafeU8(constrStmt.GetValueInt(1), "relationship constraint end"));  // relEnd (source=0 / target=1, not a class id)
                 PutU32((uint32_t)constrStmt.GetValueInt(2)); // multLower
                 PutU32((uint32_t)constrStmt.GetValueInt(3)); // multUpper
                 PutU8(constrStmt.GetValueInt(4) != 0 ? 1 : 0); // isPolymorphic
