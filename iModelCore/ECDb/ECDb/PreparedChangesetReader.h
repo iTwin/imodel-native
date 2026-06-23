@@ -14,9 +14,6 @@ struct PreparedChangesetReader final {
 private:
     using Stage = Changes::Change::Stage;
     using PropertyFilter  = ChangesetReader::PropertyFilter;
-    //! A map from SQLite column name to its DbValue for a single changeset row at one stage.
-    //! Only columns that are actually present (non-absent) in the changeset are included.
-    using ColumnValueMap = std::unordered_map<Utf8String, DbValue>;
     enum class StageProcessResult { Success, Error, Filtered };
     ECDbCR                         m_ecdb;
 
@@ -28,7 +25,9 @@ private:
     Changes::Change                 m_currentChange;
 
     // data fields
-    std::unordered_map<Stage, std::vector<std::unique_ptr<IECSqlValue>>> m_fields;
+    std::vector<std::unique_ptr<IECSqlValue>> m_oldFields;
+    std::vector<std::unique_ptr<IECSqlValue>> m_newFields;
+    std::unordered_map<Utf8String, DbValue> m_columnValues;
     std::vector<Utf8String> m_changedPropNames;
 
     //! Path to the temporary merged changeset file created by OpenChangeGroup, empty otherwise.
@@ -50,8 +49,8 @@ private:
     //! Builds a map from SQLite column name to DbValue for the current change at @p stage.
     //! Only columns that are present (non-absent) in the changeset are included in the map.
     //! The map can be passed directly to ChangesetValueFactory::Create.
-    BentleyStatus GetColumnValues(Stage stage, ColumnValueMap& outMap) const;
-    void DumpColumnValues(ColumnValueMap const& map) const;
+    BentleyStatus GetColumnValues(Stage stage);
+    void DumpColumnValues(std::unordered_map<Utf8String, DbValue> const& map) const;
     bool IsTableAllowedPostFilter(Utf8StringCR tableName) const;
     bool IsOpcodeAllowedPostFilter(DbOpcode const& opcode) const;
     bool IsECClassNameAllowedPostFilter(Utf8StringCR className) const;
@@ -66,9 +65,10 @@ private:
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
     void ClearMembers();
     BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
-    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>& changedPropNames);
+    StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>* changedPropNames);
     void DoStep();
     bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
+    BentleyStatus CheckColumnCountForStrictMode() const;
 public:
     explicit PreparedChangesetReader(ECDbCR ecdb);
     ~PreparedChangesetReader() { CloseInfallible(); }
@@ -92,17 +92,17 @@ public:
     IECSqlValue const& GetValue(Stage stage, int columnIndex) const;
     BentleyStatus GetInstanceKey(Stage stage, Utf8StringR key) const;
     BentleyStatus IsECTable(bool& isECTable) const;
-    BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    std::vector<Utf8String> const* GetChangeFetchedPropertyNames() const;
     BentleyStatus IsIndirectChange(bool& isIndirect) const;
     //filtering apis
-    void SetTableFilters(std::vector<Utf8String> const& tableFilters) { m_tableFilters.clear(); m_tableFilters = tableFilters; }
-    void SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) { m_opcodeFilters.clear(); m_opcodeFilters = opcodeFilters; }
-    void SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) { m_ecclassNameFilters.clear(); m_ecclassNameFilters = ecclassNameFilters; }
-    void ClearTableFilters() { m_tableFilters.clear(); }
-    void ClearOpcodeFilters() { m_opcodeFilters.clear(); }
-    void ClearECClassNameFilters() { m_ecclassNameFilters.clear(); }
-    void EnableStrictMode() { m_strictMode = true; }
-    void DisableStrictMode() { m_strictMode = false; }
+    BentleyStatus SetTableFilters(std::vector<Utf8String> const& tableFilters);
+    BentleyStatus SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters);
+    BentleyStatus SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters);
+    BentleyStatus ClearTableFilters();
+    BentleyStatus ClearOpcodeFilters();
+    BentleyStatus ClearECClassNameFilters();
+    BentleyStatus EnableStrictMode();
+    BentleyStatus DisableStrictMode();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

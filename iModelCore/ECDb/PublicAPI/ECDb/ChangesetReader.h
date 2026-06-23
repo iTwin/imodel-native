@@ -7,6 +7,8 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct PreparedChangesetReader;
+
 //=======================================================================================
 //! ChangesetReader provides EC-typed value access while iterating over changesets.
 //! It iterates over the changeset and exposes a higher-level API that returns EC-typed values and abstracts away the underlying SQLite tables and columns.
@@ -26,7 +28,10 @@ public:
 
 private:
     using Stage = Changes::Change::Stage;
-    Impl* m_pimpl = nullptr;
+    std::unique_ptr<PreparedChangesetReader> m_pimpl;
+
+    bool IsOpen() const;
+    void CloseInfallible();
 
     ChangesetReader(ChangesetReader const&) = delete;
     ChangesetReader& operator=(ChangesetReader const&) = delete;
@@ -123,9 +128,8 @@ public:
     //! For struct properties the property names are always returned in the "StructProp.MemberName" format.
     //! So if only X changed for a point2d property named "Myp2d" inide a struct "CustomStruct", the returned property name will be "CustomStruct.Myp2d.X".
     //! Similaly if both X and Y changed for the same point2d property, the returned property name will be "CustomStruct.Myp2d".
-    //! @param[out] out Receives the list of property names.
-    //! @return SUCCESS on success, or ERROR if the reader is not positioned on a valid row.
-    ECDB_EXPORT BentleyStatus GetChangeFetchedPropertyNames(std::vector<Utf8String>& out) const;
+    //! @return const pointer to the list of property names, or nullptr if the reader is not positioned on a valid row.
+    ECDB_EXPORT std::vector<Utf8String> const* GetChangeFetchedPropertyNames() const;
 
     //! Determines whether the current change row is an indirect change.
     //! @param[out] isIndirect Set to true if the current change is indirect, false otherwise.

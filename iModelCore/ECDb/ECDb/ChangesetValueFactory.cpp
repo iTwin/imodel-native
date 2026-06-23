@@ -292,7 +292,7 @@ ECSqlColumnInfo ChangesetValueFactory::MakeArrayColumnInfo(PropertyMap const& pr
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreatePoint2d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto& pt2dMap = propertyMap.GetAs<Point2dPropertyMap>();
     const DbColumn& xCol = pt2dMap.GetX().GetColumn();
@@ -330,12 +330,16 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(
     }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
+
+    if(changedProps == nullptr) // if changedProps is nullptr that means we donot need to fill changed prop names
+        return SUCCESS;
+
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInCurrentTableAndChangeset && yInCurrentTableAndChangeset) {
-        changedProps.emplace_back(propName);
+        FillChangedPropIfApplicable(changedProps, propName);
     } else {
-        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
-        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetX().GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s); }
+        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt2dMap.GetY().GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s); }
     }
     return SUCCESS;
 }
@@ -345,7 +349,7 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreatePoint3d(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto& pt3dMap = propertyMap.GetAs<Point3dPropertyMap>();
     const DbColumn& xCol = pt3dMap.GetX().GetColumn();
@@ -395,13 +399,17 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(
     }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
+    
+    if(changedProps == nullptr) // if changedProps is nullptr that means we donot need to fill changed prop names
+        return SUCCESS;
+
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (xInCurrentTableAndChangeset && yInCurrentTableAndChangeset && zInCurrentTableAndChangeset) {
-        changedProps.emplace_back(propName);
+        FillChangedPropIfApplicable(changedProps, propName);
     } else {
-        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetX().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
-        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetY().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
-        if (zInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetZ().GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s)); }
+        if (xInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetX().GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s); }
+        if (yInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetY().GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s); }
+        if (zInCurrentTableAndChangeset) { Utf8String s; s.Sprintf("%s.%s", propName.c_str(), pt3dMap.GetZ().GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s); }
     }
     return SUCCESS;
 }
@@ -411,7 +419,7 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreatePrimitive(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
 
@@ -437,7 +445,7 @@ BentleyStatus ChangesetValueFactory::CreatePrimitive(
         MakePrimitiveColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName(), columnValues),
         GetDateTimeInfo(propertyMap)));
-    changedProps.emplace_back(propertyMap.GetProperty().GetName());
+    FillChangedPropIfApplicable(changedProps, propertyMap.GetProperty().GetName());
     return SUCCESS;
 }
 
@@ -447,7 +455,7 @@ BentleyStatus ChangesetValueFactory::CreatePrimitive(
 BentleyStatus ChangesetValueFactory::CreateSystem(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
@@ -476,7 +484,7 @@ BentleyStatus ChangesetValueFactory::CreateSystem(
     }
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPrimitiveValue>(columnInfo, GetFromMap(dataMap->GetColumn().GetName(), columnValues)));
-    changedProps.emplace_back(propertyMap.GetProperty().GetName());
+    FillChangedPropIfApplicable(changedProps, propertyMap.GetProperty().GetName());
     return SUCCESS;
 }
 
@@ -506,7 +514,7 @@ void ChangesetValueFactory::CreateFixedId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateNav(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto& navMap = propertyMap.GetAs<NavigationPropertyMap>();
     const auto& idPropMap = navMap.GetIdPropertyMap();
@@ -559,13 +567,17 @@ BentleyStatus ChangesetValueFactory::CreateNav(
 
     fieldsOut.emplace_back(std::make_unique<ChangesetNavValue>(MakeNavColumnInfo(propertyMap),
                                                                std::move(idVal), std::move(relClassIdVal)));
+
+    if(changedProps == nullptr) // if changedProps is nullptr that means we donot need to fill changed prop names
+        return SUCCESS;
+
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
     if (hasIdInCurrentTableAndChangeset &&  hasPhysicalRelClassIdInCurrentTableAndChangeset) {
-        changedProps.emplace_back(propName);
+        FillChangedPropIfApplicable(changedProps, propName);
     } else if (hasIdInCurrentTableAndChangeset) {
-        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), idPropMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), idPropMap.GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s);
     } else if (hasPhysicalRelClassIdInCurrentTableAndChangeset) {
-        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), relClassIdMap.GetProperty().GetName().c_str()); changedProps.emplace_back(std::move(s));
+        Utf8String s; s.Sprintf("%s.%s", propName.c_str(), relClassIdMap.GetProperty().GetName().c_str()); FillChangedPropIfApplicable(changedProps, s);
     }
     return SUCCESS;
 }
@@ -575,7 +587,7 @@ BentleyStatus ChangesetValueFactory::CreateNav(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::CreateArray(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues, DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
 
@@ -595,7 +607,7 @@ BentleyStatus ChangesetValueFactory::CreateArray(
         MakeArrayColumnInfo(propertyMap),
         GetFromMap(primMap.GetColumn().GetName(), columnValues),
         conn));
-    changedProps.emplace_back(propertyMap.GetProperty().GetName());
+    FillChangedPropIfApplicable(changedProps, propertyMap.GetProperty().GetName());
     return SUCCESS;
 }
 
@@ -605,15 +617,17 @@ BentleyStatus ChangesetValueFactory::CreateArray(
 BentleyStatus ChangesetValueFactory::CreateStruct(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     auto structVal = std::make_unique<ChangesetStructValue>(MakeStructColumnInfo(propertyMap));
     Utf8StringCR structName = propertyMap.GetProperty().GetName();
     bool anyMember = false;
+    std::vector<std::unique_ptr<IECSqlValue>> memberTemp;
+    std::vector<Utf8String> memberChangedProps;
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
-        std::vector<std::unique_ptr<IECSqlValue>> memberTemp;
-        std::vector<Utf8String> memberChangedProps;
-        BentleyStatus status = CreateValueForProperty(conn, *memberMap, columnValues, dbTable, memberTemp, memberChangedProps);
+        memberTemp.clear();
+        memberChangedProps.clear();
+        BentleyStatus status = CreateValueForProperty(conn, *memberMap, columnValues, dbTable, memberTemp, changedProps == nullptr ? nullptr: &memberChangedProps); // if changedProps is nullptr that means we donot need to fill changed prop names
         if (status != SUCCESS)
             return status;
         if (memberTemp.empty())
@@ -623,7 +637,7 @@ BentleyStatus ChangesetValueFactory::CreateStruct(
         for (auto& name : memberChangedProps) {
             Utf8String path;
             path.Sprintf("%s.%s", structName.c_str(), name.c_str());
-            changedProps.emplace_back(std::move(path));
+            FillChangedPropIfApplicable(changedProps, path);
         }
     }
 
@@ -640,7 +654,7 @@ BentleyStatus ChangesetValueFactory::CreateStruct(
 BentleyStatus ChangesetValueFactory::CreateValueForProperty(
     ECDbCR conn, PropertyMap const& propertyMap, ColumnValueMap const& columnValues,
     DbTable const& dbTable,
-    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut, std::vector<Utf8String>* changedProps) {
 
     const auto& prop = propertyMap.GetProperty();
 
@@ -812,7 +826,7 @@ BentleyStatus ChangesetValueFactory::BuildPropertyFields(
     ECDbCR conn,
     DbTable const& dbTable,
     std::vector<std::unique_ptr<IECSqlValue>>& fieldsOut,
-    std::vector<Utf8String>& changedProps) {
+    std::vector<Utf8String>* changedProps) {
 
     for (auto& propertyMap : classMap.GetPropertyMaps()) {
         // ECInstanceId and ECClassId are emitted as fixed slots [0] and [1] by the caller.
@@ -858,6 +872,14 @@ bool ChangesetValueFactory::IsDerivedFromBisElement(ECClassId classId, ECDbCR co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void ChangesetValueFactory::FillChangedPropIfApplicable(std::vector<Utf8String>* changedProps, Utf8String const& propName) {
+    if (changedProps != nullptr)
+        changedProps->push_back(propName);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::ResolveClassId(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECClassId& resolvedClassIdOut, bool& classIdFromChangesetOut) {
     resolvedClassIdOut.Invalidate();
@@ -892,7 +914,7 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ChangesetValueFactory::Create(
     ECDbCR conn, DbTable const& tbl, ColumnValueMap const& columnValues, ECN::ECClassId resolvedClassId, bool classIdFromChangeset,
-    std::vector<std::unique_ptr<IECSqlValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>& changedProps) {
+    std::vector<std::unique_ptr<IECSqlValue>>& fields, ChangesetReader::PropertyFilter propertyFilter, std::vector<Utf8String>* changedProps) {
 
     const ECClass* cls = conn.Schemas().Main().GetClass(resolvedClassId);
     if (cls == nullptr) {
@@ -908,9 +930,9 @@ BentleyStatus ChangesetValueFactory::Create(
 
     // ECInstanceId and ECClassId name collection — handled here since they are
     // emitted as fixed slots and skipped by the BuildPropertyFields loop.
-    changedProps.emplace_back(ECDBSYS_PROP_ECInstanceId);
+    FillChangedPropIfApplicable(changedProps, ECDBSYS_PROP_ECInstanceId);
     if (classIdFromChangeset)
-        changedProps.emplace_back(ECDBSYS_PROP_ECClassId);
+        FillChangedPropIfApplicable(changedProps, ECDBSYS_PROP_ECClassId);
 
     // -----------------------------------------------------------------------
     // Step 2: Resolve ECInstanceId (slot [0]).
