@@ -4207,6 +4207,51 @@ TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
     ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country]='USA' OR [Customer].[Country]='DUBAI' AND [Customer].[ContactTitle]='AM')") != nativeSql.npos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsAndIsNotOperatorNullSafeSemantics)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsOperatorSemantics.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="S1" typeName="string" />
+                <ECProperty propertyName="S2" typeName="string" />
+                <ECProperty propertyName="P1" typeName="point3d" />
+              </ECEntityClass>
+            </ECSchema>)xml")));
+
+    // (S1, S2): equal-nonnull, different, both-null, one-null, the-other-null
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2) VALUES('a','a')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2) VALUES('a','b')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2) VALUES(NULL,NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2) VALUES(NULL,'b')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2) VALUES('a',NULL)"));
+
+    auto count = [this](Utf8CP whereClause) -> int
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Foo WHERE %s", whereClause).c_str())) << whereClause;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << whereClause;
+        return stmt.GetValueInt(0);
+        };
+
+    // null-safe equality: matches ('a','a') and (NULL,NULL)
+    EXPECT_EQ(2, count("S1 IS S2"));
+    // null-safe inequality: matches ('a','b'), (NULL,'b'), ('a',NULL)
+    EXPECT_EQ(3, count("S1 IS NOT S2"));
+    // contrast: regular '=' treats NULL comparisons as unknown -> only ('a','a')
+    EXPECT_EQ(1, count("S1 = S2"));
+    // NULL literal operand on either side
+    EXPECT_EQ(2, count("S1 IS NULL"));
+    EXPECT_EQ(3, count("S1 IS NOT NULL"));
+    EXPECT_EQ(2, count("NULL IS S2"));
+
+    // operands of incompatible types are rejected (string vs point)
+    ECSqlStatement bad;
+    EXPECT_NE(ECSqlStatus::Success, bad.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS P1"));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

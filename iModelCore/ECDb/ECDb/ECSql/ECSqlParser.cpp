@@ -2434,20 +2434,42 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             }
         case OSQLParseNode::boolean_test:
             {
-            std::unique_ptr<BooleanExp> op1 = nullptr;
-            if (SUCCESS != ParseSearchCondition(op1, parseNode->getChild(0/*boolean_primary*/)))
-                return ERROR;
-
             bool isNot = false;
             if (SUCCESS != ParseNotToken(isNot, parseNode->getChild(2/*sql_not*/)))
                 return ERROR;
 
-            std::unique_ptr<ValueExp> truthValueExp = nullptr;
-            if (SUCCESS != ParseTruthValue(truthValueExp, parseNode->getChild(3/*truth_value*/)))
+            const BooleanSqlOperator op = isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is;
+            OSQLParseNode const* lhsNode = parseNode->getChild(0/*boolean_primary*/);
+            OSQLParseNode const* rhsNode = parseNode->getChild(3/*truth_value | column_ref*/);
+
+            if (SQL_ISRULE(rhsNode, column_ref))
+                {
+                // X IS [NOT] Y : both sides are value expressions compared with SQLite's null-safe IS operator.
+                // The left side is parsed as a value expression (not a boolean predicate) so that it keeps its real
+                // type. This matters for operands whose comparability depends on their type (e.g. points and
+                // navigation properties) and to detect a NULL literal operand for the column-wise expansion.
+                std::unique_ptr<ValueExp> lhsValueExp = nullptr;
+                if (SUCCESS != ParseValueExp(lhsValueExp, lhsNode))
+                    return ERROR;
+
+                std::unique_ptr<ValueExp> rhsValueExp = nullptr;
+                if (SUCCESS != ParseValueExp(rhsValueExp, rhsNode))
+                    return ERROR;
+
+                exp = std::make_unique<BinaryBooleanExp>(std::move(lhsValueExp), op, std::move(rhsValueExp));
+                return SUCCESS;
+                }
+
+            // X IS [NOT] NULL|TRUE|FALSE|UNKNOWN|(ClassName) : the left side is a boolean predicate.
+            std::unique_ptr<BooleanExp> op1 = nullptr;
+            if (SUCCESS != ParseSearchCondition(op1, lhsNode))
                 return ERROR;
 
-            // X IS [NOT] NULL|TRUE|FALSE|UNKNOWN
-            exp = std::make_unique<BinaryBooleanExp>(std::move(op1), isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is, std::move(truthValueExp));
+            std::unique_ptr<ValueExp> truthValueExp = nullptr;
+            if (SUCCESS != ParseValueExp(truthValueExp, rhsNode))
+                return ERROR;
+
+            exp = std::make_unique<BinaryBooleanExp>(std::move(op1), op, std::move(truthValueExp));
             return SUCCESS;
             }
         case OSQLParseNode::boolean_primary:

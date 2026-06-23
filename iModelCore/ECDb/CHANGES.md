@@ -5,7 +5,14 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.3.2` |
+| ECSQL   | `2.0.4.0` |
+
+## ## `06/23/2026`: Added `IS` / `IS NOT` operator between operands
+* ECSql version change `2.0.3.2` -> `2.0.4.0`.
+* The `IS` and `IS NOT` operators can now be used between two operands, e.g. `prop1 IS [NOT] prop2`, where each operand may be a property or the `NULL` literal. These map to SQLite's null-safe comparison operators (`NULL IS NULL` is true, `1 IS NULL` is false).
+* Previously `IS` / `IS NOT` only supported the right-hand operands `NULL`, the boolean literals `TRUE`/`FALSE`/`UNKNOWN`, and the class type predicate `IS (ClassName)`. Those forms are unchanged.
+* For multi-column operands (e.g. `Point2d`/`Point3d` and navigation properties), the comparison is expanded column-wise: `IS` joins the per-column comparisons with `AND`, `IS NOT` joins them with `OR` (consistent with `=` and `<>`).
+* Example: `SELECT * FROM bis.Element WHERE CodeValue IS NOT UserLabel`
 
 ## ## `04/24/2026`: Allow optional ON clause with CROSS JOIN
 * ECSql version change `2.0.3.1` -> `2.0.3.2`.

@@ -1274,4 +1274,62 @@ TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin)
     ASSERT_EQ(BE_SQLITE_ROW, sqlStmt.Step());    
     }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsAndIsNotOperator.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+              <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="S1" typeName="string" />
+                <ECProperty propertyName="S2" typeName="string" />
+                <ECProperty propertyName="P1" typeName="point3d" />
+                <ECProperty propertyName="P2" typeName="point3d" />
+                <ECNavigationProperty propertyName="ParentA" relationshipName="FooOwnsFoos" direction="Backward" />
+                <ECNavigationProperty propertyName="ParentB" relationshipName="FooRefFoos" direction="Backward" />
+              </ECEntityClass>
+              <ECRelationshipClass typeName="FooOwnsFoos" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Foo" /></Source>
+                <Target multiplicity="(0..*)" roleLabel="owned by" polymorphic="true"><Class class="Foo" /></Target>
+              </ECRelationshipClass>
+              <ECRelationshipClass typeName="FooRefFoos" strength="referencing" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="refs" polymorphic="true"><Class class="Foo" /></Source>
+                <Target multiplicity="(0..*)" roleLabel="ref by" polymorphic="true"><Class class="Foo" /></Target>
+              </ECRelationshipClass>
+            </ECSchema>)xml")));
+
+    auto assertWhere = [this](Utf8CP ecsql, Utf8CP expectedWhereClause)
+        {
+        Utf8String sql = GetHelper().ECSqlToSql(ecsql);
+        EXPECT_TRUE(sql.Contains(expectedWhereClause)) << "ECSql: " << ecsql << "\nSql:   " << sql.c_str()
+            << "\nExpected to contain: " << expectedWhereClause;
+        };
+
+    // single primitive column operands: IS -> "IS", IS NOT -> "IS NOT" (space wrapped)
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS S2", "WHERE [Foo].[S1] IS [Foo].[S2]");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT S2", "WHERE [Foo].[S1] IS NOT [Foo].[S2]");
+
+    // NULL literal on either side (the new general path and the existing test_for_null path)
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NULL", "WHERE [Foo].[S1] IS NULL");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT NULL", "WHERE [Foo].[S1] IS NOT NULL");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE NULL IS S1", "WHERE NULL IS [Foo].[S1]");
+
+    // multi-column point operands: IS expands column-wise with AND, IS NOT with OR
+    assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS P2",
+                "WHERE ([Foo].[P1_X] IS [Foo].[P2_X] AND [Foo].[P1_Y] IS [Foo].[P2_Y] AND [Foo].[P1_Z] IS [Foo].[P2_Z])");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS NOT P2",
+                "WHERE ([Foo].[P1_X] IS NOT [Foo].[P2_X] OR [Foo].[P1_Y] IS NOT [Foo].[P2_Y] OR [Foo].[P1_Z] IS NOT [Foo].[P2_Z])");
+
+    // multi-column navigation operands: IS expands column-wise with AND, IS NOT with OR
+    assertWhere("SELECT 1 FROM ts.Foo WHERE ParentA IS ParentB",
+                "WHERE ([Foo].[ParentAId] IS [Foo].[ParentBId] AND [Foo].[ParentARelECClassId] IS [Foo].[ParentBRelECClassId])");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE ParentA IS NOT ParentB",
+                "WHERE ([Foo].[ParentAId] IS NOT [Foo].[ParentBId] OR [Foo].[ParentARelECClassId] IS NOT [Foo].[ParentBRelECClassId])");
+
+    // regression: the existing IS (ClassName) type predicate is unaffected
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+    }
 END_ECDBUNITTESTS_NAMESPACE

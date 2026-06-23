@@ -920,6 +920,14 @@ boolean_test:
             $$->append($3);
             $$->append($4);
         }
+    |   boolean_primary SQL_TOKEN_IS sql_not column_ref
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+        }
     ;
 boolean_factor:
         boolean_test
