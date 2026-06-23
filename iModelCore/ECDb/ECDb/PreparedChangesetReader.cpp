@@ -215,15 +215,16 @@ void PreparedChangesetReader::CloseInfallible() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PreparedChangesetReader::ClearMembers() {
-    m_currentChange = Changes::Change(nullptr, false);
-    m_changes = nullptr;
-    m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
-    m_invert = false;
     ClearFields();
     ClearTableFilters();
     ClearOpcodeFilters();
     ClearECClassNameFilters();
     DisableStrictMode();
+    m_currentChange = Changes::Change(nullptr, false);
+    m_changes = nullptr;
+    m_changeStream = nullptr; // must be destroyed before we delete the temp file it may be reading
+    m_invert = false;
+    m_propertyFilter = PropertyFilter::All;
 }
 
 //---------------------------------------------------------------------------------------

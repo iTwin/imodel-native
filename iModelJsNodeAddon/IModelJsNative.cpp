@@ -5164,15 +5164,6 @@ private:
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
         return ecdb;
         }
-    
-    Changes::Change::Stage GetStage(NapiInfoCR info, int targetStage)
-        {
-        if (targetStage < 0 || targetStage > 1)
-            THROW_JS_TYPE_EXCEPTION("Invalid stage. Expected 0 (Old) or 1 (New)");
-        if(targetStage == 0)
-            return Changes::Change::Stage::Old;
-        return Changes::Change::Stage::New;
-        }
 
     ChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
         {
@@ -5200,6 +5191,53 @@ private:
         return static_cast<size_t>(val);
         }
 
+    // Builds the ChangesetRowMetadata object for the current reader row.
+    Napi::Value BuildRowMetadata(Napi::Env env)
+        {
+        BeJsNapiObject metadata(env);
+        Utf8String tableName;
+        if (m_reader.GetTableName(tableName) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetTableName() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["tableName"] = tableName.c_str();
+        DbOpcode opcode;
+        if (m_reader.GetOpcode(opcode) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["opCode"] = static_cast<int>(opcode);
+        bool isIndirectChange;
+        if (m_reader.IsIndirectChange(isIndirectChange) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["isIndirectChange"] = isIndirectChange;
+        bool isECTable;
+        if (m_reader.IsECTable(isECTable) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsECTable() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["isECTable"] = isECTable;
+        return metadata;
+        }
+
+    // Builds a ChangesetRowValue for the given stage, or returns undefined when that stage has no columns.
+    Napi::Value BuildRowValue(Napi::Env env, ECSqlRowAdaptor& adaptor, Changes::Change::Stage stage)
+        {
+        if (m_reader.GetColumnCount(stage) == 0)
+            return env.Undefined();
+        BeJsNapiObject rv(env);
+        BeJsValue rowJson = rv["data"];
+        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stage)) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
+        Utf8String instanceKey;
+        if (m_reader.GetInstanceKey(stage, instanceKey) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
+        rv["key"] = instanceKey.c_str();
+        const auto* names = m_reader.GetChangeFetchedPropertyNames();
+        if (names == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
+        BeJsValue changeFetchedPropNames = rv["changeFetchedPropNames"];
+        changeFetchedPropNames.SetEmptyArray();
+        uint32_t idx = 0;
+        for (auto const& name : *names)
+            changeFetchedPropNames[idx++] = name;
+        return rv;
+        }
+
 public:
     NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
     ~NativeChangesetReader() { SetInDestructor(); }
@@ -5215,8 +5253,6 @@ public:
             InstanceMethod("openTxn",             &NativeChangesetReader::OpenTxn),
             InstanceMethod("close",               &NativeChangesetReader::Close),
             InstanceMethod("step",                &NativeChangesetReader::Step),
-            InstanceMethod("getValue",            &NativeChangesetReader::GetValue),
-            InstanceMethod("getChangeMetadata",     &NativeChangesetReader::GetChangeMetadata),
             InstanceMethod("setTableNameFilters",   &NativeChangesetReader::SetTableNameFilters),
             InstanceMethod("setOpCodeFilters",      &NativeChangesetReader::SetOpCodeFilters),
             InstanceMethod("setClassNameFilters",   &NativeChangesetReader::SetClassNameFilters),
@@ -5324,83 +5360,41 @@ public:
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "close() failed", IModelJsNativeErrorKey::ChangesetError);
         }
 
-    Napi::Value GetChangeMetadata(NapiInfoCR info)
-        {
-        BeJsNapiObject out(info.Env());
-        Utf8String tableName;
-        BentleyStatus rc = m_reader.GetTableName(tableName);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getTableName() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["tableName"] = tableName.c_str();
-        DbOpcode opcode;
-        rc = m_reader.GetOpcode(opcode);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["opCode"] = static_cast<int>(opcode);
-        bool isIndirectChange;
-        rc = m_reader.IsIndirectChange(isIndirectChange);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "isIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["isIndirectChange"] = isIndirectChange;
-        bool isECTable;
-        rc = m_reader.IsECTable(isECTable);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "isECTable() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["isECTable"] = isECTable;
-        return out;
-        }
-
     Napi::Value Step(NapiInfoCR info)
         {
-        DbResult rc = m_reader.Step();
-        if(rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "step() failed", rc);
-        return Napi::Boolean::New(Env(), rc == BE_SQLITE_ROW);
-        }
-
-    Napi::Value GetValue(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_INTEGER(0, stage);
+        REQUIRE_ARGUMENT_INTEGER(0, numOfRows);
         REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+
+        if (numOfRows <= 0)
+            THROW_JS_TYPE_EXCEPTION("numOfRows must be a positive integer");
 
         ECDb const* ecdb = m_reader.GetECDb();
         if (nullptr == ecdb)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getValue() called when no ECDb is associated with the ECChangesetReader", IModelJsNativeErrorKey::BadArg);
-        
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no ECDb associated", IModelJsNativeErrorKey::BadArg);
 
-        Changes::Change::Stage stageEnum = GetStage(info, stage);
-
-        if(m_reader.GetColumnCount(stageEnum) == 0)
-            return Env().Undefined(); //if there are no columns, return undefined instead of an empty object
-        
         BeJsValue opts(optObj);
         ECSqlRowAdaptor adaptor(*ecdb);
         adaptor.GetOptions().FromJson(opts);
-        // filling data
-        BeJsNapiObject out(info.Env());
-        BeJsValue rowJson = out["data"];
-        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stageEnum)) != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
-        // filling instance key
-        Utf8String instanceKey;
-        if (m_reader.GetInstanceKey(stageEnum, instanceKey) != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
-        out["key"] = instanceKey.c_str();
-        
-        // filling fetched changeset properties
-        std::vector<Utf8String> names;
-        if (m_reader.GetChangeFetchedPropertyNames(names) != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
-        
-        BeJsValue changeFetchedPropNames = out["changeFetchedPropNames"];
-        changeFetchedPropNames.SetEmptyArray();
-        uint32_t i = 0;
-        for (auto const& name : names) 
+
+        Napi::Array result = Napi::Array::New(Env());
+        uint32_t count = 0;
+
+        for (int i = 0; i < numOfRows; ++i)
             {
-            changeFetchedPropNames[i] = name;
-            i++;
+            DbResult rc = m_reader.Step();
+            if (rc == BE_SQLITE_DONE)
+                break;
+            if (rc != BE_SQLITE_ROW)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "step() failed", rc);
+
+            Napi::Object rowData = Napi::Object::New(Env());
+            rowData.Set("metadata", BuildRowMetadata(Env()));
+            rowData.Set("oldValues", BuildRowValue(Env(), adaptor, Changes::Change::Stage::Old));
+            rowData.Set("newValues", BuildRowValue(Env(), adaptor, Changes::Change::Stage::New));
+            result[count++] = rowData;
             }
-        return out;
+
+        return result;
         }
     void SetTableNameFilters(NapiInfoCR info)
         {
