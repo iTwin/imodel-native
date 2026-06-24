@@ -17,8 +17,6 @@ struct PreparedChangesetReader;
 //+===============+===============+===============+===============+===============+======
 struct ChangesetReader {
 public:
-    struct Impl;
-
     //! Controls which properties are emitted per row.
     enum class PropertyFilter {
         All = 0, //!< Emit ECInstanceId, ECClassId, and all user/domain properties.
