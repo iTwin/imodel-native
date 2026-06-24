@@ -8,7 +8,7 @@
 %include mdl.mki
 
 %if $(TARGET_PLATFORM)=="Windows"
-	%error Need to comment out this line to make it compile
+	%error Windows crashpad handler delivery is deferred — see PR #1466; comment out this line for a local test build
 %endif
 
 appName             = CrashpadHandler
