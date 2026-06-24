@@ -29,7 +29,7 @@ vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 %elif defined (DEBUG)
 	vcpkgHandlerExe     = $(vcpkgTripletDir)debug/tools/crashpad_handler$(exeext)
 %else
-	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad/crashpad_handler$(exeext)
+	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
 %endif
 handlerOut          = $(o)$(appName)$(exeext)
 
