@@ -9,10 +9,11 @@ This document including important changes to syntax or file format.
 
 ## ## `06/23/2026`: Added `IS` / `IS NOT` operator between operands
 * ECSql version change `2.0.3.2` -> `2.0.4.0`.
-* The `IS` and `IS NOT` operators can now be used between two operands, e.g. `prop1 IS [NOT] prop2`, where each operand may be a property or the `NULL` literal. These map to SQLite's null-safe comparison operators (`NULL IS NULL` is true, `1 IS NULL` is false).
-* Previously `IS` / `IS NOT` only supported the right-hand operands `NULL`, the boolean literals `TRUE`/`FALSE`/`UNKNOWN`, and the class type predicate `IS (ClassName)`. Those forms are unchanged.
+* The `IS` and `IS NOT` operators can now be used between two operands, e.g. `prop1 IS [NOT] prop2`. Each operand may be any value expression — a property, the `NULL` literal, a constant, a parameter, a function call, an arithmetic expression, etc. These map to SQLite's null-safe comparison operators (`NULL IS NULL` is true, `1 IS NULL` is false).
+* Previously `IS` / `IS NOT` only supported the right-hand operands `NULL`, the boolean literals `TRUE`/`FALSE`/`UNKNOWN`, and the class type predicate `IS (ClassName)`. Those forms are unchanged: a right-hand operand that is exactly `NULL`/`TRUE`/`FALSE`/`UNKNOWN`, or a parenthesized `(ClassName)`, keeps its original meaning. (Write a parenthesized value expression without the outer parentheses, e.g. `x IS y + 1` rather than `x IS (y + 1)`, when it could be mistaken for a type predicate.)
 * For multi-column operands (e.g. `Point2d`/`Point3d` and navigation properties), the comparison is expanded column-wise: `IS` joins the per-column comparisons with `AND`, `IS NOT` joins them with `OR` (consistent with `=` and `<>`).
 * Example: `SELECT * FROM bis.Element WHERE CodeValue IS NOT UserLabel`
+* Example: `SELECT * FROM bis.Element WHERE CodeValue IS json_extract(JsonProperties, '$.code')`
 
 ## ## `04/24/2026`: Allow optional ON clause with CROSS JOIN
 * ECSql version change `2.0.3.1` -> `2.0.3.2`.

@@ -1329,6 +1329,11 @@ TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
     assertWhere("SELECT 1 FROM ts.Foo WHERE ParentA IS NOT ParentB",
                 "WHERE ([Foo].[ParentAId] IS NOT [Foo].[ParentBId] OR [Foo].[ParentARelECClassId] IS NOT [Foo].[ParentBRelECClassId])");
 
+    // the operands may be any value expression, not just a column or NULL literal
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS 'abc'", "WHERE [Foo].[S1] IS 'abc'");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT 'abc'", "WHERE [Foo].[S1] IS NOT 'abc'");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE 'abc' IS S1", "WHERE 'abc' IS [Foo].[S1]");
+
     // regression: the existing IS (ClassName) type predicate is unaffected
     EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo)").Contains("ec_cache_ClassHierarchy"));
     }

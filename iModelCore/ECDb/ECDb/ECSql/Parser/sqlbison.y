@@ -912,6 +912,7 @@ boolean_primary:
 
 boolean_test:
         boolean_primary
+        /* X IS [NOT] NULL|TRUE|FALSE|UNKNOWN, and the X IS [NOT] (ClassName) type predicate. */
     |   boolean_primary SQL_TOKEN_IS sql_not truth_value
         {
             $$ = SQL_NEW_RULE;
@@ -920,7 +921,11 @@ boolean_test:
             $$->append($3);
             $$->append($4);
         }
-    |   boolean_primary SQL_TOKEN_IS sql_not column_ref
+        /* X IS [NOT] <value_exp>: SQLite null-safe comparison between two operands.
+           Any value expression is allowed on the right-hand side. A right-hand operand
+           that is exactly NULL/TRUE/FALSE/UNKNOWN or the parenthesized (ClassName) form
+           reduces via 'truth_value' above (it has the lower rule number). */
+    |   boolean_primary SQL_TOKEN_IS sql_not value_exp
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -981,12 +986,34 @@ type_list:
         }
     ;
 
+/* 'opt_only' is inlined here (rather than 'opt_only table_node') so that a bare class name
+   shifts SQL_TOKEN_NAME directly. Otherwise the empty 'opt_only' reduction loses a
+   shift/reduce race against value_exp's property_path in the 'X IS (...)' context, which
+   would shadow this type predicate with a parenthesized value expression. */
 type_list_item:
-    opt_only table_node
+    table_node
     {
     $$ = SQL_NEW_RULE;
+    $$->append(CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only)));
     $$->append($1);
-    $$->append($2);
+    }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ONLY table_node
+    {
+    $$ = SQL_NEW_RULE;
+    OSQLParseNode* pOptOnly = CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only));
+    pOptOnly->append($1);
+    pOptOnly->append($2 = CREATE_NODE("ONLY", SQL_NODE_NAME));
+    $$->append(pOptOnly);
+    $$->append($3);
+    }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ALL table_node
+    {
+    $$ = SQL_NEW_RULE;
+    OSQLParseNode* pOptOnly = CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only));
+    pOptOnly->append($1);
+    pOptOnly->append($2 = CREATE_NODE("ALL", SQL_NODE_NAME));
+    $$->append(pOptOnly);
+    $$->append($3);
     }
     ;
 

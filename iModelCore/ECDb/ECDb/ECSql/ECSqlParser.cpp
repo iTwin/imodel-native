@@ -2440,9 +2440,16 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
 
             const BooleanSqlOperator op = isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is;
             OSQLParseNode const* lhsNode = parseNode->getChild(0/*boolean_primary*/);
-            OSQLParseNode const* rhsNode = parseNode->getChild(3/*truth_value | column_ref*/);
+            OSQLParseNode const* rhsNode = parseNode->getChild(3/*truth_value | value_exp*/);
 
-            if (SQL_ISRULE(rhsNode, column_ref))
+            // The right-hand operand of 'X IS [NOT] <rhs>' is either a "truth value"
+            // (NULL/TRUE/FALSE/UNKNOWN or the (ClassName) type predicate), which keeps the original
+            // boolean-predicate semantics, or any other value expression, which is a null-safe comparison.
+            const bool rhsIsTruthValue = SQL_ISRULE(rhsNode, type_predicate)
+                || SQL_ISTOKEN(rhsNode, NULL) || SQL_ISTOKEN(rhsNode, TRUE)
+                || SQL_ISTOKEN(rhsNode, FALSE) || SQL_ISTOKEN(rhsNode, UNKNOWN);
+
+            if (!rhsIsTruthValue)
                 {
                 // X IS [NOT] Y : both sides are value expressions compared with SQLite's null-safe IS operator.
                 // The left side is parsed as a value expression (not a boolean predicate) so that it keeps its real

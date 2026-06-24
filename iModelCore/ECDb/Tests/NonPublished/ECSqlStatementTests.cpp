@@ -4247,6 +4247,32 @@ TEST_F(ECSqlStatementTestFixture, IsAndIsNotOperatorNullSafeSemantics)
     EXPECT_EQ(3, count("S1 IS NOT NULL"));
     EXPECT_EQ(2, count("NULL IS S2"));
 
+    // the operands may be any value expression, not just a column or NULL literal:
+    // string literal on the right-hand side
+    EXPECT_EQ(3, count("S1 IS 'a'"));
+    EXPECT_EQ(2, count("S1 IS NOT 'a'"));
+    // function call on the right-hand side (LOWER(S2) equals S2 for these lowercase values)
+    EXPECT_EQ(2, count("S1 IS LOWER(S2)"));
+    EXPECT_EQ(3, count("S1 IS NOT LOWER(S2)"));
+    // function call on the left-hand side
+    EXPECT_EQ(2, count("LOWER(S1) IS S2"));
+    // a parenthesized unqualified name is a value expression here, not a type predicate
+    EXPECT_EQ(2, count("S1 IS (S2)"));
+
+    // parameter on the right-hand side, bound to a value and to NULL (null-safe both ways)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Foo WHERE S1 IS ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "a", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(3, stmt.GetValueInt(0)) << "S1 IS ? bound to 'a'";
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(2, stmt.GetValueInt(0)) << "S1 IS ? bound to NULL";
+    }
+
     // operands of incompatible types are rejected (string vs point)
     ECSqlStatement bad;
     EXPECT_NE(ECSqlStatus::Success, bad.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS P1"));
