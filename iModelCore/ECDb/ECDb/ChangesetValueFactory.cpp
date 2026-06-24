@@ -331,7 +331,7 @@ BentleyStatus ChangesetValueFactory::CreatePoint2d(
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint2dValue>(MakePrimitiveColumnInfo(propertyMap), x, y));
 
-    if(changedProps == nullptr) // if changedProps is nullptr that means we donot need to fill changed prop names
+    if(changedProps == nullptr) // if changedProps is nullptr that means we do not need to fill changed prop names
         return SUCCESS;
 
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
@@ -400,7 +400,7 @@ BentleyStatus ChangesetValueFactory::CreatePoint3d(
 
     fieldsOut.emplace_back(std::make_unique<ChangesetPoint3dValue>(MakePrimitiveColumnInfo(propertyMap), x, y, z));
     
-    if(changedProps == nullptr) // if changedProps is nullptr that means we donot need to fill changed prop names
+    if(changedProps == nullptr) // if changedProps is nullptr that means we do not need to fill changed prop names
         return SUCCESS;
 
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
@@ -568,7 +568,7 @@ BentleyStatus ChangesetValueFactory::CreateNav(
     fieldsOut.emplace_back(std::make_unique<ChangesetNavValue>(MakeNavColumnInfo(propertyMap),
                                                                std::move(idVal), std::move(relClassIdVal)));
 
-    if(changedProps == nullptr) // if changedProps is nullptr that means we donot need to fill changed prop names
+    if(changedProps == nullptr) // if changedProps is nullptr that means we do not need to fill changed prop names
         return SUCCESS;
 
     Utf8StringCR propName = propertyMap.GetProperty().GetName();
@@ -627,7 +627,7 @@ BentleyStatus ChangesetValueFactory::CreateStruct(
     for (auto& memberMap : propertyMap.GetAs<StructPropertyMap>()) {
         memberTemp.clear();
         memberChangedProps.clear();
-        BentleyStatus status = CreateValueForProperty(conn, *memberMap, columnValues, dbTable, memberTemp, changedProps == nullptr ? nullptr: &memberChangedProps); // if changedProps is nullptr that means we donot need to fill changed prop names
+        BentleyStatus status = CreateValueForProperty(conn, *memberMap, columnValues, dbTable, memberTemp, changedProps == nullptr ? nullptr: &memberChangedProps); // if changedProps is nullptr that means we do not need to fill changed prop names
         if (status != SUCCESS)
             return status;
         if (memberTemp.empty())
