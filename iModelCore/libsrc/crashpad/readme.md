@@ -1,7 +1,8 @@
 At this time:
-- Linux and macOS builds always compile and include crashpad
-- You must define `LINUX_MINIDUMP_ENABLED` (Linux only) **or** `IMODEL_ADDON_MINIDUMP_ENABLED` (any crashpad-supported OS) in the environment to enable crashpad handling
+- Windows, Linux, and macOS builds always compile and include crashpad
+- You must define `LINUX_MINIDUMP_ENABLED` (Linux only) **or** `IMODEL_ADDON_MINIDUMP_ENABLED` (any crashpad-supported OS) in the environment to enable crashpad handling. **Note:** This is done automatically inside certain tests that get run for certain build strategies.
 - You must define `MINIDUMP_UPLOAD_URL=...` to enable automatic uploads (additionally `MINIDUMP_UPLOAD_BACKTRACE_TOKEN=...` for backtrace.io)
+- See [VCPKG.md](../VCPKG.md) for information about vcpkg builds like this one.
 
 ## Symbol processing for sentry.io
 
