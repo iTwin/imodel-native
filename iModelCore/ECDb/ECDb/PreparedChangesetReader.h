@@ -125,7 +125,6 @@ private:
     DbResult WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
     //! Stores @p changeStream directly in m_iterator without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.
-    //! Only ChangesetReader::Impl may call this directly (for the generic ChangeStream path).
     DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
     void ClearMembers();
     //! Returns the number of columns in @p tableName, using TableColumnCache for efficiency.
