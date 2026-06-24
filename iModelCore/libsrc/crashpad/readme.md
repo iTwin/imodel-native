@@ -1,6 +1,6 @@
 At this time:
 - Linux builds always compile and include crashpad
-- You must define LINUX_MINIDUMP_ENABLED=1 in the environment to enable crashpad handling
+- You must define LINUX_MINIDUMP_ENABLED=1 in the environment to enable crashpad handling. **Note:** This is done automatically inside certain tests that get run for certain build strategies.
 - You must define MINIDUMP_UPLOAD_URL=... to enable automatic uploads (additionally MINIDUMP_UPLOAD_BACKTRACE_TOKEN=... for backtrace.io)
 - See [VCPKG.md](../VCPKG.md) for information about vcpkg builds like this one.
 
