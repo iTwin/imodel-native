@@ -203,12 +203,18 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
-    // RULE: The schema must be valid and convertible to the latest ECVersion.
+    // RULE: The schema must be internally valid, and its ECVersion must be in the range [Latest, MaxParsable].
+    // Lower bound (Latest): ensures the schema has been brought up to the minimum version ECDb requires.
+    // Upper bound (MaxParsable): ensures we do not import a schema that represents a version of EC this binary cannot fully/correctly handle.
     // TODO: const_cast is evil, but the Validate method is const iff called with the argument of false.
     //       An enhancement should go towards making a const correct Validate in the future.
-    if (!const_cast<ECSchemaR>(schema).Validate(false) || schema.GetECVersion() < ECVersion::Latest)
+    if (!const_cast<ECSchemaR>(schema).Validate(false) || schema.GetECVersion() < ECVersion::Latest || schema.GetECVersion() > ECVersion::MaxParsable)
         {
-        LOG.errorv("Schema '%s' does not pass EC validation required for ECVersion %s or higher.", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
+        LOG.errorv("Schema '%s' does not pass EC validation: ECVersion %s must be at least %s and at most %s.",
+                   schema.GetFullSchemaName().c_str(),
+                   ECSchema::GetECVersionString(schema.GetECVersion()),
+                   ECSchema::GetECVersionString(ECVersion::Latest),
+                   ECSchema::GetECVersionString(ECVersion::MaxParsable));
         status = ECObjectsStatus::Error;
         }
 

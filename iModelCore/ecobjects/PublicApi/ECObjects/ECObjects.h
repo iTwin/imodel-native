@@ -303,7 +303,7 @@ enum class ECVersion : uint32_t
     V3_2 = (0x03 << 16 | 0x02),
     V3_3 = (0x03 << 16 | 0x03),
     Latest = V3_2,
-    MaxKnown = V3_3
+    MaxParsable = V3_3
     };
 
 

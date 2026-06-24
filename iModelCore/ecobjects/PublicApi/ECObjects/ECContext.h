@@ -37,6 +37,7 @@ private:
     bool m_skipValidation = false;
     bool m_acceptLegacyImperfectLatestCompatibleMatch;
     bool m_calculateChecksum = false;
+    bool m_strictSchemaValidation = false;
 
     SearchPathList m_searchPaths;
     bvector<WString> m_cultureStrings;
@@ -110,6 +111,9 @@ public:
 
     //! Sets calculate checksum on every schema loaded into context
     void SetCalculateChecksum(bool calculateChecksum) {m_calculateChecksum = calculateChecksum;}
+
+    bool GetStrictSchemaValidation() const {return m_strictSchemaValidation;}
+    void SetStrictSchemaValidation(bool strict) {m_strictSchemaValidation = strict;}
 
     //! Host should call to establish search paths for standard ECSchemas.
     //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,

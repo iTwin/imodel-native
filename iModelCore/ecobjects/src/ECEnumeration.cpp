@@ -208,7 +208,7 @@ bool ECEnumeration::EnumeratorIsUnique(Utf8CP enumeratorName, Utf8CP enumeratorV
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, pugi::xml_node childNode)
+static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, pugi::xml_node childNode, ECSchemaReadContextCR context)
     {
     PrimitiveType const primitiveType = enumeration->GetType();
     Utf8String childNodeName = childNode.name();
@@ -223,6 +223,18 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, pug
     int32_t enumeratorValueInteger {};
     Utf8String enumeratorValueString;
     auto valueAttr = childNode.attribute(ENUMERATOR_VALUE_ATTRIBUTE);
+
+    if (context.GetStrictSchemaValidation())
+        {
+        // NAME_ATTRIBUTE and DESCRIPTION_ATTRIBUTE are V3.2+ but are still recognised attribute names.
+        static const std::set<Utf8String> s_knownEnumeratorAttributes = { ENUMERATOR_VALUE_ATTRIBUTE, ECXML_DISPLAY_LABEL_ATTRIBUTE, NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(childNode, s_knownEnumeratorAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on %s element for ECEnumeration '%s'",
+                unknownAttr, ECXML_ENUMERATOR_ELEMENT, enumeration->GetName().c_str());
+            return ERROR;
+            }
+        }
 
     if (!valueAttr)
         {
@@ -327,6 +339,16 @@ SchemaReadStatus ECEnumeration::ReadXml(pugi::xml_node enumerationNode, ECSchema
     if (GetName().length() == 0)
         READ_REQUIRED_XML_ATTRIBUTE(enumerationNode, TYPE_NAME_ATTRIBUTE, this, Name, enumerationNode.name())
 
+    if (context.GetStrictSchemaValidation())
+        {
+        static const std::set<Utf8String> s_knownEnumerationAttributes = { TYPE_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, ECXML_DISPLAY_LABEL_ATTRIBUTE, ECXML_BACKING_TYPE_NAME_ATTRIBUTE, IS_STRICT_ATTRIBUTE };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(enumerationNode, s_knownEnumerationAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on ECEnumeration '%s'", unknownAttr, GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
     auto descAttr = enumerationNode.attribute(DESCRIPTION_ATTRIBUTE);
     if (descAttr)
         SetDescription(descAttr.as_string());
@@ -358,7 +380,7 @@ SchemaReadStatus ECEnumeration::ReadXml(pugi::xml_node enumerationNode, ECSchema
         if(childNode.type() != pugi::xml_node_type::node_element)
             continue;
 
-        if (SUCCESS != createEnumeratorFromXmlNode(this, childNode))
+        if (SUCCESS != createEnumeratorFromXmlNode(this, childNode, context))
             return SchemaReadStatus::InvalidECSchemaXml;
         }
 

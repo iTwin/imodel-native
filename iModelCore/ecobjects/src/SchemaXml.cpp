@@ -217,7 +217,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
             continue;
             }
 
-        if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(classNode)))
+        if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(classNode, m_schemaContext)))
             {
             delete ecClass;
             return status;
@@ -818,7 +818,7 @@ void SchemaXmlReader::SetErrorHandling(bool doAssert)
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion, pugi::xml_node& schemaNode, pugi::xml_document& xmlDoc)
+SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion, pugi::xml_node& schemaNode, pugi::xml_document& xmlDoc, const bool isValidationStrict)
     {
     schemaNode = xmlDoc.child(EC_SCHEMA_ELEMENT);
     if(!schemaNode)
@@ -852,11 +852,15 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    // Truly unknown versions
-    if (ECSchema::CompareECVersions(ECSchema::ECVersionToWrite(ecXmlMajorVersion, ecXmlMinorVersion), ECVersion::MaxKnown) > 0)
+    if (isValidationStrict)
         {
-        LOG.errorv("Unsupported ecXml version %d.%d", ecXmlMajorVersion, ecXmlMinorVersion);
-        return SchemaReadStatus::InvalidECSchemaXml;
+        ECVersion ecVersion;
+        if (const auto status = ECSchema::CreateECVersion(ecVersion, ecXmlMajorVersion, ecXmlMinorVersion);
+            status != ECObjectsStatus::Success || ecVersion > ECVersion::MaxParsable)
+            {
+            LOG.errorv("Unsupported ecXml version %d.%d", ecXmlMajorVersion, ecXmlMinorVersion);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
         }
 
     // schemaName is a REQUIRED attribute in order to create the schema
@@ -911,7 +915,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, SchemaKey&
 
     pugi::xml_node schemaNode;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
-    status = ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, m_xmlDoc);
+    status = ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, m_xmlDoc, m_schemaContext.GetStrictSchemaValidation());
     if (SchemaReadStatus::Success != status)
         return status;
 

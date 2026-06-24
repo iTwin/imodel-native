@@ -81,7 +81,7 @@ public:
 
     static void SetErrorHandling(bool doAssert);
 
-    static SchemaReadStatus ReadSchemaStub(SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion, pugi::xml_node& schemaNode, pugi::xml_document& xmlDom);
+    static SchemaReadStatus ReadSchemaStub(SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion, pugi::xml_node& schemaNode, pugi::xml_document& xmlDom, const bool isValidationStrict);
 };
 
 // =====================================================================================

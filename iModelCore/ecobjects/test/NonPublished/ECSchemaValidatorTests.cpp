@@ -199,6 +199,17 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     }
     }
 
+TEST_F(SchemaValidatorTests, ECVersion3_3_SchemaVersionValidation)
+    {
+    ECSchemaPtr v33Schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(v33Schema, "TestV33Schema", "t33", 1, 0, 0, ECVersion::V3_3));
+    ASSERT_TRUE(v33Schema.IsValid());
+    EXPECT_EQ(ECVersion::V3_3, v33Schema->GetECVersion());
+
+    // The validator must accept a V3_3 schema as it satisfies >= Latest and <= MaxParsable.
+    EXPECT_TRUE(validator.Validate(*v33Schema)) << "A V3_3 schema must pass BaseECValidator when MaxParsable == V3_3.";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

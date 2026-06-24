@@ -61,12 +61,9 @@ void SchemaCompatibilityTests::CreateSchema(Utf8CP additionSchemaXml, Utf8CP fai
     {
     uint32_t ecMajorVersion;
     uint32_t ecMinorVersion;
-    ECSchema::ParseECVersion(ecMajorVersion, ecMinorVersion, ECVersion::Latest); // Always want to grab the latest the current software handles
-
-    ASSERT_EQ(3, ecMajorVersion) << "The major version of ECObjects has changed from 3";
-
-    // Add one to the version so that the minor version is always one more than the latest.
-    ecMinorVersion += 1;
+    // Readable Schemas:          MaxParsable <= MaxParsable, so reader accepts it.
+    // Non-serializable Schemas:  MaxParsable > Latest, so writer blocks it.
+    ECSchema::ParseECVersion(ecMajorVersion, ecMinorVersion, ECVersion::MaxParsable);
 
     // Creating the string for use in the error messages.
     Utf8PrintfString versionString("%d.%d", ecMajorVersion, ecMinorVersion);
@@ -238,6 +235,111 @@ TEST_F(SchemaCompatibilityTests, SchemaItemWithUnknownAttributes)
     EXPECT_NE(nullptr, ecClass);
 
     TestSerializationFailure(*m_schema, "SchemaItemWithUnknownAttributes");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaCompatibilityTests, StrictLoading_UnknownAttributeOnEntityClass)
+    {
+    // An unknown attribute on a known element inside a known EC version must cause a hard failure.
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" unknownFutureAttr="someValue"/>
+        </ECSchema>
+    )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->SetStrictSchemaValidation(true);
+
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "An unknown attribute on ECEntityClass must cause failure in strict mode.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaCompatibilityTests, LenientLoading_UnknownAttributeOnEntityClass_Succeeds)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" unknownFutureAttr="someValue"/>
+        </ECSchema>
+    )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(); // strict = false by default
+
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx))
+        << "Unknown attributes must be silently ignored when strict mode is off.";
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_NE(nullptr, schema->GetClassCP("TestClass"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaCompatibilityTests, StrictLoading_MaxParsableVersionAccepted)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+        </ECSchema>
+    )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->SetStrictSchemaValidation(true);
+
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx))
+        << "A schema at exactly MaxParsable (V3_3) must be accepted even in strict mode.";
+    ASSERT_TRUE(schema.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaCompatibilityTests, StrictLoading_BeyondMaxParsableVersionRejected)
+    {
+    // Construct a V3.4 namespace URI (MaxParsable minor + 1).
+    uint32_t major, minor;
+    ECSchema::ParseECVersion(major, minor, ECVersion::MaxParsable);
+    Utf8PrintfString xmlns("http://www.bentley.com/schemas/Bentley.ECXML.%d.%d", major, minor + 1);
+    Utf8PrintfString schemaXml(
+        R"xml(<?xml version="1.0" encoding="utf-8"?><ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="%s"></ECSchema>)xml",
+        xmlns.c_str());
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->SetStrictSchemaValidation(true);
+
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ctx))
+        << "A schema version beyond MaxParsable must be rejected in strict mode.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaCompatibilityTests, LenientLoading_BeyondMaxParsableVersionAccepted)
+    {
+    uint32_t major, minor;
+    ECSchema::ParseECVersion(major, minor, ECVersion::MaxParsable);
+    Utf8PrintfString xmlns("http://www.bentley.com/schemas/Bentley.ECXML.%d.%d", major, minor + 1);
+    Utf8PrintfString schemaXml(
+        R"xml(<?xml version="1.0" encoding="utf-8"?><ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="%s"></ECSchema>)xml",
+        xmlns.c_str());
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(); // strict = false by default
+
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ctx))
+        << "A schema version beyond MaxParsable must still be accepted in lenient mode.";
+    ASSERT_TRUE(schema.IsValid());
+
+    // Re-serialization must be blocked regardless of how the schema was loaded.
+    Utf8String xmlOut;
+    EXPECT_EQ(SchemaWriteStatus::FailedToSaveXml, schema->WriteToXmlString(xmlOut))
+        << "A schema with OriginalECXmlVersion > Latest must not be re-serializable.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

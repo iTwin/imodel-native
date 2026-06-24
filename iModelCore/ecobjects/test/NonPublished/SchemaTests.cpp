@@ -3326,4 +3326,168 @@ TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
         << "can create a property category with an empty name";
     }
 
+// Strict Schema Loading Unit tests
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, GetRequiredECVersion_EmptySchema_ReturnsV32)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(ECVersion::V3_2, schema->GetRequiredECVersion()) << "An empty schema should require only the latest V3_2.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, GetRequiredECVersion_KoQOnly_ReturnsV32)
+    {
+    // KindOfQuantity was introduced in ECXml 3.1
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    KindOfQuantityP koq;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "Length"));
+    ASSERT_EQ(1u, schema->GetKindOfQuantityCount());
+    EXPECT_EQ(ECVersion::V3_2, schema->GetRequiredECVersion()) << "KindOfQuantity was introduced in ECXml 3.1; only the baseline should be needed.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, GetRequiredECVersion_SchemaWithUnits_RequiresV32)
+    {
+    // Units (Unit, InvertedUnit, Constant), Formats, UnitSystems, and Phenomena were introduced in ECXml 3.2.
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+
+    UnitSystemP unitSystem;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateUnitSystem(unitSystem, "SISystem", "SI", "SI Unit System"));
+    PhenomenonP phenom;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "LENGTH", "LENGTH", "Length", "Length Phenomenon"));
+    ECUnitP unit;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unit, "M", "M", *phenom, *unitSystem, 1.0, 1.0, 0.0, "Metre", "The metre"));
+    ASSERT_EQ(1u, schema->GetUnitCount());
+
+    EXPECT_EQ(ECVersion::V3_2, schema->GetRequiredECVersion()) << "Units were introduced in ECXml 3.2; GetRequiredECVersion must return V3_2.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, GetRequiredECVersion_SchemaWithFormat_RequiresV32)
+    {
+    // Formats were introduced in ECXml 3.2.
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    ECFormatP format;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DecimalFt", "Decimal Feet", ""));
+    ASSERT_EQ(1u, schema->GetFormatCount());
+    EXPECT_EQ(ECVersion::V3_2, schema->GetRequiredECVersion()) << "Formats were introduced in ECXml 3.2; GetRequiredECVersion must return V3_2.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, GetRequiredECVersion_SchemaWithNamedEnumerators_RequiresV32)
+    {
+    // Named enumerators were introduced in ECXml 3.2.
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="Active"   value="0" displayLabel="Active"/>
+                <ECEnumerator name="Inactive" value="1" displayLabel="Inactive"/>
+            </ECEnumeration>
+        </ECSchema>
+    )xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_NE(nullptr, schema->GetEnumerationCP("Status"));
+    EXPECT_EQ(ECVersion::V3_2, schema->GetRequiredECVersion()) << "Named enumerators require ECXml 3.2.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, GetRequiredECVersion_ReferenceToV33Schema_RequiresV33)
+    {
+    // If any referenced schema has ECVersion V3_3, the referencing schema must also be written at least at V3_3.
+    ECSchemaPtr refSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(refSchema, "RefSchema", "ref", 1, 0, 0, ECVersion::V3_3));
+    ASSERT_EQ(ECVersion::V3_3, refSchema->GetECVersion());
+
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchema(*refSchema);
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="RefSchema" version="1.00.00" alias="ref"/>
+        </ECSchema>
+    )xml";
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(ECVersion::V3_3, schema->GetRequiredECVersion()) << "A schema whose reference requires V3_3 must itself require V3_3.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, WriteToXml_MinimumVersionUsedNotCeiling)
+    {
+    // A V3_2-content schema written with a V3_3 ceiling must produce a 3.2 xmlns, not 3.3.
+    // This will prevent silently and unnecessarily inflating schemas when Latest is bumped.
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+
+    // Add a unit to force V3_2.
+    UnitSystemP us;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateUnitSystem(us, "SISystem", "SI", "SI Unit System"));
+    PhenomenonP ph;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(ph, "LENGTH", "LENGTH", "Length", "Length Phenomenon"));
+    ECUnitP unit;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unit, "M", "M", *ph, *us, 1.0, 1.0, 0.0, "Metre", ""));
+    EXPECT_EQ(ECVersion::V3_2, schema->GetRequiredECVersion());
+
+    // Write with a V3_3 ceiling: output must use 3.2 namespace.
+    Utf8String xmlOut;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(xmlOut, ECVersion::V3_3));
+    EXPECT_NE(Utf8String::npos, xmlOut.find("Bentley.ECXML.3.2")) << "The serialized schema should use the minimum required version (3.2), not the ceiling (3.3).";
+    EXPECT_EQ(Utf8String::npos, xmlOut.find("Bentley.ECXML.3.3")) << "The 3.3 namespace must not appear when the schema content only requires 3.2.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, WriteToXml_FailsWhenRequiredVersionExceedsCeiling)
+    {
+    // Requesting serialization with a ceiling lower than the schema's required version must fail cleanly rather than producing a corrupted output.
+    ECSchemaPtr refSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(refSchema, "RefSchema", "ref", 1, 0, 0, ECVersion::V3_3));
+
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchema(*refSchema);
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="RefSchema" version="1.00.00" alias="ref"/>
+        </ECSchema>
+    )xml";
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(ECVersion::V3_3, schema->GetRequiredECVersion());
+
+    // Writing with a V3_2 ceiling should fail because the schema requires V3_3.
+    Utf8String xmlOut;
+    EXPECT_EQ(SchemaWriteStatus::FailedToSaveXml, schema->WriteToXmlString(xmlOut, ECVersion::V3_2)) << "Serialization with a ceiling lower than the required version must fail.";
+    EXPECT_TRUE(xmlOut.empty()) << "No output should be produced on failure.";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

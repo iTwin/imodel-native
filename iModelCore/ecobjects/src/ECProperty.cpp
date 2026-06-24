@@ -1146,6 +1146,25 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (pugi::xml_node propertyNode, ECS
     if (status != SchemaReadStatus::Success)
         return status;
 
+    if (context.GetStrictSchemaValidation())
+        {
+        // Includes both modern and legacy (pre-3.0) min/max value attribute names.
+        static const std::set<Utf8String> s_knownPrimitivePropAttributes = {
+            PROPERTY_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, PRIORITY_ATTRIBUTE,
+            ECXML_DISPLAY_LABEL_ATTRIBUTE, ECXML_READONLY_ATTRIBUTE,
+            KIND_OF_QUANTITY_ATTRIBUTE, CATEGORY_ATTRIBUTE,
+            TYPE_NAME_ATTRIBUTE, EXTENDED_TYPE_NAME_ATTRIBUTE,
+            ECXML_MINIMUM_VALUE_ATTRIBUTE, ECXML_MAXIMUM_VALUE_ATTRIBUTE,
+            "MinimumValue", "MaximumValue",
+            ECXML_MINIMUM_LENGTH_ATTRIBUTE, ECXML_MAXIMUM_LENGTH_ATTRIBUTE
+            };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(propertyNode, s_knownPrimitivePropAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on property '%s.%s'", unknownAttr, GetClass().GetFullName(), propertyNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
     // For Primitive & Array properties we ignore parse errors and default to string. Struct properties will require a resolvable typename.
     status = ReadTypeNameWithPruning(propertyNode, this, context, true);
     if (status != SchemaReadStatus::Success)
@@ -1463,6 +1482,21 @@ SchemaReadStatus StructECProperty::_ReadXml (pugi::xml_node propertyNode, ECSche
     if (status != SchemaReadStatus::Success)
         return status;
 
+    if (context.GetStrictSchemaValidation())
+        {
+        static const std::set<Utf8String> s_knownStructPropAttributes = {
+            PROPERTY_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, PRIORITY_ATTRIBUTE,
+            ECXML_DISPLAY_LABEL_ATTRIBUTE, ECXML_READONLY_ATTRIBUTE,
+            KIND_OF_QUANTITY_ATTRIBUTE, CATEGORY_ATTRIBUTE,
+            TYPE_NAME_ATTRIBUTE
+            };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(propertyNode, s_knownStructPropAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on property '%s.%s'", unknownAttr, GetClass().GetFullName(), propertyNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
     Utf8String typeName;
     // For Primitive & Array properties we ignore parse errors and default to string. Struct properties will require a resolvable typename.
     return ReadTypeNameWithPruning(propertyNode, this, context);
@@ -1729,6 +1763,28 @@ SchemaReadStatus ArrayECProperty::_ReadXml (pugi::xml_node propertyNode, ECSchem
     SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
+
+    if (context.GetStrictSchemaValidation())
+        {
+        // Covers both PrimitiveArray (adds EXTENDED_TYPE_NAME, min/max value/length) and StructArray.
+        // IS_STRUCT_ATTRIBUTE is the V2.0 legacy way to distinguish struct arrays.
+        static const std::set<Utf8String> s_knownArrayPropAttributes = {
+            PROPERTY_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, PRIORITY_ATTRIBUTE,
+            ECXML_DISPLAY_LABEL_ATTRIBUTE, ECXML_READONLY_ATTRIBUTE,
+            KIND_OF_QUANTITY_ATTRIBUTE, CATEGORY_ATTRIBUTE,
+            TYPE_NAME_ATTRIBUTE, EXTENDED_TYPE_NAME_ATTRIBUTE,
+            MIN_OCCURS_ATTRIBUTE, MAX_OCCURS_ATTRIBUTE,
+            IS_STRUCT_ATTRIBUTE,
+            ECXML_MINIMUM_VALUE_ATTRIBUTE, ECXML_MAXIMUM_VALUE_ATTRIBUTE,
+            "MinimumValue", "MaximumValue",
+            ECXML_MINIMUM_LENGTH_ATTRIBUTE, ECXML_MAXIMUM_LENGTH_ATTRIBUTE
+            };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(propertyNode, s_knownArrayPropAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on property '%s.%s'", unknownAttr, GetClass().GetFullName(), propertyNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
@@ -2327,6 +2383,21 @@ SchemaReadStatus NavigationECProperty::_ReadXml(pugi::xml_node propertyNode, ECS
     SchemaReadStatus status = T_Super::_ReadXml(propertyNode, schemaContext);
     if (status != SchemaReadStatus::Success)
         return status;
+
+    if (schemaContext.GetStrictSchemaValidation())
+        {
+        static const std::set<Utf8String> s_knownNavPropAttributes = {
+            PROPERTY_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, PRIORITY_ATTRIBUTE,
+            ECXML_DISPLAY_LABEL_ATTRIBUTE, ECXML_READONLY_ATTRIBUTE,
+            KIND_OF_QUANTITY_ATTRIBUTE, CATEGORY_ATTRIBUTE,
+            RELATIONSHIP_NAME_ATTRIBUTE, DIRECTION_ATTRIBUTE
+            };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(propertyNode, s_knownNavPropAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on property '%s.%s'", unknownAttr, GetClass().GetFullName(), propertyNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
 
     // relationshipName and direction are required properties
     Utf8String value; // neede for macro.

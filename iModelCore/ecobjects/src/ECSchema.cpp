@@ -2991,7 +2991,7 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc, schemaContext.GetStrictSchemaValidation());
     if (SchemaReadStatus::Success != status)
         {
         if (outStatus != nullptr)
@@ -3154,7 +3154,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     SchemaKey key;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
+    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc, schemaContext.GetStrictSchemaValidation()))
         {
         LOG.warningv("Failed to read schema version from %ls", schemaPathname.c_str());
         return;
@@ -3639,17 +3639,32 @@ void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool i
 
 namespace
     {
-    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
+    bool IsECVersionSerializable(ECSchemaCR schema)
         {
         if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
             {
-            LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest version %s and cannot be serialized.", schema.GetName().c_str(),
+            LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest stable version %s and cannot be serialized.", schema.GetName().c_str(),
                 schema.GetOriginalECXmlVersionAsString().c_str(), schema.GetECVersionString(ECVersion::Latest));
             return false;
             }
         return true;
         }
     }
+
+ECVersion ECSchema::GetRequiredECVersion() const
+    {
+    ECVersion required = ECVersion::V3_2;
+
+    // A referenced schema might need a higher version.
+    for (auto const& ref : GetReferencedSchemas())
+        required = std::max(required, ref.second->GetECVersion());
+
+    // Future work:
+    // Check if there are any features in the schema introduced by version the user has explicitly specified.
+
+    return required;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3657,8 +3672,19 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     {
     ecSchemaXml.clear();
 
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsECVersionSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
+
+    if (ecXmlVersion >= ECVersion::V3_2)
+        {
+        ECVersion const required = GetRequiredECVersion();
+        if (required > ecXmlVersion)
+            {
+            LOG.errorv("Schema '%s' requires ECVersion %s to correctly serialize.", GetName().c_str(), GetECVersionString(required));
+            return SchemaWriteStatus::FailedToSaveXml;
+            }
+        ecXmlVersion = required;
+        }
 
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
 
@@ -3686,8 +3712,19 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     {
     ecSchemaXml.clear();
 
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsECVersionSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
+
+    if (ecXmlVersion >= ECVersion::V3_2)
+        {
+        ECVersion const required = GetRequiredECVersion();
+        if (required > ecXmlVersion)
+            {
+            LOG.errorv("Schema '%s' requires ECVersion %s to correctly serialize.", GetName().c_str(), GetECVersionString(required));
+            return SchemaWriteStatus::FailedToSaveXml;
+            }
+        ecXmlVersion = required;
+        }
 
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
     xmlWriter->SetIndentation(4);
@@ -3729,8 +3766,19 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsECVersionSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
+
+    if (ecXmlVersion >= ECVersion::V3_2)
+        {
+        ECVersion const required = GetRequiredECVersion();
+        if (required > ecXmlVersion)
+            {
+            LOG.errorv("Schema '%s' requires ECVersion %s to correctly serialize.", GetName().c_str(), GetECVersionString(required));
+            return SchemaWriteStatus::FailedToSaveXml;
+            }
+        ecXmlVersion = required;
+        }
 
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
         BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::CreateFileWriter(ecSchemaXmlFile);
@@ -3758,7 +3806,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsECVersionSerializable(*this))
         return false;
 
     ecSchemaJsonValue.SetNull();
@@ -3965,7 +4013,7 @@ SchemaReadStatus ECSchema::ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schem
 
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc, false);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////

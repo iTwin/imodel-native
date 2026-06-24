@@ -17,6 +17,9 @@ extern ECObjectsStatus ResolveStructType(ECStructClassCP& structClass, Utf8Strin
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
+
+static const Utf8CP s_knownAttributes[] = { TYPE_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, ECXML_DISPLAY_LABEL_ATTRIBUTE, MODIFIER_ATTRIBUTE };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1850,8 +1853,21 @@ bool ECClass::Validate() const { return _Validate(); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlAttributes (pugi::xml_node classNode)
+SchemaReadStatus ECClass::_ReadXmlAttributes (pugi::xml_node classNode, ECSchemaReadContextCR context)
     {
+    // With strict schema validation, every attribute the current runtime does not know gets flagged and the schema read fails.
+    // Relationship and CustomAttribute classes perform their own checks.
+    if (context.GetStrictSchemaValidation() && !IsRelationshipClass() && !IsCustomAttributeClass())
+        {
+        static const std::set<Utf8String> s_knownAttributes = { TYPE_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, ECXML_DISPLAY_LABEL_ATTRIBUTE, MODIFIER_ATTRIBUTE };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(classNode, s_knownAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on class '%s.%s'", unknownAttr, GetSchema().GetName().c_str(), classNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    
     Utf8String value;      // used by the macros.
     if (GetName().length() == 0)
         READ_REQUIRED_XML_ATTRIBUTE (classNode, TYPE_NAME_ATTRIBUTE, this, Name, classNode.name())
@@ -1974,6 +1990,14 @@ SchemaReadStatus ECClass::_ReadXmlContents (pugi::xml_node classNode, ECSchemaRe
             if (SchemaReadStatus::Success != status)
                 return status;
             navigationProperties.push_back(ecProperty);
+            }
+        else
+            {
+            if (context.GetStrictSchemaValidation() && !IsRelationshipClass())
+                {
+                LOG.errorv("Invalid ECSchemaXML: Unknown element '%s' in class '%s.%s'", childNodeName, GetSchema().GetName().c_str(), GetFullName());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
             }
         }
 
@@ -2689,11 +2713,21 @@ bool ECCustomAttributeClass::_ToJson(BeJsValue outValue, bool standalone, bool i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(pugi::xml_node classNode)
+SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(pugi::xml_node classNode, ECSchemaReadContextCR context)
     {
     SchemaReadStatus status;
-    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes(classNode)))
+    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes(classNode, context)))
         return status;
+
+    if (context.GetStrictSchemaValidation())
+        {
+        static const std::set<Utf8String> s_knownCAClassAttributes = { TYPE_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, ECXML_DISPLAY_LABEL_ATTRIBUTE, MODIFIER_ATTRIBUTE, CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(classNode, s_knownCAClassAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on class '%s.%s'", unknownAttr, GetSchema().GetName().c_str(), classNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
 
     auto appliesToAttr = classNode.attribute(CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE);
     Utf8String appliesTo;
@@ -3337,6 +3371,19 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (pugi::xml_node constraintNod
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
+    if (schemaContext.GetStrictSchemaValidation())
+        {
+        // All attributes ever valid on a constraint node, across all supported schema versions.
+        static const std::set<Utf8String> s_knownConstraintAttributes = { POLYMORPHIC_ATTRIBUTE, ROLELABEL_ATTRIBUTE, ABSTRACTCONSTRAINT_ATTRIBUTE, MULTIPLICITY_ATTRIBUTE, CARDINALITY_ATTRIBUTE };
+
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(constraintNode, s_knownConstraintAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on %s constraint of ECRelationshipClass '%s'",
+                unknownAttr, m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
     Utf8String value;  // needed for macros.
     if (m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1))
         {
@@ -3379,12 +3426,38 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (pugi::xml_node constraintNod
     if (Utf8String::npos != _GetContainerSchema()->GetName().find("_Supplemental"))
         return SchemaReadStatus::Success;
 
-    for (pugi::xml_node constraintClassNode : constraintNode.children(EC_CONSTRAINTCLASS_ELEMENT))
+    for (pugi::xml_node constraintClassNode : constraintNode.children())
         {
+        if (constraintClassNode.type() != pugi::xml_node_type::node_element)
+            continue;
+
+        if (0 != strcmp(constraintClassNode.name(), EC_CONSTRAINTCLASS_ELEMENT))
+            {
+            if (schemaContext.GetStrictSchemaValidation())
+                {
+                LOG.errorv("Invalid ECSchemaXML: Unknown child element '%s' in %s constraint of ECRelationshipClass '%s'",
+                    constraintClassNode.name(), m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            continue;
+            }
+
         auto constraintClassNameAttr = constraintClassNode.attribute(CONSTRAINTCLASSNAME_ATTRIBUTE);
         
         if (!constraintClassNameAttr)
             return SchemaReadStatus::InvalidECSchemaXml;
+
+        if (schemaContext.GetStrictSchemaValidation())
+            {
+            static const std::set<Utf8String> s_knownConstraintClassAttributes = { CONSTRAINTCLASSNAME_ATTRIBUTE };
+            if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(constraintClassNode, s_knownConstraintClassAttributes))
+                {
+                LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on %s element in %s constraint of ECRelationshipClass '%s'",
+                    unknownAttr, EC_CONSTRAINTCLASS_ELEMENT,
+                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            }
 
         Utf8String constraintClassName = constraintClassNameAttr.as_string();
         // Parse the potentially qualified class name into an alias and short class name
@@ -3449,10 +3522,23 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (pugi::xml_node constraintNod
         if (!alreadyExists)
             m_constraintClasses.push_back(constraintClass);
 
-        for (pugi::xml_node keyNode : constraintClassNode.children(EC_CONSTRAINTKEY_ELEMENT))
+        for (pugi::xml_node keyNode : constraintClassNode.children())
             {
-            if(keyNode.type() != pugi::xml_node_type::node_element)
+            if (keyNode.type() != pugi::xml_node_type::node_element)
                 continue;
+
+            if (0 != strcmp(keyNode.name(), EC_CONSTRAINTKEY_ELEMENT))
+                {
+                if (schemaContext.GetStrictSchemaValidation())
+                    {
+                    LOG.errorv("Invalid ECSchemaXML: Unknown child element '%s' on %s element in %s constraint of ECRelationshipClass '%s'",
+                        keyNode.name(), EC_CONSTRAINTCLASS_ELEMENT,
+                        m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                    return SchemaReadStatus::InvalidECSchemaXml;
+                    }
+                continue;
+                }
+
             if (m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
                 {
                 LOG.debugv("Key properties are no longer supported on constraint classes. All key properties have been dropped from the constraint class '%s' on the %s-Constraint of relationship '%s'.",
@@ -4120,11 +4206,21 @@ bool ECRelationshipClass::_ToJson(BeJsValue outValue, bool standalone, bool incl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (pugi::xml_node classNode)
+SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (pugi::xml_node classNode, ECSchemaReadContextCR context)
     {
     SchemaReadStatus status;
-    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes (classNode)))
+    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes (classNode, context)))
         return status;
+
+    if (context.GetStrictSchemaValidation())
+        {
+        static const std::set<Utf8String> s_knownRelationshipAttributes = { TYPE_NAME_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, ECXML_DISPLAY_LABEL_ATTRIBUTE, MODIFIER_ATTRIBUTE, STRENGTH_ATTRIBUTE, STRENGTHDIRECTION_ATTRIBUTE };
+        if (Utf8CP unknownAttr = SchemaParseUtils::FindFirstUnknownXmlAttribute(classNode, s_knownRelationshipAttributes))
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unknown attribute '%s' on class '%s.%s'", unknownAttr, GetSchema().GetName().c_str(), classNode.name());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
 
     Utf8String value;
     READ_OPTIONAL_XML_ATTRIBUTE (classNode, STRENGTH_ATTRIBUTE, this, Strength)

@@ -329,6 +329,18 @@ public:
     //! @param[in]  qualifiedItemName  The qualified name of the item, in the format of ns:itemName
     //! @return A status code indicating whether the qualified name was successfully parsed or not
     ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR qualifiedItemName);
+
+    // Scans the XML attributes of `node` against `knownAttributes`.
+    // Returns the name of the first unrecognised attribute, or nullptr when all are known.
+    static Utf8CP FindFirstUnknownXmlAttribute(pugi::xml_node const& node, const std::set<Utf8String>& knownAttributes)
+        {
+        for (const auto& attr : node.attributes())
+            {
+            if (std::find(knownAttributes.begin(), knownAttributes.end(), attr.name()) == knownAttributes.end())
+                return attr.name();
+            }
+        return nullptr;
+        }
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
