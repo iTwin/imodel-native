@@ -113,15 +113,6 @@
     </Bindings>
   </Part>
 
-  <Part Name="breakpad" OnlyPlatforms="x64" >
-    <SubPackage PkgType="UPack" Name="breakpad_54fa71efbe50" />
-    <Bindings>
-      <VendorNotices IfNotPresent="Continue">
-        Delivery/breakpad_notice.txt
-      </VendorNotices>
-    </Bindings>
-  </Part>
-
   <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
     <SubPart PartName="CrashpadShim"/>
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
