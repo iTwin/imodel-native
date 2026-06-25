@@ -41,6 +41,15 @@ enum class Feature
     {Feature::SystemPropertiesHaveIdExtendedType, ProfileVersion(4, 0, 0, 2)} \
     }
 
+enum class Compat { Warn, ReadOnly, Refuse };
+
+struct FeatureInfo
+    {
+    Utf8CP name;
+    Utf8CP label;
+    Compat compat;
+    };
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -52,6 +61,7 @@ private:
 
     //non-POD static members must never be destroyed (Bentley guideline)
     static std::map<Feature, ProfileVersion> const* s_featureMinimumVersions;
+    static std::vector<FeatureInfo> const* s_knownFeatures;
 
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
 
@@ -62,6 +72,9 @@ public:
     static bool SchemaRequiresProfileUpgrade(ECDbCR ecdb, ECN::ECSchemaCR ecSchema);
     static bool IsAvailable(ECDbCR ecdb, Feature feature) { return IsAvailable(ecdb.GetECDbProfileVersion(), feature); }
     static bool IsAvailable(ECDbCR, std::vector<Feature> const&);
+
+    static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
+    static std::vector<FeatureInfo const*> GetAllKnownFeatures();
     };
 
 

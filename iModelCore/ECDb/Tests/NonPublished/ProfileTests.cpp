@@ -1123,7 +1123,7 @@ TEST_F(ProfileTestFixture, TestFeatureTableWithProfileVersion4_0_0_6_NewDb)
     // Make sure the ec_Feature table is empty
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ec_Feature"));
-    EXPECT_EQ(ECSqlStatus::Success, stmt.Step());
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(0, stmt.GetValueInt(0));
     stmt.Finalize();
     }

@@ -52,4 +52,33 @@ bool FeatureManager::IsAvailable(ProfileVersion const& actualVersion, Feature fe
 //static
 std::map<Feature, ProfileVersion> const* FeatureManager::s_featureMinimumVersions = new std::map<Feature, ProfileVersion>(FEATURE_MINIMUMVERSIONS);
 
+//static
+bvector<FeatureInfo> const* FeatureManager::s_knownFeatures = new bvector<FeatureInfo>();
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+FeatureInfo const* FeatureManager::FindKnownFeature(Utf8StringCR featureName)
+    {
+    for (FeatureInfo const& info : *s_knownFeatures)
+        {
+        if (featureName == info.name)
+            return &info;
+        }
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+std::vector<FeatureInfo const*> FeatureManager::GetAllKnownFeatures()
+    {
+    std::vector<FeatureInfo const*> features;
+    for (FeatureInfo const& info : *s_knownFeatures)
+        features.push_back(&info);
+    return features;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

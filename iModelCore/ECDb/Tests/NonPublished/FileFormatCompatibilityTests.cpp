@@ -1349,7 +1349,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     //verify 4.0.0.6 upgrade: ec_Feature table exists and is empty
     EXPECT_TRUE(upgradedFile.TableExists("ec_Feature")) << "ECDb feature table not found after upgrade to profile 4.0.0.6.";
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT count(*) FROM ec_Feature"));
-    EXPECT_EQ(ECSqlStatus::Success, stmt.Step());
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(0, stmt.GetValueInt(0));
     stmt.Finalize();
 
@@ -3295,9 +3295,10 @@ TEST_F(FileFormatCompatibilityTests, TestFeatureTableCreationWithProfileUpgradeT
 
     EXPECT_EQ(ProfileVersion(4, 0, 0, 6), upgradedFile.GetECDbProfileVersion()) << "Fixture is not at expected profile 4.0.0.6";
 
+    Statement stmt;
     EXPECT_TRUE(upgradedFile.TableExists("ec_Feature")) << "Table 'ec_Feature' should exist in profile 4.0.0.6";
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT count(*) FROM ec_Feature"));
-    EXPECT_EQ(ECSqlStatus::Success, stmt.Step());
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(0, stmt.GetValueInt(0));
     stmt.Finalize();
     upgradedFile.CloseDb();
