@@ -12,7 +12,6 @@ struct PreparedChangesetReader;
 //=======================================================================================
 //! ChangesetReader provides EC-typed value access while iterating over changesets.
 //! It iterates over the changeset and exposes a higher-level API that returns EC-typed values and abstracts away the underlying SQLite tables and columns.
-//! It follows the same PIMPL pattern as ECSqlStatement.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetReader {
@@ -26,7 +25,7 @@ public:
 
 private:
     using Stage = Changes::Change::Stage;
-    std::unique_ptr<PreparedChangesetReader> m_pimpl;
+    std::unique_ptr<PreparedChangesetReader> m_innerReader;
 
     bool IsOpen() const;
     void CloseInfallible();
