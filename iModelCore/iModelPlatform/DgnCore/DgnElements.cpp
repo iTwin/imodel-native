@@ -1585,11 +1585,34 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
     if (!newModel.IsValid())
         return DgnDbStatus::InvalidId;
 
-    DgnDbStatus stat = newModel->_ValidateElementForModel(element);
+    // 4. BIS requires a parent and all of its children to reside in the same model, so changing the model of a
+    // root element relocates its entire subtree. Validate the whole subtree first (no mutation) so a rejected
+    // move leaves the iModel untouched, then perform the relocation.
+    DgnDbStatus stat = ValidateSubtreeForModelChange(elementId, *newModel, true);
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    // 4. Code handling - block if element has a model-scoped or parent-element-scoped code
+    return MoveSubtreeToNewModel(elementId, newModelId, *newModel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::ValidateSubtreeForModelChange(DgnElementId elementId, DgnModelR newModel, bool isRoot)
+    {
+    DgnElementCPtr orig = GetElement(elementId);
+    if (!orig.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCR element = *orig;
+
+    // The element must be compatible with the destination model (e.g. 2d vs 3d, information content, ...).
+    DgnDbStatus stat = newModel._ValidateElementForModel(element);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // Code handling. A Model-scoped code cannot survive a model change. A ParentElement-scoped code on the
+    // root has no parent to anchor it; descendants keep their parent (it moves with them), so theirs stay valid.
     DgnCode const& code = element.GetCode();
     if (code.IsValid() && !code.IsEmpty())
         {
@@ -1599,7 +1622,7 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
             LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a model-scoped code. Use delete+insert instead.", elementId.ToHexStr().c_str());
             return DgnDbStatus::InvalidCode;
             }
-        if (codeSpec.IsValid() && codeSpec->IsParentElementScope())
+        if (isRoot && codeSpec.IsValid() && codeSpec->IsParentElementScope())
             {
             LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a parent-element-scoped code. Use delete+insert instead.", elementId.ToHexStr().c_str());
             return DgnDbStatus::InvalidCode;
@@ -1611,83 +1634,122 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
             return DgnDbStatus::DuplicateCode;
         }
 
-    // 5. Prepare the edit copy - change model (element has no parent, so it is a root in the new model)
-    DgnElementPtr editCopy = element.CopyForEdit();
-    editCopy->m_modelId = newModelId;
-
-    // 6. Call pre-update handler
-    stat = editCopy->_OnUpdate(element);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    // 7. Load old model and remove from range index
-    DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
-    if (oldModel.IsValid())
+    // Recurse: the whole subtree must be valid before anything is moved.
+    for (DgnElementId childId : element.QueryChildren())
         {
-        auto oldGeomModel = oldModel->ToGeometricModelP();
-        if (nullptr != oldGeomModel)
-            oldGeomModel->RemoveFromRangeIndex(elementId);
+        stat = ValidateSubtreeForModelChange(childId, newModel, false);
+        if (DgnDbStatus::Success != stat)
+            return stat;
         }
 
-    // 8. Perform the model change via direct SQL
-    {
-    CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-    stmt->BindId(1, newModelId);
-    stmt->BindId(2, elementId);
-    auto sqlResult = stmt->Step();
-    if (BE_SQLITE_DONE != sqlResult)
-        {
-        if (oldModel.IsValid())
-            {
-            auto oldGeomModel = oldModel->ToGeometricModelP();
-            if (nullptr != oldGeomModel)
-                {
-                GeometrySourceCP geom = element.ToGeometrySource();
-                if (nullptr != geom && geom->HasGeometry())
-                    oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                }
-            }
-        return DgnDbStatus::WriteError;
-        }
+    return DgnDbStatus::Success;
     }
 
-    // 9. Write other properties via normal update path
-    stat = editCopy->_UpdateInDb();
-    if (DgnDbStatus::Success != stat)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::MoveSubtreeToNewModel(DgnElementId elementId, DgnModelId newModelId, DgnModelR newModel)
+    {
+    DgnElementCPtr orig = GetElement(elementId);
+    if (!orig.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCR element = *orig;
+    DgnModelId oldModelId = element.GetModelId();
+
+    // Capture children before the element is moved/dropped from the pool (the parent link is preserved by the move).
+    DgnElementIdSet children = element.QueryChildren();
+
+    // A descendant normally shares its parent's model, but guard against it already being in the target model.
+    if (oldModelId != newModelId)
         {
-        CachedStatementPtr rollbackStmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-        rollbackStmt->BindId(1, oldModelId);
-        rollbackStmt->BindId(2, elementId);
-        rollbackStmt->Step();
+        DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
+
+        // Prepare the edit copy - change model. The parent relationship is left untouched.
+        DgnElementPtr editCopy = element.CopyForEdit();
+        editCopy->m_modelId = newModelId;
+
+        // Call pre-update handler
+        DgnDbStatus stat = editCopy->_OnUpdate(element);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+
+        // Remove from old model's range index
         if (oldModel.IsValid())
             {
             auto oldGeomModel = oldModel->ToGeometricModelP();
             if (nullptr != oldGeomModel)
-                {
-                GeometrySourceCP geom = element.ToGeometrySource();
-                if (nullptr != geom && geom->HasGeometry())
-                    oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                }
+                oldGeomModel->RemoveFromRangeIndex(elementId);
             }
-        return stat;
+
+        // Perform the model change via direct SQL
+        {
+        CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
+        stmt->BindId(1, newModelId);
+        stmt->BindId(2, elementId);
+        auto sqlResult = stmt->Step();
+        if (BE_SQLITE_DONE != sqlResult)
+            {
+            if (oldModel.IsValid())
+                {
+                auto oldGeomModel = oldModel->ToGeometricModelP();
+                if (nullptr != oldGeomModel)
+                    {
+                    GeometrySourceCP geom = element.ToGeometrySource();
+                    if (nullptr != geom && geom->HasGeometry())
+                        oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+                    }
+                }
+            return DgnDbStatus::WriteError;
+            }
         }
 
-    // 10. Post-update handler notification
-    editCopy->_OnUpdated(element);
-
-    // 11. Drop stale cached element, add to new model's range index
-    DropFromPool(element);
-
-    auto newGeomModel = newModel->ToGeometricModelP();
-    if (nullptr != newGeomModel)
-        {
-        DgnElementCPtr finalElem = GetElement(elementId);
-        if (finalElem.IsValid())
+        // Write other properties via normal update path
+        stat = editCopy->_UpdateInDb();
+        if (DgnDbStatus::Success != stat)
             {
-            GeometrySourceCP geom = finalElem->ToGeometrySource();
-            if (nullptr != geom && geom->HasGeometry())
-                newGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+            CachedStatementPtr rollbackStmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
+            rollbackStmt->BindId(1, oldModelId);
+            rollbackStmt->BindId(2, elementId);
+            rollbackStmt->Step();
+            if (oldModel.IsValid())
+                {
+                auto oldGeomModel = oldModel->ToGeometricModelP();
+                if (nullptr != oldGeomModel)
+                    {
+                    GeometrySourceCP geom = element.ToGeometrySource();
+                    if (nullptr != geom && geom->HasGeometry())
+                        oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+                    }
+                }
+            return stat;
             }
+
+        // Post-update handler notification
+        editCopy->_OnUpdated(element);
+
+        // Drop stale cached element, add to new model's range index
+        DropFromPool(element);
+
+        auto newGeomModel = newModel.ToGeometricModelP();
+        if (nullptr != newGeomModel)
+            {
+            DgnElementCPtr finalElem = GetElement(elementId);
+            if (finalElem.IsValid())
+                {
+                GeometrySourceCP geom = finalElem->ToGeometrySource();
+                if (nullptr != geom && geom->HasGeometry())
+                    newGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
+                }
+            }
+        }
+
+    // Recurse into the children so the entire subtree moves with the element (parent moved first).
+    for (DgnElementId childId : children)
+        {
+        DgnDbStatus stat = MoveSubtreeToNewModel(childId, newModelId, newModel);
+        if (DgnDbStatus::Success != stat)
+            return stat;
         }
 
     return DgnDbStatus::Success;
