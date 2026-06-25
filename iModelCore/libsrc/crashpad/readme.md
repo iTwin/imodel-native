@@ -1,7 +1,8 @@
 At this time:
 - Linux builds always compile and include crashpad
-- You must define LINUX_MINIDUMP_ENABLED=1 in the environment to enable crashpad handling
+- You must define LINUX_MINIDUMP_ENABLED=1 in the environment to enable crashpad handling. **Note:** This is done automatically inside certain tests that get run for certain build strategies.
 - You must define MINIDUMP_UPLOAD_URL=... to enable automatic uploads (additionally MINIDUMP_UPLOAD_BACKTRACE_TOKEN=... for backtrace.io)
+- See [VCPKG.md](../VCPKG.md) for information about vcpkg builds like this one.
 
 ## Symbol processing for sentry.io
 
@@ -14,7 +15,12 @@ At this time:
 - Strip symbols before packaging / publishing: `objcopy --strip-debug --strip-unneeded BINARY_PATH`
 
 ---
-# WIP Notes on pulling it now (2023)
+# Notes on pulling it now (2026)
+
+To update crashpad, update the version in both locations in `iModelCore/libsrc/crashpad/vcpkg.json`. You may also have to update the `baseline` commit ID in `iModelCore/libsrc/crashpad/vcpkg-configuration.json`.
+
+---
+# Old WIP Notes on pulling it now (2023)
 
 Latest attempt (2023)
 

@@ -1,0 +1,109 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Zlib.mke - Build zlib and minizip via vcpkg, deliver as BeZlib.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+appName             = BeZlib
+compressDir         = $(_MakeFilePath)
+libsrcDir           = $(compressDir)../
+
+o                   = $(OutputRootDir)build/$(appName)/
+
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+%include $(libsrcDir)vcpkg.mki
+
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/compress/
+vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir     = $(vcpkgTripletDir)include/
+vcpkgLibDir         = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
+
+#--------------------------------------------------------------------------------------
+#   Run vcpkg to build zlib and minizip
+#--------------------------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+%if defined (winNT)
+    $(libsrcDir)vcpkg_run_install.bat $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%else
+    $(libsrcDir)vcpkg_run_install.sh $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Deliver headers to VendorAPI
+#   Downstream code uses #include "zlib/zlib.h" and #include "zlib/zip/unzip.h"
+#   vcpkg puts zlib.h/zconf.h in include/ and minizip headers in include/minizip/
+#   Create a staging directory to provide the expected layout:
+#     staging/zlib.h      -> vcpkg include/zlib.h
+#     staging/zconf.h     -> vcpkg include/zconf.h
+#     staging/zip/        -> vcpkg include/minizip/
+#--------------------------------------------------------------------------------------
+vcpkgStaging = $(o)vcpkg_headers/
+
+# minizip headers use #include "zlib.h" expecting it in the same directory.
+# On macOS, clang resolves symlinks and finds zlib.h via the vcpkg include dir.
+# On Windows, MSVC does not resolve junctions the same way, so instead of
+# symlinking the entire minizip directory, we link each header individually
+# along with zlib.h and zconf.h so they are co-located.
+vcpkgMinizipDir = $(vcpkgIncludeDir)minizip/
+vcpkgStagingZip = $(vcpkgStaging)zip/
+
+always:
+    !~@mkdir $(vcpkgStaging)
+    ~linkfile "$(vcpkgStaging)zlib.h=$(vcpkgIncludeDir)zlib.h"
+    ~linkfile "$(vcpkgStaging)zconf.h=$(vcpkgIncludeDir)zconf.h"
+    !~@mkdir $(vcpkgStagingZip)
+    ~linkfile "$(vcpkgStagingZip)zlib.h=$(vcpkgIncludeDir)zlib.h"
+    ~linkfile "$(vcpkgStagingZip)zconf.h=$(vcpkgIncludeDir)zconf.h"
+    ~linkfile "$(vcpkgStagingZip)zip.h=$(vcpkgMinizipDir)zip.h"
+    ~linkfile "$(vcpkgStagingZip)unzip.h=$(vcpkgMinizipDir)unzip.h"
+    ~linkfile "$(vcpkgStagingZip)ioapi.h=$(vcpkgMinizipDir)ioapi.h"
+    ~linkfile "$(vcpkgStagingZip)crypt.h=$(vcpkgMinizipDir)crypt.h"
+    ~linkfile "$(vcpkgStagingZip)mztools.h=$(vcpkgMinizipDir)mztools.h"
+    ~linkdir "$(BuildContext)VendorAPI/zlib=$(vcpkgStaging)"
+
+#--------------------------------------------------------------------------------------
+#   Deliver the combined static library (BeZlib = zlib + minizip)
+#   Merge both vcpkg-built static libs into a single BeZlib archive.
+#--------------------------------------------------------------------------------------
+BeZlibOut = $(o)$(stlibprefix)$(appName)$(stlibext)
+%if defined (DEBUG)
+    vcpkgMinizip = $(vcpkgDbgLibDir)$(stlibprefix)minizip$(stlibext)
+    %if $(TARGET_PLATFORM) == "Windows"
+        vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)zsd$(stlibext)
+    %else
+        vcpkgZlib = $(vcpkgDbgLibDir)$(stlibprefix)z$(stlibext)
+    %endif
+%else
+    vcpkgMinizip = $(vcpkgLibDir)$(stlibprefix)minizip$(stlibext)
+    %if $(TARGET_PLATFORM) == "Windows"
+        vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)zs$(stlibext)
+    %else
+        vcpkgZlib = $(vcpkgLibDir)$(stlibprefix)z$(stlibext)
+    %endif
+%endif
+
+always:
+%if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
+    libtool -static -o $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%elif $(TARGET_PLATFORM) == "Android"
+    $(BENTLEY_ANDROID_TOOLCHAIN_ar) qcL $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%elif $(TARGET_PLATFORM) == "Linux"
+    $(libsrcDir)merge_static_libs.sh $(BeZlibOut) $(vcpkgZlib) $(vcpkgMinizip)
+%elif $(TARGET_PLATFORM) == "Windows"
+    lib "-OUT:$(BeZlibOut)" "$(vcpkgZlib)" "$(vcpkgMinizip)"
+%endif
+    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(BeZlibOut)"
+
+#--------------------------------------------------------------------------------------
+#   Deliver license files from vcpkg
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/minizip-license.txt=$(vcpkgTripletDir)share/minizip/copyright"
+    ~linkfile "$(BuildContext)Delivery/zlib-license.txt=$(vcpkgTripletDir)share/zlib/copyright"
