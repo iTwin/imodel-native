@@ -30,7 +30,7 @@ double minStep
     if (abstol < 0.0)
         abstol = 0.0;
     if (reltol < 0.0)
-        reltol = 0.0;
+        reltol = 1.0e-12;
     mAbstolU = mAbstolV = mAbstolW = abstol;
     mReltolU = mReltolV = mReltolW = reltol;
     mMaxIterations = maxIterations;
@@ -74,6 +74,9 @@ int numIterations
     return numIterations < mMaxIterations;
     }
 
+/*-----------------------------------------------------------------*//**
+ @bsimethod
++---------------+---------------+---------------+---------------+------*/
 int NewtonIterationsRRToRR::SetMaxIterations (int maxIterations)
     {
     auto old = mMaxIterations;
@@ -314,6 +317,7 @@ FunctionRRToRRD &evaluator
             }
         u -= uFactor * du;
         v -= vFactor * dv;
+
         if (CheckConvergence (u, v, f, g, du, dv, numConverged))
             {
             return SetReturnValues (uu, vv, u, v,

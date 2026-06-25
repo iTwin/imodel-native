@@ -77,23 +77,6 @@ bool       bReverseOrder
         }
     }
 
-bool validFraction (CurveLocationDetailCR detail, double fraction)
-    {
-    bool extensible0 = true;
-    bool extensible1 = true;
-    if (detail.componentIndex != 0)
-        extensible0 = false;
-    if (detail.componentIndex + 1 != detail.numComponent)
-        extensible1 = false;
-    if (!m_extend)
-        extensible0 = extensible1 = false;
-    if (fraction < 0.0 && !extensible0)
-        return false;
-    if (fraction > 1.0 && !extensible1)
-        return false;
-    return true;
-    }
-
 /*--------------------------------------------------------------------------------**//**
 On input, detailA0 and detailB0 identify curve and component index but have no point data.
 * @bsimethod
@@ -164,8 +147,8 @@ bool bReverseOrder
                 segmentA.ProjectPoint (projectionOnA, projectionFractionA, tangentPointA);
                 segmentB.ProjectPoint (projectionOnB, projectionFractionB, tangentPointB);
 
-                if (   validFraction (detailA0, projectionFractionA)
-                   && validFraction (detailB0, projectionFractionB)
+                if (   ValidFraction (detailA0, projectionFractionA, GetExtendFlag (0, bReverseOrder))
+                   && ValidFraction (detailB0, projectionFractionB, GetExtendFlag (1, bReverseOrder))
                    )
                    {
                    GenerateBlendParabola (approachPointA,

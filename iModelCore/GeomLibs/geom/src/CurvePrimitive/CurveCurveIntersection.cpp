@@ -16,10 +16,6 @@ bool TolerancedFractionLE (double fa, double fb)
   return fa < fb;
   }
 
-bool TolerancedFractionIn01 (double f)
-    {
-    return f > -s_lineFractionTol && f < 1.0 + s_lineFractionTol;
-    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -56,9 +52,14 @@ CCIProcessor (CurveVectorR intersectionA, CurveVectorR intersectionB, DMatrix4dC
         SetExtend (extend);
     }
 
-void announce (char const *messages)
+CCIProcessor(CurveVectorR intersectionA, CurveVectorR intersectionB, DMatrix4dCP pWorldToLocal, bool extendA0, bool extendA1, bool extendB0, bool extendB1) :
+    CurveCurveProcessor(pWorldToLocal),
+    m_intersectionA(intersectionA),
+    m_intersectionB(intersectionB)
     {
+    SetExtend (extendA0, extendA1, extendB0, extendB1);
     }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -70,14 +71,15 @@ void CollectPair(
         bool bReverseCurveOrder
         )
     {
-    if (!m_extend &&
-        !(TolerancedFractionIn01 (fraction0) && TolerancedFractionIn01(fraction1))
-        )
+    if ((!GetExtendFlag(0, bReverseCurveOrder).m_extend0 && !TolerancedFractionLE(0.0, fraction0)) ||
+        (!GetExtendFlag(0, bReverseCurveOrder).m_extend1 && !TolerancedFractionLE(fraction0, 1.0)) ||
+        (!GetExtendFlag(1, bReverseCurveOrder).m_extend0 && !TolerancedFractionLE(0.0, fraction1)) ||
+        (!GetExtendFlag(1, bReverseCurveOrder).m_extend1 && !TolerancedFractionLE(fraction1, 1.0)))
         {
-        announce ("fractions out of range");
-        // ignore out of range
+        BeAssert(!"CollectPair: out-of-range fraction ignored");
+        return;
         }
-    else if (!bReverseCurveOrder)
+    if (!bReverseCurveOrder)
         {
         m_intersectionA.push_back(ICurvePrimitive::CreatePartialCurve (curve0, fraction0, fraction0, 0));
         m_intersectionB.push_back(ICurvePrimitive::CreatePartialCurve (curve1, fraction1, fraction1, 0));
@@ -103,6 +105,18 @@ void CollectPair(
         bool bReverseCurveOrder
         )
     {
+    if ((!GetExtendFlag(0, bReverseCurveOrder).m_extend0 && !TolerancedFractionLE(0.0, fractionA0)) ||
+        (!GetExtendFlag(0, bReverseCurveOrder).m_extend1 && !TolerancedFractionLE(fractionA0, 1.0)) ||
+        (!GetExtendFlag(0, bReverseCurveOrder).m_extend0 && !TolerancedFractionLE(0.0, fractionA1)) ||
+        (!GetExtendFlag(0, bReverseCurveOrder).m_extend1 && !TolerancedFractionLE(fractionA1, 1.0)) ||
+        (!GetExtendFlag(1, bReverseCurveOrder).m_extend0 && !TolerancedFractionLE(0.0, fractionB0)) ||
+        (!GetExtendFlag(1, bReverseCurveOrder).m_extend1 && !TolerancedFractionLE(fractionB0, 1.0)) ||
+        (!GetExtendFlag(1, bReverseCurveOrder).m_extend0 && !TolerancedFractionLE(0.0, fractionB1)) ||
+        (!GetExtendFlag(1, bReverseCurveOrder).m_extend1 && !TolerancedFractionLE(fractionB1, 1.0)))
+        {
+        BeAssert(!"CollectPair: out-of-range fraction ignored");
+        return;
+        }
     if (!bReverseCurveOrder)
         {
         m_intersectionA.push_back(ICurvePrimitive::CreatePartialCurve (curveA, fractionA0, fractionA1, 0));
@@ -115,25 +129,7 @@ void CollectPair(
         }
     }
 
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void CollectPairs(
-        ICurvePrimitiveP curve0,
-        ICurvePrimitiveP curve1,
-        bvector<double> const & fraction0,
-        bvector<double> const & fraction1,
-        bool bReverseCurveOrder
-        )
-    {
-    for (size_t i = 0; i < fraction0.size (); i++)
-        {
-        CollectPair (curve0, curve1, fraction0[i], fraction1[i], bReverseCurveOrder);
-        }
-    }
 // search for index where if (f0,f1) is a member of both indexed segments
-
 // ASSUME segment0, segment1 are same size.
 // return SIZE_MAX if not found.
 size_t FindContainingSegmentPair
@@ -153,6 +149,7 @@ bvector<DSegment1d> const &segment1
     }
 
 /*--------------------------------------------------------------------------------**//**
+* No fraction/overlap range testing is performed.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 void CollectPairs(
@@ -194,44 +191,39 @@ void CollectPairs(
         }
     }
 
-// Return true if the a fractional position within an edge is internal to the linestring.
-//    (false for extensions of internal edges)
-bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
-    {
-    // interior fractions are always ok ...
-    if (f >= -s_lineFractionTol && f <= 1.0 + s_lineFractionTol)
-        return true;
-
-    // We are outside the immediate edge...
-    if (m_extend)
-        {
-        if (numPoint <= 2)
-            return true;
-        if (edgeIndex <= 0)
-            return f <= 1.0;
-        else if (edgeIndex == numPoint - 2)
-            return f >= 0.0;
-        }
-
-    return false;
-    }
-
-double EdgeFractionToLinestringFraction (double f, size_t index, size_t numPoint)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static double EdgeFractionToLinestringFraction (double f, size_t index, size_t numPoint)
   {
-  if (numPoint == 2)
+  if (numPoint <= 2)
     return f;
-  return (index + f) / (numPoint - 1);
+  return PolylineOps::SegmentFractionToPolylineFraction(index, numPoint - 1, f);
   }
 
-// Return true if the a fractional position within an edge is internal to the linestring.
-//    (false for extensions of internal edges)
-bool ValidArcAngle (double theta, DEllipse3d const &ellipse)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static bool AreCollinearWithAxis(DSegment4dCR hSegA, DSegment4dCR hSegB, double& a0, double& a1, double& b0, double& b1)
     {
-    if (m_extend)
-        return true;
-    if (ellipse.IsAngleInSweep (theta))
-        return true;
-    return false;
+    bool areCollinear = false;
+    double x = hSegA.point[0].x;
+    double y = hSegA.point[0].y;
+    if (   (x == hSegA.point[1].x && x == hSegB.point[0].x && x == hSegB.point[1].x)
+        || (y == hSegA.point[1].y && y == hSegB.point[0].y && y == hSegB.point[1].y))
+        {
+        if (   1.0 == hSegA.point[0].w && 1.0 == hSegA.point[1].w
+            && 1.0 == hSegB.point[0].w && 1.0 == hSegB.point[1].w)
+            {
+            DPoint4d c;
+            areCollinear = hSegA.ProjectDPoint4dCartesianXYW(c, a0, hSegB.point[0])
+                        && hSegA.ProjectDPoint4dCartesianXYW(c, a1, hSegB.point[1])
+                        && hSegB.ProjectDPoint4dCartesianXYW(c, b0, hSegA.point[0])
+                        && hSegB.ProjectDPoint4dCartesianXYW(c, b1, hSegA.point[1]);
+            }
+        }
+
+    return areCollinear;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -245,20 +237,22 @@ void ProcessLineLine(
     DSegment4d hSegA, hSegB;
     DPoint4d hPointA, hPointB;
     double   fractionA, fractionB;
-    Transform (hSegA, segmentA);
-    Transform (hSegB, segmentB);
+    TransformSegment (hSegA, segmentA);
+    TransformSegment (hSegB, segmentB);
 
     // Parallel? Coincident? Distinct?
     DSegment4d segmentAOnB, segmentBOnA;
     double a0, a1, b0, b1;  // fractional positions on respective segments.
-    if (   hSegA.ProjectDPoint4dCartesianXYW (segmentBOnA.point[0], a0, hSegB.point[0])
+    if (AreCollinearWithAxis(hSegA, hSegB, a0, a1, b0, b1)   // TFS#1030328: fast exact check to avoid exceeding AlmostEqualXY tolerance near zero
+        ||
+        (hSegA.ProjectDPoint4dCartesianXYW (segmentBOnA.point[0], a0, hSegB.point[0])
         && AlmostEqualXY (segmentBOnA.point[0], hSegB.point[0])
         && hSegA.ProjectDPoint4dCartesianXYW (segmentBOnA.point[1], a1, hSegB.point[1])
         && AlmostEqualXY (segmentBOnA.point[1], hSegB.point[1])
         && hSegB.ProjectDPoint4dCartesianXYW (segmentAOnB.point[0], b0, hSegA.point[0])
         && AlmostEqualXY (segmentAOnB.point[0], hSegA.point[0])
         && hSegB.ProjectDPoint4dCartesianXYW (segmentAOnB.point[1], b1, hSegA.point[1])
-        && AlmostEqualXY (segmentAOnB.point[1], hSegA.point[1])
+        && AlmostEqualXY (segmentAOnB.point[1], hSegA.point[1]))
         )
         {
         ValidatedDSegment1d validatedBonA;
@@ -304,9 +298,9 @@ void ProcessLineLine(
                         );
             }
         }
-    else  if (DSegment4d::IntersectXY(hPointA, fractionA, hPointB, fractionB, hSegA, hSegB)
-        && ValidEdgeFractionWithinLinestring (fractionA, indexA, numA)
-        && ValidEdgeFractionWithinLinestring (fractionB, indexB, numB)
+    else if (DSegment4d::IntersectXY(hPointA, fractionA, hPointB, fractionB, hSegA, hSegB)
+        && ValidEdgeFractionWithinLinestring (fractionA, indexA, numA, GetExtendFlag(0, bReverseOrder))
+        && ValidEdgeFractionWithinLinestring (fractionB, indexB, numB, GetExtendFlag(1, bReverseOrder))
         )
         {
         CollectPair (curveA, curveB,
@@ -385,8 +379,10 @@ void ProcessLineArc(
     DConic4d hConicB;
     DPoint4d hPointA[2], hPointB[2];
     double   fractionA[2], thetaB[2];
-    Transform (hSegA, segmentA);
-    Transform (hConicB, ellipseB);
+    auto lineExtend = GetExtendFlag(0, bReverseOrder);
+    auto arcExtend = GetExtendFlag(1, bReverseOrder);
+    TransformSegment (hSegA, segmentA);
+    TransformEllipse (hConicB, ellipseB);
     int numIntersection = bsiDConic4d_intersectDSegment4dXYW
                 (
                 &hConicB,
@@ -396,13 +392,14 @@ void ProcessLineArc(
                 );
     for (int i = 0; i < numIntersection; i++)
         {
-        if (ValidEdgeFractionWithinLinestring (fractionA[i], 0, 2)
-            && ValidArcAngle (thetaB[i], ellipseB)
-            )
+        if (ValidEdgeFractionWithinLinestring (fractionA[i], 0, 2, lineExtend)
+            && ValidArcAngle (ellipseB, thetaB[i], arcExtend))
+            {
             CollectPair (curveA, curveB,
                 fractionA[i],
-                ellipseB.AngleToFraction (thetaB[i]),
+                ArcAngleToShiftedFraction(ellipseB, thetaB[i], arcExtend),
                 bReverseOrder);
+            }
         }
     }
 
@@ -419,7 +416,9 @@ void ProcessLinestringArc(
     DConic4d hConicB;
     DPoint4d hPointA[2], hPointB[2];
     double   fractionA[2], thetaB[2];
-    Transform (hConicB, ellipseB);
+    auto lsExtend = GetExtendFlag(0, bReverseOrder);
+    auto arcExtend = GetExtendFlag(1, bReverseOrder);
+    TransformEllipse (hConicB, ellipseB);
     size_t nXYZA = linestringA.size ();
     TransformWeightedPoint (hSegA.point[0], linestringA[0], 1.0);
     for (size_t iA = 1; iA < nXYZA; iA++, hSegA.point[0] = hSegA.point[1])
@@ -435,13 +434,12 @@ void ProcessLinestringArc(
                     );
         for (int i = 0; i < numIntersection; i++)
             {
-            if (ValidEdgeFractionWithinLinestring (fractionA[i], iA - 1, nXYZA)
-                && ValidArcAngle (thetaB[i], ellipseB)
-                )
+            if (ValidEdgeFractionWithinLinestring (fractionA[i], iA - 1, nXYZA, lsExtend)
+                && ValidArcAngle (ellipseB, thetaB[i], arcExtend))
                 {
                 CollectPair (curveA, curveB,
-                        PolylineOps::SegmentFractionToPolylineFraction (iA -1, nXYZA - 1, fractionA[i]),
-                        ellipseB.AngleToFraction (thetaB[i]),
+                        EdgeFractionToLinestringFraction(fractionA[i], iA - 1, nXYZA),
+                        ArcAngleToShiftedFraction(ellipseB, thetaB[i], arcExtend),
                         bReverseOrder);
                 }
             }
@@ -480,10 +478,11 @@ void ProcessArcArc(
     DConic4d hConicA, hConicB;
     DPoint4d hPointA[4], hPointB[4];
     double   thetaA[4],  thetaB[4];
-    Transform (hConicA,  ellipseA);
-    Transform (hConicB,  ellipseB);
+    TransformEllipse (hConicA,  ellipseA);
+    TransformEllipse (hConicB,  ellipseB);
     if (SameBasisXY (hConicA, hConicB))
         {
+        // ignore extend flags
         bvector<DSegment1d> fractionA, fractionB;
         Angle::OverlapWrapableIntervals (hConicA.start, hConicA.sweep, hConicB.start, hConicB.sweep, fractionA, fractionB);
         BeAssert (fractionA.size () == fractionB.size () && fractionA.size () <= 2);
@@ -500,19 +499,21 @@ void ProcessArcArc(
 
     int numIntersection = bsiDConic4d_intersectDConic4dXYW
             (&hConicA, hPointA, thetaA, hPointB, thetaB, &hConicB);
+
+    auto extendA = GetExtendFlag(0, bReverseOrder);
+    auto extendB = GetExtendFlag(1, bReverseOrder);
     for (int i = 0; i < numIntersection; i++)
         {
-        if (   ValidArcAngle (thetaA[i], ellipseA)
-            && ValidArcAngle (thetaB[i], ellipseB))
+        if (   ValidArcAngle (ellipseA, thetaA[i], extendA)
+            && ValidArcAngle (ellipseB, thetaB[i], extendB))
             {
             CollectPair (curveA, curveB,
-                    ellipseA.AngleToFraction (thetaA[i]),
-                    ellipseB.AngleToFraction (thetaB[i]),
+                    ArcAngleToShiftedFraction(ellipseA, thetaA[i], extendA),
+                    ArcAngleToShiftedFraction(ellipseB, thetaB[i], extendB),
                     bReverseOrder);
             }
         }
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -523,30 +524,24 @@ void ProcessLineBspline(ICurvePrimitiveP curveA, DSegment3dCR segmentA, ICurvePr
     if (NULL == pBCurve)
         return;
 
+    // always allow the line to extend, in case just-beyond-the-end retracts towards the end in the refinement step
     bvector<double> lineFraction, curveFraction;
-    // always allow the line to extend, in case just-beyond-the-end retracts towards the end in the refinement step.
     pBCurve->AddLineIntersectionsXY (NULL, &curveFraction, NULL, &lineFraction, segmentA, true, m_pWorldToLocal);
-    if (nullptr == curveA->GetBsplineCurveCP () || nullptr == curveB->GetBsplineCurveCP ())
+
+    // if there is a proxy, improve the result using the real curve
+    if (nullptr == curveB->GetBsplineCurveCP ())
         {
         for (size_t i = 0; i < lineFraction.size (); i++)
-            {
             ImprovePlaneCurveCurveTransverseIntersectionXY (*curveA, *curveB, m_pWorldToLocal, lineFraction[i], curveFraction[i]);
-            }
         }
 
-    for (size_t i = 0, n = curveFraction.size (); i < n; i++)
+    auto extendA = GetExtendFlag(0, bReverseOrder);
+    for (size_t i = 0; i < lineFraction.size(); i++)
         {
-        if (!m_extend)
-            {
-            if (!DoubleOps::IsAlmostIn01 (lineFraction[i]))
-                continue;
-            if (!DoubleOps::IsAlmostIn01 (curveFraction[i]))
-                continue;
-            }
-        CollectPair (curveA, curveB, lineFraction[i], curveFraction[i], bReverseOrder);
+        if (ValidEdgeFractionWithinLinestring(lineFraction[i], 0, 2, extendA))
+            CollectPair (curveA, curveB, lineFraction[i], curveFraction[i], bReverseOrder);
         }
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -557,23 +552,26 @@ void ProcessArcBspline(ICurvePrimitiveP curveA, DEllipse3dCR ellipseA, ICurvePri
     if (NULL == pBCurve)
         return;
 
+    // the full ellipse is considered if *either* extend flag is set
+    auto arcExtend = GetExtendFlag(0, bReverseOrder);
     bvector<double> fractionA, fractionB;
-    pBCurve->AddArcIntersectionsXY (NULL, &fractionB, NULL, &fractionA, ellipseA, m_extend, m_pWorldToLocal);
-    if (nullptr == curveA->GetBsplineCurveCP () || nullptr == curveB->GetBsplineCurveCP ())
+    pBCurve->AddArcIntersectionsXY (NULL, &fractionB, NULL, &fractionA, ellipseA, arcExtend.HasAnyExtend(), m_pWorldToLocal);
+
+    // if there is a proxy, improve the result using the real curve
+    if (nullptr == curveB->GetBsplineCurveCP ())
         {
         for (size_t i = 0; i < fractionA.size (); i++)
-            {
             ImprovePlaneCurveCurveTransverseIntersectionXY (*curveA, *curveB, m_pWorldToLocal, fractionA[i], fractionB[i]);
-            }
         }
 
-
-    for (size_t i = 0, n = fractionA.size (); i < n; i++)
+    for (size_t i = 0; i < fractionA.size(); i++)
         {
-        CollectPair (curveA, curveB, fractionA[i], fractionB[i], bReverseOrder);
+        CollectPair (curveA, curveB,
+            ArcFractionToShiftedFraction(ellipseA, fractionA[i], arcExtend),
+            fractionB[i],
+            bReverseOrder);
         }
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -585,20 +583,28 @@ void ProcessLinestringBspline(ICurvePrimitiveP curveA, bvector<DPoint3d> const &
     if (NULL == pBCurve)
         return;
 
+    auto extendA = GetExtendFlag(0, bReverseOrder);
     bvector<double> linestringFraction, curveFraction;
-    pBCurve->AddLinestringIntersectionsXY (NULL, &curveFraction, NULL, &linestringFraction, linestringA,
-          m_extend, m_pWorldToLocal);
-    // If there is a proxy, improve the result using the real curve . .
+    pBCurve->AddLinestringIntersectionsXY (NULL, &curveFraction, NULL, &linestringFraction, linestringA, extendA.m_extend0, extendA.m_extend1, m_pWorldToLocal);
+
+    // if there is a proxy, improve the result using the real curve
     if (nullptr == curveB->GetBsplineCurveCP ())
         {
         for (size_t i = 0; i < linestringFraction.size (); i++)
-            {
             ImprovePlaneCurveCurveTransverseIntersectionXY (*curveA, *curveB, m_pWorldToLocal, linestringFraction[i], curveFraction[i]);
-            }
         }
-    CollectPairs (curveA, curveB, linestringFraction, curveFraction, bReverseOrder);
-    }
 
+    double fGlobal, fLocal;
+    size_t iSeg, nSeg;
+    bool exterior;
+    for (size_t i = 0; i < linestringFraction.size(); i++)
+        {
+        fGlobal = linestringFraction[i];
+        PolylineOps::PolylineFractionToSegmentData(linestringA.size(), fGlobal, iSeg, nSeg, fLocal, exterior);
+        if (ValidEdgeFractionWithinLinestring(fLocal, iSeg, linestringA.size(), extendA))
+            CollectPair (curveA, curveB, fGlobal, curveFraction[i], bReverseOrder);
+        }
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -610,21 +616,20 @@ void ProcessBsplineBspline(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, boo
     if (NULL == pBCurveA || NULL == pBCurveB)
         return;
 
-
     bvector<double> fractionA, fractionB;
     bvector<DSegment1d> overlapA, overlapB;
     pBCurveA->AddCurveIntersectionsXY (NULL, &fractionA, &overlapA, NULL, &fractionB, &overlapB, *pBCurveB, m_pWorldToLocal);
-    // If either is a proxy, improve the result using the real curve . .
+
+    // if either is a proxy, improve the result using the real curve
     if (nullptr == curveA->GetBsplineCurveCP () || nullptr == curveB->GetBsplineCurveCP ())
         {
         for (size_t i = 0; i < fractionA.size (); i++)
-            {
             ImprovePlaneCurveCurveTransverseIntersectionXY (*curveA, *curveB, m_pWorldToLocal, fractionA[i], fractionB[i]);
-            }
         }
+
+    // ASSUME: fractions and overlaps are in [0,1]
     CollectPairs (curveA, curveB, fractionA, fractionB, overlapA, overlapB, bReverseOrder);
     }
-
 };
 
 /*--------------------------------------------------------------------------------**//**
@@ -707,8 +712,6 @@ CurveVectorR chainB,
 DMatrix4dCP    pWorldToLocal
 )
     {
-    intersectionA.clear ();
-    intersectionB.clear ();
     CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal);
     bvector<DRange3d> rangeA, rangeB;
     CollectRanges (chainA, rangeA);
@@ -733,8 +736,6 @@ CurveVectorR chain,
 DMatrix4dCP    pWorldToLocal
 )
     {
-    intersectionA.clear ();
-    intersectionB.clear ();
     CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal);
     bvector<DRange3d> ranges;
     CollectRanges (chain, ranges);
@@ -797,11 +798,30 @@ DMatrix4dCP    pWorldToLocal,
 bool           extend
 )
     {
-    intersectionA.clear ();
-    intersectionB.clear ();
     CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, extend);
     processor.Process (curveA, curveB);
     PurgeRedundantIntersections (intersectionA, intersectionB);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void CurveCurve::IntersectionsXY
+(
+CurveVectorR intersectionA,
+CurveVectorR intersectionB,
+ICurvePrimitiveP curveA,
+ICurvePrimitiveP curveB,
+DMatrix4dCP    pWorldToLocal,
+bool extendA0,
+bool extendA1,
+bool extendB0,
+bool extendB1
+)
+    {
+    CCIProcessor processor(intersectionA, intersectionB, pWorldToLocal, extendA0, extendA1, extendB0, extendB1);
+    processor.Process(curveA, curveB);
+    PurgeRedundantIntersections(intersectionA, intersectionB);
     }
 
 #ifdef CompileCompareStartFraction

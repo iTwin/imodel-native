@@ -150,6 +150,7 @@ protected:
     double mMinStepU;
     double mMinStepV;
     double mSize;
+
 public:
 
 // Detailed setup with same tolerances for both vars ...

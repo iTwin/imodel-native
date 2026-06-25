@@ -24,7 +24,7 @@ CurveCurveProcessor::CurveCurveProcessor(DMatrix4dCP pWorldToLocal)
     : m_pWorldToLocal (pWorldToLocal)
     {
     m_numProcessedByBaseClass = 0;
-    m_extend = false;
+    SetExtend (false);
     }
 
 #define IMPLEMENT_CCProcessor_ProcessAaBb(MethodName,TypeA,TypeB) \
@@ -231,7 +231,7 @@ double   w
     }
 
 // Apply the worldToLocal transform to a segment.
-void CurveCurveProcessor::Transform
+void CurveCurveProcessor::TransformSegment
 (
 DSegment4d &hSeg,
 DSegment3d const &cSeg
@@ -242,7 +242,7 @@ DSegment3d const &cSeg
     }
 
 // Apply the worldToLocal transform to an ellipse
-void CurveCurveProcessor::Transform
+void CurveCurveProcessor::TransformEllipse
 (
 DConic4d &hConic,
 DEllipse3d const &cEllipse
@@ -276,15 +276,29 @@ bool CompareDSegment3d::operator()(DSegment3dCR a, DSegment3dCR b) const
         return compareA < 0;
     return compareB < 0;
     }
+
 void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse)
     {
+    return CollectPair(curve0, nullptr, fraction0, curve1, nullptr, fraction1, bReverse);
+    }
+
+void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP curve0, DPoint3dCP point0, double fraction0, ICurvePrimitiveCP curve1, DPoint3dCP point1, double fraction1, bool bReverse)
+    {
     DSegment3d seg;
-    curve0->FractionToPoint(fraction0, seg.point[0]);
-    curve1->FractionToPoint(fraction1, seg.point[1]);
+    if (!point0)
+        curve0->FractionToPoint(fraction0, seg.point[0]);
+    else
+        seg.SetStartPoint(*point0);
+    if (!point1)
+        curve1->FractionToPoint(fraction1, seg.point[1]);
+    else
+        seg.SetEndPoint(*point1);
+
     CurveLocationDetailPair pair(curve0, fraction0, seg.point[0], curve1, fraction1, seg.point[1]);
     pair.detailA.a = pair.detailB.a = seg.Length();
     if (bReverse)
         pair.SwapDetails();
+
     if (ClosestOnly())
         {
         if (!m_pairs.empty())
@@ -298,8 +312,10 @@ void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP c
         {
         return;
         }
+
     m_pairs.emplace(seg, pair);
     }
+
 bool CurveCurveProcessAndCollectCloseApproaches::GetResults(CurveCurve::ICloseApproachAnnouncer& announce) const
     {
     // for each range of equivalent close approaches, announce the closest

@@ -1175,7 +1175,7 @@ struct CurveCurve
 {
 private: CurveCurve (); // static class, no instances allowed.
 public:
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1193,7 +1193,7 @@ DMatrix4dCP    pWorldToLocal
 );
 
 public:
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1209,7 +1209,7 @@ CurveVectorR curve,
 DMatrix4dCP    pWorldToLocal
 );
 
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1227,7 +1227,28 @@ DMatrix4dCP    pWorldToLocal,   //!< optional viewing transformation
 bool         extend = false     //!< extend the two curves?
 );
 
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
+//!   transform.
+//! Each intersection is recorded as a "partial curve" that has fraction data indicating
+//!   its position on the parent curve.
+//! If the intersection is a single point, the "partial curve" has (bitwise) identical start
+//!   and end fractions.
+//! If the intersection is a coincident portion of the curves, the "partial curve" indicates the
+//!   fractional range of the intersection.
+static GEOMDLLIMPEXP void IntersectionsXY
+(
+CurveVectorR intersectionA,     //!< intersection points on curveA
+CurveVectorR intersectionB,     //!< intersection points on curveB
+ICurvePrimitiveP curveA,       //!< first curves
+ICurvePrimitiveP curveB,       //!< second curves
+DMatrix4dCP    pWorldToLocal,   //!< optional viewing transformation
+bool extendA0,        //!< extend curveA backwards
+bool extendA1,        //!< extend curveA forwards
+bool extendB0,        //!< extend curveB backwards
+bool extendB1         //!< extend curveB forwards
+);
+
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.

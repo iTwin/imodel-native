@@ -36,7 +36,7 @@ ICurvePrimitiveP m_curveA;
 ICurvePrimitiveP m_curveB;
 
 CurveCurveApproachIterate (ICurvePrimitiveP curveA, ICurvePrimitiveP curveB) : m_curveA(curveA), m_curveB (curveB)
-{
+    {
     }
 
 // Virtual function
@@ -96,27 +96,6 @@ CCAXYZProcessor (double maxDistance = -1, IFacetOptionsCP strokeOptions = nullpt
     m_maxIterations = maxIterations > 0 ? maxIterations : 20;
     if (strokeOptions)
         SetStrokeOptions(*strokeOptions);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-void CollectApproach(
-ICurvePrimitiveP curveA,
-ICurvePrimitiveP curveB,
-double fractionA,
-double fractionB,
-DPoint3dCR pointA,
-DPoint3dCR pointB,
-bool bReverseOrder
-)
-    {
-    double d = pointA.Distance (pointB);
-    double maxDistance = ClosestOnly() ? DBL_MAX : m_maxDistance;
-    if (d < maxDistance)
-        {
-        CollectPair (curveA, curveB, fractionA, fractionB, bReverseOrder);
-        }
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -240,7 +219,10 @@ void ProcessLineArc(
     bool bReverseOrder) override
     {
     auto segmentDirection = segmentA.VectorStartToEnd();
-    BentleyApi::Transform arcToWorld, worldToArc;
+
+    // special case: closest approaches that are intersections with cylinder
+    Transform arcToWorld, worldToArc;
+    bool foundCylinderIntersections = false;
     if (arcB.GetLocalFrame(arcToWorld, worldToArc))
         {
         auto arcZ = arcToWorld.ColumnZ();
@@ -256,47 +238,55 @@ void ProcessLineArc(
             for (int i = 0; i < numIntersection; i++)
                 {
                 double fractionSegment = segmentFractions[i];
-                double fractionArc = arcB.AngleToFraction (
-                            atan2 (arcXYZ[i].y, arcXYZ[i].x));
-                DPoint3d xyzArc = arcB.FractionToPoint (fractionArc);
-                DPoint3d xyzSegment = segmentA.FractionToPoint (fractionSegment);
-                CollectApproach(
-                    curveA, curveB,
-                    fractionSegment, fractionArc,
-                    xyzSegment, xyzArc,
-                    bReverseOrder);
-
+                double fractionArc = arcB.AngleToFraction (atan2 (arcXYZ[i].y, arcXYZ[i].x));
+                CollectPair(curveA, curveB, fractionSegment, fractionArc, bReverseOrder);
                 }
-            if (numIntersection > 0)
-                return;
+            foundCylinderIntersections = numIntersection > 0;
             }
         }
-    RotMatrix localToWorldMatrix = RotMatrix::From1Vector(segmentDirection, 2, true);
-    auto localToWorld = BentleyApi::Transform::From(localToWorldMatrix, segmentA.point[0]);
-    BentleyApi::Transform worldToLocal;
-    if (worldToLocal.InverseOf(localToWorld))
+
+    // general case: if special case found an intersection, we can skip
+    if (!foundCylinderIntersections)
         {
-        DEllipse3d arcBLocal;
-        // convert to local frame with segment as z axis.
-        worldToLocal.Multiply(arcBLocal, arcB);
-        DPoint3d closestPointLocal;
-        double fractionArc, distanceXY;
-        // find closest point in the projection
-        if (arcBLocal.ClosestPointBoundedXY(closestPointLocal, fractionArc, distanceXY,
-            DPoint3d::From(0, 0, 0), nullptr, false, false))
+        RotMatrix localToWorldMatrix = RotMatrix::From1Vector(segmentDirection, 2, true);
+        auto localToWorld = Transform::From(localToWorldMatrix, segmentA.point[0]);
+        Transform worldToLocal;
+        if (worldToLocal.InverseOf(localToWorld))
             {
-            // Evaluate 3d ellipse point.
-            auto closePointArc = arcB.FractionToPoint(fractionArc);
-            // project back to segment (within the extend of the segment)
-            DPoint3d closePointSegment;
-            double fractionSegment;
-            segmentA.ProjectPointBounded(closePointSegment, fractionSegment, closePointArc, false, false);
-            CollectApproach(
-                curveA, curveB,
-                fractionSegment, fractionArc,
-                closePointSegment, closePointArc,
-                bReverseOrder);
+            // convert to local frame with segment as z axis.
+            DEllipse3d arcBLocal;
+            worldToLocal.Multiply(arcBLocal, arcB);
+
+            DPoint3d _[4]; // projections to local arc, unused
+            double radians[4];
+            int numProjections = arcBLocal.ProjectPointXYBounded(_, radians, DPoint3d::FromZero());
+            for (int i = 0; i < numProjections; i++)
+                {
+                double arcFraction = arcB.AngleToFraction(radians[i]);
+                DPoint3d arcPoint = arcB.RadiansToPoint(radians[i]);
+                // project back to the world segment
+                DPoint3d segmentPoint;
+                double segmentFraction;
+                if (segmentA.ProjectPointBounded(segmentPoint, segmentFraction, arcPoint))
+                    CollectPair(curveA, &segmentPoint, segmentFraction, curveB, &arcPoint, arcFraction, bReverseOrder);
+                }
             }
+        }
+
+    // check endpoints
+    CurveLocationDetail detail;
+    if (curveB->ClosestPointBounded(segmentA.point[0], detail))
+        CollectPair(curveA, &segmentA.point[0], 0.0, curveB, &detail.point, detail.fraction, bReverseOrder);
+    if (curveB->ClosestPointBounded(segmentA.point[1], detail))
+        CollectPair(curveA, &segmentA.point[1], 1.0, curveB, &detail.point, detail.fraction, bReverseOrder);
+    if (!arcB.IsFullEllipse())
+        {
+        DPoint3d arcStartPt, arcEndPt;
+        arcB.EvaluateEndPoints(arcStartPt, arcEndPt);
+        if (curveA->ClosestPointBounded(arcStartPt, detail))
+            CollectPair(curveA, &detail.point, detail.fraction, curveB, &arcStartPt, 0.0, bReverseOrder);
+        if (curveA->ClosestPointBounded(arcEndPt, detail))
+            CollectPair(curveA, &detail.point, detail.fraction, curveB, &arcEndPt, 1.0, bReverseOrder);
         }
     }
 };

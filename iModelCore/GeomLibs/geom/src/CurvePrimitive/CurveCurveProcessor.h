@@ -6,6 +6,15 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
+struct CurveExtendFlags
+    {
+    bool m_extend0;
+    bool m_extend1;
+    CurveExtendFlags(bool extend = false) :m_extend0(extend), m_extend1(extend) {}
+    CurveExtendFlags(bool extend0, bool extend1) : m_extend0(extend0), m_extend1(extend1) {}
+    bool HasAnyExtend () const {return m_extend0 || m_extend1;}
+    };
+
 // Base class for computations involving all combinations of 2 curve types.
 // Base class has stub implementations of
 //<ul>
@@ -15,7 +24,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //     ProcessAB (curveA, curveB, bReverseOrder)
 //</ul>
 //
-// The stub implemtations invoke the ProcessPrimitivePrimitive method.  This does nothing but increment
+// The stub implementations invoke the ProcessPrimitivePrimitive method.  This does nothing but increment
 //     a counter, and may be useful as a breakpoint to look for methods lacking derived class implementation.
 //
 struct CurveCurveProcessor
@@ -27,8 +36,9 @@ protected:
     size_t m_numProcessedByBaseClass;
     //! placement transform
     DMatrix4dCP m_pWorldToLocal;
-    //! control flag for extended geometry
-    bool m_extend;
+    //! control flags for extended geometry
+    CurveExtendFlags m_extendA;
+    CurveExtendFlags m_extendB;
     //! Options for on-demand stroking.
     IFacetOptionsPtr m_strokeOptions;
 
@@ -44,6 +54,13 @@ protected:
     void SetStrokeOptions(IFacetOptionsCR strokeOptions)
         {
         m_strokeOptions = strokeOptions.Clone();
+        }
+    CurveExtendFlags GetExtendFlag(uint32_t index, bool reversed)
+        {
+        if (reversed)
+            return index == 0 ? m_extendB : m_extendA;
+        else
+            return index == 0 ? m_extendA : m_extendB;
         }
     static bool IsLinear (ICurvePrimitiveCP curve)
         {
@@ -66,9 +83,24 @@ GEOMAPI_VIRTUAL void ProcessPrimitivePrimitive (ICurvePrimitiveP curveA, ICurveP
 
 explicit CurveCurveProcessor (DMatrix4dCP pWorldToLocal);
 
-// Return true if the a fractional position within an edge is internal to the linestring.
+bool ValidFraction (CurveLocationDetailCR detail, double fraction, CurveExtendFlags extend)
+    {
+    bool extensible0 = extend.m_extend0;
+    bool extensible1 = extend.m_extend1;
+    if (detail.componentIndex != 0)
+        extensible0 = false;
+    if (detail.componentIndex + 1 != detail.numComponent)
+        extensible1 = false;
+    if (fraction < 0.0 && !extensible0)
+        return false;
+    if (fraction > 1.0 && !extensible1)
+        return false;
+    return true;
+    }
+
+// Return true if the fractional position within the edge is internal to the linestring.
 //    (false for extensions of internal edges)
-bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
+bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint, CurveExtendFlags extend)
     {
     static double s_lineFractionTol = 1.0e-8;
     // interior fractions are always ok ...
@@ -76,31 +108,56 @@ bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPo
         return true;
 
     // We are outside the immediate edge...
-    if (m_extend)
+    if (extend.m_extend0 || extend.m_extend1)
         {
-        if (numPoint <= 2)
+        if (numPoint < 2)
             return true;
-        if (edgeIndex <= 0)
-            return f <= 1.0;
-        else if (edgeIndex == numPoint - 2)
-            return f >= 0.0;
+        if (edgeIndex <= 0 && extend.m_extend0 && f <= 1.0)
+            return true;
+        else if (edgeIndex == numPoint - 2 && extend.m_extend1 && f >= 0.0)
+            return true;
         }
 
     return false;
     }
 
-// Return true if the a fractional position within an edge is internal to the linestring.
-//    (false for extensions of internal edges)
-bool ValidArcAngle (double theta, DEllipse3d const &ellipse)
+// Given arc angle, return arc fraction shifted according to extend flags.
+double ArcAngleToShiftedFraction(DEllipse3dCR ellipse, double radians, CurveExtendFlags const& extend)
     {
-    if (m_extend)
+    if (extend.HasAnyExtend())
+        return Angle::NormalizeToSweep(radians, ellipse.start, ellipse.sweep, extend.m_extend0, extend.m_extend1);
+    return ellipse.AngleToFraction(radians);
+    }
+
+// Given arc fraction, return arc fraction shifted according to extend flags.
+double ArcFractionToShiftedFraction(DEllipse3dCR ellipse, double fraction, CurveExtendFlags const& extend)
+    {
+    if (extend.HasAnyExtend())
+        return ArcAngleToShiftedFraction(ellipse, ellipse.FractionToAngle(fraction), extend);
+    return fraction;
+    }
+
+// Return true if the angle is internal to the (possibly extended) arc.
+// In particular, return true if *either* extend flag is set.
+bool ValidArcAngle (DEllipse3d const &ellipse, double theta, CurveExtendFlags extend)
+    {
+    if (extend.HasAnyExtend ())
         return true;
     if (ellipse.IsAngleInSweep (theta))
         return true;
     return false;
     }
 
-void SetExtend (bool b) {m_extend=b;}
+// blanket extend setting ...
+void SetExtend (bool b) {m_extendA.m_extend0 = m_extendA.m_extend1 = m_extendB.m_extend0 = m_extendB.m_extend1 = b;}
+bool HasAnyExtend () const { return m_extendA.HasAnyExtend() || m_extendB.HasAnyExtend(); }
+void SetExtend(bool extendA0, bool extendA1, bool extendB0, bool extendB1)
+    {
+    m_extendA.m_extend0 = extendA0;
+    m_extendA.m_extend1 = extendA1;
+    m_extendB.m_extend0 = extendB0;
+    m_extendB.m_extend1 = extendB1;
+    }
 
 public:
 GEOMAPI_VIRTUAL void ProcessLineLine (
@@ -147,10 +204,10 @@ void Process (CurveVectorCP curvesA, ICurvePrimitiveP curveB);
 void TransformWeightedPoint (DPoint4d &hPoint, DPoint3d const &cPoint, double w);
 
 // Apply the worldToLocal transform to a segment.
-void Transform (DSegment4dR hSeg,DSegment3dCR cSeg);
+void TransformSegment (DSegment4dR hSeg, DSegment3dCR cSeg);
 
 // Apply the worldToLocal transform to an ellipse
-void Transform (DConic4d &hConic, DEllipse3d const &cEllipse);
+void TransformEllipse (DConic4d &hConic, DEllipse3d const &cEllipse);
 };
 
 // Comparator for sorting segments by their points
@@ -171,11 +228,11 @@ struct CompareDSegment3d
 // CurveCurveProcessor to capture 3D close approach results.
 struct CurveCurveProcessAndCollectCloseApproaches : public CurveCurveProcessor
 {
-
 typedef std::multimap<DSegment3d, CurveLocationDetailPair, CompareDSegment3d> SegmentPairMultiMap;
+
 static inline auto s_segmentPairLess = [](SegmentPairMultiMap::value_type const& entry0, SegmentPairMultiMap::value_type const& entry1) -> bool { return entry0.second.detailA.a < entry1.second.detailA.a; };
 
-double m_maxDistance;
+double m_maxDistance; // if negative, collect only closest approach
 SegmentPairMultiMap m_pairs; // stores close approach equivalence classes
 
 public:
@@ -186,8 +243,13 @@ CurveCurveProcessAndCollectCloseApproaches (double maxDistance, DMatrix4dCP worl
 
 // Whether the instance collects only the closest approach, or all approaches up to m_maxDistance in length.
 bool ClosestOnly() const { return m_maxDistance < 0.0; }
+
 // Add a close approach pair to the collection.
-void CollectPair (ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse);
+void CollectPair(ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse);
+
+// Add a close approach pair to the collection.
+void CollectPair(ICurvePrimitiveCP curve0, DPoint3dCP point0, double fraction0, ICurvePrimitiveCP curve1, DPoint3dCP point1, double fraction1, bool bReverse);
+
 // Announce the collected, deduplicated close approach(es).
 bool GetResults(CurveCurve::ICloseApproachAnnouncer& announce) const;
 

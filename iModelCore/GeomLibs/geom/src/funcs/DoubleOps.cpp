@@ -216,7 +216,7 @@ double DoubleOps::Magnitude (double a, double b)
 
 int DoubleOps::TolerancedComparison(double a, double b)
     {
-        return TolerancedComparison(a, b, DoubleOps::SmallCoordinateRelTol());
+    return TolerancedComparison(a, b, DoubleOps::SmallCoordinateRelTol());
     }
 
 int DoubleOps::TolerancedComparison(double a, double b, double relTol)

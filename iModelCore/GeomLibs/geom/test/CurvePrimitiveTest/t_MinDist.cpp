@@ -383,8 +383,8 @@ TEST(CurveCurve, ClosestApproach)
     // previously the arc got stroked into a 3-pt linestring that intersected the seg at a seed that sends Newton into a local minimum interior to the segment
     auto arcPrim = ICurvePrimitive::CreateArc(arc);
     auto segPrim = ICurvePrimitive::CreateLine(seg);
-    Check::SaveTransformed(*arcPrim);
-    Check::SaveTransformed(*segPrim);
+    Check::SaveTransformed(arcPrim);
+    Check::SaveTransformed(segPrim);
 
     CurveLocationDetail arcDetail, segDetail;
     if (Check::True(CurveCurve::ClosestApproach(arcDetail, segDetail, arcPrim.get(), segPrim.get()), "found closest approach"))
