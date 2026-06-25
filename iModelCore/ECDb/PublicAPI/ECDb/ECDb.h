@@ -326,7 +326,7 @@ public:
     static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 3, 2); }
 
     //! Gets the current version of the ECDb profile
-    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
+    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 6); }
     //! Gets the minimum version of the ECDb profile for which in-situ upgrades are possible.
     //! Files with an older version cannot be upgraded in-situ.
     static ProfileVersion MinimumUpgradableECDbProfileVersion() { return ProfileVersion(4, 0, 0, 0); }

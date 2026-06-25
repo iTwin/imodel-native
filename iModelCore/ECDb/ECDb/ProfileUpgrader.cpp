@@ -13,6 +13,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4006::_Upgrade(ECDbCR ecdb) const
+    {
+    if (const auto stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_Feature); BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Feature ": %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    return BE_SQLITE_OK;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4005::_Upgrade(ECDbCR ecdb) const
     {
     return BE_SQLITE_OK;

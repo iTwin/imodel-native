@@ -1320,6 +1320,9 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
         }
     ASSERT_EQ(8, rowCount) << "Expected number of id properties in ECDbSystem schema";
     ecSqlStatement.Finalize();
+
+    // Pre-4.0.0.6 : Make sure the ec_Feature table does not exist before the upgrade
+    EXPECT_FALSE(benchmarkFile.TableExists("ec_Feature")) << "ECDb feature table should not exist in profile 4.0.0.0 file.";
     }
 
     BeFileName artefactOutDir;
@@ -1343,9 +1346,14 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     stmt.Finalize();
 
-    //verify 4.0.0.4 upgrade
-    Db benchmarkFile;
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+    //verify 4.0.0.6 upgrade: ec_Feature table exists and is empty
+    EXPECT_TRUE(upgradedFile.TableExists("ec_Feature")) << "ECDb feature table not found after upgrade to profile 4.0.0.6.";
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT count(*) FROM ec_Feature"));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Step());
+    EXPECT_EQ(0, stmt.GetValueInt(0));
+    stmt.Finalize();
+
+    EXPECT_EQ(upgradedFile.GetECDbProfileVersion(), ProfileVersion(4, 0, 0, 6));
 
     {
     //verify that ECDbMeta schema was upgraded to version 4.0.1
@@ -1408,6 +1416,9 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     }
 
     bset<ECSchemaId> ecdbEnumSchemas;
+    Db benchmarkFile;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+
     {
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT Id FROM ec_Schema WHERE Name IN ('ECDbChange','ECDbFileInfo','ECDbMeta')"));
     while (BE_SQLITE_ROW == stmt.Step())
@@ -1552,7 +1563,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(26, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
 
@@ -1618,7 +1629,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    ASSERT_EQ(benchmarkMasterTableRowCount + 18, actualDdlStmt.GetValueInt(0)) << " 18 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
+    ASSERT_EQ(benchmarkMasterTableRowCount + 20, actualDdlStmt.GetValueInt(0)) << " 20 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
     upgradedFile.SaveChanges();
     }
 
@@ -3254,6 +3265,42 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
+    }
+
+TEST_F(FileFormatCompatibilityTests, TestFeatureTableCreationWithProfileUpgradeTo_4_0_0_6)
+    {
+    BeFileName benchmarkFilePath;
+    BeTest::GetHost().GetDocumentsRoot(benchmarkFilePath);
+    benchmarkFilePath.AppendToPath(L"ECDb").AppendToPath(L"fileformatbenchmark").AppendToPath(L"4005").AppendToPath(L"imodel2.ecdb");
+    ASSERT_TRUE(benchmarkFilePath.DoesPathExist()) << "Profile 4.0.0.5 benchmark file missing at " << benchmarkFilePath.GetNameUtf8().c_str();
+
+    BeFileName outDir;
+    BeTest::GetHost().GetOutputRoot(outDir);
+    if (!outDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(outDir));
+    BeFileName workingFilePath(outDir);
+    workingFilePath.AppendToPath(L"ec_feature.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, workingFilePath));
+
+    ECDb oldFile;
+    ASSERT_EQ(BE_SQLITE_OK, oldFile.OpenBeSQLiteDb(workingFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Failed to open 4.0.0.5 file readonly";
+    ASSERT_EQ(ProfileVersion(4, 0, 0, 5), oldFile.GetECDbProfileVersion()) << "Fixture is not at expected profile 4.0.0.5";
+
+    EXPECT_FALSE(oldFile.TableExists("ec_Feature")) << "Table 'ec_Feature' should not exist in profile 4.0.0.5";
+    oldFile.CloseDb();
+
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(workingFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade))) << "Failed to upgrade";
+    upgradedFile.SaveChanges();
+
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 6), upgradedFile.GetECDbProfileVersion()) << "Fixture is not at expected profile 4.0.0.6";
+
+    EXPECT_TRUE(upgradedFile.TableExists("ec_Feature")) << "Table 'ec_Feature' should exist in profile 4.0.0.6";
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT count(*) FROM ec_Feature"));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Step());
+    EXPECT_EQ(0, stmt.GetValueInt(0));
+    stmt.Finalize();
+    upgradedFile.CloseDb();
     }
 
 //*****************************************************************************************

@@ -203,7 +203,8 @@ TEST_F(ProfileTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(4,0,0,2), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
             {ProfileVersion(4,0,0,3), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
             {ProfileVersion(4,0,0,4), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
-            {ProfileVersion(4,0,0,5), ProfileState::UpToDate()},
+            {ProfileVersion(4,0,0,5), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
+            {ProfileVersion(4,0,0,6), ProfileState::UpToDate()},
             {ProfileVersion(4,0,1,0), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
             {ProfileVersion(4,0,1,1), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
             {ProfileVersion(4,0,1,99), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
@@ -221,9 +222,9 @@ TEST_F(ProfileTestFixture, CheckECDbProfileVersion)
         }
 
     std::vector<ProfileVersion> expectedTooOld = {ProfileVersion(3,6,99,0), ProfileVersion(3,7,0,0),ProfileVersion(3,7,0,1),ProfileVersion(3,7,3,1),ProfileVersion(3,7,3,2),ProfileVersion(3,7,4,3),ProfileVersion(3,100,0,0), ProfileVersion(3,100,0,1), ProfileVersion(3,100,1,1)};
-    std::vector<ProfileVersion> expectedOlderReadWriteAndUpgradable = {ProfileVersion(4,0,0,0), ProfileVersion(4,0,0,1), ProfileVersion(4,0,0,2), ProfileVersion(4,0,0,3), ProfileVersion(4,0,0,4)};
-    ProfileVersion expectedUpToDate = ProfileVersion(4,0,0,5);
-    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,6), ProfileVersion(4,0,1,0), ProfileVersion(4,0,1,3), ProfileVersion(4,0,2,0), ProfileVersion(4,0,10,99)};
+    std::vector<ProfileVersion> expectedOlderReadWriteAndUpgradable = {ProfileVersion(4,0,0,0), ProfileVersion(4,0,0,1), ProfileVersion(4,0,0,2), ProfileVersion(4,0,0,3), ProfileVersion(4,0,0,4), ProfileVersion(4,0,0,5)};
+    ProfileVersion expectedUpToDate = ProfileVersion(4,0,0,6);
+    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,7), ProfileVersion(4,0,1,0), ProfileVersion(4,0,1,3), ProfileVersion(4,0,2,0), ProfileVersion(4,0,10,99)};
     std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,1,1,0), ProfileVersion(4,1,0,0)};
     std::vector<ProfileVersion> expectedTooNew = {ProfileVersion(5,1,0,0), ProfileVersion(99,0,0,0)};
 
@@ -1109,6 +1110,22 @@ TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationshipConstraint)
     }
     }
     CloseECDb();
+    }
+
+TEST_F(ProfileTestFixture, TestFeatureTableWithProfileVersion4_0_0_6_NewDb)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ec_feature_table.ecdb"));
+
+    EXPECT_FALSE(m_ecdb.GetECDbProfileVersion().IsEmpty());
+    EXPECT_EQ(m_ecdb.GetECDbProfileVersion(), ProfileVersion(4, 0, 0, 6));
+    EXPECT_TRUE(GetHelper().TableExists("ec_Feature")) << "ECDb feature table not found in ECDb file which was newly created.";
+
+    // Make sure the ec_Feature table is empty
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ec_Feature"));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Step());
+    EXPECT_EQ(0, stmt.GetValueInt(0));
+    stmt.Finalize();
     }
 
 END_ECDBUNITTESTS_NAMESPACE
