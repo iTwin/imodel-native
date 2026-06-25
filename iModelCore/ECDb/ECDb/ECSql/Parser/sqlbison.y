@@ -986,10 +986,14 @@ type_list:
         }
     ;
 
-/* 'opt_only' is inlined here (rather than 'opt_only table_node') so that a bare class name
-   shifts SQL_TOKEN_NAME directly. Otherwise the empty 'opt_only' reduction loses a
-   shift/reduce race against value_exp's property_path in the 'X IS (...)' context, which
-   would shadow this type predicate with a parenthesized value expression. */
+/* 'opt_only' is inlined here (rather than 'opt_only table_node') so that the type predicate
+   stays reachable: without it, the empty 'opt_only' reduction loses a shift/reduce race
+   against value_exp's property_path in the 'X IS (...)' context.
+   A type predicate is reached only for a *qualified* class name (schema.Class), an ONLY/ALL
+   prefix, or a comma-separated list. A single *unqualified* name in parentheses - e.g.
+   'X IS (S2)' - still reduces as a parenthesized value_exp (null-safe comparison), not a
+   type predicate; so if an identifier is both a class and a property name, the value-
+   expression (property) reading wins. See ECSqlStatementTests IsAndIsNotOperatorNullSafeSemantics. */
 type_list_item:
     table_node
     {
