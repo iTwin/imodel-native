@@ -2930,6 +2930,7 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE i>=:myParam"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE L < 3.14"));
@@ -3053,6 +3054,7 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE i>=:myParam"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE L < 3.14"));
@@ -3421,6 +3423,7 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE i>=:myParam"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE L < 3.14"));
@@ -3541,6 +3544,7 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NOT Glob('*amp*',S)"));
     //case insensitive tests
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE L < 3.14"));
