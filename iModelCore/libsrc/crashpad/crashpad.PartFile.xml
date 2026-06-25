@@ -19,6 +19,7 @@
 
     <!-- N.B. Crashpad only builds as a static library. -->
     <Part Name="__CrashpadStaticClient" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*,x*" ExcludeLibType="Dynamic">
+        <SubPart PartName="vcpkg" PartFile="iModelCore/libsrc/vcpkg"/>
         <SubPart PartName="__OpenSslShim"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <Bindings>

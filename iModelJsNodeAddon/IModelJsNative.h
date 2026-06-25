@@ -622,11 +622,11 @@ public:
     static void MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportingConfig const&);
     static std::map<std::string,std::string> GetCrashReportPropertiesFromConfig(CrashReportingConfig const&);
 
-    static void InitializeCrashReporting(CrashReportingConfig const&)
+    static bool InitializeCrashReporting(CrashReportingConfig const&)
 #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
         ;
 #else
-        {}
+        { return true; }
 #endif
 
     static void WriteFullElementDependencyGraphToFile(DgnDbR db, Utf8StringCR dotFileName);

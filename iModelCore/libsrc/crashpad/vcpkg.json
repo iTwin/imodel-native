@@ -1,0 +1,16 @@
+{
+  "name": "imodel-native-crashpad",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "crashpad",
+      "version>=": "2024-04-11#13"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "crashpad",
+      "version": "2024-04-11#13"
+    }
+  ]
+}

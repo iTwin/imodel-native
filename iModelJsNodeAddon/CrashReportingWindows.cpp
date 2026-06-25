@@ -246,7 +246,7 @@ static void abortHandler(int signal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
+bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     {
     s_config = new CrashReportingConfig(cfg);
 
@@ -265,7 +265,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             fwprintf(stderr, L"Unable to start server\n");
             delete s_crashServer;
             s_crashServer = nullptr;
-            return;
+            return false;
             }
 
         ::Sleep(1); // let server thread run and connect to the pipe
@@ -310,6 +310,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         }
 
     signal(SIGABRT, abortHandler);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -69,12 +69,16 @@ elif [ -z "$VCPKG_ROOT" ]; then
     VCPKG_ROOT="$SrcRoot/vcpkg"
 fi
 
-# Local binary caching is enabled by default, but can be disabled by setting VCPKG_BINARY_SOURCES to "clear".
+# Use a persistent local binary cache by default to avoid rebuilding heavy ports
+# (for example, crashpad) across builds. Allow callers to override.
+if [ -z "${VCPKG_DEFAULT_BINARY_CACHE:-}" ]; then
+    export VCPKG_DEFAULT_BINARY_CACHE="$VCPKG_ROOT/archives"
+fi
+mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
 
-# # Disable binary caching by default. Override with VCPKG_BINARY_SOURCES env var.
-# if [ -z "$VCPKG_BINARY_SOURCES" ]; then
-#     export VCPKG_BINARY_SOURCES="clear"
-# fi
+if [ -z "${VCPKG_BINARY_SOURCES:-}" ]; then
+    export VCPKG_BINARY_SOURCES="clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite"
+fi
 
 VCPKG_EXE="$VCPKG_ROOT/vcpkg"
 
@@ -88,6 +92,8 @@ fi
 OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"
+echo "vcpkg: binary-cache=$VCPKG_DEFAULT_BINARY_CACHE"
+echo "vcpkg: binary-sources=$VCPKG_BINARY_SOURCES"
 
 OVERLAY_ARGS=()
 if [ -d "$OVERLAY_TRIPLETS" ]; then

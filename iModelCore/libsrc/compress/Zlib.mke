@@ -18,7 +18,7 @@ o                   = $(OutputRootDir)build/$(appName)/
 #--------------------------------------------------------------------------------------
 %include $(libsrcDir)vcpkg.mki
 
-vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/compress/
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 vcpkgIncludeDir     = $(vcpkgTripletDir)include/
 vcpkgLibDir         = $(vcpkgTripletDir)lib/
