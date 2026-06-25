@@ -80,7 +80,7 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     //.............................................................................................
     // WIP: Check whether the user wants dumps at all via CrashReportingConfig.
     // if (!cfg.m_enableCrashDumps)
-    //     return;
+    //     return true;
     std::string minidumpEnabledStr;
 #if defined(BENTLEYCONFIG_OS_LINUX)
     // The old environment variable for enabling crash dumps on Linux was "LINUX_MINIDUMP_ENABLED". We only want to
