@@ -6,6 +6,7 @@
 #---------------------------------------------------------------------------------------------
 
 %include mdl.mki
+%include $(SrcRoot)bsicommon/sharedmki/stdversion.mki
 
 appName             = CrashpadHandler
 crashpadDir         = $(_MakeFilePath)
@@ -17,6 +18,12 @@ o                   = $(OutputRootDir)build/$(appName)/
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
 #--------------------------------------------------------------------------------------
 %include $(libsrcDir)vcpkg.mki
+
+%if defined (winNT)
+	%if !defined (MSJ_SKIP_SIGNRSCS)
+		%include $(SrcRoot)bsicommon/PublicSDK/signrscsdefs.mki
+	%endif
+%endif
 
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
@@ -43,11 +50,30 @@ always:
 #--------------------------------------------------------------------------------------
 #   Deliver handler executable with expected product name.
 #--------------------------------------------------------------------------------------
-always:
-	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
-	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
+"$(handlerOut)" : $(vcpkgHandlerExe)
+	~linkfile "$@=$<"
 %if !defined (winNT)
 	chmod +x "$(vcpkgHandlerExe)"
-	chmod +x "$(handlerOut)"
-	chmod +x "$(BuildContext)Delivery/$(appName)$(exeext)"
+	chmod +x "$@"
+%endif
+
+%if defined (winNT)
+	# Stamp the delivered executable with this build's standard version metadata.
+always:
+	$(InjectVersionCmd) "$(handlerOut)" $(STD_VERSION_OPTS) -k"FileDescription=$(appName) for Windows" -k"InternalName=$(appName)$(exeext)" -k"OriginalFilename=$(appName)$(exeext)" -k"ProductName=$(appName)"
+
+%if !defined (MSJ_SKIP_SIGNRSCS)
+%if defined (signcodecmd)
+always:
+	$(signcodecmd) "$(handlerOut)"
+%else
+	%warn signcodecmd is not defined; skipping signing for $(handlerOut)
+%endif
+%endif
+%endif
+
+"$(BuildContext)Delivery/$(appName)$(exeext)" : "$(handlerOut)"
+	$(LinkFirstDepToFirstTarget)
+%if !defined (winNT)
+	chmod +x "$@"
 %endif
