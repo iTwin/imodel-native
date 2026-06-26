@@ -2,15 +2,48 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
+# BeOpenSSL.prewire.mke - Stage OpenSSL public headers and license from the vcpkg build so the
+# __PublicAPI part's VendorAPI/VendorNotices bindings are satisfied at the PublicAPI stage.
+#
+# The headers no longer come from a checked-in vendor/ tree; vcpkg owns the OpenSSL source.
+# We run the (idempotent, binary-cached) vcpkg install here so include/openssl/*.h and the
+# license are available to bind, then BeOpenSSL.mke reuses the same install to build the libs.
+#
+# NOTE (verify at build): the old prewire also exposed the internal header crypto/engineerr.h.
+# vcpkg installs only OpenSSL's public headers, so that internal header is intentionally no
+# longer delivered. If a downstream consumer still needs it, expose it from the vcpkg buildtree
+# or adjust the consumer. See VCPKG_MIGRATION.md.
+#---------------------------------------------------------------------------------------------
 %include mdl.mki
 
-vendorSrc = $(_MakeFilePath)vendor/
+opensslDir = $(_MakeFilePath)
+libsrcDir  = $(opensslDir)../
 
-#----------------------------------------------------------------------------------------
-#   License file
-#----------------------------------------------------------------------------------------
+o = $(OutputRootDir)build/iTwinOpenSSL-prewire/
+
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE.
+#--------------------------------------------------------------------------------------
+%include $(libsrcDir)vcpkg.mki
+
+vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/openssl/
+vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir  = $(vcpkgTripletDir)include/
+
+#--------------------------------------------------------------------------------------
+#   Build OpenSSL with vcpkg so its headers and license are available to bind.
+#--------------------------------------------------------------------------------------
 always:
-    ~linkfile "$(BuildContext)Delivery/openssl-license.txt=$(vendorSrc)LICENSE.txt"
-    ~linkmultifiles "$(BuildContext)VendorAPI/openssl=$(vendorSrc)include/openssl/*.h"
-    ~linkfile "$(BuildContext)VendorAPI/openssl/crypto/engineerr.h=$(vendorSrc)include/crypto/engineerr.h"
-    -$(deleteCmd) $(BuildContext)VendorAPI/openssl/*__DECC_*
+    !~@mkdir $(o)
+%if defined (winNT)
+    $(libsrcDir)vcpkg_run_install.bat $(opensslDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%else
+    $(libsrcDir)vcpkg_run_install.sh $(opensslDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Deliver headers (VendorAPI/openssl -> vcpkg include/openssl) and the license.
+#--------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)VendorAPI/openssl=$(vcpkgIncludeDir)openssl/"
+    ~linkfile "$(BuildContext)Delivery/openssl-license.txt=$(vcpkgTripletDir)share/openssl/copyright"
