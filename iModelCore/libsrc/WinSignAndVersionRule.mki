@@ -10,8 +10,9 @@
 #
 # Optional variables:
 #   winSignVersionFileDescription - Defaults to "$(winSignVersionProductName) for Windows".
-#   winSignVersionInternalName    - Defaults to "$(winSignVersionProductName)$(exeext)".
-#   winSignVersionOriginalName    - Defaults to "$(winSignVersionProductName)$(exeext)".
+#   winSignVersionFileExt         - Defaults to "$(exeext)".
+#   winSignVersionInternalName    - Defaults to "$(winSignVersionProductName)$(winSignVersionFileExt)".
+#   winSignVersionOriginalName    - Defaults to "$(winSignVersionProductName)$(winSignVersionFileExt)".
 #---------------------------------------------------------------------------------------------
 
 %if $(TARGET_PLATFORM) != "Windows"
@@ -36,12 +37,16 @@
 	winSignVersionFileDescription = $(winSignVersionProductName) for Windows
 %endif
 
+%if !defined (winSignVersionFileExt)
+	winSignVersionFileExt = $(exeext)
+%endif
+
 %if !defined (winSignVersionInternalName)
-	winSignVersionInternalName = $(winSignVersionProductName)$(exeext)
+	winSignVersionInternalName = $(winSignVersionProductName)$(winSignVersionFileExt)
 %endif
 
 %if !defined (winSignVersionOriginalName)
-	winSignVersionOriginalName = $(winSignVersionProductName)$(exeext)
+	winSignVersionOriginalName = $(winSignVersionProductName)$(winSignVersionFileExt)
 %endif
 
 always:
