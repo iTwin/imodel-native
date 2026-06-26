@@ -1146,7 +1146,9 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 		requestedVersion = (uint8_t)v;
 	}
 
-	// Parse the comma-separated decimal id list into a de-duplicated set; reject any malformed id
+	// Parse the comma-separated decimal id list into a set; reject any malformed id. Duplicate ids
+	// are intentionally de-duplicated (not an error): a caller passing the same schema id twice still
+	// gets one copy of that schema in the fragment.
 	bvector<Utf8String> tokens;
 	BeStringUtilities::Split(idList.c_str(), ",", tokens);
 	std::unordered_set<int64_t> schemaIds;
@@ -1155,7 +1157,9 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 		if (!IsAllDigits(token))
 			return reportError(Utf8PrintfString("invalid schema id '%s'; ids must be positive decimal integers.", token.c_str()));
 		int64_t id = (int64_t)strtoll(token.c_str(), nullptr, 10);
-		schemaIds.insert(id).second; // de-duplicate
+		if (id == 0)
+			return reportError(Utf8PrintfString("invalid schema id '%s'; ids must be positive decimal integers.", token.c_str()));
+		schemaIds.insert(id); // de-duplicate (duplicate ids are accepted, not rejected)
 	}
 	if (schemaIds.empty())
 		return reportError("the schema id list is empty.");

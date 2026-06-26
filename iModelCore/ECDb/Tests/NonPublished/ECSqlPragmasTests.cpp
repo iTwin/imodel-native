@@ -943,12 +943,19 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_invalid_arguments) {
     expectPrepareFails("PRAGMA schema_view_fragment('999999999')"); // non-existent schema id
     expectPrepareFails("PRAGMA schema_view_fragment(1)");         // integer argument, not a string
     expectPrepareFails("PRAGMA schema_view_fragment=2");          // assignment form is read-only
-    expectPrepareFails(Utf8PrintfString("PRAGMA schema_view_fragment('%s,%s')", validId.c_str(), validId.c_str()).c_str()); // duplicate id
+    expectPrepareFails("PRAGMA schema_view_fragment('0')");      // zero is not a positive id
 
     { // sanity: the valid id alone prepares and returns a row
         Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", validId.c_str());
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    { // duplicate ids are intentionally de-duplicated, not rejected: same id twice still prepares
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s,%s')", validId.c_str(), validId.c_str());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql.c_str();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
 }
