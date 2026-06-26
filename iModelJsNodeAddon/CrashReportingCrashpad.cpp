@@ -176,7 +176,6 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     // args.push_back("--no-upload-gzip"); // don't compress HTTP request (for debugging purposes)
 
     static CrashpadClient client;
-    // @todo: Decide if we want to pass true for restartable and asynchronous_start on macOS and maybe Windows.
     if (!client.StartHandler(
             handlerPath,        // handler
             dbPath,             // database
