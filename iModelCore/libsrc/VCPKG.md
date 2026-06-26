@@ -2,7 +2,23 @@
 
 This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select third-party library builds. vcpkg fetches source and builds libraries locally; the resulting headers and static libraries are delivered to Bentley Build via `.mke` files. The Bentley Build process installs the required version of vcpkg automatically, but the prerequisites listed below must be installed separately.
 
+A specific version of vcpkg is cloned from its official git URL during `bb pull`. The version used is controlled by the `Guid` setting for the `vcpkg` entry in [bbconfig.json](../../../imodel-native-internal/bbconfig.json). At build time, the vcpkg part runs the appropriate vcpkg install script located in this source tree.
+
+By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. It's possible that in the future this will default to some Bentley shared binary cache, but for now it is always local to the build machine.
+
 > **Note:** On all platforms, use `IMODEL_VCPKG_ROOT` (not `VCPKG_ROOT`) if you need to override the vcpkg location. The build wrappers check `IMODEL_VCPKG_ROOT` first, avoiding conflicts with tooling that may set `VCPKG_ROOT` to an undesired location. Since the build system installs the required version of vcpkg automatically, setting `IMODEL_VCPKG_ROOT` is not recommended.
+
+## Updating Libraries to Use vcpkg
+
+You must add vcpkg as a SubPart of your library Part in order to insure that its install script is run before your library is built, like is done for the Zlib part in [Zlib.PartFile.xml](compress/Zlib.PartFile.xml).
+
+Most libraries that we build with vcpkg will need their own triplet files to configure the library to build with the settings that we want. The triplet files are platform-specific. See `./compress/triplets` for example triplets. [`vcpkg.mki`](./vcpkg.mki) is used to determine the proper triplet to use at build time. Include that from any `.mke` file that builds using vcpkg. This will set the `vcpkgTriplet` environment variable.
+
+Additionally, we pin the libraries to a specific version via their vcpkg.json file. ([here](./compress/vcpkg.json) is the one used for zlib and minizip.) `vcpkg.json` will contain both a `version>=` setting under `dependencies` and a `version` entry under `overrides`.
+
+Each library also needs a copy of `vcpkg-configuration.json`. Unfortunately, this file must be in the same directory as the library-specific `vcpkg.json`, so even though all of them should be identical, they need to be copied to the library's directory. See [here](./compress/vcpkg-configuration.json) for an existing one. The `baseline` hash may have to be updated to support some specific version of a library.
+
+To actually build your library with vcpkg, run `vcpkg_run_install.bat` when building on Windows, or `vcpkg_run_install.sh` otherwise. **Note:** make sure to pick the right `vcpkg_run_install` based on the build platform, not the target platform. Android builds work fine on both Windows and macOS. See [Zlib.mke](./compress/Zlib.mke) for an example.
 
 ## Setup
 

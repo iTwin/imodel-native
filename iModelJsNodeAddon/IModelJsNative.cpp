@@ -7575,7 +7575,8 @@ static void setCrashReporting(NapiInfoCR info)
     ccfg.m_uploadUrl                = stringMember(obj, "uploadUrl");
 #endif
     ccfg.m_needsVectorExceptionHandler = true;
-    JsInterop::InitializeCrashReporting(ccfg);
+    if (!JsInterop::InitializeCrashReporting(ccfg))
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to initialize crash reporting.", IModelJsNativeErrorKey::NotInitialized);
 
     s_crashReportingInitialized = true;
     }
