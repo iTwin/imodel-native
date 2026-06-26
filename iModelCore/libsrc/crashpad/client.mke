@@ -61,18 +61,19 @@ CrashpadClientOut      = $(o)$(stlibprefix)$(appName)$(stlibext)
     vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
     vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
     vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
-    vcpkgMigOutput         = $(vcpkgLibDir)$(stlibprefix)mig_output$(stlibext)
 %elif defined (DEBUG)
     vcpkgCrashpadClient    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
     vcpkgCrashpadCommon    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
     vcpkgCrashpadUtil      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
     vcpkgCrashpadBase      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+    # vcpkgMigOutput is macOS-only (Mach Interface Generator output); used solely by the MacOS libtool merge below.
     vcpkgMigOutput         = $(vcpkgDbgLibDir)$(stlibprefix)mig_output$(stlibext)
 %else
     vcpkgCrashpadClient    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
     vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
     vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
     vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+    # vcpkgMigOutput is macOS-only (Mach Interface Generator output); used solely by the MacOS libtool merge below.
     vcpkgMigOutput         = $(vcpkgLibDir)$(stlibprefix)mig_output$(stlibext)
 %endif
 
