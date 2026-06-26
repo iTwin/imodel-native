@@ -41,19 +41,21 @@ enum class Feature
     {Feature::SystemPropertiesHaveIdExtendedType, ProfileVersion(4, 0, 0, 2)} \
     }
 
-enum class Compat { Warn, ReadOnly, Refuse };
+// TODO: Remove these exports once we have end-to-end tests in place with actual schemas.
+// These are temporary exports to facilitate testing and should not be part of the final API.
+enum class ECDB_EXPORT Compat { Warn, ReadOnly, Refuse };
 
-struct FeatureInfo
+struct ECDB_EXPORT FeatureInfo
     {
     Utf8CP name;
-    Utf8CP label;
+    Utf8CP description;
     Compat compat;
     };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct FeatureManager final
+struct ECDB_EXPORT FeatureManager final
     {
 private:
     FeatureManager() = delete;
@@ -61,7 +63,7 @@ private:
 
     //non-POD static members must never be destroyed (Bentley guideline)
     static std::map<Feature, ProfileVersion> const* s_featureMinimumVersions;
-    static std::vector<FeatureInfo> const* s_knownFeatures;
+    static bvector<FeatureInfo>* s_knownFeatures;
 
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
 
@@ -75,6 +77,10 @@ public:
 
     static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
     static std::vector<FeatureInfo const*> GetAllKnownFeatures();
+
+    static Utf8CP FeatureCompatToString(Compat compat);
+    static void RegisterKnownFeature(FeatureInfo const& info);
+    static BentleyStatus InsertFeature(ECDbCR ecdb, Utf8StringCR featureName);
     };
 
 

@@ -227,7 +227,7 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
         return BE_SQLITE_OK;
 
     Statement stmt;
-    if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Label, Compat from main." TABLE_Feature); status != BE_SQLITE_OK)
+    if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Compat from main." TABLE_Feature); status != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -242,7 +242,7 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
             continue;
 
         // Issue is not known, look at the compat mode of the issue to decide what to do.
-        const Utf8String compat = stmt.GetValueText(2);
+        const Utf8String compat = stmt.GetValueText(1);
         if (compat.EqualsI("Warn"))
             {
             m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,

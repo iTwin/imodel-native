@@ -69,7 +69,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define TABLEDDL_Feature "CREATE TABLE " TABLE_Feature "(" \
             "Name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE," \
-            "Label TEXT NOT NULL," \
+            "Description TEXT NOT NULL," \
             "Compat TEXT NOT NULL CHECK(Compat IN ('Warn','ReadOnly','Refuse')));"
 
 //=======================================================================================
