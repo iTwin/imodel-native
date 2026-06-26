@@ -833,7 +833,7 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
         }
     EXPECT_EQ(2, idx);
 
-    // changedProps for UPDATE contains only "Tags" (no ECInstanceId).
+    // changedProps for UPDATE contains only "Tags" (and includes instance key properties like ECInstanceId).
     const auto* changedProps = reader.GetChangeFetchedPropertyNames();
     ASSERT_NE(nullptr, changedProps);
     auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
