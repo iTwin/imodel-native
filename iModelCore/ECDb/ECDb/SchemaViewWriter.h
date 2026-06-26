@@ -31,6 +31,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! Format spec: docs/learning/metadata/SchemaViewBinaryFormat.md in itwinjs-core.
 //!
 //! Thread safety: safe for concurrent reads when ECDb is in WAL mode.
+//! HOWEVER, the writer itself is **not designed for concurrent use.** Each thread must create its own SchemaViewWriter instance.
 //! Called from the PragmaSchemaView handler on the ConcurrentQuery thread pool.
 // @bsistruct
 //=======================================================================================
@@ -142,7 +143,11 @@ private:
     // Verify every id in m_requestedSchemaIds is a real ec_Schema row. BE_SQLITE_NOTFOUND if not.
     DbResult ValidateRequestedSchemaIds(DbCR db);
 
-    // Shared body of WriteAllSchemas / WriteSchemas - runs the pre-passes and writes the tables.
+    // Reset all per-run accumulation state so a single instance can be reused for multiple
+    // WriteAllSchemas / WriteSchemas calls.
+    void ResetState();
+
+    // Shared body of WriteAllSchemas / WriteSchemas - resets state, runs the pre-passes and writes the tables.
     DbResult WriteBlob(DbCR db);
 
     // Per-table writers
@@ -196,7 +201,8 @@ public:
     //!         id is not an ec_Schema row.
     DbResult WriteSchemas(DbCR db, std::unordered_set<int64_t> const& requestedSchemaIds);
 
-    //! Get the output blob. Valid after WriteAllSchemas() / WriteSchemas() completes.
+    //! Get the output blob. Only valid after WriteAllSchemas() / WriteSchemas() returns BE_SQLITE_OK;
+    //! on an error return the blob is partial and must not be used.
     bvector<Byte> const& GetOutput() const { return m_output; }
 
     //! Move the output blob out. Invalidates internal state.

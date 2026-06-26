@@ -178,7 +178,7 @@ struct PragmaSchemaView : PragmaManager::GlobalHandler {
 // schema_view, for incremental SchemaView loading.
 // The single string argument is a comma-separated list of decimal ec_Schema ids, optionally
 // prefixed with a 'v<N>;' format-version token. The id list must be dependency-closed (the
-// caller computes the reference closure; the pragma does not expand references).
+// caller computes and includes the references; the pragma does not expand references).
 // Usage: PRAGMA schema_view_fragment('131,145,150')      -- latest format version
 //        PRAGMA schema_view_fragment('v1;131,145,150')   -- explicit format version 1
 // Result: single row, same columns as schema_view: format, formatVersion, data, schemaToken.
@@ -206,7 +206,7 @@ struct SHA3Helper final {
         ECDB_SCHEMA,
         ECDB_MAP,
         SQLITE_SCHEMA,
-        ECDB_SCHEMA_TOKEN, // schema identity only (ec_Schema name + version), cheap; backs PRAGMA checksum(schema_token)
+        ECDB_SCHEMA_TOKEN, // schema identity only (ec_Schema name + version), cheap
     };
 
 

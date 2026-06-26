@@ -23,8 +23,9 @@ static uint32_t SafeU32Id(int64_t val)
     }
 
 // Narrow a small int field (an ordinal, or a version digit) read from an ec_ table to a
-// byte / 16-bit value for the binary format. These values are tiny by construction, so a value that
-// does not fit signals data corruption. Like SafeU32Id, log and saturate.
+// byte / 16-bit value for the binary format. These values are tiny by construction, if we ever encounter overflow,
+// it warrants a warning but we still produce a valid blob by saturating to the min/max of the target type.
+// If we hit this and it's valid, the binary format should be updated to use a larger type.
 static uint8_t SafeU8(int val, Utf8CP field)
     {
     if (val >= 0 && val <= (int)UINT8_MAX)
@@ -92,7 +93,6 @@ static bool IsExcludedSchema(Utf8CP name)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectExcludedSchemaIds(DbCR db)
     {
-    m_excludedSchemaIds.clear();
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, "SELECT Id, Name FROM [main].[ec_Schema]");
     if (rc != BE_SQLITE_OK)
@@ -140,8 +140,6 @@ uint32_t SchemaViewWriter::Intern(Utf8CP str)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveHiddenPropertyCAClassId(DbCR db)
     {
-    m_hiddenPropertyCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -188,8 +186,6 @@ bool SchemaViewWriter::IsHiddenFromInstanceXml(Utf8CP instanceXml, Utf8CP showPr
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveQueryViewCAClassId(DbCR db)
     {
-    m_queryViewCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -220,10 +216,6 @@ uint32_t SchemaViewWriter::InternPropertyDef(PropertyDefRecord const& def)
 
 DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
     {
-    m_propDefs.clear();
-    m_propDefIndex.clear();
-    m_classPropRefs.clear();
-
     // Excluded schemas are filtered at the SQL level via NOT IN for efficiency.
     // Ordered by ClassId,Ordinal so m_classPropRefs preserves per-class order.
     // When the HiddenProperty CA class exists, an extra column (hp_ca.Instance) is added
@@ -310,7 +302,6 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectMixinClassIds(DbCR db)
     {
-    m_mixinClassIds.clear();
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
         "SELECT ca.ContainerId FROM [main].[ec_CustomAttribute] ca "
@@ -331,7 +322,6 @@ DbResult SchemaViewWriter::CollectMixinClassIds(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectQueryViewClassIds(DbCR db)
     {
-    m_queryViewClassIds.clear();
     if (!m_queryViewCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -352,8 +342,6 @@ DbResult SchemaViewWriter::CollectQueryViewClassIds(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveHiddenSchemaCAClassId(DbCR db)
     {
-    m_hiddenSchemaCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -372,8 +360,6 @@ DbResult SchemaViewWriter::ResolveHiddenSchemaCAClassId(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveHiddenClassCAClassId(DbCR db)
     {
-    m_hiddenClassCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -396,8 +382,6 @@ DbResult SchemaViewWriter::ResolveHiddenClassCAClassId(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
     {
-    m_hiddenSchemaIds.clear();
-    m_schemasWithHiddenClasses.clear();
     if (!m_hiddenSchemaCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -427,8 +411,6 @@ DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
     {
-    m_hiddenClassIds.clear();
-    m_explicitlyShownClassIds.clear();
     if (!m_hiddenClassCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -908,16 +890,41 @@ DbResult SchemaViewWriter::WriteSchemas(DbCR db, std::unordered_set<int64_t> con
     }
 
 //---------------------------------------------------------------------------------------
+// Reset all per-run accumulation state so a single instance can be reused for multiple
+// WriteAllSchemas / WriteSchemas calls. Centralizing the reset here keeps reuse correct even if
+// a new field is added and its collector forgets to clear.
+// m_isFragment / m_requestedSchemaIds are owned by the public entry points and not reset here.
+//---------------------------------------------------------------------------------------
+void SchemaViewWriter::ResetState()
+    {
+    m_output.clear();
+    m_stringTable.clear();
+    m_stringIndex.clear();
+    m_propDefs.clear();
+    m_propDefIndex.clear();
+    m_classPropRefs.clear();
+    m_hiddenPropertyCAClassId.reset();
+    m_hiddenSchemaCAClassId.reset();
+    m_hiddenClassCAClassId.reset();
+    m_queryViewCAClassId.reset();
+    m_excludedSchemaIds.clear();
+    m_mixinClassIds.clear();
+    m_queryViewClassIds.clear();
+    m_hiddenSchemaIds.clear();
+    m_schemasWithHiddenClasses.clear();
+    m_hiddenClassIds.clear();
+    m_explicitlyShownClassIds.clear();
+    }
+
+//---------------------------------------------------------------------------------------
 // Main orchestration - pre-collects metadata, then writes flat tables top-down. The
 // AppendSchemaFilter calls inside the table writers honor m_isFragment / m_requestedSchemaIds,
 // so this body is shared by the whole-schema and fragment entry points.
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WriteBlob(DbCR db)
     {
-    m_output.clear();
+    ResetState();
     m_output.reserve(2 * 1024 * 1024);
-    m_stringTable.clear();
-    m_stringIndex.clear();
     Intern(""); // index 0 = empty string
 
     // Pre-pass: collect metadata needed before writing

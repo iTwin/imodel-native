@@ -803,8 +803,7 @@ TEST_F(ECSqlPragmasTestFixture, schema_token_reflects_schema_changes) {
 // rot. So the native tests stay rough - they assert the pragma produces a well-formed row and that
 // bad input is rejected. The content-level guarantees (no-leakage, exactly which schemas/classes
 // land in a view, cross-schema reference resolution) are verified in TypeScript against a live
-// iModel, where the blob is consumed by its real reader:
-//   itwinjs-core/core/backend/src/test/schema/SchemaViewFragmentLoading.test.ts
+// iModel, where the blob is consumed by its real reader.
 //+---------------+---------------+---------------+---------------+---------------+------
 
 //---------------------------------------------------------------------------------------
@@ -822,7 +821,7 @@ static int64_t GetSchemaIdByName(ECDbR ecdb, Utf8CP name) {
 
 //---------------------------------------------------------------------------------------
 // Rough end-to-end check that the fragment pragma emits a single well-formed binary row for a
-// requested subset, and that asking for more schemas carries at least as much data. Exactly which
+// requested subset, and that asking for more schemas carries more data. Exactly which
 // schemas/classes land in the blob, and the no-leakage guarantee, are verified in TypeScript (see
 // the scope note above) - we do not decode the blob here.
 // @bsimethod
@@ -870,11 +869,11 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_returns_blob) {
         return len;
     };
 
-    // Asking for both schemas must carry at least as much data as asking for one - a coarse proxy
+    // Asking for both schemas must carry more data as asking for one - a coarse proxy
     // that the request set actually drives what the blob holds. Exact contents are a TS concern.
     size_t const lenA = fragmentDataLen(Utf8PrintfString("%lld", (long long)idA));
     size_t const lenAB = fragmentDataLen(Utf8PrintfString("%lld,%lld", (long long)idA, (long long)idB));
-    EXPECT_GE(lenAB, lenA);
+    EXPECT_GT(lenAB, lenA);
 }
 
 //---------------------------------------------------------------------------------------
