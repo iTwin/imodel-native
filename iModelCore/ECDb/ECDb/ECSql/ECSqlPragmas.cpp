@@ -1036,8 +1036,17 @@ DbResult BuildSchemaViewResult(PragmaManager::RowSet& rowSet, ECDbCR ecdb, uint8
 	// PRAGMA checksum(schema_token), so a fragment and the manifest it was planned from share one
 	// cache-invalidation key.
 	Utf8String schemaToken;
-	SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA_TOKEN, "main", SHA3Helper::HashSize::SHA3_256);
-
+	if (SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA_TOKEN, "main", SHA3Helper::HashSize::SHA3_256) != BE_SQLITE_OK) {
+		ecdb.GetImpl().Issues().Report(
+			IssueSeverity::Error,
+			IssueCategory::BusinessProperties,
+			IssueType::ECSQL,
+			ECDbIssueId::ECDb_0593,
+			"Unable to compute schema token.");
+		rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+		rowSet->FreezeSchemaChanges();
+		return BE_SQLITE_ERROR;
+	}
 	auto row = result->AppendRow();
 	row.appendValue() = "binary";
 	row.appendValue() = (int64_t)requestedVersion;
