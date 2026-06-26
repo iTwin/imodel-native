@@ -174,15 +174,15 @@ void InternalChangeIterator::Reset() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-PreparedChangesetReader::PreparedChangesetReader(ECDbCR ecdb)
-    : m_ecdb(ecdb)
+PreparedChangesetReader::PreparedChangesetReader()
+    : m_ecdb(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter mode) {
-    if(m_iterator.IsOpen()) {
+DbResult PreparedChangesetReader::OpenChangesetFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter mode) {
+    if(IsOpen()) {
         LOG.errorv("Attempting to open a file on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
@@ -195,14 +195,14 @@ DbResult PreparedChangesetReader::OpenChangesetFile(Utf8StringCR changesetFile, 
     bvector<BeFileName> files{input};
     auto reader = std::make_unique<ChangesetFileReaderBase>(files);
 
-    return Open(std::move(reader), invert, mode);
+    return Open(ecdb, std::move(reader), invert, mode);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
-    if(m_iterator.IsOpen()) {
+DbResult PreparedChangesetReader::Open(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter) {
+    if(IsOpen()) {
         LOG.errorv("Attempting to open on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
@@ -212,14 +212,15 @@ DbResult PreparedChangesetReader::Open(std::unique_ptr<ChangeStream> changeStrea
 
     m_filters.m_propertyFilter = propertyFilter;
     m_iterator.Open(std::move(changeStream), invert);
+    m_ecdb = &ecdb;
     return BE_SQLITE_OK;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
-    if (m_iterator.IsOpen()) {
+DbResult PreparedChangesetReader::OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    if (IsOpen()) {
         LOG.errorv("Attempting to open a changeset on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
@@ -234,25 +235,25 @@ DbResult PreparedChangesetReader::OpenInMemoryChangeset(std::unique_ptr<ChangeSe
             return BE_SQLITE_ERROR;
         changeSet.reset(); // release the ChangeSet RAM before writing
         DdlChanges emptyDdl;
-        if (BE_SQLITE_OK != WriteGroupToFile(tempGroup, emptyDdl, tempGroup.ContainsEcSchemaChanges(), m_tempGroupFile))
+        if (BE_SQLITE_OK != WriteGroupToFile(ecdb, tempGroup, emptyDdl, tempGroup.ContainsEcSchemaChanges(), m_tempGroupFile))
             return BE_SQLITE_ERROR;
         tempGroup.Finalize(); // release the ChangeGroup RAM before opening the file
-        return OpenChangesetFile(m_tempGroupFile.GetNameUtf8(), invert, propertyFilter);
+        return OpenChangesetFile(ecdb, m_tempGroupFile.GetNameUtf8(), invert, propertyFilter);
     }
 
-    return Open(std::move(changeSet), invert, propertyFilter);
+    return Open(ecdb, std::move(changeSet), invert, propertyFilter);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
-    if (m_iterator.IsOpen()) {
+DbResult PreparedChangesetReader::OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold) {
+    if (IsOpen()) {
         LOG.errorv("Attempting to open a group on an already open PreparedChangesetReader.");
         return BE_SQLITE_ERROR;
     }
 
-    ChangeGroup group(m_ecdb);
+    ChangeGroup group(ecdb);
     DdlChanges groupDdl;
     bool containsSchemaChanges = false;
     for (auto& changesetFile : files) {
@@ -284,22 +285,22 @@ DbResult PreparedChangesetReader::OpenChangeGroup(T_Utf8StringVector const& file
 
     if (cs->GetSize() > spillThreshold) {
         cs.reset();
-        if (BE_SQLITE_OK != WriteGroupToFile(group, groupDdl, containsSchemaChanges, m_tempGroupFile))
+        if (BE_SQLITE_OK != WriteGroupToFile(ecdb, group, groupDdl, containsSchemaChanges, m_tempGroupFile))
             return BE_SQLITE_ERROR;
         group.Finalize(); // release the ChangeGroup RAM before opening the file
-        return OpenChangesetFile(m_tempGroupFile.GetNameUtf8(), invert, propertyFilter);
+        return OpenChangesetFile(ecdb, m_tempGroupFile.GetNameUtf8(), invert, propertyFilter);
     }
 
     group.Finalize(); // group is fully materialized into cs; release the ChangeGroup RAM
-    return OpenInMemoryChangeset(std::move(cs), invert, propertyFilter, spillThreshold);
+    return OpenInMemoryChangeset(ecdb, std::move(cs), invert, propertyFilter, spillThreshold);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath) {
+DbResult PreparedChangesetReader::WriteGroupToFile(ECDbCR ecdb, ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath) {
     BeGuid guid(true);
-    BeFileName tempPath(Utf8String(m_ecdb.GetTempFileBaseName() + "-" + guid.ToString() + "-merged.changeset").c_str());
+    BeFileName tempPath(Utf8String(ecdb.GetTempFileBaseName() + "-" + guid.ToString() + "-merged.changeset").c_str());
 
     if(tempPath.DoesPathExist()) {
         LOG.errorv("WriteGroupToFile: temp file '%s' already exists.", tempPath.GetNameUtf8().c_str());
@@ -308,7 +309,7 @@ DbResult PreparedChangesetReader::WriteGroupToFile(ChangeGroup& changeGroup, Ddl
 
     // Level 1 compression with a small dictionary: this file is ephemeral so speed beats ratio.
     LzmaEncoder::LzmaParams fastParams(1 << 16, false, 1, 1);
-    ChangesetFileWriter writer(tempPath, containsSchemaChanges, ddlChanges, &m_ecdb, fastParams);
+    ChangesetFileWriter writer(tempPath, containsSchemaChanges, ddlChanges, &ecdb, fastParams);
 
     if (BE_SQLITE_OK != writer.Initialize()) {
         LOG.errorv("WriteGroupToFile: failed to initialize ChangesetFileWriter for '%s'.", tempPath.GetNameUtf8().c_str());
@@ -379,14 +380,26 @@ void PreparedChangesetReader::ClearMembers() {
     m_filters.Reset();
     m_iterator.Reset();
     m_columnCache.Clear();
+    m_ecdb = nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDb const* PreparedChangesetReader::GetECDb() const {
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to get ECDb from a closed ChangesetReader.");
+        return nullptr;
+    }
+    return m_ecdb;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PreparedChangesetReader::Step() {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to step a closed PreparedChangesetReader.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to step a closed ChangesetReader.");
         return BE_SQLITE_ERROR;
     }
     bool isCurrentRowFilteredOut = false;
@@ -418,9 +431,9 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
 
     ECClassId classId;
     bool isClassIdFromChangeset = false;
-    if (ChangesetValueFactory::ResolveClassId(m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset) != SUCCESS)
+    if (ChangesetValueFactory::ResolveClassId(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset) != SUCCESS)
         return StageProcessResult::Error;
-    ECClassCP ecClass = m_ecdb.Schemas().Main().GetClass(classId);
+    ECClassCP ecClass = m_ecdb->Schemas().Main().GetClass(classId);
     if (ecClass == nullptr) {
         LOG.errorv("ECClass with id %" PRIu64 " not found in schema.", classId.GetValueUnchecked());
         return StageProcessResult::Error;
@@ -440,7 +453,7 @@ PreparedChangesetReader::StageProcessResult PreparedChangesetReader::ProcessStag
     if (m_filters.CheckColumnCount(m_iterator.GetCurrentChange().GetColumnCount(), dbColumnCount, tableName) != SUCCESS)
         return StageProcessResult::Error;
 
-    if (ChangesetValueFactory::Create(m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset, (stage == Stage::New) ? m_newFields : m_oldFields, m_filters.m_propertyFilter, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(*m_ecdb, dbTable, m_columnValues, classId, isClassIdFromChangeset, (stage == Stage::New) ? m_newFields : m_oldFields, m_filters.m_propertyFilter, changedPropNames) != SUCCESS)
         return StageProcessResult::Error;
     return StageProcessResult::Success;
 }
@@ -486,7 +499,7 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
         return SUCCESS;
     }
 
-    DbTable const* dbTable = m_ecdb.Schemas().Main().GetDbSchema().FindTable(tableName);
+    DbTable const* dbTable = m_ecdb->Schemas().Main().GetDbSchema().FindTable(tableName);
     if (dbTable == nullptr) {
         LOG.errorv("Table '%s' not found in schema.", tableName.c_str());
         return ERROR;
@@ -511,15 +524,15 @@ BentleyStatus PreparedChangesetReader::ReFetchValues(bool& isCurrentRowFilteredO
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage) {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to get column values from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to get column values from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
     Utf8String tableName;
     if (GetTableName(tableName) != SUCCESS)
         return ERROR;
 
-    auto const* orderedNames = m_columnCache.GetOrderedColumnNames(m_ecdb, tableName);
+    auto const* orderedNames = m_columnCache.GetOrderedColumnNames(*m_ecdb, tableName);
     if (orderedNames == nullptr) {
         LOG.errorv("Failed to get column names for table '%s'.", tableName.c_str());
         return ERROR;
@@ -543,8 +556,8 @@ BentleyStatus PreparedChangesetReader::GetColumnValues(Stage stage) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PreparedChangesetReader::GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const {
-    auto const* orderedNames = m_columnCache.GetOrderedColumnNames(m_ecdb, tableName);
+BentleyStatus PreparedChangesetReader::GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) {
+    auto const* orderedNames = m_columnCache.GetOrderedColumnNames(*m_ecdb, tableName);
     if (orderedNames == nullptr) {
         LOG.errorv("Failed to get column names for table '%s'.", tableName.c_str());
         return ERROR;
@@ -565,8 +578,8 @@ void PreparedChangesetReader::DumpColumnValues(std::unordered_map<Utf8String, Db
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 int PreparedChangesetReader::GetColumnCount(Stage stage) const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to get column count from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to get column count from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return 0;
     }
     return stage == Stage::New ? static_cast<int>(m_newFields.size()) : static_cast<int>(m_oldFields.size());
@@ -576,7 +589,7 @@ int PreparedChangesetReader::GetColumnCount(Stage stage) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const {
-    if(!m_iterator.IsOpenAndStepped()) {
+    if(!IsStepped()) {
         LOG.errorv("Attempting to get table name from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
@@ -588,8 +601,8 @@ BentleyStatus PreparedChangesetReader::GetTableName(Utf8StringR tableName) const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to get opcode from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to get opcode from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
     opcode = m_iterator.GetCurrentChange().GetOpcode();
@@ -600,8 +613,8 @@ BentleyStatus PreparedChangesetReader::GetOpcode(DbOpcode& opcode) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnIndex) const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to get value from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to get value from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return NoopECSqlValue::GetSingleton();
     }
     int size = GetColumnCount(stage);
@@ -616,8 +629,8 @@ IECSqlValue const& PreparedChangesetReader::GetValue(Stage stage, int columnInde
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR key) const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to get instance key from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to get instance key from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
     const int count = GetColumnCount(stage);
@@ -655,14 +668,14 @@ BentleyStatus PreparedChangesetReader::GetInstanceKey(Stage stage, Utf8StringR k
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to check IsECTable on a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to check IsECTable on a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
     Utf8String tableName;
     if(GetTableName(tableName) != SUCCESS)
         return ERROR;
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
+    CachedStatementPtr stmt = m_ecdb->GetCachedStatement("SELECT 1 FROM ec_Table WHERE Name=?");
     if (stmt == nullptr) {
         LOG.errorv("Failed to prepare statement to check if table '%s' is an EC table.", tableName.c_str());
         return ERROR;
@@ -685,8 +698,8 @@ BentleyStatus PreparedChangesetReader::IsECTable(bool& isECTable) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 std::vector<Utf8String> const* PreparedChangesetReader::GetChangeFetchedPropertyNames() const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to get changed property names from a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to get changed property names from a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return nullptr;
     }
     return &m_changedPropNames;
@@ -696,8 +709,8 @@ std::vector<Utf8String> const* PreparedChangesetReader::GetChangeFetchedProperty
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::IsIndirectChange(bool& isIndirect) const {
-    if(!m_iterator.IsOpenAndStepped()) {
-        LOG.errorv("Attempting to check IsIndirectChange on a PreparedChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
+    if(!IsStepped()) {
+        LOG.errorv("Attempting to check IsIndirectChange on a ChangesetReader that is either not open or not stepped or has finished stepping and has reached the end.");
         return ERROR;
     }
     isIndirect = m_iterator.GetCurrentChange().IsIndirect();
@@ -708,8 +721,8 @@ BentleyStatus PreparedChangesetReader::IsIndirectChange(bool& isIndirect) const 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::SetTableFilters(std::vector<Utf8String> const& tableFilters) {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to set table filters on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to set table filters on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_tableFilters = tableFilters;
@@ -720,8 +733,8 @@ BentleyStatus PreparedChangesetReader::SetTableFilters(std::vector<Utf8String> c
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> const& opcodeFilters) {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to set opcode filters on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to set opcode filters on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_opcodeFilters = opcodeFilters;
@@ -732,8 +745,8 @@ BentleyStatus PreparedChangesetReader::SetOpcodeFilters(std::vector<DbOpcode> co
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::SetECClassNameFilters(std::vector<Utf8String> const& ecclassNameFilters) {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to set EC class name filters on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to set EC class name filters on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_ecclassNameFilters = ecclassNameFilters;
@@ -744,8 +757,8 @@ BentleyStatus PreparedChangesetReader::SetECClassNameFilters(std::vector<Utf8Str
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::ClearTableFilters() {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to clear table filters on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to clear table filters on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_tableFilters.clear();
@@ -756,8 +769,8 @@ BentleyStatus PreparedChangesetReader::ClearTableFilters() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::ClearOpcodeFilters() {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to clear opcode filters on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to clear opcode filters on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_opcodeFilters.clear();
@@ -768,8 +781,8 @@ BentleyStatus PreparedChangesetReader::ClearOpcodeFilters() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::ClearECClassNameFilters() {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to clear EC class name filters on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to clear EC class name filters on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_ecclassNameFilters.clear();
@@ -780,8 +793,8 @@ BentleyStatus PreparedChangesetReader::ClearECClassNameFilters() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::EnableStrictMode() {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to enable strict mode on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to enable strict mode on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_strictMode = true;
@@ -792,8 +805,8 @@ BentleyStatus PreparedChangesetReader::EnableStrictMode() {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PreparedChangesetReader::DisableStrictMode() {
-    if(!m_iterator.IsOpen()) {
-        LOG.errorv("Attempting to disable strict mode on a PreparedChangesetReader that is not open.");
+    if(!IsOpen()) {
+        LOG.errorv("Attempting to disable strict mode on a ChangesetReader that is not open.");
         return ERROR;
     }
     m_filters.m_strictMode = false;

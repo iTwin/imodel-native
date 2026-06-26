@@ -27,9 +27,6 @@ private:
     using Stage = Changes::Change::Stage;
     std::unique_ptr<PreparedChangesetReader> m_innerReader;
 
-    bool IsOpen() const;
-    void CloseInfallible();
-
     ChangesetReader(ChangesetReader const&) = delete;
     ChangesetReader& operator=(ChangesetReader const&) = delete;
     ChangesetReader(ChangesetReader&& rhs) = delete;

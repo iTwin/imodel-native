@@ -73,7 +73,6 @@ public:
 
     bool IsOpen()           const { return m_changeStream != nullptr; }
     bool IsStepped()        const { return m_changes != nullptr && m_currentChange.IsValid(); }
-    bool IsOpenAndStepped() const { return IsOpen() && IsStepped(); }
 
     //! Takes ownership of @p stream and records the invert flag.
     void Open(std::unique_ptr<ChangeStream> stream, bool invert);
@@ -94,10 +93,10 @@ private:
     using PropertyFilter = ChangesetReader::PropertyFilter;
     enum class StageProcessResult { Success, Error, Filtered };
 
-    ECDbCR                                    m_ecdb;
+    ECDb const*                               m_ecdb;
     InternalChangeIterator                    m_iterator;
     ChangesetFilterContext                    m_filters;
-    mutable TableColumnCache                  m_columnCache;
+    TableColumnCache                          m_columnCache;
 
     // per-row output fields
     std::vector<std::unique_ptr<IECSqlValue>> m_oldFields;
@@ -122,30 +121,34 @@ private:
     //! Writes @p changeGroup to a temporary LZMA-compressed changeset file, preserving @p ddlChanges
     //! and @p containsSchemaChanges in the file header. Sets @p outPath to the written path.
     //! The file is written with fast compression (level 1) since it is ephemeral.
-    DbResult WriteGroupToFile(ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
+    DbResult WriteGroupToFile(ECDbCR ecdb, ChangeGroup& changeGroup, DdlChanges const& ddlChanges, bool containsSchemaChanges, BeFileNameR outPath);
     //! Stores @p changeStream directly in m_iterator without any size-based spill logic.
     //! Kept private so callers are steered toward the appropriate Open* methods.
-    DbResult Open(std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
+    DbResult Open(ECDbCR ecdb, std::unique_ptr<ChangeStream> changeStream, bool invert, PropertyFilter propertyFilter);
     void ClearMembers();
     //! Returns the number of columns in @p tableName, using TableColumnCache for efficiency.
-    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName) const;
+    BentleyStatus GetColumnCountForCurrentChangedTable(int& columnCount, Utf8StringCR tableName);
     StageProcessResult ProcessStageValues(Stage stage, DbTable const& dbTable, std::vector<Utf8String>* changedPropNames);
 
+    bool IsOpen()           const { return m_ecdb != nullptr && m_iterator.IsOpen(); }
+    bool IsStepped()        const { return IsOpen() && m_iterator.IsStepped(); }
+
+    void CloseInfallible();
+
 public:
-    explicit PreparedChangesetReader(ECDbCR ecdb);
+    explicit PreparedChangesetReader();
     ~PreparedChangesetReader() { CloseInfallible(); }
 
-    DbResult OpenChangesetFile(Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
+    DbResult OpenChangesetFile(ECDbCR ecdb, Utf8StringCR changesetFile, bool invert, PropertyFilter propertyFilter);
     //! Opens a pre-built in-memory ChangeSet for reading.
     //! If the changeset size exceeds the spill threshold it is transparently written to a
     //! temporary LZMA-compressed file and read back via streaming, keeping peak RAM to a
     //! single copy at a time.
-    DbResult OpenInMemoryChangeset(std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
-    DbResult OpenChangeGroup(T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenInMemoryChangeset(ECDbCR ecdb, std::unique_ptr<ChangeSet> changeSet, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
+    DbResult OpenChangeGroup(ECDbCR ecdb, T_Utf8StringVector const& files, bool invert, PropertyFilter propertyFilter, size_t spillThreshold);
     BentleyStatus Close();
-    void CloseInfallible();
     DbResult Step();
-    ECDbCR GetECDb() const { return m_ecdb; }
+    ECDb const* GetECDb() const;
 
     BentleyStatus GetTableName(Utf8StringR tableName) const;
     BentleyStatus GetOpcode(DbOpcode& opcode) const;
