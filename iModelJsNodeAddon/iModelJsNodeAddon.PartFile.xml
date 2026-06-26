@@ -98,6 +98,7 @@
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot" LibType="Static"/>
   </ProductDirectoryList>
 
@@ -112,26 +113,14 @@
     </Bindings>
   </Part>
 
-  <Part Name="breakpad" OnlyPlatforms="x64" >
-    <SubPackage PkgType="UPack" Name="breakpad_54fa71efbe50" />
-    <Bindings>
-      <VendorNotices IfNotPresent="Continue">
-        Delivery/breakpad_notice.txt
-      </VendorNotices>
-    </Bindings>
-  </Part>
-
   <Part Name="iModelJsNative-Dynamic" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
-    <SubPart PartName="breakpad" />
+    <SubPart PartName="CrashpadShim"/>
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
     <SubPart PartName="ITwinDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite" />
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
-      <VendorNotices IfNotPresent="Continue">
-        Delivery/libdisasm_notice.txt
-      </VendorNotices>
     </Bindings>
   </Part>
 
@@ -155,7 +144,7 @@
 
   </Part>
 
-  <Part Name="CrashpadShim" OnlyPlatforms="Linux*">
+  <Part Name="CrashpadShim" OnlyPlatforms="Linux*,MacOS*,x*">
     <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
   </Part>
 
