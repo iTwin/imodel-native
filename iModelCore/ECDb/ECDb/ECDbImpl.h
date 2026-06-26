@@ -208,6 +208,7 @@ private:
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
     DbResult OnDbOpened(OpenParams const& params) const;
+    DbResult ValidateECFeaturesOnDbOpen() const;
     void RegisterECSqlPragmas() const;
     void OnInit() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;

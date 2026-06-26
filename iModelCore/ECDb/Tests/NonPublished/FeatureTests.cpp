@@ -13,16 +13,23 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // Tests for the ec_Feature table and FeatureManager string registry.
 //=======================================================================================
 
-struct FeatureTests : ECDbTestFixture {};
+struct FeatureTests : ECDbTestFixture
+    {
+protected:
+    DbResult InsertRawFeatureRow(Utf8CP name, Utf8CP compat)
+        {
+        return m_ecdb.ExecuteSql(Utf8PrintfString("INSERT INTO ec_Feature(Name, Label, Compat) VALUES ('%s', '%s', '%s')", name, "A-Feature-From-The-Future", compat).c_str());
+        }
+    };
 
 //---------------------------------------------------------------------------------------
 // ec_Feature table must be freshly created for every new 4.0.0.6 ECDb file, should have
-//  correct columns and should be empty
+// correct columns and should be empty.
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(FeatureTests, FeatureTableSetup)
     {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("feature_table_exists.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_table_exists.ecdb"));
     ProfileVersion const& actualVersion = m_ecdb.GetECDbProfileVersion();
     EXPECT_EQ(ProfileVersion(4, 0, 0, 6), actualVersion) << "Fresh ECDb must be at profile 4.0.0.6 after Task 2.1";
 
@@ -45,8 +52,7 @@ TEST_F(FeatureTests, FeatureTableSetup)
 //---------------------------------------------------------------------------------------
 TEST_F(FeatureTests, EmptyRegistry_OpenReadWriteSucceeds)
     {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("feature_open_rw.ecdb"))
-        << "Opening a fresh ECDb with an empty feature registry must succeed";
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_open_rw.ecdb")) << "Opening a fresh ECDb with an empty feature registry must succeed";
     EXPECT_TRUE(m_ecdb.IsDbOpen());
     }
 
@@ -56,13 +62,11 @@ TEST_F(FeatureTests, EmptyRegistry_OpenReadWriteSucceeds)
 //---------------------------------------------------------------------------------------
 TEST_F(FeatureTests, EmptyRegistry_OpenReadonlySucceeds)
     {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("feature_open_ro.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_open_ro.ecdb"));
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK,
-        m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)))
-        << "Read-only open of a fresh ECDb with an empty feature registry must succeed";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << "Read-only open of a fresh ECDb with an empty feature registry must succeed";
     EXPECT_TRUE(m_ecdb.IsDbOpen());
     }
 
@@ -73,17 +77,112 @@ TEST_F(FeatureTests, EmptyRegistry_OpenReadonlySucceeds)
 //---------------------------------------------------------------------------------------
 TEST_F(FeatureTests, EmptyRegistry_OpenDoesNotPopulateTable)
     {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("feature_open_nopop.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_open_nopop.ecdb"));
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ec_Feature"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_EQ(0, stmt.GetValueInt(0))
-        << "Opening an ECDb must not insert rows into ec_Feature when the registry is empty";
+    EXPECT_EQ(0, stmt.GetValueInt(0)) << "Opening an ECDb must not insert rows into ec_Feature when the registry is empty";
+    }
+
+//---------------------------------------------------------------------------------------
+// An unknown feature with Compat=Warn must NOT block the open but MUST issue a warning
+// that names the unknown feature.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_UnknownWarn_OpensWithWarning)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_warn.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-unknown-feature", "Warn"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << "A Warn feature must not prevent the file from opening";
+    EXPECT_TRUE(m_ecdb.IsDbOpen());
+
+    ASSERT_FALSE(issueListener.IsEmpty());
+
+    const ReportedIssue& issue = issueListener.m_issues.back();
+    EXPECT_EQ(IssueSeverity::Warning, issue.severity);
+    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'future-unknown-feature'. Some data may not be accessible."));
+    }
+
+//---------------------------------------------------------------------------------------
+// An unknown feature with Compat=ReadOnly must return BE_SQLITE_READONLY and leave the
+// database closed when a read-write open is attempted.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_UnknownReadOnly_BlocksWrite)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_readonly.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("unknown-readonly-feature", "ReadOnly"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    EXPECT_EQ(BE_SQLITE_READONLY, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << "An unknown ReadOnly feature must return BE_SQLITE_READONLY on a read-write open attempt";
+    EXPECT_FALSE(m_ecdb.IsDbOpen()) << "The database must be closed after the failed open";
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "The failed open must report at least one issue";
+    const ReportedIssue& issue = issueListener.m_issues.back();
+    EXPECT_EQ(IssueSeverity::Error, issue.severity) << "The issue severity must be Error";
+    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'unknown-readonly-feature'. The file can only be opened read-only."));
+
+    issueListener.ClearIssues();
+    m_ecdb.AddIssueListener(issueListener);
+    // If the ECDb is being opened in read-only mode, it should succeed
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << "An unknown ReadOnly feature must allow a read-only open";
+    EXPECT_TRUE(m_ecdb.IsDbOpen());
+    EXPECT_TRUE(m_ecdb.IsReadonly());
+    ASSERT_TRUE(issueListener.IsEmpty()) << "The failed open must not report any issues";
+    }
+
+//---------------------------------------------------------------------------------------
+// An unknown feature with Compat=Refuse must block ALL opens, both read-write and
+// read-only, returning BE_SQLITE_ERROR in both cases.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_UnknownRefuse_BlocksAllOpen)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_refuse.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("unknown-refuse-feature", "Refuse"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    // Try to open the ECDb in read-write mode. Should fail.
+    EXPECT_EQ(BE_SQLITE_ERROR, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << "An unknown Refuse feature must block a read-write open";
+    EXPECT_FALSE(m_ecdb.IsDbOpen()) << "The database must remain closed after the failed read-write open";
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "The failed open must report at least one issue";
+    const ReportedIssue& issue = issueListener.m_issues.back();
+    EXPECT_EQ(IssueSeverity::Error, issue.severity) << "The issue severity must be Error";
+    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'unknown-refuse-feature'. The file cannot be opened by this ECDb runtime."));
+
+    // Try to open the ECDb in read-only mode. Should fail.
+    issueListener.ClearIssues();
+    m_ecdb.AddIssueListener(issueListener);
+
+    EXPECT_EQ(BE_SQLITE_ERROR, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << "An unknown Refuse feature must also block a read-only open";
+    EXPECT_FALSE(m_ecdb.IsDbOpen()) << "The database must remain closed after the failed read-only open";
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "The failed open must report at least one issue";
+    EXPECT_EQ(IssueSeverity::Error, issue.severity) << "The issue severity must be Error";
+    EXPECT_TRUE(issue.message.EqualsI("ECDb file uses unknown feature 'unknown-refuse-feature'. The file cannot be opened by this ECDb runtime."));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

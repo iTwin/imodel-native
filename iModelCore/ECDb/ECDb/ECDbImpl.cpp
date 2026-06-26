@@ -218,6 +218,61 @@ DbResult ECDb::Impl::OnDbCreated() const
     return m_profileManager.CreateProfile();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
+    {
+    if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6))
+        return BE_SQLITE_OK;
+
+    Statement stmt;
+    if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Label, Compat from main." TABLE_Feature); status != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        const Utf8String featureName = stmt.GetValueText(0);
+        if (Utf8String::IsNullOrEmpty(featureName.c_str()))
+            continue;
+
+        const auto knownFeature = FeatureManager::FindKnownFeature(featureName);
+        // Feature is known to the current ECDb runtime, safe to open the Db.
+        if (knownFeature != nullptr)
+            continue;
+
+        // Issue is not known, look at the compat mode of the issue to decide what to do.
+        const Utf8String compat = stmt.GetValueText(2);
+        if (compat.EqualsI("Warn"))
+            {
+            m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
+                "ECDb file uses unknown feature '%s'. Some data may not be accessible.",
+                featureName.c_str());
+            continue;
+            }
+        if (compat.EqualsI("ReadOnly"))
+            {
+            if (m_ecdb.IsReadonly())
+                continue;
+            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
+                "ECDb file uses unknown feature '%s'. The file can only be opened read-only.",
+                featureName.c_str());
+            return BE_SQLITE_READONLY;
+            }
+        if (compat.EqualsI("Refuse"))
+            {
+            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+                "ECDb file uses unknown feature '%s'. The file cannot be opened by this ECDb runtime.",
+                featureName.c_str());
+            return BE_SQLITE_ERROR;
+            }
+        }    
+
+    return BE_SQLITE_OK;
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -225,7 +280,11 @@ DbResult ECDb::Impl::OnDbCreated() const
 DbResult ECDb::Impl::OnDbOpening() const
     {
     OnInit();
-    return m_idSequenceManager.InitializeSequences();
+    DbResult stat = m_idSequenceManager.InitializeSequences();
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    return ValidateECFeaturesOnDbOpen();
     }
 
 //--------------------------------------------------------------------------------------
