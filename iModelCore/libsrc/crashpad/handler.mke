@@ -7,10 +7,6 @@
 
 %include mdl.mki
 
-%if $(TARGET_PLATFORM)=="Windows"
-	%error Windows crashpad handler delivery is deferred — see PR #1466; comment out this line for a local test build
-%endif
-
 appName             = CrashpadHandler
 crashpadDir         = $(_MakeFilePath)
 libsrcDir           = $(crashpadDir)../
@@ -46,11 +42,23 @@ always:
 
 #--------------------------------------------------------------------------------------
 #   Deliver handler executable with expected product name.
+#   Note: -$(deleteCmd) is used to delete the destination if it exists so that the
+#   subsequent ~linkfile won't fail on rebuild.
 #--------------------------------------------------------------------------------------
 always:
+	-$(deleteCmd) "$(handlerOut)"
 	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
+
+winSignVersionTarget = $(handlerOut)
+winSignVersionProductName = $(appName)
+%include $(libsrcDir)WinSignAndVersionRule.mki
+
+always:
+	-$(deleteCmd) "$(BuildContext)Delivery/$(appName)$(exeext)"
 	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
+
 %if !defined (winNT)
+always:
 	chmod +x "$(vcpkgHandlerExe)"
 	chmod +x "$(handlerOut)"
 	chmod +x "$(BuildContext)Delivery/$(appName)$(exeext)"

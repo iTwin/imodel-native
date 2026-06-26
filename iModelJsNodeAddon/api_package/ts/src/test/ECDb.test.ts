@@ -13,9 +13,9 @@ import { openDgnDb } from "./";
 *--------------------------------------------------------------------------------------------*/
 import { dbFileName } from "./utils";
 
-// Crash reporting on linux is gated by the presence of this env variable.
-if (os.platform() === "linux")
-  process.env.LINUX_MINIDUMP_ENABLED = "yes";
+// Crash reporting is gated by this env variable on supported platforms.
+if (["linux", "darwin", "win32"].includes(os.platform()))
+  process.env.IMODEL_ADDON_MINIDUMP_ENABLED = "yes";
 
 class ConcurrentQueryHelper {
   public static async executeQueryRequest(conn: IModelJsNative.ECDb | IModelJsNative.DgnDb, request: DbQueryRequest): Promise<DbQueryResponse> {

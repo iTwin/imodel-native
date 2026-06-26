@@ -13,9 +13,9 @@ import { openDgnDb } from ".";
 import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
-// Crash reporting on linux is gated by the presence of this env variable.
-if (os.platform() === "linux")
-  process.env.LINUX_MINIDUMP_ENABLED = "yes";
+// Crash reporting is gated by this env variable on supported platforms.
+if (["linux", "darwin", "win32"].includes(os.platform()))
+  process.env.IMODEL_ADDON_MINIDUMP_ENABLED = "yes";
 
 describe("basic tests", () => {
 
@@ -775,8 +775,7 @@ describe("basic tests", () => {
     expect(() => db.updateLinkTableRelationship(updateRel)).to.throw("Failed to update relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract").to.have.property("iTwinErrorId");
   });
   it("testCrashReportingConfig", () => {
-    if (os.platform() === "darwin" || process.env.AddressSanitizer === "yes") {
-      // Currently unsupported on the Mac.
+    if (process.env.AddressSanitizer === "yes") {
       // With Address Sanitizer it fails with 'JsInterop::InitializeCrashReporting: Failed to start the crashpad handler'
       return;
     }

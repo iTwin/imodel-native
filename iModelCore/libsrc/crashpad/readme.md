@@ -1,7 +1,7 @@
 At this time:
-- Linux builds always compile and include crashpad
-- You must define LINUX_MINIDUMP_ENABLED=1 in the environment to enable crashpad handling. **Note:** This is done automatically inside certain tests that get run for certain build strategies.
-- You must define MINIDUMP_UPLOAD_URL=... to enable automatic uploads (additionally MINIDUMP_UPLOAD_BACKTRACE_TOKEN=... for backtrace.io)
+- Windows, Linux, and macOS builds always compile and include crashpad
+- You must define `LINUX_MINIDUMP_ENABLED` (Linux only) **or** `IMODEL_ADDON_MINIDUMP_ENABLED` (any crashpad-supported OS) in the environment to enable crashpad handling. **Note:** This is done automatically inside certain tests that get run for certain build strategies.
+- You must define `MINIDUMP_UPLOAD_URL=...` to enable automatic uploads (additionally `MINIDUMP_UPLOAD_BACKTRACE_TOKEN=...` for backtrace.io)
 - See [VCPKG.md](../VCPKG.md) for information about vcpkg builds like this one.
 
 ## Symbol processing for sentry.io
@@ -21,6 +21,8 @@ To update crashpad, update the version in both locations in `iModelCore/libsrc/c
 
 ---
 # Old WIP Notes on pulling it now (2023)
+
+**Note:** Now that we are using `vcpkg` to build crashpad, the below no longer applies, but I felt that deleting it wasn't a good idea.
 
 Latest attempt (2023)
 

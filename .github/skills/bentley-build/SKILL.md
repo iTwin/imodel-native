@@ -241,6 +241,32 @@ cDefs + -DMY_DEFINE=1          # append to compiler defs
 o = $(OutputRootDir)Build/mylib/
 ```
 
+### BBMake parser gotcha (`always:` blocks)
+
+- The first line after `always:` must be an executable command.
+- Do **not** place a comment immediately after `always:`.
+- If you need a comment, place it before `always:` or after at least one command line.
+- Violating this can produce parser/build errors such as:
+  - `BBMake: no rules to build always`
+  - `error : not rule or dependency`
+
+Example (bad):
+
+```makefile
+always:
+  # This comment can trigger a parse error in BBMake
+  $(SomeCommand)
+```
+
+Example (good):
+
+```makefile
+# Build step description
+always:
+  $(SomeCommand)
+  # Optional comment is safe after a command line
+```
+
 ---
 
 ## Dependency Trees (Simplified)
@@ -272,6 +298,7 @@ iModelJsNodeAddonPRG
 
 | Symptom | Fix |
 |---------|-----|
+| `BBMake: no rules to build always` or `error : not rule or dependency` near an `always:` block | Ensure the first line after `always:` is a command (not a comment). Keep `%if/%else/%endif` directives at column 1. |
 | `BSI=1` not set | Set `BSI=1`. Without it `sharedMki`, `BuildContextPublicApiDir`, `LinkFirstDepToFirstTarget` are undefined — silent failures or `can't open include file linkLibrary.mki`. |
 | Static binding file missing after broken run | Prior run without `BSI=1` left stale `.log` files in `outd\<arch>\static\BuildContexts\<Part>\Logs\`. Delete them and re-run with `BSI=1`. |
 | GeomLibs prewire: `cannot create link ... already exists` | Prior run without `BSI=1` wrote a relative symlink into source. Set `BSI=1` so `BuildContextPublicApiDir` resolves to `outd`. |

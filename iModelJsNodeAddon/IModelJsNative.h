@@ -603,14 +603,14 @@ public:
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
     static void SetCrashReportProperty(Utf8CP key, Utf8CP value)
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {}
     #endif
 
     static std::map<std::string, std::string> GetCrashReportProperties()
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {
@@ -623,7 +623,7 @@ public:
     static std::map<std::string,std::string> GetCrashReportPropertiesFromConfig(CrashReportingConfig const&);
 
     static bool InitializeCrashReporting(CrashReportingConfig const&)
-#if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+#if defined (BENTLEYCONFIG_CRASHPAD)
         ;
 #else
         { return true; }

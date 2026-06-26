@@ -1,0 +1,62 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Shared rule to stamp Windows version metadata and sign a delivered executable.
+#
+# Required variables (set before include):
+#   winSignVersionTarget      - Output file to stamp/sign.
+#   winSignVersionProductName - Product name and base executable name.
+#
+# Optional variables:
+#   winSignVersionFileDescription - Defaults to "$(winSignVersionProductName) for Windows".
+#   winSignVersionFileExt         - Defaults to "$(exeext)".
+#   winSignVersionInternalName    - Defaults to "$(winSignVersionProductName)$(winSignVersionFileExt)".
+#   winSignVersionOriginalName    - Defaults to "$(winSignVersionProductName)$(winSignVersionFileExt)".
+#---------------------------------------------------------------------------------------------
+
+%if $(TARGET_PLATFORM) != "Windows"
+	%return
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/stdversion.mki
+
+%if !defined (MSJ_SKIP_SIGNRSCS)
+	%include $(SrcRoot)bsicommon/PublicSDK/signrscsdefs.mki
+%endif
+
+%if !defined (winSignVersionTarget)
+	%error winSignVersionTarget must be defined before including WinSignAndVersionRule.mki.
+%endif
+
+%if !defined (winSignVersionProductName)
+	%error winSignVersionProductName must be defined before including WinSignAndVersionRule.mki.
+%endif
+
+%if !defined (winSignVersionFileDescription)
+	winSignVersionFileDescription = $(winSignVersionProductName) for Windows
+%endif
+
+%if !defined (winSignVersionFileExt)
+	winSignVersionFileExt = $(exeext)
+%endif
+
+%if !defined (winSignVersionInternalName)
+	winSignVersionInternalName = $(winSignVersionProductName)$(winSignVersionFileExt)
+%endif
+
+%if !defined (winSignVersionOriginalName)
+	winSignVersionOriginalName = $(winSignVersionProductName)$(winSignVersionFileExt)
+%endif
+
+always:
+	$(InjectVersionCmd) "$(winSignVersionTarget)" $(STD_VERSION_OPTS) -k"FileDescription=$(winSignVersionFileDescription)" -k"InternalName=$(winSignVersionInternalName)" -k"OriginalFilename=$(winSignVersionOriginalName)" -k"ProductName=$(winSignVersionProductName)"
+
+%if !defined (MSJ_SKIP_SIGNRSCS)
+%if defined (signcodecmd)
+always:
+	$(signcodecmd) "$(winSignVersionTarget)"
+%else
+	%warn signcodecmd is not defined; skipping signing for $(winSignVersionTarget)
+%endif
+%endif

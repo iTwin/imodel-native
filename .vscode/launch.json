@@ -501,7 +501,7 @@
             "stopAtEntry": false,
             "cwd": "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test",
             "environment": [
-                { "name": "LINUX_MINIDUMP_ENABLED", "value": "1" }
+                { "name": "IMODEL_ADDON_MINIDUMP_ENABLED", "value": "1" }
             ],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -525,7 +525,7 @@
             "args": [
             ],
             "env": {
-                "LINUX_MINIDUMP_ENABLED": "1"
+                "IMODEL_ADDON_MINIDUMP_ENABLED": "1"
             },
             "port": 9229,
             "protocol": "inspector",
