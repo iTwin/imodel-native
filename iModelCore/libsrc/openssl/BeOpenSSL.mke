@@ -96,7 +96,7 @@ always:
     #   macOS/iOS use libtool, Linux/Android use the shared merge_static_libs.sh (ar),
     #   Windows-static uses lib.exe.
     #----------------------------------------------------------------------------------
-    openSslStaticOut = $(o)$(libprefix)$(appName)$(libext)
+    openSslStaticOut = $(o)$(stlibprefix)$(appName)$(stlibext)
 
     always:
         -$(deleteCmd) "$(openSslStaticOut)"
@@ -109,8 +109,8 @@ always:
     %endif
 
     always:
-        -$(deleteCmd) "$(BuildContext)Delivery/$(libprefix)$(appName)$(libext)"
-        ~linkfile "$(BuildContext)Delivery/$(libprefix)$(appName)$(libext)=$(openSslStaticOut)"
+        -$(deleteCmd) "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)"
+        ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(openSslStaticOut)"
 
 %else
 
