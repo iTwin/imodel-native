@@ -19,6 +19,10 @@
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
     <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
+        <!-- Depend on __PublicAPI so the prewire vcpkg install runs first and completes before
+             this part's vcpkg install. Both run vcpkg against the same install-root; without this
+             ordering they can run concurrently and collide on vcpkg-running.lock. -->
+        <SubPart PartName="__PublicAPI" LibType="Static"/>
         <SubPart PartName="vcpkg" PartFile="iModelCore/libsrc/vcpkg"/>
         <Bindings>
             <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)iTwinOpenSSL$(stlibdebugext)</Libs>
@@ -28,7 +32,6 @@
     </Part>
 
     <Part Name="Library">
-        <SubPart PartName="__PublicAPI" LibType="Static"/>
         <SubPart PartName="__Library"/>
     </Part>
 
