@@ -59,7 +59,7 @@ if not "%VCPKG_ROOT%"=="" (
 )
 
 if "%IMODEL_VCPKG_ROOT%"=="" (
-    set "IMODEL_VCPKG_ROOT=%SrcRoot%\vcpkg"
+    set "IMODEL_VCPKG_ROOT=%SrcRoot%vcpkg"
 )
 
 :trim_imodel_vcpkg_root

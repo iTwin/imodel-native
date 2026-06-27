@@ -66,7 +66,7 @@ fi
 if [ -n "$IMODEL_VCPKG_ROOT" ]; then
     VCPKG_ROOT="$IMODEL_VCPKG_ROOT"
 elif [ -z "$VCPKG_ROOT" ]; then
-    VCPKG_ROOT="$SrcRoot/vcpkg"
+    VCPKG_ROOT="${SrcRoot}vcpkg"
 fi
 
 # Use a persistent local binary cache by default to avoid rebuilding heavy ports
