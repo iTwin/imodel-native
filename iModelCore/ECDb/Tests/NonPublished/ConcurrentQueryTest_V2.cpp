@@ -1387,6 +1387,11 @@ TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
 //   primary db -> needs primary SQLite mutex.
 // Without the fix, this test deadlocks (times out). With the fix, the worker uses its
 // own ECDb for schema resolution, avoiding the AB-BA lock ordering violation.
+//
+// NOTE: the deadlock window is probabilistic -- it relies on the OS scheduler interleaving
+// mainStepThread's sqlite3_step loop with a worker Prepare. On a single-core or lightly loaded
+// machine that interleaving may never happen, so a regressed build can pass here without the
+// watchdog firing. The test is therefore most reliable on multi-core CI.
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, DeadlockReproduction_MainStepVsWorkerPrepare) {
     // Use a schema with a class hierarchy to ensure polymorphic queries trigger extract_inst

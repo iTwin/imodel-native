@@ -150,6 +150,16 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
                 // exception thrown from schema loading (which would otherwise leak the lock and wedge
                 // all future worker prepares).
                 struct SchemaLockGuard final { BeMutex& m_mutex; ~SchemaLockGuard() { m_mutex.unlock(); } } guard{ schemaMutex };
+                // Re-check shutdown now that we hold the schema mutex: Shutdown() may have arrived
+                // while we were spinning to acquire it. Bail before starting a (potentially slow)
+                // Prepare so we don't stall Shutdown() under concurrent prepare load. The guard above
+                // releases the mutex on this early return. Mirrors the primary-conn spin path.
+                if (queue.GetState() == RunnableRequestQueue::State::Stop) {
+                    status = ECSqlStatus::Error;
+                    isShutDownInProgress = true;
+                    ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+                    return nullptr;
+                }
                 // Suppress logging on this attempt: a failure is expected for queries targeting an
                 // attached table space (the schema-source connection has none) or for genuinely invalid
                 // ECSQL; both are retried against the worker's own connection below, which reports
