@@ -261,6 +261,81 @@ TEST_F(FeatureTests, Feature_InsertFeature_DuplicateInserts)
     }
 
 //---------------------------------------------------------------------------------------
+// PRAGMA ecdb_known_features must return one row per registered known feature with
+// correct FeatureName and FeatureDescription columns.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_PragmaKnownFeatures_ReturnsRegistry)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_known_features.ecdb"));
+
+    static constexpr FeatureInfo testKnownFeature{"test-pragma-known-feature", "Test Pragma Registry Feature", Compat::ReadOnly};
+    FeatureManager::RegisterKnownFeature(testKnownFeature);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_known_features")) << "PRAGMA ecdb_known_features must prepare successfully";
+
+    bool found = false;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (Utf8String(stmt.GetValueText(0)) == testKnownFeature.name)
+            {
+            EXPECT_STREQ(testKnownFeature.name, stmt.GetValueText(0)) << "FeatureName column must match the registered name";
+            EXPECT_STREQ(testKnownFeature.description, stmt.GetValueText(1)) << "FeatureDescription column must match the registered description";
+            found = true;
+            break;
+            }
+        }
+    EXPECT_TRUE(found) << "PRAGMA ecdb_known_features must include a row for the registered test feature";
+    }
+
+//---------------------------------------------------------------------------------------
+// PRAGMA ecdb_known_features must reject write operations and return BE_SQLITE_READONLY.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_PragmaKnownFeatures_Write_IsReadOnly)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_known_features_write.ecdb"));
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus(BE_SQLITE_READONLY), stmt.Prepare(m_ecdb, "PRAGMA ecdb_known_features=foo")) << "Writing to ecdb_known_features must fail with BE_SQLITE_READONLY";
+    EXPECT_FALSE(issueListener.IsEmpty()) << "An error issue must be reported when attempting to write to a read-only PRAGMA";
+    }
+
+//---------------------------------------------------------------------------------------
+// PRAGMA ecdb_used_features must return an empty result set when the ec_Feature table
+// exists but contains no rows.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_PragmaUsedFeatures_EmptyTable_ReturnsEmpty)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_used_features_empty.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features")) << "PRAGMA ecdb_used_features must prepare successfully even with an empty table";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "PRAGMA ecdb_used_features must return no rows when the ec_Feature table is empty";
+    }
+
+//---------------------------------------------------------------------------------------
+// PRAGMA ecdb_used_features must reject write operations and return BE_SQLITE_READONLY.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_PragmaUsedFeatures_Write_IsReadOnly)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_used_features_write.ecdb"));
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus(BE_SQLITE_READONLY), stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features=foo")) << "Writing to ecdb_used_features must fail with BE_SQLITE_READONLY";
+    EXPECT_FALSE(issueListener.IsEmpty()) << "An error issue must be reported when attempting to write to a read-only PRAGMA";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(FeatureTests, Feature_KnownFeature_OpensNormally)
