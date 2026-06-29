@@ -1083,7 +1083,10 @@ DbResult PragmaECDbUsedFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb
 
 	Statement stmt;
 	if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Description, Compat FROM " TABLE_Feature))
-		return BE_SQLITE_ERROR;
+		{
+		rowSet = std::move(result);
+		return BE_SQLITE_OK;
+		}
 
 	while (stmt.Step() == BE_SQLITE_ROW)
 		{

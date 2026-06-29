@@ -359,4 +359,19 @@ TEST_F(FeatureTests, Feature_KnownFeature_OpensNormally)
     EXPECT_TRUE(issueListener.IsEmpty()) << "No issues must be reported for a known feature";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_PragmaUsedFeatures_PreMigrationFile_ReturnsEmpty)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_used_features_premigration.ecdb"));
+
+    // Drop the ec_Feature table to simulate a pre-4.0.0.6 file where the table doesn't exist.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP TABLE ec_Feature")) << "DROP TABLE must succeed on an open connection";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features")) << "PRAGMA ecdb_used_features must prepare successfully even without the table";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "PRAGMA ecdb_used_features must return no rows (not an error) when the ec_Feature table is absent";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

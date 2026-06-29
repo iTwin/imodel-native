@@ -5,12 +5,16 @@
 1. [Overview](#1-overview)
 2. [Motivation](#2-motivation)
 3. [Multi-Zone Split of ECVersion: The Three-Zone Model](#3-multi-zone-split-of-ecversion)
-4. [Make ECXml Parsing Forward-Compatible in a window while maininting strictness (ecobjects layer)](#4-make-ecxml-parsing-forward-compatible-in-a-window-while-maininting-strictness-ecobjects-layer)
+4. [ECXml Parsing Forward-Compatibility (ecobjects layer)](#4-ecxml-parsing-forward-compatibility-ecobjects-layer)
    - [1.1 : Strict/Tolerant Schema Loading](#11--stricttolerant-schema-loading)
    - [1.3 : Minimum-Version Write Enforcement](#13--minimum-version-write-enforcement)
    - [1.5 : Test Coverage](#15--test-coverage)
-7. [Design Decisions and Rationale](#7-design-decisions-and-rationale)
-8. [Future Work (TODOs)](#8-future-work-todos)
+5. [The `ec_feature` Table (ECDb layer)](#5-the-ec_feature-table-ecdb-layer)
+   - [5.1 : Table Structure and Profile Bump](#51--table-structure-and-profile-bump)
+   - [5.2 : The Two-Registry Model](#52--the-two-registry-model)
+   - [5.3 : Compatibility Matrix](#53-compatibility-matrix)
+6. [Design Decisions and Rationale](#6-design-decisions-and-rationale)
+7. [Future Work (TODOs)](#7-future-work-todos)
 
 ---
 
@@ -64,7 +68,7 @@ Independent of the strict flag. Rejects any schema whose original ECXml version 
 
 ---
 
-## 4. Make ECXml Parsing Forward-Compatible in a window while maininting strictness (ecobjects layer)
+## 4. ECXml Parsing Forward-Compatibility (ecobjects layer)
 
 ### 1.1 : Strict/Tolerant Schema Loading
 
@@ -233,22 +237,101 @@ Tests added to the ECObjects layer, organized by file and (for `StrictSchemaVali
 
 ---
 
-## 7. Design Decisions and Rationale
+## 5. The `ec_feature` Table (ECDb layer)
+
+### 5.1 - Table Structure and Profile Bump
+
+A new `ec_Feature` table was added to every ECDb file at the new profile version `4.0.0.6`.
+
+**DDL:**
+```sql
+CREATE TABLE ec_Feature (
+    Name        TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    Description TEXT NOT NULL,
+    Compat      TEXT NOT NULL CHECK(Compat IN ('Warn', 'ReadOnly', 'Refuse'))
+);
+```
+
+---
+
+### 5.2 The Two-Registry Model
+
+The feature system operates across two completely separate data stores that answer two distinct questions:
+
+| Data store |Populated by | Answers |
+|---|---|---|
+| Binary (compiled-in) | Developer, at code-write time via `RegisterKnownFeature` when adding a new feature to ECDb | "What features does **this runtime** understand?" |
+| `ec_Feature` table in `.ecdb` on disk |`InsertFeature()`, called at runtime | "What features are actually **in use in this specific file**?" |
+
+Each entry describes one feature:
+
+```cpp
+struct FeatureInfo {
+    Utf8CP name;        // canonical string key,  e.g. "json-primitive-type"
+    Utf8CP description; // human-readable description,  e.g. "JSON Primitive Types"
+    Compat compat;      // policy for older binaries (see below)
+};
+```
+
+#### The role of `Compat` in `FeatureInfo`
+
+`Compat` in the runtime registry is **not** enforcement policy for the current binary. Any feature in `s_knownFeatures` is by definition understood and fully supported. The current binary always opens such files normally, regardless of the `Compat` value stored in the file.
+
+`Compat` is purely **outward-facing metadata**: it is the value that `InsertFeature` writes into the `ec_feature.Compat` column, which then governs the behavior of **older binaries** that open the ECDb file without knowing the feature.
+
+> *"If a binary that has never heard of this feature opens a ECDb file that uses this feature, what should it do?"*
+
+Choosing the right `Compat` level when registering a feature:
+
+| Level | Meaning | Use when |
+|---|---|---|
+| `Warn` | Older binary opens normally; a warning is logged | Feature is purely additive; an older binary can safely ignore it without risk of data loss or corruption |
+| `ReadOnly` | Older binary cannot write to the file | Feature involves new schema constructs or data that an older binary would silently lose or corrupt on write |
+| `Refuse` | Older binary cannot open the file at all | Feature changes how existing data is physically interpreted (e.g. new storage layout with a new MapStrategy); even a read by an older binary is unsafe |
+
+---
+
+### 5.3 Compatibility Matrix
+
+The following table covers every combination a binary will encounter as the feature list grows. The opening binary's behavior depends solely on: (a) whether the feature row is present in the file, and (b) whether the feature is in the binary's `s_knownFeatures`.
+These scenarios are covered by the iModel evolution tests.
+
+| `ec_Feature` row present | `s_knownFeatures` | Open mode | Result |
+|---|---|---|---|
+| No | No | Any |  Opens normally. Feature not activated in this file. |
+| No | Yes | Any |  Opens normally. Runtime supports it; file doesn't use it. |
+| Yes - `Warn` | Yes | Any |  Opens normally. Known feature; `Compat` column is not consulted. |
+| Yes - `ReadOnly` | Yes | Any |  Opens normally. Known feature; `Compat` column is not consulted. |
+| Yes - `Refuse` | Yes | Any |  Opens normally. Known feature; `Compat` column is not consulted. |
+| Yes - `Warn` | **No** | Any |  Opens normally; **warning logged** naming the feature name. |
+| Yes - `ReadOnly` | **No** | Read-only |  Opens read-only. No warning - file is safely accessible in read-only mode. |
+| Yes - `ReadOnly` | **No** | Read-write |  **Open fails** (`BE_SQLITE_READONLY`). Error logged. |
+| Yes - `Refuse` | **No** | Any |  **Open fails** (`BE_SQLITE_ERROR`). Error logged. |
+
+**Key insight:** The `Compat` column is only ever consulted when the feature is **unknown** to the opening binary. For every feature present in `s_knownFeatures`, the `Compat` value in the file is irrelevant to the current binary - it is purely a message left for older binaries.
+
+---
+
+## 6. Design Decisions and Rationale
 
 ### `MaxParsable` not `Latest` as the strict ceiling
 
 The strict-mode ceiling in `ReadSchemaStub` is `MaxParsable` (V3_3), not `Latest` (V3_2). This allows ECDb to import V3_3 schemas today while still blocking truly unknown versions. The write-side gate (`IsECVersionSerializable`) uses `Latest` as its sentinel to prevent V3_3 schemas from being accidentally re-serialized (which would drop any V3_3 constructs not yet understood by the serializer).
 
+### `Compat` is outward-facing, not inward-facing
+
+`Compat` in `FeatureInfo` describes the behavior policy for **older binaries** that do not recognize the feature. It is never consulted for the current binary - any feature in `s_knownFeatures` is by definition fully supported and the file always opens normally. This is confirmed by `Feature_KnownFeature_OpensNormally`, which asserts that a file with a `Refuse` feature row opens in read-write mode when the feature is present in the registry.
+
 ---
 
-## 8. Future Work (TODOs)
+## 7. Future Work (TODOs)
 
-### 8.1 Expand strict reading of all ECObjects
+### 7.1 Expand strict reading of all ECObjects
 
 Current changes have only covered strict reading of `ECClass` (Base + Relationship + CA), `ECEnumeration`, and `ECProperty`.
 All remaining ECObjects need to check the strict flag in their `ReadXml` / `_ReadXmlAttributes` method and call `SchemaParseUtils::FindFirstUnknownXmlAttribute` when the flag is set.
 
-The `_StrictFails` tests for all these gaps are already written in Zone 1 of `StrictSchemaValidationTests.cpp` (see [Section 1.5](#15--test-coverage) for the full list with expected outcomes) and are currently expected to fail until the implementations below land.
+The `_StrictFails` tests for all these gaps are already written in Zone 1 of `StrictSchemaValidationTests.cpp` (see [Section 4](#4-ecxml-parsing-forward-compatibility-ecobjects-layer) for the full list with expected outcomes) and are currently expected to fail until the implementations below land.
 
 | ECObject | Reader to update | Matching `_StrictFails` test |
 |---|---|---|
