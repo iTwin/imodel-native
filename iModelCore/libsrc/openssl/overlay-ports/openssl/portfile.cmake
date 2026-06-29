@@ -11,17 +11,19 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO openssl/openssl
     REF "openssl-${VERSION}"
-    SHA512 243e250ee42913ea4ef3901c4022118efdb2f196484d22a6c16db0451137686110079ca320af4c6da0804aedf5ba90cbd9c681e454f35da1302a6e8c8bd79a84
+    SHA512 a89c08101fa1d7e3c09b14f4a90d450bcf336a4f6a3e6e4ea990e4deddcd9ce250472f9114438fd134ff4b47fe93dd47232308567088b2b1c0b2eb50e3b56bdf
     PATCHES
         cmake-config.patch
         command-line-length.patch
         script-prefix.patch
         windows/install-layout.patch
         windows/install-pdbs.patch
+        windows/install-programs.diff # https://github.com/openssl/openssl/issues/28744
         unix/android-cc.patch
         unix/move-openssldir.patch
         unix/no-empty-dirs.patch
         unix/no-static-libs-for-shared.patch
+        # Bentley overlay patches (see ../README.md and ../../READ_BEFORE_UPDATING_CODE.md):
         android-by_dir.patch
         bsiver-version-string.patch
 )
@@ -32,6 +34,14 @@ vcpkg_list(SET CONFIGURE_OPTIONS
     no-tests
     no-docs
 )
+
+# https://github.com/openssl/openssl/blob/master/INSTALL.md#enable-ec_nistp_64_gcc_128
+vcpkg_cmake_get_vars(cmake_vars_file)
+include("${cmake_vars_file}")
+if(VCPKG_DETECTED_CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$"
+   AND VCPKG_TARGET_ARCHITECTURE MATCHES "^(x64|arm64|riscv64|ppc64le)$")
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-ec_nistp_64_gcc_128)
+endif()
 
 set(INSTALL_FIPS "")
 if("fips" IN_LIST FEATURES)

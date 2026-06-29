@@ -1,5 +1,11 @@
 # Migrating the OpenSSL build to vcpkg
 
+> **Update (post-migration):** OpenSSL has since been bumped from 3.4.6 to **3.6.3**, which the
+> vcpkg registry now packages natively. The overlay port is therefore a verbatim copy of the
+> registry's 3.6.3 `ports/openssl` plus our two Bentley patches; it no longer needs to pin a
+> version the registry lacks. See [`overlay-ports/README.md`](overlay-ports/README.md) for the
+> current state. The 3.4.6-specific notes below are retained for historical context.
+
 This document enumerates the steps to replace the current build-from-source OpenSSL
 (`iModelCore/libsrc/openssl`) with a vcpkg-driven build, while retaining the three pieces
 of custom behavior we depend on:
