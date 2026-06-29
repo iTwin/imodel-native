@@ -261,6 +261,7 @@ private:
     BentleyStatus ParseTableValuedFunction(std::unique_ptr<TableValuedFunctionExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
     BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
+    BentleyStatus TryParseParenthesizedNameAsValueExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *typePredicateNode) const;
     BentleyStatus ParseWindowClause(std::unique_ptr<WindowFunctionClauseExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowDefinitionListExp(std::unique_ptr<WindowDefinitionListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowDefinitionExp(std::unique_ptr<WindowDefinitionExp>&, connectivity::OSQLParseNode const*) const;

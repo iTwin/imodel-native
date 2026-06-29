@@ -1336,5 +1336,13 @@ TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
 
     // regression: the existing IS (ClassName) type predicate is unaffected
     EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo)").Contains("ec_cache_ClassHierarchy"));
+
+    // a parenthesized qualified property reference '(alias.prop)' is a value expression (null-safe
+    // comparison), not the (ClassName) type predicate, because the name does not resolve to a class
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS (Foo.S2)", "WHERE [Foo].[S1] IS [Foo].[S2]");
+    assertWhere("SELECT 1 FROM ts.Foo WHERE S1 IS NOT (Foo.S2)", "WHERE [Foo].[S1] IS NOT [Foo].[S2]");
+    // multi-column point operand still expands column-wise through the parenthesized property reference
+    assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS (Foo.P2)",
+                "WHERE ([Foo].[P1_X] IS [Foo].[P2_X] AND [Foo].[P1_Y] IS [Foo].[P2_Y] AND [Foo].[P1_Z] IS [Foo].[P2_Z])");
     }
 END_ECDBUNITTESTS_NAMESPACE

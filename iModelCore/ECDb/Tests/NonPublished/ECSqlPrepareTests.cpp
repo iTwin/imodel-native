@@ -1722,6 +1722,11 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS TRUE"));
+    // a parenthesized qualified property reference '(alias.prop)' is a value expression (null-safe
+    // comparison), not the '(ClassName)' type predicate, when the name does not resolve to a class.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS (P.I)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS (p.I)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS NOT (p.I)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 8 % 3 = 2"));

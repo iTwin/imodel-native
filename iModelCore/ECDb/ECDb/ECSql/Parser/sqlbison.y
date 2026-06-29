@@ -993,7 +993,11 @@ type_list:
    prefix, or a comma-separated list. A single *unqualified* name in parentheses - e.g.
    'X IS (S2)' - still reduces as a parenthesized value_exp (null-safe comparison), not a
    type predicate; so if an identifier is both a class and a property name, the value-
-   expression (property) reading wins. See ECSqlStatementTests IsAndIsNotOperatorNullSafeSemantics. */
+   expression (property) reading wins.
+   A *qualified* name in parentheses - e.g. 'X IS (alias.prop)' - does reduce here as a type
+   predicate, but the semantic layer (ECSqlParser::TryParseParenthesizedNameAsValueExp)
+   reinterprets it as a property reference (null-safe comparison) when the name does not resolve
+   to a class. See ECSqlStatementTests IsAndIsNotOperatorNullSafeSemantics. */
 type_list_item:
     table_node
     {

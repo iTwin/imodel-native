@@ -2442,12 +2442,22 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             OSQLParseNode const* lhsNode = parseNode->getChild(0/*boolean_primary*/);
             OSQLParseNode const* rhsNode = parseNode->getChild(3/*truth_value | value_exp*/);
 
+            // A parenthesized qualified name on the right-hand side - e.g. 'X IS (alias.prop)' - parses as a
+            // '(ClassName)' type predicate because it is grammatically identical to one. If the name does not
+            // resolve to a class, reinterpret it as a property reference or enum literal so the comparison behaves
+            // like the null-safe 'X IS alias.prop' / 'X IS ts.Enum.Enumerator' instead of failing with a
+            // "class not found" error.
+            std::unique_ptr<ValueExp> rhsAsValueExp = nullptr;
+            if (SQL_ISRULE(rhsNode, type_predicate) && SUCCESS != TryParseParenthesizedNameAsValueExp(rhsAsValueExp, rhsNode))
+                return ERROR;
+
             // The right-hand operand of 'X IS [NOT] <rhs>' is either a "truth value"
             // (NULL/TRUE/FALSE/UNKNOWN or the (ClassName) type predicate), which keeps the original
             // boolean-predicate semantics, or any other value expression, which is a null-safe comparison.
-            const bool rhsIsTruthValue = SQL_ISRULE(rhsNode, type_predicate)
+            const bool rhsIsTruthValue = rhsAsValueExp == nullptr
+                && (SQL_ISRULE(rhsNode, type_predicate)
                 || SQL_ISTOKEN(rhsNode, NULL) || SQL_ISTOKEN(rhsNode, TRUE)
-                || SQL_ISTOKEN(rhsNode, FALSE) || SQL_ISTOKEN(rhsNode, UNKNOWN);
+                || SQL_ISTOKEN(rhsNode, FALSE) || SQL_ISTOKEN(rhsNode, UNKNOWN));
 
             if (!rhsIsTruthValue)
                 {
@@ -2460,7 +2470,9 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
                     return ERROR;
 
                 std::unique_ptr<ValueExp> rhsValueExp = nullptr;
-                if (SUCCESS != ParseValueExp(rhsValueExp, rhsNode))
+                if (rhsAsValueExp != nullptr)
+                    rhsValueExp = std::move(rhsAsValueExp);
+                else if (SUCCESS != ParseValueExp(rhsValueExp, rhsNode))
                     return ERROR;
 
                 exp = std::make_unique<BinaryBooleanExp>(std::move(lhsValueExp), op, std::move(rhsValueExp));
@@ -3492,6 +3504,103 @@ BentleyStatus ECSqlParser::ParseTypePredicate(std::unique_ptr<ValueExp>& valueEx
         }
 
     valueExp = std::make_unique<TypeListExp>(typeList);
+    return SUCCESS;
+    }
+//-----------------------------------------------------------------------------------------
+// In an 'X IS (...)' expression a parenthesized qualified name such as '(alias.prop)' is
+// grammatically indistinguishable from the '(ClassName)' type predicate: both reduce to a
+// 'type_predicate' node. When the name does not resolve to an existing class, this reinterprets it as
+// a property-reference or enum-literal value expression so the statement behaves like the
+// null-safe comparison 'X IS alias.prop' / 'X IS ts.Enum.Enumerator' instead of failing with
+// a "class not found" error.
+// 'valueExp' is left null - so the caller keeps the type-predicate behavior - when the predicate uses
+// an ONLY/ALL prefix, a comma-separated type list, the 'schema:class' (colon) form, or a name that
+// does resolve to a class (e.g. 'ECClassId IS (ts.Foo)' or 'ECClassId IS (main.ts.Foo)').
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::TryParseParenthesizedNameAsValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* typePredicateNode) const
+    {
+    valueExp = nullptr;
+    if (!SQL_ISRULE(typePredicateNode, type_predicate))
+        return SUCCESS;
+
+    OSQLParseNode const* type_list = typePredicateNode->getChild(1/*type_list*/);
+    if (type_list->count() != 1)
+        return SUCCESS; // a comma-separated type list is always a genuine type predicate
+
+    OSQLParseNode const* type_list_item = type_list->getChild(0);
+    OSQLParseNode const* opt_only = type_list_item->getChild(0/*opt_only*/);
+    if (opt_only->count() != 0)
+        return SUCCESS; // an ONLY/ALL prefix is always a genuine type predicate
+
+    OSQLParseNode const* tableNode = type_list_item->getChild(1/*table_node*/);
+    if (!SQL_ISRULE(tableNode, table_node))
+        return SUCCESS;
+
+    OSQLParseNode const* nameNode = tableNode->getChild(0);
+    PropertyPath propertyPath;
+    if (SQL_ISRULE(nameNode, qualified_class_name))
+        {
+        // The 'schema:class' (colon) form is class-only syntax and is never a property path.
+        if (!nameNode->getChild(1/*'.' or ':'*/)->getTokenValue().Equals("."))
+            return SUCCESS;
+
+        Utf8StringCR schemaNameOrAlias = nameNode->getChild(0)->getTokenValue();
+        OSQLParseNode const* classNameNode = nameNode->getChild(2/*class_name*/);
+        Utf8StringCR propertyName = classNameNode->getChild(0)->getTokenValue();
+        if (schemaNameOrAlias.empty() || propertyName.empty())
+            return SUCCESS;
+
+        // If the name resolves to a class, keep the '(ClassName)' type-predicate meaning.
+        if (m_context->GetECDb().Schemas().GetClass(schemaNameOrAlias, propertyName, SchemaLookupMode::AutoDetect) != nullptr)
+            return SUCCESS;
+
+        propertyPath.Push(schemaNameOrAlias);
+        propertyPath.Push(propertyName);
+        }
+    else if (SQL_ISRULE(nameNode, tablespace_qualified_class_name))
+        {
+        Utf8StringCR tableSpaceName = nameNode->getChild(0)->getTokenValue();
+        OSQLParseNode const* qualifiedNameNode = nameNode->getChild(2/*qualified_class_name*/);
+        if (!SQL_ISRULE(qualifiedNameNode, qualified_class_name))
+            return SUCCESS;
+
+        // The 'tablespace.schema:class' (colon) form is class-only syntax and is never a property path.
+        if (!qualifiedNameNode->getChild(1/*'.' or ':'*/)->getTokenValue().Equals("."))
+            return SUCCESS;
+
+        Utf8StringCR schemaNameOrAlias = qualifiedNameNode->getChild(0)->getTokenValue();
+        OSQLParseNode const* classNameNode = qualifiedNameNode->getChild(2/*class_name*/);
+        Utf8StringCR classNameOrPropertyName = classNameNode->getChild(0)->getTokenValue();
+        if (tableSpaceName.empty() || schemaNameOrAlias.empty() || classNameOrPropertyName.empty())
+            return SUCCESS;
+
+        // If the name resolves to a tablespace-qualified class, keep the '(ClassName)' type-predicate meaning.
+        if (m_context->GetECDb().Schemas().GetClass(schemaNameOrAlias, classNameOrPropertyName, SchemaLookupMode::AutoDetect, tableSpaceName.c_str()) != nullptr)
+            return SUCCESS;
+
+        propertyPath.Push(tableSpaceName);
+        propertyPath.Push(schemaNameOrAlias);
+        propertyPath.Push(classNameOrPropertyName);
+        }
+    else
+        return SUCCESS;
+
+    if (propertyPath.Size() == 3)
+        {
+        ECEnumerationCP ecEnum = m_context->GetECDb().Schemas().GetEnumeration(propertyPath[0].GetName(), propertyPath[1].GetName(), SchemaLookupMode::AutoDetect);
+        if (ecEnum != nullptr)
+            {
+            ECEnumeratorCP enumerator = ecEnum->FindEnumeratorByName(propertyPath[2].GetName().c_str());
+            if (enumerator != nullptr)
+                {
+                valueExp = std::make_unique<EnumValueExp>(*enumerator, propertyPath);
+                return SUCCESS;
+                }
+            }
+        }
+
+    valueExp = std::make_unique<PropertyNameExp>(propertyPath);
     return SUCCESS;
     }
 //-----------------------------------------------------------------------------------------
