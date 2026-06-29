@@ -1523,11 +1523,11 @@ DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementI
     if (!parentElem.IsValid())
         return DgnDbStatus::InvalidId;
 
-    // 3. The new parent must be in the same model as the element. Reparenting across models is
-    // not allowed here; use ChangeElementModel to move an element to a different model.
+    // 3. The new parent must be in the same model as the element. Cross-model reparenting is
+    // not allowed; ChangeElementModel only moves root elements between models.
     if (parentElem->GetModelId() != oldModelId)
         {
-        LOG.errorv("ChangeElementParent: Cannot change parent of element %s because the new parent %s is in a different model. Use ChangeElementModel instead.", elementId.ToHexStr().c_str(), newParentId.ToHexStr().c_str());
+        LOG.errorv("ChangeElementParent: Cannot change parent of element %s because the new parent %s is in a different model; ChangeElementModel only moves root elements between models.", elementId.ToHexStr().c_str(), newParentId.ToHexStr().c_str());
         return DgnDbStatus::WrongModel;
         }
 
@@ -1547,7 +1547,10 @@ DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementI
     DgnElementPtr editCopy = element.CopyForEdit();
     DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
         : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-    editCopy->SetParentId(newParentId, relClassId);
+    DgnDbStatus stat = editCopy->SetParentId(newParentId, relClassId);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
     return UpdateElement(*editCopy);
     }
 
@@ -1573,10 +1576,10 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
     if (oldModelId == newModelId)
         return DgnDbStatus::Success;
 
-    // 2. The element must not have a parent. Use ChangeElementParent to reparent first.
+    // 2. The element must not have a parent.
     if (element.GetParentId().IsValid())
         {
-        LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a parent element. Use ChangeElementParent instead.", elementId.ToHexStr().c_str());
+        LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a parent element.", elementId.ToHexStr().c_str());
         return DgnDbStatus::InvalidParent;
         }
 
@@ -1587,7 +1590,7 @@ DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId n
 
     // 4. BIS requires a parent and all of its children to reside in the same model, so changing the model of a
     // root element relocates its entire subtree. Validate the whole subtree first (no mutation) so a rejected
-    // move leaves the iModel untouched, then perform the relocation.
+    // move leaves the iModel untouched, then perform the relocation in one SQL statement.
     DgnDbStatus stat = ValidateSubtreeForModelChange(elementId, *newModel, true);
     if (DgnDbStatus::Success != stat)
         return stat;
@@ -1605,6 +1608,9 @@ DgnDbStatus DgnElements::ValidateSubtreeForModelChange(DgnElementId elementId, D
         return DgnDbStatus::InvalidId;
 
     DgnElementCR element = *orig;
+
+    if (element.GetElementHandler().GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     // The element must be compatible with the destination model (e.g. 2d vs 3d, information content, ...).
     DgnDbStatus stat = newModel._ValidateElementForModel(element);
@@ -1650,106 +1656,92 @@ DgnDbStatus DgnElements::ValidateSubtreeForModelChange(DgnElementId elementId, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElements::MoveSubtreeToNewModel(DgnElementId elementId, DgnModelId newModelId, DgnModelR newModel)
     {
-    DgnElementCPtr orig = GetElement(elementId);
-    if (!orig.IsValid())
+    struct GeometricElementMove
+        {
+        DgnElementId m_id;
+        DgnModelId m_oldModelId;
+        AxisAlignedBox3d m_range;
+        };
+
+    DgnElementIdSet subtreeIds;
+    bset<DgnModelId> sourceModelIds;
+    bvector<GeometricElementMove> geometricMoves;
+
+    // Capture the subtree and any loaded geometric ranges before the model ids change. The SQL update below
+    // does not fire element/model callbacks, so this local bookkeeping keeps native caches and range indexes
+    // coherent without dispatching per-element update events.
+    CachedStatementPtr selectStmt = GetStatement(
+        "WITH RECURSIVE subtree(Id) AS ("
+        "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=? "
+        "UNION ALL "
+        "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " e INNER JOIN subtree s ON e.ParentId=s.Id"
+        ") "
+        "SELECT Id FROM subtree"
+        );
+    selectStmt->BindId(1, elementId);
+    while (BE_SQLITE_ROW == selectStmt->Step())
+        {
+        DgnElementId id = selectStmt->GetValueId<DgnElementId>(0);
+        subtreeIds.insert(id);
+
+        DgnElementCPtr el = GetElement(id);
+        if (!el.IsValid() || el->GetModelId() == newModelId)
+            continue;
+
+        sourceModelIds.insert(el->GetModelId());
+
+        GeometrySourceCP geom = el->ToGeometrySource();
+        if (nullptr != geom && geom->HasGeometry())
+            {
+            GeometricElementMove move;
+            move.m_id = id;
+            move.m_oldModelId = el->GetModelId();
+            move.m_range = geom->CalculateRange3d();
+            geometricMoves.push_back(move);
+            }
+        }
+
+    if (subtreeIds.empty())
         return DgnDbStatus::InvalidId;
 
-    DgnElementCR element = *orig;
-    DgnModelId oldModelId = element.GetModelId();
+    CachedStatementPtr updateStmt = GetStatement(
+        "WITH RECURSIVE subtree(Id) AS ("
+        "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=? "
+        "UNION ALL "
+        "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " e INNER JOIN subtree s ON e.ParentId=s.Id"
+        ") "
+        "UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id IN (SELECT Id FROM subtree) AND ModelId<>?"
+        );
+    updateStmt->BindId(1, elementId);
+    updateStmt->BindId(2, newModelId);
+    updateStmt->BindId(3, newModelId);
+    if (BE_SQLITE_DONE != updateStmt->Step())
+        return DgnDbStatus::WriteError;
 
-    // Capture children before the element is moved/dropped from the pool (the parent link is preserved by the move).
-    DgnElementIdSet children = element.QueryChildren();
+    DropFromPool(subtreeIds);
 
-    // A descendant normally shares its parent's model, but guard against it already being in the target model.
-    if (oldModelId != newModelId)
+    for (DgnModelId sourceModelId : sourceModelIds)
+        m_dgndb.Txns().m_modelChanges.AddModel(sourceModelId);
+
+    auto newGeomModel = newModel.ToGeometricModelP();
+    for (GeometricElementMove const& move : geometricMoves)
         {
-        DgnModelPtr oldModel = m_dgndb.Models().GetModel(oldModelId);
-
-        // Prepare the edit copy - change model. The parent relationship is left untouched.
-        DgnElementPtr editCopy = element.CopyForEdit();
-        editCopy->m_modelId = newModelId;
-
-        // Call pre-update handler
-        DgnDbStatus stat = editCopy->_OnUpdate(element);
-        if (DgnDbStatus::Success != stat)
-            return stat;
-
-        // Remove from old model's range index
+        DgnModelPtr oldModel = m_dgndb.Models().GetModel(move.m_oldModelId);
         if (oldModel.IsValid())
             {
             auto oldGeomModel = oldModel->ToGeometricModelP();
             if (nullptr != oldGeomModel)
-                oldGeomModel->RemoveFromRangeIndex(elementId);
-            }
-
-        // Perform the model change via direct SQL
-        {
-        CachedStatementPtr stmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-        stmt->BindId(1, newModelId);
-        stmt->BindId(2, elementId);
-        auto sqlResult = stmt->Step();
-        if (BE_SQLITE_DONE != sqlResult)
-            {
-            if (oldModel.IsValid())
                 {
-                auto oldGeomModel = oldModel->ToGeometricModelP();
-                if (nullptr != oldGeomModel)
-                    {
-                    GeometrySourceCP geom = element.ToGeometrySource();
-                    if (nullptr != geom && geom->HasGeometry())
-                        oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                    }
+                oldGeomModel->RemoveFromRangeIndex(move.m_id);
+                m_dgndb.Txns().m_modelChanges.AddGeometricElementChange(move.m_oldModelId, move.m_id, TxnTable::ChangeType::Delete);
                 }
-            return DgnDbStatus::WriteError;
-            }
-        }
-
-        // Write other properties via normal update path
-        stat = editCopy->_UpdateInDb();
-        if (DgnDbStatus::Success != stat)
-            {
-            CachedStatementPtr rollbackStmt = GetStatement("UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id=?");
-            rollbackStmt->BindId(1, oldModelId);
-            rollbackStmt->BindId(2, elementId);
-            rollbackStmt->Step();
-            if (oldModel.IsValid())
-                {
-                auto oldGeomModel = oldModel->ToGeometricModelP();
-                if (nullptr != oldGeomModel)
-                    {
-                    GeometrySourceCP geom = element.ToGeometrySource();
-                    if (nullptr != geom && geom->HasGeometry())
-                        oldGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                    }
-                }
-            return stat;
             }
 
-        // Post-update handler notification
-        editCopy->_OnUpdated(element);
-
-        // Drop stale cached element, add to new model's range index
-        DropFromPool(element);
-
-        auto newGeomModel = newModel.ToGeometricModelP();
         if (nullptr != newGeomModel)
             {
-            DgnElementCPtr finalElem = GetElement(elementId);
-            if (finalElem.IsValid())
-                {
-                GeometrySourceCP geom = finalElem->ToGeometrySource();
-                if (nullptr != geom && geom->HasGeometry())
-                    newGeomModel->AddElementRange(elementId, geom->CalculateRange3d());
-                }
+            newGeomModel->AddElementRange(move.m_id, move.m_range);
+            m_dgndb.Txns().m_modelChanges.AddGeometricElementChange(newModelId, move.m_id, TxnTable::ChangeType::Insert);
             }
-        }
-
-    // Recurse into the children so the entire subtree moves with the element (parent moved first).
-    for (DgnElementId childId : children)
-        {
-        DgnDbStatus stat = MoveSubtreeToNewModel(childId, newModelId, newModel);
-        if (DgnDbStatus::Success != stat)
-            return stat;
         }
 
     return DgnDbStatus::Success;
@@ -2073,4 +2065,3 @@ DgnElementIdSet DgnElements::FindGeometryPartReferences(BeSQLite::IdSet<DgnGeome
 
     return refs;
     }
-
