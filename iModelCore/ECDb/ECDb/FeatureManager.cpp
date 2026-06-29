@@ -53,7 +53,7 @@ bool FeatureManager::IsAvailable(ProfileVersion const& actualVersion, Feature fe
 std::map<Feature, ProfileVersion> const* FeatureManager::s_featureMinimumVersions = new std::map<Feature, ProfileVersion>(FEATURE_MINIMUMVERSIONS);
 
 //static
-bvector<FeatureInfo>* FeatureManager::s_knownFeatures = new bvector<FeatureInfo>();
+std::map<Utf8String, FeatureInfo> const* FeatureManager::s_knownFeatures = new std::map<Utf8String, FeatureInfo>(KNOWN_FEATURES);
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -61,12 +61,15 @@ bvector<FeatureInfo>* FeatureManager::s_knownFeatures = new bvector<FeatureInfo>
 //static
 FeatureInfo const* FeatureManager::FindKnownFeature(Utf8StringCR featureName)
     {
-    for (FeatureInfo const& info : *s_knownFeatures)
-        {
-        if (featureName == info.name)
-            return &info;
-        }
+    if (auto it = s_knownFeatures->find(featureName); it != s_knownFeatures->end())
+        return &it->second;
+
     return nullptr;
+    }
+
+bool FeatureManager::IsFeatureKnown(Utf8StringCR featureName)
+    {
+    return s_knownFeatures->find(featureName) != s_knownFeatures->end();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -76,20 +79,9 @@ FeatureInfo const* FeatureManager::FindKnownFeature(Utf8StringCR featureName)
 std::vector<FeatureInfo const*> FeatureManager::GetAllKnownFeatures()
     {
     std::vector<FeatureInfo const*> features;
-    for (FeatureInfo const& info : *s_knownFeatures)
-        features.push_back(&info);
+    for (auto const& [featureName, featureInfo] : *s_knownFeatures)
+        features.push_back(&featureInfo);
     return features;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-void FeatureManager::RegisterKnownFeature(FeatureInfo const& info)
-    {
-    if (FindKnownFeature(info.name) != nullptr)
-        return;
-    s_knownFeatures->push_back(info);
     }
 
 //-----------------------------------------------------------------------------------------

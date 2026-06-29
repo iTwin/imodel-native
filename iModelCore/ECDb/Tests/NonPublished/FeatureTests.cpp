@@ -217,79 +217,6 @@ TEST_F(FeatureTests, Feature_InsertFeature_UnknownName_ReturnsError)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(FeatureTests, Feature_InsertFeature_InsertsRowFromRegistry)
-    {
-    static constexpr FeatureInfo testFeature{"test-inserts-from-registry", "Inserts From Registry", Compat::ReadOnly};
-    FeatureManager::RegisterKnownFeature(testFeature);
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("insert_feature_inserts_row.ecdb"));
-
-    EXPECT_EQ(BentleyStatus::SUCCESS, FeatureManager::InsertFeature(m_ecdb, testFeature.name));
-    m_ecdb.SaveChanges();
-
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Name, Description, Compat FROM ec_Feature WHERE Name=?"));
-    stmt.BindText(1, testFeature.name, Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "InsertFeature must insert exactly one row";
-
-    EXPECT_STREQ(testFeature.name, stmt.GetValueText(0)) << "Name must match the registry";
-    EXPECT_STREQ(testFeature.description, stmt.GetValueText(1)) << "Description must come from the registry, not from the caller";
-    EXPECT_STREQ(FeatureManager::FeatureCompatToString(testFeature.compat), stmt.GetValueText(2)) << "Compat must come from the registry";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(FeatureTests, Feature_InsertFeature_DuplicateInserts)
-    {
-    static constexpr FeatureInfo testFeature{"test-new-feature", "Idempotent Feature", Compat::Warn};
-    FeatureManager::RegisterKnownFeature(testFeature);
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("insert_new_feature.ecdb"));
-
-    EXPECT_EQ(BentleyStatus::SUCCESS, FeatureManager::InsertFeature(m_ecdb, testFeature.name));
-    EXPECT_EQ(BentleyStatus::SUCCESS, FeatureManager::InsertFeature(m_ecdb, testFeature.name)) << "Second InsertFeature call must still return SUCCESS";
-    m_ecdb.SaveChanges();
-
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ec_Feature WHERE Name=?"));
-    stmt.BindText(1, testFeature.name, Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_EQ(1, stmt.GetValueInt(0));
-    }
-
-//---------------------------------------------------------------------------------------
-// PRAGMA ecdb_known_features must return one row per registered known feature with
-// correct FeatureName and FeatureDescription columns.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(FeatureTests, Feature_PragmaKnownFeatures_ReturnsRegistry)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_known_features.ecdb"));
-
-    static constexpr FeatureInfo testKnownFeature{"test-pragma-known-feature", "Test Pragma Registry Feature", Compat::ReadOnly};
-    FeatureManager::RegisterKnownFeature(testKnownFeature);
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_known_features")) << "PRAGMA ecdb_known_features must prepare successfully";
-
-    bool found = false;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        if (Utf8String(stmt.GetValueText(0)) == testKnownFeature.name)
-            {
-            EXPECT_STREQ(testKnownFeature.name, stmt.GetValueText(0)) << "FeatureName column must match the registered name";
-            EXPECT_STREQ(testKnownFeature.description, stmt.GetValueText(1)) << "FeatureDescription column must match the registered description";
-            found = true;
-            break;
-            }
-        }
-    EXPECT_TRUE(found) << "PRAGMA ecdb_known_features must include a row for the registered test feature";
-    }
-
-//---------------------------------------------------------------------------------------
 // PRAGMA ecdb_known_features must reject write operations and return BE_SQLITE_READONLY.
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -333,30 +260,6 @@ TEST_F(FeatureTests, Feature_PragmaUsedFeatures_Write_IsReadOnly)
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus(BE_SQLITE_READONLY), stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features=foo")) << "Writing to ecdb_used_features must fail with BE_SQLITE_READONLY";
     EXPECT_FALSE(issueListener.IsEmpty()) << "An error issue must be reported when attempting to write to a read-only PRAGMA";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(FeatureTests, Feature_KnownFeature_OpensNormally)
-    {
-    static constexpr FeatureInfo testFeature{"test-known-refuse", "Known Refuse Feature", Compat::Refuse};
-    FeatureManager::RegisterKnownFeature(testFeature);
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_known_opens_normally.ecdb"));
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, FeatureManager::InsertFeature(m_ecdb, testFeature.name));
-    m_ecdb.SaveChanges();
-
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    CloseECDb();
-
-    TestIssueListener issueListener;
-    m_ecdb.AddIssueListener(issueListener);
-
-    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << "A feature known to the runtime must never block opening, regardless of its Compat level";
-    EXPECT_TRUE(m_ecdb.IsDbOpen());
-    EXPECT_TRUE(issueListener.IsEmpty()) << "No issues must be reported for a known feature";
     }
 
 //---------------------------------------------------------------------------------------

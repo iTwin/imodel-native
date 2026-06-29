@@ -52,6 +52,8 @@ struct ECDB_EXPORT FeatureInfo
     Compat compat;
     };
 
+#define KNOWN_FEATURES { }
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -63,9 +65,10 @@ private:
 
     //non-POD static members must never be destroyed (Bentley guideline)
     static std::map<Feature, ProfileVersion> const* s_featureMinimumVersions;
-    static bvector<FeatureInfo>* s_knownFeatures;
+    static std::map<Utf8String, FeatureInfo> const* s_knownFeatures;
 
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
+    static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
 
 public:
     //! convenience method to check whether EC3.2 features (units, named enumerators) are available in the given file
@@ -75,12 +78,10 @@ public:
     static bool IsAvailable(ECDbCR ecdb, Feature feature) { return IsAvailable(ecdb.GetECDbProfileVersion(), feature); }
     static bool IsAvailable(ECDbCR, std::vector<Feature> const&);
 
-    static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
+    static bool IsFeatureKnown(Utf8StringCR featureName);
     static std::vector<FeatureInfo const*> GetAllKnownFeatures();
-
-    static Utf8CP FeatureCompatToString(Compat compat);
-    static void RegisterKnownFeature(FeatureInfo const& info);
     static BentleyStatus InsertFeature(ECDbCR ecdb, Utf8StringCR featureName);
+    static Utf8CP FeatureCompatToString(Compat compat);
     };
 
 

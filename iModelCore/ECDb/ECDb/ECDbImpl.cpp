@@ -223,7 +223,8 @@ DbResult ECDb::Impl::OnDbCreated() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
     {
-    if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6))
+    // Either the profile version does not support ec_Feature table or else the ECDb file is not using any features yet.
+    if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6) || !m_ecdb.TableExists(TABLE_Feature))
         return BE_SQLITE_OK;
 
     Statement stmt;
@@ -236,9 +237,8 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
         if (Utf8String::IsNullOrEmpty(featureName.c_str()))
             continue;
 
-        const auto knownFeature = FeatureManager::FindKnownFeature(featureName);
         // Feature is known to the current ECDb runtime, safe to open the Db.
-        if (knownFeature != nullptr)
+        if (FeatureManager::IsFeatureKnown(featureName))
             continue;
 
         // Issue is not known, look at the compat mode of the issue to decide what to do.
