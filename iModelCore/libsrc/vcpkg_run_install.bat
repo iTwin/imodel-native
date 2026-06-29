@@ -137,7 +137,12 @@ if not exist "%VCPKG_EXE%" (
     exit /b 1
 )
 
-set "VCPKG_DOWNLOADS=%VCPKG_ROOT%\downloads"
+rem Use a per-install-root downloads directory so parallel builds for different
+rem triplets (e.g. AndroidARM64 and AndroidX64) each get their own
+rem downloads\tools\msys2 tree and cannot race on MSYS2 tool extraction.
+rem The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared so compiled
+rem packages are not rebuilt redundantly.
+set "VCPKG_DOWNLOADS=%INSTALL_ROOT%\downloads"
 if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
     set "VCPKG_DEFAULT_BINARY_CACHE=%VCPKG_ROOT%\archives"
 )

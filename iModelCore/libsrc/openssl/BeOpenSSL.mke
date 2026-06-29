@@ -76,7 +76,7 @@ always:
 #   Resolve the vcpkg-produced OpenSSL static libraries. ssl is listed before crypto so the
 #   static link order (ssl depends on crypto) is correct.
 #--------------------------------------------------------------------------------------
-%if defined (winNT)
+%if $(TARGET_PLATFORM) == "Windows"
     libcryptoName = libcrypto.lib
     libsslName    = libssl.lib
 %else
@@ -106,12 +106,14 @@ always:
 
     always:
         -$(deleteCmd) "$(openSslStaticOut)"
-    %if defined (winNT)
+    %if $(TARGET_PLATFORM) == "Windows"
         lib "-OUT:$(openSslStaticOut)" "$(vcpkgSsl)" "$(vcpkgCrypto)"
     %elif $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
         libtool -static -o "$(openSslStaticOut)" "$(vcpkgSsl)" "$(vcpkgCrypto)"
-    %else
+    %elif $(TARGET_PLATFORM) == "Linux"
         $(libsrcDir)merge_static_libs.sh "$(openSslStaticOut)" "$(vcpkgSsl)" "$(vcpkgCrypto)"
+    %elif $(TARGET_PLATFORM) == "Android"
+        $(BENTLEY_ANDROID_TOOLCHAIN_ar) qcL "$(openSslStaticOut)" "$(vcpkgSsl)" "$(vcpkgCrypto)"
     %endif
 
     always:
