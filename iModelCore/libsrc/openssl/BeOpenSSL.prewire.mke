@@ -23,7 +23,12 @@ o = $(OutputRootDir)build/iTwinOpenSSL-prewire/
 
 #--------------------------------------------------------------------------------------
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE.
+#   Mirror the triplet override from BeOpenSSL.mke so the prewire installs into the same
+#   vcpkg_installed tree that the main build will use.
 #--------------------------------------------------------------------------------------
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    vcpkgWindowsMDCRT = 1
+%endif
 %include $(libsrcDir)vcpkg.mki
 
 vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/openssl/

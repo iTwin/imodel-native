@@ -3734,9 +3734,6 @@ EXPORTS
   ossl_rand_ctx_new
   ossl_random_add_conf_module
   ossl_err_load_RAND_strings
-  RAND_egd
-  RAND_egd_bytes
-  RAND_query_egd_bytes
   ossl_rand_cleanup_entropy
   ossl_rand_cleanup_nonce
   ossl_rand_get_entropy
@@ -4689,7 +4686,6 @@ EXPORTS
   MD5_Init
   MD5_Transform
   MD5_Update
-  md5_block_data_order
   MD4
   MD4_Final
   MD4_Init
@@ -6479,7 +6475,6 @@ EXPORTS
   i2d_DSAPublicKey
   i2d_DSAparams
   ossl_dsa_asn1_meths
-  DllMain
   DH_get_1024_160
   DH_get_2048_224
   DH_get_2048_256

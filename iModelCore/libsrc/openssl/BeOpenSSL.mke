@@ -46,7 +46,13 @@ o = $(OutputRootDir)build/$(appName)/
 
 #--------------------------------------------------------------------------------------
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE.
+#   On Windows, iTwinOpenSSL.dll is re-linked with /MD (dynamic CRT) to match the Bentley
+#   build.  Request the x64-windows-static-md triplet so the OpenSSL objects embed
+#   /DEFAULTLIB:msvcrt.lib rather than libcmt.lib.
 #--------------------------------------------------------------------------------------
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    vcpkgWindowsMDCRT = 1
+%endif
 %include $(libsrcDir)vcpkg.mki
 
 vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/openssl/
@@ -159,6 +165,13 @@ always:
     LINKER_LIBRARIES + advapi32.lib
     LINKER_LIBRARIES + crypt32.lib
     LINKER_LIBRARIES + user32.lib
+    # DLM_NOENTRY suppresses the Bentley DLL entry-point object that would normally
+    # carry /DEFAULTLIB directives into the link.  The vcpkg archives also emit no
+    # /DEFAULTLIB directives.  List the CRT import libs explicitly so the linker can
+    # resolve _DllMainCRTStartup, __chkstk, memcpy/memset, malloc/free, etc.
+    LINKER_LIBRARIES + $(cRuntime)
+    LINKER_LIBRARIES + vcruntime.lib
+    LINKER_LIBRARIES + ucrt.lib
 
     %include $(sharedMki)linkLibrary.mki
 

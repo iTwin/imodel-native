@@ -23,6 +23,11 @@
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     %if defined (IS_VERACODE_BUILD)
         vcpkgTriplet = x64-windows-static-veracode
+    %elif defined (vcpkgWindowsMDCRT)
+        # Caller explicitly requested the dynamic-CRT static triplet (e.g. a Windows DLL that
+        # must link /MD to match the rest of the Bentley build).  Set vcpkgWindowsMDCRT = 1
+        # before including this file to activate this branch.
+        vcpkgTriplet = x64-windows-static-md
     %else
         vcpkgTriplet = x64-windows-static
     %endif
