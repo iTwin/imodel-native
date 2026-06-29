@@ -44,6 +44,7 @@ describe("ECDb standalone", () => {
       <ECProperty propertyName="P2d" typeName="point2d"/>
       <ECProperty propertyName="P3d" typeName="point3d"/>
       <ECProperty propertyName="G" typeName="Bentley.Geometry.Common.IGeometry"/>
+      <ECProperty propertyName="Gu" typeName="binary" extendedTypeName="BeGuid"/>
     </ECEntityClass>
     <ECEntityClass typeName="Child" modifier="Sealed">
       <ECProperty propertyName="Name" typeName="string"/>
@@ -292,7 +293,7 @@ describe("ECDb standalone", () => {
 
     it("bind and retrieve guid values", () => {
       const stmt = new iModelJsNative.ECSqlStatement();
-      stmt.prepare(db, "INSERT INTO test.AllTypes(G) VALUES(?)");
+      stmt.prepare(db, "INSERT INTO test.AllTypes(Gu) VALUES(?)");
 
       const guid = Guid.createValue();
       stmt.getBinder(1).bindGuid(guid);
@@ -302,7 +303,7 @@ describe("ECDb standalone", () => {
       stmt.dispose();
 
       const sel = new iModelJsNative.ECSqlStatement();
-      sel.prepare(db, "SELECT G FROM test.AllTypes WHERE ECInstanceId=?");
+      sel.prepare(db, "SELECT Gu FROM test.AllTypes WHERE ECInstanceId=?");
       sel.getBinder(1).bindId(id);
       assert.equal(sel.step(), DbResult.BE_SQLITE_ROW);
       const retrieved = sel.getValue(0).getGuid();
@@ -523,20 +524,30 @@ describe("ECDb standalone", () => {
       const ins = new iModelJsNative.ECSqlStatement();
       ins.prepare(db, "INSERT INTO test.AllTypes(S) VALUES('async-test')");
       ins.stepForInsertAsync((r) => {
-        assert.equal(r.status, DbResult.BE_SQLITE_DONE);
-        assert.isString(r.id);
-        const insertedId = r.id;
-        ins.dispose();
+        try {
+          assert.equal(r.status, DbResult.BE_SQLITE_DONE);
+          assert.isString(r.id);
+          const insertedId = r.id;
+          ins.dispose();
 
-        const sel = new iModelJsNative.ECSqlStatement();
-        sel.prepare(db, "SELECT S FROM test.AllTypes WHERE ECInstanceId=?");
-        sel.getBinder(1).bindId(insertedId);
-        sel.stepAsync((status) => {
-          assert.equal(status, DbResult.BE_SQLITE_ROW);
-          assert.equal(sel.getValue(0).getString(), "async-test");
-          sel.dispose();
-          done();
-        });
+          const sel = new iModelJsNative.ECSqlStatement();
+          sel.prepare(db, "SELECT S FROM test.AllTypes WHERE ECInstanceId=?");
+          sel.getBinder(1).bindId(insertedId);
+          sel.stepAsync((status) => {
+            try {
+              assert.equal(status, DbResult.BE_SQLITE_ROW);
+              assert.equal(sel.getValue(0).getString(), "async-test");
+              done();
+            } catch (err) {
+              done(err);
+            } finally {
+              sel.dispose();
+            }
+          });
+        } catch (err) {
+          ins.dispose();
+          done(err);
+        }
       });
     });
   });

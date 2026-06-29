@@ -175,58 +175,64 @@ describe("DgnDb CRUD", () => {
     });
 
     it("insert element and retrieve it", () => {
-      const elemProps: PhysicalElementProps = {
-        classFullName: "CrudTest:TestPhysical",
-        model: physicalModelId,
-        category: categoryId,
-        code: Code.createEmpty(),
-      };
+      try {
+        const elemProps: PhysicalElementProps = {
+          classFullName: "CrudTest:TestPhysical",
+          model: physicalModelId,
+          category: categoryId,
+          code: Code.createEmpty(),
+        };
 
-      const elementId = db.insertElement(elemProps);
-      assert.isString(elementId);
-      assert.isTrue(elementId.length > 0);
+        const elementId = db.insertElement(elemProps);
+        assert.isString(elementId);
+        assert.isTrue(elementId.length > 0);
 
-      const retrieved = db.getElement({ id: elementId });
-      assert.equal(retrieved.classFullName, "CrudTest:TestPhysical");
-      assert.equal(retrieved.model, physicalModelId);
-
-      db.abandonChanges();
+        const retrieved = db.getElement({ id: elementId });
+        assert.equal(retrieved.classFullName, "CrudTest:TestPhysical");
+        assert.equal(retrieved.model, physicalModelId);
+      } finally {
+        db.abandonChanges();
+      }
     });
 
     it("update element properties", () => {
-      const elemProps: PhysicalElementProps = {
-        classFullName: "CrudTest:TestPhysical",
-        model: physicalModelId,
-        category: categoryId,
-        code: Code.createEmpty(),
-      };
-      const elementId = db.insertElement(elemProps);
+      try {
+        const elemProps: PhysicalElementProps = {
+          classFullName: "CrudTest:TestPhysical",
+          model: physicalModelId,
+          category: categoryId,
+          code: Code.createEmpty(),
+        };
+        const elementId = db.insertElement(elemProps);
 
-      const retrieved: any = db.getElement({ id: elementId });
-      retrieved.testProp = "updated-value";
-      db.updateElement(retrieved);
+        const retrieved: any = db.getElement({ id: elementId });
+        retrieved.testProp = "updated-value";
+        db.updateElement(retrieved);
 
-      const updated: any = db.getElement({ id: elementId });
-      assert.equal(updated.testProp, "updated-value");
-
-      db.abandonChanges();
+        const updated: any = db.getElement({ id: elementId });
+        assert.equal(updated.testProp, "updated-value");
+      } finally {
+        db.abandonChanges();
+      }
     });
 
     it("delete element", () => {
-      const elemProps: PhysicalElementProps = {
-        classFullName: "CrudTest:TestPhysical",
-        model: physicalModelId,
-        category: categoryId,
-        code: Code.createEmpty(),
-      };
-      const elementId = db.insertElement(elemProps);
-      assert.isString(elementId);
+      try {
+        const elemProps: PhysicalElementProps = {
+          classFullName: "CrudTest:TestPhysical",
+          model: physicalModelId,
+          category: categoryId,
+          code: Code.createEmpty(),
+        };
+        const elementId = db.insertElement(elemProps);
+        assert.isString(elementId);
 
-      db.deleteElement(elementId);
+        db.deleteElement(elementId);
 
-      expect(() => db.getElement({ id: elementId })).to.throw();
-
-      db.abandonChanges();
+        expect(() => db.getElement({ id: elementId })).to.throw();
+      } finally {
+        db.abandonChanges();
+      }
     });
 
     it("insert element returns error for invalid class", () => {
@@ -263,12 +269,14 @@ describe("DgnDb CRUD", () => {
       db.saveChanges();
 
       // Empty model should throw NoGeometry
+      let caught: any;
       try {
         db.queryModelExtents({ id: modelId });
-        assert.fail("should have thrown");
       } catch (err: any) {
-        assert.equal(err.errorNumber, IModelStatus.NoGeometry);
+        caught = err;
       }
+      assert.isDefined(caught, "queryModelExtents should have thrown for empty model");
+      assert.equal(caught.errorNumber, IModelStatus.NoGeometry);
 
       db.closeFile();
     });

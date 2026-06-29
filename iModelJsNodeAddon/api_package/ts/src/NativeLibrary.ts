@@ -17,14 +17,14 @@ import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ChangesetIndexAndId, CodeProps, CodeSpecProperties, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
   ElementGeometryBuilderParamsForPart,
   ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
-  IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, ModelExtentsProps, PerStatementHealthStats as CorePerStatementHealthStats, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, TxnProps as CoreTxnProps, UpgradeOptions
+  IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelExtentsProps, ModelLoadProps,
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
 import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -553,7 +553,7 @@ export declare namespace IModelJsNative {
   }
 
   /** @see `TxnProps` from `@itwin/core-common` */
-  type TxnProps = CoreTxnProps;
+  export type TxnProps = CoreTxnProps;
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
