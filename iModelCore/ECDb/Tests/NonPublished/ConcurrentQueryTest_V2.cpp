@@ -1702,9 +1702,13 @@ TEST_F(ConcurrentQueryFixture, CancelAfterCompletionIsSafe) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cancel_after_complete.ecdb"));
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto future = mgr.Enqueue(ECSqlRequest::MakeRequest("WITH cnt(x) AS (VALUES(1)) SELECT x FROM cnt"));
-        auto r = future.Get(); // block until the request completes and is destroyed
+        auto r = future.Get(); // block until the request completes
         ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-        // Must not crash / use-after-free; the request id is no longer in the queue so this is a no-op.
+        // Give the worker thread time to run ClearRequest() (which destroys the RunnableRequest)
+        // before we cancel, so this actually exercises the post-destruction path. The cancel
+        // callback captures the request id and queue pointer by value -- never the request -- so
+        // CancelRequest(id) stays a safe no-op once the request has left the queue.
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
         future.Cancel();
     });
 }

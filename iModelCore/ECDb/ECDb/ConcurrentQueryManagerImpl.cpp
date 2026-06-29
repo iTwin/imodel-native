@@ -486,6 +486,9 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection() {
         }
     }
     if (m_conns.size() < m_poolSize) {
+        // Worker connection ids must never collide with SCHEMA_SOURCE_CONN_ID (UINT16_MAX). The
+        // default pool size makes this unreachable, but assert the invariant explicitly.
+        BeAssert(m_conns.size() < UINT16_MAX - 1);
         m_conns.push_back(CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1));
         return m_conns.back();
     }
@@ -523,43 +526,6 @@ CachedConnection* ConnectionCache::GetSchemaSourceConnection() {
         // in-flight row adaptors).
     }
     return m_schemaConn.get();
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
-    recursive_guard_t lock(m_mutex);
-    uint32_t used_count = 0;
-    while (used_count != m_conns.size()) {
-        used_count = 0;
-        for (auto& it : m_conns) {
-            if (it.use_count() == 1)  {
-                ++used_count;
-            } else {
-                it->InterruptIf(
-                    [](RunnableRequestBase const& request) {
-                        return true;
-                    },
-                    true);
-            }
-        }
-        std::this_thread::yield();
-    }
-    if (reset_conn) {
-        if(m_syncConn)
-            m_syncConn->Reset(detach_dbs);
-
-        for (auto& it : m_conns) {
-            it->Reset(detach_dbs);
-        }
-        // Reset the shared schema-source connection's cache too. Guard with its ECDb impl mutex so we
-        // never clear it while a worker is mid-prepare against it. (Workers have already been drained
-        // above, but the guard keeps the invariant unconditional.)
-        if (m_schemaConn != nullptr) {
-            BeMutexHolder schemaLock(m_schemaConn->GetDbR().GetImpl().GetMutex());
-            m_schemaConn->Reset(detach_dbs);
-        }
-    }
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

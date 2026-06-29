@@ -212,7 +212,6 @@ struct ConnectionCache final {
         // Lazily creates and returns the shared schema-source connection, or nullptr if it cannot be
         // opened (callers then fall back to preparing against the worker's own connection).
         CachedConnection* GetSchemaSourceConnection();
-        void Interrupt(bool reset_conn, bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
         void SyncAttachDbs();
 };
