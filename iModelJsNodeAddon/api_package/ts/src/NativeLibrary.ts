@@ -606,7 +606,7 @@ export declare namespace IModelJsNative {
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
     public invalidateFontMap(): void;
-    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean, noUpdateLoop?: boolean): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
@@ -1544,10 +1544,10 @@ export declare namespace IModelJsNative {
   class ChangesetReader {
     constructor();
     public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
-    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number): void;
-    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number): void;
-    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number): void;
-    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number): void;
+    public openGroup(db: AnyECDb, fileNames: string[], invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
     public close(): void;
     public step(): boolean;
     public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ChangesetRowValue | undefined;
@@ -1558,6 +1558,8 @@ export declare namespace IModelJsNative {
     public clearTableNameFilters(): void;
     public clearOpCodeFilters(): void;
     public clearClassNameFilters(): void;
+    public enableStrictMode(): void;
+    public disableStrictMode(): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

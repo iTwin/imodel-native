@@ -182,6 +182,15 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
         return rc;
         }
 
+    // Validate file-based txn files if enabled
+    if (m_txnManager.IsValid() && Txns().IsFileBasedTxnEnabled()) {
+        if (!Txns().ValidateFileBasedTxns()) {
+            LOG.error("_OnDbOpened: file-based txn validation failed — missing or corrupt .txn files");
+            m_txnManager = nullptr;
+            return BE_SQLITE_ERROR;
+        }
+    }
+
     m_geoLocation.Load();
 
 

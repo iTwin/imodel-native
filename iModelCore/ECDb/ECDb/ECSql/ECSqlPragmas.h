@@ -157,6 +157,22 @@ struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
 };
 
 //=======================================================================================
+// @bsiclass PragmaSchemaView
+// Returns all EC schema metadata as a single binary blob, exposed as base64 text.
+// Usage: PRAGMA schema_view           -- returns current format version (v1)
+//        PRAGMA schema_view(1)        -- explicitly request format version 1
+// Result: single row with columns: format (string), formatVersion (int), data (base64-encoded string), schemaToken (string)
+//+===============+===============+===============+===============+===============+======
+struct PragmaSchemaView : PragmaManager::GlobalHandler {
+    static constexpr uint8_t CURRENT_FORMAT_VERSION = 1;
+    PragmaSchemaView():GlobalHandler("schema_view", "schema_view [(version)] - returns all schema metadata as a base64-encoded binary blob string. Optional integer argument selects format version (default: latest)."){}
+    ~PragmaSchemaView(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaSchemaView>(); }
+};
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SHA3Helper final {

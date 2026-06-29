@@ -30,6 +30,10 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinOpenSSL.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_google_re2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPugixml.a
 
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)librustls.a
+%endif
+
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libproxyres.a
 %endif
@@ -42,14 +46,6 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libpskernel.a
 
 %if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinVisualization.a
-%endif
-
-%if defined (USING_BREAKPAD)
-%if $(USING_BREAKPAD) == 1
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad_client.a
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad.a
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libdisasm.a
-%endif
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)
@@ -87,14 +83,6 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBRepCore$(libext)
 
 %if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinVisualization$(libext)
-%endif
-
-%if defined (USING_BREAKPAD)
-%if $(USING_BREAKPAD) == 1
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libbreakpad.lib
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libbreakpad_client.lib
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libdisasm.lib
-%endif
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)

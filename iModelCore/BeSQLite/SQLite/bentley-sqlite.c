@@ -80,9 +80,11 @@ int checkNoActiveStatements(sqlite3* db)
     if (0 == db->nVdbeActive)
         return SQLITE_OK;
 
-    for (stmt = db->pVdbe; stmt != NULL; stmt = sqlite3_next_stmt(db, stmt))
+    // A prepared statement is internally a Vdbe; sqlite3_stmt is just its opaque public handle.
+    // The casts cross that public/private boundary and mirror what SQLite does internally.
+    for (stmt = db->pVdbe; stmt != NULL; stmt = (Vdbe*)sqlite3_next_stmt(db, (sqlite3_stmt*)stmt))
         {
-        if (stmt->eVdbeState != VDBE_RUN_STATE)
+        if (stmt->eVdbeState == VDBE_RUN_STATE)
             {
             sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
             //assert(0);

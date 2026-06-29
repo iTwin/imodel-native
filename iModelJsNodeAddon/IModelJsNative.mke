@@ -31,18 +31,11 @@ o = $(OutputRootDir)Build/imodeljs-addon/
 always:
     !~@mkdir $(o)
 
-# vvvv Hack for breakpad vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-# Assumes you have <RequiredRepository>Thirdparty-breakpad_54fa71efbe50</RequiredRepository>
-
-USING_BREAKPAD = 0
-
-%if defined (BSI) && !defined (IS_VERACODE_BUILD)
-    %if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") 
-        USING_BREAKPAD = 1
-    %endif
+# Note: bsicommon/InternalPlatformSetup.mki sets this for Linux. We may want to move this setting
+# there also, but we also may not.
+%if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "Windows"
+    BENTLEYCONFIG_CRASHPAD = 1
 %endif
-
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #
 # Burn the package version # into the code
@@ -56,19 +49,6 @@ $(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.pa
     ~time
 
 cIncs + -I$(o)
-
-%if ($(USING_BREAKPAD) == 1)
-    cDefs + -DUSING_GOOGLE_BREAKPAD
-
-    # breakpad's own .h files include each other relative to the "client" directory.
-    # For example, a file that is located in breakpad/client/windows/handler will
-    # include another header file like this:
-    # #include "client/windows/crash_generation/crash_generation_client.h"
-    # Now, "client" is a subdirectory of "breakpad".
-    # So, we have to add the breakpad directory itself to the include path
-    cIncs + -I$(BuildContext)VendorAPI/breakpad
-
-%endif
 
 # Add this so we don't have to modify vendor code.
 %if defined(BENTLEYCONFIG_CRASHPAD)
@@ -122,13 +102,9 @@ $(o)TextureImageWorker$(oext) : $(baseDir)TextureImageWorker.cpp $(baseDir)DgnDb
 
 $(o)SchemaUtil$(oext) : $(baseDir)SchemaUtil.cpp $(baseDir)SchemaUtil.h ${MultiCompileDepends}
 
-%if (($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") && (USING_BREAKPAD == 1))
+%if defined(BENTLEYCONFIG_CRASHPAD)
 
-    $(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
-
-%elif defined(BENTLEYCONFIG_CRASHPAD)
-
-    $(o)CrashReportingLinuxCrashpad$(oext) : $(baseDir)CrashReportingLinuxCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+    $(o)CrashReportingCrashpad$(oext) : $(baseDir)CrashReportingCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 %endif
 
@@ -181,6 +157,10 @@ DLM_NO_CONTEXT_LINK = 1
 
         # macOS 10.15+
         LINKER_LIBRARIES  + -framework DriverKit
+
+        # Required by rustls (aws-lc-rs crypto provider)
+        LINKER_LIBRARIES  + -framework Security
+
         # This is a hack, Mac is not set up with the various context definitions like linux
         BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
     %endif

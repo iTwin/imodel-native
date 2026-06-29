@@ -448,11 +448,18 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
 
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="iOS"
+    LINKER_LIBRARIES + -framework Security
+    LINKER_LIBRARIES + -framework Foundation
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)rustls$(stlibext)
+%endif
+
 %if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
     LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)proxyres$(stlibext)
 %endif
 
 %if $(TARGET_PLATFORM)=="Windows"
+    DLM_SPECIAL_LINKOPT = -NODEFAULTLIB:msvcrtd.lib
     LINKER_LIBRARIES + iphlpapi.lib
     LINKER_LIBRARIES + winhttp.lib
 %endif

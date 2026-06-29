@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <BeSQLite/ChangesetFile.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -115,6 +117,49 @@ struct ChangesetReaderTests : ECDbTestFixture {
                             </ECEntityClass>
                         </ECSchema>)xml";
         }
+
+    //! Writes @p cs to an LZMA-compressed changeset file in the test output directory.
+    //! Returns the absolute path of the created file.
+    BeFileName WriteChangesetToFile(ECDbCR ecdb, TestCSChangeSet& cs, Utf8CP fileName)
+        {
+        BeFileName path = BuildECDbPath(fileName);
+        BeSQLite::ChangeGroup group(ecdb);
+        EXPECT_EQ(BE_SQLITE_OK, cs.AddToChangeGroup(group));
+        BeSQLite::DdlChanges emptyDdl;
+        BeSQLite::ChangesetFileWriter writer(path, false, emptyDdl, &ecdb);
+        EXPECT_EQ(BE_SQLITE_OK, writer.Initialize());
+        EXPECT_EQ(BE_SQLITE_OK, writer.FromChangeGroup(group));
+        return path;
+        }
+    
+    size_t GetDefaultSpillThresholdBytes() const { return 50ull * 1024 * 1024; /* 50 MB */ }
+
+    //! V1 schema: Item with Name (string) and Value (int).
+    Utf8CP GetStrictModeV1Schema() const {
+        return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.00"
+                                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                        <ECEntityClass typeName="Item" modifier="Sealed">
+                            <ECProperty propertyName="Name" typeName="string"/>
+                            <ECProperty propertyName="Val" typeName="int"/>
+                        </ECEntityClass>
+                        </ECSchema>)xml";
+        }
+
+    //! V2 schema: Item with Name, Value, and Extra (string) — one column wider than V1.
+    Utf8CP GetStrictModeV2Schema() const {
+        return R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestStrictItem" alias="tsi" version="01.00.01"
+                                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                        <ECEntityClass typeName="Item" modifier="Sealed">
+                            <ECProperty propertyName="Name" typeName="string"/>
+                            <ECProperty propertyName="Val" typeName="int"/>
+                            <ECProperty propertyName="Extra" typeName="string"/>
+                        </ECEntityClass>
+                        </ECSchema>)xml";
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -125,8 +170,6 @@ struct ChangesetReaderTests : ECDbTestFixture {
 //---------------------------------------------------------------------------------------
 TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_insert.ecdb", SchemaItem(GetSchema())));
 
     // Container inserted BEFORE tracking — must not appear in the changeset.
@@ -163,8 +206,8 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // Step one by one.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -300,7 +343,7 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,8 +389,8 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(reader.Step(), BE_SQLITE_ROW);
     bool isEC = false;
@@ -457,7 +500,7 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
 
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -513,8 +556,8 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false, ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
     bool isEC = false;
@@ -622,7 +665,7 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -651,9 +694,8 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -707,7 +749,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     EXPECT_TRUE(hasName("Weight"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -752,9 +794,8 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -802,7 +843,7 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
     EXPECT_TRUE(hasName("ECInstanceId"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -841,9 +882,8 @@ TEST_F(ChangesetReaderTests, Update_TwoScalars)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -888,7 +928,7 @@ TEST_F(ChangesetReaderTests, Update_TwoScalars)
     EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE — always present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -923,9 +963,8 @@ TEST_F(ChangesetReaderTests, Insert_NestedStruct)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -966,7 +1005,7 @@ TEST_F(ChangesetReaderTests, Insert_NestedStruct)
     EXPECT_FALSE(hasName("Location.Coord"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1009,9 +1048,8 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1044,7 +1082,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     EXPECT_TRUE(hasName("ECInstanceId"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1089,9 +1127,8 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1129,7 +1166,7 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
     EXPECT_TRUE(hasName("ECInstanceId"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1171,9 +1208,8 @@ TEST_F(ChangesetReaderTests, Insert_StructArray)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1204,7 +1240,7 @@ TEST_F(ChangesetReaderTests, Insert_StructArray)
     EXPECT_FALSE(hasName("MetaTags.Value"));
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1271,9 +1307,8 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1301,7 +1336,7 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE — always present
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1337,9 +1372,8 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1435,7 +1469,7 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
 
         {
         ECSqlStatement stmt;
@@ -1491,9 +1525,8 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -1597,7 +1630,7 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     EXPECT_TRUE(hasName("Owner.Id")); // Expected 'Owner.Id' in changed property names because 'Owner.RelClassId' is virtual
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
@@ -1644,9 +1677,8 @@ TEST_F(ChangesetReaderTests, Filter_ByTableName)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     reader.SetTableFilters({"ts_Widget"});
 
@@ -1672,7 +1704,7 @@ TEST_F(ChangesetReaderTests, Filter_ByTableName)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1703,9 +1735,8 @@ TEST_F(ChangesetReaderTests, Filter_ByOpcode)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     reader.SetOpcodeFilters({DbOpcode::Update});
 
@@ -1733,7 +1764,7 @@ TEST_F(ChangesetReaderTests, Filter_ByOpcode)
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1761,9 +1792,8 @@ TEST_F(ChangesetReaderTests, Filter_ByECClassId)
     ASSERT_TRUE(widgetClassId.IsValid());
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     reader.SetECClassNameFilters({"TestReadCS:Widget"});
 
@@ -1790,7 +1820,7 @@ TEST_F(ChangesetReaderTests, Filter_ByECClassId)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1815,14 +1845,14 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
         ChangesetReader reader;
-        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-            std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-            ChangesetReader::PropertyFilter::All));
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+            std::move(cs), false,
+            ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
         reader.SetTableFilters({"no_such_table"});
         // should not include the Widget row because of the filter
         ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-        reader.Close();
+        ASSERT_EQ(SUCCESS, reader.Close());
         }
 
         // Second reader: set the same filter then clear it → the Widget row must appear.
@@ -1831,9 +1861,8 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
         ChangesetReader reader;
-        ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-            std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-            ChangesetReader::PropertyFilter::All));
+        ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+            std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
         reader.SetTableFilters({"no_such_table"});
         reader.ClearTableFilters();
@@ -1859,7 +1888,7 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
 
         ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-        reader.Close();
+        ASSERT_EQ(SUCCESS, reader.Close());
         }
     }
 
@@ -1914,9 +1943,8 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // --- Changeset row 1: primary table (to_Entity) ---
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2009,7 +2037,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
     // -----------------------------------------------------------------------
@@ -2031,9 +2059,8 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
     ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs2.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // Only the overflow table row must appear; primary table was not written.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2087,7 +2114,7 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
     }
 
@@ -2134,9 +2161,8 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // --- Changeset row 1: primary table (tj_JBase) ---
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2219,7 +2245,7 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
     }
 
@@ -2270,9 +2296,8 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // --- Changeset row 1: primary table (tjo_JBase) ---
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2388,7 +2413,7 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
     }
 
@@ -2436,9 +2461,8 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     // ExistingTable maps to exactly one physical table — exactly one changeset row.
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
@@ -2483,7 +2507,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
     // -----------------------------------------------------------------------
@@ -2499,9 +2523,8 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
     ASSERT_EQ(BE_SQLITE_OK, cs2->FromChangeTrack(tracker2));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs2.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs2), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
         {
@@ -2550,7 +2573,7 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
     }
 
@@ -2597,9 +2620,8 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
 
     ChangesetReader reader;
-    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeStream(m_ecdb,
-        std::unique_ptr<BeSQLite::ChangeStream>(cs.release()), false,
-        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
 
     ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
 
@@ -2681,7 +2703,7 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     }
 
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
-    reader.Close();
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2739,6 +2761,978 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_RoundTrip_VirtualClass
     EXPECT_EQ(projectKey.GetInstanceId(), stmt.GetValue(1).GetId<ECInstanceId>());
     EXPECT_EQ(personKey.GetClassId(),     stmt.GetValue(2).GetId<ECClassId>());
     EXPECT_EQ(projectKey.GetClassId(),    stmt.GetValue(3).GetId<ECClassId>());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenChangeGroup with a single file should produce the same opcode and row count as OpenChangesetFile.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_SingleFile_SameResultAsOpenFile)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_single.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Alpha", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_single.changeset");
+
+    // Read with OpenChangesetFile.
+    int fileRowCount = 0;
+    DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++fileRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(fileOpcode));
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Read with OpenChangeGroup using the same single file.
+    int groupRowCount = 0;
+    DbOpcode groupOpcode = DbOpcode::Delete; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    T_Utf8StringVector files{csFile.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++groupRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(groupOpcode));
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    EXPECT_EQ(groupRowCount, 1);
+    EXPECT_EQ(fileRowCount, groupRowCount);
+    EXPECT_EQ(fileOpcode, groupOpcode);
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenInMemoryChangeset with the same in memory changeset should produce the same opcode and row count as OpenChangesetFile.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenInMemoryChangeset_SingleFile_SameResultAsOpenFile)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_single.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Alpha", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto inMemoryCS = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, inMemoryCS->FromChangeTrack(tracker));
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_single.changeset");
+
+
+    // Read with OpenChangesetFile.
+    int fileRowCount = 0;
+    DbOpcode fileOpcode = DbOpcode::Update; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false, ChangesetReader::PropertyFilter::All));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++fileRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(fileOpcode));
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Read with OpenInMemoryChangeset using the same in memory changeset.
+    int inMemRowCount = 0;
+    DbOpcode inMemOpcode = DbOpcode::Delete; // sentinel — will be overwritten
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(inMemoryCS), false, ChangesetReader::PropertyFilter::All, 1));
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        ++inMemRowCount;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(inMemOpcode));
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    EXPECT_EQ(inMemRowCount, 1);
+    EXPECT_EQ(fileRowCount, inMemRowCount);
+    EXPECT_EQ(fileOpcode, inMemOpcode);
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenChangeGroup with two files each inserting a different row should return both INSERT rows.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_TwoIndependentInserts_BothRowsReturned)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_two_inserts.ecdb", SchemaItem(GetSchema())));
+
+    // Changeset 1: INSERT Widget "Alpha".
+    BeFileName cs1File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Alpha", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey k;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(k));
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs1File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_two_inserts_cs1.changeset");
+    }
+
+    // Changeset 2: INSERT Widget "Beta".
+    BeFileName cs2File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Beta", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey k;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(k));
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs2File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_two_inserts_cs2.changeset");
+    }
+
+    ChangesetReader reader;
+    T_Utf8StringVector files{cs1File.GetNameUtf8(), cs2File.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+
+    int insertCount = 0;
+    while (BE_SQLITE_ROW == reader.Step())
+        {
+        DbOpcode opcode;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+        ++insertCount;
+        }
+    ASSERT_EQ(SUCCESS, reader.Close());
+
+    EXPECT_EQ(2, insertCount);
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenChangeGroup merges two sequential updates to the same row via ChangeGroup net-merge
+// semantics: the merged result is a single UPDATE whose Old value comes from cs1 and
+// whose New value comes from cs2.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_TwoUpdatesToSameRow_NetMerged)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_net_merge.ecdb", SchemaItem(GetSchema())));
+
+    // Pre-insert the Widget outside tracking so its initial value is "Original".
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Original", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    // Changeset 1: UPDATE → "Version1".
+    BeFileName cs1File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Widget SET Name=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Version1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs1File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs1.changeset");
+    }
+
+    // Changeset 2: UPDATE → "Version2".
+    BeFileName cs2File;
+    {
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Widget SET Name=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Version2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, widgetKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    cs2File = WriteChangesetToFile(m_ecdb, cs, "csreader_group_net_merge_cs2.changeset");
+    }
+
+    // OpenChangeGroup merges the two: result must be a single UPDATE.
+    ChangesetReader reader;
+    T_Utf8StringVector files{cs1File.GetNameUtf8(), cs2File.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Update, opcode);
+
+    // New stage: Name must be "Version2".
+    Utf8String newName;
+    int newColCount = reader.GetColumnCount(Changes::Change::Stage::New);
+    for (int i = 0; i < newColCount; ++i)
+        {
+        IECSqlValue const& v = reader.GetValue(Changes::Change::Stage::New, i);
+        ECN::ECPropertyCP prop = v.GetColumnInfo().GetProperty();
+        if (prop != nullptr && Utf8String("Name") == prop->GetName())
+            {
+            newName = v.GetText();
+            break;
+            }
+        }
+    EXPECT_EQ(Utf8String("Version2"), newName);
+
+    // Old stage: Name must be "Original".
+    Utf8String oldName;
+    int oldColCount = reader.GetColumnCount(Changes::Change::Stage::Old);
+    for (int i = 0; i < oldColCount; ++i)
+        {
+        IECSqlValue const& v = reader.GetValue(Changes::Change::Stage::Old, i);
+        ECN::ECPropertyCP prop = v.GetColumnInfo().GetProperty();
+        if (prop != nullptr && Utf8String("Name") == prop->GetName())
+            {
+            oldName = v.GetText();
+            break;
+            }
+        }
+    EXPECT_EQ(Utf8String("Original"), oldName);
+
+    EXPECT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// After Close(), OpenChangeGroup must have deleted the temporary "*-merged.changeset" file
+// it created during the merge phase.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_TempFileDeletedAfterClose)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_cleanup.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Widget(Name) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "CleanupWidget", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_cleanup.changeset");
+
+    // Helper: count files matching "*-merged.changeset" in the test output root.
+    BeFileName outputDir;
+    BeTest::GetHost().GetOutputRoot(outputDir);
+    auto countMergedFiles = [&]() -> size_t
+        {
+        bvector<BeFileName> matches;
+        BeDirectoryIterator::WalkDirsAndMatch(matches, outputDir, L"*-merged.changeset", false);
+        return matches.size();
+        };
+
+    {
+    ChangesetReader reader;
+    T_Utf8StringVector files{csFile.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+
+    // The temp merged file must exist while the reader is open.
+    EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp *-merged.changeset file must exist while reader is open";
+
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == reader.Step())
+        ++rowCount;
+    EXPECT_EQ(1, rowCount);
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // After Close() the temp file must be gone.
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp *-merged.changeset file must be deleted after Close()";
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenInMemoryChangeset with a changeset below the default 50 MB threshold must stream directly
+// from the in-memory ChangeSet without writing any temp file.
+// Uses a fully-populated Widget (all property types) and asserts every column value.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_cs_inmem.ecdb", SchemaItem(GetSchema())));
+
+    // Container inserted BEFORE tracking — must not appear in the changeset.
+    ECInstanceKey containerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Box')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Weight, Cnt, Active, Pos2d, Pos3d, Details.Label, Details.Score, Tags, Owner) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "InMemWidget", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, 1.23));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, 10));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(4, true));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(5, DPoint2d::From(4.0, 5.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(6, DPoint3d::From(6.0, 7.0, 8.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(7, "InMemLabel", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(8, 42));
+    IECSqlBinder& tagsBinder = stmt.GetBinder(9);
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("alpha", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("beta", IECSqlBinder::MakeCopy::No));
+    ECN::ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestReadCS", "ContainerOwnsWidgets");
+    ASSERT_TRUE(relClassId.IsValid());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(10, containerKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    BeFileName outputDir;
+    BeTest::GetHost().GetOutputRoot(outputDir);
+    auto countMergedFiles = [&]() -> size_t
+        {
+        bvector<BeFileName> matches;
+        BeDirectoryIterator::WalkDirsAndMatch(matches, outputDir, L"*-merged.changeset", false);
+        return matches.size();
+        };
+
+    // Default threshold is 50 MB; a tiny changeset must stream in memory — no file written.
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "No temp file should be created for a sub-threshold changeset";
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage must be empty for an insert.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    // Property 1
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    // Property 2
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    // Property 3
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("InMemWidget", v2.GetText());
+
+    // Property 4
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Weight", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(1.23, v3.GetDouble());
+
+    // Property 5
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
+    EXPECT_STREQ("Cnt", v4.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(10, v4.GetInt64());
+
+    // Property 6
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::New, 5);
+    EXPECT_STREQ("Active", v5.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_TRUE(v5.GetBoolean());
+
+    // Property 7
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
+    EXPECT_STREQ("Pos2d", v6.GetColumnInfo().GetProperty()->GetName().c_str());
+    DPoint2d pos2d = v6.GetPoint2d();
+    EXPECT_DOUBLE_EQ(4.0, pos2d.x);
+    EXPECT_DOUBLE_EQ(5.0, pos2d.y);
+
+    // Property 8
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
+    EXPECT_STREQ("Pos3d", v7.GetColumnInfo().GetProperty()->GetName().c_str());
+    DPoint3d pos3d = v7.GetPoint3d();
+    EXPECT_DOUBLE_EQ(6.0, pos3d.x);
+    EXPECT_DOUBLE_EQ(7.0, pos3d.y);
+    EXPECT_DOUBLE_EQ(8.0, pos3d.z);
+
+    // Property 9
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
+    EXPECT_STREQ("Details", v8.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("InMemLabel", v8["Label"].GetText());
+    EXPECT_EQ(42, v8["Score"].GetInt());
+
+    // Property 10
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::New, 9);
+    EXPECT_STREQ("Tags", v9.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(2, v9.GetArrayLength());
+    Utf8CP expectedTags[] = {"alpha", "beta"};
+    int tagIdx = 0;
+    for (IECSqlValue const& elem : v9.GetArrayIterable())
+        {
+        EXPECT_STREQ(expectedTags[tagIdx], elem.GetText());
+        ++tagIdx;
+        }
+    EXPECT_EQ(2, tagIdx);
+
+    // Property 11
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::New, 10);
+    EXPECT_STREQ("Owner", v10.GetColumnInfo().GetProperty()->GetName().c_str());
+    ECN::ECClassId navRelId;
+    ECInstanceId ownerId = v10.GetNavigation<ECInstanceId>(&navRelId);
+    EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
+    EXPECT_TRUE(navRelId.IsValid());
+
+    Utf8String instanceKey;
+    ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
+    EXPECT_FALSE(instanceKey.empty());
+
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    EXPECT_TRUE(hasName("ECInstanceId"));
+    EXPECT_TRUE(hasName("Name"));
+    EXPECT_TRUE(hasName("Weight"));
+    EXPECT_TRUE(hasName("Cnt"));
+    EXPECT_TRUE(hasName("Active"));
+    EXPECT_TRUE(hasName("Pos2d"));
+    EXPECT_TRUE(hasName("Pos3d"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
+    EXPECT_TRUE(hasName("Tags"));
+    EXPECT_TRUE(hasName("Owner.Id"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "No temp file should exist after Close() for in-memory path";
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenInMemoryChangeset with threshold=1 must spill to a temp LZMA file, stream the same data
+// correctly, and delete the file on Close().
+// Uses a fully-populated Widget (all property types) and asserts every column value.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenChangeSet_SpillPath_TempFileCreatedAndDeleted)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_cs_spill.ecdb", SchemaItem(GetSchema())));
+
+    // Container inserted BEFORE tracking — must not appear in the changeset.
+    ECInstanceKey containerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Crate')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Weight, Cnt, Active, Pos2d, Pos3d, Details.Label, Details.Score, Tags, Owner) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "SpilledWidget", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, 9.81));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, 99));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(4, false));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(5, DPoint2d::From(11.0, 22.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(6, DPoint3d::From(33.0, 44.0, 55.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(7, "SpillLabel", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(8, 77));
+    IECSqlBinder& tagsBinder = stmt.GetBinder(9);
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("x", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("y", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("z", IECSqlBinder::MakeCopy::No));
+    ECN::ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestReadCS", "ContainerOwnsWidgets");
+    ASSERT_TRUE(relClassId.IsValid());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(10, containerKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    BeFileName outputDir;
+    BeTest::GetHost().GetOutputRoot(outputDir);
+    auto countMergedFiles = [&]() -> size_t
+        {
+        bvector<BeFileName> matches;
+        BeDirectoryIterator::WalkDirsAndMatch(matches, outputDir, L"*-merged.changeset", false);
+        return matches.size();
+        };
+
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb, std::move(cs), false, ChangesetReader::PropertyFilter::All, 1));
+
+    // Temp file must exist while the reader is open and streaming.
+    EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp *-merged.changeset file must exist during spill-path reading";
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage must be empty for an insert.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    // Property 1
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    // Property 2
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    // Property 3
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("SpilledWidget", v2.GetText());
+
+    // Property 4
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Weight", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(9.81, v3.GetDouble());
+
+    // Property 5
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
+    EXPECT_STREQ("Cnt", v4.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(99, v4.GetInt64());
+
+    // Property 6
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::New, 5);
+    EXPECT_STREQ("Active", v5.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_FALSE(v5.GetBoolean());
+
+    // Property 7
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
+    EXPECT_STREQ("Pos2d", v6.GetColumnInfo().GetProperty()->GetName().c_str());
+    DPoint2d pos2d = v6.GetPoint2d();
+    EXPECT_DOUBLE_EQ(11.0, pos2d.x);
+    EXPECT_DOUBLE_EQ(22.0, pos2d.y);
+
+    // Property 8
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
+    EXPECT_STREQ("Pos3d", v7.GetColumnInfo().GetProperty()->GetName().c_str());
+    DPoint3d pos3d = v7.GetPoint3d();
+    EXPECT_DOUBLE_EQ(33.0, pos3d.x);
+    EXPECT_DOUBLE_EQ(44.0, pos3d.y);
+    EXPECT_DOUBLE_EQ(55.0, pos3d.z);
+
+    // Property 9
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
+    EXPECT_STREQ("Details", v8.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("SpillLabel", v8["Label"].GetText());
+    EXPECT_EQ(77, v8["Score"].GetInt());
+
+    // Property 10
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::New, 9);
+    EXPECT_STREQ("Tags", v9.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(3, v9.GetArrayLength());
+    Utf8CP expectedTags[] = {"x", "y", "z"};
+    int tagIdx = 0;
+    for (IECSqlValue const& elem : v9.GetArrayIterable())
+        {
+        EXPECT_STREQ(expectedTags[tagIdx], elem.GetText());
+        ++tagIdx;
+        }
+    EXPECT_EQ(3, tagIdx);
+
+    // Property 11
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::New, 10);
+    EXPECT_STREQ("Owner", v10.GetColumnInfo().GetProperty()->GetName().c_str());
+    ECN::ECClassId navRelId;
+    ECInstanceId ownerId = v10.GetNavigation<ECInstanceId>(&navRelId);
+    EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
+    EXPECT_TRUE(navRelId.IsValid());
+
+    Utf8String instanceKey;
+    ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
+    EXPECT_FALSE(instanceKey.empty());
+
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    EXPECT_TRUE(hasName("ECInstanceId"));
+    EXPECT_TRUE(hasName("Name"));
+    EXPECT_TRUE(hasName("Weight"));
+    EXPECT_TRUE(hasName("Cnt"));
+    EXPECT_TRUE(hasName("Active"));
+    EXPECT_TRUE(hasName("Pos2d"));
+    EXPECT_TRUE(hasName("Pos3d"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
+    EXPECT_TRUE(hasName("Tags"));
+    EXPECT_TRUE(hasName("Owner.Id"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // After Close() the temp file must be deleted.
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp *-merged.changeset file must be deleted after Close()";
+    }
+
+//---------------------------------------------------------------------------------------
+// OpenChangeGroup with threshold=1 spills the merged ChangeSet to a temp LZMA file, yields
+// the correct rows, and deletes the file on Close().
+// Uses a fully-populated Widget (all property types) and asserts every column value.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("csreader_group_spill.ecdb", SchemaItem(GetSchema())));
+
+    // Container inserted BEFORE tracking — must not appear in the changeset.
+    ECInstanceKey containerKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(containerKey,
+        "INSERT INTO ts.Container(Name) VALUES('Bin')"));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey widgetKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+        "INSERT INTO ts.Widget(Name, Weight, Cnt, Active, Pos2d, Pos3d, Details.Label, Details.Score, Tags, Owner) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "GroupSpillWidget", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, 2.71));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, 5));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(4, true));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(5, DPoint2d::From(7.0, 8.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(6, DPoint3d::From(1.0, 2.0, 3.0)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(7, "GroupLabel", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(8, 11));
+    IECSqlBinder& tagsBinder = stmt.GetBinder(9);
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("p", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, tagsBinder.AddArrayElement().BindText("q", IECSqlBinder::MakeCopy::No));
+    ECN::ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestReadCS", "ContainerOwnsWidgets");
+    ASSERT_TRUE(relClassId.IsValid());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(10, containerKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(widgetKey));
+    }
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "csreader_group_spill.changeset");
+
+    BeFileName outputDir;
+    BeTest::GetHost().GetOutputRoot(outputDir);
+    auto countMergedFiles = [&]() -> size_t
+        {
+        bvector<BeFileName> matches;
+        BeDirectoryIterator::WalkDirsAndMatch(matches, outputDir, L"*-merged.changeset", false);
+        return matches.size();
+        };
+
+    {
+    ChangesetReader reader;
+    T_Utf8StringVector files{csFile.GetNameUtf8()};
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangeGroup(m_ecdb, files, false, ChangesetReader::PropertyFilter::All, 1));
+
+    EXPECT_GE(countMergedFiles(), (size_t) 1) << "Temp file must exist while group reader is open (spill path)";
+
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    ASSERT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage must be empty for an insert.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+    EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    // Property 1
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    // Property 2
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(widgetKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    // Property 3
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("GroupSpillWidget", v2.GetText());
+
+    // Property 4
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Weight", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_DOUBLE_EQ(2.71, v3.GetDouble());
+
+    // Property 5
+    IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
+    EXPECT_STREQ("Cnt", v4.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(5, v4.GetInt64());
+
+    // Property 6
+    IECSqlValue const& v5 = reader.GetValue(Changes::Change::Stage::New, 5);
+    EXPECT_STREQ("Active", v5.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_TRUE(v5.GetBoolean());
+
+    // Property 7
+    IECSqlValue const& v6 = reader.GetValue(Changes::Change::Stage::New, 6);
+    EXPECT_STREQ("Pos2d", v6.GetColumnInfo().GetProperty()->GetName().c_str());
+    DPoint2d pos2d = v6.GetPoint2d();
+    EXPECT_DOUBLE_EQ(7.0, pos2d.x);
+    EXPECT_DOUBLE_EQ(8.0, pos2d.y);
+
+    // Property 8
+    IECSqlValue const& v7 = reader.GetValue(Changes::Change::Stage::New, 7);
+    EXPECT_STREQ("Pos3d", v7.GetColumnInfo().GetProperty()->GetName().c_str());
+    DPoint3d pos3d = v7.GetPoint3d();
+    EXPECT_DOUBLE_EQ(1.0, pos3d.x);
+    EXPECT_DOUBLE_EQ(2.0, pos3d.y);
+    EXPECT_DOUBLE_EQ(3.0, pos3d.z);
+
+    // Property 9
+    IECSqlValue const& v8 = reader.GetValue(Changes::Change::Stage::New, 8);
+    EXPECT_STREQ("Details", v8.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("GroupLabel", v8["Label"].GetText());
+    EXPECT_EQ(11, v8["Score"].GetInt());
+
+    // Property 10
+    IECSqlValue const& v9 = reader.GetValue(Changes::Change::Stage::New, 9);
+    EXPECT_STREQ("Tags", v9.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(2, v9.GetArrayLength());
+    Utf8CP expectedTags[] = {"p", "q"};
+    int tagIdx = 0;
+    for (IECSqlValue const& elem : v9.GetArrayIterable())
+        {
+        EXPECT_STREQ(expectedTags[tagIdx], elem.GetText());
+        ++tagIdx;
+        }
+    EXPECT_EQ(2, tagIdx);
+
+    // Property 11
+    IECSqlValue const& v10 = reader.GetValue(Changes::Change::Stage::New, 10);
+    EXPECT_STREQ("Owner", v10.GetColumnInfo().GetProperty()->GetName().c_str());
+    ECN::ECClassId navRelId;
+    ECInstanceId ownerId = v10.GetNavigation<ECInstanceId>(&navRelId);
+    EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
+    EXPECT_TRUE(navRelId.IsValid());
+
+    Utf8String instanceKey;
+    ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
+    EXPECT_FALSE(instanceKey.empty());
+
+    std::vector<Utf8String> changedProps;
+    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    EXPECT_TRUE(hasName("ECInstanceId"));
+    EXPECT_TRUE(hasName("Name"));
+    EXPECT_TRUE(hasName("Weight"));
+    EXPECT_TRUE(hasName("Cnt"));
+    EXPECT_TRUE(hasName("Active"));
+    EXPECT_TRUE(hasName("Pos2d"));
+    EXPECT_TRUE(hasName("Pos3d"));
+    EXPECT_TRUE(hasName("Details.Label"));
+    EXPECT_TRUE(hasName("Details.Score"));
+    EXPECT_TRUE(hasName("Tags"));
+    EXPECT_TRUE(hasName("Owner.Id"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    EXPECT_EQ((size_t) 0, countMergedFiles()) << "Temp file must be deleted after Close() for OpenChangeGroup spill path";
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies strict-mode behaviour when the changeset was captured against an older (V1)
+// schema and is later read against a newer (V2) DB whose table has an extra column.
+// Strict mode ON  → Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF → Step() must succeed and return BE_SQLITE_ROW.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, StrictMode_OlderChangesetOnNewerDb)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_cs.ecdb", SchemaItem(GetStrictModeV1Schema())));
+
+    // Capture a V1 INSERT changeset (table has 4 columns: Id, ECClassId, Name, Value).
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey itemKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(itemKey,
+        "INSERT INTO tsi.Item(Name, Val) VALUES('Foo', 42)"));
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    BeFileName csFile = WriteChangesetToFile(m_ecdb, cs, "strict_older_cs.changeset");
+
+    // Upgrade the DB to V2 — the tsi_Item table now has 5 columns (Id, ECClassId, Name, Value, Extra).
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
+
+    // Strict mode ON: column-count mismatch (4 in changeset vs 5 in table) must be an error.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(SUCCESS, reader.EnableStrictMode());
+    EXPECT_EQ(BE_SQLITE_ERROR, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Strict mode OFF: reader must tolerate the shorter changeset and return a valid row.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage is empty for an INSERT.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    // Only the 4 V1 columns are readable; the V2 Extra column is not present in the changeset.
+    EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Foo", v2.GetText());
+
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Val", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(42, v3.GetInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies strict-mode behaviour when the changeset was captured against a newer (V2)
+// schema and is read against an older (V1) DB whose table is one column shorter.
+// The V2 changeset is produced by a separate ECDb instance; the reader uses a V1 DB.
+// Strict mode ON  → Step() must return BE_SQLITE_ERROR.
+// Strict mode OFF → Step() must succeed and return BE_SQLITE_ROW.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
+    {
+    // Build a V2 changeset using a separate ECDb upgraded to V2 (5 columns).
+    BeFileName csFile;
+    ECInstanceKey itemKey;
+    {
+    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_newer_src.ecdb", SchemaItem(GetStrictModeV1Schema())));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(GetStrictModeV2Schema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(itemKey,
+        "INSERT INTO tsi.Item(Name, Val, Extra) VALUES('Bar', 99, 'bonus')"));
+
+    TestCSChangeSet cs;
+    ASSERT_EQ(BE_SQLITE_OK, cs.FromChangeTrack(tracker));
+    csFile = WriteChangesetToFile(m_ecdb, cs, "strict_newer_cs.changeset");
+    }   // End source-db setup scope; m_ecdb is reinitialized by the SetupECDb() call below.
+
+    // m_ecdb is the reader DB — it carries only the V1 schema (4 columns).
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("strict_older_db.ecdb", SchemaItem(GetStrictModeV1Schema())));
+
+    // Strict mode ON: changeset has 5 columns but the V1 reader DB table has only 4 → error.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(SUCCESS, reader.EnableStrictMode());
+    EXPECT_EQ(BE_SQLITE_ERROR, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+    // Strict mode OFF: reader must read the first min(5,4)=4 columns and succeed.
+    // The Extra column (index 4 in the changeset) is beyond the minimum and not surfaced.
+    {
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenChangesetFile(m_ecdb, csFile.GetNameUtf8(), false,
+        ChangesetReader::PropertyFilter::All));
+    ASSERT_EQ(BE_SQLITE_ROW, reader.Step());
+
+    DbOpcode opcode;
+    ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+    EXPECT_EQ(DbOpcode::Insert, opcode);
+
+    // Old stage is empty for an INSERT.
+    EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
+
+    // Only the 4 V1 columns are resolved; Extra (5th changeset column) is beyond the minimum.
+    EXPECT_EQ(4, reader.GetColumnCount(Changes::Change::Stage::New));
+
+    IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+    EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetInstanceId(), v0.GetId<ECInstanceId>());
+
+    IECSqlValue const& v1 = reader.GetValue(Changes::Change::Stage::New, 1);
+    EXPECT_STREQ("ECClassId", v1.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(itemKey.GetClassId(), v1.GetId<ECN::ECClassId>());
+
+    IECSqlValue const& v2 = reader.GetValue(Changes::Change::Stage::New, 2);
+    EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_STREQ("Bar", v2.GetText());
+
+    IECSqlValue const& v3 = reader.GetValue(Changes::Change::Stage::New, 3);
+    EXPECT_STREQ("Val", v3.GetColumnInfo().GetProperty()->GetName().c_str());
+    EXPECT_EQ(99, v3.GetInt());
+
+    ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
     }
 
