@@ -1,0 +1,9 @@
+set(VCPKG_TARGET_ARCHITECTURE x64)
+set(VCPKG_CRT_LINKAGE dynamic)
+set(VCPKG_LIBRARY_LINKAGE static)
+
+set(VCPKG_CMAKE_SYSTEM_NAME Linux)
+
+# Match the previous Linux Crashpad build's large-file ABI mode.
+set(VCPKG_C_FLAGS "${VCPKG_C_FLAGS} -D_FILE_OFFSET_BITS=64")
+set(VCPKG_CXX_FLAGS "${VCPKG_CXX_FLAGS} -D_FILE_OFFSET_BITS=64")
