@@ -619,7 +619,24 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
 //---------------------------------------------------------------------------------------
 ECSqlStatus PragmaECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp) {
     auto& pragmaExp = exp.GetAs<PragmaStatementExp>();
-    const auto rc = ctx.GetECDb().GetImpl().GetPragmaManager().Prepare(m_resultSet, pragmaExp);
+
+    // A pragma runs its underlying logic (schema/class lookups, SQLite reads, attached-table-space
+    // access, SQL functions, etc.) at prepare time against the connection whose PragmaManager handles
+    // it. For multi-threaded prepares (e.g. concurrent query) ctx.GetECDb() is a separate, read-only
+    // schema-source connection used only to parse/resolve schemas; it is shared across worker threads
+    // and does not carry the executing connection's synced attached databases or SQL functions. Mirror
+    // regular ECSQL -- which prepares and steps against ctx.GetDataSourceConnection() -- and run the
+    // pragma against the data-source connection so it observes the same attached table spaces and
+    // functions as the executing (worker) connection, and so concurrent workers never share a single
+    // pragma-execution connection. When no separate data-source connection was provided (the common
+    // single-connection case) ctx.GetDataSourceConnection() is the same object as ctx.GetECDb().
+    ECDb const* pragmaConn = &ctx.GetECDb();
+    if (&ctx.GetDataSourceConnection() != &ctx.GetECDb()) {
+        if (ECDb const* dataSourceECDb = dynamic_cast<ECDb const*>(&ctx.GetDataSourceConnection()))
+            pragmaConn = dataSourceECDb;
+    }
+
+    const auto rc = pragmaConn->GetImpl().GetPragmaManager().Prepare(m_resultSet, pragmaExp);
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
@@ -627,6 +644,8 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         BeAssert(m_resultSet != nullptr && "Must be never nullptr for successful prepare");
         return ECSqlStatus::Error;
     }
+
+    SetDataSourceDb(*pragmaConn);
     return ECSqlStatus::Success;
 }
 
