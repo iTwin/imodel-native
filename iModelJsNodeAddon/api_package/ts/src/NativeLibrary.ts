@@ -291,6 +291,7 @@ export declare namespace IModelJsNative {
   interface IConcurrentQueryManager {
     concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
+    /** Shuts down the concurrent query manager. This is called automatically when the database is closed. */
     concurrentQueryShutdown(): void;
   }
 

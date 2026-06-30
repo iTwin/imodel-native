@@ -597,12 +597,14 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-
     auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(1), 1000));
-    ConcurrentQueryMgr::Config::Reset(config);
 
+
+    config.AddFunction(SleepFunc::Instance());
+    ConcurrentQueryMgr::Config::Reset(config);
     m_ecdb.AddFunction(SleepFunc::Instance());
+
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest(
             "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt",

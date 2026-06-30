@@ -158,6 +158,18 @@ bvector<DbFunction*> ECDb::GetSqlFunctions() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_CreateSecondaryConnection(std::unique_ptr<SecondaryConnection>& secondary, Db::OpenParams const& params) const
+    {
+    auto conn = std::make_unique<TypedSecondaryConnection<ECDb>>();
+    auto result = OpenSecondaryConnection(conn->m_db, params);
+    if (result == BE_SQLITE_OK)
+        secondary = std::move(conn);
+    return result;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 void ECDb::_OnAfterSetBriefcaseId()
     {
     m_pimpl->OnBriefcaseIdAssigned(GetBriefcaseId());

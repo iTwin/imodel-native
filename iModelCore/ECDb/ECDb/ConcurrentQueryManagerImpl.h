@@ -28,6 +28,8 @@
 #define MAX_STATEMENT_CACHE_SIZE_PER_WORKER         100
 #define MIN_MONITOR_POLL_INTERVAL                   1000
 #define MIN_PROGRESS_OP_COUNT                       500
+#define MIN_QUOTA_MEMORY_BYTES                      32000
+#define MIN_QUOTA_TIME_SECONDS                      std::chrono::seconds(10)
 #define MIN_WORKER_THREAD_COUNT                     1
 #define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
 #define V8_MAX_STRING_SIZE                          0x3B9ACA00ul // 1GB - Max string size for V8 
@@ -89,8 +91,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
 
 struct RunnableRequestQueue;
 
-struct RunnableRequestQueue;
-
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -134,37 +134,21 @@ struct RunnableRequestBase;
 //=======================================================================================
 struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
     friend struct QueryAdaptorCache;
+    friend struct ConnectionCache;
     private:
-        enum ConnectionAction {
-            Opening,
-            Closing
-        };
-        struct FunctionInfo {
-            private:
-                std::string m_name;
-                int m_numArgs;
-                DbFunction *m_func;
-            public:
-                FunctionInfo(std::string name, int numArgs, DbFunction* func): m_name(name), m_numArgs(numArgs), m_func(func) {}
-                std::string const& GetName() const {return m_name;}
-                int GetNumArgs() const {return m_numArgs;}
-                DbFunction* GetFunction() const {return m_func;}
-        };
-
         ConnectionCache& m_cache;
-        ECDb m_db;
+        std::unique_ptr<SecondaryConnection> m_conn;
         recursive_mutex_t m_mutexReq;
         std::unique_ptr<RunnableRequestBase> m_request;
         uint16_t m_id;
         uint32_t m_primaryFileDataVer = 0;
         QueryAdaptorCache m_adaptorCache;
         QueryRetryHandler::Ptr m_retryHandler;
-        void UpdateSqlFunctions(ConnectionAction);
+        bool m_inUse = false;
         CachedConnection(const CachedConnection&)=delete;
         CachedConnection(CachedConnection&&)=delete;
         CachedConnection& operator = (const CachedConnection&)=delete;
         CachedConnection& operator = (CachedConnection&&)=delete;
-        std::vector<FunctionInfo> GetPrimaryDbSqlFunctions() const;
         void SetRequest(std::unique_ptr<RunnableRequestBase> request);
         void ClearRequest();
     public:
@@ -176,9 +160,10 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         void Reset(bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)>,bool cancel);
         bool IsSync() const { return m_id == 0; }
+        bool IsInUse() const { return m_inUse; }
         ECDb const& GetPrimaryDb() const;
-        ECDb const& GetDb() const {return m_db; }
-        ECDb& GetDbR() {return m_db; }
+        ECDb const& GetDb() const {return m_conn->GetDb(); }
+        ECDb& GetDbR() {return m_conn->GetDb(); }
         uint16_t Id() const { return m_id; }
         std::shared_ptr<CachedConnection> Shared() { return  shared_from_this(); }
         static std::shared_ptr<CachedConnection> Make(ConnectionCache&,uint16_t);
@@ -194,12 +179,16 @@ struct ConnectionCache final {
         std::shared_ptr<CachedConnection> m_syncConn;
         ECDb const& m_primaryDb;
         recursive_mutex_t m_mutex;
+        std::condition_variable_any m_connAvailable;
         uint32_t m_poolSize;
         uint64_t m_primaryAttachFileHash = 0;
+        bool m_stopped = false;
     public:
         ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
         std::shared_ptr<CachedConnection> GetConnection();
+        void ReleaseConnection(std::shared_ptr<CachedConnection> const& conn);
+        void StopWaiting();
         CachedConnection& GetSyncConnection();
         void Interrupt(bool reset_conn, bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
@@ -321,6 +310,8 @@ struct RunnableRequestQueue final {
         std::unique_ptr<RunnableRequestBase> Dequeue();
         std::unique_ptr<RunnableRequestBase> WaitForDequeue();
         QueryQuota AdjustQuota(QueryQuota const& quota) const;
+        void AdjustDelay(QueryRequest& request) const;
+        void DispatchOrEnqueue(ConnectionCache& conns, std::unique_ptr<RunnableRequestBase> runnableReq);
         void ExecuteSynchronously(ConnectionCache&, std::unique_ptr<RunnableRequestBase>);
     public:
         explicit RunnableRequestQueue(ECDbCR ecdb);

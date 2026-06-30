@@ -203,6 +203,18 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
+DbResult DgnDb::_CreateSecondaryConnection(std::unique_ptr<SecondaryConnection>& secondary, Db::OpenParams const& params) const
+    {
+    auto conn = std::make_unique<TypedSecondaryConnection<DgnDb>>();
+    auto result = OpenSecondaryConnection(conn->m_db, params);
+    if (result == BE_SQLITE_OK)
+        secondary = std::move(conn);
+    return result;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
 DbResult DgnDb::DisqualifyTypeIndexForBisCoreExternalSourceAspect()
     {
     if (Schemas().FindClass("BisCore.ExternalSourceAspect") != nullptr)
