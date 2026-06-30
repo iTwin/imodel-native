@@ -32,6 +32,9 @@
 
     <Part Name="CrashpadHandler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*,x*,macos*">
         <SubPart LibType="Static" PartName="__CrashpadStaticClient"/>
+        <!-- LibType="Static": chain is static-only; dynamic builds call vcpkg_run_install in
+             handler.mke for a fast cache hit in the dynamic OutputRootDir. -->
+        <SubPart PartName="vcpkg_install_crashpad" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <Files ProductDirectoryName="CrashpadHandler" Required="false">Delivery/CrashpadHandler$(exeext)</Files>
         </Bindings>

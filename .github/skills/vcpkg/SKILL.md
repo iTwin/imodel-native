@@ -79,38 +79,56 @@ Update the block comment above the chain to name the new last link.
 
 ### 4. Wire the consumer PartFile
 
-In your library's `.PartFile.xml`, depend on the chain part — **not** the bare `vcpkg` part:
+In your library's `.PartFile.xml`, depend on the chain part with **`LibType="Static"`**.
+
+**Critical:** `$(OutputRootDir)` differs between static and dynamic builds (`static/vcpkg_installed/…`
+vs `vcpkg_installed/…`).  The chain always runs static-only; dynamic builds install to their
+own `OutputRootDir` via a direct `vcpkg_run_install` call in the `.mke` (step 5).
+Using `LibType="Static"` here ensures the static chain completes (and populates the binary
+cache) before a dynamic build starts, without triggering a redundant dynamic chain build that
+would race against the static one on the shared vcpkg git repo.
 
 ```xml
 <Part Name="MyLib" BentleyBuildMakeFile="MyLib.mke">
-    <SubPart PartName="vcpkg_install_<mylib>" PartFile="iModelCore/libsrc/vcpkg"/>
+    <!-- LibType="Static": chain is static-only.  Dynamic builds call vcpkg_run_install in
+         the .mke for a fast cache hit in the dynamic OutputRootDir (see step 5). -->
+    <SubPart PartName="vcpkg_install_<mylib>" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
     ...
 ```
 
+If a separate prewire/PublicAPI part also needs the install, give it the same
+`LibType="Static"` SubPart (see `BeOpenSSL.PartFile.xml` for the `__PublicAPI` example).
+
 ### 5. Write the consumer `.mke`
 
-Include `vcpkg.mki` to get `vcpkgTriplet`, set `vcpkgInstallRoot` to match the install
-root used in `vcpkg_install_<mylib>.mke`, then consume the installed outputs.
-**Do not call `vcpkg_run_install` here.**
+Include `vcpkg.mki` to get `vcpkgTriplet`, then set `vcpkgInstallRoot`.
+
+**Key rule:** the chain always runs as Static, so the installed packages always live under
+the **static** `OutputRootDir`.  Dynamic builds must redirect `vcpkgInstallRoot` to that
+same static location — do **not** call `vcpkg_run_install` from the dynamic `.mke` path,
+because this creates a concurrent vcpkg process that races against the static chain on
+shared global locks (registry git lock, cmake download rename, etc.).
+
+Use `CREATE_STATIC_LIBRARIES` (defined by bmake for static builds) to pick the right root:
 
 ```makefile
-%include mdl.mki
-
-mylibDir        = $(_MakeFilePath)
-libsrcDir       = $(mylibDir)../
-
-%include $(libsrcDir)vcpkg.mki
-
+# Static builds: packages are at $(OutputRootDir)vcpkg_installed/<mylib>/
+# Dynamic builds: chain ran as Static; redirect to the same location.
+%if defined (CREATE_STATIC_LIBRARIES)
 vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/<mylib>/
+%else
+vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/<mylib>/
+%endif
 vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 vcpkgIncludeDir  = $(vcpkgTripletDir)include/
 vcpkgLibDir      = $(vcpkgTripletDir)lib/
-
-# vcpkg install was already run by vcpkg_install_<mylib>.mke — just consume the outputs.
-always:
-    !~@mkdir $(o)
-    # ... linkfile / linkdir / lib merge steps ...
 ```
+
+No `vcpkg_run_install` call in the `.mke` at all — the chain part handles it.
+
+Libraries that **only** build as static (e.g. compress, crashpad client) can skip the
+`%if defined (CREATE_STATIC_LIBRARIES)` conditional and use `$(OutputRootDir)vcpkg_installed/…`
+directly — their `OutputRootDir` is always the static one.
 
 ---
 

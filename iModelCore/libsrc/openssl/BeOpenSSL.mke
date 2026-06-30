@@ -55,14 +55,21 @@ o = $(OutputRootDir)build/$(appName)/
 %endif
 %include $(libsrcDir)vcpkg.mki
 
+# The vcpkg_install_openssl chain part always runs as Static, so the installed packages
+# live under the static OutputRootDir.  Both static and dynamic builds of this mke point
+# vcpkgInstallRoot at that same location so no second vcpkg invocation is needed.
+%if defined (CREATE_STATIC_LIBRARIES)
 vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/openssl/
+%else
+vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/openssl/
+%endif
 vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 vcpkgLibDir      = $(vcpkgTripletDir)lib/
 vcpkgDbgLibDir   = $(vcpkgTripletDir)debug/lib/
 
 #--------------------------------------------------------------------------------------
-#   vcpkg install is performed by the vcpkg_install_openssl part (vcpkg.PartFile.xml)
-#   before this mke runs. The static libraries are already present.
+#   vcpkg install was performed by the vcpkg_install_openssl chain part before this mke
+#   runs (for both static and dynamic builds via the LibType="Static" PartFile dep).
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)

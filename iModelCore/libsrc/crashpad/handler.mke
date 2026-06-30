@@ -18,7 +18,14 @@ o                   = $(OutputRootDir)build/$(appName)/
 #--------------------------------------------------------------------------------------
 %include $(libsrcDir)vcpkg.mki
 
+# The vcpkg_install_crashpad chain part always runs as Static, so installed packages
+# (including the handler exe) live under the static OutputRootDir.  Both static and
+# dynamic builds point vcpkgInstallRoot there so no second vcpkg invocation is needed.
+%if defined (CREATE_STATIC_LIBRARIES)
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
+%else
+vcpkgInstallRoot    = $(OutputRootDir)static/vcpkg_installed/crashpad/
+%endif
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 %if $(TARGET_PLATFORM)=="Windows"
 	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
@@ -30,8 +37,8 @@ vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 handlerOut          = $(o)$(appName)$(exeext)
 
 #--------------------------------------------------------------------------------------
-#   vcpkg install is performed by the vcpkg_install_crashpad part (vcpkg.PartFile.xml)
-#   before this mke runs. The handler executable is already present.
+#   vcpkg install was performed by the vcpkg_install_crashpad chain part before this mke
+#   runs (for both static and dynamic builds via the LibType="Static" PartFile dep).
 #--------------------------------------------------------------------------------------
 always:
 	!~@mkdir $(o)
