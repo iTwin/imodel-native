@@ -30,15 +30,11 @@ vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 handlerOut          = $(o)$(appName)$(exeext)
 
 #--------------------------------------------------------------------------------------
-#   Run vcpkg to build crashpad artifacts.
+#   vcpkg install is performed by the vcpkg_install_crashpad part (vcpkg.PartFile.xml)
+#   before this mke runs. The handler executable is already present.
 #--------------------------------------------------------------------------------------
 always:
 	!~@mkdir $(o)
-%if defined (winNT)
-	$(libsrcDir)vcpkg_run_install.bat $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%else
-	$(libsrcDir)vcpkg_run_install.sh $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Deliver handler executable with expected product name.

@@ -8,4 +8,20 @@
         <RequiredRepository>vcpkg</RequiredRepository>
     </Part>
 
+    <!-- Sequential vcpkg install chain.  Each part runs vcpkg install for one consumer and
+         gates the next consumer behind it, so no two vcpkg processes ever run concurrently.
+         Order only matters when packages share vcpkg state (binary cache, running.lock, etc.),
+         but when it does matter it matters a great deal — concurrent runs against the same
+         install root will collide on vcpkg-running.lock and corrupt the build.
+         Consumers depend on their named part here instead of directly on "vcpkg". -->
+    <Part Name="vcpkg_install_compress" BentleyBuildMakeFile="vcpkg_install_compress.mke">
+        <SubPart PartName="vcpkg"/>
+    </Part>
+    <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
+        <SubPart PartName="vcpkg_install_compress"/>
+    </Part>
+    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
+        <SubPart PartName="vcpkg_install_openssl"/>
+    </Part>
+
 </BuildContext>

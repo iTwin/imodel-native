@@ -26,15 +26,11 @@ vcpkgLibDir         = $(vcpkgTripletDir)lib/
 vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 
 #--------------------------------------------------------------------------------------
-#   Run vcpkg to build crashpad
+#   vcpkg install is performed by the vcpkg_install_crashpad part (vcpkg.PartFile.xml)
+#   before this mke runs. The crashpad libraries are already present.
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-%if defined (winNT)
-    $(libsrcDir)vcpkg_run_install.bat $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%else
-    $(libsrcDir)vcpkg_run_install.sh $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Deliver headers to VendorAPI.

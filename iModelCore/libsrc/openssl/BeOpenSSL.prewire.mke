@@ -36,15 +36,11 @@ vcpkgTripletDir  = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 vcpkgIncludeDir  = $(vcpkgTripletDir)include/
 
 #--------------------------------------------------------------------------------------
-#   Build OpenSSL with vcpkg so its headers and license are available to bind.
+#   vcpkg install is performed by the vcpkg_install_openssl part (vcpkg.PartFile.xml)
+#   before this mke runs. The headers and license are already present.
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-%if defined (winNT)
-    $(libsrcDir)vcpkg_run_install.bat $(opensslDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%else
-    $(libsrcDir)vcpkg_run_install.sh $(opensslDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Deliver headers (VendorAPI/openssl -> vcpkg include/openssl) and the license.

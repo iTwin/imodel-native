@@ -61,16 +61,11 @@ vcpkgLibDir      = $(vcpkgTripletDir)lib/
 vcpkgDbgLibDir   = $(vcpkgTripletDir)debug/lib/
 
 #--------------------------------------------------------------------------------------
-#   Build OpenSSL with vcpkg. Idempotent: the prewire step may have already installed it,
-#   in which case the binary cache makes this a fast no-op.
+#   vcpkg install is performed by the vcpkg_install_openssl part (vcpkg.PartFile.xml)
+#   before this mke runs. The static libraries are already present.
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-%if defined (winNT)
-    $(libsrcDir)vcpkg_run_install.bat $(opensslDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%else
-    $(libsrcDir)vcpkg_run_install.sh $(opensslDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Resolve the vcpkg-produced OpenSSL static libraries. ssl is listed before crypto so the

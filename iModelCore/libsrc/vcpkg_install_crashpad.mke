@@ -1,0 +1,21 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_crashpad.mke - Run vcpkg install for the crashpad manifest.
+# Runs after vcpkg_install_openssl as part of the sequential chain in vcpkg.PartFile.xml.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+crashpadDir = $(_MakeFilePath)crashpad/
+installRoot = $(OutputRootDir)vcpkg_installed/crashpad/
+
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    $(_MakeFilePath)vcpkg_run_install.bat $(crashpadDir) $(installRoot) $(vcpkgTriplet)
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(crashpadDir) $(installRoot) $(vcpkgTriplet)
+%endif

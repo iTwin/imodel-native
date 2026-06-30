@@ -10,7 +10,7 @@
 
     <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
     <Part Name="__PublicAPI" BentleyBuildMakeFile="BeOpenSSL.prewire.mke">
-        <SubPart PartName="vcpkg" PartFile="iModelCore/libsrc/vcpkg"/>
+        <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg"/>
         <Bindings>
             <VendorAPI Domain="openssl" />
             <VendorNotices>Delivery/openssl-license.txt</VendorNotices>
@@ -19,11 +19,9 @@
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
     <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
-        <!-- Depend on __PublicAPI so the prewire vcpkg install runs first and completes before
-             this part's vcpkg install. Both run vcpkg against the same install-root; without this
-             ordering they can run concurrently and collide on vcpkg-running.lock. -->
+        <!-- __PublicAPI delivers headers needed by this part and depends on vcpkg_install_openssl,
+             so the vcpkg install is guaranteed complete before either part runs. -->
         <SubPart PartName="__PublicAPI" LibType="Static"/>
-        <SubPart PartName="vcpkg" PartFile="iModelCore/libsrc/vcpkg"/>
         <Bindings>
             <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)iTwinOpenSSL$(stlibdebugext)</Libs>
             <Libs>Delivery/$(libprefix)iTwinOpenSSL$(libext)</Libs>
