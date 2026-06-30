@@ -211,11 +211,17 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    StatementState state;
-    if(m_sqliteStatement.TryGetStatementState(state) && state == StatementState::Ready)
+    // OnBeforeFirstStep only needs to run for the small set of binders that opt into it (e.g. array/struct/
+    // virtual-set binders). The vast majority of statements have none, so we avoid probing the SQLite
+    // statement state (a C call) on every step unless at least one binder requires the first-step callback.
+    if (m_parameterMap.HasBindersToCallOnBeforeStep())
         {
-        if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
-            return BE_SQLITE_ERROR;
+        StatementState state;
+        if (m_sqliteStatement.TryGetStatementState(state) && state == StatementState::Ready)
+            {
+            if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
+                return BE_SQLITE_ERROR;
+            }
         }
     
 
@@ -534,7 +540,12 @@ DbResult ECSqlSelectPreparedStatement::Step()
         return BE_SQLITE_ERROR;
 
     if (IsInstanceQuery())
-        m_ecdb.GetInstanceReader().Reset();
+        // Only invalidate the cached seek position for the previous row. We must not call Reset() here:
+        // Reset() clears the InstanceReader's schema-level caches (class/table maps), each of which owns a
+        // prepared SQLite statement. Clearing them on every row forces those statements to be re-prepared for
+        // each row of an instance query. InvalidateSeekPos() forces a re-seek for the next row while keeping
+        // the (row-independent) class/table caches warm.
+        m_ecdb.GetInstanceReader().InvalidateSeekPos();
 
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)
