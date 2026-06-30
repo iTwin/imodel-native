@@ -799,14 +799,29 @@ TEST_F(ECSqlPragmasTestFixture, PragmaKnownFeatures_ReturnsRegistry)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_known_features.ecdb"));
 
+    std::vector<std::tuple<Utf8CP, Utf8CP, Utf8CP>> features = {
+        { "json-primitive-type", "JSON Primitive Types", "ReadOnly" },
+    };
+
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_known_features")) << "PRAGMA ecdb_known_features must prepare successfully";
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
 
-    EXPECT_EQ(3, stmt.GetColumnCount()) << "PRAGMA ecdb_known_features must return 3 columns";
-    EXPECT_STREQ("FeatureName", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-    EXPECT_STREQ("FeatureDescription", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-    EXPECT_STREQ("FeatureCompatibility", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    for (const auto& [featureName, featureDescription, featureCompat] : features)
+        {
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+            
+        EXPECT_EQ(3, stmt.GetColumnCount()) << "PRAGMA ecdb_known_features must return 3 columns";
+        EXPECT_STREQ("FeatureName", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(featureName, stmt.GetValueText(0)) << "FeatureName column must match the inserted row";
+
+        EXPECT_STREQ("FeatureDescription", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(featureDescription, stmt.GetValueText(1)) << "FeatureDescription column must match the inserted row";
+
+        EXPECT_STREQ("FeatureCompatibility", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(featureCompat, stmt.GetValueText(2)) << "FeatureCompatibility column must match the inserted Compat value";
+        }
+
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -832,11 +847,9 @@ TEST_F(ECSqlPragmasTestFixture, PragmaUsedFeatures_ReturnsTableContents)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features")) << "PRAGMA ecdb_used_features must prepare successfully";
 
-    for (auto i = 0; i < 3; ++i)
+    for (const auto& [featureName, featureDescription, featureCompat] : features)
         {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-
-        const auto [featureName, featureDescription, featureCompat] = features[i];
         
         EXPECT_EQ(3, stmt.GetColumnCount()) << "PRAGMA ecdb_known_features must return 3 columns";
         EXPECT_STREQ("FeatureName", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());

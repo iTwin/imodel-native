@@ -1666,6 +1666,12 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
       }
 
     ctx.ImportCtx().RemapManager().CollectRemapInfosFromNewProperty(ecProperty.GetClass(), ecProperty.GetName(), ecProperty.GetId());
+
+    ECN::PrimitiveECPropertyCP primProp = ecProperty.GetAsPrimitiveProperty();
+    ECN::PrimitiveArrayECPropertyCP primArrProp = ecProperty.GetAsPrimitiveArrayProperty();
+    if ((primProp != nullptr && primProp->GetType() == ECN::PRIMITIVETYPE_Json) || (primArrProp != nullptr && primArrProp->GetType() == ECN::PRIMITIVETYPE_Json))
+        FeatureManager::InsertFeature(ctx.GetECDb(), "json-primitive-type");
+
     return result;
     }
 

@@ -1170,6 +1170,15 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (pugi::xml_node propertyNode, ECS
     if (status != SchemaReadStatus::Success)
         return status;
 
+    if (GetType() == PRIMITIVETYPE_Json 
+        && GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_3)
+        && context.GetStrictSchemaValidation())
+        {
+        LOG.errorv("Invalid ECSchemaXML: Property '%s.%s' uses typeName 'json' which requires ECXml version 3.3 or higher.",
+            GetClass().GetFullName(), GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+
     auto extendedTypeAttr = propertyNode.attribute(EXTENDED_TYPE_NAME_ATTRIBUTE);
     if (extendedTypeAttr)
         {
@@ -2100,6 +2109,15 @@ SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(pugi::xml_node propertyNode,
     SchemaReadStatus status = T_Super::_ReadXml(propertyNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
+
+    if (GetType() == PRIMITIVETYPE_Json 
+        && GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_3)
+        && context.GetStrictSchemaValidation())
+        {
+        LOG.errorv("Invalid ECSchemaXML: Property '%s.%s' uses typeName 'json' which requires ECXml version 3.3 or higher.",
+            GetClass().GetFullName(), GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     auto extendedTypeAttr = propertyNode.attribute(EXTENDED_TYPE_NAME_ATTRIBUTE);
     if (extendedTypeAttr)

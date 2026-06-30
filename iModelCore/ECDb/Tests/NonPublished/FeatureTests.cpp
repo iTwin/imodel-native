@@ -277,4 +277,11 @@ TEST_F(FeatureTests, Feature_PragmaUsedFeatures_PreMigrationFile_ReturnsEmpty)
     EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "PRAGMA ecdb_used_features must return no rows (not an error) when the ec_Feature table is absent";
     }
 
+TEST_F(FeatureTests, Feature_JSONPrimitiveType_IsRegistered)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_json_primitive_type.ecdb"));
+
+    EXPECT_TRUE(FeatureManager::IsFeatureKnown("json-primitive-type")) << "\"json-primitive-type\" must be registered in the ECDb known-feature registry";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

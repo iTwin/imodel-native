@@ -372,6 +372,8 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_Point3d                   = 0x801,
     PRIMITIVETYPE_String                    = 0x901,
     PRIMITIVETYPE_IGeometry                 = 0xa01,
+    //! Introduced in ECXml3.3
+    PRIMITIVETYPE_Json                      = 0xb01,
     };
 
 //! Enumerates the possible return values for evaluating an expression or its value

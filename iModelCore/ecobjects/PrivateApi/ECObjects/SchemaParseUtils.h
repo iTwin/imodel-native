@@ -211,6 +211,8 @@
 // This is used for matching incoming types to any common geometry type
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY_ROOT "Bentley.GeometryNET.Common"
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY_ROOT        "Bentley.Geometry.Common"
+//! Introduced in ECXml3.3
+#define EC_PRIMITIVE_TYPENAME_JSON                  "json"
 #define EMPTY_STRING ""
 
 // Defines Instance attributes that are used in Xml and Json serialization

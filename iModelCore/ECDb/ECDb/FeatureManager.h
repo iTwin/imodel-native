@@ -52,7 +52,9 @@ struct ECDB_EXPORT FeatureInfo
     Compat compat;
     };
 
-#define KNOWN_FEATURES { }
+#define KNOWN_FEATURES { \
+    {"json-primitive-type", FeatureInfo{"json-primitive-type", "JSON Primitive Types", Compat::ReadOnly}} \
+    }
 
 //=======================================================================================
 // @bsiclass

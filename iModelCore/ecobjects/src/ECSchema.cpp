@@ -3649,8 +3649,28 @@ namespace
             }
         return true;
         }
+
+    // Returns true if the schema uses any construct introduced in ECXml 3.3.
+    bool SchemaRequiresV3_3(ECSchemaCR schema)
+        {
+        // json primitive type
+        for (ECClassCP ecClass : schema.GetClasses())
+            for (ECPropertyCP prop : ecClass->GetProperties(false))
+                {
+                if (const auto primProp = prop->GetAsPrimitiveProperty(); primProp != nullptr && primProp->GetType() == PRIMITIVETYPE_Json)
+                    return true;
+
+                if (const auto primArrProp = prop->GetAsPrimitiveArrayProperty(); primArrProp != nullptr && primArrProp->GetType() == PRIMITIVETYPE_Json)
+                    return true;
+                }
+
+        return false;
+        }
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECVersion ECSchema::GetRequiredECVersion() const
     {
     ECVersion required = ECVersion::V3_2;
@@ -3659,8 +3679,8 @@ ECVersion ECSchema::GetRequiredECVersion() const
     for (auto const& ref : GetReferencedSchemas())
         required = std::max(required, ref.second->GetECVersion());
 
-    // Future work:
-    // Check if there are any features in the schema introduced by version the user has explicitly specified.
+    if (SchemaRequiresV3_3(*this))
+        required = std::max(required, ECVersion::V3_3);
 
     return required;
     }

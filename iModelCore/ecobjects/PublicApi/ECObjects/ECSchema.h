@@ -3338,6 +3338,9 @@ private:
 
     ECObjectsStatus TryFillKindOfQuantity(KindOfQuantityP targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences);
 
+    //! Returns the minimum ECXml version needed to faithfully serialize this schema
+    ECVersion GetRequiredECVersion() const;
+
 protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
     Utf8String _GetContainerName() const override  {return GetName();}
@@ -3887,9 +3890,6 @@ public:
     //! Removes any ECSchema from the list of referenced ECSchemas that is not referenced by elements of this schema
     //! @return The number of ECSchemas that were removed
     ECOBJECTS_EXPORT int RemoveUnusedSchemaReferences();
-
-    //! Returns the minimum ECXml version needed to faithfully serialize this schema
-    ECOBJECTS_EXPORT ECVersion GetRequiredECVersion() const;
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
