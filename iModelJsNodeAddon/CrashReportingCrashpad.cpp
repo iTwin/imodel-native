@@ -2,13 +2,11 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <Bentley/BentleyConfig.h>
-#include <Bentley/Desktop/FileSystem.h>
 
-#ifndef BENTLEYCONFIG_OS_LINUX
-    #error This file is for Linux only
-#endif
+#define NOMINMAX
+
+#include "IModelJsNative.h"
+#include <Bentley/Desktop/FileSystem.h>
 
 #include <crashpad/client/crash_report_database.h>
 #include <crashpad/client/settings.h>
@@ -16,11 +14,51 @@
 #include <crashpad/client/crashpad_info.h>
 
 #undef MAP_TYPE // linux.h #define's this, while ECSchema.h uses it as a template parameter name
-#include "IModelJsNative.h"
 
 using namespace std;
 using namespace crashpad;
 using namespace IModelJsNative;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void InitFilePath(base::FilePath& filePath, BeFileNameCR fileName)
+    {
+#ifdef BENTLEY_WIN32
+    filePath = base::FilePath(fileName.c_str());
+#else
+    filePath = base::FilePath(Utf8String(fileName).c_str());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetEnvironmentVariable(std::string& value, const char* variableName)
+    {
+    value.clear();
+#ifdef BENTLEY_WIN32
+    DWORD size = GetEnvironmentVariableA(variableName, nullptr, 0);
+    if (size == 0)
+        return false;
+    
+    std::vector<char> buffer(size);
+    DWORD result = GetEnvironmentVariableA(variableName, buffer.data(), size);
+    if (result == 0 || result >= size)
+        return false;
+    
+    value.assign(buffer.data(), result);
+    return true;
+#else
+    const char* env = getenv(variableName);
+    if (env != nullptr)
+        {
+        value.assign(env);
+        return true;
+        }
+    return false;
+#endif
+    }
 
 // WIP: See comments about MaintainCrashDumpDir below.
 // static int s_nextNativeCrashTxtFileNo;
@@ -43,14 +81,38 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     // WIP: Check whether the user wants dumps at all via CrashReportingConfig.
     // if (!cfg.m_enableCrashDumps)
     //     return true;
-    if (NULL == getenv("LINUX_MINIDUMP_ENABLED"))
+    std::string minidumpEnabledStr;
+#if defined(BENTLEYCONFIG_OS_LINUX)
+    // The old environment variable for enabling crash dumps on Linux was "LINUX_MINIDUMP_ENABLED". We only want to
+    // support that on Linux. However, even on Linux we want to allow users to switch to the new
+    // "IMODEL_ADDON_MINIDUMP_ENABLED" variable, so we check for both and require at least one of them to be set. On
+    // other platforms, only check for "IMODEL_ADDON_MINIDUMP_ENABLED". 
+    if (!GetEnvironmentVariable(minidumpEnabledStr, "IMODEL_ADDON_MINIDUMP_ENABLED") && !GetEnvironmentVariable(minidumpEnabledStr, "LINUX_MINIDUMP_ENABLED"))
         return true;
+#else
+    if (!GetEnvironmentVariable(minidumpEnabledStr, "IMODEL_ADDON_MINIDUMP_ENABLED"))
+        return true;
+#endif
     
     //.............................................................................................
     // WIP: solely rely on configuration for crash path.
     BeFileName dbPathW = cfg.m_crashDir;
     if (0 == dbPathW.size())
+        {
+#ifdef BENTLEY_WIN32
+        wchar_t tempPath[MAX_PATH];
+        DWORD len = GetTempPath2W(MAX_PATH, tempPath);
+        if (len == 0 || len >= MAX_PATH)
+            dbPathW.assign(L"C:\\temp\\crash");
+        else
+            {
+            dbPathW.assign(tempPath);
+            dbPathW.AppendToPath(L"crash");
+            }
+#else
         dbPathW.assign(L"/tmp/crash");
+#endif
+        }
 
     if (!dbPathW.DoesPathExist())
         {
@@ -62,7 +124,8 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             }
         }
     
-    base::FilePath dbPath(Utf8String(dbPathW).c_str());
+    base::FilePath dbPath;
+    InitFilePath(dbPath, dbPathW);
     unique_ptr<CrashReportDatabase> database = CrashReportDatabase::Initialize(dbPath);
     if (nullptr == database || nullptr == database->GetSettings())
         {
@@ -72,14 +135,18 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         }
 
     // WIP: Check for presence of upload URL and/or config option to determine whether to attempt uploads.
-    Utf8CP reportingUrlEnv = getenv("MINIDUMP_UPLOAD_URL");
-    bool hasReportingUrlEnv = !Utf8String::IsNullOrEmpty(reportingUrlEnv);
+    std::string reportingUrlEnv;
+    bool hasReportingUrlEnv = GetEnvironmentVariable(reportingUrlEnv, "MINIDUMP_UPLOAD_URL");
     
     database->GetSettings()->SetUploadsEnabled(hasReportingUrlEnv);
 
     //.............................................................................................
     BeFileName handlerPathW = Desktop::FileSystem::GetLibraryDir();
+#ifdef BENTLEY_WIN32
+    handlerPathW.AppendToPath(L"CrashpadHandler.exe");
+#else
     handlerPathW.AppendToPath(L"CrashpadHandler");
+#endif
     if (!handlerPathW.DoesPathExist())
         {
         // BeAssert(false);
@@ -87,8 +154,9 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         return false;
         }
 
-    base::FilePath handlerPath(Utf8String(handlerPathW).c_str());
-    
+    base::FilePath handlerPath;
+    InitFilePath(handlerPath, handlerPathW);
+
     // WIP: Get the URL from configuration.
     string reportingUrl;
     if (hasReportingUrlEnv)
@@ -96,8 +164,8 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     
     // backtrace.io requires some manual annotations.
     std::map<std::string, std::string> processAnnotations;
-    Utf8CP backtraceToken = getenv("MINIDUMP_UPLOAD_BACKTRACE_TOKEN");
-    if (!Utf8String::IsNullOrEmpty(backtraceToken))
+    std::string backtraceToken;
+    if (GetEnvironmentVariable(backtraceToken, "MINIDUMP_UPLOAD_BACKTRACE_TOKEN"))
         {
         processAnnotations["format"] = "minidump";
         processAnnotations["token"] = backtraceToken;
@@ -107,7 +175,7 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     args.push_back("--no-rate-limit"); // don't restrict to once per-hour
     // args.push_back("--no-upload-gzip"); // don't compress HTTP request (for debugging purposes)
 
-    CrashpadClient client;
+    static CrashpadClient client;
     if (!client.StartHandler(
             handlerPath,        // handler
             dbPath,             // database
@@ -115,9 +183,14 @@ bool JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
             reportingUrl,       // url
             processAnnotations, // annotations
             args,               // arguments
-            false,              // restartable (not supported on Linux)
-            false               // asynchronous_start (not supported on Linux)
-            ))
+#if defined(BENTLEYCONFIG_OS_LINUX)
+            false,  // restartable (not supported on Linux)
+            false   // asynchronous_start (not supported on Linux)
+#else
+            true,   // restartable
+            true    // asynchronous_start
+#endif
+        ))
         {
         // BeAssert(false);
         printf("JsInterop::InitializeCrashReporting: Failed to start the crashpad handler.\n");
