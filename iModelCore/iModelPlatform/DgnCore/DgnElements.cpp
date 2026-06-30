@@ -1704,6 +1704,17 @@ DgnDbStatus DgnElements::MoveSubtreeToNewModel(DgnElementId elementId, DgnModelI
     if (subtreeIds.empty())
         return DgnDbStatus::InvalidId;
 
+    // BIS enforces that a parent and all of its children reside in the same model (see DgnElement::_OnChildInsert/
+    // _OnChildAdd), so the ParentId subtree must resolve to exactly one source model. The set above is kept as a
+    // defensive guard: if it ever holds more than one model the hierarchy is already corrupt, so fail before
+    // mutating anything (preserving move atomicity) rather than silently relocating an inconsistent subtree.
+    if (sourceModelIds.size() > 1)
+        {
+        BeAssert(false && "subtree spans multiple models; parent and child must be in same model");
+        LOG.errorv("ChangeElementModel: Cannot change model of element %s because its subtree spans multiple models; a parent and its children must reside in the same model.", elementId.ToHexStr().c_str());
+        return DgnDbStatus::WrongModel;
+        }
+
     CachedStatementPtr updateStmt = GetStatement(
         "WITH RECURSIVE subtree(Id) AS ("
         "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=? "
@@ -1722,6 +1733,12 @@ DgnDbStatus DgnElements::MoveSubtreeToNewModel(DgnElementId elementId, DgnModelI
 
     for (DgnModelId sourceModelId : sourceModelIds)
         m_dgndb.Txns().m_modelChanges.AddModel(sourceModelId);
+
+    // The destination model is modified by the move as well. Geometric moves record this implicitly via
+    // AddGeometricElementChange(newModelId, ...) below, but non-geometric moves do not, so track it here
+    // to keep consumers that walk m_modelChanges (change summaries, briefcase merge, push/pull diffs) correct.
+    if (!sourceModelIds.empty())
+        m_dgndb.Txns().m_modelChanges.AddModel(newModelId);
 
     auto newGeomModel = newModel.ToGeometricModelP();
     for (GeometricElementMove const& move : geometricMoves)
