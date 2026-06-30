@@ -222,7 +222,7 @@ void AnnotationTextStyle::SetColorValue(ColorDef value) { setIntegerValue(m_data
 
 static const int64_t DEFAULT_FONTID_VALUE = 0; // See definition of BeServerIssuedId, of which FontId is a sub-class.
 FontId AnnotationTextStyle::GetFontId() const { return FontId((uint64_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
-void AnnotationTextStyle::SetFontId(FontId value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value.GetValue()); }
+void AnnotationTextStyle::SetFontId(FontId value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value.GetValueUnchecked()); }
 
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_HEIGHT_VALUE = 1.0;
 double AnnotationTextStyle::GetHeight() const { return getRealValue(m_data, AnnotationTextStyleProperty::Height, DEFAULT_HEIGHT_VALUE); }
