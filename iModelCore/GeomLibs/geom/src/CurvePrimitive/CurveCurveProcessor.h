@@ -216,7 +216,8 @@ struct CompareDSegment3d
     // absolute and relative tolerance for coordinate comparisons
     double m_coordTol;
 
-    CompareDSegment3d(double coordTol) : m_coordTol (coordTol) {}
+    // @param coordTol absolute and relative tolerance for clustering coordinates
+    CompareDSegment3d(double coordTol) : m_coordTol(fabs(coordTol)) {}
 
     // lexicographical point comparison: x first, then y, then z
     int compareXYZ(DPoint3dCR p0, DPoint3dCR p1) const;
@@ -228,21 +229,34 @@ struct CompareDSegment3d
 // CurveCurveProcessor to capture 3D close approach results.
 struct CurveCurveProcessAndCollectCloseApproaches : public CurveCurveProcessor
 {
+private:
 typedef std::multimap<DSegment3d, CurveLocationDetailPair, CompareDSegment3d> SegmentPairMultiMap;
 
 static inline auto s_segmentPairLess = [](SegmentPairMultiMap::value_type const& entry0, SegmentPairMultiMap::value_type const& entry1) -> bool { return entry0.second.detailA.a < entry1.second.detailA.a; };
 
-double m_maxDistance; // if negative, collect only closest approach
+double m_maxDistance;
 SegmentPairMultiMap m_pairs; // stores close approach equivalence classes
 
 public:
-CurveCurveProcessAndCollectCloseApproaches (double maxDistance, DMatrix4dCP worldToLocal, double coordTol) :
-    CurveCurveProcessor(worldToLocal), m_maxDistance(maxDistance), m_pairs(CompareDSegment3d(coordTol))
+// @param maxDistance if positive, collect all approaches within this distance; otherwise collect only the closest approach.
+// When Newton iteration is employed to compute the closest approach, two sub-options are available to control how many seeds are used.
+// When maxDistance = 0 (default), use only one Newton seed, the closest approach between the stroked inputs.
+// When maxDistance < 0, use all stroked close approaches within -maxDistance as Newton seeds (slower but more accurate).
+// @param worldToLocal optional placement transform.
+// @param coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default/negative is 1.0e-4.
+CurveCurveProcessAndCollectCloseApproaches (double maxDistance = 0.0, DMatrix4dCP worldToLocal = nullptr, double coordTol = -1.0) :
+    CurveCurveProcessor(worldToLocal), m_maxDistance(maxDistance), m_pairs(CompareDSegment3d(coordTol < 0.0 ? 1.0e-4 : coordTol))
     {
     }
 
-// Whether the instance collects only the closest approach, or all approaches up to m_maxDistance in length.
-bool ClosestOnly() const { return m_maxDistance < 0.0; }
+// Whether the instance collects only the closest approach, or multiple close approaches.
+bool CollectClosestOnly() const { return m_maxDistance <= 0.0; }
+
+// Whether the instance refines only one seed, or multiple seeds, when Newton iteration is employed.
+bool RefineClosestSeedOnly() const { return m_maxDistance == 0.0; }
+
+// Return the maximum positive approach distance for returned/stroked approaches.
+double GetMaxDistance() const { return fabs(m_maxDistance); }
 
 // Add a close approach pair to the collection.
 void CollectPair(ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse);
@@ -251,7 +265,7 @@ void CollectPair(ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double frac
 void CollectPair(ICurvePrimitiveCP curve0, DPoint3dCP point0, double fraction0, ICurvePrimitiveCP curve1, DPoint3dCP point1, double fraction1, bool bReverse);
 
 // Announce the collected, deduplicated close approach(es).
-bool GetResults(CurveCurve::ICloseApproachAnnouncer& announce) const;
+bool GetResults(CurveCurve::ICloseApproachAnnouncer const& announce) const;
 
 // Retrieve the closest approach.
 bool GetResult(CurveLocationDetailPairR result) const;

@@ -985,25 +985,25 @@ TEST(BsplineCurve, Fit2)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BaseAnnouncer : CurveCurve::ICloseApproachAnnouncer
+struct BaseAnnouncer
     {
     int numInvocations{0};
-    virtual void operator()(CurveLocationDetailPairCR pair) override { numInvocations++; }
+    virtual void announce(CurveLocationDetailPairCR pair) { numInvocations++; }
     virtual void Reset() { numInvocations = 0; }
+    CurveCurve::ICloseApproachAnnouncer GetAnnouncer() { return [this](CurveLocationDetailPairCR pair) { this->announce(pair); }; }
     };
 struct MRUAnnouncer : BaseAnnouncer
     {
     CurveLocationDetailPair result;
-    void operator()(CurveLocationDetailPairCR pair) override { BaseAnnouncer::operator()(pair); result = pair; }
+    void announce(CurveLocationDetailPairCR pair) override { BaseAnnouncer::announce(pair); result = pair; }
     void Reset() override { BaseAnnouncer::Reset(); result = CurveLocationDetailPair(); }
     };
 struct DisplayAnnouncer : BaseAnnouncer
     {
-    void operator()(CurveLocationDetailPairCR pair) override
+    void announce(CurveLocationDetailPairCR pair) override
         {
-        BaseAnnouncer::operator()(pair);
-        auto approach = DSegment3d::From(pair.detailA.point, pair.detailB.point);
-        Check::SaveTransformed(approach);
+        BaseAnnouncer::announce(pair);
+        Check::SaveTransformed(DSegment3d::From(pair.detailA.point, pair.detailB.point));
         }
     };
 
@@ -1068,7 +1068,7 @@ TEST(bspcci, BsplineTangencyCloseApproach)
         auto bsplinePrim = ICurvePrimitive::CreateBsplineCurve(*bspline);
 
         // default settings aren't great against a high-order tangency
-        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce);
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer());
         checkAnnouncement(intersection, segment);
         double pointDelta1 = announce.result.detailA.point.Distance(intersection);
         double paramDelta1 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
@@ -1077,8 +1077,8 @@ TEST(bspcci, BsplineTangencyCloseApproach)
         Check::Shift(120, 0, 0);
         announce.Reset();
 
-        // increased iterations aren't much better
-        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce, -1, nullptr, 50);
+        // using more seeds doesn't help
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer(), -DBL_MAX);
         checkAnnouncement(intersection, segment);
         double pointDelta2 = announce.result.detailA.point.Distance(intersection);
         double paramDelta2 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
@@ -1087,17 +1087,27 @@ TEST(bspcci, BsplineTangencyCloseApproach)
         Check::Shift(120, 0, 0);
         announce.Reset();
 
-        // increased strokes aren't much better either
-        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce, -1, strokeOptions.get(), 50);
+        // increased iterations aren't much better
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer(), -DBL_MAX, nullptr, 50);
         checkAnnouncement(intersection, segment);
         double pointDelta3 = announce.result.detailA.point.Distance(intersection);
         double paramDelta3 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
         double approachDistance3 = announce.result.detailA.a;
-        Check::True(pointDelta3 <= pointDelta2 || paramDelta3 <= paramDelta2 || approachDistance3 <= approachDistance2, "expect improved accuracy with more strokes");
+        Check::True(pointDelta3 <= pointDelta2 || paramDelta3 <= paramDelta2 || approachDistance3 <= approachDistance2, "expect improved accuracy with more iterations");
+        Check::Shift(120, 0, 0);
+        announce.Reset();
+
+        // increased strokes aren't much better either
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer(), -DBL_MAX, strokeOptions.get(), 50);
+        checkAnnouncement(intersection, segment);
+        double pointDelta4 = announce.result.detailA.point.Distance(intersection);
+        double paramDelta4 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
+        double approachDistance4 = announce.result.detailA.a;
+        Check::True(pointDelta4 <= pointDelta3 || paramDelta4 <= paramDelta3 || approachDistance4 <= approachDistance3, "expect improved accuracy with more strokes");
         announce.Reset();
 
         // find all approaches, verify clustering
-        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce2, DBL_MAX, strokeOptions.get(), 50);
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce2.GetAnnouncer(), DBL_MAX, strokeOptions.get(), 50);
         Check::True(data.approachCountRange.Contains(announce2.numInvocations), "expect de-duplicated approach count within expected range");
         Check::Shift(120, 0, 0);
         announce2.Reset();

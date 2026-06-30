@@ -299,7 +299,7 @@ void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP c
     if (bReverse)
         pair.SwapDetails();
 
-    if (ClosestOnly())
+    if (CollectClosestOnly())
         {
         if (!m_pairs.empty())
             {
@@ -308,7 +308,7 @@ void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP c
             m_pairs.erase(m_pairs.begin());
             }
         }
-    else if (pair.detailA.a > m_maxDistance)
+    else if (pair.detailA.a > GetMaxDistance())
         {
         return;
         }
@@ -316,7 +316,7 @@ void CurveCurveProcessAndCollectCloseApproaches::CollectPair(ICurvePrimitiveCP c
     m_pairs.emplace(seg, pair);
     }
 
-bool CurveCurveProcessAndCollectCloseApproaches::GetResults(CurveCurve::ICloseApproachAnnouncer& announce) const
+bool CurveCurveProcessAndCollectCloseApproaches::GetResults(CurveCurve::ICloseApproachAnnouncer const& announce) const
     {
     // for each range of equivalent close approaches, announce the closest
     bool announcedAtLeastOne = false;

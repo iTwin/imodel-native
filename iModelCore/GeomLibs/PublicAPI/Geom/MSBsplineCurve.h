@@ -854,7 +854,7 @@ public:
                                  bvector<DPoint3d> *ellipsePoints, bvector<double> *ellipseFractions,
                                  DEllipse3dCR arc, bool extendConic, DMatrix4dCP matrix) const;
 
-    //! Compute intersections with ellipse, as viewed in xy plane.
+    //! Compute intersections with another curve, as viewed in xy plane.
     //! @param [out] curveAPoints points on instances curve
     //! @param [out] curveAFractions fractions on instance curve
     //! @param [out] curveBPoints points on second curve
@@ -865,7 +865,7 @@ public:
                                  bvector<DPoint3d> *curveBPoints, bvector<double> *curveBFractions,
                                  MSBsplineCurveCR curveB, DMatrix4dCP matrix) const;
 
-    //! Compute intersections with ellipse, as viewed in xy plane.
+    //! Compute intersections with another curve, as viewed in xy plane.
     //! @param [out] curveAPoints points on instances curve
     //! @param [out] curveAFractions fractions on instance curve
     //! @param [out] curveAOverlapFractions intervals of fractional overlap on instance curve

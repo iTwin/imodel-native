@@ -88,14 +88,23 @@ int m_maxIterations;
 double m_newtonFractionTol;
 
 /*--------------------------------------------------------------------------------**//**
+* @param [in] maxDistance if positive, collect all approaches within this distance; otherwise collect only the closest approach.
+* When Newton iteration is employed to compute the closest approach, two sub-options are available to control how many seeds are used.
+* When maxDistance = 0 (default), use only one Newton seed, the closest approach between the stroked inputs.
+* When maxDistance < 0, use all stroked close approaches within -maxDistance as Newton seeds (slower but more accurate).
+* @param [in] strokeOptions optional stroking parameters to use for nonlinear curves. Default is nullptr (use default stroking parameters).
+* @param [in] maxIterations maximum number of Newton iterations to run per seed for nonlinear curves. Default/negative is 20.
+* @param [in] fractionTol parametric (fractional) convergence tolerance for Newton iteration. Default/negative is 1.0e-12.
+* @param [in] coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default/negative is 1.0e-4.
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-CCAXYZProcessor (double maxDistance = -1, IFacetOptionsCP strokeOptions = nullptr, int maxIterations = 20, double fractionTol = 1.0e-12, double coordTol = 1.0e-4) :
-    CurveCurveProcessAndCollectCloseApproaches(maxDistance, nullptr, coordTol), m_newtonFractionTol (fractionTol)
+CCAXYZProcessor (double maxDistance = 0.0, IFacetOptionsCP strokeOptions = nullptr, int maxIterations = -1.0, double fractionTol = -1.0, double coordTol = -1.0) :
+    CurveCurveProcessAndCollectCloseApproaches(maxDistance, nullptr, coordTol)
     {
-    m_maxIterations = maxIterations > 0 ? maxIterations : 20;
     if (strokeOptions)
         SetStrokeOptions(*strokeOptions);
+    m_maxIterations = maxIterations > 0 ? maxIterations : 20;
+    m_newtonFractionTol = fractionTol >= 0.0 ? fractionTol : 1.0e-12;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -147,11 +156,22 @@ void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB,
     bvector<DPoint3d> strokesB = StrokeCurveForNewtonSeed(*curveB);
 
     // seeds are solutions to the discrete problem on the strokesA/B linestrings
-    double maxDiscreteDistance = ClosestOnly() ? DBL_MAX : m_maxDistance;
     bvector<CurveLocationDetail> seedA;
     bvector<CurveLocationDetail> seedB;
-    if (!PolylineOps::AddCloseApproaches(strokesA, strokesB, seedA, seedB, maxDiscreteDistance))
-        return;
+    if (RefineClosestSeedOnly())
+        {
+        CurveLocationDetail detailA, detailB;
+        if (PolylineOps::ClosestApproach(strokesA, strokesB, detailA, detailB))
+            {
+            seedA.push_back(detailA);
+            seedB.push_back(detailB);
+            }
+        }
+    else
+        {
+        if (!PolylineOps::AddCloseApproaches(strokesA, strokesB, seedA, seedB, GetMaxDistance()))
+            return;
+        }
 
     auto collectApproachUV = [&](double u, double v) -> bool
         {
@@ -298,7 +318,7 @@ bool CurveCurve::AnnounceCloseApproaches
 (
 CurveVectorCR chainA,
 CurveVectorCR chainB,
-ICloseApproachAnnouncer& announce,
+ICloseApproachAnnouncer const& announce,
 double maxDistance,
 IFacetOptionsCP strokeOptions,
 int maxIterations,
@@ -321,7 +341,7 @@ bool CurveCurve::AnnounceCloseApproaches
 (
 ICurvePrimitiveCR curveA,
 ICurvePrimitiveCR curveB,
-ICloseApproachAnnouncer& announce,
+ICloseApproachAnnouncer const& announce,
 double maxDistance,
 IFacetOptionsCP strokeOptions,
 int maxIterations,
@@ -337,7 +357,7 @@ double coordTol
     }
 
 // Announcer that collects all approaches into two parallel arrays of partial curves.
-struct AllCloseApproaches : CurveCurve::ICloseApproachAnnouncer
+struct AllCloseApproaches
     {
     CurveVectorR m_pointsOnA;
     CurveVectorR m_pointsOnB;
@@ -346,12 +366,15 @@ struct AllCloseApproaches : CurveCurve::ICloseApproachAnnouncer
         m_pointsOnA.clear();
         m_pointsOnB.clear();
         }
-    void operator()(CurveLocationDetailPairCR approach) override
+    CurveCurve::ICloseApproachAnnouncer GetAnnouncer()
         {
-        double u = approach.detailA.fraction;
-        double v = approach.detailB.fraction;
-        m_pointsOnA.push_back(ICurvePrimitive::CreatePartialCurve(const_cast<ICurvePrimitiveP>(approach.detailA.curve), u, u));
-        m_pointsOnB.push_back(ICurvePrimitive::CreatePartialCurve(const_cast<ICurvePrimitiveP>(approach.detailB.curve), v, v));
+        return [this](CurveLocationDetailPairCR approach) -> void
+            {
+            double u = approach.detailA.fraction;
+            double v = approach.detailB.fraction;
+            m_pointsOnA.push_back(ICurvePrimitive::CreatePartialCurve(const_cast<ICurvePrimitiveP>(approach.detailA.curve), u, u));
+            m_pointsOnB.push_back(ICurvePrimitive::CreatePartialCurve(const_cast<ICurvePrimitiveP>(approach.detailB.curve), v, v));
+            };
         }
     };
 
@@ -367,8 +390,7 @@ ICurvePrimitiveP curveB,
 double maxDist
 )
     {
-    AllCloseApproaches announcer(pointsOnA, pointsOnB);
-    AnnounceCloseApproaches(*curveA, *curveB, announcer, maxDist);
+    AnnounceCloseApproaches(*curveA, *curveB, AllCloseApproaches(pointsOnA, pointsOnB).GetAnnouncer(), maxDist <= 0 ? DBL_MAX : maxDist);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -383,23 +405,18 @@ CurveVectorCR chainB,
 double maxDist
 )
     {
-    AllCloseApproaches announcer(pointsOnA, pointsOnB);
-    AnnounceCloseApproaches(chainA, chainB, announcer, maxDist);
+    AnnounceCloseApproaches(chainA, chainB, AllCloseApproaches(pointsOnA, pointsOnB).GetAnnouncer(), maxDist <= 0 ? DBL_MAX : maxDist);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
 // Announcer that collects the closest approach into two details.
-struct TheClosestApproach : CurveCurve::ICloseApproachAnnouncer
+struct TheClosestApproach
     {
     CurveLocationDetailR m_detailA;
     CurveLocationDetailR m_detailB;
     TheClosestApproach(CurveLocationDetailR a, CurveLocationDetailR b) : m_detailA(a), m_detailB(b) {}
-    void operator()(CurveLocationDetailPairCR approach) override
+    CurveCurve::ICloseApproachAnnouncer GetAnnouncer()
         {
-        m_detailA = approach.detailA;
-        m_detailB = approach.detailB;
+        return [this](CurveLocationDetailPairCR approach) { m_detailA = approach.detailA; m_detailB = approach.detailB; };
         }
     };
 
@@ -414,8 +431,7 @@ ICurvePrimitiveP    curveA,
 ICurvePrimitiveP    curveB
 )
     {
-    TheClosestApproach announcer(detailA, detailB);
-    return AnnounceCloseApproaches(*curveA, *curveB, announcer);
+    return AnnounceCloseApproaches(*curveA, *curveB, TheClosestApproach(detailA, detailB).GetAnnouncer());
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -429,8 +445,7 @@ CurveVectorCR    chainA,
 CurveVectorCR    chainB
 )
     {
-    TheClosestApproach announcer(detailA, detailB);
-    return AnnounceCloseApproaches(chainA, chainB, announcer);
+    return AnnounceCloseApproaches(chainA, chainB, TheClosestApproach(detailA, detailB).GetAnnouncer());
     }
 
 //! Search for locations where there is a local min or max in the Z distance between

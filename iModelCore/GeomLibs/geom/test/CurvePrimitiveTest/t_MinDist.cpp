@@ -6,16 +6,15 @@
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 #include "ConstructPointRadiusTangentPointTangentRadius.h"
 
-// Make a smooth bcurve.
+// Make a smooth B-spline curve.
 // evaluate its frenet frame at curveFraction
 // Make a perpendicular circle there;
 //   evaluate the circle at circleFraction.
-//   interpolate at radius fraction from the circle center to the circle ponit.
-//   make the bcurve pass throught there perpendicular to the circle's plane
+//   interpolate at radius fraction from the circle center to the circle point.
+//   make the B-spline curve pass through the perpendicular to the circle's plane.
 // evaluate the closest approach -- should be at curveFraction and on that radial line.
-static void testBsplineCircleProximity (double curveEvaluationFraction, double circleEvaluationFraction, double radiusFraction)
+static void testBsplineCircleProximity (double curveEvaluationFraction, double circleEvaluationFraction, double radiusFraction, bool tryHarder = false)
     {
-
     // Make a bspline known to be in xy plane ..
     bvector<DPoint3d> poles;
     // in xz plane, concave to the right ...
@@ -47,25 +46,36 @@ static void testBsplineCircleProximity (double curveEvaluationFraction, double c
     arc.center = center1;
     ICurvePrimitivePtr primitiveA = ICurvePrimitive::CreateBsplineCurve (*curve);
     ICurvePrimitivePtr primitiveB = ICurvePrimitive::CreateArc (arc);
+    Check::SaveTransformed(primitiveA);
+    Check::SaveTransformed(primitiveB);
+
     CurveLocationDetail detailA, detailB;
+    if (tryHarder)
+        {
+        // we need to refine *all* the discrete approaches; the closest settles on a local minimum
+        Check::True(CurveCurve::AnnounceCloseApproaches(*primitiveA, *primitiveB, [&](CurveLocationDetailPairCR p) { detailA = p.detailA; detailB = p.detailB; }, -200), "Announced closest approach");
+        }
+    else
+        {
+        CurveCurve::ClosestApproach (detailA, detailB, primitiveA.get (), primitiveB.get ());
+        }
+    Check::SaveTransformed(DSegment3d::From(detailA.point, detailB.point));
+    Check::Shift(20, 0, 0);
 
-    CurveCurve::ClosestApproach (detailA, detailB, primitiveA.get (), primitiveB.get ());
     Check::Near (center0, detailA.point, "MinDist point on curve");
-
     }
-//static int s_noisy = 0;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveCurve, MinDistBsplineToCircle)
     {
-
     Check::StartScope ("MinDistBsplineToCircle");
-
     testBsplineCircleProximity (0.5, 0.5, 0.9);
     testBsplineCircleProximity (0.5, 0.5, 0.1);
-    testBsplineCircleProximity (0.5, 0.5, 0.0);     // hard case -- curve at dead center of circle.
+    testBsplineCircleProximity (0.5, 0.5, 0.0, true);     // hard case -- curve at dead center of circle.
     Check::EndScope ();
+    Check::ClearGeometry("CurveCurve.MinDistBsplineToCircle");
     }
 
 //!<ul>
