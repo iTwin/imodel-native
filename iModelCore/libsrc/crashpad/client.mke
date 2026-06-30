@@ -2,56 +2,93 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-
-# Ignore warnings in third-party code.
-IS_THIRD_PARTY_LIBRARY = 1
-BUILD_WITH_C17 = 1
+# client.mke - Build crashpad client via vcpkg, deliver as CrashpadClient.
+#---------------------------------------------------------------------------------------------
 
 %include mdl.mki
 
-AppName = CrashpadClient
-CCompPDBName = $(AppName)
-VendorDir = $(_MakeFilePath)vendor/
-o = $(PartBuildDir)
-ApiStagingDir = $(o)ApiStaging/
+appName             = CrashpadClient
+crashpadDir         = $(_MakeFilePath)
+libsrcDir           = $(crashpadDir)../
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-%if defined (BMAKE_DELETE_ALL_TARGETS)
-    always:
-        -$(rmdirRecursiveCmd) $(o)
-    
-    %return
+o                   = $(OutputRootDir)build/$(appName)/
+
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+%include $(libsrcDir)vcpkg.mki
+
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
+vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir     = $(vcpkgTripletDir)include/
+vcpkgCrashpadIncDir = $(vcpkgIncludeDir)crashpad/
+vcpkgLibDir         = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
+
+#--------------------------------------------------------------------------------------
+#   Run vcpkg to build crashpad
+#--------------------------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+%if defined (winNT)
+    $(libsrcDir)vcpkg_run_install.bat $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%else
+    $(libsrcDir)vcpkg_run_install.sh $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Deliver headers to VendorAPI.
+#   Downstream code expects #include paths rooted at crashpad/client, crashpad/util,
+#   crashpad/base, and crashpad/build.
+#--------------------------------------------------------------------------------------
+vcpkgStaging = $(o)vcpkg_headers/
+
+always:
+    !~@mkdir $(vcpkgStaging)
+    ~linkdir "$(vcpkgStaging)client=$(vcpkgCrashpadIncDir)client/"
+    ~linkdir "$(vcpkgStaging)util=$(vcpkgCrashpadIncDir)util/"
+    ~linkdir "$(vcpkgStaging)base=$(vcpkgCrashpadIncDir)base/"
+    ~linkdir "$(vcpkgStaging)build=$(vcpkgCrashpadIncDir)build/"
+    ~linkdir "$(BuildContext)VendorAPI/crashpad=$(vcpkgStaging)"
+
+#--------------------------------------------------------------------------------------
+#   Deliver a single CrashpadClient static library.
+#   Merge vcpkg crashpad component archives into one output expected by downstream.
+#--------------------------------------------------------------------------------------
+CrashpadClientOut      = $(o)$(stlibprefix)$(appName)$(stlibext)
+%if $(TARGET_PLATFORM) == "Windows"
+    vcpkgCrashpadClient    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
+    vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
+    vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
+    vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+%elif defined (DEBUG)
+    vcpkgCrashpadClient    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
+    vcpkgCrashpadCommon    = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
+    vcpkgCrashpadUtil      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
+    vcpkgCrashpadBase      = $(vcpkgDbgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+    # vcpkgMigOutput is macOS-only (Mach Interface Generator output); used solely by the MacOS libtool merge below.
+    vcpkgMigOutput         = $(vcpkgDbgLibDir)$(stlibprefix)mig_output$(stlibext)
+%else
+    vcpkgCrashpadClient    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client$(stlibext)
+    vcpkgCrashpadCommon    = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_client_common$(stlibext)
+    vcpkgCrashpadUtil      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_util$(stlibext)
+    vcpkgCrashpadBase      = $(vcpkgLibDir)$(stlibprefix)vcpkg_crashpad_base$(stlibext)
+    # vcpkgMigOutput is macOS-only (Mach Interface Generator output); used solely by the MacOS libtool merge below.
+    vcpkgMigOutput         = $(vcpkgLibDir)$(stlibprefix)mig_output$(stlibext)
 %endif
 
 always:
-    !~@mkdir $(o)
-    ~linkfile "$(BuildContext)Delivery/crashpad-license.txt=$(VendorDir)LICENSE"
-    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)client" "$(ApiStagingDir)client"
-    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)util" "$(ApiStagingDir)util"
-    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)third_party/mini_chromium/mini_chromium/base" "$(ApiStagingDir)base"
-    $(BBPYTHONCMD) $(_MakeFilePath)copy_headers.py "$(VendorDir)third_party/mini_chromium/mini_chromium/build" "$(ApiStagingDir)build"
-    ~linkdir "$(BuildContext)VendorAPI/crashpad=${ApiStagingDir}"
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec)
-
-# The combination of files and options varies so much that I do each platform from scratch.
-
 %if $(TARGET_PLATFORM) == "Linux"
-    %include $(_MakeFilePath)client_linux.mki
+    $(libsrcDir)merge_static_libs.sh $(CrashpadClientOut) $(vcpkgCrashpadClient) $(vcpkgCrashpadCommon) $(vcpkgCrashpadUtil) $(vcpkgCrashpadBase)
+%elif $(TARGET_PLATFORM) == "MacOS"
+    libtool -static -o $(CrashpadClientOut) $(vcpkgCrashpadClient) $(vcpkgCrashpadCommon) $(vcpkgCrashpadUtil) $(vcpkgCrashpadBase) $(vcpkgMigOutput)
 %elif $(TARGET_PLATFORM) == "Windows"
-    %include $(_MakeFilePath)client_windows.mki
+    lib "-OUT:$(CrashpadClientOut)" "$(vcpkgCrashpadClient)" "$(vcpkgCrashpadCommon)" "$(vcpkgCrashpadUtil)" "$(vcpkgCrashpadBase)"
 %endif
+    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(CrashpadClientOut)"
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# N.B. Crashpad only builds as a static library (they have no export macros setup).
-
-LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
-LIB_DEST = $(o)
-LIB_LST_NAME = $(o)$(AppName).lst
-LIB_NAME = $(AppName)
-LIB_OBJECT_DEST = $(o)
-LIB_OBJS = $(objs)
-LIB_TMP_DIR = $(o)
-
-%include creatlib.mki
+#--------------------------------------------------------------------------------------
+#   Deliver license file from vcpkg
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/crashpad-license.txt=$(vcpkgTripletDir)share/crashpad/copyright"

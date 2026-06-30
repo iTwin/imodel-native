@@ -2,63 +2,64 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-
-# Ignore warnings in third-party code.
-IS_THIRD_PARTY_LIBRARY = 1
-BUILD_WITH_C17 = 1
+# handler.mke - Deliver CrashpadHandler via vcpkg, with optional legacy fallback.
+#---------------------------------------------------------------------------------------------
 
 %include mdl.mki
 
-AppName = CrashpadHandler
-CCompPDBName = $(AppName)
-VendorDir = $(_MakeFilePath)vendor/
-o = $(PartBuildDir)
+appName             = CrashpadHandler
+crashpadDir         = $(_MakeFilePath)
+libsrcDir           = $(crashpadDir)../
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-%if defined (BMAKE_DELETE_ALL_TARGETS)
-    always:
-        -$(rmdirRecursiveCmd) $(o)
+o                   = $(OutputRootDir)build/$(appName)/
 
-    %return
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+%include $(libsrcDir)vcpkg.mki
+
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
+vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+%if $(TARGET_PLATFORM)=="Windows"
+	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
+%elif defined (DEBUG)
+	vcpkgHandlerExe     = $(vcpkgTripletDir)debug/tools/crashpad_handler$(exeext)
+%else
+	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
 %endif
+handlerOut          = $(o)$(appName)$(exeext)
+
+#--------------------------------------------------------------------------------------
+#   Run vcpkg to build crashpad artifacts.
+#--------------------------------------------------------------------------------------
+always:
+	!~@mkdir $(o)
+%if defined (winNT)
+	$(libsrcDir)vcpkg_run_install.bat $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%else
+	$(libsrcDir)vcpkg_run_install.sh $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Deliver handler executable with expected product name.
+#   Note: -$(deleteCmd) is used to delete the destination if it exists so that the
+#   subsequent ~linkfile won't fail on rebuild.
+#--------------------------------------------------------------------------------------
+always:
+	-$(deleteCmd) "$(handlerOut)"
+	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
+
+winSignVersionTarget = $(handlerOut)
+winSignVersionProductName = $(appName)
+%include $(libsrcDir)WinSignAndVersionRule.mki
 
 always:
-    !~@mkdir $(o)
+	-$(deleteCmd) "$(BuildContext)Delivery/$(appName)$(exeext)"
+	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec)
-
-# The combination of files and options varies so much that I do each platform from scratch.
-
-%if $(TARGET_PLATFORM) == "Linux"
-    %include $(_MakeFilePath)handler_linux.mki
-%elif $(TARGET_PLATFORM) == "Windows"
-    %include $(_MakeFilePath)handler_windows.mki
+%if !defined (winNT)
+always:
+	chmod +x "$(vcpkgHandlerExe)"
+	chmod +x "$(handlerOut)"
+	chmod +x "$(BuildContext)Delivery/$(appName)$(exeext)"
 %endif
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/
-EXE_DEST = $(o)
-EXE_NAME = $(AppName)
-EXE_OBJS = $(objs)
-EXE_UNICODE = 1
-
-# N.B. Link order matters for non-Windows targets. CrashpadClient should be listed first, followed by other dependencies.
-
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)CrashpadClient$(stlibext)
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
-
-%if $(TARGET_PLATFORM) == "Linux"
-    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
-%elif $(TARGET_PLATFORM) == "Windows"
-    LINKER_LIBRARIES + advapi32.lib
-    LINKER_LIBRARIES + powrprof.lib
-    LINKER_LIBRARIES + user32.lib
-    LINKER_LIBRARIES + version.lib
-    LINKER_LIBRARIES + winhttp.lib
-
-    # So that we don't unecessarily show a console window when launched from a "GUI" bridge like OBD.
-    EXE_WIN_APP = 1
-%endif
-
-%include $(SharedMki)linktool.mki

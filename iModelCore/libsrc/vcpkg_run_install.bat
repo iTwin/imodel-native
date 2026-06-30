@@ -138,6 +138,16 @@ if not exist "%VCPKG_EXE%" (
 )
 
 set "VCPKG_DOWNLOADS=%VCPKG_ROOT%\downloads"
+if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
+    set "VCPKG_DEFAULT_BINARY_CACHE=%VCPKG_ROOT%\archives"
+)
+if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
+
+rem Use a persistent local binary cache by default to avoid rebuilding heavy ports
+rem (for example, crashpad) across builds. Allow callers to override.
+if "%VCPKG_BINARY_SOURCES%"=="" (
+    set "VCPKG_BINARY_SOURCES=clear;files,%VCPKG_DEFAULT_BINARY_CACHE%,readwrite"
+)
 
 rem For Android cross-compilation, vcpkg needs ANDROID_NDK_HOME.
 rem Our build system sets ANDROID_NDK_ROOT; map it if ANDROID_NDK_HOME is not set.
@@ -155,6 +165,8 @@ echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, instal
 echo vcpkg: exe="%VCPKG_EXE%"
 echo vcpkg: root="%VCPKG_ROOT%"
 echo vcpkg: downloads="%VCPKG_DOWNLOADS%"
+echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
+echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 
 if "%OVERLAY_ARG%"=="" (
     "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages"
