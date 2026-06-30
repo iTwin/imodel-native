@@ -549,6 +549,44 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ChangeElementParent(DgnDbR dgndb, Napi::Object obj) {
+    BeJsConst props(obj);
+
+    DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
+    if (!elementId.IsValid())
+        throwInvalidId();
+
+    DgnElementId newParentId = props["parentId"].GetId64<DgnElementId>();
+    if (!newParentId.IsValid())
+        throwInvalidId();
+
+    DgnDbStatus status = dgndb.Elements().ChangeElementParent(elementId, newParentId);
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ChangeElementModel(DgnDbR dgndb, Napi::Object obj) {
+    BeJsConst props(obj);
+
+    DgnElementId elementId = props[DgnElement::json_id()].GetId64<DgnElementId>();
+    if (!elementId.IsValid())
+        throwInvalidId();
+
+    DgnModelId newModelId = props["modelId"].GetId64<DgnModelId>();
+    if (!newModelId.IsValid())
+        throwInvalidId();
+
+    DgnDbStatus status = dgndb.Elements().ChangeElementModel(elementId, newModelId);
+    if (DgnDbStatus::Success != status)
+        throwDgnDbStatus(status);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static DgnElementId getElementIdFromNapiValue(Napi::Value const& napiVal)
     {
     auto napiString = napiVal.As<Napi::String>();
