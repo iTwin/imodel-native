@@ -3958,6 +3958,12 @@ private:
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
+    //! Recursively validate that every element in the subtree rooted at elementId can be moved into newModel.
+    //! Performs no mutation, so a rejected model change leaves the iModel untouched. Used by ChangeElementModel.
+    DgnDbStatus ValidateSubtreeForModelChange(DgnElementId elementId, DgnModelR newModel, bool isRoot);
+    //! Relocate the subtree rooted at elementId into newModelId, preserving the parent-child hierarchy.
+    //! Used by ChangeElementModel after ValidateSubtreeForModelChange has approved the whole subtree.
+    DgnDbStatus MoveSubtreeToNewModel(DgnElementId elementId, DgnModelId newModelId, DgnModelR newModel);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
@@ -4094,6 +4100,27 @@ public:
         *stat = UpdateElement(modifiedElement);
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
+
+    //! Change the parent of an element. The new parent must be in the same model as the element;
+    //! cross-model reparenting is not allowed.
+    //! @param[in] elementId The element to reparent
+    //! @param[in] newParentId The new parent element. Must be in the same model as the element.
+    //! @return DgnDbStatus::Success if the element was reparented, error status otherwise.
+    //! @note If the new parent is in a different model, this will fail with WrongModel.
+    //! @note If the element has a parent-element-scoped code, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementParent(DgnElementId elementId, DgnElementId newParentId);
+
+    //! Change the model of a root element, making it a root element in the new model.
+    //! The element must not have a parent.
+    //! BIS requires a parent and all of its children to reside in the same model, so the element's entire
+    //! subtree is relocated into the new model as well; the parent-child hierarchy is preserved. The whole
+    //! subtree is validated before anything is moved, so a rejected change leaves the iModel untouched.
+    //! @param[in] elementId The root element to move
+    //! @param[in] newModelId The target model
+    //! @return DgnDbStatus::Success if the element (and its subtree) was moved, error status otherwise.
+    //! @note If the element has a parent, this will fail with InvalidParent.
+    //! @note If any element in the subtree has a model-scoped code, this will fail with InvalidCode. Use delete+insert instead.
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementId elementId, DgnModelId newModelId);
 
 
     //! Delete a DgnElement from this DgnDb.
