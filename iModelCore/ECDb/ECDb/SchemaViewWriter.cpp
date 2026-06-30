@@ -26,6 +26,9 @@ static uint32_t SafeU32Id(int64_t val)
 // byte / 16-bit value for the binary format. These values are tiny by construction, if we ever encounter overflow,
 // it warrants a warning but we still produce a valid blob by saturating to the min/max of the target type.
 // If we hit this and it's valid, the binary format should be updated to use a larger type.
+// Explicitly didn't choose an error here because SchemaView needs to be resilient since it's a "all or nothing"-mechanism.
+// Adding too strict validation would cause consumers to not see any schema at all, which is very disruptive.
+// The warning is enough to catch the issue in testing.
 static uint8_t SafeU8(int val, Utf8CP field)
     {
     if (val >= 0 && val <= (int)UINT8_MAX)
