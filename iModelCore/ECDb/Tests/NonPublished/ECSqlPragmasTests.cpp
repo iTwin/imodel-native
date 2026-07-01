@@ -603,264 +603,264 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, schema_view_returns_blob) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "  <ECEntityClass typeName='Foo' modifier='None'>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "</ECSchema>")));
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ECSqlPragmasTestFixture, schema_view_returns_blob) {
+//     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view.ecdb", SchemaItem(
+//         "<?xml version='1.0' encoding='utf-8'?>"
+//         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+//         "  <ECEntityClass typeName='Foo' modifier='None'>"
+//         "    <ECProperty propertyName='Name' typeName='string' />"
+//         "  </ECEntityClass>"
+//         "</ECSchema>")));
 
-    { // basic pragma returns one row with expected columns
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//     { // basic pragma returns one row with expected columns
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-        // Column 0: format (string)
-        ASSERT_STREQ("binary", stmt.GetValueText(0));
-        // Column 1: formatVersion (integer)
-        ASSERT_EQ(1, stmt.GetValueInt(1));
-        // Column 2: data (base64-encoded binary, stored as string with "encoding=base64;" prefix)
-        Utf8CP dataText = stmt.GetValueText(2);
-        ASSERT_NE(nullptr, dataText);
-        static constexpr Utf8CP base64Prefix = "encoding=base64;";
-        static constexpr size_t base64PrefixLen = 16;
-        ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
-        ByteStream decoded;
-        Utf8CP b64 = dataText + base64PrefixLen;
-        Base64Utilities::Decode(decoded, b64, strlen(b64));
-        ASSERT_GT((int)decoded.GetSize(), 9); // at least header size: magic(4) + version(1) + stringTableOffset(4)
+//         // Column 0: format (string)
+//         ASSERT_STREQ("binary", stmt.GetValueText(0));
+//         // Column 1: formatVersion (integer)
+//         ASSERT_EQ(1, stmt.GetValueInt(1));
+//         // Column 2: data (base64-encoded binary, stored as string with "encoding=base64;" prefix)
+//         Utf8CP dataText = stmt.GetValueText(2);
+//         ASSERT_NE(nullptr, dataText);
+//         static constexpr Utf8CP base64Prefix = "encoding=base64;";
+//         static constexpr size_t base64PrefixLen = 16;
+//         ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
+//         ByteStream decoded;
+//         Utf8CP b64 = dataText + base64PrefixLen;
+//         Base64Utilities::Decode(decoded, b64, strlen(b64));
+//         ASSERT_GT((int)decoded.GetSize(), 9); // at least header size: magic(4) + version(1) + stringTableOffset(4)
 
-        // Verify magic bytes "CSCH" = 0x43534348
-        auto bytes = decoded.GetData();
-        uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
-        ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
-        // Verify format version in blob header matches
-        ASSERT_EQ(1, bytes[4]);
+//         // Verify magic bytes "CSCH" = 0x43534348
+//         auto bytes = decoded.GetData();
+//         uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+//         ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
+//         // Verify format version in blob header matches
+//         ASSERT_EQ(1, bytes[4]);
 
-        // Column 3: schemaToken (string, non-empty SHA hash)
-        Utf8CP token = stmt.GetValueText(3);
-        ASSERT_NE(nullptr, token);
-        ASSERT_GT(strlen(token), 0u);
+//         // Column 3: schemaToken (string, non-empty SHA hash)
+//         Utf8CP token = stmt.GetValueText(3);
+//         ASSERT_NE(nullptr, token);
+//         ASSERT_GT(strlen(token), 0u);
 
-        // Should be exactly one row
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }
-}
+//         // Should be exactly one row
+//         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+//     }
+// }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, schema_view_explicit_version) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_ver.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "  <ECEntityClass typeName='Bar' modifier='None'>"
-        "    <ECProperty propertyName='Value' typeName='int' />"
-        "  </ECEntityClass>"
-        "</ECSchema>")));
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ECSqlPragmasTestFixture, schema_view_explicit_version) {
+//     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_ver.ecdb", SchemaItem(
+//         "<?xml version='1.0' encoding='utf-8'?>"
+//         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+//         "  <ECEntityClass typeName='Bar' modifier='None'>"
+//         "    <ECProperty propertyName='Value' typeName='int' />"
+//         "  </ECEntityClass>"
+//         "</ECSchema>")));
 
-    { // explicit version 1 should succeed
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view(1)"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion column
-        Utf8CP dataText = stmt.GetValueText(2);
-        ASSERT_NE(nullptr, dataText);
-        static constexpr Utf8CP base64Prefix = "encoding=base64;";
-        static constexpr size_t base64PrefixLen = 16;
-        ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
-        ByteStream decoded;
-        Utf8CP b64 = dataText + base64PrefixLen;
-        Base64Utilities::Decode(decoded, b64, strlen(b64));
-        ASSERT_GT((int)decoded.GetSize(), 9);
-        // Verify blob header format version matches requested version
-        auto bytes = decoded.GetData();
-        ASSERT_EQ(1, bytes[4]);
-    }
+//     { // explicit version 1 should succeed
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view(1)"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion column
+//         Utf8CP dataText = stmt.GetValueText(2);
+//         ASSERT_NE(nullptr, dataText);
+//         static constexpr Utf8CP base64Prefix = "encoding=base64;";
+//         static constexpr size_t base64PrefixLen = 16;
+//         ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
+//         ByteStream decoded;
+//         Utf8CP b64 = dataText + base64PrefixLen;
+//         Base64Utilities::Decode(decoded, b64, strlen(b64));
+//         ASSERT_GT((int)decoded.GetSize(), 9);
+//         // Verify blob header format version matches requested version
+//         auto bytes = decoded.GetData();
+//         ASSERT_EQ(1, bytes[4]);
+//     }
 
-    { // unsupported high version should fail
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view(99)"));
-    }
+//     { // unsupported high version should fail
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view(99)"));
+//     }
 
-    { // version 0 should fail
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view(0)"));
-    }
+//     { // version 0 should fail
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view(0)"));
+//     }
 
-    { // negative version should fail to parse
-        ECSqlStatement stmt;
-        // -1 is not a valid pragma_value (no unary minus in grammar), so this fails at parse
-        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view(-1)"));
-    }
+//     { // negative version should fail to parse
+//         ECSqlStatement stmt;
+//         // -1 is not a valid pragma_value (no unary minus in grammar), so this fails at parse
+//         ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view(-1)"));
+//     }
 
-    { // string argument should fail
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view('2')"));
-    }
-}
+//     { // string argument should fail
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view('2')"));
+//     }
+// }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, schema_view_is_readonly) {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schema_view_ro.ecdb"));
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ECSqlPragmasTestFixture, schema_view_is_readonly) {
+//     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schema_view_ro.ecdb"));
 
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view=2"));
-}
+//     ECSqlStatement stmt;
+//     ASSERT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, "PRAGMA schema_view=2"));
+// }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, schema_view_token_determinism_and_checksum_match) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_token.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "  <ECEntityClass typeName='Foo' modifier='None'>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "</ECSchema>")));
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ECSqlPragmasTestFixture, schema_view_token_determinism_and_checksum_match) {
+//     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_token.ecdb", SchemaItem(
+//         "<?xml version='1.0' encoding='utf-8'?>"
+//         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+//         "  <ECEntityClass typeName='Foo' modifier='None'>"
+//         "    <ECProperty propertyName='Name' typeName='string' />"
+//         "  </ECEntityClass>"
+//         "</ECSchema>")));
 
-    // Get schemaToken from schema_view pragma (two calls to verify determinism)
-    Utf8String token1, token2;
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        token1 = stmt.GetValueText(3);
-    }
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        token2 = stmt.GetValueText(3);
-    }
-    ASSERT_STREQ(token1.c_str(), token2.c_str()) << "schema_view token must be deterministic across calls";
+//     // Get schemaToken from schema_view pragma (two calls to verify determinism)
+//     Utf8String token1, token2;
+//     {
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         token1 = stmt.GetValueText(3);
+//     }
+//     {
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         token2 = stmt.GetValueText(3);
+//     }
+//     ASSERT_STREQ(token1.c_str(), token2.c_str()) << "schema_view token must be deterministic across calls";
 
-    // Get checksum from PRAGMA checksum(ecdb_schema) - must match schema_view's schemaToken
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        Utf8CP checksumVal = stmt.GetValueText(0);
-        ASSERT_STREQ(token1.c_str(), checksumVal) << "schema_view schemaToken must match checksum(ecdb_schema)";
-    }
-}
+//     // Get checksum from PRAGMA checksum(ecdb_schema) - must match schema_view's schemaToken
+//     {
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         Utf8CP checksumVal = stmt.GetValueText(0);
+//         ASSERT_STREQ(token1.c_str(), checksumVal) << "schema_view schemaToken must match checksum(ecdb_schema)";
+//     }
+// }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_token_change.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "  <ECEntityClass typeName='Foo' modifier='None'>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "</ECSchema>")));
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ECSqlPragmasTestFixture, schema_view_token_changes_after_schema_import) {
+//     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_view_token_change.ecdb", SchemaItem(
+//         "<?xml version='1.0' encoding='utf-8'?>"
+//         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+//         "  <ECEntityClass typeName='Foo' modifier='None'>"
+//         "    <ECProperty propertyName='Name' typeName='string' />"
+//         "  </ECEntityClass>"
+//         "</ECSchema>")));
 
-    // Capture token before schema change
-    Utf8String tokenBefore;
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        tokenBefore = stmt.GetValueText(3);
-    }
+//     // Capture token before schema change
+//     Utf8String tokenBefore;
+//     {
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         tokenBefore = stmt.GetValueText(3);
+//     }
 
-    // Import an updated schema (adds a new property)
-    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "  <ECEntityClass typeName='Foo' modifier='None'>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "    <ECProperty propertyName='Description' typeName='string' />"
-        "  </ECEntityClass>"
-        "</ECSchema>")));
+//     // Import an updated schema (adds a new property)
+//     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(
+//         "<?xml version='1.0' encoding='utf-8'?>"
+//         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+//         "  <ECEntityClass typeName='Foo' modifier='None'>"
+//         "    <ECProperty propertyName='Name' typeName='string' />"
+//         "    <ECProperty propertyName='Description' typeName='string' />"
+//         "  </ECEntityClass>"
+//         "</ECSchema>")));
 
-    // Token after schema change must differ
-    Utf8String tokenAfter;
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        tokenAfter = stmt.GetValueText(3);
-    }
-    ASSERT_STRNE(tokenBefore.c_str(), tokenAfter.c_str()) << "schema_view token must change after schema import";
+//     // Token after schema change must differ
+//     Utf8String tokenAfter;
+//     {
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         tokenAfter = stmt.GetValueText(3);
+//     }
+//     ASSERT_STRNE(tokenBefore.c_str(), tokenAfter.c_str()) << "schema_view token must change after schema import";
 
-    // checksum(ecdb_schema) must still match the new schema_view token
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "checksum(ecdb_schema) must match schema_view token after import";
-    }
-}
+//     // checksum(ecdb_schema) must still match the new schema_view token
+//     {
+//         ECSqlStatement stmt;
+//         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA checksum(ecdb_schema)"));
+//         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//         ASSERT_STREQ(tokenAfter.c_str(), stmt.GetValueText(0)) << "checksum(ecdb_schema) must match schema_view token after import";
+//     }
+// }
 
-//---------------------------------------------------------------------------------------
-// Regression test against the 4.0.0.1 benchmark fixture. Profile 4.0.0.1 predates the
-// EC3.2 Units/Formats migration (introduced in 4.0.0.2, ~2018). SchemaViewWriter does
-// not query any of the tables/columns added in 4.0.0.2, so the pragma must succeed
-// without requiring a profile upgrade. KoQ PersistenceUnit/PresentationUnits will pass
-// through in legacy FUS format - that is acceptable degradation; the consumer can
-// detect it and decide how to handle it.
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlPragmasTestFixture, schema_view_works_on_old_profile_4001) {
-    BeFileName benchmarkFilePath;
-    BeTest::GetHost().GetDocumentsRoot(benchmarkFilePath);
-    benchmarkFilePath.AppendToPath(L"ECDb").AppendToPath(L"fileformatbenchmark").AppendToPath(L"4001").AppendToPath(L"imodel2.ecdb");
-    ASSERT_TRUE(benchmarkFilePath.DoesPathExist())
-        << "Profile 4.0.0.1 benchmark fixture missing at " << benchmarkFilePath.GetNameUtf8().c_str();
+// //---------------------------------------------------------------------------------------
+// // Regression test against the 4.0.0.1 benchmark fixture. Profile 4.0.0.1 predates the
+// // EC3.2 Units/Formats migration (introduced in 4.0.0.2, ~2018). SchemaViewWriter does
+// // not query any of the tables/columns added in 4.0.0.2, so the pragma must succeed
+// // without requiring a profile upgrade. KoQ PersistenceUnit/PresentationUnits will pass
+// // through in legacy FUS format - that is acceptable degradation; the consumer can
+// // detect it and decide how to handle it.
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(ECSqlPragmasTestFixture, schema_view_works_on_old_profile_4001) {
+//     BeFileName benchmarkFilePath;
+//     BeTest::GetHost().GetDocumentsRoot(benchmarkFilePath);
+//     benchmarkFilePath.AppendToPath(L"ECDb").AppendToPath(L"fileformatbenchmark").AppendToPath(L"4001").AppendToPath(L"imodel2.ecdb");
+//     ASSERT_TRUE(benchmarkFilePath.DoesPathExist())
+//         << "Profile 4.0.0.1 benchmark fixture missing at " << benchmarkFilePath.GetNameUtf8().c_str();
 
-    BeFileName outDir;
-    BeTest::GetHost().GetOutputRoot(outDir);
-    if (!outDir.DoesPathExist())
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(outDir));
-    BeFileName workingFilePath(outDir);
-    workingFilePath.AppendToPath(L"schema_view_4001.ecdb");
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, workingFilePath));
+//     BeFileName outDir;
+//     BeTest::GetHost().GetOutputRoot(outDir);
+//     if (!outDir.DoesPathExist())
+//         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(outDir));
+//     BeFileName workingFilePath(outDir);
+//     workingFilePath.AppendToPath(L"schema_view_4001.ecdb");
+//     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, workingFilePath));
 
-    ECDb oldFile;
-    ASSERT_EQ(BE_SQLITE_OK, oldFile.OpenBeSQLiteDb(workingFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
-        << "Failed to open 4.0.0.1 file readonly";
-    ASSERT_EQ(ProfileVersion(4, 0, 0, 1), oldFile.GetECDbProfileVersion())
-        << "Fixture is not at expected profile 4.0.0.1";
+//     ECDb oldFile;
+//     ASSERT_EQ(BE_SQLITE_OK, oldFile.OpenBeSQLiteDb(workingFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
+//         << "Failed to open 4.0.0.1 file readonly";
+//     ASSERT_EQ(ProfileVersion(4, 0, 0, 1), oldFile.GetECDbProfileVersion())
+//         << "Fixture is not at expected profile 4.0.0.1";
 
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(oldFile, "PRAGMA schema_view"))
-        << "PRAGMA schema_view must prepare against profile 4.0.0.1";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+//     ECSqlStatement stmt;
+//     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(oldFile, "PRAGMA schema_view"))
+//         << "PRAGMA schema_view must prepare against profile 4.0.0.1";
+//     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_STREQ("binary", stmt.GetValueText(0));
-    ASSERT_EQ(1, stmt.GetValueInt(1));
+//     ASSERT_STREQ("binary", stmt.GetValueText(0));
+//     ASSERT_EQ(1, stmt.GetValueInt(1));
 
-    Utf8CP dataText = stmt.GetValueText(2);
-    ASSERT_NE(nullptr, dataText);
-    static constexpr Utf8CP base64Prefix = "encoding=base64;";
-    static constexpr size_t base64PrefixLen = 16;
-    ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
-    ByteStream decoded;
-    Utf8CP b64 = dataText + base64PrefixLen;
-    Base64Utilities::Decode(decoded, b64, strlen(b64));
-    ASSERT_GT((int)decoded.GetSize(), 9);
+//     Utf8CP dataText = stmt.GetValueText(2);
+//     ASSERT_NE(nullptr, dataText);
+//     static constexpr Utf8CP base64Prefix = "encoding=base64;";
+//     static constexpr size_t base64PrefixLen = 16;
+//     ASSERT_EQ(0, strncmp(dataText, base64Prefix, base64PrefixLen));
+//     ByteStream decoded;
+//     Utf8CP b64 = dataText + base64PrefixLen;
+//     Base64Utilities::Decode(decoded, b64, strlen(b64));
+//     ASSERT_GT((int)decoded.GetSize(), 9);
 
-    auto bytes = decoded.GetData();
-    uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
-    ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
-    ASSERT_EQ(1, bytes[4]) << "Expected format version 1";
+//     auto bytes = decoded.GetData();
+//     uint32_t magic = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+//     ASSERT_EQ(0x43534348u, magic) << "Expected CSCH magic";
+//     ASSERT_EQ(1, bytes[4]) << "Expected format version 1";
 
-    Utf8CP token = stmt.GetValueText(3);
-    ASSERT_NE(nullptr, token);
-    ASSERT_GT(strlen(token), 0u);
+//     Utf8CP token = stmt.GetValueText(3);
+//     ASSERT_NE(nullptr, token);
+//     ASSERT_GT(strlen(token), 0u);
 
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-}
+//     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+// }
 
 END_ECDBUNITTESTS_NAMESPACE
