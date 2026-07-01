@@ -1749,6 +1749,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::UpdateElement(db, elemProps);
     }
 
+    void ChangeElementParent(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, props);
+        JsInterop::ChangeElementParent(db, props);
+    }
+
+    void ChangeElementModel(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, props);
+        JsInterop::ChangeElementModel(db, props);
+    }
+
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
@@ -3306,6 +3318,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("changeElementParent", &NativeDgnDb::ChangeElementParent),
+            InstanceMethod("changeElementModel", &NativeDgnDb::ChangeElementModel),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
@@ -7575,7 +7589,8 @@ static void setCrashReporting(NapiInfoCR info)
     ccfg.m_uploadUrl                = stringMember(obj, "uploadUrl");
 #endif
     ccfg.m_needsVectorExceptionHandler = true;
-    JsInterop::InitializeCrashReporting(ccfg);
+    if (!JsInterop::InitializeCrashReporting(ccfg))
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to initialize crash reporting.", IModelJsNativeErrorKey::NotInitialized);
 
     s_crashReportingInitialized = true;
     }
