@@ -981,3 +981,169 @@ TEST(BsplineCurve, Fit2)
         }
     Check::ClearGeometry ("BsplineCurve.Fit2");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BaseAnnouncer
+    {
+    int numInvocations{0};
+    virtual void announce(CurveLocationDetailPairCR pair) { numInvocations++; }
+    virtual void Reset() { numInvocations = 0; }
+    CurveCurve::ICloseApproachAnnouncer GetAnnouncer() { return [this](CurveLocationDetailPairCR pair) { this->announce(pair); }; }
+    };
+struct MRUAnnouncer : BaseAnnouncer
+    {
+    CurveLocationDetailPair result;
+    void announce(CurveLocationDetailPairCR pair) override { BaseAnnouncer::announce(pair); result = pair; }
+    void Reset() override { BaseAnnouncer::Reset(); result = CurveLocationDetailPair(); }
+    };
+struct DisplayAnnouncer : BaseAnnouncer
+    {
+    void announce(CurveLocationDetailPairCR pair) override
+        {
+        BaseAnnouncer::announce(pair);
+        Check::SaveTransformed(DSegment3d::From(pair.detailA.point, pair.detailB.point));
+        }
+    };
+
+TEST(bspcci, BsplineTangencyCloseApproach)
+    {
+    bvector<DPoint3d> poles0 {
+        {0, -20, 0},
+        {20, -20, 0},
+        {50, -10, 0},
+        {80, 0, 0},
+        {100, 0, 0}
+        };
+
+    int order = 3;
+    auto bspline = MSBsplineCurve::CreateFromPolesAndOrder(poles0, nullptr, nullptr, order, false, true);
+    Check::True (bspline.IsValid(), "bspline created");
+
+    bvector<double> tangencyFraction = {0.2, 0.5};  // high-order tangencies, one at local convexity, one at inflection
+    double segLength = 50.0;
+
+    MRUAnnouncer announce;
+    DisplayAnnouncer announce2;
+    auto strokeOptions = IFacetOptions::CreateForCurves();
+    strokeOptions->SetAngleTolerance(0.1);
+    strokeOptions->SetMaxEdgeLength(1.0); // increases B-spline curve strokes from 10 (with defaults) to 113
+
+    auto checkAnnouncement = [&announce, &bspline](DPoint3dCR expected, DSegment3dCR tangentSegment)
+        {
+        Check::ExactDouble(announce.result.detailA.a, announce.result.detailB.a, "expect same value in detail.a fields");
+        Check::ExactDouble(announce.numInvocations, 1, "expect exactly one invocation of callback");
+        Check::SaveTransformedMarker(announce.result.detailA.point, -5);
+        Check::SaveTransformedMarker(announce.result.detailB.point, -5);
+        Check::SaveTransformedMarker(expected, 2);
+        Check::SaveTransformed(bspline);
+        Check::SaveTransformed(tangentSegment);
+        };
+
+    struct TestCase
+        {
+        double bsplineTangencyFraction; // where the tangency occurs on the B-spline curve
+        double pointDelta0;              // initial max distance between known tangency and Newton-computed closest approach
+        double paramDelta0;              // initial max parametric distance between bsplineTangencyFraction and computed fraction
+        double approachDistance0;        // initial max close approach distance computed by Newton
+        DRange1d approachCountRange;
+        };
+    bvector<TestCase> testCases = {
+        {0.2, 1.0e-2, 1.0e-4, 1.0e-7, DRange1d::From(3, 5)}, // high order tangency at a B-spline curve local convexity
+        {0.5, 100, 1, 1.0e-12, DRange1d::From(15, 25)} // higher order tangency at B-spline curve inflection
+        };
+
+    for (auto const& data : testCases)
+        {
+        DPoint3d intersection;
+        DVec3d tangent;
+        bspline->FractionToPoint(intersection, tangent, data.bsplineTangencyFraction);
+        tangent.Normalize();
+
+        DPoint3d segStart = DPoint3d::FromSumOf(intersection, tangent, segLength);
+        DPoint3d segEnd = DPoint3d::FromSumOf(intersection, tangent, -segLength);
+        auto segment = DSegment3d::From(segStart, segEnd);
+        auto segmentPrim = ICurvePrimitive::CreateLine(segment);
+        auto bsplinePrim = ICurvePrimitive::CreateBsplineCurve(*bspline);
+
+        // default settings aren't great against a high-order tangency
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer());
+        checkAnnouncement(intersection, segment);
+        double pointDelta1 = announce.result.detailA.point.Distance(intersection);
+        double paramDelta1 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
+        double approachDistance1 = announce.result.detailA.a;
+        Check::True(pointDelta1 <= data.pointDelta0 || paramDelta1 <= data.paramDelta0 || approachDistance1 <= data.approachDistance0, "expect poor accuracy with default settings");
+        Check::Shift(120, 0, 0);
+        announce.Reset();
+
+        // using more seeds doesn't help
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer(), -DBL_MAX);
+        checkAnnouncement(intersection, segment);
+        double pointDelta2 = announce.result.detailA.point.Distance(intersection);
+        double paramDelta2 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
+        double approachDistance2 = announce.result.detailA.a;
+        Check::True(pointDelta2 <= pointDelta1 || paramDelta2 <= paramDelta1 || approachDistance2 <= approachDistance1, "expect improved accuracy with more iterations");
+        Check::Shift(120, 0, 0);
+        announce.Reset();
+
+        // increased iterations aren't much better
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer(), -DBL_MAX, nullptr, 50);
+        checkAnnouncement(intersection, segment);
+        double pointDelta3 = announce.result.detailA.point.Distance(intersection);
+        double paramDelta3 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
+        double approachDistance3 = announce.result.detailA.a;
+        Check::True(pointDelta3 <= pointDelta2 || paramDelta3 <= paramDelta2 || approachDistance3 <= approachDistance2, "expect improved accuracy with more iterations");
+        Check::Shift(120, 0, 0);
+        announce.Reset();
+
+        // increased strokes aren't much better either
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce.GetAnnouncer(), -DBL_MAX, strokeOptions.get(), 50);
+        checkAnnouncement(intersection, segment);
+        double pointDelta4 = announce.result.detailA.point.Distance(intersection);
+        double paramDelta4 = fabs(announce.result.detailA.fraction - data.bsplineTangencyFraction);
+        double approachDistance4 = announce.result.detailA.a;
+        Check::True(pointDelta4 <= pointDelta3 || paramDelta4 <= paramDelta3 || approachDistance4 <= approachDistance3, "expect improved accuracy with more strokes");
+        announce.Reset();
+
+        // find all approaches, verify clustering
+        CurveCurve::AnnounceCloseApproaches(*bsplinePrim, *segmentPrim, announce2.GetAnnouncer(), DBL_MAX, strokeOptions.get(), 50);
+        Check::True(data.approachCountRange.Contains(announce2.numInvocations), "expect de-duplicated approach count within expected range");
+        Check::Shift(120, 0, 0);
+        announce2.Reset();
+        }
+    Check::ClearGeometry ("bspcci.BsplineTangencyCloseApproach");
+    }
+
+TEST(bspcci, CloseApproachesNoDuplicates)
+    {
+    bvector<DPoint3d> polyA { DPoint3d::From(1, -1, 0), DPoint3d::From(5, 0, 0), DPoint3d::From(10, -1, 0) };
+    bvector<DPoint3d> polyB { DPoint3d::From(0, 2, 0), DPoint3d::From(5, 1, 0), DPoint3d::From(9, 3, 0) };
+    auto primA = ICurvePrimitive::CreateLineString(polyA);
+    auto primB = ICurvePrimitive::CreateLineString(polyB);
+    Check::SaveTransformed(*primA);
+    Check::SaveTransformed(*primB);
+
+    CurveVectorPtr pointsOnA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    CurveVectorPtr pointsOnB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+    // 4 equal solutions to the discrete problem are generated.
+    // No Newton is involved, so post-Newton clustering is expected to collapse the solutions to 1.
+    double maxDist = 2.0;
+    CurveCurve::CloseApproach(*pointsOnA, *pointsOnB, primA.get(), primB.get(), maxDist);
+
+    if (Check::Size(pointsOnA->size(), 1, "expect exactly one close approach"))
+        {
+        auto detailA = pointsOnA->front()->GetPartialCurveDetailCP();
+        auto detailB = pointsOnB->front()->GetPartialCurveDetailCP();
+        if (Check::True(detailA != nullptr && detailB != nullptr, "expect partial curves returned by close approach"))
+            {
+            Check::True(detailA->IsSingleFraction() && detailB->IsSingleFraction(), "expect single fraction partial curves");
+            DPoint3d ptA, ptB;
+            pointsOnA->front()->GetStartPoint(ptA);
+            pointsOnB->front()->GetStartPoint(ptB);
+            Check::SaveTransformed(DSegment3d::From(ptA, ptB));
+            }
+        }
+    Check::ClearGeometry ("bspcci.CloseApproachesNoDuplicates");
+    }

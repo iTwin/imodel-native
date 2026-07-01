@@ -218,7 +218,7 @@ MTG_MarkSet &nodesOnActiveFace
                 nextTheta = vertexExitAngle (pRG, nextNodeId);
 
                 if (   nodesOnActiveFace.IsNodeInSet (currNodeId)
-                    // && nodesOnActiveFace.IsNodeInSet (currNodeId) *** NEEDS WORK STATIC ANALYSIS - redundant code - what did we mean to test here in addition to nodesOnActiveFace.IsNodeInSet?
+                    && nodesOnActiveFace.IsNodeInSet (nextNodeId)
                     && Angle::InSweepAllowPeriodShift (nextTheta, currTheta - s_halfAngle, sweep))
                     {
                     MTGNodeId backNodeId = jmdlMTGGraph_getVPred (pGraph, currNodeId);

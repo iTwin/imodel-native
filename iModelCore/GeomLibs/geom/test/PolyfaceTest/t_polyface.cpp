@@ -4568,40 +4568,41 @@ TEST (PolyfaceQuery, FacetOrientation)
     Check::ClearGeometry("PolyfaceQuery.FacetOrientation");
     }
 
-// lexicographical order, with slop for equality
-static bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, double y1, double z1, double tol = DoubleOps::SmallMetricDistance())
-    {
-    if (DoubleOps::WithinTolerance(x0, x1, tol) && DoubleOps::WithinTolerance(y0, y1, tol) && DoubleOps::WithinTolerance(z0, z1, tol))
-        return false;
-    if (!DoubleOps::WithinTolerance(x0, x1, tol))
-        {
-        if (x0 < x1)
-            return true;
-        if (x0 > x1)
-            return false;
-        }
-    if (!DoubleOps::WithinTolerance(y0, y1, tol))
-        {
-        if (y0 < y1)
-            return true;
-        if (y0 > y1)
-            return false;
-        }
-    if (!DoubleOps::WithinTolerance(z0, z1, tol))
-        {
-        if (z0 < z1)
-            return true;
-        if (z0 > z1)
-            return false;
-        }
-    return false;
-    }
-
+// A "less" operator for 3D points, with coordinate tolerance
 struct ComparePoints
     {
+    double m_tol;
+
+    ComparePoints(double tolerance = DoubleOps::SmallMetricDistance()) : m_tol(tolerance) {}
+
+    // lexicographical order, with slop for equality
+    bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, double y1, double z1, double tol) const
+        {
+        bool xEqual = DoubleOps::WithinTolerance(x0, x1, tol);
+        bool yEqual = DoubleOps::WithinTolerance(y0, y1, tol);
+        bool zEqual = DoubleOps::WithinTolerance(z0, z1, tol);
+        if (xEqual && yEqual && zEqual)
+            return false;
+        if (!xEqual)
+            {
+            if (x0 < x1)
+                return true;
+            if (x0 > x1)
+                return false;
+            }
+        if (!yEqual)
+            {
+            if (y0 < y1)
+                return true;
+            if (y0 > y1)
+                return false;
+            }
+        return z0 < z1;
+        }
+
     bool operator() (DPoint3dCR v0, DPoint3dCR v1) const
         {
-        return lexicalXYZLessThanTol(v0.x, v0.y, v0.z, v1.x, v1.y, v1.z);
+        return lexicalXYZLessThanTol(v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, m_tol);
         }
     };
 

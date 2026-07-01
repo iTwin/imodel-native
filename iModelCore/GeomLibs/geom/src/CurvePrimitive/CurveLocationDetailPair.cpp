@@ -61,6 +61,16 @@ CurveLocationDetailPair::CurveLocationDetailPair(ICurvePrimitiveCP curve,
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 CurveLocationDetailPair::CurveLocationDetailPair(
+    ICurvePrimitiveCP curve0, double fraction0, DPoint3dCR point0,
+    ICurvePrimitiveCP curve1, double fraction1, DPoint3dCR point1)
+    : detailA (curve0, fraction0, point0), detailB (curve1, fraction1, point1)
+    {}
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+CurveLocationDetailPair::CurveLocationDetailPair(
     ICurvePrimitiveCP curve0, double a0,
     ICurvePrimitiveCP curve1, double a1
     )
@@ -109,6 +119,13 @@ DSegment3d CurveLocationDetailPair::GetDSegment3d () const
     segment.point[0] = detailA.point;
     segment.point[1] = detailB.point;
     return segment;
+    }
+
+void CurveLocationDetailPair::SwapDetails()
+    {
+    auto q = detailA;
+    detailA = detailB;
+    detailB = q;
     }
 
 double CurveLocationDetailPair::DistanceSquared () const
