@@ -10,7 +10,9 @@
 
     <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
     <Part Name="__PublicAPI" BentleyBuildMakeFile="BeOpenSSL.prewire.mke">
-        <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg"/>
+        <!-- The chain runs static-only; force Static here too so the prewire never triggers a
+            concurrent dynamic chain run, regardless of how __PublicAPI is reached. -->
+        <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <VendorAPI Domain="openssl" />
             <VendorNotices>Delivery/openssl-license.txt</VendorNotices>
