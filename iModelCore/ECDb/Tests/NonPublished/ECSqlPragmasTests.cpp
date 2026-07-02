@@ -603,6 +603,7 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
         }
     }
 
+// TODO Rohit: Revert these before final commit
 // //---------------------------------------------------------------------------------------
 // // @bsimethod
 // //+---------------+---------------+---------------+---------------+---------------+------
@@ -862,5 +863,69 @@ TEST_F(ECSqlPragmasTestFixture, sqlite_sql)
 
 //     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 // }
+
+//---------------------------------------------------------------------------------------
+// PRAGMA ecdb_known_features must return one row per registered known feature with
+// correct FeatureName and FeatureDescription columns (currently empty until the first feature)
+// TODO: This test should be kept updated when the first feature is added for each compat mode.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlPragmasTestFixture, PragmaKnownFeatures_ReturnsRegistry)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_known_features.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_known_features")) << "PRAGMA ecdb_known_features must prepare successfully";
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
+    EXPECT_EQ(3, stmt.GetColumnCount()) << "PRAGMA ecdb_known_features must return 3 columns";
+    EXPECT_STREQ("FeatureName", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_STREQ("FeatureDescription", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+    EXPECT_STREQ("FeatureCompatibility", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// PRAGMA ecdb_used_features must return one row per feature present in the ec_Feature
+// table, with correct FeatureName, FeatureDescription, and FeatureCompatibility columns.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlPragmasTestFixture, PragmaUsedFeatures_ReturnsTableContents)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_used_features.ecdb"));
+
+    std::vector<std::tuple<Utf8CP, Utf8CP, Utf8CP>> features = {
+        { "used-warn-feature-test", "A used warn Feature", "Warn" },
+        { "used-readOnly-feature-test", "A used readonly Feature", "ReadOnly" },
+        { "used-noImport-feature-test", "A used noImport Feature", "NoSchemaImport" },
+        { "used-refuse-feature-test", "A used refuse Feature", "Refuse" },
+    };
+
+    for (const auto& [featureName, featureDescription, featureCompat] : features)
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("INSERT INTO ec_Feature(Name, Description, Compat) VALUES ('%s', '%s', '%s')", featureName, featureDescription, featureCompat).GetUtf8CP()));
+
+    m_ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features")) << "PRAGMA ecdb_used_features must prepare successfully";
+
+    for (auto i = 0; i < features.size(); ++i)
+        {
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+
+        const auto [featureName, featureDescription, featureCompat] = features[i];
+        
+        EXPECT_EQ(3, stmt.GetColumnCount()) << "PRAGMA ecdb_known_features must return 3 columns";
+        EXPECT_STREQ("FeatureName", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(featureName, stmt.GetValueText(0)) << "FeatureName column must match the inserted row";
+
+        EXPECT_STREQ("FeatureDescription", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(featureDescription, stmt.GetValueText(1)) << "FeatureDescription column must match the inserted row";
+
+        EXPECT_STREQ("FeatureCompatibility", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(featureCompat, stmt.GetValueText(2)) << "FeatureCompatibility column must match the inserted Compat value";
+        }
+
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
 
 END_ECDBUNITTESTS_NAMESPACE
