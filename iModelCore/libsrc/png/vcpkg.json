@@ -1,0 +1,14 @@
+{
+  "name": "imodel-native-png",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "libpng",
+      "version>=": "1.6.58"
+    }
+  ],
+  "overrides": [
+    { "name": "libpng", "version": "1.6.58" },
+    { "name": "zlib", "version": "1.3.2" }
+  ]
+}

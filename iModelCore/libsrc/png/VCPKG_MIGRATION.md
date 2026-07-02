@@ -39,7 +39,12 @@ See the shared guide in [`../VCPKG.md`](../VCPKG.md) and the agent skill
 
 ---
 
-## Step 1 — 🔲 Add the vcpkg manifest
+## Step 1 — ✅ Add the vcpkg manifest
+
+> **Done.** Created [`vcpkg.json`](vcpkg.json) and [`vcpkg-configuration.json`](vcpkg-configuration.json).
+> libpng **1.6.58** is confirmed available at the pinned baseline `81de6771…` (verified against
+> the registry `versions/l-/libpng.json`), so no baseline bump and no overlay port were needed.
+> The `zlib` override (`1.3.2`, matching `compress`) was included.
 
 Create, in this folder (mirroring [`../compress/`](../compress)):
 
@@ -68,15 +73,24 @@ Create, in this folder (mirroring [`../compress/`](../compress)):
   (each manifest dir needs its own copy even though they are identical). It pins the registry
   `baseline` commit.
 
-  > **Baseline / version availability check:** confirm the registry at the `compress` baseline
-  > commit (`81de6771512413aaf89ea77add5ad1fda126b9d0`) actually packages libpng **1.6.58**.
-  > If it only has an older 1.6.x, either (a) bump `baseline` to a newer registry commit that
-  > has 1.6.58 (and re-verify the other libs still resolve), or (b) as a last resort follow the
-  > OpenSSL precedent and add a thin `overlay-ports/libpng/` that pins 1.6.58. Prefer (a).
+  > **Baseline / version availability check:** ✅ confirmed — the registry at the `compress`
+  > baseline commit (`81de6771512413aaf89ea77add5ad1fda126b9d0`) packages libpng **1.6.58**
+  > (it is the newest entry in `versions/l-/libpng.json` at that commit). No baseline bump and
+  > no `overlay-ports/libpng/` were required.
 
 ---
 
-## Step 2 — 🔲 Add overlay triplets  (static lib, dynamic CRT on Windows)
+## Step 2 — ✅ Add overlay triplets  (static lib, dynamic CRT on Windows)
+
+> **Done.** Created [`triplets/`](triplets) with six files —
+> [`x64-windows-static.cmake`](triplets/x64-windows-static.cmake),
+> [`arm64-osx.cmake`](triplets/arm64-osx.cmake), [`arm64-ios.cmake`](triplets/arm64-ios.cmake),
+> [`x64-linux.cmake`](triplets/x64-linux.cmake), [`arm64-android.cmake`](triplets/arm64-android.cmake),
+> [`x64-android.cmake`](triplets/x64-android.cmake). Each sets `VCPKG_LIBRARY_LINKAGE static`
+> (+ `VCPKG_CRT_LINKAGE dynamic` on Windows) and the platform/system settings mirrored from
+> `compress`, but omits the minizip-only `NOCRYPT`/`NOUNCRYPT` defines and the `/RTC` debug
+> flags. Because no triplet sets any `-RTC` flag, **no veracode overlay triplet is needed** and
+> `vcpkgUseVeracodeTriplet` must stay undefined (Steps 3 & 5).
 
 Create `triplets/` mirroring [`../compress/triplets/`](../compress/triplets), but **simplified**:
 
