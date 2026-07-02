@@ -6878,11 +6878,13 @@ bool GeometryBuilder::FromJson(BeJsConst input)
                 styleParams.modifiers |= STYLEMOD_RMATRIX;
                 }
 
-            DgnStyleId      styleId;
-            LineStyleInfoCP currentLsInfo = params.GetLineStyle();
-
-            if (nullptr != currentLsInfo)
-                styleId = currentLsInfo->GetStyleId();
+            DgnStyleId styleId;
+            if (!params.IsLineStyleFromSubCategoryAppearance())
+                {
+                LineStyleInfoCP currentLsInfo = params.GetLineStyle();
+                if (nullptr != currentLsInfo)
+                    styleId = currentLsInfo->GetStyleId();
+                }
 
             LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, &styleParams);
             params.SetLineStyle(lsInfo.get());
