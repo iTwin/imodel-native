@@ -145,6 +145,64 @@ bb -s "imodel-native-internal:build/strategies/iModelJsNodeAddon" \
 
 ---
 
+## Running Unit Tests
+
+Unit tests use Google Test (gtest). Each module has test parts with `DeferType="BuildUnitTests"` or `DeferType="RunUnitTests"` — these are NOT built by default strategies.
+
+### Build and run tests for a module
+
+```bash
+# Full form: build and run
+bb -r <repo> -f <PartFile> -p RunGtest build
+
+# Examples:
+bb -r imodel-native -f iModelCore/iModelPlatform/iModelPlatform -p RunGtest build
+bb -r imodel-native-internal -f iModelCore/Visualization/Visualization -p RunGtest build
+bb -r imodel-native -f iModelCore/ECDb/ECDb -p RunGtest build
+bb -r imodel-native -f iModelCore/GeoCoord/GeoCoord -p RunGtest build
+```
+
+### Shorthand: `bb re`
+
+The `re` (rebuild) action supports a `partfile:partname` shorthand:
+
+```bash
+# Rebuild just the test binary (no SubParts)
+bb re dgnplatform:unittests-nonpublished
+
+# Rebuild and package the gtest runner
+bb re dgnplatform:gtest
+```
+
+### Filtering tests
+
+Set `GTEST_FILTER` before running, or pass `--gtest_filter` to the test executable directly:
+
+```bash
+# Via environment variable (affects bb RunGtest)
+set GTEST_FILTER=ContentIdQualifierTests.ProducesConsistentProjectExtentsHash
+
+# Or run the test executable directly after building
+dgnplatformtest --gtest_filter=GeometryClipper*
+VisualizationTest --gtest_filter=ContentIdQualifier*
+```
+
+Test executables are output to the gtest product directory under `$(OutRoot)`.
+
+### Common test part names
+
+| Module | PartFile | Build Part | Run Part |
+|--------|----------|------------|----------|
+| DgnPlatform | `iModelCore/iModelPlatform/iModelPlatform` | `Gtest` | `RunGtest` |
+| ECDb | `iModelCore/ECDb/ECDb` | `Gtest` | `RunGtest` |
+| GeoCoord | `iModelCore/GeoCoord/GeoCoord` | `Gtest` | `RunGtest` |
+| Visualization | `iModelCore/Visualization/Visualization` (internal) | `Gtest` | `RunGtest` |
+
+> **Tip:** To find test part names for any module, grep the PartFile:
+> `grep -i "gtest\|unittest" <path>.PartFile.xml`
+
+---
+
 ## Part Files (.PartFile.xml)
 
 ### Key PartFile locations (relative to `src/imodel-native/`)

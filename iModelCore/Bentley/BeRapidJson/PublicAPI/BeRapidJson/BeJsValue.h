@@ -34,6 +34,64 @@ struct BeJsConst;
 enum StringifyFormat {
     Default,
     Indented,
+    Precision17, //!< Format doubles with sprintf "%#.17g" (same as jsoncpp). Use when output string must be byte-identical to legacy jsoncpp serialization.
+};
+
+//=======================================================================================
+//! A custom RapidJSON writer that formats doubles using sprintf "%#.17g" with trailing
+//! zero cleanup, producing output byte-identical to jsoncpp's valueToString(double).
+//! This is necessary for backward compatibility where JSON string hashes must not change.
+// @bsiclass
+//=======================================================================================
+template<typename OutputStream>
+class JsonCppCompatWriter : public rapidjson::Writer<OutputStream> {
+    using Base = rapidjson::Writer<OutputStream>;
+public:
+    explicit JsonCppCompatWriter(OutputStream& os) : Base(os) {}
+
+    bool Double(double d) {
+        this->Prefix(rapidjson::kNumberType);
+        if (std::isnan(d) || std::isinf(d)) {
+            // Match jsoncpp: NaN/Inf → "null"
+            rapidjson::PutReserve(*this->os_, 4);
+            rapidjson::PutUnsafe(*this->os_, 'n');
+            rapidjson::PutUnsafe(*this->os_, 'u');
+            rapidjson::PutUnsafe(*this->os_, 'l');
+            rapidjson::PutUnsafe(*this->os_, 'l');
+            return this->EndValue(true);
+        }
+
+        char buffer[40];
+        snprintf(buffer, sizeof(buffer), "%#.17g", d);
+
+        // Trailing zero cleanup matching jsoncpp behavior exactly:
+        char* ch = buffer + strlen(buffer) - 1;
+        // If last char is '.', append '0' (e.g. "1." → "1.0")
+        if (*ch == '.') {
+            *(ch + 1) = '0';
+            *(ch + 2) = '\0';
+        } else if (*ch == '0') {
+            // Truncate trailing zeros after decimal point, keeping at least one
+            while (ch > buffer && *ch == '0')
+                --ch;
+            char* last_nonzero = ch;
+            while (ch >= buffer) {
+                if (*ch == '.') {
+                    *(last_nonzero + 2) = '\0';
+                    break;
+                } else if (*ch >= '0' && *ch <= '9') {
+                    --ch;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        rapidjson::PutReserve(*this->os_, 40);
+        for (char* p = buffer; *p; ++p)
+            rapidjson::PutUnsafe(*this->os_, static_cast<typename OutputStream::Ch>(*p));
+        return this->EndValue(true);
+    }
 };
 //=======================================================================================
 // @internal
@@ -902,6 +960,9 @@ private:
             rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
             writer.SetIndent(' ', 3);
             m_value->Accept(writer);
+        } else if (format == StringifyFormat::Precision17) {
+            JsonCppCompatWriter<rapidjson::StringBuffer> writer(buffer);
+            m_value->Accept(writer);
         } else {
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
             m_value->Accept(writer);
@@ -955,6 +1016,11 @@ public:
     void Parse(Utf8CP jsonString) { m_doc.Parse(jsonString); }
     // replace the content of this document with the parsed value of stringified JSON
     void Parse(std::string const& jsonString) { Parse(jsonString.c_str()); }
+    // Parse with full-precision (strtod-equivalent) double conversion. Slower than Parse() but
+    // guarantees correctly-rounded IEEE 754 doubles, matching jsoncpp's parser. Use when parsed
+    // double values must be bit-identical to jsoncpp-parsed results (e.g. for hashing raw bytes).
+    void ParseFullPrecision(Utf8CP jsonString) { m_doc.Parse<rapidjson::kParseFullPrecisionFlag>(jsonString); }
+    void ParseFullPrecision(std::string const& jsonString) { ParseFullPrecision(jsonString.c_str()); }
 
     bool hasParseError() { return m_doc.HasParseError(); }
     void PurgeNulls() { PurgeNulls(m_doc); }

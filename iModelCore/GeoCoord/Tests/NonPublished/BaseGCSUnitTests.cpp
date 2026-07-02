@@ -3041,9 +3041,10 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoid_Test)
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — RapidJSON's number parser may produce slightly different doubles than
-    // strtod() for values exceeding double precision, causing exact equality comparisons against C++ literals to fail.
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum3), errorMessage));
+    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
+    BeJsDocument parsedDatum;
+    parsedDatum.ParseFullPrecision(customDatum3);
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
     EXPECT_TRUE(Utf8String(theDatum->GetName()) == "CustomDatum3");
@@ -3132,8 +3133,10 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
+    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
+    BeJsDocument parsedDatum;
+    parsedDatum.ParseFullPrecision(customDatum4);
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
 
@@ -3225,8 +3228,10 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum4), errorMessage));
+    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
+    BeJsDocument parsedDatum;
+    parsedDatum.ParseFullPrecision(customDatum4);
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
 
@@ -3318,8 +3323,10 @@ TEST_F(BaseGCSUnitTests, CreateAFullySelfContainedDatumWithCustomEllipsoidButFil
     GeoCoordinates::DatumP theDatum = const_cast<GeoCoordinates::DatumP>(GeoCoordinates::Datum::CreateDatum());
 
     Utf8String errorMessage;
-    // DO NOT CHANGE TO BeJsDocument — see comment in CreateAFullySelfContainedDatumWithCustomEllipsoid_Test
-    ASSERT_TRUE(SUCCESS == theDatum->FromJson(Json::Value::From(customDatum5), errorMessage));
+    // ParseFullPrecision uses strtod-equivalent parsing to match jsoncpp behavior for exact double equality.
+    BeJsDocument parsedDatum;
+    parsedDatum.ParseFullPrecision(customDatum5);
+    ASSERT_TRUE(SUCCESS == theDatum->FromJson(parsedDatum, errorMessage));
     Utf8String source;
 
     EXPECT_TRUE(Utf8String(theDatum->GetName()) == "CustomDatum5");
