@@ -11,8 +11,6 @@ appName             = BePng
 pngDir              = $(_MakeFilePath)
 libsrcDir           = $(pngDir)../
 
-o                   = $(OutputRootDir)build/$(appName)/
-
 #--------------------------------------------------------------------------------------
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
 #--------------------------------------------------------------------------------------
@@ -34,13 +32,6 @@ vcpkgLibDir         = $(vcpkgTripletDir)lib/
 vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 
 #--------------------------------------------------------------------------------------
-#   vcpkg install is performed by the vcpkg_install_png part (vcpkg.PartFile.xml)
-#   before this mke runs. Nothing to do here; just ensure the output directory exists.
-#--------------------------------------------------------------------------------------
-always:
-    !~@mkdir $(o)
-
-#--------------------------------------------------------------------------------------
 #   Deliver headers to VendorAPI
 #   Downstream code uses #include <png/png.h>. vcpkg installs the public libpng headers
 #   (png.h, pngconf.h, pnglibconf.h) into include/; png.h pulls in the other two by
@@ -54,10 +45,11 @@ always:
 #--------------------------------------------------------------------------------------
 #   Deliver the static library (BePng = libpng)
 #   vcpkg builds a single archive named libpng16 (release) / libpng16d (debug); the file
-#   literally begins with "lib" on every platform (libpng16.a / libpng16.lib). Re-archive
-#   it under our BePng name so the delivered name is unchanged.
+#   literally begins with "lib" on every platform (libpng16.a / libpng16.lib). Since there is
+#   only one input archive there is nothing to merge, so deliver it directly under our BePng
+#   name (same approach BeZlib uses to deliver its merged output and licenses from the vcpkg
+#   tree).
 #--------------------------------------------------------------------------------------
-BePngOut = $(o)$(stlibprefix)$(appName)$(stlibext)
 %if defined (DEBUG)
     vcpkgPng = $(vcpkgDbgLibDir)libpng16d$(stlibext)
 %else
@@ -65,16 +57,7 @@ BePngOut = $(o)$(stlibprefix)$(appName)$(stlibext)
 %endif
 
 always:
-%if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
-    libtool -static -o $(BePngOut) $(vcpkgPng)
-%elif $(TARGET_PLATFORM) == "Android"
-    $(BENTLEY_ANDROID_TOOLCHAIN_ar) qcL $(BePngOut) $(vcpkgPng)
-%elif $(TARGET_PLATFORM) == "Linux"
-    $(libsrcDir)merge_static_libs.sh $(BePngOut) $(vcpkgPng)
-%elif $(TARGET_PLATFORM) == "Windows"
-    lib "-OUT:$(BePngOut)" "$(vcpkgPng)"
-%endif
-    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(BePngOut)"
+    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(vcpkgPng)"
 
 #--------------------------------------------------------------------------------------
 #   Deliver license file from vcpkg

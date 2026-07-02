@@ -200,6 +200,13 @@ update the chain description in [`../VCPKG.md`](../VCPKG.md) ("How It Works" men
 > Also dropped the VS2012 (`VC_Version`) handling from this makefile; the legacy `png_VS2012`
 > part is addressed separately in Step 6.
 >
+> **Build-verified correction (Linux x64):** the initial mke re-archived the single vcpkg lib
+> into `BePng` using the per-platform merge tools, but `merge_static_libs.sh` requires **two or
+> more** input archives and failed on Linux with a usage error. Since png produces exactly one
+> vcpkg archive there is nothing to merge, so the mke now delivers it directly under the `BePng`
+> name via `~linkfile` (`Delivery/$(stlibprefix)BePng$(stlibext)=$(vcpkgPng)`), dropping all the
+> platform-specific archive tooling and the unused intermediate output dir.
+>
 > **Build-verified correction (macOS arm64):** although png delivers only a static lib, the
 > `pnglib` part can be built in a *dynamic* context (e.g. requested directly under the
 > `iModelJsNodeAddon` strategy). The install chain always runs static-only, so the packages
