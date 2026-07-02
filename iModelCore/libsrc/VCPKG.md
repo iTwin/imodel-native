@@ -17,9 +17,17 @@ To add a new library:
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
 3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml) at the end of the chain, with `<SubPart PartName="vcpkg_install_<previous>"/>` to preserve sequential ordering.
+4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml) at the end of the chain, with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
 5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
-6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3.
+6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
+
+   ```makefile
+   %if defined (CREATE_STATIC_LIBRARIES)
+   vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/mylib/
+   %else
+   vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/mylib/
+   %endif
+   ```
 
 Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 

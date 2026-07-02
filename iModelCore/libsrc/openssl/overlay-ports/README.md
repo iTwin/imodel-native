@@ -13,8 +13,10 @@ The version pinned is **3.6.3**, which the vcpkg registry now packages natively.
 every other file in `openssl/` (portfile, registry patches, helper scripts, `vcpkg.json`) is a
 verbatim copy of the registry's 3.6.3 `ports/openssl`; only the two Bentley patches above and
 their two lines in `portfile.cmake`'s `PATCHES` list are our additions. To re-sync after a future
-registry bump, overwrite these files from `microsoft/vcpkg`'s `ports/openssl` and re-append the
-two Bentley patch lines.
+registry bump, overwrite these files from `microsoft/vcpkg`'s `ports/openssl`, re-append the
+two Bentley patch lines, and update the `"baseline"` in [`../vcpkg-configuration.json`](../vcpkg-configuration.json)
+to the registry commit that includes the new version. Without the baseline bump, vcpkg resolves
+the old baseline and may reject the new port version or pull the wrong transitive dependencies.
 
 All patches in the `PATCHES` list (the ten carried over from the registry's 3.6.3 port plus the
 two Bentley patches above) have been verified to apply cleanly to fresh 3.6.3 source with
