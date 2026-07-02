@@ -1163,8 +1163,11 @@ std::string QueryHelper::FormatQuery(const char* query) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void QueryHelper::BindLimits(ECSqlStatement& stmt, QueryLimit const& limit) {
-    const auto idxCount = stmt.GetParameterIndex(LIMIT_VAR_COUNT);
-    const auto idxOffset = stmt.GetParameterIndex(LIMIT_VAR_OFFSET);
+    // A PRAGMA (or any statement FormatQuery left unwrapped) has no LIMIT/OFFSET parameters. Use the
+    // non-logging TryGetParameterIndex so probing for their absence does not emit "No
+    // parameter index found" errors - GetParameterIndex would log one per missing parameter.
+    const auto idxCount = stmt.TryGetParameterIndex(LIMIT_VAR_COUNT);
+    const auto idxOffset = stmt.TryGetParameterIndex(LIMIT_VAR_OFFSET);
     if (idxCount < 0 || idxOffset < 0)
         return; // PRAGMA or other statement without LIMIT/OFFSET parameters
     stmt.BindInt64(idxCount, limit.GetCount());
