@@ -1,0 +1,25 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_compress.mke - Run vcpkg install for the compress manifest (zlib + minizip).
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+compressDir = $(_MakeFilePath)compress/
+installRoot = $(OutputRootDir)vcpkg_installed/compress/
+
+# This library's base triplet sets explicit -RTC flags, so use the veracode overlay
+# triplet (which omits them) for veracode builds.
+vcpkgUseVeracodeTriplet = 1
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    $(_MakeFilePath)vcpkg_run_install.bat $(compressDir) $(installRoot) $(vcpkgTriplet)
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(compressDir) $(installRoot) $(vcpkgTriplet)
+%endif

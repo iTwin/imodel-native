@@ -66,7 +66,7 @@ fi
 if [ -n "$IMODEL_VCPKG_ROOT" ]; then
     VCPKG_ROOT="$IMODEL_VCPKG_ROOT"
 elif [ -z "$VCPKG_ROOT" ]; then
-    VCPKG_ROOT="$SrcRoot/vcpkg"
+    VCPKG_ROOT="${SrcRoot}vcpkg"
 fi
 
 # Use a persistent local binary cache by default to avoid rebuilding heavy ports
@@ -91,7 +91,16 @@ fi
 # Use custom overlay triplets from the manifest directory (if present) for build flags
 OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 
+# Use a per-install-root downloads directory so parallel builds for different
+# triplets (e.g. arm64-android and x64-android) each get their own
+# downloads/tools tree and cannot race on tool extraction (e.g. MSYS2 on Windows,
+# or any vcpkg_find_acquire_program downloads on macOS/Linux).
+# The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared.
+DOWNLOADS_ROOT="$INSTALL_ROOT/downloads"
+mkdir -p "$DOWNLOADS_ROOT"
+
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"
+echo "vcpkg: downloads=$DOWNLOADS_ROOT"
 echo "vcpkg: binary-cache=$VCPKG_DEFAULT_BINARY_CACHE"
 echo "vcpkg: binary-sources=$VCPKG_BINARY_SOURCES"
 
@@ -102,6 +111,7 @@ fi
 
 "$VCPKG_EXE" install \
     --triplet "$TRIPLET" \
+    --downloads-root="$DOWNLOADS_ROOT" \
     --x-install-root="$INSTALL_ROOT" \
     --x-manifest-root="$MANIFEST_DIR" \
     --x-buildtrees-root="$INSTALL_ROOT/buildtrees" \

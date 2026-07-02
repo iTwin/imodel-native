@@ -1,0 +1,21 @@
+Bentley: Android certificate-hash compatibility.
+
+On Android we must use the legacy X509_NAME_hash_old() so that V2 checkpoints can be
+downloaded (see iModelCore/libsrc/openssl/READ_BEFORE_UPDATING_CODE.md). Guarded by
+__ANDROID__ so all other platforms keep the default behavior.
+
+--- a/crypto/x509/by_dir.c
++++ b/crypto/x509/by_dir.c
+@@ -257,7 +257,11 @@ static int get_cert_by_subject_ex(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
+     }
+ 
+     ctx = (BY_DIR *)xl->method_data;
+-    h = X509_NAME_hash_ex(name, libctx, propq, &i);
++#if defined(__ANDROID__)
++    h = X509_NAME_hash_old(name);
++#else
++    h = X509_NAME_hash_ex(name, libctx, propq, &i);
++#endif
+     if (i == 0)
+         goto finish;
+     for (i = 0; i < sk_BY_DIR_ENTRY_num(ctx->dirs); i++) {
