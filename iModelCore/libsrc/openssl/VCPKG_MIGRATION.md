@@ -113,8 +113,7 @@ with OpenSSL's stock exports and no `BSIVer` section, instead of our single `iTw
 > (`SHA512 243e250e…79a84`). Our two patches — `android-by_dir.patch` and
 > `bsiver-version-string.patch` — are appended to the `PATCHES` list. All 11 patches (the 9
 > carried from 3.4.1 plus our 2) were verified to apply cleanly to fresh 3.4.6 source with both
-> `patch -p1 --dry-run` and `git apply --check`. The port has **not** yet been driven through a
-> real `vcpkg install` (no build consumes it until Step 6).
+> `patch -p1 --dry-run` and `git apply --check`.
 
 We need a thin overlay port so that our source patches are applied during the vcpkg build.
 Copy the upstream `openssl` port into an `overlay-ports/openssl/` directory under this folder

@@ -141,8 +141,6 @@ Install the following prerequisites **before running vcpkg**:
    "%USERPROFILE%\src\vcpkg\vcpkg.exe" version
    ```
 
-   With CMake installed and 7-Zip and PowerShell Core manually installed in `downloads/tools/`, vcpkg should now be ready to build zlib and minizip without downloading tools during the build.
-
 #### Windows vcpkg selection order used by the wrapper
 
 `vcpkg_run_install.bat` resolves roots in this order:

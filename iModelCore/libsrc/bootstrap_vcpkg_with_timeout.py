@@ -59,6 +59,10 @@ def main():
 
     stamp_path = os.path.join(vcpkg_dir, STAMP_FILENAME)
     current_hash = get_vcpkg_hash(vcpkg_dir)
+    if not current_hash:
+        print("Warning: could not determine vcpkg commit hash for {}; "
+              "bootstrap skip optimization is disabled and bootstrap will run every time.".format(vcpkg_dir),
+              file=sys.stderr)
 
     # Skip bootstrap if we already succeeded for this exact vcpkg commit and the
     # vcpkg executable is still present.

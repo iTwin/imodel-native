@@ -24,6 +24,9 @@
         <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
     </Part>
     <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_openssl" LibType="Static"/>
     </Part>
 
