@@ -119,7 +119,13 @@ our overlay).
 
 ---
 
-## Step 3 — 🔲 Add `vcpkg_install_png.mke`
+## Step 3 — ✅ Add `vcpkg_install_png.mke`
+
+> **Done.** Created [`../vcpkg_install_png.mke`](../vcpkg_install_png.mke), mirroring
+> [`../vcpkg_install_compress.mke`](../vcpkg_install_compress.mke) but **without**
+> `vcpkgUseVeracodeTriplet` (the png triplets set no `-RTC` flags). It installs the png manifest
+> into `$(OutputRootDir)vcpkg_installed/png/`; `vcpkg_run_install.{bat,sh}` auto-passes
+> `--overlay-triplets=$(pngDir)triplets` because that directory exists.
 
 Create `iModelCore/libsrc/vcpkg_install_png.mke` next to the other `vcpkg_install_*.mke`
 files, mirroring [`../vcpkg_install_compress.mke`](../vcpkg_install_compress.mke) but **without**
@@ -146,7 +152,14 @@ that directory exists.
 
 ---
 
-## Step 4 — 🔲 Extend the sequential install chain
+## Step 4 — ✅ Extend the sequential install chain
+
+> **Done.** Inserted `vcpkg_install_png` into the chain in
+> [`../vcpkg.PartFile.xml`](../vcpkg.PartFile.xml) **after compress and before openssl** with
+> `<SubPart PartName="vcpkg_install_compress" LibType="Static"/>` (and openssl now chains off
+> `vcpkg_install_png`), keeping it static-only. Updated the "How It Works" chain description
+> in [`../VCPKG.md`](../VCPKG.md) to `compress → png → openssl → crashpad` and added `png.mke`
+> to the consumer-mke list.
 
 In [`../vcpkg.PartFile.xml`](../vcpkg.PartFile.xml), append a new link at the **end** of the
 chain (after `vcpkg_install_crashpad`) so no two vcpkg processes ever run concurrently:
@@ -164,7 +177,39 @@ update the chain description in [`../VCPKG.md`](../VCPKG.md) ("How It Works" men
 
 ---
 
-## Step 5 — 🔲 Rewrite `png.mke`  (compress/Zlib.mke style, static-only)
+## Step 5 — ✅ Rewrite `png.mke`  (compress/Zlib.mke style, static-only)
+
+> **Done.** [`png.mke`](png.mke) rewritten as a thin static-only makefile modeled on
+> [`../compress/Zlib.mke`](../compress/Zlib.mke). Details confirmed against the libpng vcpkg
+> port (`ports/libpng/portfile.cmake`):
+> - **Lib name:** vcpkg produces a single archive whose file name literally starts with `lib`
+>   on every platform — `libpng16.a` / `libpng16.lib` (release) and `libpng16d.a` /
+>   `libpng16d.lib` (debug). The mke selects it with a `%if defined (DEBUG)` guard and
+>   re-archives it into `BePng` via the per-platform tool (`libtool` / `ar qcL` /
+>   `merge_static_libs.sh` / `lib -OUT`), so the delivered `$(stlibprefix)BePng$(stlibext)`
+>   name is unchanged.
+> - **Headers:** delivers the three public headers (`png.h`, `pngconf.h`, `pnglibconf.h`) from
+>   the vcpkg `include/` dir to `VendorAPI/png/`. The internal `pnginfo.h` / `pngstruct.h` are
+>   no longer delivered (vcpkg ships only public headers); the sole consumer `ImageSource.cpp`
+>   does not include them (still to be re-confirmed downstream in Step 8).
+> - **iOS NEON:** the old `PNG_ARM_NEON_OPT=0` workaround is dropped — the port already sets
+>   `-DPNG_HARDWARE_OPTIMIZATIONS=OFF` for iOS, so the previous `png_init_filter_functions_neon`
+>   link error cannot recur there.
+> - **License:** delivered from `share/libpng/copyright`.
+>
+> Also dropped the VS2012 (`VC_Version`) handling from this makefile; the legacy `png_VS2012`
+> part is addressed separately in Step 6.
+>
+> **Build-verified correction (macOS arm64):** although png delivers only a static lib, the
+> `pnglib` part can be built in a *dynamic* context (e.g. requested directly under the
+> `iModelJsNodeAddon` strategy). The install chain always runs static-only, so the packages
+> land under `.../static/vcpkg_installed/png/`. The `vcpkgInstallRoot` is therefore gated on
+> `CREATE_STATIC_LIBRARIES` (static builds use `$(OutputRootDir)vcpkg_installed/png/`; dynamic
+> builds redirect to `$(OutputRootDir)static/vcpkg_installed/png/`) — the same pattern the skill
+> prescribes. The first test build failed without this gate (`png.h ... desired target does not
+> exist`) because the dynamic `OutputRootDir` omits the `static/` segment. vcpkg confirmed
+> **libpng 1.6.58** builds with our overlay triplet, and the headers install directly to
+> `include/{png.h,pngconf.h,pnglibconf.h}` (release lib `lib/libpng16.a`).
 
 Replace the file-by-file compile makefile with a thin one modeled on
 [`../compress/Zlib.mke`](../compress/Zlib.mke). libpng is **static on all platforms**, so there
@@ -245,7 +290,21 @@ blocks (not dependency rules) so they run after the vcpkg install completed by t
 
 ---
 
-## Step 6 — 🔲 Update the PartFile
+## Step 6 — ✅ Update the PartFile
+
+> **Done.** Updated [`png.PartFile.xml`](png.PartFile.xml):
+> - `pnglib` now depends on `<SubPart PartName="vcpkg_install_png" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>`
+>   (chain runs first, static-only) and keeps the `Zlib` SubPart (supplies zlib symbols at the
+>   final link).
+> - Bindings switched to the vcpkg static-lib pattern used by `BeZlib`:
+>   `ProductDirectoryName="BeStaticLibDir" Required="false"`, with the debug variant marked
+>   `IfNotPresent="Continue"` (the mke delivers a single `$(stlibext)`-named archive, so the
+>   debug-suffixed binding must be optional). Verified iModelPlatform consumes `BePng` via
+>   `$(ContextSubPartsStaticLibs)` exactly like `BeZlib`, so `BeStaticLibDir` is correct.
+> - **Removed the `png_VS2012` part** — a grep confirmed no other part references it or
+>   `BePng_VC11`, and the rewritten `png.mke` no longer honors `BUILD_USING_VS2012`.
+> - `PngNuget` product unchanged. No explicit rebuild-input element needed (vcpkg's manifest
+>   hashing handles it), matching crashpad/compress.
 
 In [`png.PartFile.xml`](png.PartFile.xml):
 

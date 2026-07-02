@@ -2,104 +2,83 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+# png.mke - Build libpng via vcpkg, deliver as BePng.
+#---------------------------------------------------------------------------------------------
 
-# Ignore warnings in third-party code.
-IS_THIRD_PARTY_LIBRARY = 1
-
-%if defined(BUILD_USING_VS2012)
-    VS_Version=_VS2012
-    VC_Version=_VC11
-    OVERRIDE_DEFAULT_TOOLSET=VS2012
-%endif
 %include mdl.mki
 
-appName         = BePng$(VC_Version)
-CCompPDBName    = $(appName)
-pnglibSrcDir    = $(_MakeFilePath)vendor/
+appName             = BePng
+pngDir              = $(_MakeFilePath)
+libsrcDir           = $(pngDir)../
 
-o               = $(OutBuildDir)$(appName)/
+o                   = $(OutputRootDir)build/$(appName)/
 
-# Get link errors for png_init_filter_functions_neon on iOS, which as far as I can tell, is not defined anywhere in libpng source.
-# The old source we were using had no mention of neon, so until proven otherwise, I'm going to disable it.
-# I don't think it will be any worse than what we had.
-nameToDefine = PNG_ARM_NEON_OPT=0
-%include cdefapnd.mki
+#--------------------------------------------------------------------------------------
+#   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
+#--------------------------------------------------------------------------------------
+# This library's triplets set no explicit -RTC flags, so no veracode overlay triplet is
+# needed and vcpkgUseVeracodeTriplet is intentionally left undefined.
+%include $(libsrcDir)vcpkg.mki
 
-# Vendor API
-always:
-    ~linkfile "$(BuildContext)VendorAPI/png/png.h=$(pnglibSrcDir)png.h"
-    ~linkfile "$(BuildContext)VendorAPI/png/pngconf.h=$(pnglibSrcDir)pngconf.h"
-    ~linkfile "$(BuildContext)VendorAPI/png/pnginfo.h=$(pnglibSrcDir)pnginfo.h"
-    ~linkfile "$(BuildContext)VendorAPI/png/pnglibconf.h=$(pnglibSrcDir)pnglibconf.h"
-    ~linkfile "$(BuildContext)VendorAPI/png/pngstruct.h=$(pnglibSrcDir)pngstruct.h"
+# The vcpkg install chain always runs static-only, so the packages always live under the
+# static OutputRootDir. Static builds of this part share that root directly; dynamic builds
+# (whose OutputRootDir omits the "static/" segment) must redirect to the same static location.
+%if defined (CREATE_STATIC_LIBRARIES)
+vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/png/
+%else
+vcpkgInstallRoot    = $(OutputRootDir)static/vcpkg_installed/png/
+%endif
+vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir     = $(vcpkgTripletDir)include/
+vcpkgLibDir         = $(vcpkgTripletDir)lib/
+vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 
-#----------------------------------------------------------------------
-#       Create output directories
-#----------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+#   vcpkg install is performed by the vcpkg_install_png part (vcpkg.PartFile.xml)
+#   before this mke runs. Nothing to do here; just ensure the output directory exists.
+#--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
 
-#----------------------------------------------------------------------
-#       Build source files
-#----------------------------------------------------------------------
-MultiCompileDepends=$(_MakeFileSpec)
-%include MultiCppCompileRule.mki
+#--------------------------------------------------------------------------------------
+#   Deliver headers to VendorAPI
+#   Downstream code uses #include <png/png.h>. vcpkg installs the public libpng headers
+#   (png.h, pngconf.h, pnglibconf.h) into include/; png.h pulls in the other two by
+#   relative include, so co-locating all three under VendorAPI/png/ is sufficient.
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)VendorAPI/png/png.h=$(vcpkgIncludeDir)png.h"
+    ~linkfile "$(BuildContext)VendorAPI/png/pngconf.h=$(vcpkgIncludeDir)pngconf.h"
+    ~linkfile "$(BuildContext)VendorAPI/png/pnglibconf.h=$(vcpkgIncludeDir)pnglibconf.h"
 
-$(o)png$(oext) : $(pnglibSrcDir)png.c ${MultiCompileDepends}
+#--------------------------------------------------------------------------------------
+#   Deliver the static library (BePng = libpng)
+#   vcpkg builds a single archive named libpng16 (release) / libpng16d (debug); the file
+#   literally begins with "lib" on every platform (libpng16.a / libpng16.lib). Re-archive
+#   it under our BePng name so the delivered name is unchanged.
+#--------------------------------------------------------------------------------------
+BePngOut = $(o)$(stlibprefix)$(appName)$(stlibext)
+%if defined (DEBUG)
+    vcpkgPng = $(vcpkgDbgLibDir)libpng16d$(stlibext)
+%else
+    vcpkgPng = $(vcpkgLibDir)libpng16$(stlibext)
+%endif
 
-$(o)pngerror$(oext) : $(pnglibSrcDir)pngerror.c ${MultiCompileDepends}
+always:
+%if $(TARGET_PLATFORM) == "MacOS" || $(TARGET_PLATFORM) == "iOS"
+    libtool -static -o $(BePngOut) $(vcpkgPng)
+%elif $(TARGET_PLATFORM) == "Android"
+    $(BENTLEY_ANDROID_TOOLCHAIN_ar) qcL $(BePngOut) $(vcpkgPng)
+%elif $(TARGET_PLATFORM) == "Linux"
+    $(libsrcDir)merge_static_libs.sh $(BePngOut) $(vcpkgPng)
+%elif $(TARGET_PLATFORM) == "Windows"
+    lib "-OUT:$(BePngOut)" "$(vcpkgPng)"
+%endif
+    ~linkfile "$(BuildContext)Delivery/$(stlibprefix)$(appName)$(stlibext)=$(BePngOut)"
 
-$(o)pngget$(oext) : $(pnglibSrcDir)pngget.c ${MultiCompileDepends}
+#--------------------------------------------------------------------------------------
+#   Deliver license file from vcpkg
+#--------------------------------------------------------------------------------------
+always:
+    ~linkfile "$(BuildContext)Delivery/png-license.txt=$(vcpkgTripletDir)share/libpng/copyright"
 
-$(o)pngmem$(oext) : $(pnglibSrcDir)pngmem.c ${MultiCompileDepends}
-
-$(o)pngpread$(oext) : $(pnglibSrcDir)pngpread.c ${MultiCompileDepends}
-
-$(o)pngread$(oext) : $(pnglibSrcDir)pngread.c ${MultiCompileDepends}
-
-$(o)pngrio$(oext) : $(pnglibSrcDir)pngrio.c ${MultiCompileDepends}
-
-$(o)pngrtran$(oext) : $(pnglibSrcDir)pngrtran.c ${MultiCompileDepends}
-
-$(o)pngrutil$(oext) : $(pnglibSrcDir)pngrutil.c ${MultiCompileDepends}
-
-$(o)pngset$(oext) : $(pnglibSrcDir)pngset.c ${MultiCompileDepends}
-
-$(o)pngtrans$(oext) : $(pnglibSrcDir)pngtrans.c ${MultiCompileDepends}
-
-$(o)pngwio$(oext) : $(pnglibSrcDir)pngwio.c ${MultiCompileDepends}
-
-$(o)pngwrite$(oext) : $(pnglibSrcDir)pngwrite.c ${MultiCompileDepends}
-
-$(o)pngwtran$(oext) : $(pnglibSrcDir)pngwtran.c ${MultiCompileDepends}
-
-$(o)pngwutil$(oext) : $(pnglibSrcDir)pngwutil.c ${MultiCompileDepends}
-
-#
-# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
-# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
-# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
-#
-%include MultiCppCompileGo.mki
-
-#----------------------------------------------------------------------
-#       Lib creation
-#----------------------------------------------------------------------
-DLM_NAME                    = $(appName)
-DLM_OBJECT_FILES            = $(MultiCompileObjectList)
-DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
-DLM_OBJECT_DEST             = $(o)
-DLM_DEST                    = $(o)
-DLM_EXPORT_DEST             = $(o)
-DLM_NOENTRY                 = 1
-DLM_NO_BENTLEY_LIB          = 1
-DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
-DLM_CREATE_LIB_CONTEXT_LINK = 1
-CREATE_STATIC_LIBRARIES     = 1
-
-%include $(sharedMki)linkLibrary.mki
-
-$(BuildContext)Delivery/png-license.txt : $(pnglibSrcDir)LICENSE
-    $(LinkFirstDepToFirstTarget)
