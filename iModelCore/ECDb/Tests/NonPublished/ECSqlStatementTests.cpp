@@ -4207,6 +4207,110 @@ TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
     ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country]='USA' OR [Customer].[Country]='DUBAI' AND [Customer].[ContactTitle]='AM')") != nativeSql.npos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsAndIsNotOperatorNullSafeSemantics)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsOperatorSemantics.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="Active" value="1" />
+                <ECEnumerator name="Inactive" value="2" />
+              </ECEnumeration>
+              <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="S1" typeName="string" />
+                <ECProperty propertyName="S2" typeName="string" />
+                <ECProperty propertyName="Status" typeName="Status" />
+                <ECStructProperty propertyName="Info" typeName="Info" />
+                <ECProperty propertyName="P1" typeName="point3d" />
+              </ECEntityClass>
+              <ECStructClass typeName="Info" modifier="None">
+                <ECProperty propertyName="Code" typeName="string" />
+              </ECStructClass>
+            </ECSchema>)xml")));
+
+    // (S1, S2): equal-nonnull, different, both-null, one-null, the-other-null
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES('a','a',ts.Status.Active,'a')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES('a','b',ts.Status.Inactive,'b')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES(NULL,NULL,ts.Status.Active,NULL)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES(NULL,'b',NULL,'b')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S1,S2,Status,Info.Code) VALUES('a',NULL,ts.Status.Active,NULL)"));
+
+    auto count = [this](Utf8CP whereClause) -> int
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Foo WHERE %s", whereClause).c_str())) << whereClause;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << whereClause;
+        return stmt.GetValueInt(0);
+        };
+
+    // same as 'count' but with an explicit range alias 'f', so 'f.<prop>' references can be used
+    auto countAliased = [this](Utf8CP whereClause) -> int
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Foo f WHERE %s", whereClause).c_str())) << whereClause;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << whereClause;
+        return stmt.GetValueInt(0);
+        };
+
+    // null-safe equality: matches ('a','a') and (NULL,NULL)
+    EXPECT_EQ(2, count("S1 IS S2"));
+    // null-safe inequality: matches ('a','b'), (NULL,'b'), ('a',NULL)
+    EXPECT_EQ(3, count("S1 IS NOT S2"));
+    // contrast: regular '=' treats NULL comparisons as unknown -> only ('a','a')
+    EXPECT_EQ(1, count("S1 = S2"));
+    // NULL literal operand on either side
+    EXPECT_EQ(2, count("S1 IS NULL"));
+    EXPECT_EQ(3, count("S1 IS NOT NULL"));
+    EXPECT_EQ(2, count("NULL IS S2"));
+
+    // the operands may be any value expression, not just a column or NULL literal:
+    // string literal on the right-hand side
+    EXPECT_EQ(3, count("S1 IS 'a'"));
+    EXPECT_EQ(2, count("S1 IS NOT 'a'"));
+    // function call on the right-hand side (LOWER(S2) equals S2 for these lowercase values)
+    EXPECT_EQ(2, count("S1 IS LOWER(S2)"));
+    EXPECT_EQ(3, count("S1 IS NOT LOWER(S2)"));
+    // function call on the left-hand side
+    EXPECT_EQ(2, count("LOWER(S1) IS S2"));
+    // a parenthesized unqualified name is a value expression here, not a type predicate
+    EXPECT_EQ(2, count("S1 IS (S2)"));
+    // a parenthesized *qualified* property reference '(alias.prop)' is likewise a value expression
+    // (null-safe comparison), not the '(ClassName)' type predicate: the name does not resolve to a
+    // class, so it is reread as the property 'alias.prop'.
+    EXPECT_EQ(2, count("S1 IS (Foo.S2)"));        // implicit class-name range qualifier
+    EXPECT_EQ(3, count("S1 IS NOT (Foo.S2)"));
+    EXPECT_EQ(2, countAliased("f.S1 IS (f.S2)")); // explicit range alias
+    EXPECT_EQ(3, countAliased("f.S1 IS NOT (f.S2)"));
+    // three-part names can also be value expressions: a nested property reference or an enum literal
+    EXPECT_EQ(2, countAliased("f.S1 IS (f.Info.Code)"));
+    EXPECT_EQ(3, countAliased("f.S1 IS NOT (f.Info.Code)"));
+    EXPECT_EQ(3, count("Status IS (ts.Status.Active)"));
+    EXPECT_EQ(2, count("Status IS NOT (ts.Status.Active)"));
+    // regression: a parenthesized name that *is* a class keeps the '(ClassName)' type-predicate meaning
+    EXPECT_EQ(5, count("ECClassId IS (ts.Foo)"));   // every row is a ts.Foo instance
+    EXPECT_EQ(0, count("ECClassId IS NOT (ts.Foo)"));
+
+    // parameter on the right-hand side, bound to a value and to NULL (null-safe both ways)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Foo WHERE S1 IS ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "a", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(3, stmt.GetValueInt(0)) << "S1 IS ? bound to 'a'";
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(2, stmt.GetValueInt(0)) << "S1 IS ? bound to NULL";
+    }
+
+    // operands of incompatible types are rejected (string vs point)
+    ECSqlStatement bad;
+    EXPECT_NE(ECSqlStatus::Success, bad.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS P1"));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
