@@ -17,16 +17,6 @@
 #
 # The BSIVer audit version string is injected by an overlay-port patch (baked into libcrypto),
 # so no separate BentleyVersionString.c object is compiled here.
-#
-# NOTE (verify at build): two behaviors that the old file-by-file build guaranteed now depend
-# on the vcpkg port/triplet and should be confirmed when this first builds:
-#   1. Symbol visibility on unix. The old build compiled OpenSSL with GCC_DEFAULT_VISIBILITY
-#      =hidden so its symbols would not clash with the OpenSSL bundled in Node (the Node 18
-#      segfault). The static triplets should build OpenSSL with -fvisibility=hidden to preserve
-#      this; if not, add it via a custom overlay triplet. See VCPKG_MIGRATION.md.
-#   2. Feeding vcpkg's static .libs to dlmlink as DLM_OBJECT_FILES (Windows). link.exe accepts
-#      .lib inputs and pulls the exported objects per the .def; confirm dlmlink does not reject
-#      non-.obj inputs.
 #---------------------------------------------------------------------------------------------
 
 IS_THIRD_PARTY_LIBRARY = 1

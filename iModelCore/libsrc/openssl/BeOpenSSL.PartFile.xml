@@ -19,11 +19,9 @@
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
     <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
-        <!-- __PublicAPI delivers headers needed by this part and depends on vcpkg_install_openssl.
-             LibType="Static" on the vcpkg dep ensures the static chain completes (and populates
-             the binary cache) before this part runs in any LibType.  The dynamic build then
-             calls vcpkg_run_install itself in BeOpenSSL.mke for a fast cache hit in the dynamic
-             OutputRootDir, without launching a new chain-part build. -->
+        <!-- __PublicAPI delivers headers; LibType="Static" ensures the static chain
+            completes before this part runs. Both static and dynamic consumer mke
+            files read from the static install root — no second vcpkg invocation. -->
         <SubPart PartName="__PublicAPI" LibType="Static"/>
         <SubPart PartName="vcpkg_install_openssl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
