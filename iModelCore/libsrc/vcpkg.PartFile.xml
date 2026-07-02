@@ -19,8 +19,8 @@
     </Part>
     <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
-             their chain part with LibType="Static" and call vcpkg_run_install themselves for
-             the dynamic OutputRootDir (fast binary-cache hit). -->
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
     </Part>
     <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
