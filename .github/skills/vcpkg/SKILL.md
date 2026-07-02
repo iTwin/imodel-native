@@ -52,6 +52,10 @@ mylibDir    = $(_MakeFilePath)<mylib>/
 installRoot = $(OutputRootDir)vcpkg_installed/<mylib>/
 
 # Add vcpkgWindowsMDCRT = 1 here if the library must link /MD on Windows (like openssl).
+# Add vcpkgUseVeracodeTriplet = 1 here ONLY if this library's base triplet sets explicit
+# -RTC flags and you have provided a triplets/x64-windows-static-veracode.cmake overlay
+# that omits them (see compress/ and crashpad/). Libraries whose triplets set no -RTC
+# flags need no veracode variant and should leave this undefined.
 %include $(_MakeFilePath)vcpkg.mki
 
 always:

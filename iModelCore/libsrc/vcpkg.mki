@@ -21,7 +21,12 @@
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
     vcpkgTriplet = x64-linux
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-    %if defined (IS_VERACODE_BUILD)
+    %if defined (IS_VERACODE_BUILD) && defined (vcpkgUseVeracodeTriplet)
+        # Veracode builds forbid explicit -RTC options, so libraries whose base triplet
+        # sets any -RTC flags provide a dedicated x64-windows-static-veracode overlay
+        # triplet.  A library opts in by setting vcpkgUseVeracodeTriplet = 1 before
+        # including this file.  Libraries whose triplets set no -RTC flags (e.g. OpenSSL)
+        # need no veracode variant and simply leave this undefined.
         vcpkgTriplet = x64-windows-static-veracode
     %elif defined (vcpkgWindowsMDCRT)
         # Caller explicitly requested the dynamic-CRT static triplet (e.g. a Windows DLL that

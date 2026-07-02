@@ -12,6 +12,9 @@
 compressDir = $(_MakeFilePath)compress/
 installRoot = $(OutputRootDir)vcpkg_installed/compress/
 
+# This library's base triplet sets explicit -RTC flags, so use the veracode overlay
+# triplet (which omits them) for veracode builds.
+vcpkgUseVeracodeTriplet = 1
 %include $(_MakeFilePath)vcpkg.mki
 
 always:

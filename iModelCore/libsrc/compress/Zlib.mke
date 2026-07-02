@@ -16,6 +16,9 @@ o                   = $(OutputRootDir)build/$(appName)/
 #--------------------------------------------------------------------------------------
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
 #--------------------------------------------------------------------------------------
+# This library's base triplet sets explicit -RTC flags, so use the veracode overlay
+# triplet (which omits them) for veracode builds.
+vcpkgUseVeracodeTriplet = 1
 %include $(libsrcDir)vcpkg.mki
 
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/compress/
