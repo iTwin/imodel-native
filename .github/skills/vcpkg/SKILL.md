@@ -75,7 +75,7 @@ Append at the end of the chain (after the current last link):
 
 ```xml
 <Part Name="vcpkg_install_<mylib>" BentleyBuildMakeFile="vcpkg_install_<mylib>.mke">
-    <SubPart PartName="vcpkg_install_<current-last>"/>
+    <SubPart PartName="vcpkg_install_<current-last>" LibType="Static"/>
 </Part>
 ```
 
@@ -86,16 +86,17 @@ Update the block comment above the chain to name the new last link.
 In your library's `.PartFile.xml`, depend on the chain part with **`LibType="Static"`**.
 
 **Critical:** `$(OutputRootDir)` differs between static and dynamic builds (`static/vcpkg_installed/…`
-vs `vcpkg_installed/…`).  The chain always runs static-only; dynamic builds install to their
-own `OutputRootDir` via a direct `vcpkg_run_install` call in the `.mke` (step 5).
-Using `LibType="Static"` here ensures the static chain completes (and populates the binary
-cache) before a dynamic build starts, without triggering a redundant dynamic chain build that
+vs `vcpkg_installed/…`).  The chain always runs static-only; dynamic builds do **not** run
+`vcpkg install` at all — their `.mke` reads the packages the static chain produced under
+`static/vcpkg_installed/…` (see step 5).
+Using `LibType="Static"` here ensures the static chain completes (and populates that install
+root) before a dynamic build starts, without triggering a redundant dynamic chain build that
 would race against the static one on the shared vcpkg git repo.
 
 ```xml
 <Part Name="MyLib" BentleyBuildMakeFile="MyLib.mke">
-    <!-- LibType="Static": chain is static-only.  Dynamic builds call vcpkg_run_install in
-         the .mke for a fast cache hit in the dynamic OutputRootDir (see step 5). -->
+    <!-- LibType="Static": chain is static-only.  Dynamic builds read the packages from the
+         static install root; they do not run vcpkg themselves (see step 5). -->
     <SubPart PartName="vcpkg_install_<mylib>" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
     ...
 ```
