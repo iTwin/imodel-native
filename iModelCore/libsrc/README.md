@@ -22,7 +22,7 @@ Libraries built in `iModelCore/libsrc/`.
 | `libjpegturbo` | libjpeg-turbo | 3.1.2 | No |
 | `libxml2` | libxml2 | 2.13.5 | No |
 | `openssl` | OpenSSL | 3.6.3 | Yes |
-| `png` | libpng | 1.6.56 | No |
+| `png` | libpng | 1.6.58 | Yes |
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.12 | No |
 | `rapidjson` | RapidJSON | 1.1.0 | No |
