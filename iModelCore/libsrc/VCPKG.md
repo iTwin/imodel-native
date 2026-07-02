@@ -10,15 +10,26 @@ By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree
 
 ## Updating Libraries to Use vcpkg
 
-You must add vcpkg as a SubPart of your library Part in order to insure that its install script is run before your library is built, like is done for the Zlib part in [Zlib.PartFile.xml](compress/Zlib.PartFile.xml).
+All vcpkg installs are driven by the sequential chain in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) rather than by individual consumer `.mke` files. This ensures that no two `vcpkg` processes ever run concurrently, which is important because concurrent runs against the same install root will collide on `vcpkg-running.lock` and corrupt the build.
 
-Most libraries that we build with vcpkg will need their own triplet files to configure the library to build with the settings that we want. The triplet files are platform-specific. See `./compress/triplets` for example triplets. [`vcpkg.mki`](./vcpkg.mki) is used to determine the proper triplet to use at build time. Include that from any `.mke` file that builds using vcpkg. This will set the `vcpkgTriplet` environment variable.
+To add a new library:
 
-Additionally, we pin the libraries to a specific version via their vcpkg.json file. ([here](./compress/vcpkg.json) is the one used for zlib and minizip.) `vcpkg.json` will contain both a `version>=` setting under `dependencies` and a `version` entry under `overrides`.
+1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
+2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
+3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
+4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml) at the end of the chain, with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
+6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
-Each library also needs a copy of `vcpkg-configuration.json`. Unfortunately, this file must be in the same directory as the library-specific `vcpkg.json`, so even though all of them should be identical, they need to be copied to the library's directory. See [here](./compress/vcpkg-configuration.json) for an existing one. The `baseline` hash may have to be updated to support some specific version of a library.
+   ```makefile
+   %if defined (CREATE_STATIC_LIBRARIES)
+   vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/mylib/
+   %else
+   vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/mylib/
+   %endif
+   ```
 
-To actually build your library with vcpkg, run `vcpkg_run_install.bat` when building on Windows, or `vcpkg_run_install.sh` otherwise. **Note:** make sure to pick the right `vcpkg_run_install` based on the build platform, not the target platform. Android builds work fine on both Windows and macOS. See [Zlib.mke](./compress/Zlib.mke) for an example.
+Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 
 ## Setup
 
@@ -130,8 +141,6 @@ Install the following prerequisites **before running vcpkg**:
    "%USERPROFILE%\src\vcpkg\vcpkg.exe" version
    ```
 
-   With CMake installed and 7-Zip and PowerShell Core manually installed in `downloads/tools/`, vcpkg should now be ready to build zlib and minizip without downloading tools during the build.
-
 #### Windows vcpkg selection order used by the wrapper
 
 `vcpkg_run_install.bat` resolves roots in this order:
@@ -155,8 +164,9 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 ## How It Works
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
-- The `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) scripts wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<triplet>/`.
-- `.mke` files invoke the script, then deliver the resulting headers and `.a`/`.lib` files to the Bentley Build context.
+- `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 
 ## Version Pinning
 
@@ -165,4 +175,4 @@ Versions are locked via two mechanisms in each manifest directory:
 - `vcpkg.json` → `overrides` array pins exact versions
 - `vcpkg-configuration.json` → `baseline` pins the vcpkg registry commit
 
-To update a library version, change the override in `vcpkg.json` and (if needed) update the baseline commit in `vcpkg-configuration.json`.
+To update a library version, change the override in `vcpkg.json` and (if needed) update the baseline commit in `vcpkg-configuration.json`. Also update the version in the `iModelCore/libsrc/README.md` library table.
