@@ -17,7 +17,7 @@ import type { UpgradeOptions } from "@itwin/core-common";
 function runMochaTests() {
   const mocha = new Mocha();
   mocha.options = {
-    useColors: true,
+    color: true,
     // timeout: 0, For some reason mocha does not care what timeout you pass here.
   };
   mocha.suite.timeout(0);
