@@ -341,7 +341,11 @@ In [`png.PartFile.xml`](png.PartFile.xml):
 
 ---
 
-## Step 7 — 🔲 Update `README.md` and docs
+## Step 7 — ✅ Update `README.md` and docs
+
+> **Done.** Bumped the `png` row in [`../README.md`](../README.md) to `libpng | 1.6.58 | Yes`.
+> The [`../VCPKG.md`](../VCPKG.md) "How It Works" chain description and consumer-mke list were
+> already updated in Step 4 (`compress → png → openssl → crashpad`).
 
 - [`../README.md`](../README.md) library table: bump the `png` row version `1.6.56` → `1.6.58`
   and change the vcpkg column from `No` → `Yes`.
