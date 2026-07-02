@@ -2,9 +2,18 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-
+#include <map>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+struct CurveExtendFlags
+    {
+    bool m_extend0;
+    bool m_extend1;
+    CurveExtendFlags(bool extend = false) :m_extend0(extend), m_extend1(extend) {}
+    CurveExtendFlags(bool extend0, bool extend1) : m_extend0(extend0), m_extend1(extend1) {}
+    bool HasAnyExtend () const {return m_extend0 || m_extend1;}
+    };
 
 // Base class for computations involving all combinations of 2 curve types.
 // Base class has stub implementations of
@@ -15,7 +24,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //     ProcessAB (curveA, curveB, bReverseOrder)
 //</ul>
 //
-// The stub implemtations invoke the ProcessPrimitivePrimitive method.  This does nothing but increment
+// The stub implementations invoke the ProcessPrimitivePrimitive method.  This does nothing but increment
 //     a counter, and may be useful as a breakpoint to look for methods lacking derived class implementation.
 //
 struct CurveCurveProcessor
@@ -25,12 +34,11 @@ GEOMAPI_VIRTUAL ~CurveCurveProcessor (){}
 protected:
     //! Number of calls to base class stubs
     size_t m_numProcessedByBaseClass;
-    //! distance tolerance
-    double m_tol;
     //! placement transform
     DMatrix4dCP m_pWorldToLocal;
-    //! control flag for extended geometry
-    bool m_extend;
+    //! control flags for extended geometry
+    CurveExtendFlags m_extendA;
+    CurveExtendFlags m_extendB;
     //! Options for on-demand stroking.
     IFacetOptionsPtr m_strokeOptions;
 
@@ -43,8 +51,18 @@ protected:
             }
         return m_strokeOptions.get ();
         }
-
-    static bool IsLinear (ICurvePrimitiveP curve)
+    void SetStrokeOptions(IFacetOptionsCR strokeOptions)
+        {
+        m_strokeOptions = strokeOptions.Clone();
+        }
+    CurveExtendFlags GetExtendFlag(uint32_t index, bool reversed)
+        {
+        if (reversed)
+            return index == 0 ? m_extendB : m_extendA;
+        else
+            return index == 0 ? m_extendA : m_extendB;
+        }
+    static bool IsLinear (ICurvePrimitiveCP curve)
         {
         ICurvePrimitive::CurvePrimitiveType type = curve->GetCurvePrimitiveType ();
         if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
@@ -58,17 +76,31 @@ protected:
         return false;
         }
 
-
 //! processor called by default implementations.
 //! Implementors can trap here to apply generic curve logic in absence of special cases.
 //! Base class increments counters.
 GEOMAPI_VIRTUAL void ProcessPrimitivePrimitive (ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverseOrder);
 
-explicit CurveCurveProcessor (DMatrix4dCP pWorldToLocal, double tol);
+explicit CurveCurveProcessor (DMatrix4dCP pWorldToLocal);
 
-// Return true if the a fractional position within an edge is internal to the linestring.
+bool ValidFraction (CurveLocationDetailCR detail, double fraction, CurveExtendFlags extend)
+    {
+    bool extensible0 = extend.m_extend0;
+    bool extensible1 = extend.m_extend1;
+    if (detail.componentIndex != 0)
+        extensible0 = false;
+    if (detail.componentIndex + 1 != detail.numComponent)
+        extensible1 = false;
+    if (fraction < 0.0 && !extensible0)
+        return false;
+    if (fraction > 1.0 && !extensible1)
+        return false;
+    return true;
+    }
+
+// Return true if the fractional position within the edge is internal to the linestring.
 //    (false for extensions of internal edges)
-bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint)
+bool ValidEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPoint, CurveExtendFlags extend)
     {
     static double s_lineFractionTol = 1.0e-8;
     // interior fractions are always ok ...
@@ -76,34 +108,56 @@ bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPo
         return true;
 
     // We are outside the immediate edge...
-    if (m_extend)
+    if (extend.m_extend0 || extend.m_extend1)
         {
-        if (numPoint <= 2)
+        if (numPoint < 2)
             return true;
-        if (edgeIndex <= 0)
-            return f <= 1.0;
-        else if (edgeIndex == numPoint - 2)
-            return f >= 0.0;
+        if (edgeIndex <= 0 && extend.m_extend0 && f <= 1.0)
+            return true;
+        else if (edgeIndex == numPoint - 2 && extend.m_extend1 && f >= 0.0)
+            return true;
         }
 
     return false;
     }
 
-
-// Return true if the a fractional position within an edge is internal to the linestring.
-//    (false for extensions of internal edges)
-bool validArcAngle (double theta, DEllipse3d const &ellipse)
+// Given arc angle, return arc fraction shifted according to extend flags.
+double ArcAngleToShiftedFraction(DEllipse3dCR ellipse, double radians, CurveExtendFlags const& extend)
     {
-    if (m_extend)
+    if (extend.HasAnyExtend())
+        return Angle::NormalizeToSweep(radians, ellipse.start, ellipse.sweep, extend.m_extend0, extend.m_extend1);
+    return ellipse.AngleToFraction(radians);
+    }
+
+// Given arc fraction, return arc fraction shifted according to extend flags.
+double ArcFractionToShiftedFraction(DEllipse3dCR ellipse, double fraction, CurveExtendFlags const& extend)
+    {
+    if (extend.HasAnyExtend())
+        return ArcAngleToShiftedFraction(ellipse, ellipse.FractionToAngle(fraction), extend);
+    return fraction;
+    }
+
+// Return true if the angle is internal to the (possibly extended) arc.
+// In particular, return true if *either* extend flag is set.
+bool ValidArcAngle (DEllipse3d const &ellipse, double theta, CurveExtendFlags extend)
+    {
+    if (extend.HasAnyExtend ())
         return true;
     if (ellipse.IsAngleInSweep (theta))
         return true;
     return false;
     }
 
-
-
-void SetExtend (bool b) {m_extend=b;}
+// blanket extend setting ...
+void SetExtend (bool b) {m_extendA.m_extend0 = m_extendA.m_extend1 = m_extendB.m_extend0 = m_extendB.m_extend1 = b;}
+bool HasAnyExtend () const { return m_extendA.HasAnyExtend() || m_extendB.HasAnyExtend(); }
+void SetExtend(bool extendA0, bool extendA1, bool extendB0, bool extendB1)
+    {
+    m_extendA.m_extend0 = extendA0;
+    m_extendA.m_extend1 = extendA1;
+    m_extendB.m_extend0 = extendB0;
+    m_extendB.m_extend1 = extendB1;
+    }
 
 public:
 GEOMAPI_VIRTUAL void ProcessLineLine (
@@ -150,111 +204,71 @@ void Process (CurveVectorCP curvesA, ICurvePrimitiveP curveB);
 void TransformWeightedPoint (DPoint4d &hPoint, DPoint3d const &cPoint, double w);
 
 // Apply the worldToLocal transform to a segment.
-void Transform (DSegment4dR hSeg,DSegment3dCR cSeg);
+void TransformSegment (DSegment4dR hSeg, DSegment3dCR cSeg);
 
 // Apply the worldToLocal transform to an ellipse
-void Transform (DConic4d &hConic, DEllipse3d const &cEllipse);
+void TransformEllipse (DConic4d &hConic, DEllipse3d const &cEllipse);
 };
 
+// Comparator for sorting segments by their points
+struct CompareDSegment3d
+    {
+    // absolute and relative tolerance for coordinate comparisons
+    double m_coordTol;
 
-// CurveCurveProcessor with CurveVectorR members to capture results as announced
-// by derived classes.
-struct CurveCurveProcessAndCollect : public CurveCurveProcessor
+    // @param coordTol absolute and relative tolerance for clustering coordinates
+    CompareDSegment3d(double coordTol) : m_coordTol(fabs(coordTol)) {}
+
+    // lexicographical point comparison: x first, then y, then z
+    int compareXYZ(DPoint3dCR p0, DPoint3dCR p1) const;
+
+    // lexicographical segment "less" operator: compare first points of each segment, then the second points
+    bool operator()(DSegment3dCR a, DSegment3dCR b) const;
+    };
+
+// CurveCurveProcessor to capture 3D close approach results.
+struct CurveCurveProcessAndCollectCloseApproaches : public CurveCurveProcessor
 {
+private:
+typedef std::multimap<DSegment3d, CurveLocationDetailPair, CompareDSegment3d> SegmentPairMultiMap;
 
-CurveVectorR m_resultA;
-CurveVectorR m_resultB;
+static inline auto s_segmentPairLess = [](SegmentPairMultiMap::value_type const& entry0, SegmentPairMultiMap::value_type const& entry1) -> bool { return entry0.second.detailA.a < entry1.second.detailA.a; };
 
-CurveCurveProcessAndCollect (CurveVectorR intersectionA, CurveVectorR intersectionB,
-            DMatrix4dCP worldToLocal, double tol) :
-    CurveCurveProcessor (worldToLocal, tol),
-    m_resultA (intersectionA),
-    m_resultB (intersectionB)
+double m_maxDistance;
+SegmentPairMultiMap m_pairs; // stores close approach equivalence classes
+
+public:
+// @param maxDistance if positive, collect all approaches within this distance; otherwise collect only the closest approach.
+// When Newton iteration is employed to compute the closest approach, two sub-options are available to control how many seeds are used.
+// When maxDistance = 0 (default), use only one Newton seed, the closest approach between the stroked inputs.
+// When maxDistance < 0, use all stroked close approaches within -maxDistance as Newton seeds (slower but more accurate).
+// @param worldToLocal optional placement transform.
+// @param coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default/negative is 1.0e-4.
+CurveCurveProcessAndCollectCloseApproaches (double maxDistance = 0.0, DMatrix4dCP worldToLocal = nullptr, double coordTol = -1.0) :
+    CurveCurveProcessor(worldToLocal), m_maxDistance(maxDistance), m_pairs(CompareDSegment3d(coordTol < 0.0 ? 1.0e-4 : coordTol))
     {
     }
 
-void CollectPair (
-        ICurvePrimitiveP curve0,
-        ICurvePrimitiveP curve1,
-        double fraction0,
-        double fraction1,
-        bool bReverseCurveOrder
-        )
-    {
-    if (!bReverseCurveOrder)
-        {
-        m_resultA.push_back(ICurvePrimitive::CreatePartialCurve (curve0, fraction0, fraction0, 0));
-        m_resultB.push_back(ICurvePrimitive::CreatePartialCurve (curve1, fraction1, fraction1, 0));
-        }
-    else
-        {
-        m_resultB.push_back(ICurvePrimitive::CreatePartialCurve (curve0, fraction0, fraction0, 0));
-        m_resultA.push_back(ICurvePrimitive::CreatePartialCurve (curve1, fraction1, fraction1, 0));
-        }
-    }
+// Whether the instance collects only the closest approach, or multiple close approaches.
+bool CollectClosestOnly() const { return m_maxDistance <= 0.0; }
 
-void CollectPairs (
-        ICurvePrimitiveP curve0,
-        ICurvePrimitiveP curve1,
-        bvector<double> const & fraction0,
-        bvector<double> const & fraction1,
-        bool bReverseCurveOrder
-        )
-    {
-    for (size_t i = 0; i < fraction0.size (); i++)
-        {
-        CollectPair (curve0, curve1, fraction0[i], fraction1[i], bReverseCurveOrder);
-        }
-    }
+// Whether the instance refines only one seed, or multiple seeds, when Newton iteration is employed.
+bool RefineClosestSeedOnly() const { return m_maxDistance == 0.0; }
 
+// Return the maximum positive approach distance for returned/stroked approaches.
+double GetMaxDistance() const { return fabs(m_maxDistance); }
+
+// Add a close approach pair to the collection.
+void CollectPair(ICurvePrimitiveCP curve0, ICurvePrimitiveCP curve1, double fraction0, double fraction1, bool bReverse);
+
+// Add a close approach pair to the collection.
+void CollectPair(ICurvePrimitiveCP curve0, DPoint3dCP point0, double fraction0, ICurvePrimitiveCP curve1, DPoint3dCP point1, double fraction1, bool bReverse);
+
+// Announce the collected, deduplicated close approach(es).
+bool GetResults(CurveCurve::ICloseApproachAnnouncer const& announce) const;
+
+// Retrieve the closest approach.
+bool GetResult(CurveLocationDetailPairR result) const;
 };
-
-
-// CurveCurveProcessor with members of type T to test and capture results as announced by derived classes.
-template <typename T>
-struct CurveCurveProcessAndSelectMinimum : public CurveCurveProcessor
-{
-double m_minWeight;
-T m_dataA;
-T m_dataB;
-int m_numCandidates;
-
-CurveCurveProcessAndSelectMinimum (DMatrix4dCP worldToLocal, double tol) :
-    CurveCurveProcessor (worldToLocal, tol), m_numCandidates(0)
-    {
-    m_minWeight = DBL_MAX;
-    }
-
-bool GetResult (double &weight, T &dataA, T &dataB) const
-    {
-    if (m_numCandidates > 0)
-        {
-        dataA = m_dataA;
-        dataB = m_dataB;
-        return true;
-        }
-    return false;
-    }
-
-void TestAndCollectMin (double weight, T const &dataA, T const &dataB, bool bReverseOrder)
-    {
-    m_numCandidates++;
-    if (weight < m_minWeight)
-        {
-        m_minWeight = weight;
-        if (!bReverseOrder)
-            {
-            m_dataA = dataA;
-            m_dataB = dataB;
-            }
-        else
-            {
-            m_dataB = dataA;
-            m_dataA = dataB;
-            }
-        }
-    }
-};
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE

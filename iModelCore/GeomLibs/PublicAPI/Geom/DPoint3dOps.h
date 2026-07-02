@@ -5,11 +5,11 @@
 #pragma once
 
 #include <Bentley/BeTimeUtilities.h>
-//! @file  DPoint3dOps.h Class wrapper for static utiliity functions on data structures built around DPoint2d: VectorOps, DPoint2dOps, DVec3dOps, DVec2dOps, DoubleOps, DPoint3dOps, and PolylineOps
+//! @file  DPoint3dOps.h Class wrapper for static utility functions on data structures built around DPoint2d: VectorOps, DPoint2dOps, DVec3dOps, DVec2dOps, DoubleOps, DPoint3dOps, and PolylineOps
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 // To be included from GeomApi.h !!!
 //!
-//! @description class wrapper for static utiliity functions on data structures built around DPoint2d.
+//! @description class wrapper for static utility functions on data structures built around DPoint2d.
 //!
 template <typename T>
 //! Templated base class for operations on arrays of DPoint2d, DPoint3d, DVec2d, DVec3d double.
@@ -545,6 +545,9 @@ static GEOMDLLIMPEXP bool AlmostEqualFraction (double a, double b);
 
 //! Return -1,0,1 for less than, AlmostEqual, greater than
 static GEOMDLLIMPEXP int TolerancedComparison (double a, double b);
+
+//! Return -1,0,1 for less than, AlmostEqual, greater than
+static GEOMDLLIMPEXP int TolerancedComparison (double a, double b, double tol);
 
 //! test knowing range 0..1 for values...
 static GEOMDLLIMPEXP bool ClearlyIncreasingFraction (double a, double b);
