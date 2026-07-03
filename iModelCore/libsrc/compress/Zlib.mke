@@ -16,6 +16,9 @@ o                   = $(OutputRootDir)build/$(appName)/
 #--------------------------------------------------------------------------------------
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
 #--------------------------------------------------------------------------------------
+# This library's base triplet sets explicit -RTC flags, so use the veracode overlay
+# triplet (which omits them) for veracode builds.
+vcpkgUseVeracodeTriplet = 1
 %include $(libsrcDir)vcpkg.mki
 
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/compress/
@@ -25,15 +28,11 @@ vcpkgLibDir         = $(vcpkgTripletDir)lib/
 vcpkgDbgLibDir      = $(vcpkgTripletDir)debug/lib/
 
 #--------------------------------------------------------------------------------------
-#   Run vcpkg to build zlib and minizip
+#   vcpkg install is performed by the vcpkg_install_compress part (vcpkg.PartFile.xml)
+#   before this mke runs. Nothing to do here; just ensure the output directory exists.
 #--------------------------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-%if defined (winNT)
-    $(libsrcDir)vcpkg_run_install.bat $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%else
-    $(libsrcDir)vcpkg_run_install.sh $(compressDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Deliver headers to VendorAPI
