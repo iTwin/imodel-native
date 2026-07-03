@@ -855,8 +855,8 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_returns_blob) {
 
     // Returns the length of the (base64 text) "data" column for a fragment request, asserting it is
     // a single well-formed binary row along the way.
-    auto fragmentDataLen = [&](Utf8StringCR idList) -> size_t {
-        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", idList.c_str());
+    auto fragmentDataLen = [&](Utf8StringCR nameList) -> size_t {
+        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", nameList.c_str());
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql.c_str();
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -871,9 +871,13 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_returns_blob) {
 
     // Asking for both schemas must carry more data as asking for one - a coarse proxy
     // that the request set actually drives what the blob holds. Exact contents are a TS concern.
-    size_t const lenA = fragmentDataLen(Utf8PrintfString("%lld", (long long)idA));
-    size_t const lenAB = fragmentDataLen(Utf8PrintfString("%lld,%lld", (long long)idA, (long long)idB));
+    size_t const lenA = fragmentDataLen("SchemaA");
+    size_t const lenAB = fragmentDataLen("SchemaA,SchemaB");
     EXPECT_GT(lenAB, lenA);
+
+    // Names are matched case-insensitively and duplicates are de-duplicated, not rejected.
+    EXPECT_EQ(fragmentDataLen("schemaa"), lenA);
+    EXPECT_EQ(fragmentDataLen("SchemaA,schemaA"), lenA);
 }
 
 //---------------------------------------------------------------------------------------
@@ -893,9 +897,8 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_version_prefix) {
     ASSERT_GT(id, 0);
 
     { // explicit 'v1;' prefix succeeds and reports format version 1
-        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('v1;%lld')", (long long)id);
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('v1;TestSchema')"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("binary", stmt.GetValueText(0));
         ASSERT_EQ(1, stmt.GetValueInt(1)); // formatVersion
@@ -904,9 +907,8 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_version_prefix) {
     }
 
     { // no prefix defaults to latest, also version 1
-        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%lld')", (long long)id);
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema')"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(1, stmt.GetValueInt(1));
     }
@@ -927,35 +929,38 @@ TEST_F(ECSqlPragmasTestFixture, schema_view_fragment_invalid_arguments) {
 
     int64_t const id = GetSchemaIdByName(m_ecdb, "TestSchema");
     ASSERT_GT(id, 0);
-    Utf8String const validId = Utf8PrintfString("%lld", (long long)id);
 
     auto expectPrepareFails = [&](Utf8CP sql) {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Status::SQLiteError, stmt.Prepare(m_ecdb, sql)) << sql;
     };
 
-    expectPrepareFails("PRAGMA schema_view_fragment('')");        // empty list
-    expectPrepareFails("PRAGMA schema_view_fragment('abc')");     // non-integer id
-    expectPrepareFails("PRAGMA schema_view_fragment('v1;')");     // version present, empty list
-    expectPrepareFails("PRAGMA schema_view_fragment('v;1')");     // malformed version token (no digits)
-    expectPrepareFails("PRAGMA schema_view_fragment('vx;1')");    // malformed version token (non-digit)
-    expectPrepareFails("PRAGMA schema_view_fragment('v99;1')");   // unsupported version
-    expectPrepareFails("PRAGMA schema_view_fragment('999999999')"); // non-existent schema id
-    expectPrepareFails("PRAGMA schema_view_fragment(1)");         // integer argument, not a string
-    expectPrepareFails("PRAGMA schema_view_fragment=2");          // assignment form is read-only
-    expectPrepareFails("PRAGMA schema_view_fragment('0')");      // zero is not a positive id
+    expectPrepareFails("PRAGMA schema_view_fragment('')");            // empty list
+    expectPrepareFails("PRAGMA schema_view_fragment('NoSuchSchema')"); // non-existent schema name
+    expectPrepareFails("PRAGMA schema_view_fragment('v1;')");         // version present, empty list
+    expectPrepareFails("PRAGMA schema_view_fragment('v;TestSchema')"); // malformed version token (no digits)
+    expectPrepareFails("PRAGMA schema_view_fragment('vx;TestSchema')"); // malformed version token (non-digit)
+    expectPrepareFails("PRAGMA schema_view_fragment('v99;TestSchema')"); // unsupported version
+    expectPrepareFails("PRAGMA schema_view_fragment('123')");         // decimal id, no longer a valid ECName argument
+    expectPrepareFails("PRAGMA schema_view_fragment('Bad Name')");    // space is not valid in an ECName
+    expectPrepareFails("PRAGMA schema_view_fragment(1)");             // integer argument, not a string
+    expectPrepareFails("PRAGMA schema_view_fragment=2");              // assignment form is read-only
 
-    { // sanity: the valid id alone prepares and returns a row
-        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s')", validId.c_str());
+    { // sanity: the valid name alone prepares and returns a row
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema')"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
 
-    { // duplicate ids are intentionally de-duplicated, not rejected: same id twice still prepares
-        Utf8String const sql = Utf8PrintfString("PRAGMA schema_view_fragment('%s,%s')", validId.c_str(), validId.c_str());
+    { // duplicate names are intentionally de-duplicated, not rejected: same name twice still prepares
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str())) << sql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema,TestSchema')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    { // a trailing comma is tolerated: Split skips empty tokens, so only the real name remains
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA schema_view_fragment('TestSchema,')"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
 }

@@ -1132,18 +1132,19 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 	};
 
 	if (!val.IsString())
-		return reportError("expects a single string argument: a comma-separated list of decimal ec_Schema ids, optionally prefixed with a 'v<N>;' format-version token.");
+		return reportError("expects a single string argument: a comma-separated list of schema names, optionally prefixed with a 'v<N>;' format-version token.");
 
 	Utf8String arg(val.GetString().c_str());
 
 	// Optional leading 'v<N>;' format-version token. The version is carried inside the one string
-	// argument (the pragma grammar allows only a single argument)
+	// argument (the pragma grammar allows only a single argument). Schema names are ECNames, so
+	// ';' can never occur in one - a semicolon always means a version prefix.
 	uint8_t requestedVersion = CURRENT_FORMAT_VERSION;
-	Utf8String idList = arg;
+	Utf8String nameList = arg;
 	size_t const semicolon = arg.find(';');
 	if (semicolon != Utf8String::npos) {
 		Utf8String versionToken = arg.substr(0, semicolon);
-		idList = arg.substr(semicolon + 1);
+		nameList = arg.substr(semicolon + 1);
 		if (versionToken.size() < 2 || (versionToken[0] != 'v' && versionToken[0] != 'V'))
 			return reportError("malformed version prefix; expected 'v<N>;' (for example 'v1;').");
 		Utf8String digits = versionToken.substr(1);
@@ -1155,28 +1156,34 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 		requestedVersion = (uint8_t)v;
 	}
 
-	// Parse the comma-separated decimal id list into a set; reject any malformed id. Duplicate ids
-	// are intentionally de-duplicated (not an error): a caller passing the same schema id twice still
-	// gets one copy of that schema in the fragment.
+	// Parse the comma-separated schema name list and resolve each name to its ec_Schema id.
+	// Names are ECNames ([A-Za-z_][A-Za-z0-9_]*), so ',' can never occur in one. A malformed or
+	// unknown name fails the pragma (no partial fragment). Duplicate names are intentionally
+	// de-duplicated (not an error): a caller passing the same schema twice still gets one copy.
 	bvector<Utf8String> tokens;
-	BeStringUtilities::Split(idList.c_str(), ",", tokens);
+	BeStringUtilities::Split(nameList.c_str(), ",", tokens);
 	std::unordered_set<int64_t> schemaIds;
+	Statement nameStmt;
+	if (BE_SQLITE_OK != nameStmt.Prepare(ecdb, "SELECT Id FROM [main].[ec_Schema] WHERE Name=? COLLATE NOCASE"))
+		return reportError("failed to prepare the schema name lookup.");
 	for (Utf8StringR token : tokens) {
 		token.Trim();
-		if (!IsAllDigits(token))
-			return reportError(Utf8PrintfString("invalid schema id '%s'; ids must be positive decimal integers.", token.c_str()));
-		int64_t id = (int64_t)strtoll(token.c_str(), nullptr, 10);
-		if (id == 0)
-			return reportError(Utf8PrintfString("invalid schema id '%s'; ids must be positive decimal integers.", token.c_str()));
-		schemaIds.insert(id); // de-duplicate (duplicate ids are accepted, not rejected)
+		if (!ECN::ECNameValidation::IsValidName(token.c_str()))
+			return reportError(Utf8PrintfString("invalid schema name '%s'; names must be valid ECNames.", token.c_str()));
+		nameStmt.Reset();
+		nameStmt.ClearBindings();
+		nameStmt.BindText(1, token.c_str(), Statement::MakeCopy::Yes);
+		if (BE_SQLITE_ROW != nameStmt.Step())
+			return reportError(Utf8PrintfString("schema '%s' does not exist in this connection.", token.c_str()));
+		schemaIds.insert(nameStmt.GetValueInt64(0));
 	}
 	if (schemaIds.empty())
-		return reportError("the schema id list is empty.");
+		return reportError("the schema name list is empty.");
 
 	SchemaViewWriter writer;
 	DbResult writeResult = writer.WriteSchemas(ecdb, schemaIds);
-	if (writeResult == BE_SQLITE_NOTFOUND)
-		return reportError("one or more requested schema ids do not exist in this connection.");
+	if (writeResult == BE_SQLITE_NOTFOUND) // cannot happen (ids were just resolved), kept as defense in depth
+		return reportError("one or more requested schemas do not exist in this connection.");
 	if (writeResult != BE_SQLITE_OK)
 		return writeResult;
 
