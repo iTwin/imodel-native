@@ -361,7 +361,21 @@ In [`png.PartFile.xml`](png.PartFile.xml):
 
 ---
 
-## Step 8 — 🔲 Verify
+## Step 8 — ✅ Verify
+
+> **Done.** The full CI pipeline passed on this branch, covering the builds on all target
+> platforms (Windows x64, Linux x64, macOS arm64, iOS arm64, Android arm64/x64) with libpng
+> **1.6.58** built via vcpkg, the `BePng` delivery, and the downstream `imodeljs.node` link and
+> tests. The iOS NEON path built cleanly (the port's `-DPNG_HARDWARE_OPTIMIZATIONS=OFF` handles
+> it), so no per-triplet NEON override was needed.
+>
+> Additionally build-verified the **Android build on a macOS host** (CI runs Android from a
+> Windows host), so the vcpkg Android toolchain path is confirmed on both host OSes — including
+> the arm64-android NEON default, which linked cleanly with no `-DPNG_ARM_NEON_OPT=0` override.
+>
+> Residual item deferred to Step 9 cleanup: confirm no repo **outside this build tree** relied
+> on the now-removed internal headers `VendorAPI/png/pnginfo.h` / `pngstruct.h` (in-tree, the
+> sole consumer `ImageSource.cpp` does not use them and CI is green).
 
 1. Build every target platform: Windows (x64), Linux (x64), macOS (arm64), iOS (arm64),
    Android (arm64 and x64). Confirm libpng resolves at version 1.6.58 in each install root.
@@ -380,7 +394,18 @@ In [`png.PartFile.xml`](png.PartFile.xml):
 
 ---
 
-## Step 9 — 🔲 Cleanup once green
+## Step 9 — ✅ Cleanup once green
+
+> **Done.**
+> - Deleted the checked-in `vendor/` libpng source tree. A repo-wide grep confirmed the only
+>   references to `png/vendor/` and to the internal headers `pnginfo.h` / `pngstruct.h` were
+>   *inside* that tree itself — no source, `.mke`, or PartFile outside `vendor/` depends on them.
+> - Removed the png `.gitignore` (its entries were all `vendor/`-subdirectory ignores, now moot).
+> - The `png_VS2012` part was already removed in Step 6.
+> - Bumped the stale `libpng` version in [`PngNugetLicense.json`](PngNugetLicense.json)
+>   (`1.6.37` → `1.6.58`).
+> - Remaining png dir is now just the vcpkg wiring: `vcpkg.json`, `vcpkg-configuration.json`,
+>   `triplets/`, `png.mke`, `png.PartFile.xml`, `PngNugetLicense.json`, and this doc.
 
 - Delete the checked-in `vendor/` libpng source tree.
 - Remove the `png_VS2012` part (if retired in Step 6) and `PngNugetLicense.json` references that
