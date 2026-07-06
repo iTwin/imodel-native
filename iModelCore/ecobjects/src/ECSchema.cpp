@@ -591,6 +591,8 @@ ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajor
         ecVersion = ECVersion::V3_1;
     else if (ecMajorVersion == 3 && ecMinorVersion == 2)
         ecVersion = ECVersion::V3_2;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 3)
+        ecVersion = ECVersion::V3_3;
     else
         return ECObjectsStatus::InvalidECVersion;
 
@@ -635,6 +637,8 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
             return "3.1";
         case ECVersion::V3_2:
             return "3.2";
+        case ECVersion::V3_3:
+            return "3.3";
         }
     return nullptr;
     }
@@ -1491,6 +1495,7 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
         case ECVersion::V3_0:
         case ECVersion::V3_1:
         case ECVersion::V3_2:
+        case ECVersion::V3_3:
             m_ecVersion = ecVersion;
             break;
         default:
@@ -3615,7 +3620,7 @@ void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool i
 
 namespace
     {
-    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
+    bool IsSchemaSerializable(ECSchemaCR schema)
         {
         if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
             {
@@ -3626,6 +3631,21 @@ namespace
         return true;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECVersion ECSchema::GetRequiredECVersion() const
+    {
+    ECVersion required = m_minRequiredECVersion;
+
+    // A referenced schema might need a higher version.
+    for (auto const& ref : GetReferencedSchemas())
+        required = std::max(required, ref.second->GetECVersion());
+
+    return required;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3633,7 +3653,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     {
     ecSchemaXml.clear();
 
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
@@ -3662,7 +3682,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     {
     ecSchemaXml.clear();
 
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
@@ -3705,7 +3725,7 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
@@ -3734,7 +3754,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return false;
 
     ecSchemaJsonValue.SetNull();

@@ -3262,6 +3262,9 @@ private:
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
+
+    //! The minimum ECXml version required by this schema's own content.
+    mutable ECVersion           m_minRequiredECVersion;
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
     mutable ECSchemaElementsOrder m_serializationOrder; //mutable because we might modify this during serialization
@@ -3269,7 +3272,7 @@ private:
     bmap<ECSchemaP, Utf8String> m_referencedSchemaAliasMap;
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-        m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
+        m_hasExplicitDisplayLabel(false), m_minRequiredECVersion(ECVersion::V3_2), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
         m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this), m_schemaOrigin()
         { }
     virtual ~ECSchema();
@@ -3887,6 +3890,9 @@ public:
     //! Removes any ECSchema from the list of referenced ECSchemas that is not referenced by elements of this schema
     //! @return The number of ECSchemas that were removed
     ECOBJECTS_EXPORT int RemoveUnusedSchemaReferences();
+
+    ECOBJECTS_EXPORT ECVersion GetRequiredECVersion() const;
+    void NoteRequiredECVersion(ECVersion version) const { m_minRequiredECVersion = std::max(m_minRequiredECVersion, version); }
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema

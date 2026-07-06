@@ -39,7 +39,8 @@ TEST_F(SchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     importSchema(m_ecdb, ECVersion::V2_0, false);
     importSchema(m_ecdb, ECVersion::V3_0, false);
     importSchema(m_ecdb, ECVersion::V3_1, false);
-    importSchema(m_ecdb, ECVersion::V3_2, true);
+    importSchema(m_ecdb, ECVersion::V3_2, false);
+    importSchema(m_ecdb, ECVersion::V3_3, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3326,11 +3327,11 @@ TEST_F(SchemaManagerTests, ForeignKeyOnWrongSideUsingDefaultStrengthDirection)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void createV3_2SchemaWithAllItemTypes(ECSchemaPtr& schema)
+static void createV3_3SchemaWithAllItemTypes(ECSchemaPtr& schema)
     {
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema3_2", "ts_tt", 1, 0, 0, ECVersion::V3_2))
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema3_3", "ts_tt", 1, 0, 0, ECVersion::V3_3))
         << "Should successfully create a schema";
-    schema->SetOriginalECXmlVersion(3, 2);
+    schema->SetOriginalECXmlVersion(3, 3);
     schema->AddReferencedSchema(*ECDbTestFixture::GetUnitsSchema());
     schema->AddReferencedSchema(*ECDbTestFixture::GetFormatsSchema());
 
@@ -3445,7 +3446,7 @@ static void createV3_2SchemaWithAllItemTypes(ECSchemaPtr& schema)
 TEST_F(SchemaManagerTests, PruneImportedNamelessPropertyCategories)
     {
     ECSchemaPtr schema;
-    createV3_2SchemaWithAllItemTypes(schema);
+    createV3_3SchemaWithAllItemTypes(schema);
         {
         PropertyCategoryP namelessPropCateg;
         ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(namelessPropCateg, ""));
@@ -3467,7 +3468,7 @@ TEST_F(SchemaManagerTests, PruneImportedNamelessPropertyCategories)
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("prune_imported_nameless_property_categories.ecdb"));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(schema)) << "Importing schema should succeed";
-    ECSchemaCP storedSchema = m_ecdb.Schemas().GetSchema("TestSchema3_2");
+    ECSchemaCP storedSchema = m_ecdb.Schemas().GetSchema("TestSchema3_3");
     ECClassCP structClass = storedSchema->GetClassCP("structClass");
         {
         ASSERT_NE(nullptr, storedSchema) << "schema should be found after import";

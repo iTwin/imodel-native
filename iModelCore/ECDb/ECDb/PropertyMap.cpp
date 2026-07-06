@@ -292,6 +292,9 @@ DbColumn::Type PrimitivePropertyMap::DetermineColumnDataType(ECN::PrimitiveType 
 
             case ECN::PrimitiveType::PRIMITIVETYPE_String:
                 return DbColumn::Type::Text;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_Json:
+                return DbColumn::Type::Text;
         }
 
     BeAssert(false && "Type not supported");

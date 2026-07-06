@@ -41,14 +41,17 @@ enum class Feature
 
 enum class Compat { Warn, ReadOnly, NoSchemaImport, Refuse };
 
+//! Function that returns true if the feature is currently in use in the given ECDb.
+//! Set to nullptr for write-once features (e.g. profile-upgrade changes)
+using FeatureDetector = bool (*)(ECDbCR);
+
 struct ECDB_EXPORT FeatureInfo
     {
     Utf8CP name;
     Utf8CP description;
     Compat compat;
+    FeatureDetector featureDetector;
     };
-
-#define KNOWN_FEATURES { }
 
 //=======================================================================================
 // @bsiclass
@@ -77,7 +80,14 @@ public:
     static bool IsFeatureKnown(Utf8StringCR featureName);
     static std::vector<FeatureInfo const*> GetAllKnownFeatures();
     static BentleyStatus InsertFeature(ECDbCR ecdb, Utf8StringCR featureName);
+    static BentleyStatus DeleteFeature(ECDbCR ecdb, Utf8StringCR featureName);
     static Utf8CP FeatureCompatToString(Compat compat);
+
+    //! Reconciles all schema-driven feature rows after a schema modification (import or drop).
+    //! Inserts or removes rows based on the current state of the database.
+    //! TODO Rohit: This needs further discussion.
+    //! This was easy for the Json primitive type as we can just check the db. But it might get expensive where in memory scans might be needed.
+    static BentleyStatus ReconcileSchemaFeatures(ECDbCR ecdb);
     };
 
 

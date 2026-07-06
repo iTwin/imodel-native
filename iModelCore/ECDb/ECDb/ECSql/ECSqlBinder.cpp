@@ -125,6 +125,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
                     case ECN::PRIMITIVETYPE_Integer:
                     case ECN::PRIMITIVETYPE_Long:
                     case ECN::PRIMITIVETYPE_String:
+                    case ECN::PRIMITIVETYPE_Json:
                         return std::unique_ptr<ECSqlBinder>(new PrimitiveECSqlBinder(ctx, typeInfo, nameGen));
 
                     case ECN::PRIMITIVETYPE_Point2d:

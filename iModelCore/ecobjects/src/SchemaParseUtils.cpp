@@ -313,6 +313,8 @@ ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveTyp
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_JSON))
+        primitiveType = PRIMITIVETYPE_Json;
     else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY_ROOT))
         primitiveType = PRIMITIVETYPE_IGeometry;
     else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_ROOT))
@@ -459,6 +461,8 @@ Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
             return EC_PRIMITIVE_TYPENAME_STRING;
         case PRIMITIVETYPE_IGeometry:
             return EC_PRIMITIVE_TYPENAME_IGEOMETRY;
+        case PRIMITIVETYPE_Json:
+            return EC_PRIMITIVE_TYPENAME_JSON;
         default:
             return EMPTY_STRING;
         }

@@ -7,13 +7,12 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.6` |
 | ECSQL   | `2.0.3.3` |
 
-## ## `06/29/2026`: Added `ec_Feature` table — profile version `4.0.0.5` → `4.0.0.6`
-* ECDb profile version change `4.0.0.5` → `4.0.0.6`.
+## `07/06/2026`: Added support for feature-driven ecschema evolution
+* ECDb profile version change `4.0.0.5` -> `4.0.0.6`.
+* Added `PRIMITIVETYPE_Json` (`typeName="json"`) as a fully supported ECXml 3.3 primitive type.
 * Added `ec_Feature` table to every new ECDb file and to existing files through a profile upgrade.
 * The table is a persistent, self-describing record of which optional features are in use in a specific file.
 * Open-time enforcement: unknown features with `ReadOnly` compat block write access; unknown features with `NoSchemaImport` compat block schema imports/updates; unknown features with `Refuse` compat block all access.
-
-## ## `06/29/2026`: Added PRAGMAs `ecdb_known_features` and `ecdb_used_features`
 * ECSql version change `2.0.3.2` -> `2.0.3.3`.
 * Added `PRAGMA ecdb_known_features` which returns a list of the features supported by the ECDb runtime.
 * Added `PRAGMA ecdb_used_features` which returns a list of features that are being used in the ECDb file.

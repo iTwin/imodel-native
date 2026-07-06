@@ -208,6 +208,8 @@
 #define EC_PRIMITIVE_TYPENAME_POINT3D       "point3d"
 #define EC_PRIMITIVE_TYPENAME_STRING        "string"
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY     "Bentley.Geometry.Common.IGeometry";
+//! Introduced in ECXml3.3
+#define EC_PRIMITIVE_TYPENAME_JSON                  "json"
 // This is used for matching incoming types to any common geometry type
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY_ROOT "Bentley.GeometryNET.Common"
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY_ROOT        "Bentley.Geometry.Common"

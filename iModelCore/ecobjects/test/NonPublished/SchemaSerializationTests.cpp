@@ -1083,4 +1083,43 @@ TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
         << ECTestUtility::JsonSchemasComparisonString(expectedSchemaJson, actualSchemaJson);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, JsonPrimitive_SerializationRoundTrip)
+    {
+    // Parse a V3.3 schema with a json property, serialize it back, and re-parse.
+    // The re-parsed schema must still have the json type and the namespace must be 3.3.
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="TestJsonProp" typeName="json" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
+
+    // Serialize using the version required by the schema content.
+    Utf8String serialized;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serialized, schema->GetRequiredECVersion()));
+
+    // The namespace must advertise 3.3.
+    EXPECT_TRUE(serialized.Contains("Bentley.ECXML.3.3")) << "Serialized XML must carry ECXML.3.3 namespace when schema has a json property";
+
+    // Re-parse and verify the round-trip.
+    ECSchemaPtr schema2;
+    ECSchemaReadContextPtr ctx2 = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, serialized.c_str(), *ctx2));
+
+    ECClassCP cls = schema2->GetClassCP("TestClass");
+    ASSERT_NE(nullptr, cls);
+    ECPropertyP prop = cls->GetPropertyP("TestJsonProp");
+    ASSERT_NE(nullptr, prop);
+    EXPECT_EQ(PRIMITIVETYPE_Json, prop->GetAsPrimitiveProperty()->GetType());
+    EXPECT_STREQ("json", prop->GetTypeName().c_str());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

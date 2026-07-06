@@ -402,6 +402,7 @@ Utf8CP JsonECSqlValue::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodTyp
             case PRIMITIVETYPE_Point3d:
                 return "GetPoint3d";
             case PRIMITIVETYPE_String:
+            case PRIMITIVETYPE_Json:
                 return "GetText";
 
             default:

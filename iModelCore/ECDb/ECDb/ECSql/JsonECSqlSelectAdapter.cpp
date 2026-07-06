@@ -684,6 +684,7 @@ BentleyStatus AdapterHelper::PrimitiveToJson(BeJsValue jsonValue, IECSqlValue co
             }
 
             case PRIMITIVETYPE_String:
+            case PRIMITIVETYPE_Json:
             {
             jsonValue =  ecsqlValue.GetText();
             return SUCCESS;

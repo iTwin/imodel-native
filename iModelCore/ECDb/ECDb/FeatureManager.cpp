@@ -6,6 +6,27 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// Detects whether any property in the DB uses the json primitive type (PRIMITIVETYPE_Json).
+//---------------------------------------------------------------------------------------
+static bool DetectJsonPrimitiveType(ECDbCR ecdb)
+    {
+    Statement stmt;
+    if (stmt.Prepare(ecdb, "SELECT 1 FROM main.ec_Property WHERE PrimitiveType=? LIMIT 1") != BE_SQLITE_OK)
+        return false;
+    stmt.BindInt(1, static_cast<int>(ECN::PRIMITIVETYPE_Json));
+    return stmt.Step() == BE_SQLITE_ROW;
+    }
+
+#define KNOWN_FEATURES { \
+    { "json-primitive-type", FeatureInfo{ \
+        "json-primitive-type", \
+        "JSON Primitive Types", \
+        Compat::ReadOnly, \
+        DetectJsonPrimitiveType} \
+    } \
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -134,6 +155,45 @@ BentleyStatus FeatureManager::InsertFeature(ECDbCR ecdb, Utf8StringCR featureNam
         return BentleyStatus::SUCCESS;
 
     return BentleyStatus::ERROR;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus FeatureManager::DeleteFeature(ECDbCR ecdb, Utf8StringCR featureName)
+    {
+    Statement stmt;
+    if (stmt.Prepare(ecdb, "DELETE FROM " TABLE_Feature " WHERE Name=?") != BE_SQLITE_OK)
+        return BentleyStatus::ERROR;
+
+    stmt.BindText(1, featureName.c_str(), Statement::MakeCopy::No);
+    if (stmt.Step() == BE_SQLITE_DONE)
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus FeatureManager::ReconcileSchemaFeatures(ECDbCR ecdb)
+    {
+    if (!ecdb.TableExists(TABLE_Feature))
+        return BentleyStatus::SUCCESS;
+
+    for (auto const& [name, info] : *s_knownFeatures)
+        {
+        if (info.featureDetector == nullptr)
+            continue;
+
+        const auto status = info.featureDetector(ecdb) ? InsertFeature(ecdb, name) : DeleteFeature(ecdb, name);
+        if (status != BentleyStatus::SUCCESS)
+            return status;
+        }
+
+    return BentleyStatus::SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -119,7 +119,8 @@ public:
             val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_DateTime) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Double) ||
             val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_IGeometry) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Integer) ||
             val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Long) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Point2d) ||
-            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Point3d) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_String))
+            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Point3d) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_String) ||
+            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Json))
             return Enum::FromInt<ECN::PrimitiveType>(val);
 
         return Nullable<ECN::PrimitiveType>();
