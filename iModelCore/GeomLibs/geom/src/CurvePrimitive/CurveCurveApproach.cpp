@@ -110,13 +110,20 @@ CCAXYZProcessor (double maxDistance = 0.0, IFacetOptionsCP strokeOptions = nullp
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static double Snap01(double& x, double tolerance = 1.0e-10)
+void TestEndPoints(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverseOrder)
     {
-    if (fabs (x) < tolerance)
-        x = 0.0;
-    else if (fabs (x - 1) < tolerance)
-        x = 1.0;
-    return x;
+    DPoint3d startA, endA, startB, endB; // closed curve duplicate approaches will be filtered
+    if (!curveA->GetStartEnd(startA, endA) || !curveB->GetStartEnd(startB, endB))
+        return;
+    CurveLocationDetail detail;
+    if (curveB->ClosestPointBounded(startA, detail))
+        CollectPair(curveA, &startA, 0.0, curveB, &detail.point, detail.fraction, bReverseOrder);
+    if (curveB->ClosestPointBounded(endA, detail))
+        CollectPair(curveA, &endA, 1.0, curveB, &detail.point, detail.fraction, bReverseOrder);
+    if (curveA->ClosestPointBounded(startB, detail))
+        CollectPair(curveA, &detail.point, detail.fraction, curveB, &startB, 0.0, bReverseOrder);
+    if (curveA->ClosestPointBounded(endB, detail))
+        CollectPair(curveA, &detail.point, detail.fraction, curveB, &endB, 1.0, bReverseOrder);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -135,12 +142,11 @@ bvector<DPoint3d> StrokeCurveForNewtonSeed(ICurvePrimitiveCR curve)
     static size_t s_minStrokeCount = 5;
     if (!IsLinear(&curve) && strokes.size() < s_minStrokeCount)
         {
-        GetStrokeOptions()->SetChordTolerance(0.5 * GetStrokeOptions()->GetChordTolerance());
-        GetStrokeOptions()->SetAngleTolerance(0.5 * GetStrokeOptions()->GetAngleTolerance());
+        auto segData = PolylineOps::SumSegmentLengths(strokes);
+        auto maxEdgeLength = segData.Mean() / (s_minStrokeCount / segData.Count());
+        GetStrokeOptions()->SetMaxEdgeLength(maxEdgeLength);
         strokes.clear();
         curve.AddStrokes(strokes, *GetStrokeOptions());
-        GetStrokeOptions()->SetChordTolerance(2 * GetStrokeOptions()->GetChordTolerance());
-        GetStrokeOptions()->SetAngleTolerance(2 * GetStrokeOptions()->GetAngleTolerance());
         }
 
     GetStrokeOptions()->SetMaxEdgeLength(saveMaxEdgeLength);
@@ -150,7 +156,7 @@ bvector<DPoint3d> StrokeCurveForNewtonSeed(ICurvePrimitiveCR curve)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverse) override
+void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverseOrder) override
     {
     bvector<DPoint3d> strokesA = StrokeCurveForNewtonSeed(*curveA);
     bvector<DPoint3d> strokesB = StrokeCurveForNewtonSeed(*curveB);
@@ -173,14 +179,6 @@ void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB,
             return;
         }
 
-    auto collectApproachUV = [&](double u, double v) -> bool
-        {
-        if (!DoubleOps::IsIn01(Snap01(u), Snap01(v)))
-            return false;
-        CollectPair(curveA, curveB, u, v, bReverse);
-        return true;
-        };
-
     CurveCurveApproachIterate iterate(curveA, curveB);
     NewtonIterationsRRToRR newton(m_newtonFractionTol, m_newtonFractionTol);
     newton.SetMaxIterations(m_maxIterations);
@@ -191,7 +189,6 @@ void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB,
         {
         double u = seedA[i].fraction;
         double v = seedB[i].fraction;
-        double u0 = u, v0 = v;
 
         // convert from linestring to curve fractions
         if (curveA->ClosestPointBounded(seedA[i].point, detail))
@@ -202,21 +199,11 @@ void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB,
         if (needNewton)
             newton.RunNewton(u, v, iterate);
 
-        if (!collectApproachUV(u, v))
-            {
-            // Newton drifted outside [0,1]
-            bool endPointA = u0 == 0.0 || u0 == 1.0;
-            bool endPointB = v0 == 0.0 || v0 == 1.0;
-            if (!endPointA && !endPointB)
-                continue;
-            // if we started at an endpoint, collect the closest approach from there
-            if (endPointA && !endPointB && curveB->ClosestPointBounded(seedA[i].point, detail))
-                v0 = detail.fraction;
-            else if (!endPointA && endPointB && curveA->ClosestPointBounded(seedB[i].point, detail))
-                u0 = detail.fraction;
-            collectApproachUV(u0, v0);
-            }
+        if (DoubleOps::IsIn01(u, v))
+            CollectPair(curveA, curveB, u, v, bReverseOrder);
         }
+
+    TestEndPoints(curveA, curveB, bReverseOrder);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -293,21 +280,7 @@ void ProcessLineArc(
             }
         }
 
-    // check endpoints
-    CurveLocationDetail detail;
-    if (curveB->ClosestPointBounded(segmentA.point[0], detail))
-        CollectPair(curveA, &segmentA.point[0], 0.0, curveB, &detail.point, detail.fraction, bReverseOrder);
-    if (curveB->ClosestPointBounded(segmentA.point[1], detail))
-        CollectPair(curveA, &segmentA.point[1], 1.0, curveB, &detail.point, detail.fraction, bReverseOrder);
-    if (!arcB.IsFullEllipse())
-        {
-        DPoint3d arcStartPt, arcEndPt;
-        arcB.EvaluateEndPoints(arcStartPt, arcEndPt);
-        if (curveA->ClosestPointBounded(arcStartPt, detail))
-            CollectPair(curveA, &detail.point, detail.fraction, curveB, &arcStartPt, 0.0, bReverseOrder);
-        if (curveA->ClosestPointBounded(arcEndPt, detail))
-            CollectPair(curveA, &detail.point, detail.fraction, curveB, &arcEndPt, 1.0, bReverseOrder);
-        }
+    TestEndPoints(curveA, curveB, bReverseOrder);
     }
 };
 
