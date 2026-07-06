@@ -29,6 +29,8 @@ To add a new library:
    %endif
    ```
 
+> **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
+
 Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 
 ## Setup

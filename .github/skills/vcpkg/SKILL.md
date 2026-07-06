@@ -135,6 +135,16 @@ Libraries that **only** build as static (e.g. compress, crashpad client) can ski
 `%if defined (CREATE_STATIC_LIBRARIES)` conditional and use `$(OutputRootDir)vcpkg_installed/…`
 directly — their `OutputRootDir` is always the static one.
 
+### 6. Migrating an existing (previously vendored) library
+
+When the library you are moving to vcpkg was previously vendored (its source checked into
+`iModelCore/libsrc/<mylib>/`), the vendored source deletion belongs in the **same** PR as the
+vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will
+likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then
+remove the vendored code in a separate standalone commit within that same PR. Deleting the
+vendored source up front produces too many modified files for Copilot to review, and the review
+may not run at all.
+
 ---
 
 ## Updating an Existing Library Version
