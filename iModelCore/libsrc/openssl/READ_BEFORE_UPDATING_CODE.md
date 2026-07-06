@@ -3,17 +3,24 @@
 ## Android patch
 When updating code make sure to that following change is not overridden. It is required to ensure V2 checkpoint can be downloaded on android.
 
+The `i = 1;` line is REQUIRED: `X509_NAME_hash_old()` does not set the `i` out-parameter
+(unlike `X509_NAME_hash_ex()`), so without it the subsequent `if (i == 0)` check reads an
+uninitialized variable and intermittently crashes during TLS certificate verification.
+This was originally fixed in [PR #986](https://github.com/iTwin/imodel-native/pull/986);
+do not drop it when re-creating this patch.
+
 File [by_dir.c](./vendor/crypto/x509/by_dir.c) as following [patch](https://github.com/iTwin/imodel-native/pull/315/commits/b6c95911cc66756f9572c875f59ed45eaa3cc053)
 `````
 --- a/iModelCore/libsrc/openssl/vendor/crypto/x509/by_dir.c
 +++ b/iModelCore/libsrc/openssl/vendor/crypto/x509/by_dir.c
-@@ -261,7 +261,13 @@ static int get_cert_by_subject_ex(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
+@@ -261,7 +261,14 @@ static int get_cert_by_subject_ex(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
      }
  
      ctx = (BY_DIR *)xl->method_data;
 +
 +#if defined(__ANDROID__)
 +    h = X509_NAME_hash_old(name);
++    i = 1; // X509_NAME_hash_old() does not set i; assume ok (PR #986)
 +#else
      h = X509_NAME_hash_ex(name, libctx, propq, &i);
 +#endif
