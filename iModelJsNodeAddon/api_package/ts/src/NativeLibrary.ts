@@ -1083,6 +1083,62 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
   }
 
+  /** The kind of change carried by an AppModel changeset file. */
+  const enum AppModelChangesetType {
+    /** Contains data changes only. */
+    Regular = 0,
+    /** Contains schema (DDL) changes, possibly along with data changes. */
+    Schema = 1,
+  }
+
+  /** Properties that describe an AppModel changeset file produced by [[AppModelDb.beginCreateChangeset]]. */
+  interface AppModelChangesetProps {
+    /** The SHA1 id of this changeset, computed from its parent id and its file contents. */
+    id: string;
+    /** The id of the parent changeset this changeset chains onto ("" for the first changeset). */
+    parentId: string;
+    /** The guid of the AppModelDb this changeset originated from. */
+    dbGuid: string;
+    /** Whether this changeset carries schema (DDL) changes or data-only changes. */
+    changesetType: AppModelChangesetType;
+    /** The full path of the changeset file. */
+    fileName: string;
+  }
+
+  /**
+   * A [[SQLiteDb]] that carries the "AppModel" profile. It automatically records local changes into an
+   * internal txns table on each [[saveChanges]] (when open read-write) and can combine them into self-describing
+   * AppModel *changeset* files (SHA1-identified and chained onto a parent) that can be validated and merged
+   * into other AppModelDbs. This is independent of the iModel changeset pipeline.
+   */
+  class AppModelDb extends SQLiteDb {
+    /** saveChanges, optionally recording a description on the resulting txn. */
+    public saveChanges(description?: string): void;
+    /** Begin creating an AppModel changeset: combine all recorded txns into a single changeset file and return its
+     * properties. Does not yet delete the captured txns or advance the changeset id - call [[endCreateChangeset]]
+     * once the file has been safely persisted to finalize.
+     * @throws if there are no recorded changes or the file could not be written.
+     */
+    public beginCreateChangeset(changesetFileName: string): AppModelChangesetProps;
+    /** Finalize the changeset started by [[beginCreateChangeset]]: delete the captured txns and advance this db's
+     * current changeset id.
+     * @throws if there is no changeset creation in progress.
+     */
+    public endCreateChangeset(): void;
+    /** Validate and merge an AppModel changeset into this db, advancing this db's parent changeset id.
+     * DDL and data changes are applied atomically; any conflict aborts and rolls back the whole changeset.
+     * @throws if the changeset did not originate from this db, does not chain onto its current changeset,
+     * has an incorrect id, or conflicts with existing data.
+     */
+    public applyChangeset(props: AppModelChangesetProps): void;
+    /** The id of this db's current changeset ("" if none has been created/merged yet). */
+    public getParentChangesetId(): string;
+    /** True when local changes have been recorded but not yet serialized into a changeset. */
+    public hasPendingTxns(): boolean;
+    /** Stage a JSON properties string to store on the next committed txn. */
+    public setTxnProps(propsJson: string): void;
+  }
+
   class SqliteStatement implements IDisposable {
     constructor();
     public bindBlob(param: number | string, val: Uint8Array | ArrayBuffer | SharedArrayBuffer): DbResult;
