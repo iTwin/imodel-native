@@ -321,9 +321,9 @@ TEST_F(ChangesetReaderTests, Insert_AllPropertyTypes)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -482,9 +482,9 @@ TEST_F(ChangesetReaderTests, Update_PartialFields_ChangesetAndDBFallback)
     EXPECT_FALSE(newKey.empty());
     EXPECT_FALSE(oldKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     // Changed: Name (scalar), Pos2d.X (partial Point2d), Details.Label (partial struct).
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Pos2d.X"));
@@ -648,9 +648,9 @@ TEST_F(ChangesetReaderTests, Delete_OldStageContainsAllValues)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::Old, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId")); // DELETE — always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -741,9 +741,9 @@ TEST_F(ChangesetReaderTests, Insert_PartialProperties)
     EXPECT_TRUE(foundWeight) << "Weight must appear in the partial-insert changeset";
 
     // GetChangeFetchedPropertyNames must always include the explicitly set properties.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -833,10 +833,10 @@ TEST_F(ChangesetReaderTests, Update_ArrayProperty)
         }
     EXPECT_EQ(2, idx);
 
-    // changedProps for UPDATE contains only "Tags" (no ECInstanceId).
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    // changedProps for UPDATE contains only "Tags" (and includes instance key properties like ECInstanceId).
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Tags"));
     EXPECT_FALSE(hasName("Name"));
     EXPECT_FALSE(hasName("Weight"));
@@ -918,9 +918,9 @@ TEST_F(ChangesetReaderTests, Update_TwoScalars)
     EXPECT_EQ(10, old_v3.GetInt64());
 
     // changedProps: only Weight and Cnt; Name and Active were not touched.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Weight"));
     EXPECT_TRUE(hasName("Cnt"));
     EXPECT_FALSE(hasName("Name"));
@@ -992,9 +992,9 @@ TEST_F(ChangesetReaderTests, Insert_NestedStruct)
     EXPECT_DOUBLE_EQ(2.34,  locVal["Coord"]["Lon"].GetDouble());
 
     // changedProps: fully-dotted paths for nested members.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Location.Street"));
@@ -1069,9 +1069,9 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_StreetOnly)
     EXPECT_STREQ("Location", oldLoc.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_STREQ("Old Street", oldLoc["Street"].GetText());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Location.Street"));
     // Coord was not touched — must not appear at all.
     EXPECT_FALSE(hasName("Location.Coord.Lat"));
@@ -1154,9 +1154,9 @@ TEST_F(ChangesetReaderTests, Update_NestedStruct_CoordOnly)
 
     // Key distinction from Point2d/3d: struct nesting NEVER collapses to a bare name,
     // so even when BOTH Lat and Lon change, changedProps has two dotted entries, not "Location.Coord".
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("Location.Coord.Lat"));
     EXPECT_TRUE(hasName("Location.Coord.Lon"));
     EXPECT_FALSE(hasName("Location.Coord"));  // struct, not a Point — no collapse
@@ -1230,9 +1230,9 @@ TEST_F(ChangesetReaderTests, Insert_StructArray)
     EXPECT_EQ(2, tagsVal.GetArrayLength());
 
     // changedProps: struct-array uses bare property name, same as primitive arrays.
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Title"));
     EXPECT_TRUE(hasName("MetaTags"));
@@ -1328,9 +1328,9 @@ TEST_F(ChangesetReaderTests, Update_StructArray)
     EXPECT_STREQ("MetaTags", oldTags.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(2, oldTags.GetArrayLength()) << "Old MetaTags must have 2 elements";
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("MetaTags"));
     EXPECT_FALSE(hasName("Title"));       // not changed
     EXPECT_TRUE(hasName("ECInstanceId")); // UPDATE — always present
@@ -1447,9 +1447,9 @@ TEST_F(ChangesetReaderTests, Insert_PartialPoint2dAndPoint3d)
     EXPECT_STREQ("Owner", prop10->GetName().c_str());
     EXPECT_TRUE(v10.IsNull());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -1608,9 +1608,9 @@ TEST_F(ChangesetReaderTests, Insert_NavProperty)
     EXPECT_EQ(containerKey.GetInstanceId(), ownerId);
     EXPECT_TRUE(relId.IsValid());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId")); // INSERT — always present
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -1693,9 +1693,9 @@ TEST_F(ChangesetReaderTests, Filter_ByTableName)
         bool isECTable = false;
         ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
         EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        EXPECT_TRUE(!changedProps.empty());
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_TRUE(!changedProps->empty());
         
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
         EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
@@ -1753,8 +1753,8 @@ TEST_F(ChangesetReaderTests, Filter_ByOpcode)
     ASSERT_EQ(ERROR, reader.GetInstanceKey(Changes::Change::Stage::Old, instanceKey));
     bool isIndirect = false;
     ASSERT_EQ(ERROR, reader.IsIndirectChange(isIndirect));
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(ERROR, reader.GetChangeFetchedPropertyNames(changedProps));
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_EQ(nullptr, changedProps);
     ASSERT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::New));
     ASSERT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
     EXPECT_TRUE(reader.GetValue(Changes::Change::Stage::New, 0).IsNull());
@@ -1809,9 +1809,9 @@ TEST_F(ChangesetReaderTests, Filter_ByECClassId)
         bool isECTable = false;
         ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
         EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        EXPECT_TRUE(!changedProps.empty());
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_TRUE(!changedProps->empty());
         
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old));
         EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New));
@@ -1877,9 +1877,9 @@ TEST_F(ChangesetReaderTests, Filter_ClearTableFilter)
         bool isECTable = false;
         ASSERT_EQ(SUCCESS, reader.IsECTable(isECTable));
         EXPECT_TRUE(isECTable);
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps)); 
-        EXPECT_TRUE(!changedProps.empty()); // should not be empty because the filter was cleared
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        EXPECT_TRUE(!changedProps->empty()); // should not be empty because the filter was cleared
 
         EXPECT_EQ(0, reader.GetColumnCount(Changes::Change::Stage::Old)); // Fields should not be empty because the filter was cleared
         EXPECT_EQ(11, reader.GetColumnCount(Changes::Change::Stage::New)); // Fields should not be empty because the filter was cleared
@@ -1980,10 +1980,10 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         IECSqlValue const& v4 = reader.GetValue(Changes::Change::Stage::New, 4);
         EXPECT_STREQ("C", v4.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("gamma", v4.GetText());
-
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("A"));
@@ -2024,9 +2024,9 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
         EXPECT_STREQ("E", v3.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("epsilon", v3.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("D"));
@@ -2101,9 +2101,9 @@ TEST_F(ChangesetReaderTests, OverflowTable_InsertAndUpdateOverflowOnly)
 
         // ECClassId was not in the UPDATE changeset (neither PK nor changed column),
         // so classIdFromChangeset=false and ECClassId does not appear in changedProps.
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("D"));
         EXPECT_TRUE(hasName("E"));
@@ -2191,9 +2191,9 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         EXPECT_STREQ("BaseCode", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("hello", v2.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId")); // physical in the primary table — present in changeset
         EXPECT_TRUE(hasName("BaseCode"));
@@ -2233,9 +2233,9 @@ TEST_F(ChangesetReaderTests, JoinedTable_Insert)
         EXPECT_STREQ("Q", v3.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("world", v3.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("P"));
         EXPECT_TRUE(hasName("Q"));
@@ -2326,9 +2326,9 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         EXPECT_STREQ("BaseCode", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("hello", v2.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId"));
         EXPECT_TRUE(hasName("BaseCode"));
@@ -2364,9 +2364,9 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         EXPECT_STREQ("Name", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_STREQ("Alice", v2.GetText());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("Name"));
         EXPECT_TRUE(hasName("ECClassId"));
@@ -2402,9 +2402,9 @@ TEST_F(ChangesetReaderTests, OverflowOfJoinedTable_Insert)
         EXPECT_STREQ("Age", v2.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_EQ(30, v2.GetInt());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_TRUE(hasName("ECClassId")); // physical in the overflow table — present in changeset
         EXPECT_TRUE(hasName("Age"));
@@ -2496,9 +2496,9 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         EXPECT_STREQ("Score", v3.GetColumnInfo().GetProperty()->GetName().c_str());
         EXPECT_EQ(99, v3.GetInt());
 
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         // ECClassId is virtual — not in the SQLite changeset, so classIdFromChangeset=false.
         EXPECT_FALSE(hasName("ECClassId"));
@@ -2563,9 +2563,9 @@ TEST_F(ChangesetReaderTests, ExistingTable_InsertAndUpdate)
         EXPECT_EQ(99, oldScore.GetInt());
 
         // ECClassId virtual → not from changeset → absent from changedProps.
-        std::vector<Utf8String> changedProps;
-        ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-        auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+        const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+        ASSERT_NE(nullptr, changedProps);
+        auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
         EXPECT_TRUE(hasName("ECInstanceId"));
         EXPECT_FALSE(hasName("ECClassId")); // virtual — resolved via GetRootClassMap, not changeset
         EXPECT_TRUE(hasName("Label"));
@@ -2657,10 +2657,10 @@ TEST_F(ChangesetReaderTests, Insert_RelationshipLinkTable_VirtualSourceTargetCla
     EXPECT_STREQ("TargetECInstanceId", v3.GetColumnInfo().GetProperty()->GetName().c_str());
     EXPECT_EQ(projectKey.GetInstanceId(), v3.GetId<ECInstanceId>());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
     auto hasName = [&](Utf8CP n) {
-        return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end();
+        return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end();
     };
 
     // Physical columns: ECInstanceId always present for INSERT; Source/TargetECInstanceId
@@ -3224,9 +3224,9 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_InMemoryPath_BelowThreshold)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -3390,9 +3390,9 @@ TEST_F(ChangesetReaderTests, OpenChangeSet_SpillPath_TempFileCreatedAndDeleted)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -3559,9 +3559,9 @@ TEST_F(ChangesetReaderTests, OpenGroup_SpillPath_TempFileCreatedAndDeleted)
     ASSERT_EQ(SUCCESS, reader.GetInstanceKey(Changes::Change::Stage::New, instanceKey));
     EXPECT_FALSE(instanceKey.empty());
 
-    std::vector<Utf8String> changedProps;
-    ASSERT_EQ(SUCCESS, reader.GetChangeFetchedPropertyNames(changedProps));
-    auto hasName = [&](Utf8CP n) { return std::find(changedProps.begin(), changedProps.end(), n) != changedProps.end(); };
+    const auto* changedProps = reader.GetChangeFetchedPropertyNames();
+    ASSERT_NE(nullptr, changedProps);
+    auto hasName = [&](Utf8CP n) { return std::find(changedProps->begin(), changedProps->end(), n) != changedProps->end(); };
     EXPECT_TRUE(hasName("ECInstanceId"));
     EXPECT_TRUE(hasName("Name"));
     EXPECT_TRUE(hasName("Weight"));
@@ -3734,6 +3734,136 @@ TEST_F(ChangesetReaderTests, StrictMode_NewerChangesetOnOlderDb)
     ASSERT_EQ(BE_SQLITE_DONE, reader.Step());
     ASSERT_EQ(SUCCESS, reader.Close());
     }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// Verifies the TableColumnCache consistency on cache hits.
+// Steps through 8 rows that all belong to the same SQLite table (ts_Widget).
+// The first Step() triggers a PRAGMA_TABLE_INFO query (cache miss); the remaining seven
+// are served from the cache (cache hits).  Column count must be identical on every row.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, TableColumnCache_HitReturnsConsistentColumns)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cache_consistent.ecdb", SchemaItem(GetSchema())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert 8 Widgets under tracking — they all map to the same SQLite table ts_Widget.
+    constexpr int kRowCount = 8;
+    for (int i = 0; i < kRowCount; ++i)
+        {
+        ECSqlStatement stmt;
+        Utf8String sql;
+        sql.Sprintf("INSERT INTO ts.Widget(Name, Weight) VALUES('W%d', %d.5)", i, i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Walk all 8 rows.  The first step is a cache miss (PRAGMA_TABLE_INFO is queried);
+    // steps 2-8 are cache hits.  Any discrepancy in column count indicates a bug where
+    // the cached result differs from the freshly queried result.
+    int expectedColumnCount = -1;
+    int rowsSeen = 0;
+    while (reader.Step() == BE_SQLITE_ROW)
+        {
+        int colCount = reader.GetColumnCount(Changes::Change::Stage::New);
+        ASSERT_GT(colCount, 0);
+        if (expectedColumnCount < 0)
+            expectedColumnCount = colCount;
+        else
+            EXPECT_EQ(expectedColumnCount, colCount)
+                << "column count changed between rows (cache inconsistency on row " << rowsSeen << ")";
+        ++rowsSeen;
+        }
+    EXPECT_EQ(kRowCount, rowsSeen);
+    ASSERT_EQ(SUCCESS, reader.Close());
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies that the LRU eviction in TableColumnCache is transparent and correct.
+// A schema with 26 sealed EC classes (T01..T26) is created — one more than the cache's
+// MAX_ENTRIES limit of 25.  One row is inserted per class, so the reader accesses 26
+// distinct SQLite tables in sequence.  When the 26th table is first seen the cache is
+// full and must evict the least-recently-used entry before inserting the new one.
+// Every row must still be returned with correct column metadata (3 columns: ECInstanceId,
+// ECClassId, Name) regardless of whether its table entry was evicted.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangesetReaderTests, TableColumnCache_Eviction_26TablesAllCorrect)
+    {
+    static constexpr int kTableCount = 26;
+
+    // Build a schema string containing 26 sealed EC classes T01..T26, each with a single
+    // string property Name.  Each class maps to a distinct SQLite table (tc_T01..tc_T26).
+    Utf8String schemaXml;
+    schemaXml.append(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestCache" alias="tc" version="01.00.00"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">)xml");
+    for (int i = 1; i <= kTableCount; ++i)
+        {
+        Utf8String classDef;
+        classDef.Sprintf(
+            R"xml(<ECEntityClass typeName="T%02d" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string"/>
+            </ECEntityClass>)xml", i);
+        schemaXml.append(classDef);
+        }
+    schemaXml.append("</ECSchema>");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cache_26tables.ecdb", SchemaItem(schemaXml.c_str())));
+
+    TestCSChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    // Insert one row per class in order T01 → T26.
+    for (int i = 1; i <= kTableCount; ++i)
+        {
+        ECSqlStatement stmt;
+        Utf8String sql;
+        sql.Sprintf("INSERT INTO tc.T%02d(Name) VALUES('Row%02d')", i, i);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    auto cs = std::make_unique<TestCSChangeSet>();
+    ASSERT_EQ(BE_SQLITE_OK, cs->FromChangeTrack(tracker));
+
+    ChangesetReader reader;
+    ASSERT_EQ(BE_SQLITE_OK, reader.OpenInMemoryChangeset(m_ecdb,
+        std::move(cs), false, ChangesetReader::PropertyFilter::All, GetDefaultSpillThresholdBytes()));
+
+    // Each row must report 3 New-stage columns: ECInstanceId, ECClassId, Name.
+    // The 26th distinct table causes an LRU eviction; its row and any re-queried rows
+    // must still be resolved correctly.
+    int rowsSeen = 0;
+    while (reader.Step() == BE_SQLITE_ROW)
+        {
+        EXPECT_EQ(3, reader.GetColumnCount(Changes::Change::Stage::New))
+            << "unexpected column count on row " << rowsSeen;
+
+        IECSqlValue const& v0 = reader.GetValue(Changes::Change::Stage::New, 0);
+        EXPECT_STREQ("ECInstanceId", v0.GetColumnInfo().GetProperty()->GetName().c_str());
+        EXPECT_TRUE(v0.GetId<ECInstanceId>().IsValid())
+            << "ECInstanceId must be valid on row " << rowsSeen;
+
+        DbOpcode opcode;
+        ASSERT_EQ(SUCCESS, reader.GetOpcode(opcode));
+        EXPECT_EQ(DbOpcode::Insert, opcode);
+
+        ++rowsSeen;
+        }
+    EXPECT_EQ(kTableCount, rowsSeen) << "all 26 rows must be returned despite LRU eviction";
+    ASSERT_EQ(SUCCESS, reader.Close());
     }
 
 END_ECDBUNITTESTS_NAMESPACE
