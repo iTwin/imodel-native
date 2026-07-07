@@ -4309,6 +4309,15 @@ TEST_F(ECSqlStatementTestFixture, IsAndIsNotOperatorNullSafeSemantics)
     // operands of incompatible types are rejected (string vs point)
     ECSqlStatement bad;
     EXPECT_NE(ECSqlStatus::Success, bad.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS P1"));
+
+    // a parenthesized qualified name that resolves to neither a class nor an existing property/enumerator
+    // is rejected at prepare time (it falls through to a property reference that fails to resolve):
+    ECSqlStatement badProp;
+    EXPECT_NE(ECSqlStatus::Success, badProp.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE S1 IS (Foo.NonExistentProp)"));
+    // enum whose enumerator does not exist: the enum is found but the enumerator is not, so it is not a
+    // silent pass either
+    ECSqlStatement badEnum;
+    EXPECT_NE(ECSqlStatus::Success, badEnum.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE Status IS (ts.Status.DoesNotExist)"));
     }
 
 //---------------------------------------------------------------------------------------

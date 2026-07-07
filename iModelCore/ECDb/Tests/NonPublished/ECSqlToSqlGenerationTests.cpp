@@ -1291,6 +1291,9 @@ TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
                 <ECNavigationProperty propertyName="ParentA" relationshipName="FooOwnsFoos" direction="Backward" />
                 <ECNavigationProperty propertyName="ParentB" relationshipName="FooRefFoos" direction="Backward" />
               </ECEntityClass>
+              <ECEntityClass typeName="Bar" modifier="None">
+                <ECProperty propertyName="B1" typeName="string" />
+              </ECEntityClass>
               <ECRelationshipClass typeName="FooOwnsFoos" strength="embedding" modifier="None">
                 <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Foo" /></Source>
                 <Target multiplicity="(0..*)" roleLabel="owned by" polymorphic="true"><Class class="Foo" /></Target>
@@ -1344,5 +1347,23 @@ TEST_F(ECSqlToSqlGenerationTests, IsAndIsNotOperatorBetweenOperands)
     // multi-column point operand still expands column-wise through the parenthesized property reference
     assertWhere("SELECT 1 FROM ts.Foo WHERE P1 IS (Foo.P2)",
                 "WHERE ([Foo].[P1_X] IS [Foo].[P2_X] AND [Foo].[P1_Y] IS [Foo].[P2_Y] AND [Foo].[P1_Z] IS [Foo].[P2_Z])");
+
+    // regression: the type_list_item grammar refactor (opt_only is now inlined into three explicit
+    // alternatives) must keep the ONLY / ALL and comma-separated type-list forms routing through the
+    // type-predicate path - not TryParseParenthesizedNameAsValueExp, which would reinterpret the
+    // parenthesized name as a value expression. An ONLY (non-polymorphic) list is optimized to an
+    // exact 'IN (<classId>)' filter and does not use ec_cache_ClassHierarchy; a polymorphic
+    // comma-separated list resolves through ec_cache_ClassHierarchy.
+    {
+    Utf8String onlySql = GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ONLY ts.Foo)");
+    EXPECT_FALSE(onlySql.empty()) << "IS (ONLY ts.Foo) must prepare as a type predicate";
+    EXPECT_FALSE(onlySql.Contains("ec_cache_ClassHierarchy")) << "ONLY is a non-polymorphic exact match: " << onlySql;
+
+    Utf8String onlyListSql = GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ONLY ts.Foo, ONLY ts.Bar)");
+    EXPECT_FALSE(onlyListSql.empty()) << "IS (ONLY ts.Foo, ONLY ts.Bar) must prepare as a type predicate";
+    EXPECT_FALSE(onlyListSql.Contains("ec_cache_ClassHierarchy")) << "an all-exact type list is optimized: " << onlyListSql;
+    }
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS (ts.Foo, ts.Bar)").Contains("ec_cache_ClassHierarchy"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT 1 FROM ts.Foo WHERE ECClassId IS NOT (ts.Foo, ts.Bar)").Contains("ec_cache_ClassHierarchy"));
     }
 END_ECDBUNITTESTS_NAMESPACE

@@ -1727,6 +1727,12 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS (P.I)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS (p.I)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS NOT (p.I)"));
+    // a parenthesized qualified name that resolves to neither a class nor an existing property is an
+    // error: it is not a class (so it is not a type predicate) and it falls through
+    // TryParseParenthesizedNameAsValueExp to a PropertyNameExp that then fails property resolution -
+    // it is not silently accepted.
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS (P.NonExistentProp)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS NOT (p.NonExistentProp)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 8 % 3 = 2"));
