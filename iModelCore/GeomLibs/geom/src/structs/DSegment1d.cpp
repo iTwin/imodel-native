@@ -99,7 +99,6 @@ double DSegment1d::EndToStartDistance (DSegment1dCR other) const
     return fabs (EndToStartDelta (other));
     }
 
-
 bool DSegment1d::IsEqual (DSegment1dCR other) const
     {
     return m_x0 == other.m_x0 && m_x1 == other.m_x1;

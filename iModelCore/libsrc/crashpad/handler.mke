@@ -7,10 +7,6 @@
 
 %include mdl.mki
 
-%if $(TARGET_PLATFORM)=="Windows"
-	%error Windows crashpad handler delivery is deferred — see PR #1466; comment out this line for a local test build
-%endif
-
 appName             = CrashpadHandler
 crashpadDir         = $(_MakeFilePath)
 libsrcDir           = $(crashpadDir)../
@@ -20,9 +16,19 @@ o                   = $(OutputRootDir)build/$(appName)/
 #--------------------------------------------------------------------------------------
 #   Determine vcpkg triplet from TARGET_PROCESSOR_ARCHITECTURE
 #--------------------------------------------------------------------------------------
+# This library's base triplet sets explicit -RTC flags, so use the veracode overlay
+# triplet (which omits them) for veracode builds.
+vcpkgUseVeracodeTriplet = 1
 %include $(libsrcDir)vcpkg.mki
 
+# The vcpkg_install_crashpad chain part always runs as Static, so installed packages
+# (including the handler exe) live under the static OutputRootDir.  Both static and
+# dynamic builds point vcpkgInstallRoot there so no second vcpkg invocation is needed.
+%if defined (CREATE_STATIC_LIBRARIES)
 vcpkgInstallRoot    = $(OutputRootDir)vcpkg_installed/crashpad/
+%else
+vcpkgInstallRoot    = $(OutputRootDir)static/vcpkg_installed/crashpad/
+%endif
 vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 %if $(TARGET_PLATFORM)=="Windows"
 	vcpkgHandlerExe     = $(vcpkgTripletDir)tools/crashpad_handler$(exeext)
@@ -34,23 +40,31 @@ vcpkgTripletDir     = $(vcpkgInstallRoot)$(vcpkgTriplet)/
 handlerOut          = $(o)$(appName)$(exeext)
 
 #--------------------------------------------------------------------------------------
-#   Run vcpkg to build crashpad artifacts.
+#   vcpkg install was performed by the vcpkg_install_crashpad chain part before this mke
+#   runs (for both static and dynamic builds via the LibType="Static" PartFile dep).
 #--------------------------------------------------------------------------------------
 always:
 	!~@mkdir $(o)
-%if defined (winNT)
-	$(libsrcDir)vcpkg_run_install.bat $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%else
-	$(libsrcDir)vcpkg_run_install.sh $(crashpadDir) $(vcpkgInstallRoot) $(vcpkgTriplet)
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Deliver handler executable with expected product name.
+#   Note: -$(deleteCmd) is used to delete the destination if it exists so that the
+#   subsequent ~linkfile won't fail on rebuild.
 #--------------------------------------------------------------------------------------
 always:
+	-$(deleteCmd) "$(handlerOut)"
 	~linkfile "$(handlerOut)=$(vcpkgHandlerExe)"
+
+winSignVersionTarget = $(handlerOut)
+winSignVersionProductName = $(appName)
+%include $(libsrcDir)WinSignAndVersionRule.mki
+
+always:
+	-$(deleteCmd) "$(BuildContext)Delivery/$(appName)$(exeext)"
 	~linkfile "$(BuildContext)Delivery/$(appName)$(exeext)=$(handlerOut)"
+
 %if !defined (winNT)
+always:
 	chmod +x "$(vcpkgHandlerExe)"
 	chmod +x "$(handlerOut)"
 	chmod +x "$(BuildContext)Delivery/$(appName)$(exeext)"
