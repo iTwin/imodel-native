@@ -960,7 +960,7 @@ public: static GEOMDLLIMPEXP double Length (bvector< bvector<DPoint3d> > const &
 //! return the total length of polylines, with worldToLocal applied to each vector.  Optionally add closure edge. to each
 public: static GEOMDLLIMPEXP double Length (RotMatrixCP worldToLocal, bvector<DPoint3d> const &xyz, bool addClosure = false);
 
-//! return statistical data (sum, min, max ..) for length of segments
+//! Return statistical data for the polyline: segment count, sum of segment lengths, sum of squared segment lengths, min segment length, max segment length.
 public: static GEOMDLLIMPEXP UsageSums SumSegmentLengths (bvector<DPoint3d> const &xyz);
 
 //! return the total length of polyline with step index.  Optionally add closure edge.   Weights optional.
