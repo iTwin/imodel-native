@@ -119,7 +119,6 @@
 #include "ChangesetValue.h"
 #include "ChangesetValueFactory.h"
 #include "PreparedChangesetReader.h"
-#include "ChangesetReaderImpl.h"
 
 #include "ECSql/ECSqlBinder.h"
 #include "ECSql/IdECSqlBinder.h"

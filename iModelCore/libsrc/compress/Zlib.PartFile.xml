@@ -7,7 +7,7 @@
 
     <Part Name="Zlib" BentleyBuildMakeFile="Zlib.mke">
         <SubPart PartName="_prewire_VendorAPI" />
-        <SubPart PartName="vcpkg" PartFile="iModelCore/libsrc/vcpkg"/>
+        <SubPart PartName="vcpkg_install_compress" PartFile="iModelCore/libsrc/vcpkg"/>
         <Bindings>
             <VendorAPI Domain="zlib" />
             <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeZlib$(stlibext)</Libs>
