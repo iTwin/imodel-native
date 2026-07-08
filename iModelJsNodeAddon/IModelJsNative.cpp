@@ -108,7 +108,7 @@ template<typename T_Db> struct SQLiteOps {
     T_Db& GetOpenedDb(NapiInfoCR info) {
         auto* db = _GetMyDb();
         if (db == nullptr || !db->IsDbOpen())
-           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         return *db;
     }
@@ -299,7 +299,7 @@ template<typename T_Db> struct SQLiteOps {
         auto db = &GetOpenedDb(info);
         if (db == nullptr)
             {
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
             return;
             }
         auto dgnDb = dynamic_cast<DgnDbP>(db);
@@ -5072,7 +5072,7 @@ public:
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
         }
@@ -5088,9 +5088,12 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
@@ -5102,9 +5105,12 @@ public:
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
@@ -5117,9 +5123,12 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
@@ -5175,7 +5184,7 @@ private:
         else
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
         if (!ecdb || !ecdb->IsDbOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         return ecdb;
         }
     
@@ -5280,8 +5289,8 @@ public:
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
@@ -5299,8 +5308,8 @@ public:
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
@@ -5319,8 +5328,8 @@ public:
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str()))
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
