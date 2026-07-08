@@ -99,8 +99,16 @@ OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 DOWNLOADS_ROOT="$INSTALL_ROOT/downloads"
 mkdir -p "$DOWNLOADS_ROOT"
 
+# Isolate the git registries cache per install-root to prevent a race condition
+# where parallel vcpkg processes (building different arches) collide on the shared
+# global cache at ~/.cache/vcpkg/registries. Concurrent git fetch/GC operations on
+# that bare repo cause transient "port does not exist" failures.
+export X_VCPKG_REGISTRIES_CACHE="${INSTALL_ROOT}registries"
+mkdir -p "$X_VCPKG_REGISTRIES_CACHE"
+
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"
 echo "vcpkg: downloads=$DOWNLOADS_ROOT"
+echo "vcpkg: registries-cache=$X_VCPKG_REGISTRIES_CACHE"
 echo "vcpkg: binary-cache=$VCPKG_DEFAULT_BINARY_CACHE"
 echo "vcpkg: binary-sources=$VCPKG_BINARY_SOURCES"
 
