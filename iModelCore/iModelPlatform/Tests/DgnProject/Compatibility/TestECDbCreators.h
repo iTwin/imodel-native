@@ -27,6 +27,7 @@
 #define TESTECDB_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.ecdb"
 #define TESTECDB_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.ecdb"
 #define TESTECDB_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.ecdb"
+#define TESTECDB_JSON_PRIMITIVE "jsonprimitive.ecdb"
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
                               std::make_shared<EC31EnumsTestECDbCreator>(), \

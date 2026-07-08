@@ -23,6 +23,8 @@ bool TestDb::VersionSupportsFeature(ProfileVersion const& ecdbVersion, ECDbFeatu
 			return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
 		case ECDbFeature::SystemPropertiesHaveIdExtendedType:
 			return true; // ExtendedType is not persisted and added on the fly
+        case ECDbFeature::FeatureTable:
+            return ecdbVersion >= ProfileVersion(4, 0, 0, 6);
 
         default:
             BeAssert(false && "Unhandled ECDbFeature enum value");

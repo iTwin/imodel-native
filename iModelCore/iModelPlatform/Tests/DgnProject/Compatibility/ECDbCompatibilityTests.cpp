@@ -238,6 +238,8 @@ void Assert_BuiltinSchemaVersions_4_X_X_X(TestECDb& testDb)
     //Standard schema versions
     EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
     EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+
+    EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2363,6 +2365,81 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
                 }
 
             testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, FeatureTable_OlderRuntime_DoesNotValidate)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_JSON_PRIMITIVE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+
+            // The 4.0.0.5 runtime does not know about ec_Feature, so it performs no feature
+            // validation on open. The file opens successfully despite containing a ReadOnly feature.
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT Compat FROM " TABLE_FEATURE " WHERE Name='json-primitive-type'")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "json-primitive-type feature row must be present | " << testDb.GetDescription();
+            EXPECT_STREQ("ReadOnly", stmt.GetValueText(0)) << "json-primitive-type Compat must be ReadOnly | " << testDb.GetDescription();
+
+            // JsonHolder class loads successfully, but the 'Data' property has PRIMITIVETYPE_Json which is unknown to this runtime.
+            // Since TestSchema's OriginalECXmlVersion is newer than ECVersion::Latest, SchemaReader silently drops the property when loading the class.
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "JsonHolder");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
+
+            ECPropertyCP dataProp = cl->GetPropertyP("Data");
+            EXPECT_TRUE(dataProp == nullptr) << "Data property with PRIMITIVETYPE_Json must be silently ignored by the older runtime | " << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, JsonPrimitive_OlderRuntime_SchemaImportDoesNotCorruptFeatureTable)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_JSON_PRIMITIVE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            // All jsonprimitive.ecdb files were written by the 4.0.0.6 runtime.
+            ASSERT_EQ(ProfileState::Age::Newer, testDb.GetAge()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.DoesECDbVersionAllowSchemaImport()) << testDb.GetDescription();
+
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="CompatTestSchema" alias="cts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECEntityClass typeName="Foo">
+                        <ECProperty propertyName="Code" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            EXPECT_EQ(SUCCESS, testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << "Schema import into a same-family Newer ECDb must succeed | " << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_OK, testDb.GetDb().SaveChanges()) << testDb.GetDescription();
+
+            Statement featureStmt;
+            ASSERT_EQ(BE_SQLITE_OK, featureStmt.Prepare(testDb.GetDb(), "SELECT Compat FROM " TABLE_FEATURE " WHERE Name='json-primitive-type'")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, featureStmt.Step()) << "json-primitive-type row must still be present after schema import | " << testDb.GetDescription();
+            EXPECT_STREQ("ReadOnly", featureStmt.GetValueText(0)) << "json-primitive-type Compat must be unchanged after schema import | " << testDb.GetDescription();
             }
         }
     }

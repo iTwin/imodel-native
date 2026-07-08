@@ -7,6 +7,8 @@
 #include "CompatibilityTestFixture.h"
 #include "Profiles.h"
 
+#define TABLE_FEATURE "ec_Feature"
+
 //=======================================================================================
 // Features that were added later. Use TestDb::SupportsFeature to check whether a certain file supports a 
 // feature or not.
@@ -18,7 +20,8 @@ enum class ECDbFeature
     PersistedECVersions,
     NamedEnumerators,
     UnitsAndFormats,
-    SystemPropertiesHaveIdExtendedType
+    SystemPropertiesHaveIdExtendedType,
+    FeatureTable
     };
 
 //=======================================================================================

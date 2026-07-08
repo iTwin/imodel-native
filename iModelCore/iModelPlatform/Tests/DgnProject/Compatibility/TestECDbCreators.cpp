@@ -119,6 +119,9 @@ BentleyStatus EC32EnumsProfileUpgradedTestECDbCreator::_UpgradeSchemas() const
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(ECDbProfile::Get().GetCreatedDataFolder(), TESTECDB_EC32ENUMS_PROFILEUPGRADED, false))
         {
+        if (testFile.GetAge() == ProfileState::Age::Newer)
+            continue; // Newer files belong to a future runtime; schema upgrade does not apply here.
+
         if (testFile.GetAge() != ProfileState::Age::UpToDate)
             {
             BeAssert(false && "files to upgrade schemas for should be up-to-date profilewise.");
