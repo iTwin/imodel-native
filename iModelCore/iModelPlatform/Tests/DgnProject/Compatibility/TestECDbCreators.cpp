@@ -164,10 +164,30 @@ BentleyStatus JsonPrimitiveTestECDbCreator::_Create()
     if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
         return ERROR;
 
-    return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    if (SUCCESS != ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEntityClass typeName="JsonHolder">
                 <ECProperty propertyName="Data" typeName="json"/>
             </ECEntityClass>
-        </ECSchema>)xml"));
+        </ECSchema>)xml")))
+        return ERROR;
+
+    static constexpr Utf8CP s_seedValues[] = {
+        R"({"count":1,"label":"first"})",
+        R"([10,20,30])",
+        R"("hello")",
+    };
+
+    for (const auto jsonValue : s_seedValues)
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, "INSERT INTO ts.JsonHolder(Data) VALUES(?)"))
+            return ERROR;
+        if (ECSqlStatus::Success != stmt.BindText(1, jsonValue, IECSqlBinder::MakeCopy::No))
+            return ERROR;
+        if (BE_SQLITE_DONE != stmt.Step())
+            return ERROR;
+        }
+
+    return BE_SQLITE_OK == ecdb.SaveChanges() ? SUCCESS : ERROR;
     }

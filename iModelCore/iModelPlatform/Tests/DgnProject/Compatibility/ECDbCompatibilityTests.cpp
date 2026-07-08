@@ -2495,6 +2495,12 @@ TEST_F(ECDbCompatibilityTestFixture, JsonPrimitive_FeatureTableState)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, JsonPrimitive_ECSqlRoundTrip)
     {
+    static constexpr Utf8CP existingJsonData[] = {
+        R"({"count":1,"label":"first"})",
+        R"([10,20,30])",
+        R"("hello")",
+    };
+
     static constexpr Utf8CP testJson = R"({"answer":42,"name":"test"})";
 
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_JSON_PRIMITIVE))
@@ -2514,17 +2520,27 @@ TEST_F(ECDbCompatibilityTestFixture, JsonPrimitive_ECSqlRoundTrip)
             ASSERT_TRUE(dataProp != nullptr && dataProp->GetIsPrimitive()) << testDb.GetDescription();
             EXPECT_EQ(PRIMITIVETYPE_Json, dataProp->GetAsPrimitiveProperty()->GetType()) << testDb.GetDescription();
 
+            // Verify the seeded rows read back exactly
+            ECSqlStatement seededStmt;
+            ASSERT_EQ(ECSqlStatus::Success, seededStmt.Prepare(testDb.GetDb(), "SELECT Data FROM ts.JsonHolder ORDER BY ECInstanceId ASC")) << testDb.GetDescription();
+            for (Utf8CP expected : existingJsonData)
+                {
+                ASSERT_EQ(BE_SQLITE_ROW, seededStmt.Step()) << testDb.GetDescription();
+                EXPECT_STREQ(expected, seededStmt.GetValueText(0)) << "Seeded JSON value must read back exactly | " << testDb.GetDescription();
+                }
+            EXPECT_EQ(BE_SQLITE_DONE, seededStmt.Step()) << "Must have exactly " << std::size(existingJsonData) << " seeded rows | " << testDb.GetDescription();
+            seededStmt.Finalize();
+
             if (testDb.GetOpenParams().IsReadonly())
                 continue;
 
-            // INSERT a JSON value
+            // INSERT a JSON value and verify it round-trips exactly
             ECSqlStatement insertStmt;
             ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(testDb.GetDb(), "INSERT INTO ts.JsonHolder(Data) VALUES(?)")) << testDb.GetDescription();
             ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, testJson, IECSqlBinder::MakeCopy::No)) << testDb.GetDescription();
             ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << testDb.GetDescription();
             insertStmt.Finalize();
 
-            // SELECT it back and verify the value round-trips exactly
             ECSqlStatement selectStmt;
             ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(testDb.GetDb(), "SELECT Data FROM ts.JsonHolder ORDER BY ECInstanceId DESC LIMIT 1")) << testDb.GetDescription();
             ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step()) << testDb.GetDescription();
