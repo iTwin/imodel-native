@@ -103,7 +103,7 @@ mkdir -p "$DOWNLOADS_ROOT"
 # where parallel vcpkg processes (building different arches) collide on the shared
 # global cache at ~/.cache/vcpkg/registries. Concurrent git fetch/GC operations on
 # that bare repo cause transient "port does not exist" failures.
-export X_VCPKG_REGISTRIES_CACHE="${INSTALL_ROOT}registries"
+export X_VCPKG_REGISTRIES_CACHE="$INSTALL_ROOT/registries"
 mkdir -p "$X_VCPKG_REGISTRIES_CACHE"
 
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"

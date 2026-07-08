@@ -152,7 +152,7 @@ rem Isolate the git registries cache per install-root to prevent a race conditio
 rem where parallel vcpkg processes (building different arches) collide on the shared
 rem global cache at %LOCALAPPDATA%\vcpkg\registries. Concurrent git fetch/GC
 rem operations on that bare repo cause transient "port does not exist" failures.
-set "X_VCPKG_REGISTRIES_CACHE=%INSTALL_ROOT%registries"
+set "X_VCPKG_REGISTRIES_CACHE=%INSTALL_ROOT%\registries"
 if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%"
 
 rem Use a persistent local binary cache by default to avoid rebuilding heavy ports
