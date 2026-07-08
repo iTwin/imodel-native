@@ -144,7 +144,7 @@ BentleyStatus FeatureManager::InsertFeature(ECDbCR ecdb, Utf8StringCR featureNam
 
     // Insert the row into the ECDb file
     Statement stmt;
-    if (stmt.Prepare(ecdb, "INSERT OR IGNORE INTO " TABLE_Feature " (Name, Description, Compat) VALUES (?,?,?)") != BE_SQLITE_OK)
+    if (stmt.Prepare(ecdb,"INSERT INTO " TABLE_Feature " (Name, Description, Compat) VALUES (?,?,?) ON CONFLICT(Name) DO UPDATE SET Description=excluded.Description, Compat=excluded.Compat") != BE_SQLITE_OK)
         return BentleyStatus::ERROR;
 
     stmt.BindText(1, info->name, Statement::MakeCopy::No);
