@@ -1122,4 +1122,59 @@ TEST_F(SchemaXmlSerializationTest, JsonPrimitive_SerializationRoundTrip)
     EXPECT_STREQ("json", prop->GetTypeName().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// A schema with a json-typed property must emit 3.3 schema URI.
+// A schema without any json-typed properties must keep emitting the 3.2 URI
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaJsonSerializationTest, JsonPrimitive_JsonFormat_UsesEC33SchemaUri)
+    {
+    // Schema WITH a json-typed property
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schemaWithJson;
+
+    Utf8CP schemaXmlWithJson = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="JsonSchema" alias="js" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEntityClass typeName="Holder">
+                <ECProperty propertyName="Data" typeName="json" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaWithJson, schemaXmlWithJson, *ctx));
+
+    BeJsDocument jsonWithJson;
+    ASSERT_TRUE(schemaWithJson->WriteToJsonValue(jsonWithJson));
+    ASSERT_TRUE(jsonWithJson.isMember("$schema"));
+    EXPECT_STREQ("https://dev.bentley.com/json_schemas/ec/33/ecschema", jsonWithJson["$schema"].asCString());
+
+    // Also verify the property round-trips correctly inside the JSON output.
+    ASSERT_TRUE(jsonWithJson.isMember("items"));
+    ASSERT_TRUE(jsonWithJson["items"].isMember("Holder"));
+
+    BeJsConst propertiesArr = jsonWithJson["items"]["Holder"]["properties"];
+    ASSERT_TRUE(propertiesArr.isArray() && propertiesArr.size() == 1);
+
+    BeJsConst dataProp = propertiesArr[0];
+    EXPECT_STREQ("Data", dataProp["name"].asCString());
+    EXPECT_STREQ("json", dataProp["typeName"].asCString());
+
+    // Schema WITHOUT any json-typed property
+    ECSchemaReadContextPtr ctx2 = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schemaNoJson;
+
+    Utf8CP schemaXmlNoJson = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="PlainSchema" alias="ps" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaNoJson, schemaXmlNoJson, *ctx2));
+
+    BeJsDocument jsonNoJson;
+    ASSERT_TRUE(schemaNoJson->WriteToJsonValue(jsonNoJson));
+    ASSERT_TRUE(jsonNoJson.isMember("$schema"));
+    EXPECT_STREQ("https://dev.bentley.com/json_schemas/ec/32/ecschema", jsonNoJson["$schema"].asCString());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

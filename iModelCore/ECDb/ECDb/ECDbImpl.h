@@ -241,7 +241,7 @@ public:
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
-    std::vector<Utf8String> GetFeaturesBlockingSchemaImport() const { return m_featuresBlockingSchemaImport; }
+    std::vector<Utf8String>& GetFeaturesBlockingSchemaImport() const { return m_featuresBlockingSchemaImport; }
 
     template<typename T>
     T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {

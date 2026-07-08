@@ -11,6 +11,7 @@
 
 #define ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
 #define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/32/ecschema"
+#define ECJSON_URI_33                       "https://dev.bentley.com/json_schemas/ec/33/ecschema"
 #define ECJSON_SCHEMA_ITEM_URI              "https://dev.bentley.com/json_schemas/ec/32/schemaitem"
 
 #define ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
