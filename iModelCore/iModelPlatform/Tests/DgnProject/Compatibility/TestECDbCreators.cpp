@@ -154,3 +154,20 @@ BentleyStatus EC32EnumsProfileUpgradedTestECDbCreator::_UpgradeSchemas() const
         }
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonPrimitiveTestECDbCreator::_Create()
+    {
+    ECDb ecdb;
+    if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+        return ERROR;
+
+    return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEntityClass typeName="JsonHolder">
+                <ECProperty propertyName="Data" typeName="json"/>
+            </ECEntityClass>
+        </ECSchema>)xml"));
+    }

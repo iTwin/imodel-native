@@ -23,6 +23,8 @@ bool TestDb::VersionSupportsFeature(ProfileVersion const& ecdbVersion, ECDbFeatu
 			return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
 		case ECDbFeature::SystemPropertiesHaveIdExtendedType:
 			return true; // ExtendedType is not persisted and added on the fly
+        case ECDbFeature::FeatureTable:
+            return ecdbVersion >= ProfileVersion(4, 0, 0, 6);
 
         default:
             BeAssert(false && "Unhandled ECDbFeature enum value");
@@ -893,6 +895,58 @@ Utf8String TestDb::GetDescription() const
         }
 
     return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr.c_str(), ageStr, GetTestFile().ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestDb::FeatureTableExistsInDb() const
+    {
+    return GetDb().TableExists(TABLE_FEATURE);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+int TestDb::GetFeatureRowCount() const
+    {
+    Statement stmt;
+    if (const auto status = stmt.Prepare(GetDb(), "SELECT COUNT(*) FROM ec_Feature"); status != BE_SQLITE_OK)
+        return 0;
+
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return 0;
+
+    return stmt.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestDb::HasFeatureRow(Utf8CP featureName) const
+    {
+    Statement stmt;
+    if (const auto status = stmt.Prepare(GetDb(), "SELECT COUNT(*) FROM ec_Feature WHERE Name = ?"); status != BE_SQLITE_OK)
+        return false;
+
+    stmt.BindText(1, featureName, Statement::MakeCopy::Yes);
+    return (stmt.Step() == BE_SQLITE_ROW);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestDb::GetFeatureCompat(Utf8CP featureName) const
+    {
+    Statement stmt;
+    if (const auto status = stmt.Prepare(GetDb(), "SELECT Compatibility FROM ec_Feature WHERE Name = ?"); status != BE_SQLITE_OK)
+        return "";
+
+    stmt.BindText(1, featureName, Statement::MakeCopy::Yes);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return "";
+
+    return stmt.GetValueText(0);
     }
 
 //***************************** TestECDb ********************************************
