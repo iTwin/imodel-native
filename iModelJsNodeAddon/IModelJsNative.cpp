@@ -5553,7 +5553,7 @@ public:
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
+            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "db not open", Env());
 
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
@@ -5901,7 +5901,7 @@ public:
         }
 
         if (!db || !db->IsDbOpen())
-          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
+          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "db not open", IModelJsNativeErrorKey::NotOpen);
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
