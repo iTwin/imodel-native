@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_NOPROXY_H
-#define HEADER_CURL_NOPROXY_H
+#ifndef HEADER_CURL_PROXY_H
+#define HEADER_CURL_PROXY_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -27,17 +27,33 @@
 
 #ifndef CURL_DISABLE_PROXY
 
-#ifdef UNITTESTS
+struct Curl_easy;
+struct Curl_peer;
+struct Curl_creds;
+struct connectdata;
 
-UNITTEST bool Curl_cidr4_match(const char *ipv4,    /* 1.2.3.4 address */
-                               const char *network, /* 1.2.3.4 address */
-                               unsigned int bits);
-UNITTEST bool Curl_cidr6_match(const char *ipv6,
-                               const char *network,
-                               unsigned int bits);
-#endif
+struct proxy_info {
+  struct Curl_peer *peer; /* proxy to this peer */
+  struct Curl_creds *creds; /* use these credentials, maybe NULL */
+  uint8_t proxytype; /* what kind of proxy that is in use */
+};
 
-bool Curl_check_noproxy(const char *name, const char *no_proxy);
-#endif
+#define CURL_PROXY_IS_HTTPS(t)  \
+  (((t) == CURLPROXY_HTTPS) ||  \
+   ((t) == CURLPROXY_HTTPS2) || \
+   ((t) == CURLPROXY_HTTPS3))
 
-#endif /* HEADER_CURL_NOPROXY_H */
+#define CURL_PROXY_IS_HTTP(t)   \
+  (((t) == CURLPROXY_HTTP) ||   \
+   ((t) == CURLPROXY_HTTP_1_0))
+
+#define CURL_PROXY_IS_ANY_HTTP(t) \
+  (CURL_PROXY_IS_HTTP(t) ||       \
+   CURL_PROXY_IS_HTTPS(t))
+
+CURLcode Curl_proxy_init_conn(struct Curl_easy *data,
+                              struct connectdata *conn);
+
+#endif /* !CURL_DISABLE_PROXY */
+
+#endif /* HEADER_CURL_PROXY_H */

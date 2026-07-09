@@ -60,7 +60,7 @@ $opt_d = 'release';
 # If the OpenSSL commandline is not in search path you can configure it here!
 my $openssl = 'openssl';
 
-my $version = '1.31';
+my $version = '1.33';
 
 $opt_w = 76; # default base64 encoded lines length
 
@@ -153,7 +153,7 @@ sub warning_message() {
         print "  3. certdata.txt file format may change, lag time to update this script\n";
         print "  4. Generally unwise to blindly trust CAs without manual review & verification\n";
         print "  5. Mozilla apps use additional security checks are not represented in certdata\n";
-        print "  6. Use of this script will make a security engineer grind his teeth and\n";
+        print "  6. Use of this script makes a security engineer grind his teeth and\n";
         print "     swear at you.  ;)\n";
         exit;
     } else { # Short Form Warning
@@ -166,14 +166,16 @@ sub HELP_MESSAGE() {
     print "\t-b\tbackup an existing version of ca-bundle.crt\n";
     print "\t-d\tspecify Mozilla tree to pull certdata.txt or custom URL\n";
     print "\t\t  Valid names are:\n";
-    print "\t\t    ", join(", ", map { ($_ =~ m/$opt_d/) ? "$_ (default)" : "$_" } sort keys %urls), "\n";
+    print "\t\t    ", join(", ", map { ($_ =~ m/$opt_d/) ? "$_ (default)" : $_ } sort keys %urls), "\n";
     print "\t-f\tforce rebuild even if certdata.txt is current\n";
     print "\t-i\tprint version info about used modules\n";
     print "\t-k\tallow URLs other than HTTPS, enable HTTP fallback (insecure)\n";
     print "\t-l\tprint license info about certdata.txt\n";
     print "\t-m\tinclude meta data in output\n";
     print "\t-n\tno download of certdata.txt (to use existing)\n";
-    print wrap("\t","\t\t", "-p\tlist of Mozilla trust purposes and levels for certificates to include in output. Takes the form of a comma separated list of purposes, a colon, and a comma separated list of levels. (default: $default_mozilla_trust_purposes:$default_mozilla_trust_levels)"), "\n";
+    print wrap("\t","\t\t", "-p\tlist of Mozilla trust purposes and levels for certificates to include in output. " .
+          "Takes the form of a comma separated list of purposes, a colon, and a comma separated list of levels. " .
+          "(default: $default_mozilla_trust_purposes:$default_mozilla_trust_levels)"), "\n";
     print "\t\t  Valid purposes are:\n";
     print wrap("\t\t    ","\t\t    ", join(", ", "ALL", @valid_mozilla_trust_purposes)), "\n";
     print "\t\t  Valid levels are:\n";
@@ -226,7 +228,7 @@ sub parse_csv_param($$@) {
 
     if(scalar(@invalid) > 0) {
         # Tell the user which parameters were invalid and print the standard help
-        # message which will exit
+        # message which also exits
         print "Error: Invalid ", $description, scalar(@invalid) == 1 ? ": " : "s: ", join(", ", map { "\"$_\"" } @invalid), "\n";
         HELP_MESSAGE();
     }
@@ -255,7 +257,7 @@ sub sha256 {
 
 sub oldhash {
     my $hash = "";
-    open(C, "<$_[0]") || return 0;
+    open(C, "<$_[0]") or return 0;
     while(<C>) {
         chomp;
         if($_ =~ /^\#\# SHA256: (.*)/) {
@@ -302,11 +304,12 @@ my $oldhash = oldhash($crt);
 report "SHA256 of old file: $oldhash";
 
 if(!$opt_n) {
+    report "Using URL: $url";
     report "Downloading $txt ...";
 
     # If we have an HTTPS URL then use curl
     if($url =~ /^https:\/\//i) {
-        my $curl = `curl -V`;
+        my $curl = qx(curl -V);
         if($curl) {
             if($curl =~ /^Protocols:.* https( |$)/m) {
                 report "Get certdata with curl!";
@@ -418,7 +421,7 @@ print CRT <<EOT;
 ## It contains the certificates in ${format}PEM format and therefore
 ## can be directly used with curl / libcurl / php_curl, or with
 ## an Apache+mod_ssl webserver for SSL client authentication.
-## Just configure this file as the SSLCACertificateFile.
+## Configure this file as the SSLCACertificateFile.
 ##
 ## Conversion done with mk-ca-bundle.pl version $version.
 ## SHA256: $newhash
@@ -439,7 +442,7 @@ my @precert;
 my $cka_value;
 my $valid = 0;
 
-open(TXT,"$txt") or die "Could not open $txt: $!\n";
+open(TXT, $txt) or die "Could not open $txt: $!\n";
 while(<TXT>) {
     if(/\*\*\*\*\* BEGIN LICENSE BLOCK \*\*\*\*\*/) {
         print CRT;
@@ -490,7 +493,7 @@ while(<TXT>) {
     #
     # The latter is for certificates that have already been removed and are not
     # included. Not all explicitly distrusted certificates are ignored at this
-    # point, just those without an actual certificate.
+    # point, only those without an actual certificate.
     elsif(!$main_block && !$trust_block) {
         next;
     }
@@ -654,6 +657,7 @@ while(<TXT>) {
 }
 close(TXT) or die "Could not close $txt: $!\n";
 close(CRT) or die "Could not close $crt.~: $!\n";
+utime($filedate, $filedate, "$crt.~");
 unless($stdout) {
     if($opt_b && -e $crt) {
         my $bk = 1;
