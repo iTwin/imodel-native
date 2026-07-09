@@ -29,6 +29,19 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+namespace {
+
+struct ConflictRow : public IECSqlRow {
+    private:
+    std::vector<std::unique_ptr<IECSqlValue>> const& m_values;
+    public:
+    ConflictRow(std::vector<std::unique_ptr<IECSqlValue>> const& values) : m_values(values) {}
+    virtual int GetColumnCount() const override { return (int)m_values.size(); }
+    virtual IECSqlValue const& GetValue(int columnIndex) const override { return *m_values[columnIndex]; }
+};
+
+} // namespace
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -194,6 +207,35 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
             THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
         m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
+    }));
+    arg.Set("getEcChange", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
+        std::vector<std::unique_ptr<IECSqlValue>> originalValues;
+        std::vector<std::unique_ptr<IECSqlValue>> theirValues;
+        std::vector<std::unique_ptr<IECSqlValue>> myValues;
+        ChangesetReader::GetConflictColumnValues(
+            m_dgndb,
+            ChangesetReader::PropertyFilter::All,
+            iter,
+            originalValues,
+            theirValues,
+            myValues);
+
+        ECSqlRowAdaptor adaptor(m_dgndb);
+        BeJsNapiObject out(env);
+
+        BeJsValue originalRowJson = out["originalValues"];
+        if (adaptor.RenderRowAsObject(originalRowJson, ConflictRow(originalValues)) != SUCCESS)
+            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
+
+        BeJsValue theirsRowJson = out["theirValues"];
+        if (adaptor.RenderRowAsObject(theirsRowJson, ConflictRow(theirValues)) != SUCCESS)
+            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
+
+        BeJsValue myRowJson = out["myValues"];
+        if (adaptor.RenderRowAsObject(myRowJson, ConflictRow(myValues)) != SUCCESS)
+            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
+
+        return out;
     }));
 
     const auto resJsVal = onRebaseLocalTxnConflict.Call(m_dgndb.GetJsTxns(), {arg});

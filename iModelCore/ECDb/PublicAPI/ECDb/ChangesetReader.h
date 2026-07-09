@@ -170,6 +170,14 @@ public:
     //! @return SUCCESS on success, or ERROR if the reader is not open.
     ECDB_EXPORT BentleyStatus DisableStrictMode();
 
+    //! 
+    ECDB_EXPORT static BentleyStatus GetConflictColumnValues(
+        ECDbCR ecdb,
+        ChangesetReader::PropertyFilter propertyFilter,
+        Changes::Change const& conflict,
+        std::vector<std::unique_ptr<IECSqlValue>>& originalValues,
+        std::vector<std::unique_ptr<IECSqlValue>>& theirValues,
+        std::vector<std::unique_ptr<IECSqlValue>>& myValues);
 };
 
 

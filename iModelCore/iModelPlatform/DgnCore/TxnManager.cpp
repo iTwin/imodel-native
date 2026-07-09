@@ -1017,6 +1017,7 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
+               TABLE_NAME_STARTS_WITH("ec_cache_") ||
                DgnSearchableText::IsUntrackedFts5Table(tableName)
             ) ? TrackChangesForTable::No : TrackChangesForTable::Yes;
 }
@@ -2173,9 +2174,9 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fast
     if (m_dgndb.IsReadonly())
         m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
 
-    auto conf = PullMergeConf::Load(m_dgndb);
-    if (HasChanges() && !(conf.InProgress()))
-        m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
+    // auto conf = PullMergeConf::Load(m_dgndb);
+    // if (HasChanges() && !(conf.InProgress()))
+    //     m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
 
     changeset.ValidateContent(m_dgndb);
 

@@ -2294,7 +2294,8 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
     std::unordered_map<Utf8String, TestCase> revisionsData = {
         { revisions[0]->GetChangesetId(), { 5, 2, 0, 0, 7 } },
         { revisions[1]->GetChangesetId(), { 1, 1, 3, 0, 5 } },
-        { revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
+        //{ revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
+        { revisions[2]->GetChangesetId(), { 0, 1, 43, 0, 7 } },
     };
 
     auto changesets = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
@@ -2326,6 +2327,46 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
 
         EXPECT_EQ(changeset["scan_count"].asUInt(), expected.scanCount) << "Scan count mismatch for changeset: " << id;
         EXPECT_EQ(changeset["health_stats"].size(), expected.sqlStatementCount) << "SQL statement count mismatch for changeset: " << id;
+
+        // For the major-schema-update changeset, verify that any rows beyond the baseline come
+        // exclusively from ec_cache_ tables (ec_cache_ClassHierarchy, ec_cache_ClassHasTables).
+        // These assertions are invariant: they pass both with and without the ec_cache_ exclusion
+        // in TxnManager::_FilterTable, so they can be used to confirm that filtering ec_cache_
+        // tables accounts for exactly all the "extra" rows previously appearing in schema changesets.
+        if (id == revisions[2]->GetChangesetId()) {
+            unsigned int nonCacheInserted = 0;
+            unsigned int nonCacheUpdated = 0;
+            unsigned int nonCacheDeleted = 0;
+            unsigned int nonCacheStatements = 0;
+            changeset["health_stats"].ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst stat) {
+                Utf8String stmt(stat["statement"].asCString());
+                if (!stmt.ContainsI("ec_cache_")) {
+                    Utf8String op(stat["op"].asCString());
+                    const unsigned int rowCount = stat["row_count"].asUInt();
+                    if (op.StartsWithI("INSERT"))
+                        nonCacheInserted += rowCount;
+                    else if (op.StartsWithI("UPDATE"))
+                        nonCacheUpdated += rowCount;
+                    else if (op.StartsWithI("DELETE"))
+                        nonCacheDeleted += rowCount;
+                    else if (op == "CTE") {
+                        // CTE op: determine direction from the statement text
+                        if (stmt.ContainsI("INSERT INTO"))
+                            nonCacheInserted += rowCount;
+                        else if (stmt.ContainsI("UPDATE"))
+                            nonCacheUpdated += rowCount;
+                        else if (stmt.ContainsI("DELETE"))
+                            nonCacheDeleted += rowCount;
+                    }
+                    ++nonCacheStatements;
+                }
+                return false;
+            });
+            EXPECT_EQ(nonCacheInserted, 0u) << "Non-ec_cache_ inserted rows should be 0 for the major schema update";
+            EXPECT_EQ(nonCacheUpdated, 1u) << "Non-ec_cache_ updated rows should be 1 for the major schema update";
+            EXPECT_EQ(nonCacheDeleted, 43u) << "Non-ec_cache_ deleted rows should be 43 for the major schema update";
+            EXPECT_EQ(nonCacheStatements, 7u) << "Non-ec_cache_ SQL statements should be 7 for the major schema update";
+        }
 
         return false;
     });

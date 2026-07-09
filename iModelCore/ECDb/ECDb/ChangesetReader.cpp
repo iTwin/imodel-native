@@ -165,4 +165,68 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
     return m_pimpl->DisableStrictMode();
 }
 
+/*static*/ BentleyStatus ChangesetReader::GetConflictColumnValues(
+    ECDbCR ecdb,
+    ChangesetReader::PropertyFilter propertyFilter,
+    Changes::Change const& conflict,
+    std::vector<std::unique_ptr<IECSqlValue>>& originalValues,
+    std::vector<std::unique_ptr<IECSqlValue>>& theirValues,
+    std::vector<std::unique_ptr<IECSqlValue>>& myValues)
+    {
+    originalValues.clear();
+    theirValues.clear();
+    myValues.clear();
+
+    DbTable const* dbTable = ecdb.Schemas().Main().GetDbSchema().FindTable(conflict.GetTableName());
+    if (!dbTable) return BentleyStatus::ERROR;
+
+    bvector<Utf8String> columns;
+    if (!ecdb.GetColumns(columns, conflict.GetTableName().c_str()))
+        return BentleyStatus::ERROR;
+
+    std::unordered_map<Utf8String, DbValue> originalDbValues;
+    std::unordered_map<Utf8String, DbValue> theirDbValues;
+    std::unordered_map<Utf8String, DbValue> myDbValues;
+    for(int i = 0; i < static_cast<int>(columns.size()); ++i)
+        {
+            auto originalValue = conflict.GetOldValue(i);
+            auto myValue = conflict.GetNewValue(i);
+            auto theirValue = conflict.GetConflictValue(i);
+
+            // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
+            if (conflict.IsPrimaryKeyColumn(i))
+                {
+                if (!myValue.IsValid())
+                    myValue = originalValue;
+                if (!theirValue.IsValid())
+                    theirValue = originalValue;
+                }
+
+            if (originalValue.IsValid())
+                originalDbValues.emplace(columns[i], originalValue);
+            if (myValue.IsValid())
+                myDbValues.emplace(columns[i], myValue);
+            if (theirValue.IsValid())
+                theirDbValues.emplace(columns[i], theirValue);
+        }
+
+    // TODO: Resolving the class ID _only_ from the original row is not sufficient.
+    ECClassId classId;
+    bool isClassIdFromChangeset = false;
+    if (ChangesetValueFactory::ResolveClassId(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset) != SUCCESS)
+        return BentleyStatus::ERROR;
+
+
+    std::vector<Utf8String> changedPropNames;
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, originalValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+        return BentleyStatus::ERROR;
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, theirValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+        return BentleyStatus::ERROR;
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, myDbValues, classId, isClassIdFromChangeset, myValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
