@@ -6,3 +6,11 @@ set(VCPKG_CMAKE_SYSTEM_NAME iOS)
 set(VCPKG_OSX_ARCHITECTURES arm64)
 set(VCPKG_OSX_SYSROOT iphoneos)
 set(VCPKG_OSX_DEPLOYMENT_TARGET 13.0)
+
+# Build libpng with hidden symbol visibility so its symbols are not exported from the final
+# imodeljs.node. This matches the previous file-by-file build (the repo default is hidden
+# visibility) and prevents clashes with the libpng that Electron/Chromium bundle. libpng
+# annotates its public API with default visibility, so -fvisibility=hidden is needed to keep
+# its png_* symbols from being dynamic-exported and silently preempting the wrong copy.
+set(VCPKG_C_FLAGS "${VCPKG_C_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
+set(VCPKG_CXX_FLAGS "${VCPKG_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
