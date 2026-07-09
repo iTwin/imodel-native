@@ -146,7 +146,6 @@ ECDbAllHeaders = \
                 $(baseDir)ChangesetValue.h \
                 $(baseDir)IECSqlValueHelper.h \
                 $(baseDir)ChangesetValueFactory.h \
-                $(baseDir)ChangesetReaderImpl.h \
                 $(baseDir)PreparedChangesetReader.h
 
 
@@ -258,8 +257,6 @@ $(o)ChangedIdsIteratorImpl$(oext):                            $(baseDir)ChangedI
 $(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangesetReader$(oext):                                 $(baseDir)ChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ChangesetReaderImpl$(oext):                             $(baseDir)ChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PreparedChangesetReader$(oext):                         $(baseDir)PreparedChangesetReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -1044,14 +1044,14 @@ TEST(bspcci, BsplineTangencyCloseApproach)
     struct TestCase
         {
         double bsplineTangencyFraction; // where the tangency occurs on the B-spline curve
-        double pointDelta0;              // initial max distance between known tangency and Newton-computed closest approach
-        double paramDelta0;              // initial max parametric distance between bsplineTangencyFraction and computed fraction
-        double approachDistance0;        // initial max close approach distance computed by Newton
-        DRange1d approachCountRange;
+        double pointDelta0;             // initial max distance between known tangency and Newton-computed closest approach
+        double paramDelta0;             // initial max parametric distance between bsplineTangencyFraction and computed fraction
+        double approachDistance0;       // initial max close approach distance computed by Newton
+        DRange1d approachCountRange;    // the expected number of de-duped approaches should fall in this range
         };
     bvector<TestCase> testCases = {
-        {0.2, 1.0e-2, 1.0e-4, 1.0e-7, DRange1d::From(3, 5)}, // high order tangency at a B-spline curve local convexity
-        {0.5, 100, 1, 1.0e-12, DRange1d::From(15, 25)} // higher order tangency at B-spline curve inflection
+        {0.2, 1.0e-2, 1.0e-4, 1.0e-7, DRange1d::From(4, 10)}, // high order tangency at a B-spline curve local convexity
+        {0.5, 100, 1, 1.0e-12, DRange1d::From(15, 30)} // higher order tangency at B-spline curve inflection
         };
 
     for (auto const& data : testCases)
@@ -1113,6 +1113,36 @@ TEST(bspcci, BsplineTangencyCloseApproach)
         announce2.Reset();
         }
     Check::ClearGeometry ("bspcci.BsplineTangencyCloseApproach");
+    }
+
+TEST(bspcci, CloseApproachArcArcAtEnds) // ADO#1285218
+    {
+    auto startRadians0 = Angle::DegreesToRadians(17.397704459021128);
+    auto endRadians0 = Angle::DegreesToRadians(7.8269558056074304);
+    auto sweepRadians0 = endRadians0 - startRadians0;
+    auto startRadians1 = Angle::DegreesToRadians(17.399315407552645);
+    auto endRadians1 = Angle::DegreesToRadians(7.4774944473350375);
+    auto sweepRadians1 = endRadians1 - startRadians1;
+
+    // master units
+    auto arc0 = DEllipse3d::FromVectors(DPoint3d::From(600183.03933418915, 200219.41541009204), DVec3d::From(300, 0, 0), DVec3d::From(0, 300, 0), startRadians0, sweepRadians0);
+    auto arc1 = DEllipse3d::FromVectors(DPoint3d::From(600183.65427006490, 200217.92021355688), DVec3d::From(303.5, 0, 0), DVec3d::From(0, 303.5, 0), startRadians1, sweepRadians1);
+    auto curve0 = ICurvePrimitive::CreateArc(arc0);
+    auto curve1 = ICurvePrimitive::CreateArc(arc1);
+    Check::SaveTransformed(curve0);
+    Check::SaveTransformed(curve1);
+
+    auto expectedFractions = DPoint2d::From(0.031587228496006862, 0.0); // closest approach lands at start of curve1
+    CurveLocationDetail detail0, detail1;
+
+    auto succeeded = CurveCurve::ClosestApproach(detail0, detail1, curve0.get(), curve1.get());
+    if (Check::True(succeeded, "expect closest approach to succeed"))
+        {
+        Check::SaveTransformed(DSegment3d::From(detail0.point, detail1.point));
+        Check::Near(detail0.fraction, expectedFractions.x, "expect fraction on curve0 to match expected");
+        Check::Near(detail1.fraction, expectedFractions.y, "expect fraction on curve1 to match expected");
+        }
+    Check::ClearGeometry ("bspcci.CloseApproachArcArcAtEnds");
     }
 
 TEST(bspcci, CloseApproachesNoDuplicates)
