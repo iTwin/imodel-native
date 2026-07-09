@@ -148,6 +148,13 @@ if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
 )
 if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
 
+rem Isolate the git registries cache per install-root to prevent a race condition
+rem where parallel vcpkg processes (building different arches) collide on the shared
+rem global cache at %LOCALAPPDATA%\vcpkg\registries. Concurrent git fetch/GC
+rem operations on that bare repo cause transient "port does not exist" failures.
+set "X_VCPKG_REGISTRIES_CACHE=%INSTALL_ROOT%\registries"
+if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%"
+
 rem Use a persistent local binary cache by default to avoid rebuilding heavy ports
 rem (for example, crashpad) across builds. Allow callers to override.
 if "%VCPKG_BINARY_SOURCES%"=="" (
@@ -170,6 +177,7 @@ echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, instal
 echo vcpkg: exe="%VCPKG_EXE%"
 echo vcpkg: root="%VCPKG_ROOT%"
 echo vcpkg: downloads="%VCPKG_DOWNLOADS%"
+echo vcpkg: registries-cache="%X_VCPKG_REGISTRIES_CACHE%"
 echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
 echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 
