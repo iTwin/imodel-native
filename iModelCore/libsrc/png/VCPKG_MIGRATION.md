@@ -1,5 +1,12 @@
 # Migrating the libpng build to vcpkg
 
+> **Note (post-migration):** this migration is complete and the state described by the ✅ *Done*
+> banners under each step is the current, shipped state. The prose **below** each banner is the
+> original plan and is **retained for historical context only** — where it disagrees with a
+> banner or with the final files (e.g. the chain insertion point in Step 4, or the
+> `CREATE_STATIC_LIBRARIES` gate in Step 5), the banner and the checked-in files are
+> authoritative.
+
 This document enumerates the steps to replace the current build-from-source libpng
 (`iModelCore/libsrc/png`, currently **1.6.56**, compiled file-by-file by
 [`png.mke`](png.mke)) with a vcpkg-driven build, and to bump the version to **1.6.58**
@@ -24,7 +31,7 @@ See the shared guide in [`../VCPKG.md`](../VCPKG.md) and the agent skill
 
 | Aspect | Today |
 |--------|-------|
-| Version | 1.6.56 (see [`vendor/CMakeLists.txt`](vendor/CMakeLists.txt) `PNGLIB_REVISION 56`) |
+| Version | 1.6.56 (see `vendor/CMakeLists.txt` `PNGLIB_REVISION 56` — `vendor/` tree deleted by this PR) |
 | Build | [`png.mke`](png.mke) compiles the `vendor/*.c` files into `BePng` (static only, `CREATE_STATIC_LIBRARIES = 1`) |
 | Delivered lib | `Delivery/$(stlibprefix)BePng$(stlibext)` (+ debug variant) |
 | Delivered headers | `VendorAPI/png/` ← `png.h`, `pngconf.h`, `pnginfo.h`, `pnglibconf.h`, `pngstruct.h` |
@@ -161,19 +168,24 @@ that directory exists.
 > in [`../VCPKG.md`](../VCPKG.md) to `compress → png → openssl → crashpad` and added `png.mke`
 > to the consumer-mke list.
 
-In [`../vcpkg.PartFile.xml`](../vcpkg.PartFile.xml), append a new link at the **end** of the
-chain (after `vcpkg_install_crashpad`) so no two vcpkg processes ever run concurrently:
+> **Historical note:** the plan below proposed appending png at the **end** of the chain (after
+> `vcpkg_install_crashpad`). As implemented (see the *Done* banner), png was instead inserted
+> **after compress and before openssl** — it chains off `vcpkg_install_compress`, and openssl
+> now chains off `vcpkg_install_png`. The checked-in
+> [`../vcpkg.PartFile.xml`](../vcpkg.PartFile.xml) is authoritative.
+
+In [`../vcpkg.PartFile.xml`](../vcpkg.PartFile.xml), insert a new link so no two vcpkg processes
+ever run concurrently:
 
 ```xml
 <Part Name="vcpkg_install_png" BentleyBuildMakeFile="vcpkg_install_png.mke">
     <!-- LibType="Static": the chain always runs static-only. -->
-    <SubPart PartName="vcpkg_install_crashpad" LibType="Static"/>
+    <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
 </Part>
 ```
 
-Update the block comment above the chain to name `vcpkg_install_png` as the new last link, and
-update the chain description in [`../VCPKG.md`](../VCPKG.md) ("How It Works" mentions the chain
-`compress → openssl → crashpad`).
+Update the block comment above the chain and the chain description in
+[`../VCPKG.md`](../VCPKG.md) ("How It Works") to `compress → png → openssl → crashpad`.
 
 ---
 
@@ -219,9 +231,15 @@ update the chain description in [`../VCPKG.md`](../VCPKG.md) ("How It Works" men
 > `include/{png.h,pngconf.h,pnglibconf.h}` (release lib `lib/libpng16.a`).
 
 Replace the file-by-file compile makefile with a thin one modeled on
-[`../compress/Zlib.mke`](../compress/Zlib.mke). libpng is **static on all platforms**, so there
-is **no** `CREATE_STATIC_LIBRARIES` conditional and no dynamic path — the chain always installs
-under `$(OutputRootDir)vcpkg_installed/png/`.
+[`../compress/Zlib.mke`](../compress/Zlib.mke). libpng is **static on all platforms**, so the
+lib itself has no dynamic variant.
+
+> **Historical note:** the plan originally said there is **no** `CREATE_STATIC_LIBRARIES`
+> conditional. That was wrong — as the build-verified blockquote above explains, the final
+> [`png.mke`](png.mke) *does* gate `vcpkgInstallRoot` on `CREATE_STATIC_LIBRARIES`, because the
+> `pnglib` part can be built in a dynamic context even though the chain always installs
+> static-only (static → `$(OutputRootDir)vcpkg_installed/png/`; dynamic →
+> `$(OutputRootDir)static/vcpkg_installed/png/`).
 
 1. Resolve the triplet: `%include $(libsrcDir)vcpkg.mki` (do **not** set
    `vcpkgUseVeracodeTriplet`).
@@ -376,6 +394,14 @@ In [`png.PartFile.xml`](png.PartFile.xml):
 > Residual item deferred to Step 9 cleanup: confirm no repo **outside this build tree** relied
 > on the now-removed internal headers `VendorAPI/png/pnginfo.h` / `pngstruct.h` (in-tree, the
 > sole consumer `ImageSource.cpp` does not use them and CI is green).
+>
+> **Behavioral note (hardware optimizations):** unlike the old build, which disabled hardware
+> optimizations everywhere, the vcpkg port now enables them by default: arm64 macOS/Android
+> execute the NEON filter/palette paths, and all x64 targets use SSE2 de-filtering (via the
+> port's `PNG_INTEL_SSE` default). Output is bit-identical to the scalar paths and this is the
+> industry-default configuration, but it is recorded here so a future image regression bisected
+> to this PR is easy to explain (only iOS keeps optimizations off, via
+> `-DPNG_HARDWARE_OPTIMIZATIONS=OFF`).
 
 1. Build every target platform: Windows (x64), Linux (x64), macOS (arm64), iOS (arm64),
    Android (arm64 and x64). Confirm libpng resolves at version 1.6.58 in each install root.
