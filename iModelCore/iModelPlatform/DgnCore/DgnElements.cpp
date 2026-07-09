@@ -1503,6 +1503,270 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::ChangeElementParent(DgnElementId elementId, DgnElementId newParentId)
+    {
+    DgnDb::VerifyClientThread();
+
+    if (!newParentId.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // 1. Load the element
+    DgnElementCPtr orig = GetElement(elementId);
+    if (!orig.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCR element = *orig;
+    DgnModelId oldModelId = element.GetModelId();
+
+    // 2. Load and validate the new parent element
+    DgnElementCPtr parentElem = GetElement(newParentId);
+    if (!parentElem.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // 3. The new parent must be in the same model as the element. Cross-model reparenting is
+    // not allowed; ChangeElementModel only moves root elements between models.
+    if (parentElem->GetModelId() != oldModelId)
+        {
+        LOG.errorv("ChangeElementParent: Cannot change parent of element %s because the new parent %s is in a different model; ChangeElementModel only moves root elements between models.", elementId.ToHexStr().c_str(), newParentId.ToHexStr().c_str());
+        return DgnDbStatus::WrongModel;
+        }
+
+    // 4. If element has a parent-element-scoped code, block the operation
+    DgnCode const& code = element.GetCode();
+    if (code.IsValid() && !code.IsEmpty())
+        {
+        CodeSpecCPtr codeSpec = m_dgndb.CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
+        if (codeSpec.IsValid() && codeSpec->IsParentElementScope())
+            {
+            LOG.errorv("ChangeElementParent: Cannot change parent of element %s because it has a parent-element-scoped code. Use delete+insert instead.", elementId.ToHexStr().c_str());
+            return DgnDbStatus::InvalidCode;
+            }
+        }
+
+    // 5. Update the parent (model is unchanged)
+    DgnElementPtr editCopy = element.CopyForEdit();
+    DgnClassId relClassId = element.GetParentRelClassId().IsValid() ? element.GetParentRelClassId()
+        : m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnDbStatus stat = editCopy->SetParentId(newParentId, relClassId);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    return UpdateElement(*editCopy);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::ChangeElementModel(DgnElementId elementId, DgnModelId newModelId)
+    {
+    DgnDb::VerifyClientThread();
+
+    if (!newModelId.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // 1. Load the element
+    DgnElementCPtr orig = GetElement(elementId);
+    if (!orig.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCR element = *orig;
+    DgnModelId oldModelId = element.GetModelId();
+
+    // No-op if model is unchanged
+    if (oldModelId == newModelId)
+        return DgnDbStatus::Success;
+
+    // 2. The element must not have a parent.
+    if (element.GetParentId().IsValid())
+        {
+        LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a parent element.", elementId.ToHexStr().c_str());
+        return DgnDbStatus::InvalidParent;
+        }
+
+    // 3. Load and validate destination model
+    DgnModelPtr newModel = m_dgndb.Models().GetModel(newModelId);
+    if (!newModel.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // 4. BIS requires a parent and all of its children to reside in the same model, so changing the model of a
+    // root element relocates its entire subtree. Validate the whole subtree first (no mutation) so a rejected
+    // move leaves the iModel untouched, then perform the relocation in one SQL statement.
+    DgnDbStatus stat = ValidateSubtreeForModelChange(elementId, *newModel, true);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    return MoveSubtreeToNewModel(elementId, newModelId, *newModel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::ValidateSubtreeForModelChange(DgnElementId elementId, DgnModelR newModel, bool isRoot)
+    {
+    DgnElementCPtr orig = GetElement(elementId);
+    if (!orig.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCR element = *orig;
+
+    if (element.GetElementHandler().GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
+
+    // The element must be compatible with the destination model (e.g. 2d vs 3d, information content, ...).
+    DgnDbStatus stat = newModel._ValidateElementForModel(element);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    // Code handling. A Model-scoped code cannot survive a model change. A ParentElement-scoped code on the
+    // root has no parent to anchor it; descendants keep their parent (it moves with them), so theirs stay valid.
+    DgnCode const& code = element.GetCode();
+    if (code.IsValid() && !code.IsEmpty())
+        {
+        CodeSpecCPtr codeSpec = m_dgndb.CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
+        if (codeSpec.IsValid() && codeSpec->IsModelScope())
+            {
+            LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a model-scoped code. Use delete+insert instead.", elementId.ToHexStr().c_str());
+            return DgnDbStatus::InvalidCode;
+            }
+        if (isRoot && codeSpec.IsValid() && codeSpec->IsParentElementScope())
+            {
+            LOG.errorv("ChangeElementModel: Cannot change model of element %s because it has a parent-element-scoped code. Use delete+insert instead.", elementId.ToHexStr().c_str());
+            return DgnDbStatus::InvalidCode;
+            }
+
+        // Check for code uniqueness in new scope
+        DgnElementId existingElem = QueryElementIdByCode(code);
+        if (existingElem.IsValid() && existingElem != elementId)
+            return DgnDbStatus::DuplicateCode;
+        }
+
+    // Recurse: the whole subtree must be valid before anything is moved.
+    for (DgnElementId childId : element.QueryChildren())
+        {
+        stat = ValidateSubtreeForModelChange(childId, newModel, false);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElements::MoveSubtreeToNewModel(DgnElementId elementId, DgnModelId newModelId, DgnModelR newModel)
+    {
+    struct GeometricElementMove
+        {
+        DgnElementId m_id;
+        DgnModelId m_oldModelId;
+        AxisAlignedBox3d m_range;
+        };
+
+    DgnElementIdSet subtreeIds;
+    bset<DgnModelId> sourceModelIds;
+    bvector<GeometricElementMove> geometricMoves;
+
+    // Capture the subtree and any loaded geometric ranges before the model ids change. The SQL update below
+    // does not fire element/model callbacks, so this local bookkeeping keeps native caches and range indexes
+    // coherent without dispatching per-element update events.
+    CachedStatementPtr selectStmt = GetStatement(
+        "WITH RECURSIVE subtree(Id) AS ("
+        "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=? "
+        "UNION ALL "
+        "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " e INNER JOIN subtree s ON e.ParentId=s.Id"
+        ") "
+        "SELECT Id FROM subtree"
+        );
+    selectStmt->BindId(1, elementId);
+    while (BE_SQLITE_ROW == selectStmt->Step())
+        {
+        DgnElementId id = selectStmt->GetValueId<DgnElementId>(0);
+        subtreeIds.insert(id);
+
+        DgnElementCPtr el = GetElement(id);
+        if (!el.IsValid() || el->GetModelId() == newModelId)
+            continue;
+
+        sourceModelIds.insert(el->GetModelId());
+
+        GeometrySourceCP geom = el->ToGeometrySource();
+        if (nullptr != geom && geom->HasGeometry())
+            {
+            GeometricElementMove move;
+            move.m_id = id;
+            move.m_oldModelId = el->GetModelId();
+            move.m_range = geom->CalculateRange3d();
+            geometricMoves.push_back(move);
+            }
+        }
+
+    if (subtreeIds.empty())
+        return DgnDbStatus::InvalidId;
+
+    // BIS enforces that a parent and all of its children reside in the same model (see DgnElement::_OnChildInsert/
+    // _OnChildAdd), so the ParentId subtree must resolve to exactly one source model. The set above is kept as a
+    // defensive guard: if it ever holds more than one model the hierarchy is already corrupt, so fail before
+    // mutating anything (preserving move atomicity) rather than silently relocating an inconsistent subtree.
+    if (sourceModelIds.size() > 1)
+        {
+        BeAssert(false && "subtree spans multiple models; parent and child must be in same model");
+        LOG.errorv("ChangeElementModel: Cannot change model of element %s because its subtree spans multiple models; a parent and its children must reside in the same model.", elementId.ToHexStr().c_str());
+        return DgnDbStatus::WrongModel;
+        }
+
+    CachedStatementPtr updateStmt = GetStatement(
+        "WITH RECURSIVE subtree(Id) AS ("
+        "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=? "
+        "UNION ALL "
+        "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " e INNER JOIN subtree s ON e.ParentId=s.Id"
+        ") "
+        "UPDATE " BIS_TABLE(BIS_CLASS_Element) " SET ModelId=? WHERE Id IN (SELECT Id FROM subtree) AND ModelId<>?"
+        );
+    updateStmt->BindId(1, elementId);
+    updateStmt->BindId(2, newModelId);
+    updateStmt->BindId(3, newModelId);
+    if (BE_SQLITE_DONE != updateStmt->Step())
+        return DgnDbStatus::WriteError;
+
+    DropFromPool(subtreeIds);
+
+    for (DgnModelId sourceModelId : sourceModelIds)
+        m_dgndb.Txns().m_modelChanges.AddModel(sourceModelId);
+
+    // The destination model is modified by the move as well. Geometric moves record this implicitly via
+    // AddGeometricElementChange(newModelId, ...) below, but non-geometric moves do not, so track it here
+    // to keep consumers that walk m_modelChanges (change summaries, briefcase merge, push/pull diffs) correct.
+    if (!sourceModelIds.empty())
+        m_dgndb.Txns().m_modelChanges.AddModel(newModelId);
+
+    auto newGeomModel = newModel.ToGeometricModelP();
+    for (GeometricElementMove const& move : geometricMoves)
+        {
+        DgnModelPtr oldModel = m_dgndb.Models().GetModel(move.m_oldModelId);
+        if (oldModel.IsValid())
+            {
+            auto oldGeomModel = oldModel->ToGeometricModelP();
+            if (nullptr != oldGeomModel)
+                {
+                oldGeomModel->RemoveFromRangeIndex(move.m_id);
+                m_dgndb.Txns().m_modelChanges.AddGeometricElementChange(move.m_oldModelId, move.m_id, TxnTable::ChangeType::Delete);
+                }
+            }
+
+        if (nullptr != newGeomModel)
+            {
+            newGeomModel->AddElementRange(move.m_id, move.m_range);
+            m_dgndb.Txns().m_modelChanges.AddGeometricElementChange(newModelId, move.m_id, TxnTable::ChangeType::Insert);
+            }
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
     {
     // delete children, if any.
@@ -1818,4 +2082,3 @@ DgnElementIdSet DgnElements::FindGeometryPartReferences(BeSQLite::IdSet<DgnGeome
 
     return refs;
     }
-

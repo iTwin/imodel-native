@@ -512,6 +512,8 @@ public:
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
+    static void ChangeElementParent(DgnDbR db, Napi::Object props);
+    static void ChangeElementModel(DgnDbR db, Napi::Object props);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
     static BulkDeleteElementsResult DeleteElements(DgnDbR dgndb, Napi::Array elementIds, Napi::Value deleteOptionsObj);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
@@ -603,14 +605,14 @@ public:
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
     static void SetCrashReportProperty(Utf8CP key, Utf8CP value)
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {}
     #endif
 
     static std::map<std::string, std::string> GetCrashReportProperties()
-    #if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    #if defined (BENTLEYCONFIG_CRASHPAD)
         ;
     #else
         {
@@ -622,11 +624,11 @@ public:
     static void MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportingConfig const&);
     static std::map<std::string,std::string> GetCrashReportPropertiesFromConfig(CrashReportingConfig const&);
 
-    static void InitializeCrashReporting(CrashReportingConfig const&)
-#if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
+    static bool InitializeCrashReporting(CrashReportingConfig const&)
+#if defined (BENTLEYCONFIG_CRASHPAD)
         ;
 #else
-        {}
+        { return true; }
 #endif
 
     static void WriteFullElementDependencyGraphToFile(DgnDbR db, Utf8StringCR dotFileName);

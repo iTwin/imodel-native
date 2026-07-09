@@ -30,8 +30,6 @@ double minStep
     if (abstol < 0.0)
         abstol = 0.0;
     if (reltol < 0.0)
-        reltol = 0.0;
-    if (reltol < 1.0e-12)
         reltol = 1.0e-12;
     mAbstolU = mAbstolV = mAbstolW = abstol;
     mReltolU = mReltolV = mReltolW = reltol;
@@ -39,6 +37,7 @@ double minStep
     mSuccessiveConvergenceTarget = successiveConvergenceTarget;
     mSoftAbstolU = mSoftAbstolV = -1.0;
     mMinStepU = mMinStepV = minStep;
+    mSize = 0.0;
     }
 void NewtonIterationsRRToRR::SetSoftTolerance (double abstolU, double abstolV)
     {
@@ -75,7 +74,15 @@ int numIterations
     return numIterations < mMaxIterations;
     }
 
-
+/*-----------------------------------------------------------------*//**
+ @bsimethod
++---------------+---------------+---------------+---------------+------*/
+int NewtonIterationsRRToRR::SetMaxIterations (int maxIterations)
+    {
+    auto old = mMaxIterations;
+    mMaxIterations = maxIterations;
+    return old;
+    }
 
 /*-----------------------------------------------------------------*//**
 // Convergence tester.
@@ -248,59 +255,9 @@ static double FuzzyFunctionValue (double f0, double dfdu, double du)
     return fabs (f0) + fabs (dfdu * du);
     }
 
-bool NewtonIterationsRRToRR::RunDiagonalNewton
-(
-double &uu,
-double &vv,
-FunctionRRToRRD &evaluator
-)
-    {
-    int numConverged = 0;
-    double u = uu;
-    double v = vv;
-    double f=0.0, g=0.0, dfdu, dfdv, dgdu, dgdv, du, dv;
-    double f0 = -1.0, g0 = -1.0;
-
-    for (int numIterations = 0; CheckIterationStart (u, v, numIterations); numIterations++)
-        {
-        if (!evaluator.EvaluateRRToRRD (u, v, f, g, dfdu, dfdv, dgdu, dgdv))
-            return false;
-        if (numIterations == 0)
-            {
-            f0 = f;
-            g0 = g;
-            }
-        bool uOK = DoubleOps::SafeDivide (du, f, dfdu, 0.0);
-        bool vOK = DoubleOps::SafeDivide (dv, g, dgdv, 0.0);
-        if (!uOK && !vOK)
-            {
-            return SetReturnValues (uu, vv, u, v, f0, g0, f, g);
-            }
-        // Heuristically, a big diagonal indicates a safe step.
-        // So let each diagonal indicate a reduction factor on the respective steps:
-        double uFactor, vFactor;
-        double a = DoubleOps::Hypotenuse (dfdu, dgdv);
-        DoubleOps::SafeDivide (uFactor, fabs (dfdu), a, 0.0);
-        DoubleOps::SafeDivide (vFactor, fabs (dgdv), a, 0.0);
-
-        u -= uFactor * du;
-        v -= vFactor * dv;
-        if (CheckConvergence (u, v, f, g, du, dv, numConverged))
-            {
-            return SetReturnValues (uu, vv, u, v,
-                  FuzzyFunctionValue (f0, dfdu, mAbstolU, dfdv, mAbstolV),
-                  FuzzyFunctionValue (g0, dgdu, mAbstolU, dgdv, mAbstolV),
-                  f, g);
-            }
-        }
-    return SetReturnValues (uu, vv, u, v, f0, g0, f, g);
-    }
-
-
-
 /*-----------------------------------------------------------------*//**
  @bsimethod
-// Run Newton stesp for a function represented by a Newton2BivariateEvaluator
+// Run Newton steps for a function represented by a FunctionRRToRRD
 // @param u INOUT first  variable.
 // @param v INOUT second variable.
 // @param evaluator IN evaluator object.
@@ -312,27 +269,55 @@ double &vv,
 FunctionRRToRRD &evaluator
 )
     {
+    static double s_smallDeltaForFunctionValueTest = 1.0e-14;
+
     int numConverged = 0;
     double u = uu;
     double v = vv;
+    double uFactor, vFactor;
     double f=0.0, g=0.0, dfdu, dfdv, dgdu, dgdv, du, dv;
     double f0=0.0, g0=0.0;
-    static double s_smallDeltaForFunctionValueTest = 1.0e-14;
+    double uMin=0.0, vMin=0.0;
+    double sizeMin = DBL_MAX;
+
+    mSize = 0.0;
+
     for (int numIterations = 0; CheckIterationStart (u, v, numIterations); numIterations++)
         {
         if (!evaluator.EvaluateRRToRRD (u, v, f, g, dfdu, dfdv, dgdu, dgdv))
             return false;
+
+        // remember first/best iterate
         if (numIterations == 0)
             {
             f0 = f;
             g0 = g;
             }
+        auto size = std::max(fabs(f), fabs(g)); // L-infinity norm
+        if (size < sizeMin)
+            {
+            sizeMin = size;
+            uMin = u;
+            vMin = v;
+            }
+
+        // compute next step
+        uFactor = vFactor = 1.0;
         if (!ComputeNewtonStep(f, g, dfdu, dfdv, dgdu, dgdv, du, dv))
             {
-            return RunDiagonalNewton (uu, vv, evaluator);
+            // Jacobian is (nearly) singular, but if diagonal is sufficiently large, we can try ignoring off-diagonal entries
+            bool uOK = DoubleOps::SafeDivide (du, f, dfdu, 0.0);
+            bool vOK = DoubleOps::SafeDivide (dv, g, dgdv, 0.0);
+            if (!uOK && !vOK)
+                break;
+            // HEURISTIC: a big diagonal indicates a safe step, so compute a reduction factor from each diagonal entry
+            double denom = DoubleOps::Hypotenuse (dfdu, dgdv);
+            DoubleOps::SafeDivide (uFactor, fabs (dfdu), denom, 0.0);
+            DoubleOps::SafeDivide (vFactor, fabs (dgdv), denom, 0.0);
             }
-        u -= du;
-        v -= dv;
+        u -= uFactor * du;
+        v -= vFactor * dv;
+
         if (CheckConvergence (u, v, f, g, du, dv, numConverged))
             {
             return SetReturnValues (uu, vv, u, v,
@@ -341,7 +326,11 @@ FunctionRRToRRD &evaluator
                   f, g);
             }
         }
-    return SetReturnValues (uu, vv, u, v, f0, g0, f, g);
+    // Newton failed to converge; return closest iterate encountered
+    uu = uMin;
+    vv = vMin;
+    mSize = sizeMin;
+    return true;
     }
 
 /*-----------------------------------------------------------------*//**
@@ -639,11 +628,6 @@ double &dgdv
 };
 
 /*-----------------------------------------------------------------*//**
-// Run Newton stesp for a function represented by two Newton2UnivariateEvaluator's
-// @param u INOUT first  variable.
-// @param v INOUT second variable.
-// @param evaluatorA IN first evaluator object
-// @param evaluatorB IN second evaluator object
  @bsimethod
 +---------------+---------------+---------------+---------------+------*/
 bool NewtonIterationsRRToRR::RunNewtonDifference

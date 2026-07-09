@@ -1,0 +1,32 @@
+Bentley: BSIVer audit version section (replaces BentleyVersionString.c).
+
+Mike's audit tool locates the underlying OpenSSL version by finding the "BSIVer" PE
+section with DumpBin (it is matched by section name, not by an exported symbol). This is
+Windows-only (_MSC_VER) and is appended to cversion.c because that translation unit is
+always compiled and always linked (OpenSSL_version* are pulled in by normal usage).
+
+The version string is derived from OPENSSL_VERSION_STR (already in scope in this file), so
+it tracks the vcpkg-pinned OpenSSL version automatically. As in the original
+BentleyVersionString.c, the array is `static`: the audit tool matches it by the "BSIVer"
+section name, not by an exported symbol, so no .def entry is needed, and because OpenSSL is
+not built with /Gw the named-section data is not COMDAT and /OPT:REF cannot strip it (this
+matches the long-shipping original, which carried no /INCLUDE and survived). If a future
+toolset enables /Gw and the audit tool can no longer find the section, force it in with
+`#pragma comment(linker, "/INCLUDE:...")` (note: requires non-static and the correct
+name decoration per architecture) or export it via the .def.
+
+--- a/crypto/cversion.c
++++ b/crypto/cversion.c
+@@ -137,3 +137,12 @@ const char *OpenSSL_version(int t)
+     }
+     return "not available";
+ }
++
++/* Bentley: BSIVer audit section. Windows-only; matched by section name via DumpBin. */
++#ifdef _MSC_VER
++# pragma const_seg("BSIVer")
++# pragma const_seg()
++static __declspec(allocate("BSIVer")) char szSourceFileVersionString[] =
++    "#@!~BeOpenSSL " OPENSSL_VERSION_STR "; OpenSSL " OPENSSL_VERSION_STR ", "
++    OPENSSL_VERSION_STR "~!@#";
++#endif

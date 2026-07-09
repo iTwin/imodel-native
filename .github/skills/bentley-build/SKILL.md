@@ -241,6 +241,32 @@ cDefs + -DMY_DEFINE=1          # append to compiler defs
 o = $(OutputRootDir)Build/mylib/
 ```
 
+### BBMake parser gotcha (`always:` blocks)
+
+- The first line after `always:` must be an executable command.
+- Do **not** place a comment immediately after `always:`.
+- If you need a comment, place it before `always:` or after at least one command line.
+- Violating this can produce parser/build errors such as:
+  - `BBMake: no rules to build always`
+  - `error : not rule or dependency`
+
+Example (bad):
+
+```makefile
+always:
+  # This comment can trigger a parse error in BBMake
+  $(SomeCommand)
+```
+
+Example (good):
+
+```makefile
+# Build step description
+always:
+  $(SomeCommand)
+  # Optional comment is safe after a command line
+```
+
 ---
 
 ## Dependency Trees (Simplified)
@@ -272,6 +298,7 @@ iModelJsNodeAddonPRG
 
 | Symptom | Fix |
 |---------|-----|
+| `BBMake: no rules to build always` or `error : not rule or dependency` near an `always:` block | Ensure the first line after `always:` is a command (not a comment). Keep `%if/%else/%endif` directives at column 1. |
 | `BSI=1` not set | Set `BSI=1`. Without it `sharedMki`, `BuildContextPublicApiDir`, `LinkFirstDepToFirstTarget` are undefined — silent failures or `can't open include file linkLibrary.mki`. |
 | Static binding file missing after broken run | Prior run without `BSI=1` left stale `.log` files in `outd\<arch>\static\BuildContexts\<Part>\Logs\`. Delete them and re-run with `BSI=1`. |
 | GeomLibs prewire: `cannot create link ... already exists` | Prior run without `BSI=1` wrote a relative symlink into source. Set `BSI=1` so `BuildContextPublicApiDir` resolves to `outd`. |
@@ -298,6 +325,61 @@ iModelJsNodeAddonPRG
 ```
 
 **TMR warning:** `--tmrbuild` deletes all LKG artifacts and rebuilds everything including third-party libs. Prefer targeted `rebuild` on only the changed part.
+
+---
+
+## Adding a New Repository
+
+To make `bb pull` automatically fetch a new Git repository, changes are needed in **three** repos:
+
+### 1. `imodel-native-internal/bbconfig.json` — Register the repo
+
+Add an entry to the `"GitRepositories"` array with the URL and version info:
+
+```json
+{
+  "Branch": "master",
+  "FromLkgs": false,
+  "Guid": "<commit-hash-to-pin-to>",
+  "Name": "myrepo",
+  "Url": "https://github.com/org/myrepo",
+  "UseBranch": false
+}
+```
+
+- `"UseBranch": true` + `"Guid": "0"` → track branch tip
+- `"UseBranch": false` + `"Guid": "<sha>"` → pin to exact commit
+
+### 2. `imodel-native` PartFile — Declare `<RequiredRepository>`
+
+In the PartFile that needs the repo, add `<RequiredRepository>` inside the `<Part>`:
+
+```xml
+<Part Name="MyPart" BentleyBuildMakeFile="mypart.mke">
+    <RequiredRepository>myrepo</RequiredRepository>
+</Part>
+```
+
+The name must match the `"Name"` field in `bbconfig.json`.
+
+### 3. `BuildStrategies/RepositoryLists.BuildStrategy.xml` — Add LocalRepository and RemoteRepository
+
+Add entries for the repo in `RepositoryLists.BuildStrategy.xml` so BentleyBuild knows where to find it locally and remotely:
+
+- `<LocalRepository>` — maps the repo name to its local checkout path under `$SrcRoot`
+- `<RemoteRepository>` — maps the repo name to its remote source
+
+Without these entries, bb will error with: `Can't find LocalRepository <name>`.
+
+### Summary
+
+| Repo | File | Change |
+|------|------|--------|
+| `imodel-native-internal` | `bbconfig.json` | Add `GitRepositories` entry (URL, branch/commit) |
+| `imodel-native` | `<path>.PartFile.xml` | Add `<RequiredRepository>name</RequiredRepository>` |
+| `BuildStrategies` | `RepositoryLists.BuildStrategy.xml` | Add `<LocalRepository>` and `<RemoteRepository>` entries |
+
+> **Merge order:** The `BuildStrategies` PR (in Azure DevOps) must be created and merged first. Then create linked PRs in `imodel-native` and `imodel-native-internal`.
 
 ---
 

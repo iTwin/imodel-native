@@ -800,6 +800,8 @@ export declare namespace IModelJsNative {
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
+    public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
+    public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
@@ -1563,6 +1565,18 @@ export declare namespace IModelJsNative {
     changeFetchedPropNames: string[]
   }
 
+  interface ChangesetRowMetadata {
+    tableName: string;
+    opCode: DbOpcode;
+    isIndirectChange: boolean;
+    isECTable: boolean;
+  }
+  interface ChangesetRowData {
+    metadata: ChangesetRowMetadata;
+    oldValues: ChangesetRowValue | undefined;
+    newValues: ChangesetRowValue | undefined;
+  }
+
   class ChangesetReader {
     constructor();
     public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
@@ -1571,9 +1585,7 @@ export declare namespace IModelJsNative {
     public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
     public close(): void;
-    public step(): boolean;
-    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ChangesetRowValue | undefined;
-    public getChangeMetadata(): { tableName: string, opCode: DbOpcode, isIndirectChange: boolean, isECTable: boolean };
+    public step(numOfRows: number, rowOptions: ECSqlRowAdaptorOptions): ChangesetRowData[];
     public setTableNameFilters(tableNames: string[]): void;
     public setOpCodeFilters(ops: string[]): void;
     public setClassNameFilters(classNames: string[]): void;

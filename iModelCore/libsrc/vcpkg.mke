@@ -1,0 +1,32 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg.mke - Check out and install vcpkg from GitHub
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+# Updating vcpkg:
+# Find the release you want by tag from https://github.com/microsoft/vcpkg/tags
+# and use the full commit hash shown on that tag's page as the Guid value in the
+# vcpkg entry in imodel-native-internal/bbconfig.json.
+# You can also get the commit hash by running:
+#   git ls-remote --tags https://github.com/microsoft/vcpkg.git <tag>^{}
+
+%if $(TARGET_PLATFORM)=="Windows"
+    %if defined (IMODEL_VCPKG_ROOT)
+        # If IMODEL_VCPKG_ROOT is set, use that vcpkg instead of installing a local one.
+        %warn Using vcpkg from $(IMODEL_VCPKG_ROOT).
+        %return
+    %endif
+%else
+    %if defined (VCPKG_ROOT)
+        # If VCPKG_ROOT is set, use that vcpkg instead of installing a local one.
+        %warn Using vcpkg from $(VCPKG_ROOT).
+        %return
+    %endif
+%endif
+
+always:
+    $(BBPYTHONCMD) $(_MakeFilePath)bootstrap_vcpkg_with_timeout.py $(SrcRoot)vcpkg

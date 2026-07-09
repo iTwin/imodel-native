@@ -4,11 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <functional>
 
 //! @file CurveVector.h A collection of curve primitives: CurveVector, CurveCurve, PathLocationDetail, CurveVectorWithDistanceIndex
 
 // @addtogroup BentleyGeom_PolymorphicCurves ICurvePrimitive
-
 
 /**
 @page BentleyGeom_Summary_CurveVector CurveVector
@@ -24,32 +24,32 @@ Inputs to methods can be passed as simple references and pointers.
 <ul>
 <li> open chain:
 <pre>
-    (CurveVector::BOUNDARY_TYPE_OPEN prim1 prim2 ... primN)
+    (CurveVector::BOUNDARY_TYPE_Open prim1 prim2 ... primN)
 </pre>
 
 <li> single loop:
 <pre>
-   (CurveVector::BOUNDARY_TYPE_OUTER prim1 prim2 ... primN)
+   (CurveVector::BOUNDARY_TYPE_Outer prim1 prim2 ... primN)
 </pre>
 
 <li> multi-loop region:
 <pre>
- (CurveVector::BOUNDARY_TYPE_UNION_REGION
-    (CurveVector::BOUNDARY_TYPE_OUTER prim1 ... primN)
-    (CurveVector::BOUNDARY_TYPE_OUTER prim1 ... primN)
-    (CurveVector::BOUNDARY_TYPE_INNER prim1 ... primN)
+ (CurveVector::BOUNDARY_TYPE_UnionRegion
+    (CurveVector::BOUNDARY_TYPE_Outer prim1 ... primN)
+    (CurveVector::BOUNDARY_TYPE_Outer prim1 ... primN)
+    (CurveVector::BOUNDARY_TYPE_Inner prim1 ... primN)
     )
 </pre>
 
 <li> union of regions:
 <pre>
-    (CurveVector::BOUNDARY_TYPE_UNION_REGION  // the direct children of this CurveVector may be any set of Outer and ParityReigion
-        (CurveVector:ParityRegion
-            (CurveVector::BOUNDARY_TYPE_OUTER prim1 ... primN)
-            (CurveVector::BOUNDARY_TYPE_OUTER prim1 ... primN)
-            (CurveVector::BOUNDARY_TYPE_INNER prim1 ... primN)
+    (CurveVector::BOUNDARY_TYPE_UnionRegion  // the direct children of this CurveVector may be any set of Outer and ParityRegion
+        (CurveVector:BOUNDARY_TYPE_ParityRegion
+            (CurveVector::BOUNDARY_TYPE_Outer prim1 ... primN)
+            (CurveVector::BOUNDARY_TYPE_Outer prim1 ... primN)
+            (CurveVector::BOUNDARY_TYPE_Inner prim1 ... primN)
             )
-        (CurveVector::BOUNDARY_TYPE_OUTER prim1 prim2 ... primN)
+        (CurveVector::BOUNDARY_TYPE_Outer prim1 prim2 ... primN)
         )
 </pre>
 </ul>
@@ -66,17 +66,9 @@ loop first followed by holes, with the outer loop counterclockwise and inner loo
 
 Warning: Computational code that requires signed loops (e.g. area calculations) assumes that the largest loop is outer
 and others are inner.
-
 */
 
-
-
-#ifdef BENTLEY_WIN32
-#pragma warning (push)
-#pragma warning (default : 4266)	// NEEDS WORK -- warnings about missing virtuals?
-#endif
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
 
 //! Vector of ICurvePrimitivePtr, used for collecting curves into paths, loops with area, multi-loop areas with parity
 //! rules, and unions of areas.
@@ -139,7 +131,7 @@ enum BoundaryType
     BOUNDARY_TYPE_Outer         = 2,
     //! Curves should join head to tail in a single closed path; this area is expected to be an inner loop.
     BOUNDARY_TYPE_Inner         = 3,
-    //! Expected to contain (only) multiple CurveVectors, all of which are either BOUNDARY_TYPE_Outer or BOUNDARY_TYPE_inner. (No individual curves or open paths).
+    //! Expected to contain (only) multiple CurveVectors, all of which are either BOUNDARY_TYPE_Outer or BOUNDARY_TYPE_Inner. (No individual curves or open paths).
     //! These are to be analyzed by parity rules.
     BOUNDARY_TYPE_ParityRegion  = 4,
     //! Expected to contain (only) multiple CurveVectors, all of which have area. (No individual curves or open paths).
@@ -221,7 +213,6 @@ GEOMDLLIMPEXP bool IsPhysicallyClosedPath () const;
 //! @param [out] worldToLocal transform to map rectangle to 0..1 in each direction.
 GEOMDLLIMPEXP bool IsRectangle (TransformR localToWorld, TransformR worldToLocal) const;
 
-
 //! Swap the entries at given indices.   Return false if either index is out of bounds.
 GEOMDLLIMPEXP bool SwapAt (size_t index0, size_t index1);
 
@@ -246,7 +237,6 @@ GEOMDLLIMPEXP static CurveVectorPtr Create (BoundaryType boundaryType, ICurvePri
 
 //! Create a curve vector with multiple initial primitives.
 GEOMDLLIMPEXP static CurveVectorPtr Create (BoundaryType boundaryType, bvector<ICurvePrimitivePtr> primitives);
-
 
 //! Return a "deep copy"
 GEOMDLLIMPEXP CurveVectorPtr Clone () const;
@@ -286,7 +276,6 @@ GEOMDLLIMPEXP void Add (ICurvePrimitivePtr child);
 //! wrap as child curve primitive and add to this vector
 GEOMDLLIMPEXP void Add (CurveVectorPtr child);
 
-
 //! return a (deep) clone with fillets inserted between successive curves.
 GEOMDLLIMPEXP CurveVectorPtr CloneWithBlends (BlendType, double radiusA, double radiusB) const;
 //! return a (deep) clone with all curves offset by signed distance.
@@ -306,7 +295,6 @@ GEOMDLLIMPEXP CurveVectorPtr AreaOffsetFromPath(CurveOffsetOptionsCR options, do
 //! @param [in] targetType primitive type to count.
 GEOMDLLIMPEXP size_t CountPrimitivesOfType (ICurvePrimitive::CurvePrimitiveType targetType) const;
 
-
 //! Return a curve vector that is a clone, but with all primitives split at intersections with any splitter curve.
 //! Optionally omit tree structure and only copy primitives.
 GEOMDLLIMPEXP CurveVectorPtr CloneWithSplits (CurveVectorCR splitterCurves, bool primitivesOnly = false) const;
@@ -316,10 +304,8 @@ GEOMDLLIMPEXP void AppendSplitCurvesByRegion (CurveVectorCR region, CurveVectorP
 //! Return curves (not regions) that are below, above, and on a plane
 GEOMDLLIMPEXP void AppendSplitCurvesByPlane (DPlane3dCR plane, CurveVectorP belowCollector, CurveVectorP aboveCollector, CurveVectorP onCollector) const;
 
-
 //! Return a curve vector that is a clone, but with all polylines split into individual line segments.
 GEOMDLLIMPEXP CurveVectorPtr CloneWithExplodedLinestrings () const;
-
 
 //flex !! Size and orientation
 //flex
@@ -340,7 +326,6 @@ GEOMDLLIMPEXP CurveVectorPtr CloneWithExplodedLinestrings () const;
 //flex || Compute products of inertia for the curve wire || bool cv.ComputeSecondMomentWireProducts (outProducts) ||
 //flex || Compute centroid and area viewing the xy plane || bool cv.CentroidAreaXY (outCentroid, outArea) ||
 //flex
-
 
 //! Return the centroid of the contained curves, considered as wires.   (Isolated points are not considered.)
 //!  (Bounded area centroids are not computed.  The boundary curves are used as wires.)
@@ -409,9 +394,6 @@ GEOMDLLIMPEXP bool  CentroidAreaXY (DPoint3dR centroid, double &area) const;
 //! @remark If the CurveVector has no curves, the returned range returns true on the DRange1d::IsNull() predicate.
 GEOMDLLIMPEXP DRange1d ProjectedParameterRange (DRay3dCR ray) const;
 
-
-
-
 //! Return curve copy and transforms for a local coordinate system related to the curves.
 //! The local x and y axes are parallel to the x and y axes of the frenet frame at the curve start.
 //! @return curves transformed to local system.
@@ -444,7 +426,6 @@ TransformR worldToLocal,
 DRange3dR localRange
 ) const;
 
-
 //! Deep search for any curve primitive that has a well defined coordinate frame.
 //! @param [out] frame coordinate frame with origin on a primitive.
 //! @return true if a primitive was found.
@@ -463,8 +444,6 @@ GEOMDLLIMPEXP bool GetAnyFrenetFrame (TransformR frame) const;
 //! @return true if a primitive was found.
 GEOMDLLIMPEXP bool GetAnyFrenetFrame (TransformR frame, int searchPreference) const;
 
-
-
 //! convert u,v fraction to xyz and derivatives.
 //! This is an expensive operation.  It has to call CloneInLocalCoordinates before it can multiply uv by the localToWorld transformation.
 //! To do this efficiently many times, call CloneInLocalCoordinates once and reuse the localToWorld transform.
@@ -482,7 +461,6 @@ GEOMDLLIMPEXP bool TryUVFractionToXYZ
     DVec3dR dXdv
     ) const;
 
-
 //flex !! Geometric Construction
 //flex
 //flex || Promote a point array to a cv.  If creating loop, optionally force CCW order || outCv = CurveVector::CreateLinear (bvector<DPoint3d> &points, boundaryType, forceXYOrientation)||
@@ -496,12 +474,11 @@ GEOMDLLIMPEXP bool TryUVFractionToXYZ
 //flex || Deep copy with each primitives replaced by an individual bspline || outCv = source.CloneAsBsplines () ||
 //flex || Stroke all primitives.  Append to a single bvector<DPoint3d>, with DISCONNECT seprators || cv.AddStrokePoints (inout points, facetOptions) ||
 
-
 //! Create a linestring or polygon from xyz data.
 //! @param [in] points vertex coordinates points.
 //! @param [in] boundaryType is one of
 //! <ul>
-//! <li> BOUNDARY_TYPE_Outer, or BOUNDARY_TYPE_INNER: Duplication forced on first/last point.  Orientation optionally enforced.
+//! <li> BOUNDARY_TYPE_Outer, or BOUNDARY_TYPE_Inner: Duplication forced on first/last point.  Orientation optionally enforced.
 //! <li> BOUNDARY_TYPE_Open, BOUNDARY_TYPE_None: points copied unchanged.
 //! <li> BOUNDARY_TYPE_UnionRegion, BOUNDARY_TYPE_ParityRegion create two-level structure with polygonat second level with BOUNDARY_TYPE_Outer.
 //! </ul>
@@ -515,7 +492,7 @@ GEOMDLLIMPEXP static CurveVectorPtr CreateLinear (bvector<DPoint3d> const&points
 //! @param [in] numPoints number of coordinates.
 //! @param [in] boundaryType is one of
 //! <ul>
-//! <li> BOUNDARY_TYPE_Outer, or BOUNDARY_TYPE_INNER: Duplication forced on first/last point.  Orientation optionally enforced.
+//! <li> BOUNDARY_TYPE_Outer, or BOUNDARY_TYPE_Inner: Duplication forced on first/last point.  Orientation optionally enforced.
 //! <li> BOUNDARY_TYPE_Open, BOUNDARY_TYPE_None: points copied unchanged.
 //! <li> BOUNDARY_TYPE_UnionRegion, BOUNDARY_TYPE_ParityRegion create two-level structure with polygonat second level with BOUNDARY_TYPE_Outer.
 //! </ul>
@@ -531,7 +508,7 @@ GEOMDLLIMPEXP static CurveVectorPtr CreateLinear (
 //! @param [in] numPoints number of coordinates.
 //! @param [in] boundaryType is one of
 //! <ul>
-//! <li> BOUNDARY_TYPE_Outer, or BOUNDARY_TYPE_INNER: Duplication forced on first/last point.  Orientation optionally enforced.
+//! <li> BOUNDARY_TYPE_Outer, or BOUNDARY_TYPE_Inner: Duplication forced on first/last point.  Orientation optionally enforced.
 //! <li> BOUNDARY_TYPE_Open, BOUNDARY_TYPE_None: points copied unchanged.
 //! <li> BOUNDARY_TYPE_UnionRegion, BOUNDARY_TYPE_ParityRegion create two-level structure with polygonat second level with BOUNDARY_TYPE_Outer.
 //! </ul>
@@ -583,8 +560,6 @@ BoundaryType boundaryType = CurveVector::BOUNDARY_TYPE_Outer
 //! Create a BOUNDARY_TYPE_None with line segments.
 GEOMDLLIMPEXP static CurveVectorPtr Create (bvector<DSegment3d> const &segments);
 
-
-
 //! Create a (deep) curve vector structure for a complete elliptic (circular) disk.
 //! @param [in] arc boundary ellipse
 //! @param [in] boundaryType is one of
@@ -602,8 +577,6 @@ GEOMDLLIMPEXP static CurveVectorPtr CreateDisk (DEllipse3dCR arc, BoundaryType b
 //! @param [in] boundaryType
 GEOMDLLIMPEXP static CurveVectorPtr Create (ICurvePrimitivePtr child, BoundaryType boundaryType = CurveVector::BOUNDARY_TYPE_Open);
 
-
-
 //! Return a "deep copy" with primitives replaced by bsplines
 //! The tree upper levels of the tree structure are retained -- i.e. the output contains corresponding tree structure
 //!     ParityRegion, UnionRegion, OuterLoop, and InnerLoop
@@ -614,7 +587,6 @@ GEOMDLLIMPEXP static CurveVectorPtr Create (ICurvePrimitivePtr child, BoundaryTy
 //!<li>Primitives: Each primitive is copied as a bspline curve primitive.
 //!</ul>
 GEOMDLLIMPEXP CurveVectorPtr CloneAsBsplines () const;
-
 
 //! Return a "deep copy" with primitives replaced by strokes.
 //! The tree upper levels of the tree structure are retained -- i.e. the output contains corresponding tree structure
@@ -678,7 +650,6 @@ GEOMDLLIMPEXP bool AddSpacedPoints (bvector<double> const &distances, bvector<Cu
 //! @param [in] signedDistance  distance to move forward or backward.
 GEOMDLLIMPEXP ValidatedCurveLocationDetail PointAtSignedDistanceAlong (CurveLocationDetailCR startPoint, double signedDistance) const;
 
-
 //flex
 //flex || Convert to single-loop bspline curve || status = source.ToBsplineCurve (out curve) ||
 //flex
@@ -686,8 +657,6 @@ GEOMDLLIMPEXP ValidatedCurveLocationDetail PointAtSignedDistanceAlong (CurveLoca
 GEOMDLLIMPEXP BentleyStatus ToBsplineCurve (MSBsplineCurveR curve) const;
 //! Represent a curve vector that denotes an open or closed path as a single bspline curve.
 GEOMDLLIMPEXP MSBsplineCurvePtr GetBsplineCurve () const;
-
-
 
 //flex !! Parametric Queries
 //flex
@@ -804,8 +773,6 @@ GEOMDLLIMPEXP bool IsPlanar (TransformR localToWorld, TransformR worldToLocal, D
 //! @return true if range is computed and has small z component.
 GEOMDLLIMPEXP bool IsPlanarWithDefaultNormal (TransformR localToWorld, TransformR worldToLocal, DRange3dR range, DVec3dCP normal) const;
 
-
-
 //flex !! Non-geometric queries
 //flex
 //flex || description || ||
@@ -815,7 +782,6 @@ GEOMDLLIMPEXP bool IsPlanarWithDefaultNormal (TransformR localToWorld, Transform
 //flex || Convert a cyclic index to the actual range. || i = cv.CyclicIndex(i0) ||
 //flex || Access by cyclic index || cp = cv.GetCyclic (index) ||
 //flex
-
 
 //! return mod of index with vector length, properly corrected for negatives.
 GEOMDLLIMPEXP size_t CyclicIndex (int index) const;
@@ -846,7 +812,6 @@ GEOMDLLIMPEXP double ResolveTolerance (double tolerance) const;
 //! @param [in] tolerance distance tolerance
 GEOMDLLIMPEXP void FindPrimitivesWithNearbyStartEnd (bvector<CurveLocationDetail> &data, DPoint3dCR xyz, double tolerance) const;
 
-
 //flex !! Selective extraction
 //flex
 //flex || Split into parts at parametric positions || outCv = cv.GenerateAllParts (indexA, fractionA, indexB, fractionB) ||
@@ -855,7 +820,6 @@ GEOMDLLIMPEXP void FindPrimitivesWithNearbyStartEnd (bvector<CurveLocationDetail
 //flex || Copy with all orientations reversed || CloneReversed () ||
 //flex || Compute one of several types of local coordinate systems.  Return a deep copy transformed to the system. || outCv = cv.CloneInLocalCoordinates (in frameType, out localToWorld, out worldToLocal, out localRange) ||
 //flex
-
 
 //! Return a new vector containing curves from index0,fraction0 to index1,fraction1 with the (signed int!!) indices interpreted cyclically.
 GEOMDLLIMPEXP CurveVectorPtr CloneBetweenCyclicIndexedFractions (int index0, double fraction0, int index1, double fraction1) const;
@@ -872,9 +836,6 @@ CurveLocationDetailCR location1,        //!< [in] end of cloned portion
 bool allowExtrapolation = false,        //!< [in] true to allow extrapolation beyond ends
 bool usePartialCurves = false           //!< [in] true to create CURVE_PRIMITIVE_TYPE_PartialCurve to clone portions of curves.
 ) const;
-
-
-
 
 //! Return a new curve vector that has all components reversed.
 GEOMDLLIMPEXP CurveVectorPtr CloneReversed () const;
@@ -947,7 +908,6 @@ SolidLocationDetailR hitDetail   //!< [out] hit point with parameters relative t
 //flex || Fixup order, boundary type, and loop direction || bool FixupXYOuterInner (fullGeometryCheckFlag) ||
 //flex
 
-
 //! Apply a transform to all contained curves.
 GEOMDLLIMPEXP bool TransformInPlace (TransformCR transform);
 
@@ -956,7 +916,6 @@ GEOMDLLIMPEXP bool TransformInPlace (TransformCR transform);
 //! Primitive order within path types (_Outer, _Inner, _Open) is reversed.
 //! All others (_Union, _Parity, _None) are unchanged.
 GEOMDLLIMPEXP bool ReverseCurvesInPlace ();
-
 
 //! Inplace update to consolidate contiguous parts.
 //! Adjacent lines and linestrings become a single linestring. Interior colinear points of linestrings are eliminated.
@@ -1007,7 +966,6 @@ GEOMDLLIMPEXP double ReorderForSmallGaps ();
 //! Return a top level BOUNDARY_TYPE_None containing the various BOUNDARY_TYPE_Open and BOUNDARY_TYPE_Outer
 GEOMDLLIMPEXP CurveVectorPtr AssembleChains ();
 
-
 //flex !! Region booleans
 //flex !! Each has an optional bvector to receive pairs (newCurve, oldCurve) so caller can manage relationships
 //flex || Union    || outRegion = CurveVector::AreaUnion (regionA, regionB, newToOld) ||
@@ -1040,10 +998,6 @@ GEOMDLLIMPEXP static CurveVectorPtr AreaIntersection (CurveVectorCR regionA, Cur
 //! @param [in,out] newToOld (optional) pointer to bvector to receive paring of new and old curves.
 GEOMDLLIMPEXP static CurveVectorPtr AreaParity (CurveVectorCR regionA, CurveVectorCR regionB, CurvePrimitivePtrPairVector *newToOld = NULL);
 
-
-
-
-
 //! Return a curve vector containing the "inside" areas by various conditions.
 //! @param [in] region Region that may have loops back over its area.
 //! @param [in] select1 Rule for classifying single area: one of AreaSelect_Parity, AreaSelect_CCWPositiveWindingNumber,  AreaSelect_CCWNonzeroWindingNumber, AreaSelect_CCWNegativeWindingNumber
@@ -1057,7 +1011,6 @@ GEOMDLLIMPEXP static CurveVectorPtr AreaAnalysis
 //! @param [in] regionA input areas
 GEOMDLLIMPEXP static CurveVectorPtr ReduceToCCWAreas (CurveVectorCR regionA);
 
-
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
 GEOMDLLIMPEXP static void CreateXYHatch (
 bvector<DSegment3d> &sticks,         //!< [out] computed hatch segments
@@ -1070,7 +1023,6 @@ int                  selection = 0  //!< 0 for parity rules, 1 for longest possi
 );
 
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
-
 GEOMDLLIMPEXP static void CreateHatch (
 bvector<DSegment3d> &sticks,         //!< [out] computed hatch segments
 bvector<HatchSegmentPosition> *segmentPosition, //!< [out] For each stick, description of hatch level and distance along.
@@ -1166,16 +1118,13 @@ static GEOMDLLIMPEXP CurveVectorPtr  ThickenXYPathToArea
 );
 }; // CurveVector
 
-
-
 //! static operations on curves.
 //! @ingroup BentleyGeom_PolymorphicCurves
-
 struct CurveCurve
 {
 private: CurveCurve (); // static class, no instances allowed.
 public:
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1193,7 +1142,7 @@ DMatrix4dCP    pWorldToLocal
 );
 
 public:
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1209,7 +1158,7 @@ CurveVectorR curve,
 DMatrix4dCP    pWorldToLocal
 );
 
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1227,7 +1176,28 @@ DMatrix4dCP    pWorldToLocal,   //!< optional viewing transformation
 bool         extend = false     //!< extend the two curves?
 );
 
-//! Collect apparent intersections between curves as viewed in XY plane, optionally after a
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
+//!   transform.
+//! Each intersection is recorded as a "partial curve" that has fraction data indicating
+//!   its position on the parent curve.
+//! If the intersection is a single point, the "partial curve" has (bitwise) identical start
+//!   and end fractions.
+//! If the intersection is a coincident portion of the curves, the "partial curve" indicates the
+//!   fractional range of the intersection.
+static GEOMDLLIMPEXP void IntersectionsXY
+(
+CurveVectorR intersectionA,     //!< intersection points on curveA
+CurveVectorR intersectionB,     //!< intersection points on curveB
+ICurvePrimitiveP curveA,       //!< first curves
+ICurvePrimitiveP curveB,       //!< second curves
+DMatrix4dCP    pWorldToLocal,   //!< optional viewing transformation
+bool extendA0,        //!< extend curveA backwards
+bool extendA1,        //!< extend curveA forwards
+bool extendB0,        //!< extend curveB backwards
+bool extendB1         //!< extend curveB forwards
+);
+
+//! Append apparent intersections between curves as viewed in XY plane, optionally after a
 //!   transform.
 //! Each intersection is recorded as a "partial curve" that has fraction data indicating
 //!   its position on the parent curve.
@@ -1261,7 +1231,7 @@ DRay3dCR            rayB        //!< ray to intersect with surface swept by rota
 //! @param [out] pointsOnB "partial curve" data for points or intervals on curve B
 //! @param [in] curveA first curve
 //! @param [in] curveB second curve
-//! @param maxDist [in] largest distance to consider.
+//! @param maxDist [in] largest distance to consider, default/negative DBL_MAX.
 static GEOMDLLIMPEXP void CloseApproach
 (
 CurveVectorR pointsOnA,
@@ -1289,14 +1259,14 @@ static GEOMDLLIMPEXP bool ClosestApproachNewton (
 //! @param [out] pointsOnB "partial curve" data for points or intervals on curve B
 //! @param [in] chainA first curve
 //! @param [in] chainB second curve
-//! @param maxDist [in] largest distance to consider.
+//! @param maxDist [in] largest distance to consider, default/negative DBL_MAX.
 void CloseApproach
 (
 CurveVectorR pointsOnA,
 CurveVectorR pointsOnB,
 CurveVectorCR chainA,
 CurveVectorCR chainB,
-double maxDist
+double maxDist = DBL_MAX
 );
 
 //! Find a single point where curveA and curveB have closest approach.
@@ -1327,6 +1297,58 @@ CurveVectorCR chainA,
 CurveVectorCR chainB
 );
 
+//! Callback signature for AnnounceCloseApproaches
+typedef std::function<void(CurveLocationDetailPairCR)> ICloseApproachAnnouncer;
+
+//! Compute close approaches or closest approach between two chains, and report them through a callback.
+//! @param [in] chainA first chain
+//! @param [in] chainB second chain
+//! @param [in] announce callback to receive details of each close approach
+//! @param [in] maxDistance if positive, announce all approaches within this distance; otherwise announce only the closest approach.
+//! When Newton iteration is employed to compute the closest approach, two sub-options are available to control how many seeds are used.
+//! When maxDistance = 0 (default), use only one Newton seed, the closest approach between the stroked inputs.
+//! When maxDistance < 0, use all stroked close approaches within -maxDistance as Newton seeds (slower but more accurate).
+//! @param [in] strokeOptions optional stroking parameters to use for nonlinear curves. Default is nullptr (use default stroking parameters).
+//! @param [in] maxIterations maximum number of Newton iterations to run per seed for nonlinear curves. Default/negative is 20.
+//! @param [in] fractionTol parametric (fractional) convergence tolerance for Newton iteration. Default/negative is 1.0e-12.
+//! @param [in] coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default/negative is 1.0e-4.
+//! @return true if and only if announce was called at least once.
+static GEOMDLLIMPEXP bool AnnounceCloseApproaches
+(
+CurveVectorCR chainA,
+CurveVectorCR chainB,
+ICloseApproachAnnouncer const& announce,
+double maxDistance = 0.0,
+IFacetOptionsCP strokeOptions = nullptr,
+int maxIterations = 20,
+double fractionTol = 1.0e-12,
+double coordTol = 1.0e-4
+);
+
+//! Compute close approaches or closest approach between two curves, and report them through a callback.
+//! @param [in] curveA first curve
+//! @param [in] curveB second curve
+//! @param [in] announce callback to receive details of each close approach
+//! @param [in] maxDistance if positive, announce all approaches within this distance; otherwise announce only the closest approach.
+//! When Newton iteration is employed to compute the closest approach, two sub-options are available to control how many seeds are used.
+//! When maxDistance = 0 (default), use only one Newton seed, the closest approach between the stroked inputs.
+//! When maxDistance < 0, use all stroked close approaches within -maxDistance as Newton seeds (slower but more accurate).
+//! @param [in] strokeOptions optional stroking parameters to use for nonlinear curves. Default is nullptr (use default stroking parameters).
+//! @param [in] maxIterations maximum number of Newton iterations to run per seed for nonlinear curves. Default/negative is 20.
+//! @param [in] fractionTol parametric (fractional) convergence tolerance for Newton iteration. Default/negative is 1.0e-12.
+//! @param [in] coordTol absolute and relative tolerance for clustering solutions. Typically this is a coarse tolerance. Default/negative is 1.0e-4.
+//! @return true if and only if announce was called at least once.
+static GEOMDLLIMPEXP bool AnnounceCloseApproaches
+(
+ICurvePrimitiveCR curveA,
+ICurvePrimitiveCR curveB,
+ICloseApproachAnnouncer const& announce,
+double maxDistance = 0.0,
+IFacetOptionsCP strokeOptions = nullptr,
+int maxIterations = 20,
+double fractionTol = 1.0e-12,
+double coordTol = 1.0e-4
+);
 
 //! Convenience function for extracting single point intersection from the output of CurveCurveIntersectionsXY.
 //! Specifically, test if the specified index in the CurveVectors are both PartialCurve with a degenerate
@@ -1683,7 +1705,6 @@ ICurvePrimitiveCR curve
 
 };
 
-
 GEOMDLLIMPEXP bool ImprovePlaneCurveIntersection (DPlane3dCR plane, ICurvePrimitiveCP curve, CurveLocationDetailPair& pair);
 GEOMDLLIMPEXP void ImprovePlaneCurveIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, bvector<CurveLocationDetailPair> &intersections);
 GEOMDLLIMPEXP bool ImprovePerpendicularProjection (ICurvePrimitiveCP curve, DPoint3dCR spacePoint, double &fraction, DPoint3dR xyz);
@@ -1898,7 +1919,6 @@ double targetDistance,
 PathLocationDetail &detail
 ) const;
 
-
 // clone a fragment of an indexed curve.
 // if non-null, push it to dest.
 // (Create dest if needed)
@@ -1958,7 +1978,6 @@ GEOMDLLIMPEXP PathLocationDetail AtEnd () const;
 
 //! projected distance between points
 GEOMDLLIMPEXP_XY double DistanceBetweenPointsXY (DPoint3dCR xyzA, DPoint3dCR xyzB) const;
-
 
 //! Return detailed curve location for the position at targetDistance along the curve.
 GEOMDLLIMPEXP bool SearchByDistanceFromPathStart
@@ -2089,8 +2108,6 @@ bvector<PathLocationDetailPair> &locations  //!> [out] complete details of locat
 
 };
 
-
-
 //! Fast search structure for a curve vector whose x coordinate is distance along a vertical alignment, and
 //! z is the elevation.
 struct CurveVectorWithXIndex : RefCountedBase
@@ -2133,16 +2150,6 @@ GEOMDLLIMPEXP double GetEndX () const;
 GEOMDLLIMPEXP CurveVectorPtr CloneDirectedXInterval (double xStart, double xEnd) const;
 //! Extract a subcurve by detailed locations . .
 GEOMDLLIMPEXP CurveVectorPtr CloneDirectedInterval (PathLocationDetailCR detailA, PathLocationDetailCR detailB) const;
-
 };
 
-
-
-
-
-
 END_BENTLEY_GEOMETRY_NAMESPACE
-
-#ifdef BENTLEY_WIN32
-#pragma warning (pop)
-#endif
