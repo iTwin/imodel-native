@@ -17,7 +17,7 @@ To add a new library:
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
 3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml) at the end of the chain, with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
 5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
 6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
@@ -28,6 +28,8 @@ To add a new library:
    vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/mylib/
    %endif
    ```
+
+> **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
 
 Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 
@@ -165,8 +167,8 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
-- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
-- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 
 ## Version Pinning
 
