@@ -98,13 +98,18 @@ git commit  # or let the merge auto-commit if clean
 
 `iModelCore/libsrc/README.md` contains a table listing every third-party library and its version. Update the `Version` cell for the library you're updating to the new version. This is a Bentley file, so like every other Bentley change it is authored on `libsrc-Main` (not `libsrc-Vendor`); it will reach `main` via the PR branch merge in step 5.
 
-```
-| Directory | Library | Version | vcpkg? |
-|-----------|---------|---------|--------|
-| `compress/snappy` | Google Snappy | 1.2.2 | No |
-```
+     | Directory | Library | Version | vcpkg? |
+     |-----------|---------|---------|--------|
+     | `compress/snappy` | Google Snappy | 1.2.2 | No |
 
 Match the existing version format for that row (some entries include extra detail like a sub-library version, revision number, or SONAME).
+
+Commit the change on `libsrc-Main` so it's included in the step 5 merge (a merge only picks up committed content):
+
+```bash
+git add iModelCore/libsrc/README.md
+git commit -m "Update <library> version in libsrc/README.md"
+```
 
 ### 5. Create PR branch and merge libsrc-Main
 
