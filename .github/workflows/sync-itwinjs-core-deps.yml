@@ -1,0 +1,155 @@
+# Workflow triggered by itwinjs-core releases to update iTwin.js devDependencies.
+# See: https://github.com/iTwin/itwinjs-backlog/issues/2198
+name: Sync iTwin.js Core Dependencies
+
+on:
+  repository_dispatch:
+    types: [itwinjs-core-released]
+  workflow_dispatch:
+    inputs:
+      next_dev_version:
+        description: "Next dev version (e.g. 5.12.0-dev)"
+        required: true
+      tag:
+        description: "Release tag (e.g. release/5.11.0)"
+        required: false
+        default: "manual"
+      release_url:
+        description: "GitHub release URL"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-itwinjs-core-deps
+  cancel-in-progress: false
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_DEV_VERSION: ${{ github.event.client_payload.next_dev_version || github.event.inputs.next_dev_version }}
+      TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag }}
+      RELEASE_URL: ${{ github.event.client_payload.release_url || github.event.inputs.release_url }}
+      PACKAGE_DIR: iModelJsNodeAddon/api_package/ts
+      BRANCH_NAME: bot/sync-itwinjs-core-deps
+    steps:
+      - name: Validate inputs
+        run: |
+          if [ -z "$NEXT_DEV_VERSION" ]; then
+            echo "::error::next_dev_version is required"
+            exit 1
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::tag is required"
+            exit 1
+          fi
+          echo "Updating iTwin.js deps to ^${NEXT_DEV_VERSION} (triggered by ${TAG})"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure git identity
+        run: |
+          git config user.name "imodeljs-admin"
+          git config user.email "imodeljs-admin@users.noreply.github.com"
+
+      - name: Create or reset branch
+        run: git checkout -B "$BRANCH_NAME"
+
+      - name: Update devDependencies
+        id: update
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const content = fs.readFileSync('package.json', 'utf8');
+            const eol = content.includes('\r\n') ? '\r\n' : '\n';
+            const pkg = JSON.parse(content);
+            const version = '^' + process.env.NEXT_DEV_VERSION;
+            const packages = [
+              '@itwin/build-tools',
+              '@itwin/core-bentley',
+              '@itwin/core-common',
+              '@itwin/core-geometry',
+            ];
+            for (const name of packages) {
+              console.log('Updating ' + name + ' to ' + version);
+              pkg.devDependencies[name] = version;
+            }
+            const output = JSON.stringify(pkg, null, 2).replace(/\n/g, eol) + eol;
+            fs.writeFileSync('package.json', output);
+
+            // Export package list for PR body generation
+            const table = packages.map(p => '| \`' + p + '\` | \`' + version + '\` |').join('\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'packages_table<<DELIM\n' + table + '\nDELIM\n');
+          "
+
+      - name: Regenerate package-lock.json
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: npm install --ignore-scripts
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected, deps may already be up to date."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git add "$PACKAGE_DIR/package.json" "$PACKAGE_DIR/package-lock.json"
+          git commit -m "Update iTwin.js packages to ^${NEXT_DEV_VERSION}"
+          git push --force origin "$BRANCH_NAME"
+
+      - name: Create or update pull request
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES_TABLE: ${{ steps.update.outputs.packages_table }}
+        run: |
+          PR_TITLE="Update iTwin.js packages to ^${NEXT_DEV_VERSION}"
+
+          RELEASE_LINE=""
+          if [ -n "$RELEASE_URL" ]; then
+            RELEASE_LINE="Release: ${RELEASE_URL}"
+          fi
+
+          read -r -d '' PR_BODY <<EOF || true
+          ## iTwin.js Dependency Update
+
+          Triggered by itwinjs-core release: **${TAG}**
+          ${RELEASE_LINE}
+
+          ### Updated packages
+          | Package | Version |
+          |---------|---------|
+          ${PACKAGES_TABLE}
+
+          ---
+          *This PR was automatically created by the [sync-itwinjs-core-deps](../actions/workflows/sync-itwinjs-core-deps.yml) workflow.*
+          EOF
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #${EXISTING_PR} already exists, updating..."
+            gh pr edit "$EXISTING_PR" --title "$PR_TITLE" --body "$PR_BODY"
+          else
+            gh pr create \
+              --title "$PR_TITLE" \
+              --body "$PR_BODY" \
+              --base main \
+              --head "$BRANCH_NAME"
+          fi
