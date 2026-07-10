@@ -221,17 +221,18 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
             myValues);
 
         ECSqlRowAdaptor adaptor(m_dgndb);
+        adaptor.GetOptions().SetIncludeNulls(true);
         BeJsNapiObject out(env);
 
-        BeJsValue originalRowJson = out["originalValues"];
+        BeJsValue originalRowJson = out["original"];
         if (adaptor.RenderRowAsObject(originalRowJson, ConflictRow(originalValues)) != SUCCESS)
             THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
 
-        BeJsValue theirsRowJson = out["theirValues"];
+        BeJsValue theirsRowJson = out["theirs"];
         if (adaptor.RenderRowAsObject(theirsRowJson, ConflictRow(theirValues)) != SUCCESS)
             THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
 
-        BeJsValue myRowJson = out["myValues"];
+        BeJsValue myRowJson = out["ours"];
         if (adaptor.RenderRowAsObject(myRowJson, ConflictRow(myValues)) != SUCCESS)
             THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
 

@@ -22,7 +22,7 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
                 continue;
             }
 
-            if (ecsqlValue.IsNull()) {
+            if (ecsqlValue.IsNull() && m_options.IncludeNulls() == false) {
                 ++consecutiveNulls;
                 continue;
             }
@@ -42,7 +42,7 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
             if (m_options.SkipReadOnlyProperties() && ecsqlValue.GetColumnInfo().GetProperty() && ecsqlValue.GetColumnInfo().GetProperty()->GetIsReadOnly()) {
                 continue;
             }
-            if (ecsqlValue.IsNull()) {
+            if (ecsqlValue.IsNull() && m_options.IncludeNulls() == false) {
                 continue;
             }
 
@@ -104,6 +104,12 @@ BentleyStatus ECSqlRowAdaptor::RenderProperty(BeJsValue out, IECSqlValue const& 
         BeAssert(false && "property is null");
         return ERROR;
     }
+    
+    if (in.IsNull() && m_options.IncludeNulls() == true) {
+        out.SetNull();
+        return SUCCESS;
+    }
+
     if (prop->GetIsPrimitive())
         return RenderPrimitiveProperty(out, in, nullptr);
     if (prop->GetIsStruct())
@@ -349,7 +355,7 @@ BentleyStatus ECSqlRowAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlVal
 BentleyStatus ECSqlRowAdaptor::RenderStructProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyObject();
     for (IECSqlValue const& structMemberValue : in.GetStructIterable()) {
-        if (structMemberValue.IsNull())
+        if (structMemberValue.IsNull() && m_options.IncludeNulls() == false)
             continue;
 
         auto memberProp = structMemberValue.GetColumnInfo().GetProperty();
@@ -372,7 +378,7 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSq
     out.SetEmptyArray();
     auto elementType  = in.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
-        if (arrayElementValue.IsNull())
+        if (arrayElementValue.IsNull() && m_options.IncludeNulls() == false)
             continue;
 
         if (SUCCESS != RenderPrimitiveProperty(out.appendValue(), arrayElementValue, &elementType))
@@ -386,7 +392,7 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSq
 BentleyStatus ECSqlRowAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
-        if (arrayElementValue.IsNull()){
+        if (arrayElementValue.IsNull() && m_options.IncludeNulls() == false){
             out.appendValue().SetEmptyObject();
             continue;
         }
@@ -520,6 +526,9 @@ void JsReadOptions::FromJson(BeJsValue opts) {
 
     if (opts.isBoolMember(JUseClassFullNameInsteadofClassName))
         m_useClassFullNameInsteadofClassName = opts[JUseClassFullNameInsteadofClassName].asBool();
+
+    if (opts.isBoolMember(JIncludeNulls))
+        m_includeNulls = opts[JIncludeNulls].asBool();
 }
 
 //---------------------------------------------------------------------------------------
@@ -533,6 +542,7 @@ void JsReadOptions::ToJson(BeJsValue opts) const {
     opts[JDoNotConvertClassIdsToClassNamesWhenAliased] = m_doNotConvertClassIdsToClassNamesWhenAliased;
     opts[JSkipReadOnlyProperties] = m_skipReadOnlyProperties;
     opts[JUseClassFullNameInsteadofClassName] = m_useClassFullNameInsteadofClassName;
+    opts[JIncludeNulls] = m_includeNulls;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

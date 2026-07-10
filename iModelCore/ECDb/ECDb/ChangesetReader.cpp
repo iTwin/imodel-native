@@ -171,11 +171,11 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
     Changes::Change const& conflict,
     std::vector<std::unique_ptr<IECSqlValue>>& originalValues,
     std::vector<std::unique_ptr<IECSqlValue>>& theirValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& myValues)
+    std::vector<std::unique_ptr<IECSqlValue>>& ourValues)
     {
     originalValues.clear();
     theirValues.clear();
-    myValues.clear();
+    ourValues.clear();
 
     DbTable const* dbTable = ecdb.Schemas().Main().GetDbSchema().FindTable(conflict.GetTableName());
     if (!dbTable) return BentleyStatus::ERROR;
@@ -186,26 +186,31 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
 
     std::unordered_map<Utf8String, DbValue> originalDbValues;
     std::unordered_map<Utf8String, DbValue> theirDbValues;
-    std::unordered_map<Utf8String, DbValue> myDbValues;
+    std::unordered_map<Utf8String, DbValue> ourDbValues;
     for(int i = 0; i < static_cast<int>(columns.size()); ++i)
         {
             auto originalValue = conflict.GetOldValue(i);
-            auto myValue = conflict.GetNewValue(i);
-            auto theirValue = conflict.GetConflictValue(i);
+            auto ourValue = conflict.GetNewValue(i);
+
+            // GetConflictValue will get any column from the current database row.
+            // But we only need it if is this column is in the conflicting changeset.
+            auto theirValue = originalValue.IsValid() || ourValue.IsValid()
+                ? conflict.GetConflictValue(i)
+                : DbValue(nullptr);
 
             // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
             if (conflict.IsPrimaryKeyColumn(i))
                 {
-                if (!myValue.IsValid())
-                    myValue = originalValue;
+                if (!ourValue.IsValid())
+                    ourValue = originalValue;
                 if (!theirValue.IsValid())
                     theirValue = originalValue;
                 }
 
             if (originalValue.IsValid())
                 originalDbValues.emplace(columns[i], originalValue);
-            if (myValue.IsValid())
-                myDbValues.emplace(columns[i], myValue);
+            if (ourValue.IsValid())
+                ourDbValues.emplace(columns[i], ourValue);
             if (theirValue.IsValid())
                 theirDbValues.emplace(columns[i], theirValue);
         }
@@ -222,7 +227,7 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
         return BentleyStatus::ERROR;
     if (ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, theirValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, myDbValues, classId, isClassIdFromChangeset, myValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, ourValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;

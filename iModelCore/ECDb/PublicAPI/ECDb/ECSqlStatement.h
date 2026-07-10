@@ -778,6 +778,7 @@ struct JsReadOptions final {
     static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
     static constexpr auto JSkipReadOnlyProperties = "skipReadOnlyProperties";
     static constexpr auto JUseClassFullNameInsteadofClassName = "useClassFullNameInsteadofClassNaem";
+    static constexpr auto JIncludeNulls = "includeNulls";
 
     private:
         bool m_abbreviateBlobs:1;
@@ -786,13 +787,21 @@ struct JsReadOptions final {
         bool m_doNotConvertClassIdsToClassNamesWhenAliased:4;
         bool m_skipReadOnlyProperties:5;
         bool m_useClassFullNameInsteadofClassName:6;
+        bool m_includeNulls:7;
 
     public:
-        JsReadOptions(JsReadOptions const& other) =default;
+        JsReadOptions(JsReadOptions const& other) = default;
         JsReadOptions& operator = (JsReadOptions const& other) = default;
         JsReadOptions(JsReadOptions&& other) = default;
         JsReadOptions& operator = (JsReadOptions&& other) = default;
-        JsReadOptions(JsFormat fmt = JsFormat::Standard):m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false), m_doNotConvertClassIdsToClassNamesWhenAliased(false), m_skipReadOnlyProperties(false), m_useClassFullNameInsteadofClassName(false){}
+        JsReadOptions(JsFormat fmt = JsFormat::Standard) :
+            m_abbreviateBlobs(true),
+            m_classIdToClassNames(false),
+            m_useJsName(false),
+            m_doNotConvertClassIdsToClassNamesWhenAliased(false),
+            m_skipReadOnlyProperties(false),
+            m_useClassFullNameInsteadofClassName(false),
+            m_includeNulls(false) {}
 
         bool operator == (JsReadOptions const& other) const {
             return m_abbreviateBlobs == other.m_abbreviateBlobs &&
@@ -800,7 +809,8 @@ struct JsReadOptions final {
                 m_useJsName == other.m_useJsName &&
                 m_doNotConvertClassIdsToClassNamesWhenAliased == other.m_doNotConvertClassIdsToClassNamesWhenAliased &&
                 m_skipReadOnlyProperties == other.m_skipReadOnlyProperties &&
-                m_useClassFullNameInsteadofClassName == other.m_useClassFullNameInsteadofClassName;
+                m_useClassFullNameInsteadofClassName == other.m_useClassFullNameInsteadofClassName &&
+                m_includeNulls == other.m_includeNulls;
         }
 
         bool operator != (JsReadOptions const& other) const {
@@ -812,6 +822,7 @@ struct JsReadOptions final {
         bool DoNotConvertClassIdsToClassNamesWhenAliased() const { return m_useJsName && m_doNotConvertClassIdsToClassNamesWhenAliased; }
         bool SkipReadOnlyProperties() const { return m_skipReadOnlyProperties; }
         bool UseClassFullNameInsteadofClassName() const { return m_useJsName && m_useClassFullNameInsteadofClassName; }
+        bool IncludeNulls() const { return m_includeNulls; }
 
     JsReadOptions& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
     JsReadOptions& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
@@ -819,6 +830,7 @@ struct JsReadOptions final {
     JsReadOptions& SetDoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v; return *this; }
     JsReadOptions& SetSkipReadOnlyProperties(bool v) { m_skipReadOnlyProperties = v; return *this; }
     JsReadOptions& SetUseClassFullNameInsteadofClassName(bool v) { m_useClassFullNameInsteadofClassName = v; return *this; }
+    JsReadOptions& SetIncludeNulls(bool v) { m_includeNulls = v; return *this; }
 
     ECDB_EXPORT void FromJson(BeJsValue opts);
     ECDB_EXPORT void ToJson(BeJsValue opts) const;

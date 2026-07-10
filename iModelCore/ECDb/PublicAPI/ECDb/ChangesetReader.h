@@ -177,7 +177,7 @@ public:
         Changes::Change const& conflict,
         std::vector<std::unique_ptr<IECSqlValue>>& originalValues,
         std::vector<std::unique_ptr<IECSqlValue>>& theirValues,
-        std::vector<std::unique_ptr<IECSqlValue>>& myValues);
+        std::vector<std::unique_ptr<IECSqlValue>>& ourValues);
 };
 
 
