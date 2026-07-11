@@ -167,7 +167,8 @@ static CURLcode tftp_set_timeouts(struct tftp_conn *state)
   }
 
   /* Set per-block timeout to total */
-  if(timeout_ms > 0)
+  if((timeout_ms > 0) && (timeout_ms < 3600000))
+    /* do the calculation only if the timeout is "reasonable" */
     timeout = (time_t)(timeout_ms + 500) / 1000;
   else
     timeout = 15;
@@ -175,7 +176,7 @@ static CURLcode tftp_set_timeouts(struct tftp_conn *state)
   /* Average reposting an ACK after 5 seconds */
   state->retry_max = (int)timeout / 5;
 
-  /* But bound the total number */
+  /* Bound the total number */
   if(state->retry_max < 3)
     state->retry_max = 3;
 
@@ -266,16 +267,19 @@ static CURLcode tftp_parse_option_ack(struct tftp_conn *state,
 
   while(tmp < ptr + len) {
     const char *option, *value;
+    size_t olen;
 
     tmp = tftp_option_get(tmp, ptr + len - tmp, &option, &value);
     if(!tmp) {
       failf(data, "Malformed ACK packet, rejecting");
       return CURLE_TFTP_ILLEGAL;
     }
+    olen = strlen(option);
 
     infof(data, "got option=(%s) value=(%s)", option, value);
 
-    if(checkprefix(TFTP_OPTION_BLKSIZE, option)) {
+    if((strlen(TFTP_OPTION_BLKSIZE) == olen) &&
+       checkprefix(TFTP_OPTION_BLKSIZE, option)) {
       curl_off_t blksize;
       if(curlx_str_number(&value, &blksize, TFTP_BLKSIZE_MAX)) {
         failf(data, "%s (%d)", "blksize is larger than max supported",
@@ -300,11 +304,12 @@ static CURLcode tftp_parse_option_ack(struct tftp_conn *state,
         return CURLE_TFTP_ILLEGAL;
       }
 
-      state->blksize = (int)blksize;
-      infof(data, "blksize parsed from OACK (%d) requested (%d)",
+      state->blksize = (unsigned int)blksize;
+      infof(data, "blksize parsed from OACK (%u) requested (%u)",
             state->blksize, state->requested_blksize);
     }
-    else if(checkprefix(TFTP_OPTION_TSIZE, option)) {
+    else if((strlen(TFTP_OPTION_TSIZE) == olen) &&
+            checkprefix(TFTP_OPTION_TSIZE, option)) {
       curl_off_t tsize = 0;
       /* tsize should be ignored on upload: Who cares about the size of the
          remote file? */
@@ -370,9 +375,9 @@ static CURLcode tftp_tx(struct tftp_conn *state, tftp_event_t event)
       int rblock = getrpacketblock(&state->rpacket);
 
       if(rblock != state->block &&
-         /* There is a bug in tftpd-hpa that causes it to send us an ack for
-          * 65535 when the block number wraps to 0. So when we are expecting
-          * 0, also accept 65535. See
+         /* There is a bug in tftpd-hpa that causes it to send us an ACK for
+          * 65535 when the block number wraps to 0. To handle it, when we are
+          * expecting 0, also accept 65535. See
           * https://www.syslinux.org/archives/2010-September/015612.html
           * */
          !(state->block == 0 && rblock == 65535)) {
@@ -418,7 +423,7 @@ static CURLcode tftp_tx(struct tftp_conn *state, tftp_event_t event)
       return CURLE_OK;
     }
 
-    /* TFTP considers data block size < 512 bytes as an end of session. So
+    /* TFTP considers data block size < 512 bytes as an end of session, so
      * in some cases we must wait for additional data to build full (512 bytes)
      * data block.
      * */
@@ -486,7 +491,7 @@ static CURLcode tftp_tx(struct tftp_conn *state, tftp_event_t event)
     break;
 
   default:
-    failf(data, "tftp_tx: internal error, event: %i", (int)event);
+    failf(data, "tftp_tx: internal error, event: %d", (int)event);
     break;
   }
 
@@ -671,7 +676,7 @@ static CURLcode tftp_send_first(struct tftp_conn *state,
     }
 
     if(data->state.upload) {
-      /* If we are uploading, send an WRQ */
+      /* If we are uploading, send a WRQ */
       setpacketevent(&state->spacket, TFTP_EVENT_WRQ);
       if(data->state.infilesize != -1)
         Curl_pgrsSetUploadSize(data, data->state.infilesize);
@@ -717,7 +722,7 @@ static CURLcode tftp_send_first(struct tftp_conn *state,
         result = tftp_option_add(state, &sbytes, sbytes, buf);
 
       /* add blksize option */
-      curl_msnprintf(buf, sizeof(buf), "%d", state->requested_blksize);
+      curl_msnprintf(buf, sizeof(buf), "%u", state->requested_blksize);
       if(result == CURLE_OK)
         result = tftp_option_add(state, &sbytes, sbytes, TFTP_OPTION_BLKSIZE);
       if(result == CURLE_OK)
@@ -736,7 +741,7 @@ static CURLcode tftp_send_first(struct tftp_conn *state,
       }
     }
 
-    /* the typecase for the 3rd argument is mostly for systems that do
+    /* the typecast for the 3rd argument is mostly for systems that do
        not have a size_t argument, like older unixes that want an 'int' */
 #ifdef __AMIGA__
 #define CURL_SENDTO_ARG5(x) CURL_UNCONST(x)
@@ -869,7 +874,7 @@ static CURLcode tftp_state_machine(struct tftp_conn *state,
     infof(data, "%s", "TFTP finished");
     break;
   default:
-    DEBUGF(infof(data, "STATE: %d", state->state));
+    DEBUGF(infof(data, "STATE: %d", (int)state->state));
     failf(data, "%s", "Internal state machine error");
     result = CURLE_TFTP_ILLEGAL;
     break;
@@ -883,8 +888,8 @@ static void tftp_conn_dtor(void *key, size_t klen, void *entry)
   struct tftp_conn *state = entry;
   (void)key;
   (void)klen;
-  Curl_safefree(state->rpacket.data);
-  Curl_safefree(state->spacket.data);
+  curlx_safefree(state->rpacket.data);
+  curlx_safefree(state->spacket.data);
   curlx_free(state);
 }
 
@@ -1192,9 +1197,9 @@ static CURLcode tftp_multi_statemach(struct Curl_easy *data, bool *done)
 
     if(rc == -1) {
       /* bail out */
-      int error = SOCKERRNO;
+      int sockerr = SOCKERRNO;
       char buffer[STRERROR_LEN];
-      failf(data, "%s", curlx_strerror(error, buffer, sizeof(buffer)));
+      failf(data, "%s", curlx_strerror(sockerr, buffer, sizeof(buffer)));
       state->event = TFTP_EVENT_ERROR;
     }
     else if(rc) {
@@ -1332,7 +1337,7 @@ static CURLcode tftp_setup_connection(struct Curl_easy *data,
 /*
  * TFTP protocol handler.
  */
-static const struct Curl_protocol Curl_protocol_tftp = {
+const struct Curl_protocol Curl_protocol_tftp = {
   tftp_setup_connection,                /* setup_connection */
   tftp_do,                              /* do_it */
   tftp_done,                            /* done */
@@ -1347,25 +1352,9 @@ static const struct Curl_protocol Curl_protocol_tftp = {
   ZERO_NULL,                            /* disconnect */
   ZERO_NULL,                            /* write_resp */
   ZERO_NULL,                            /* write_resp_hd */
-  ZERO_NULL,                            /* connection_check */
+  ZERO_NULL,                            /* connection_is_dead */
   ZERO_NULL,                            /* attach connection */
   ZERO_NULL,                            /* follow */
 };
 
 #endif
-
-/*
- * TFTP protocol handler.
- */
-const struct Curl_scheme Curl_scheme_tftp = {
-  "tftp",                               /* scheme */
-#ifdef CURL_DISABLE_TFTP
-  ZERO_NULL,
-#else
-  &Curl_protocol_tftp,
-#endif
-  CURLPROTO_TFTP,                       /* protocol */
-  CURLPROTO_TFTP,                       /* family */
-  PROTOPT_NOTCPPROXY | PROTOPT_NOURLQUERY, /* flags */
-  PORT_TFTP,                            /* defport */
-};
