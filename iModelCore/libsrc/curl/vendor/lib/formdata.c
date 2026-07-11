@@ -154,7 +154,7 @@ static void AddFormInfo(struct FormInfo *form_info, struct FormInfo *parent)
 
 static void free_formlist(struct FormInfo *ptr)
 {
-  for(; ptr != NULL; ptr = ptr->more) {
+  for(; ptr; ptr = ptr->more) {
     Curl_bufref_free(&ptr->name);
     Curl_bufref_free(&ptr->value);
     Curl_bufref_free(&ptr->contenttype);
@@ -184,7 +184,7 @@ static void free_formlist(struct FormInfo *ptr)
  *
  * name/value pair where only the content pointer is remembered:
  * curl_formadd(&post, &last, CURLFORM_COPYNAME, "name",
- *              CURLFORM_PTRCONTENTS, ptr, CURLFORM_CONTENTSLENGTH, 10,
+ *              CURLFORM_PTRCONTENTS, ptr, CURLFORM_CONTENTSLENGTH, 10L,
  *              CURLFORM_END);
  * (if CURLFORM_CONTENTSLENGTH is missing strlen () is used)
  *
@@ -223,7 +223,7 @@ static CURLFORMcode FormAddCheck(struct FormInfo *first_form,
   /* go through the list, check for completeness and if everything is
    * alright add the HttpPost item otherwise set retval accordingly */
 
-  for(form = first_form; form != NULL; form = form->more) {
+  for(form = first_form; form; form = form->more) {
     const char *name = Curl_bufref_ptr(&form->name);
 
     if(((!name || !Curl_bufref_ptr(&form->value)) && !post) ||
@@ -609,11 +609,11 @@ CURLFORMcode curl_formadd(struct curl_httppost **httppost,
                           struct curl_httppost **last_post, ...)
 {
   va_list arg;
-  CURLFORMcode result;
+  CURLFORMcode form;
   va_start(arg, last_post);
-  result = FormAdd(httppost, last_post, arg);
+  form = FormAdd(httppost, last_post, arg);
   va_end(arg);
-  return result;
+  return form;
 }
 
 /*
@@ -691,16 +691,16 @@ void curl_formfree(struct curl_httppost *form)
 static CURLcode setname(curl_mimepart *part, const char *name, size_t len)
 {
   char *zname;
-  CURLcode res;
+  CURLcode result;
 
   if(!name || !len)
     return curl_mime_name(part, name);
   zname = curlx_memdup0(name, len);
   if(!zname)
     return CURLE_OUT_OF_MEMORY;
-  res = curl_mime_name(part, zname);
+  result = curl_mime_name(part, zname);
   curlx_free(zname);
-  return res;
+  return result;
 }
 
 /*
