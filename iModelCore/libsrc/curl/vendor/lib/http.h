@@ -37,26 +37,15 @@ typedef enum {
   HTTPREQ_HEAD
 } Curl_HttpReq;
 
-/* When redirecting transfers. */
-typedef enum {
-  FOLLOW_NONE,  /* not used within the function, a placeholder to allow
-                   initing to this */
-  FOLLOW_FAKE,  /* only records stuff, not actually following */
-  FOLLOW_RETRY, /* set if this is a request retry as opposed to a real
-                   redirect following */
-  FOLLOW_REDIR /* a full true redirect */
-} followtype;
-
 #define CURL_HTTP_V1x   (1 << 0)
 #define CURL_HTTP_V2x   (1 << 1)
 #define CURL_HTTP_V3x   (1 << 2)
 /* bitmask of CURL_HTTP_V* values */
 typedef unsigned char http_majors;
 
-extern const struct Curl_scheme Curl_scheme_http;
-extern const struct Curl_scheme Curl_scheme_https;
-
 #ifndef CURL_DISABLE_HTTP
+
+extern const struct Curl_protocol Curl_protocol_http;
 
 struct dynhds;
 
@@ -94,8 +83,6 @@ char *Curl_checkProxyheaders(struct Curl_easy *data,
 CURLcode Curl_add_timecondition(struct Curl_easy *data, struct dynbuf *req);
 CURLcode Curl_add_custom_headers(struct Curl_easy *data, bool is_connect,
                                  int httpversion, struct dynbuf *req);
-CURLcode Curl_dynhds_add_custom(struct Curl_easy *data, bool is_connect,
-                                struct dynhds *hds);
 
 void Curl_http_to_fold(struct dynbuf *bf);
 
@@ -118,6 +105,11 @@ CURLcode Curl_http_write_resp(struct Curl_easy *data,
 CURLcode Curl_http_write_resp_hd(struct Curl_easy *data,
                                  const char *hd, size_t hdlen,
                                  bool is_eos);
+
+/* check a received header line for forbidden bytes/format, the same checks
+   applied to regular response headers */
+CURLcode Curl_verify_header(struct Curl_easy *data,
+                            const char *hd, size_t hdlen);
 
 /* These functions are in http.c */
 CURLcode Curl_http_input_auth(struct Curl_easy *data, bool proxy,
@@ -191,19 +183,19 @@ CURLcode Curl_http_write_resp_hds(struct Curl_easy *data,
  * @param request pointer to the request keyword
  * @param httpreq is the request type
  * @param path pointer to the requested path
- * @param proxytunnel boolean if this is the request setting up a "proxy
- * tunnel"
+ * @param query pointer to the requested query or NULL
+ * @param is_connect boolean if this is a CONNECT request
+ *        (where httpreq is HTTPREQ_GET since there is no HTTPREQ_CONNECT)
  *
  * @returns CURLcode
  */
-CURLcode
-Curl_http_output_auth(struct Curl_easy *data,
-                      struct connectdata *conn,
-                      const char *request,
-                      Curl_HttpReq httpreq,
-                      const char *path,
-                      bool proxytunnel); /* TRUE if this is the request setting
-                                            up the proxy tunnel */
+CURLcode Curl_http_output_auth(struct Curl_easy *data,
+                               struct connectdata *conn,
+                               const char *request,
+                               Curl_HttpReq httpreq,
+                               const char *path,
+                               const char *query,
+                               bool is_connect);
 
 /* Decode HTTP status code string. */
 CURLcode Curl_http_decode_status(int *pstatus, const char *s, size_t len);

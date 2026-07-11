@@ -81,6 +81,7 @@ LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 %if $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES + iphlpapi.lib
     LINKER_LIBRARIES + winhttp.lib
+    LINKER_LIBRARIES + bcrypt.lib
 %endif
 
 %include $(SharedMki)linktool.mki

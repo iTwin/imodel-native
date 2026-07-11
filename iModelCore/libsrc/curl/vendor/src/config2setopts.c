@@ -40,6 +40,10 @@
 #include "tool_helpers.h"
 #include "tool_version.h"
 
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h> /* IPPROTO_IPV6 */
+#endif
+
 #define BUFFER_SIZE 102400L
 
 #ifdef IP_TOS
@@ -143,29 +147,40 @@ static CURLcode url_proto_and_rewrite(char **url,
       curl_url_set(uh, CURLUPART_URL, *url,
                    CURLU_GUESS_SCHEME | CURLU_NON_SUPPORT_SCHEME);
     if(!uc) {
-      uc = curl_url_get(uh, CURLUPART_SCHEME, &schemep, CURLU_DEFAULT_SCHEME);
-      if(!uc) {
-#ifdef CURL_DISABLE_IPFS
-        (void)config;
-#else
-        if(curl_strequal(schemep, proto_ipfs) ||
-           curl_strequal(schemep, proto_ipns)) {
-          result = ipfs_url_rewrite(uh, schemep, url, config);
-          /* short-circuit proto_token, we know it is ipfs or ipns */
-          if(curl_strequal(schemep, proto_ipfs))
-            proto = proto_ipfs;
-          else if(curl_strequal(schemep, proto_ipns))
-            proto = proto_ipns;
-          if(result)
-            config->synthetic_error = TRUE;
+      if(config->proto_default) {
+        /* when a default proto is requested, do not guess */
+        uc = curl_url_get(uh, CURLUPART_SCHEME, &schemep,
+                          CURLU_NO_GUESS_SCHEME);
+        if(uc == CURLUE_NO_SCHEME) {
+          /* use the default */
+          proto = proto_token(config->proto_default);
+          if(proto)
+            uc = CURLUE_OK;
         }
-        else
-#endif /* !CURL_DISABLE_IPFS */
-          proto = proto_token(schemep);
-        curl_free(schemep);
       }
-      else if(uc == CURLUE_OUT_OF_MEMORY)
+      else {
+        uc = curl_url_get(uh, CURLUPART_SCHEME, &schemep,
+                          CURLU_DEFAULT_SCHEME);
+      }
+      if(schemep)
+        proto = proto_token(schemep);
+#ifndef CURL_DISABLE_IPFS
+      if(!uc &&
+         (curl_strequal(schemep, proto_ipfs) ||
+          curl_strequal(schemep, proto_ipns))) {
+        result = ipfs_url_rewrite(uh, schemep, url, config);
+        /* short-circuit proto_token, we know it is ipfs or ipns */
+        if(curl_strequal(schemep, proto_ipfs))
+          proto = proto_ipfs;
+        else if(curl_strequal(schemep, proto_ipns))
+          proto = proto_ipns;
+        if(result)
+          config->synthetic_error = TRUE;
+      }
+#endif /* !CURL_DISABLE_IPFS */
+      if(uc == CURLUE_OUT_OF_MEMORY)
         result = CURLE_OUT_OF_MEMORY;
+      curl_free(schemep);
     }
     else if(uc == CURLUE_OUT_OF_MEMORY)
       result = CURLE_OUT_OF_MEMORY;
@@ -204,13 +219,20 @@ static CURLcode ssh_setopts(struct OperationConfig *config, CURL *curl,
 
   if(!config->insecure_ok) {
     char *known = config->knownhosts;
-    if(!known)
-      known = findfile(".ssh/known_hosts", FALSE);
+    if(!known) {
+      char *found = findfile(".ssh/known_hosts", FALSE);
+      if(found) {
+        known = curlx_strdup(found);
+        curl_free(found);
+        if(!known)
+          return CURLE_OUT_OF_MEMORY;
+      }
+    }
     if(known) {
       result = my_setopt_str(curl, CURLOPT_SSH_KNOWNHOSTS, known);
       if(result) {
         config->knownhosts = NULL;
-        curl_free(known);
+        curlx_free(known);
         return result;
       }
       /* store it in global to avoid repeated checks */
@@ -291,10 +313,11 @@ static CURLcode ssl_ca_setopts(struct OperationConfig *config, CURL *curl)
     MY_SETOPT_STR(curl, CURLOPT_PROXY_CAPATH,
                   (config->proxy_capath ? config->proxy_capath :
                    config->capath));
-    if(result && config->proxy_capath) {
+    if((result == CURLE_NOT_BUILT_IN) || (result == CURLE_UNKNOWN_OPTION)) {
       warnf("ignoring %s, not supported by libcurl with %s",
-            config->proxy_capath ? "--proxy-capath" : "--capath",
+            "setting the CA path for the proxy",
             ssl_backend());
+      result = CURLE_OK;
     }
   }
   if(result)
@@ -507,7 +530,7 @@ static CURLcode cookie_setopts(struct OperationConfig *config, CURL *curl)
                                 ISBLANK(cl->data[0]) ? "" : " ", cl->data);
       if(result) {
         warnf("skipped provided cookie, the cookie header "
-              "would go over %u bytes", MAX_COOKIE_LINE);
+              "would go over %d bytes", MAX_COOKIE_LINE);
         return result;
       }
     }
@@ -843,16 +866,17 @@ CURLcode config2setopts(struct OperationConfig *config,
   if(result)
     return result;
 
-#ifndef DEBUGBUILD
-  /* On most modern OSes, exiting works thoroughly,
-     we will clean everything up via exit(), so do not bother with
-     slow cleanups. Crappy ones might need to skip this.
-     Note: avoid having this setopt added to the --libcurl source
-     output. */
-  result = curl_easy_setopt(curl, CURLOPT_QUICK_EXIT, 1L);
-  if(result)
-    return result;
+  if(TRUE
+#ifdef DEBUGBUILD
+    && getenv("CURL_QUICK_EXIT")
 #endif
+    ) {
+    /* QUICK_EXIT allows for running threads to be detached and not
+     * joined. Preferably in non-debug runs. */
+    result = curl_easy_setopt(curl, CURLOPT_QUICK_EXIT, 1L);
+    if(result)
+      return result;
+  }
 
   gen_trace_setopts(config, curl);
 
@@ -938,6 +962,13 @@ CURLcode config2setopts(struct OperationConfig *config,
       result = ssl_setopts(config, curl);
     if(setopt_bad(result))
       return result;
+#ifdef DEBUGBUILD
+    if(!per->urlnum) {
+      char *env = getenv("CURL_DBG_NO_USE_SSL_ON_FIRST");
+      if(env)
+        my_setopt_enum(curl, CURLOPT_USE_SSL, CURLUSESSL_NONE);
+    }
+#endif
   }
 
   if(config->path_as_is)

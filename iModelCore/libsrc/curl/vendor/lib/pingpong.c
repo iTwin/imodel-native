@@ -39,29 +39,21 @@
 #include "select.h"
 #include "progress.h"
 
-/* Returns timeout in ms. 0 or negative number means the timeout has already
-   triggered */
-timediff_t Curl_pp_state_timeout(struct Curl_easy *data,
-                                 struct pingpong *pp)
+timediff_t Curl_pp_state_timeleft_ms(struct Curl_easy *data,
+                                     struct pingpong *pp)
 {
-  timediff_t timeout_ms, xfer_timeout_ms;
-  timediff_t response_time = data->set.server_response_timeout ?
-    data->set.server_response_timeout : RESP_TIMEOUT;
+  timediff_t xfer_remain_ms;
+  timediff_t remain_ms = data->set.server_response_timeout ?
+    data->set.server_response_timeout : PINGPONG_TIMEOUT_MS;
 
-  /* if CURLOPT_SERVER_RESPONSE_TIMEOUT is set, use that to determine
-     remaining time, or use pp->response because SERVER_RESPONSE_TIMEOUT is
-     supposed to govern the response for any given server response, not for
-     the time from connect to the given server response. */
-
-  /* Without a requested timeout, we only wait 'response_time' seconds for the
-     full response to arrive before we bail out */
-  timeout_ms = response_time -
-               curlx_ptimediff_ms(Curl_pgrs_now(data), &pp->response);
-  /* transfer timeout can be 0, which means no timeout applies */
-  xfer_timeout_ms = Curl_timeleft_ms(data);
-  if(xfer_timeout_ms && (xfer_timeout_ms < timeout_ms))
-    return xfer_timeout_ms;
-  return timeout_ms;
+  /* If the overall transfer has less time remaining than pingpong
+   * has otherwise for the state, return that. */
+  remain_ms -= curlx_ptimediff_ms(Curl_pgrs_now(data), &pp->response);
+  /* transfer remaining time is 0, when it has no timeout. */
+  xfer_remain_ms = Curl_timeleft_ms(data);
+  if(xfer_remain_ms)
+    return CURLMIN(remain_ms, xfer_remain_ms);
+  return remain_ms;
 }
 
 /*
@@ -75,7 +67,7 @@ CURLcode Curl_pp_statemach(struct Curl_easy *data,
   curl_socket_t sock = conn->sock[FIRSTSOCKET];
   int rc;
   timediff_t interval_ms;
-  timediff_t timeout_ms = Curl_pp_state_timeout(data, pp);
+  timediff_t timeout_ms = Curl_pp_state_timeleft_ms(data, pp);
   CURLcode result = CURLE_OK;
 
   if(timeout_ms <= 0) {
@@ -128,13 +120,13 @@ CURLcode Curl_pp_statemach(struct Curl_easy *data,
 /* initialize stuff to prepare for reading a fresh new response */
 void Curl_pp_init(struct pingpong *pp, const struct curltime *pnow)
 {
-  DEBUGASSERT(!pp->initialised);
+  DEBUGASSERT(!pp->initialized);
   pp->nread_resp = 0;
   pp->response = *pnow; /* start response time-out */
   pp->pending_resp = TRUE;
   curlx_dyn_init(&pp->sendbuf, DYN_PINGPPONG_CMD);
   curlx_dyn_init(&pp->recvbuf, DYN_PINGPPONG_CMD);
-  pp->initialised = TRUE;
+  pp->initialized = TRUE;
 }
 
 /***********************************************************************
@@ -160,7 +152,7 @@ CURLcode Curl_pp_vsendf(struct Curl_easy *data,
 
   DEBUGASSERT(pp->sendleft == 0);
   DEBUGASSERT(pp->sendsize == 0);
-  DEBUGASSERT(pp->sendthis == NULL);
+  DEBUGASSERT(!pp->sendthis);
 
   if(!conn)
     /* cannot send without a connection! */
@@ -300,6 +292,13 @@ CURLcode Curl_pp_readresp(struct Curl_easy *data,
            the line is not really terminated until the LF comes */
         size_t length = nl - line + 1;
 
+        if(memchr(line, 0, length)) {
+          /* The response line is passed on as a "header" below, so reject an
+             embedded nul the same way verify_header() does for HTTP. */
+          failf(data, "Nul byte in server response line");
+          return CURLE_WEIRD_SERVER_REPLY;
+        }
+
         /* output debug output if that is requested */
         Curl_debug(data, CURLINFO_HEADER_IN, line, length);
 
@@ -397,7 +396,7 @@ CURLcode Curl_pp_flushsend(struct Curl_easy *data,
 
 CURLcode Curl_pp_disconnect(struct pingpong *pp)
 {
-  if(pp->initialised) {
+  if(pp->initialized) {
     curlx_dyn_free(&pp->sendbuf);
     curlx_dyn_free(&pp->recvbuf);
     memset(pp, 0, sizeof(*pp));

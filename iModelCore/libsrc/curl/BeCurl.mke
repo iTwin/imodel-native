@@ -105,6 +105,12 @@ $(o)cf-haproxy$(oext) : $(BeCurlLibDir)cf-haproxy.c ${MultiCompileDepends}
 
 $(o)cf-ip-happy$(oext) : $(BeCurlLibDir)cf-ip-happy.c ${MultiCompileDepends}
 
+$(o)cf-dns$(oext) : $(BeCurlLibDir)cf-dns.c ${MultiCompileDepends}
+
+$(o)cf-recvbuf$(oext) : $(BeCurlLibDir)cf-recvbuf.c ${MultiCompileDepends}
+
+$(o)cf-setup$(oext) : $(BeCurlLibDir)cf-setup.c ${MultiCompileDepends}
+
 $(o)cf-socket$(oext) : $(BeCurlLibDir)cf-socket.c ${MultiCompileDepends}
 
 $(o)cfilters$(oext) : $(BeCurlLibDir)cfilters.c ${MultiCompileDepends}
@@ -141,7 +147,7 @@ $(o)cw-out$(oext) : $(BeCurlLibDir)cw-out.c ${MultiCompileDepends}
 
 $(o)cw-pause$(oext) : $(BeCurlLibDir)cw-pause.c ${MultiCompileDepends}
 
-$(o)curl_rtmp$(oext) : $(BeCurlLibDir)curl_rtmp.c ${MultiCompileDepends}
+$(o)creds$(oext) : $(BeCurlLibDir)creds.c ${MultiCompileDepends}
 
 $(o)curl_sasl$(oext) : $(BeCurlLibDir)curl_sasl.c ${MultiCompileDepends}
 
@@ -154,6 +160,8 @@ $(o)curl_threads$(oext) : $(BeCurlLibDir)curl_threads.c ${MultiCompileDepends}
 $(o)curl_trc$(oext) : $(BeCurlLibDir)curl_trc.c ${MultiCompileDepends}
 
 $(o)dict$(oext) : $(BeCurlLibDir)dict.c ${MultiCompileDepends}
+
+$(o)dnscache$(oext) : $(BeCurlLibDir)dnscache.c ${MultiCompileDepends}
 
 $(o)doh$(oext) : $(BeCurlLibDir)doh.c ${MultiCompileDepends}
 
@@ -247,7 +255,11 @@ $(o)multi_ntfy$(oext) : $(BeCurlLibDir)multi_ntfy.c ${MultiCompileDepends}
 
 $(o)netrc$(oext) : $(BeCurlLibDir)netrc.c ${MultiCompileDepends}
 
-$(o)noproxy$(oext) : $(BeCurlLibDir)noproxy.c ${MultiCompileDepends}
+$(o)peer$(oext) : $(BeCurlLibDir)peer.c ${MultiCompileDepends}
+
+$(o)protocol$(oext) : $(BeCurlLibDir)protocol.c ${MultiCompileDepends}
+
+$(o)proxy$(oext) : $(BeCurlLibDir)proxy.c ${MultiCompileDepends}
 
 $(o)openldap$(oext) : $(BeCurlLibDir)openldap.c ${MultiCompileDepends}
 
@@ -397,6 +409,8 @@ $(o)schannel$(oext) : $(BeCurlLibDir)vtls/schannel.c ${MultiCompileDepends}
 
 $(o)vtls$(oext) : $(BeCurlLibDir)vtls/vtls.c ${MultiCompileDepends}
 
+$(o)vtls_config$(oext) : $(BeCurlLibDir)vtls/vtls_config.c ${MultiCompileDepends}
+
 $(o)vtls_scache$(oext) : $(BeCurlLibDir)vtls/vtls_scache.c ${MultiCompileDepends}
 
 $(o)vtls_spack$(oext) : $(BeCurlLibDir)vtls/vtls_spack.c ${MultiCompileDepends}
@@ -419,6 +433,10 @@ $(o)schannel_verify$(oext) : $(BeCurlLibDir)vtls/schannel_verify.c ${MultiCompil
 
 $(o)socketpair$(oext) : $(BeCurlLibDir)socketpair.c ${MultiCompileDepends}
 
+$(o)thrdpool$(oext) : $(BeCurlLibDir)thrdpool.c ${MultiCompileDepends}
+
+$(o)thrdqueue$(oext) : $(BeCurlLibDir)thrdqueue.c ${MultiCompileDepends}
+
 $(o)ws$(oext) : $(BeCurlLibDir)ws.c ${MultiCompileDepends}
 
 $(o)mqtt$(oext) : $(BeCurlLibDir)mqtt.c ${MultiCompileDepends}
@@ -427,9 +445,17 @@ $(o)keylog$(oext) : $(BeCurlLibDir)vtls/keylog.c ${MultiCompileDepends}
 
 $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
-$(o)curl_ngtcp2$(oext) : $(BeCurlLibDir)vquic/curl_ngtcp2.c ${MultiCompileDepends}
+$(o)cf-ngtcp2-cmn$(oext) : $(BeCurlLibDir)vquic/cf-ngtcp2-cmn.c ${MultiCompileDepends}
 
-$(o)curl_quiche$(oext) : $(BeCurlLibDir)vquic/curl_quiche.c ${MultiCompileDepends}
+$(o)cf-ngtcp2$(oext) : $(BeCurlLibDir)vquic/cf-ngtcp2.c ${MultiCompileDepends}
+
+$(o)cf-ngtcp2-proxy$(oext) : $(BeCurlLibDir)vquic/cf-ngtcp2-proxy.c ${MultiCompileDepends}
+
+$(o)cf-quiche$(oext) : $(BeCurlLibDir)vquic/cf-quiche.c ${MultiCompileDepends}
+
+$(o)capsule$(oext) : $(BeCurlLibDir)vquic/capsule.c ${MultiCompileDepends}
+
+$(o)cf-capsule$(oext) : $(BeCurlLibDir)vquic/cf-capsule.c ${MultiCompileDepends}
 
 $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
@@ -662,6 +688,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES	    + crypt32.lib
     LINKER_LIBRARIES	    + secur32.lib
     LINKER_LIBRARIES	    + Iphlpapi.lib
+    LINKER_LIBRARIES	    + bcrypt.lib
 %elif $(TARGET_PLATFORM) == "WinRT"
     LINKER_LIBRARIES	    + crypt32.lib
     LINKER_LIBRARIES	    + secur32.lib

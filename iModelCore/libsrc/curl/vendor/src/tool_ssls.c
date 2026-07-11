@@ -79,13 +79,13 @@ CURLcode tool_ssls_load(struct OperationConfig *config,
   i = imported = 0;
   while(my_get_line(fp, &buf, &error)) {
     ++i;
-    tool_safefree(shmac);
-    tool_safefree(sdata);
+    curlx_safefree(shmac);
+    curlx_safefree(sdata);
     line = curlx_dyn_ptr(&buf);
 
     c = memchr(line, ':', strlen(line));
     if(!c) {
-      warnf("unrecognized line %d in ssl session file %s", i, filename);
+      warnf("unrecognized line %d in SSL session file %s", i, filename);
       continue;
     }
     *c = '\0';
@@ -109,7 +109,7 @@ CURLcode tool_ssls_load(struct OperationConfig *config,
     result = curl_easy_ssls_import(easy, NULL, shmac, shmac_len, sdata,
                                    sdata_len);
     if(result) {
-      warnf("import of session from line %d rejected(%d)", i, result);
+      warnf("import of session from line %d rejected(%d)", i, (int)result);
       continue;
     }
     ++imported;
@@ -165,7 +165,7 @@ static CURLcode tool_ssls_exp(CURL *easy, void *userptr,
     goto out;
   if(EOF == fputc(':', ctx->fp))
     goto out;
-  tool_safefree(enc);
+  curlx_safefree(enc);
   result = curlx_base64_encode(sdata, sdata_len, &enc, &enc_len);
   if(result)
     goto out;
@@ -179,7 +179,7 @@ static CURLcode tool_ssls_exp(CURL *easy, void *userptr,
 out:
   if(result)
     warnf("Warning: error saving SSL session for '%s': %d", session_key,
-          result);
+          (int)result);
   curlx_free(enc);
   return result;
 }

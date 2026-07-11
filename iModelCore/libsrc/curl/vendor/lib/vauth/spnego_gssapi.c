@@ -32,7 +32,7 @@
 #include "curl_gssapi.h"
 #include "curl_trc.h"
 
-#if defined(__GNUC__) && defined(__APPLE__)
+#if defined(CURL_HAVE_DIAG) && defined(__APPLE__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -70,9 +70,8 @@ bool Curl_auth_is_spnego_supported(void)
  * Returns CURLE_OK on success.
  */
 CURLcode Curl_auth_decode_spnego_message(struct Curl_easy *data,
-                                         const char *user,
-                                         const char *password,
-                                         const char *service,
+                                         struct Curl_creds *creds,
+                                         const char *default_service,
                                          const char *host,
                                          const char *chlg64,
                                          struct negotiatedata *nego)
@@ -90,8 +89,7 @@ CURLcode Curl_auth_decode_spnego_message(struct Curl_easy *data,
   struct gss_channel_bindings_struct chan;
 #endif
 
-  (void)user;
-  (void)password;
+  (void)creds;
 
   if(nego->context && nego->status == GSS_S_COMPLETE) {
     /* We finished successfully our part of authentication, but server
@@ -105,6 +103,8 @@ CURLcode Curl_auth_decode_spnego_message(struct Curl_easy *data,
     gss_buffer_desc spn_token = GSS_C_EMPTY_BUFFER;
 
     /* Generate our SPN */
+    const char *service = Curl_creds_has_sasl_service(creds) ?
+      Curl_creds_sasl_service(creds) : default_service;
     char *spn = Curl_auth_build_spn(service, NULL, host);
     if(!spn)
       return CURLE_OUT_OF_MEMORY;
@@ -171,7 +171,7 @@ CURLcode Curl_auth_decode_spnego_message(struct Curl_easy *data,
                                            NULL);
 
   /* Free the decoded challenge as it is not required anymore */
-  Curl_safefree(input_token.value);
+  curlx_safefree(input_token.value);
 
   nego->status = major_status;
   if(GSS_ERROR(major_status)) {
@@ -211,7 +211,7 @@ CURLcode Curl_auth_decode_spnego_message(struct Curl_easy *data,
  * data        [in]     - The session handle.
  * nego        [in/out] - The Negotiate data struct being used and modified.
  * outptr      [in/out] - The address where a pointer to newly allocated memory
- *                        holding the result will be stored upon completion.
+ *                        holding the result is stored upon completion.
  * outlen      [out]    - The length of the output message.
  *
  * Returns CURLE_OK on success.
@@ -288,7 +288,7 @@ void Curl_auth_cleanup_spnego(struct negotiatedata *nego)
   nego->havemultiplerequests = FALSE;
 }
 
-#if defined(__GNUC__) && defined(__APPLE__)
+#if defined(CURL_HAVE_DIAG) && defined(__APPLE__)
 #pragma GCC diagnostic pop
 #endif
 
