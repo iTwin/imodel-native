@@ -211,14 +211,16 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     arg.Set("getEcChange", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
         std::vector<std::unique_ptr<IECSqlValue>> originalValues;
         std::vector<std::unique_ptr<IECSqlValue>> theirValues;
-        std::vector<std::unique_ptr<IECSqlValue>> myValues;
+        std::vector<std::unique_ptr<IECSqlValue>> ourValues;
+        std::vector<Utf8String> conflictPropertyAccessStrings;
         ChangesetReader::GetConflictColumnValues(
             m_dgndb,
             ChangesetReader::PropertyFilter::All,
             iter,
             originalValues,
             theirValues,
-            myValues);
+            ourValues,
+            conflictPropertyAccessStrings);
 
         ECSqlRowAdaptor adaptor(m_dgndb);
         adaptor.GetOptions().SetIncludeNulls(true);
@@ -232,9 +234,15 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         if (adaptor.RenderRowAsObject(theirsRowJson, ConflictRow(theirValues)) != SUCCESS)
             THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
 
-        BeJsValue myRowJson = out["ours"];
-        if (adaptor.RenderRowAsObject(myRowJson, ConflictRow(myValues)) != SUCCESS)
+        BeJsValue oursRowJson = out["ours"];
+        if (adaptor.RenderRowAsObject(oursRowJson, ConflictRow(ourValues)) != SUCCESS)
             THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
+
+        BeJsValue conflictsJson = out["conflicts"];
+        for (Utf8String const& accessString : conflictPropertyAccessStrings) {
+            BeJsValue conflictJson = conflictsJson.appendValue();
+            conflictJson = accessString;
+        }
 
         return out;
     }));

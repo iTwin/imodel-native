@@ -176,17 +176,62 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
     return m_innerReader->DisableStrictMode();
 }
 
+namespace {
+
+// This function is meant to mirror the behavior of SQLite's internal sqlite3MemCompare function,
+// which is used (via the IS operator) to compare expected to current column values when applying
+// a changeset.
+bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
+    if (!a.IsValid() && !b.IsValid()) return true;
+    if (!a.IsValid() || !b.IsValid()) return false;
+    if (a.IsNull() && b.IsNull()) return true;
+    if (a.IsNull() || b.IsNull()) return false;
+
+    auto typeA = a.GetValueType();
+    auto typeB = b.GetValueType();
+    bool aIsNumeric = (typeA == DbValueType::IntegerVal || typeA == DbValueType::FloatVal);
+    bool bIsNumeric = (typeB == DbValueType::IntegerVal || typeB == DbValueType::FloatVal);
+
+    if (aIsNumeric && bIsNumeric) {
+        // Cross-type numeric comparison matching SQLite IS semantics.
+        // Both-integer and both-real fast paths avoid double precision issues.
+        if (typeA == DbValueType::IntegerVal && typeB == DbValueType::IntegerVal)
+            return a.GetValueInt64() == b.GetValueInt64();
+        if (typeA == DbValueType::FloatVal && typeB == DbValueType::FloatVal)
+            return a.GetValueDouble() == b.GetValueDouble();
+        // Mixed int/float: use sqlite3RealSameAsInt equivalent
+        int64_t i = (typeA == DbValueType::IntegerVal) ? a.GetValueInt64() : b.GetValueInt64();
+        double  r = (typeA == DbValueType::FloatVal)   ? a.GetValueDouble() : b.GetValueDouble();
+        return (double)i == r && (int64_t)r == i; // guards against precision loss
+    }
+
+    if (typeA != typeB) return false;  // e.g. text vs blob
+
+    switch (typeA) {
+        case DbValueType::TextVal:
+            return strcmp(a.GetValueText(), b.GetValueText()) == 0;
+        case DbValueType::BlobVal: {
+            int na = a.GetValueBytes(), nb = b.GetValueBytes();
+            return na == nb && memcmp(a.GetValueBlob(), b.GetValueBlob(), na) == 0;
+        }
+        default: return false;
+    }
+}
+
+}
+
 /*static*/ BentleyStatus ChangesetReader::GetConflictColumnValues(
     ECDbCR ecdb,
     ChangesetReader::PropertyFilter propertyFilter,
     Changes::Change const& conflict,
-    std::vector<std::unique_ptr<IECSqlValue>>& originalValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& theirValues,
-    std::vector<std::unique_ptr<IECSqlValue>>& ourValues)
+    std::vector<std::unique_ptr<IECSqlValue>>& outOriginalValues,
+    std::vector<std::unique_ptr<IECSqlValue>>& outTheirValues,
+    std::vector<std::unique_ptr<IECSqlValue>>& outOurValues,
+    std::vector<Utf8String>& outConflictPropertyAccessStrings)
     {
-    originalValues.clear();
-    theirValues.clear();
-    ourValues.clear();
+    outOriginalValues.clear();
+    outTheirValues.clear();
+    outOurValues.clear();
 
     DbTable const* dbTable = ecdb.Schemas().Main().GetDbSchema().FindTable(conflict.GetTableName());
     if (!dbTable) return BentleyStatus::ERROR;
@@ -198,6 +243,7 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
     std::unordered_map<Utf8String, DbValue> originalDbValues;
     std::unordered_map<Utf8String, DbValue> theirDbValues;
     std::unordered_map<Utf8String, DbValue> ourDbValues;
+    std::unordered_set<Utf8String> conflictColumns;
     for(int i = 0; i < static_cast<int>(columns.size()); ++i)
         {
             auto originalValue = conflict.GetOldValue(i);
@@ -224,6 +270,14 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
                 ourDbValues.emplace(columns[i], ourValue);
             if (theirValue.IsValid())
                 theirDbValues.emplace(columns[i], theirValue);
+
+            // Determine which columns represent genuine conflicts.
+            // A column is in conflict if "their" value is different from the "original" value.
+            // Note that "our" value may be the same as "their" value, but if it is different from "original", it is still a conflict.
+            if (originalValue.IsValid() && theirValue.IsValid() && !DbValuesAreEqual(originalValue, theirValue))
+                {
+                conflictColumns.emplace(columns[i]);
+                }
         }
 
     // TODO: Resolving the class ID _only_ from the original row is not sufficient.
@@ -233,13 +287,30 @@ BentleyStatus ChangesetReader::DisableStrictMode() {
         return BentleyStatus::ERROR;
 
 
-    std::vector<Utf8String> changedPropNames;
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, originalValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, outOriginalValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, theirValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, outTheirValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, ourValues, ChangesetReader::PropertyFilter::All, changedPropNames) != SUCCESS)
+    if (ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, outOurValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
+
+    // Build conflict property access strings from conflict column names.
+    const ECClass* cls = ecdb.Schemas().Main().GetClass(classId);
+    const ClassMap* classMap = ecdb.Schemas().Main().GetClassMap(*cls);
+    if (classMap) {
+        for (PropertyMap const* propMap : classMap->GetPropertyMaps()) {
+            // Data filter causes the visitor to recurse into Point2d/Point3d/Struct/Navigation
+            // and collect all leaf DbColumn pointers. SingleColumnData alone would not recurse.
+            GetColumnsPropertyMapVisitor colVisitor(PropertyMap::Type::Data);
+            propMap->AcceptVisitor(colVisitor);
+            for (DbColumn const* col : colVisitor.GetColumns()) {
+                if (conflictColumns.count(col->GetName())) {
+                    outConflictPropertyAccessStrings.push_back(propMap->GetAccessString());
+                    break; // one conflicting column is enough to mark the whole property
+                }
+            }
+        }
+    }
 
     return BentleyStatus::SUCCESS;
     }
