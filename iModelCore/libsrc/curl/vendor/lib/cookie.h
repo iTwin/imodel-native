@@ -109,7 +109,7 @@ struct connectdata;
  * are only used if the header boolean is TRUE.
  */
 
-bool Curl_secure_context(struct connectdata *conn, const char *host);
+bool Curl_secure_context(struct Curl_easy *data, const char *host);
 CURLcode Curl_cookie_add(struct Curl_easy *data,
                          struct CookieInfo *ci,
                          bool httpheader,
@@ -118,18 +118,18 @@ CURLcode Curl_cookie_add(struct Curl_easy *data,
                          const char *domain,
                          const char *path,
                          bool secure) WARN_UNUSED_RESULT;
-CURLcode Curl_cookie_getlist(struct Curl_easy *data, struct connectdata *conn,
+CURLcode Curl_cookie_getlist(struct Curl_easy *data,
                              bool *okay, const char *host,
                              struct Curl_llist *list) WARN_UNUSED_RESULT;
 void Curl_cookie_clearall(struct CookieInfo *ci);
 void Curl_cookie_clearsess(struct CookieInfo *ci);
 
 #if defined(CURL_DISABLE_HTTP) || defined(CURL_DISABLE_COOKIES)
-#define Curl_cookie_list(x) NULL
+#define Curl_cookie_list(x)      NULL
 #define Curl_cookie_loadfiles(x) CURLE_OK
-#define Curl_cookie_init() NULL
-#define Curl_cookie_run(x) Curl_nop_stmt
-#define Curl_cookie_cleanup(x) Curl_nop_stmt
+#define Curl_cookie_init()       NULL
+#define Curl_cookie_run(x)       Curl_nop_stmt
+#define Curl_cookie_cleanup(x)   Curl_nop_stmt
 #define Curl_flush_cookies(x, y) Curl_nop_stmt
 #else
 void Curl_flush_cookies(struct Curl_easy *data, bool cleanup);
