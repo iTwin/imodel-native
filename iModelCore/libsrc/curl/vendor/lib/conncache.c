@@ -122,7 +122,7 @@ void Curl_cpool_init(struct cpool *cpool,
 
   cpool->idata = idata;
   cpool->share = share;
-  cpool->initialised = TRUE;
+  cpool->initialized = TRUE;
 }
 
 /* Return the "first" connection in the pool or NULL. */
@@ -206,7 +206,7 @@ static void cpool_discard_conn(struct cpool *cpool,
 
   /* treat the connection as aborted in CONNECT_ONLY situations, we do
    * not know what the APP did with it. */
-  if(conn->connect_only)
+  if(conn->bits.connect_only)
     aborted = TRUE;
   conn->bits.aborted = aborted;
 
@@ -230,7 +230,7 @@ static void cpool_discard_conn(struct cpool *cpool,
 
 void Curl_cpool_destroy(struct cpool *cpool)
 {
-  if(cpool && cpool->initialised && cpool->idata) {
+  if(cpool && cpool->initialized && cpool->idata) {
     struct connectdata *conn;
     struct Curl_sigpipe_ctx pipe_ctx;
 
@@ -305,9 +305,9 @@ static struct cpool_bundle *cpool_add_bundle(struct cpool *cpool,
   return bundle;
 }
 
-static struct connectdata *
-cpool_bundle_get_oldest_idle(struct cpool_bundle *bundle,
-                             const struct curltime *pnow)
+static struct connectdata *cpool_bundle_get_oldest_idle(
+  struct cpool_bundle *bundle,
+  const struct curltime *pnow)
 {
   struct Curl_llist_node *curr;
   timediff_t highscore = -1;
@@ -354,7 +354,7 @@ static struct connectdata *cpool_get_oldest_idle(struct cpool *cpool,
     for(curr = Curl_llist_head(&bundle->conns); curr;
         curr = Curl_node_next(curr)) {
       conn = Curl_node_elem(curr);
-      if(CONN_INUSE(conn) || conn->bits.close || conn->connect_only)
+      if(CONN_INUSE(conn) || conn->bits.close || conn->bits.connect_only)
         continue;
       /* Set higher score for the age passed since the connection was used */
       score = curlx_ptimediff_ms(pnow, &conn->lastused);
@@ -375,7 +375,7 @@ int Curl_cpool_check_limits(struct Curl_easy *data,
   size_t dest_limit = 0;
   size_t total_limit = 0;
   size_t shutdowns;
-  int result = CPOOL_LIMIT_OK;
+  int res = CPOOL_LIMIT_OK;
 
   if(!cpool)
     return CPOOL_LIMIT_OK;
@@ -425,7 +425,7 @@ int Curl_cpool_check_limits(struct Curl_easy *data,
       shutdowns = Curl_cshutdn_dest_count(cpool->idata, conn->destination);
     }
     if((live + shutdowns) >= dest_limit) {
-      result = CPOOL_LIMIT_DEST;
+      res = CPOOL_LIMIT_DEST;
       goto out;
     }
   }
@@ -453,14 +453,14 @@ int Curl_cpool_check_limits(struct Curl_easy *data,
       shutdowns = Curl_cshutdn_count(cpool->idata);
     }
     if((cpool->num_conn + shutdowns) >= total_limit) {
-      result = CPOOL_LIMIT_TOTAL;
+      res = CPOOL_LIMIT_TOTAL;
       goto out;
     }
   }
 
 out:
   CPOOL_UNLOCK(cpool, cpool->idata);
-  return result;
+  return res;
 }
 
 CURLcode Curl_cpool_add(struct Curl_easy *data,
@@ -558,7 +558,7 @@ bool Curl_cpool_conn_now_idle(struct Curl_easy *data,
   struct cpool *cpool = cpool_get_instance(data);
   bool kept = TRUE;
 
-  if(!data)
+  if(!data || !data->multi)
     return kept;
 
   if(!data->multi->maxconnects) {
@@ -600,7 +600,7 @@ bool Curl_cpool_find(struct Curl_easy *data,
 {
   struct cpool *cpool = cpool_get_instance(data);
   struct cpool_bundle *bundle;
-  bool result = FALSE;
+  bool found = FALSE;
 
   DEBUGASSERT(cpool);
   DEBUGASSERT(conn_cb);
@@ -619,17 +619,17 @@ bool Curl_cpool_find(struct Curl_easy *data,
       curr = Curl_node_next(curr);
 
       if(conn_cb(conn, userdata)) {
-        result = TRUE;
+        found = TRUE;
         break;
       }
     }
   }
 
   if(done_cb) {
-    result = done_cb(result, userdata);
+    found = done_cb(userdata);
   }
   CPOOL_UNLOCK(cpool, data);
-  return result;
+  return found;
 }
 
 void Curl_conn_terminate(struct Curl_easy *data,
@@ -665,7 +665,7 @@ void Curl_conn_terminate(struct Curl_easy *data,
 
   /* treat the connection as aborted in CONNECT_ONLY situations,
    * so no graceful shutdown is attempted. */
-  if(conn->connect_only)
+  if(conn->bits.connect_only)
     aborted = TRUE;
 
   if(data->multi) {
