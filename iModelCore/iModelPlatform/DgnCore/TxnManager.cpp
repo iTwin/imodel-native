@@ -2493,7 +2493,7 @@ public:
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, bool invert, bool fastForward, bool noUpdateLoop) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, bool invert, bool fastForward, bool noUpdateLoop, bool directChangesOnly) {
     if (invert && fastForward) {
          LOG.error("ApplyChanges() cannot be called with invert & fastForward flag both been set at same time");
         BeAssert(false);
@@ -2598,6 +2598,14 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     // If schema changes are present, we need to apply only data changes after schema changes are applied.
     if (containsSchemaChanges){
         dataApplyArgs.ApplyOnlyDataChanges();
+    }
+
+    if (directChangesOnly) {
+        dataApplyArgs.SetFilterChange([](Changes::Change const& change) {
+            return change.IsDirect()
+                ? ChangeStream::FilterChangeAction::Accept
+                : ChangeStream::FilterChangeAction::Skip;
+        });
     }
 
     scope.Resume();
@@ -4500,7 +4508,9 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         PullMergeAbortRebase(txnId, "failed to read data changes", rc);
     }
 
-    rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
+    // TODO: don't hard-code directChangesOnly here. Probably we need an entry point other
+    // than PullMergeRebaseReinstateTxn for interactive rebase.
+    rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false, false, false, /*directChangeOnly*/true);
     if (rc != BE_SQLITE_OK) {
         if (changeset.GetLastErrorMessage().empty())
             PullMergeAbortRebase(txnId, "failed to apply changes", rc);

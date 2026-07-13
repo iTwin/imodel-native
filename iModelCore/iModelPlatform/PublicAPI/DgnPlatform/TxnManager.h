@@ -463,7 +463,7 @@ private:
     bool ValidateFileBasedTxns() const;
 
     BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false, bool noUpdateLoop = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false, bool noUpdateLoop = false, bool directChangesOnly = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
