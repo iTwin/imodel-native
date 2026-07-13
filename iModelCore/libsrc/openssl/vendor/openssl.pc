@@ -1,9 +1,0 @@
-prefix=D:\imodel-native\src\imodel-native\iModelCore\libsrc\openssl\vendor
-exec_prefix=${prefix}
-libdir=${exec_prefix}
-includedir=${prefix}/include ${prefix}/./include 
-
-Name: OpenSSL
-Description: Secure Sockets Layer and cryptography libraries and tools
-Version: 3.3.7
-Requires: libssl libcrypto

@@ -59,7 +59,7 @@ if not "%VCPKG_ROOT%"=="" (
 )
 
 if "%IMODEL_VCPKG_ROOT%"=="" (
-    set "IMODEL_VCPKG_ROOT=%SrcRoot%\vcpkg"
+    set "IMODEL_VCPKG_ROOT=%SrcRoot%vcpkg"
 )
 
 :trim_imodel_vcpkg_root
@@ -137,11 +137,23 @@ if not exist "%VCPKG_EXE%" (
     exit /b 1
 )
 
-set "VCPKG_DOWNLOADS=%VCPKG_ROOT%\downloads"
+rem Use a per-install-root downloads directory so parallel builds for different
+rem triplets (e.g. AndroidARM64 and AndroidX64) each get their own
+rem downloads\tools\msys2 tree and cannot race on MSYS2 tool extraction.
+rem The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared so compiled
+rem packages are not rebuilt redundantly.
+set "VCPKG_DOWNLOADS=%INSTALL_ROOT%\downloads"
 if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
     set "VCPKG_DEFAULT_BINARY_CACHE=%VCPKG_ROOT%\archives"
 )
 if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
+
+rem Isolate the git registries cache per install-root to prevent a race condition
+rem where parallel vcpkg processes (building different arches) collide on the shared
+rem global cache at %LOCALAPPDATA%\vcpkg\registries. Concurrent git fetch/GC
+rem operations on that bare repo cause transient "port does not exist" failures.
+set "X_VCPKG_REGISTRIES_CACHE=%INSTALL_ROOT%\registries"
+if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%"
 
 rem Use a persistent local binary cache by default to avoid rebuilding heavy ports
 rem (for example, crashpad) across builds. Allow callers to override.
@@ -165,6 +177,7 @@ echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, instal
 echo vcpkg: exe="%VCPKG_EXE%"
 echo vcpkg: root="%VCPKG_ROOT%"
 echo vcpkg: downloads="%VCPKG_DOWNLOADS%"
+echo vcpkg: registries-cache="%X_VCPKG_REGISTRIES_CACHE%"
 echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
 echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 

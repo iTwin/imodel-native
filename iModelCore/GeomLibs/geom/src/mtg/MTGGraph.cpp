@@ -1739,7 +1739,7 @@ int             numNode
         pCurrNode = pGraph->GetNodeP (currId);
         pFSuccNode = pGraph->GetNodeP (fSuccId);
         if (   pCurrNode->fSucc != UNINITIALIZED_NODE_ID
-            // || pCurrNode->fSucc != UNINITIALIZED_NODE_ID     *** NEEDS WORK STATIC ANALYSIS - redundant code - what did we mean to test here in addition to fSucc?
+            || pFSuccNode->vSucc != UNINITIALIZED_NODE_ID
            )
             {
             boolstat = false;
