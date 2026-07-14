@@ -1,0 +1,22 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_png.mke - Run vcpkg install for the png manifest (libpng).
+# This mke is part of the sequential vcpkg install chain in vcpkg.PartFile.xml so that
+# only one vcpkg process runs at a time.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+pngDir      = $(_MakeFilePath)png/
+installRoot = $(OutputRootDir)vcpkg_installed/png/
+
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    $(_MakeFilePath)vcpkg_run_install.bat $(pngDir) $(installRoot) $(vcpkgTriplet)
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(pngDir) $(installRoot) $(vcpkgTriplet)
+%endif

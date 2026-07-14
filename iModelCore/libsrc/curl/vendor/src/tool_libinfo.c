@@ -71,7 +71,6 @@ bool feature_http2 = FALSE;
 bool feature_http3 = FALSE;
 bool feature_httpsproxy = FALSE;
 bool feature_libz = FALSE;
-bool feature_libssh2 = FALSE;
 bool feature_ntlm = FALSE;
 bool feature_ntlm_wb = FALSE;
 bool feature_spnego = FALSE;
@@ -132,7 +131,6 @@ size_t feature_count;
  * the latter is not returned by curl_version_info(), it is built from
  * the returned features bit mask.
  */
-
 CURLcode get_libcurl_info(void)
 {
   CURLcode result = CURLE_OK;
@@ -184,8 +182,6 @@ CURLcode get_libcurl_info(void)
     ++feature_count;
   }
 
-  feature_libssh2 = curlinfo->libssh_version &&
-                    !strncmp("libssh2", curlinfo->libssh_version, 7);
   return CURLE_OK;
 }
 
@@ -196,7 +192,6 @@ CURLcode get_libcurl_info(void)
  * a given protocol and thus allows comparing pointers rather than strings.
  * In addition, the returned pointer is not deallocated until the program ends.
  */
-
 const char *proto_token(const char *proto)
 {
   const char * const *builtin;
