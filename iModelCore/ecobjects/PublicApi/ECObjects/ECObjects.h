@@ -70,6 +70,8 @@ EC_TYPEDEFS(UnitSystemContainer);
 EC_TYPEDEFS(NamedFormat);
 EC_TYPEDEFS(ECFormat);
 EC_TYPEDEFS(FormatContainer);
+EC_TYPEDEFS(JsonDescription);
+EC_TYPEDEFS(JsonDescriptionContainer);
 
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECInstanceInterface);
@@ -531,6 +533,14 @@ struct KindOfQuantityId : BeInt64Id
 struct PropertyCategoryId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(PropertyCategoryId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct JsonDescriptionId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(JsonDescriptionId, BeInt64Id)
     };
 
 //=======================================================================================

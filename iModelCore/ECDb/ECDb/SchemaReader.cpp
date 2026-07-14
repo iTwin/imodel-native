@@ -1556,6 +1556,85 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaReader::ReadJsonDescription(JsonDescriptionCP& jd, Context& ctx, JsonDescriptionId jdId) const
+    {
+    BeMutexHolder ecdbLock(GetECDbMutex());
+    jd = m_cache.Find(jdId);
+    if (jd != nullptr)
+        return SUCCESS;
+
+    const int schemaIdIx = 0;
+    const int nameIx = 1;
+    const int displayLabelIx = 2;
+    const int descriptionIx = 3;
+    const int jsonSchemaIx = 4;
+
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId, Name, DisplayLabel, Description, JsonSchema FROM [%s]." TABLE_JsonDescription " WHERE Id = ?", GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, jdId))
+        return ERROR;
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+
+    const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
+    SchemaDbEntry* schemaKey = nullptr;
+    if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
+        return ERROR;
+
+    Utf8CP jdName = stmt->GetValueText(nameIx);
+    Utf8CP displayLabel = stmt->IsColumnNull(displayLabelIx) ? nullptr : stmt->GetValueText(displayLabelIx);
+    Utf8CP description = stmt->IsColumnNull(descriptionIx) ? nullptr : stmt->GetValueText(descriptionIx);
+    Utf8CP jsonSchema = stmt->IsColumnNull(jsonSchemaIx) ? nullptr : stmt->GetValueText(jsonSchemaIx);
+
+    JsonDescriptionP newJd = nullptr;
+    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateJsonDescription(newJd, jdName))
+        return ERROR;
+
+    newJd->SetId(jdId);
+
+    if (displayLabel != nullptr)
+        newJd->SetDisplayLabel(displayLabel);
+
+    if (description != nullptr)
+        newJd->SetDescription(description);
+
+    if (!Utf8String::IsNullOrEmpty(jsonSchema))
+        {
+        if (ECObjectsStatus::Success != newJd->SetJsonSchema(jsonSchema))
+            return ERROR;
+        }
+
+    m_cache.Insert(*newJd);
+    schemaKey->m_loadedTypeCount++;
+    jd = newJd;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+JsonDescriptionId SchemaReader::GetJsonDescriptionId(JsonDescriptionCR jd) const
+    {
+    if (jd.HasId())
+        {
+        BeAssert(jd.GetId() == SchemaPersistenceHelper::GetJsonDescriptionId(GetECDb(), GetTableSpace(), jd.GetSchema().GetName().c_str(), jd.GetName().c_str(), SchemaLookupMode::ByName));
+        return jd.GetId();
+        }
+
+    const JsonDescriptionId id = SchemaPersistenceHelper::GetJsonDescriptionId(GetECDb(), GetTableSpace(), jd.GetSchema().GetName().c_str(), jd.GetName().c_str(), SchemaLookupMode::ByName);
+    if (id.IsValid())
+        const_cast<JsonDescriptionR>(jd).SetId(id);
+
+    return id;
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
     {
     if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
@@ -1643,6 +1722,11 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
     {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
     CachedStatementPtr stmt = nullptr;
+
+    Utf8String featureDrivenSelects("");
+    if (m_cache.HasJsonDescriptionTable())
+        featureDrivenSelects += Utf8PrintfString(" + (SELECT COUNT(*) FROM [%s]." TABLE_JsonDescription " jd WHERE s.Id = jd.SchemaId) ", tableSpace);
+
     const bool hasECVersionsAndUnits = FeatureManager::IsAvailable(GetECDb(), {Feature::ECVersions, Feature::UnitsAndFormats});
     if (hasECVersionsAndUnits)
         {
@@ -1655,7 +1739,8 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Phenomenon " ph WHERE s.Id = ph.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Format " f WHERE s.Id = f.SchemaId) "
-                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+                                                   "%s"
+                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, featureDrivenSelects.c_str(), tableSpace).c_str());
         }
     else
         {
@@ -1664,7 +1749,8 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) "
-                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+                                                   "%s"
+                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, featureDrivenSelects.c_str(), tableSpace).c_str());
         }
 
     if (stmt == nullptr)
@@ -1874,6 +1960,30 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
 
     stmt = nullptr;
 
+    if (m_cache.HasJsonDescriptionTable())
+        {
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_JsonDescription " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
+        if (stmt == nullptr)
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
+            return ERROR;
+
+        while (BE_SQLITE_ROW == stmt->Step())
+            {
+            JsonDescriptionCP jd = nullptr;
+            if (SUCCESS != ReadJsonDescription(jd, ctx, stmt->GetValueId<JsonDescriptionId>(0)))
+                return ERROR;
+
+            if (schemaEntry.IsFullyLoaded())
+                return SUCCESS;
+            }
+
+        stmt = nullptr;
+        }
+
+    stmt = nullptr;
+
     if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
         {
         // Load Units (are loaded at once for unit conversion API)
@@ -1987,13 +2097,14 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
             ECEnumerationId m_enumId;
             KindOfQuantityId m_koqId;
             PropertyCategoryId m_catId;
+            JsonDescriptionId m_jsonDescriptionId;
             int64_t m_arrayMinOccurs = INT64_C(0);
             Nullable<int64_t> m_arrayMaxOccurs;
             ECClassId m_navPropRelClassId;
             Nullable<int> m_navPropDirection;
             };
 
-        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassCR ecClass)
+        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassCR ecClass, bool hasJsonDescription)
             {
             const int idIx = 0;
             const int kindIx = 1;
@@ -2016,20 +2127,19 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
             const int maxOccursIx = 18;
             const int navRelationshipClassId = 19;
             const int navPropDirectionIx = 20;
+            const int jsonDescriptionIdIx = 21;
+
+            Utf8String featureDrivenColumns;
+            featureDrivenColumns += hasJsonDescription ? ",JsonDescriptionId " : " ";
 
             CachedStatementPtr stmt = nullptr;
-            if (tableSpace.IsMain())
-                stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
-                                                              "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
-                                                              "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
-                                                              "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
-                                                              "FROM main." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal");
-            else
-                stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
+            stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
                                                                "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
                                                                "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
-                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
-                                                               "FROM [%s]." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal", tableSpace.GetName().c_str()).c_str());
+                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection%s"
+                                                               "FROM [%s]." TABLE_Property " WHERE ClassId=? ORDER BY Ordinal", 
+                                                               featureDrivenColumns.c_str(), 
+                                                               tableSpace.IsMain() ? "main" : tableSpace.GetName().c_str()).c_str());
 
             if (stmt == nullptr)
                 return ERROR;
@@ -2133,6 +2243,9 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
                 if (!stmt->IsColumnNull(catIdIx))
                     rowInfo.m_catId = stmt->GetValueId<PropertyCategoryId>(catIdIx);
+
+                if (hasJsonDescription && !stmt->IsColumnNull(jsonDescriptionIdIx))
+                    rowInfo.m_jsonDescriptionId = stmt->GetValueId<JsonDescriptionId>(jsonDescriptionIdIx);
 
                 if (stmt->IsColumnNull(minOccursIx))
                     {
@@ -2263,7 +2376,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
         };
 
     std::vector<PropReaderHelper::RowInfo> rowInfos;
-    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, GetECDb(), GetTableSpace(), ecClass))
+    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, GetECDb(), GetTableSpace(), ecClass, m_cache.HasJsonDescriptionTable()))
         return ERROR;
 
     const auto isSystemSchema = ecClass.GetSchema().GetId() == GetSystemSchemaId();
@@ -2493,6 +2606,15 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 return ERROR;
 
             prop->SetCategory(cat);
+            }
+
+        if (rowInfo.m_jsonDescriptionId.IsValid())
+            {
+            JsonDescriptionCP jd = nullptr;
+            if (SUCCESS != ReadJsonDescription(jd, ctx, rowInfo.m_jsonDescriptionId))
+                return ERROR;
+
+            prop->SetJsonDescription(jd);
             }
 
         if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))
@@ -2846,8 +2968,21 @@ void SchemaReader::ReaderCache::Clear() const
     m_phenomenonCache.clear();
     m_unitCache.clear();
     m_formatCache.clear();
+    m_jsonDescriptionCache.clear();
     m_areUnitsAndFormatsLoaded = false;
+    m_hasJsonDescriptionTable = nullptr;
     m_legacyUnitsHelper.ClearCache();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::HasJsonDescriptionTable() const
+    {
+    if (m_hasJsonDescriptionTable.IsNull())
+        m_hasJsonDescriptionTable = m_ecdb.TableExists(TABLE_JsonDescription);
+
+    return m_hasJsonDescriptionTable.Value();
     }
 
 //-----------------------------------------------------------------------------------------

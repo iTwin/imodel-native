@@ -66,6 +66,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareLikeRhsValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LikeRhsValueExp const&);
         static ECSqlStatus PrepareLimitOffsetExp(ECSqlPrepareContext&, LimitOffsetExp const&);
         static ECSqlStatus PrepareLiteralValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LiteralValueExp const&);
+        static ECSqlStatus ValidateJsonLiteralForAssignment(ECSqlPrepareContext&, Utf8StringCR literalValue, const PropertyMap* propMap);
         static ECSqlStatus PrepareEnumValueExp(NativeSqlBuilder::List& , ECSqlPrepareContext&, EnumValueExp const&);
         static ECSqlStatus PrepareNaturalJoinExp(ECSqlPrepareContext&, NaturalJoinExp const&);
         static ECSqlStatus PrepareNullExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ComputedExp const&, size_t targetExpNativeSqlSnippetCount);

@@ -72,6 +72,7 @@ public:
 
     ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetKindOfQuantity(schemaNameOrAlias, koqName, mode); }
     ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR koq) const { return m_reader.GetKindOfQuantityId(koq); }
+    ECN::JsonDescriptionId GetJsonDescriptionId(ECN::JsonDescriptionCR jd) const { return m_reader.GetJsonDescriptionId(jd); }
 
     ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetUnit(schemaNameOrAlias, unitName, mode); }
     ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetFormat(schemaNameOrAlias, formatName, mode); }

@@ -67,6 +67,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "CREATE UNIQUE INDEX uix_ec_FormatCompositeUnit_FormatId_Ordinal ON " TABLE_FormatCompositeUnit "(FormatId,Ordinal);" \
                        "CREATE INDEX ix_ec_FormatCompositeUnit_UnitId ON " TABLE_FormatCompositeUnit "(UnitId);"
 
+#define TABLEDDL_JsonDescription "CREATE TABLE " TABLE_JsonDescription \
+                       "(Id INTEGER PRIMARY KEY," \
+                       "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE," \
+                       "Name TEXT NOT NULL COLLATE NOCASE," \
+                       "DisplayLabel TEXT," \
+                       "Description TEXT," \
+                       "JsonSchema TEXT);" \
+                       "CREATE INDEX ix_ec_JsonDescription_SchemaId ON " TABLE_JsonDescription "(SchemaId);" \
+                       "CREATE INDEX ix_ec_JsonDescription_Name ON " TABLE_JsonDescription "(Name);"
+
 #define TABLEDDL_Feature "CREATE TABLE " TABLE_Feature "(" \
             "Name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE," \
             "Description TEXT NOT NULL," \

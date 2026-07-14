@@ -154,6 +154,8 @@ $(o)ECUnit$(oext)                                          : $(baseDir)ECUnit.cp
 
 $(o)Format$(oext)                                          : $(baseDir)Format.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)JsonDescription$(oext)                                 : $(baseDir)JsonDescription.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)IssueReporter$(oext)                                   : $(baseDir)IssueReporter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 

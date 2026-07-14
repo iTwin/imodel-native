@@ -416,6 +416,16 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             }
         }
 
+    //JsonDescriptions must be imported before ECClasses as properties reference JsonDescriptions
+    for (JsonDescriptionCP jd : ecSchema.GetJsonDescriptions())
+        {
+        if (SUCCESS != ImportJsonDescription(ctx, *jd))
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0313, "Failed to import JsonDescription '%s'.", jd->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
     //PropertyCategories must be imported before ECClasses as properties reference PropertyCategories
     for (PropertyCategoryCP cat : ecSchema.GetPropertyCategories())
         {
@@ -1260,6 +1270,154 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportJsonDescription(Context& ctx, JsonDescriptionCR jd)
+    {
+    if (ctx.GetSchemaManager().GetJsonDescriptionId(jd).IsValid())
+        return SUCCESS;
+
+    if (!ctx.GetSchemaManager().GetSchemaId(jd.GetSchema()).IsValid())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
+            "Failed to import JsonDescription '%s'. Its ECSchema '%s' hasn't been imported yet.", jd.GetName().c_str(), jd.GetSchema().GetFullSchemaName().c_str()
+        );
+        BeAssert(false && "Failed to import JsonDescription because its ECSchema hasn't been imported yet.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_JsonDescription "(SchemaId, Name, DisplayLabel, Description, JsonSchema, Id) VALUES(?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, jd.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(2, jd.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (!jd.GetDisplayLabel().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(3, jd.GetDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!jd.GetDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, jd.GetDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!jd.GetJsonSchema().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(5, jd.GetJsonSchema(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindId(6, ctx.GetECDb().GetImpl().GetIdFactory().JsonDescription().NextId()))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    const JsonDescriptionId jdId = DbUtilities::GetLastInsertedId<JsonDescriptionId>(ctx.GetECDb());
+    if (!jdId.IsValid())
+        return ERROR;
+
+    const_cast<JsonDescriptionR>(jd).SetId(jdId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateJsonDescriptions(Context& ctx, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    std::map<Utf8String, JsonDescriptionCP> oldJds;
+    for (JsonDescriptionCP jd : oldSchema.GetJsonDescriptions())
+        oldJds[jd->GetName()] = jd;
+
+    std::set<Utf8String> newNames;
+    for (JsonDescriptionCP newJd : newSchema.GetJsonDescriptions())
+        {
+        newNames.insert(newJd->GetName());
+
+        auto it = oldJds.find(newJd->GetName());
+        if (it == oldJds.end())
+            {
+            // Newly added JsonDescription item.
+            if (SUCCESS != ImportJsonDescription(ctx, *newJd))
+                return ERROR;
+            continue;
+            }
+
+        // Existing JsonDescription item: update in place only if something changed.
+        JsonDescriptionCP oldJd = it->second;
+        const bool labelChanged = !oldJd->GetDisplayLabel().Equals(newJd->GetDisplayLabel());
+        const bool descChanged = !oldJd->GetDescription().Equals(newJd->GetDescription());
+        const bool blobChanged = !oldJd->GetJsonSchema().Equals(newJd->GetJsonSchema());
+        if (!labelChanged && !descChanged && !blobChanged)
+            continue;
+
+        const JsonDescriptionId id = ctx.GetSchemaManager().GetJsonDescriptionId(*newJd);
+        if (!id.IsValid())
+            {
+            BeAssert(false && "Existing JsonDescription must have a valid id during schema upgrade");
+            return ERROR;
+            }
+
+        SqlUpdateBuilder updateBuilder(TABLE_JsonDescription);
+        if (labelChanged)
+            {
+            if (newJd->GetDisplayLabel().empty())
+                updateBuilder.AddSetToNull("DisplayLabel");
+            else
+                updateBuilder.AddSetExp("DisplayLabel", newJd->GetDisplayLabel().c_str());
+            }
+        if (descChanged)
+            {
+            if (newJd->GetDescription().empty())
+                updateBuilder.AddSetToNull("Description");
+            else
+                updateBuilder.AddSetExp("Description", newJd->GetDescription().c_str());
+            }
+        if (blobChanged)
+            {
+            if (newJd->GetJsonSchema().empty())
+                updateBuilder.AddSetToNull("JsonSchema");
+            else
+                updateBuilder.AddSetExp("JsonSchema", newJd->GetJsonSchema().c_str());
+            }
+
+        updateBuilder.AddWhereExp("Id", id.GetValue());
+        if (updateBuilder.IsValid() && updateBuilder.ExecuteSql(ctx.GetECDb()) != SUCCESS)
+            {
+            LOG.debugv("Failed to update JsonDescription '%s'", newJd->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
+    for (auto const& jd : oldJds)
+        {
+        if (newNames.find(jd.first) != newNames.end())
+            continue;
+
+        const JsonDescriptionId id = ctx.GetSchemaManager().GetJsonDescriptionId(*jd.second);
+        if (!id.IsValid())
+            continue;
+
+        CachedStatementPtr stmt = ctx.GetCachedStatement("DELETE FROM main." TABLE_JsonDescription " WHERE Id=?");
+        if (stmt == nullptr || BE_SQLITE_OK != stmt->BindId(1, id) || BE_SQLITE_DONE != stmt->Step())
+            {
+            LOG.debugv("Failed to delete JsonDescription '%s'", jd.second->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportPropertyCategory(Context& ctx, PropertyCategoryCR cat)
     {
     if (ctx.GetSchemaManager().GetPropertyCategoryId(cat).IsValid())
@@ -1471,9 +1629,20 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
         }
 
     //now insert the actual property
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Property(ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,"
+    Utf8String featureDrivenColumns("");
+    Utf8String bindParameters;
+    if (ctx.GetECDb().TableExists(TABLE_JsonDescription))
+        {
+        featureDrivenColumns += ",JsonDescriptionId";
+        bindParameters += ",?";
+        }
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement(Utf8PrintfString("INSERT INTO main.ec_Property(ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,"
                                                         "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
-                                                        "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection,Id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                                        "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,"
+                                                        "NavigationRelationshipClassId,NavigationDirection%s,Id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?%s,?)",
+                                                        featureDrivenColumns.c_str(),
+                                                        bindParameters.c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -1523,7 +1692,8 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
     const int arrayMaxIndex = 20;
     const int navRelClassIdIndex = 21;
     const int navDirIndex = 22;
-    const int idIndex = 23;
+    const int jdIdIndex = 23;
+    const int idIndex = 24;
     if (ecProperty.IsMinimumLengthDefined())
         {
         //min length is persisted as int64 to not lose unsignedness
@@ -1574,6 +1744,9 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
         return ERROR;
 
     if (SUCCESS != BindPropertyCategory(ctx, *stmt, catIdIndex, ecProperty))
+        return ERROR;
+
+    if (SUCCESS != BindPropertyJsonDescription(ctx, *stmt, jdIdIndex, ecProperty))
         return ERROR;
 
     if (ecProperty.GetIsPrimitive())
@@ -1979,6 +2152,32 @@ BentleyStatus SchemaWriter::BindPropertyCategory(Context& ctx, Statement& stmt, 
 
     BeAssert(cat->HasId());
     return stmt.BindId(paramIndex, cat->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::BindPropertyJsonDescription(Context& ctx, Statement& stmt, int paramIndex, ECPropertyCR prop)
+    {
+    if (!prop.IsJsonDescriptionDefinedLocally() || prop.GetJsonDescription() == nullptr)
+        {
+        // Warn when a json-typed property is persisted without a JsonDescription.
+        if (prop.GetIsPrimitive() && prop.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Json)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0748,
+                "Property '%s.%s' uses typeName='json' but has no jsonDescription. JSON data will not be validated against a schema.",
+                prop.GetClass().GetFullName(), prop.GetName().c_str());
+            }
+        return SUCCESS;
+        }
+
+    JsonDescriptionCP jd = prop.GetJsonDescription();
+    if (SUCCESS != ImportJsonDescription(ctx, *jd))
+        return ERROR;
+
+    BeAssert(jd->HasId());
+    return stmt.BindId(paramIndex, jd->GetId()) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2542,6 +2741,42 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
                 }
 
             sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
+            }
+        }
+
+    if (propertyChange.JsonDescription().IsChanged())
+        {
+        StringChange& change = propertyChange.JsonDescription();
+        if (change.GetNew().IsNull())
+            {
+            sqlUpdateBuilder.AddSetToNull("JsonDescriptionId");
+            }
+        else
+            {
+            JsonDescriptionCP newJd = newProperty.GetJsonDescription();
+            if (newJd == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            JsonDescriptionId id = ctx.GetSchemaManager().GetJsonDescriptionId(*newJd);
+            if (!id.IsValid())
+                {
+                if (ImportJsonDescription(ctx, *newJd) != SUCCESS)
+                    {
+                    LOG.debugv("SchemaWriter::UpdateProperty - Failed to ImportJsonDescription %s", newJd->GetFullName().c_str());
+                    return ERROR;
+                    }
+
+                id = newJd->GetId();
+                }
+
+            sqlUpdateBuilder.AddSetExp("JsonDescriptionId", id.GetValue());
+
+            ctx.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0751,
+                "ECProperty '%s.%s' has been assigned JsonDescription '%s' in a schema upgrade. Existing stored JSON values are not retroactively validated against the new constraint.",
+                newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), newJd->GetFullName().c_str());
             }
         }
 
@@ -5585,6 +5820,13 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
     if (SUCCESS != UpdatePropertyCategories(ctx, schemaChange.PropertyCategories(), oldSchema, newSchema))
         {
         LOG.debugv("SchemaWriter::UpdateSchema - failed to UpdatePropertyCategories for %s", newSchema.GetFullSchemaName().c_str());
+        return ERROR;
+        }
+
+    // JsonDescription items must be reconciled before classes so that property JsonDescriptionId FKs can resolve.
+    if (SUCCESS != UpdateJsonDescriptions(ctx, oldSchema, newSchema))
+        {
+        LOG.debugv("SchemaWriter::UpdateSchema - failed to UpdateJsonDescriptions for %s", newSchema.GetFullSchemaName().c_str());
         return ERROR;
         }
 

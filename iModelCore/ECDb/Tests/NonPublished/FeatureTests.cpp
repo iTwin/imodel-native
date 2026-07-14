@@ -355,7 +355,7 @@ TEST_F(FeatureTests, Feature_InsertFeature_StaleRow_UpdatesDescriptionAndCompat)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Description, Compat FROM ec_Feature WHERE Name='json-primitive-type'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_STREQ("JSON Primitive Types", stmt.GetValueText(0));
+    EXPECT_STREQ("JSON primitive type with json description Schema Item", stmt.GetValueText(0));
     EXPECT_STREQ("ReadOnly", stmt.GetValueText(1));
     stmt.Finalize();
 
@@ -431,6 +431,7 @@ TEST_F(FeatureTests, Feature_JSONPrimitiveType_IsRegistered)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_json_primitive_type.ecdb"));
 
     EXPECT_TRUE(FeatureManager::IsFeatureKnown("json-primitive-type")) << "\"json-primitive-type\" must be registered in the ECDb known-feature registry";
+    EXPECT_TRUE(FeatureManager::IsFeatureKnown(Feature::JsonPrimitiveType)) << "\"json-primitive-type\" must be registered in the ECDb known-feature registry";
     }
 
 // Helper: ECSchema XML fragment for a V3.3 schema that uses a json-typed property.

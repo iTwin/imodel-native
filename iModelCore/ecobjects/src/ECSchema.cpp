@@ -295,6 +295,16 @@ ECSchema::~ECSchema ()
     m_propertyCategoryMap.clear();
     BeAssert(m_propertyCategoryMap.empty());
 
+    for (auto entry : m_jsonDescriptionMap)
+        {
+        auto jsonDescription = entry.second;
+        delete jsonDescription;
+        }
+
+    m_jsonDescriptionMap.clear();
+    BeAssert(m_jsonDescriptionMap.empty());
+
+
     for (auto entry : m_formatMap)
         {
         auto format = entry.second;
@@ -1091,6 +1101,27 @@ ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCate
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateJsonDescription(JsonDescriptionP& jsonDescription, Utf8CP name)
+    {
+    if (m_immutable)
+        return ECObjectsStatus::SchemaIsImmutable;
+
+    jsonDescription = new JsonDescription(*this);
+    jsonDescription->SetName(name);
+
+    auto status = AddSchemaChildToMap<JsonDescription, JsonDescriptionMap>(jsonDescription, &m_jsonDescriptionMap, ECSchemaElementType::JsonDescription);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete jsonDescription;
+        jsonDescription = nullptr;
+        }
+
+    return status;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -1447,6 +1478,7 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP chil
 template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddUnitType<Phenomenon>(child, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddUnitType<ECUnit>(child, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECFormat>(ECFormatP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECFormat, FormatMap>(child, &m_formatMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<JsonDescription>(JsonDescriptionP child, ECSchemaElementType childType) { return AddSchemaChildToMap<JsonDescription, JsonDescriptionMap>(child, &m_jsonDescriptionMap, childType);}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -4201,6 +4233,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     AddElements<ECEnumeration, ECEnumerationContainer>(ecSchema.GetEnumerations(), ECSchemaElementType::ECEnumeration);
     AddElements<ECClass, ECClassContainer>(ecSchema.GetClasses(), ECSchemaElementType::ECClass);
     AddElements<KindOfQuantity, KindOfQuantityContainer>(ecSchema.GetKindOfQuantities(), ECSchemaElementType::KindOfQuantity);
+    AddElements<JsonDescription, JsonDescriptionContainer>(ecSchema.GetJsonDescriptions(), ECSchemaElementType::JsonDescription);
     AddElements<PropertyCategory, PropertyCategoryContainer>(ecSchema.GetPropertyCategories(), ECSchemaElementType::PropertyCategory);
     AddElements<UnitSystem, UnitSystemContainer>(ecSchema.GetUnitSystems(), ECSchemaElementType::UnitSystem);
     AddElements<Phenomenon, PhenomenonContainer>(ecSchema.GetPhenomena(), ECSchemaElementType::Phenomenon);

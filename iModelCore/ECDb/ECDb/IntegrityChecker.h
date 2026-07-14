@@ -49,7 +49,8 @@ private:
     DbResult GetNavigationProperties(std::map<ECN::ECClassId, std::vector<std::string>>&);
     DbResult GetMappedClasses(std::set<ECN::ECClassId>&);
 
-    DbResult CheckProfileTablesAndIndexes4002AndLater(std::function<bool(std::string, std::string, std::string)>);
+	DbResult CheckProfileTablesAndIndexes4006AndLater(std::function<bool(std::string,std::string,std::string)>);
+    DbResult CheckProfileTablesAndIndexesOlderThan4006(std::function<bool(std::string, std::string, std::string)>);
     DbResult CheckProfileTablesAndIndexes4001AndOlder(std::function<bool(std::string, std::string, std::string)>);
     DbResult CheckEcProfile(
 		std::map<std::string, std::string> const&,

@@ -275,6 +275,47 @@ KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, DbTab
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
+JsonDescriptionId SchemaPersistenceHelper::GetJsonDescriptionId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP jdName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT jd.Id FROM main." TABLE_JsonDescription " jd, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT jd.Id FROM [%s]." TABLE_JsonDescription " jd, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+        case SchemaLookupMode::ByName:
+            sql.append(" WHERE jd.SchemaId=s.Id AND s.Name=?1 AND jd.Name=?2");
+            break;
+
+        case SchemaLookupMode::ByAlias:
+            sql.append(" WHERE jd.SchemaId=s.Id AND s.Alias=?1 AND jd.Name=?2");
+            break;
+
+        default:
+            sql.append(" WHERE jd.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND jd.Name=?2");
+            break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return JsonDescriptionId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, jdName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return JsonDescriptionId();
+
+    return stmt->GetValueId<JsonDescriptionId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
 PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP catName, SchemaLookupMode lookupMode)
     {
     Utf8String sql;

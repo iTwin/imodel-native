@@ -322,6 +322,11 @@ DbResult ProfileManager::CreateProfileTables() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    //ec_JsonDescription
+    stat = m_ecdb.GetImpl().ExecuteDDL(TABLEDDL_JsonDescription);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     //ec_UnitSystem
     stat = m_ecdb.GetImpl().ExecuteDDL(TABLEDDL_UnitSystem);
     if (BE_SQLITE_OK != stat)
@@ -385,6 +390,7 @@ DbResult ProfileManager::CreateProfileTables() const
                            "ExtendedTypeName TEXT,"
                            "KindOfQuantityId INTEGER REFERENCES " TABLE_KindOfQuantity "(Id) ON DELETE CASCADE,"
                            "CategoryId INTEGER REFERENCES " TABLE_PropertyCategory "(Id) ON DELETE CASCADE,"
+                           "JsonDescriptionId INTEGER REFERENCES " TABLE_JsonDescription "(Id) ON DELETE SET NULL,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
                            "NavigationRelationshipClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE CASCADE,"
@@ -400,6 +406,7 @@ DbResult ProfileManager::CreateProfileTables() const
                            "CREATE INDEX ix_ec_Property_StructClassId ON " TABLE_Property "(StructClassId);"
                            "CREATE INDEX ix_ec_Property_KindOfQuantityId ON " TABLE_Property "(KindOfQuantityId);"
                            "CREATE INDEX ix_ec_Property_CategoryId ON " TABLE_Property "(CategoryId);"
+                           "CREATE INDEX ix_ec_Property_JsonDescriptionId ON " TABLE_Property "(JsonDescriptionId);"
                            "CREATE INDEX ix_ec_Property_NavigationRelationshipClassId ON " TABLE_Property "(NavigationRelationshipClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

@@ -1563,7 +1563,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(26, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(27, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
 
@@ -1615,6 +1615,11 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
                              actualDdl);
             else if (BeStringUtilities::StricmpAscii(benchmarkName,"ix_bis_EmbeddedFileLink_Name") == 0)    // Special case : Partial index condition was added to upgraded profile version (4002) for index "ix_bis_EmbeddedFileLink_Name"
                 EXPECT_STREQ("CREATE INDEX [ix_bis_EmbeddedFileLink_Name] ON [bis_InformationReferenceElement]([js1]) WHERE ECClassId=583", actualDdl);
+            else if (BeStringUtilities::StricmpAscii(benchmarkName,"ec_Property") == 0)    // Special case : JsonDescriptionId column was added to ec_Property in the profile version (4006) that introduced the 'json' primitive type
+                EXPECT_STREQ("CREATE TABLE ec_Property(Id INTEGER PRIMARY KEY,ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,Name TEXT NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),Priority INTEGER,Ordinal INTEGER NOT NULL,Kind INTEGER NOT NULL,PrimitiveType INTEGER,"
+                            "PrimitiveTypeMinLength INTEGER,PrimitiveTypeMaxLength INTEGER,PrimitiveTypeMinValue NUMERIC,PrimitiveTypeMaxValue NUMERIC,EnumerationId INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,StructClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,ExtendedTypeName TEXT,KindOfQuantityId INTEGER REFERENCES ec_KindOfQuantity(Id) ON DELETE CASCADE,"
+                            "CategoryId INTEGER REFERENCES ec_PropertyCategory(Id) ON DELETE CASCADE,ArrayMinOccurs INTEGER,ArrayMaxOccurs INTEGER,NavigationRelationshipClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,NavigationDirection INTEGER, JsonDescriptionId INTEGER REFERENCES ec_JsonDescription(Id) ON DELETE SET NULL)",
+                            actualDdl);
             else
                 EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << benchmarkName;
 
@@ -1629,7 +1634,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    ASSERT_EQ(benchmarkMasterTableRowCount + 20, actualDdlStmt.GetValueInt(0)) << " 20 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
+    ASSERT_EQ(benchmarkMasterTableRowCount + 24, actualDdlStmt.GetValueInt(0)) << " 24 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
     upgradedFile.SaveChanges();
     }
 

@@ -91,6 +91,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_baseProperty(nullptr),
                                                 m_kindOfQuantity(nullptr),
                                                 m_propertyCategory(nullptr),
+                                                m_jsonDescription(nullptr),
                                                 m_priority(0), m_flags()
     {}
 
@@ -982,6 +983,34 @@ ECObjectsStatus ECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECProperty::SetJsonDescription(JsonDescriptionCP jsonDescription)
+    {
+    if (jsonDescription == nullptr)
+        {
+        m_jsonDescription = jsonDescription;
+        return ECObjectsStatus::Success;
+        }
+
+    // JsonDescription is only meaningful for json-typed primitive properties.
+    if (!GetIsPrimitive() || GetAsPrimitiveProperty()->GetType() != PRIMITIVETYPE_Json)
+        {
+        LOG.errorv("Cannot set JsonDescription on property '%s': property must be of primitive type 'json'.", GetName().c_str());
+        return ECObjectsStatus::DataTypeMismatch;
+        }
+
+    if (&(jsonDescription->GetSchema()) != &(this->GetClass().GetSchema()))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), jsonDescription->GetSchema()))
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
+    m_jsonDescription = jsonDescription;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 static bool IsCategorySerializable(const ECProperty& prop)
     {
@@ -1074,6 +1103,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BePugiXmlWriterR xmlWriter, Utf8CP elem
         xmlWriter.WriteAttribute(KIND_OF_QUANTITY_ATTRIBUTE, koqQualifiedName.c_str());
         }
 
+    // Json primitive type is introduced in ECXml3.3
+    if (ecXmlVersion >= ECVersion::V3_3 && IsJsonDescriptionDefinedLocally())
+        xmlWriter.WriteAttribute(JSON_DESCRIPTION_ATTRIBUTE, m_jsonDescription->GetQualifiedName(GetClass().GetSchema()).c_str());
+
     WriteCustomAttributes(xmlWriter, ecXmlVersion);
     xmlWriter.WriteElementEnd();
 
@@ -1137,6 +1170,9 @@ bool ECProperty::_ToJson(BeJsValue outValue, bool isInherited, bvector<bpair<Utf
     if (IsKindOfQuantityDefinedLocally())
         outValue[KIND_OF_QUANTITY_ATTRIBUTE] = ECJsonUtilities::FormatKindOfQuantityName(*GetKindOfQuantity());
 
+    if (IsJsonDescriptionDefinedLocally())
+        outValue[JSON_DESCRIPTION_ATTRIBUTE] = m_jsonDescription->GetFullName().c_str();
+
     WriteCustomAttributes(outValue);
 
     if (isInherited)
@@ -1166,6 +1202,39 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (pugi::xml_node propertyNode, ECS
     if (extendedTypeAttr)
         {
         this->SetExtendedTypeName(extendedTypeAttr.as_string());
+        }
+
+    auto jsonDescAttr = propertyNode.attribute(JSON_DESCRIPTION_ATTRIBUTE);
+    if (jsonDescAttr)
+        {
+        Utf8String alias, itemName;
+        SchemaParseUtils::ParseName(alias, itemName, jsonDescAttr.as_string());
+
+        ECSchemaCP resolvedSchema;
+        if (alias.empty())
+            resolvedSchema = &GetClass().GetSchema();
+        else
+            resolvedSchema = GetClass().GetSchema().GetSchemaByAliasP(alias);
+
+        if (nullptr == resolvedSchema)
+            {
+            LOG.errorv("Invalid ECSchemaXML: Property '%s' references JsonDescription '%s' in unknown schema alias '%s'",
+                        GetName().c_str(), itemName.c_str(), alias.c_str());
+            return SchemaReadStatus::ReferencedSchemaNotFound;
+            }
+
+        const auto jd = resolvedSchema->GetJsonDescriptionCP(itemName.c_str());
+        if (!jd)
+            LOG.warningv("Property '%s' references unknown JsonDescription '%s'. JSON data will not be validated.", GetName().c_str(), jsonDescAttr.as_string());
+        else
+            SetJsonDescription(jd);
+        }
+    else
+        {
+        if (GetTypeName() == "json")
+            {
+            LOG.warningv("Property '%s' does not define a jsonDescription attribute. JSON data will not be validated.", GetName().c_str());
+            }
         }
 
     status = ReadMinMaxXml(propertyNode);

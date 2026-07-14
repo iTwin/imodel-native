@@ -99,6 +99,10 @@ bool SchemaJsonWriter::WriteSchemaItems()
         if (!WriteFormat(*format))
             return false;
 
+    for (auto const jsonDescription : m_ecSchema.GetJsonDescriptions())
+        if (!WriteSchemaItem<JsonDescription>(*jsonDescription))
+            return false;
+
     if (0 == m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE].size())
         m_jsonRoot.removeMember(ECJSON_SCHEMA_ITEMS_ATTRIBUTE);
 

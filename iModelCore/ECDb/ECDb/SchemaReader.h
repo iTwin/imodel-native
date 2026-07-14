@@ -143,22 +143,26 @@ struct SchemaReader final
                 mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
                 mutable std::map<ECN::ECEnumerationId, ECN::ECEnumerationCP> m_enumCache;
                 mutable std::map<ECN::KindOfQuantityId, ECN::KindOfQuantityCP> m_koqCache;
+                mutable std::map<ECN::JsonDescriptionId, ECN::JsonDescriptionCP> m_jsonDescriptionCache;
                 mutable std::map<ECN::PropertyCategoryId, ECN::PropertyCategoryCP> m_propCategoryCache;
                 mutable std::map<ECN::UnitSystemId, ECN::UnitSystemCP> m_unitSystemCache;
                 mutable std::map<ECN::PhenomenonId, ECN::PhenomenonCP> m_phenomenonCache;
                 mutable std::map<ECN::UnitId, ECN::ECUnitCP> m_unitCache;
                 mutable std::map<ECN::FormatId, ECN::ECFormatCP> m_formatCache;
                 mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
+                mutable Nullable<bool> m_hasJsonDescriptionTable;
 
                 LegacyUnitsHelper m_legacyUnitsHelper;
 
             public:
                 ReaderCache(ECDb const& ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_legacyUnitsHelper(ecdb, tableSpace) {}
                 void Clear() const;
+                bool HasJsonDescriptionTable() const;
                 SchemaDbEntry* Find(ECN::ECSchemaId) const;
                 ClassDbEntry* Find(ECN::ECClassId) const;
                 ECN::ECEnumerationCP Find(ECN::ECEnumerationId id) const { auto it = m_enumCache.find(id); return it != m_enumCache.end() ? it->second : nullptr; }
                 ECN::KindOfQuantityCP Find(ECN::KindOfQuantityId id) const { auto it = m_koqCache.find(id); return it != m_koqCache.end() ? it->second : nullptr; }
+                ECN::JsonDescriptionCP Find(ECN::JsonDescriptionId id) const { auto it = m_jsonDescriptionCache.find(id); return it != m_jsonDescriptionCache.end() ? it->second : nullptr; }
                 ECN::PropertyCategoryCP Find(ECN::PropertyCategoryId id) const { auto it = m_propCategoryCache.find(id); return it != m_propCategoryCache.end() ? it->second : nullptr; }
                 ECN::UnitSystemCP Find(ECN::UnitSystemId id) const { auto it = m_unitSystemCache.find(id); return it != m_unitSystemCache.end() ? it->second : nullptr;}
                 ECN::PhenomenonCP Find(ECN::PhenomenonId id) const { auto it = m_phenomenonCache.find(id); return it != m_phenomenonCache.end() ? it->second : nullptr; }
@@ -173,6 +177,7 @@ struct SchemaReader final
                 bool Insert(std::unique_ptr<ClassDbEntry> entry) const;
                 void Insert(ECN::ECEnumerationCR ecEnum) const { m_enumCache.insert(std::make_pair(ecEnum.GetId(), &ecEnum)); }
                 void Insert(ECN::KindOfQuantityCR koq) const { m_koqCache.insert(std::make_pair(koq.GetId(), &koq)); }
+                void Insert(ECN::JsonDescriptionCR jd) const { m_jsonDescriptionCache.insert(std::make_pair(jd.GetId(), &jd)); }
                 void Insert(ECN::PropertyCategoryCR propCat) const { m_propCategoryCache.insert(std::make_pair(propCat.GetId(), &propCat)); }
                 void Insert(ECN::UnitSystemCR us) const { m_unitSystemCache.insert(std::make_pair(us.GetId(), &us)); }
                 void Insert(ECN::PhenomenonCR ph) const { m_phenomenonCache.insert(std::make_pair(ph.GetId(), &ph)); }
@@ -211,6 +216,8 @@ struct SchemaReader final
         BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
 
         BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityCP&, Context&, ECN::KindOfQuantityId) const;
+
+        BentleyStatus ReadJsonDescription(ECN::JsonDescriptionCP&, Context&, ECN::JsonDescriptionId) const;
 
         BentleyStatus ReadUnits(Context&) const;
         BentleyStatus ReadUnitSystems(Context&) const;
@@ -256,6 +263,8 @@ struct SchemaReader final
 
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaName, Utf8StringCR koqName, SchemaLookupMode) const;
         ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR) const;
+        
+        ECN::JsonDescriptionId GetJsonDescriptionId(ECN::JsonDescriptionCR) const;
 
         ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaName, Utf8StringCR catName, SchemaLookupMode) const;
         ECN::PropertyCategoryId GetPropertyCategoryId(ECN::PropertyCategoryCR) const;

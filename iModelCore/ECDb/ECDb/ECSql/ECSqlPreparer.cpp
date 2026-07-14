@@ -995,6 +995,46 @@ ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& native
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus ECSqlExpPreparer::ValidateJsonLiteralForAssignment(ECSqlPrepareContext& ctx, Utf8StringCR literalValue, const PropertyMap* propMap)
+    {
+    if (propMap == nullptr)
+        return ECSqlStatus::Success;
+
+    ECPropertyCR prop = propMap->GetProperty();
+    if (!prop.GetIsPrimitive() && !prop.GetIsPrimitiveArray())
+        return ECSqlStatus::Success;
+
+    const auto primProp = prop.GetAsPrimitiveProperty();
+    const auto primArrayProp = prop.GetAsPrimitiveArrayProperty();
+    const auto primType = (primProp != nullptr) ? primProp->GetType() : (primArrayProp != nullptr) ? primArrayProp->GetType() : PRIMITIVETYPE_String;
+
+    if (primType != PRIMITIVETYPE_Json)
+        return ECSqlStatus::Success;
+
+    rapidjson::Document doc;
+    doc.Parse(literalValue.c_str());
+    if (doc.HasParseError())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0749,
+            "Invalid JSON literal for property '%s': value is not well-formed JSON.", prop.GetName().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    const auto jd = prop.GetJsonDescription();
+    if (jd != nullptr && !jd->ValidateJson(doc))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0750,
+            "Invalid JSON literal for property '%s': value does not conform to the JsonDescription '%s'.", prop.GetName().c_str(), jd->GetFullName().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const& exp)
     {
     NativeSqlBuilder nativeSqlBuilder;

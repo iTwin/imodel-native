@@ -201,6 +201,7 @@ struct PropertyProxy final
 
 
         Nullable<Utf8String> KindOfQuantity() const { return m_prop != nullptr && m_prop->GetKindOfQuantity() != nullptr ? m_prop->GetKindOfQuantity()->GetFullName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> JsonDescription() const { return m_prop != nullptr && m_prop->GetJsonDescription() != nullptr ? m_prop->GetJsonDescription()->GetFullName() : Nullable<Utf8String>(); }
         Nullable<Utf8String> Category() const { return m_prop != nullptr && m_prop->GetCategory() != nullptr ? m_prop->GetCategory()->GetFullName() : Nullable<Utf8String>(); }
         Nullable<Utf8String> Enumeration() const
             {
@@ -1115,6 +1116,7 @@ BentleyStatus SchemaComparer::CompareProperty(PropertyChange& change, ECProperty
     change.MaximumValue().Set(oldProp.MaximumValue(), newProp.MaximumValue());
 
     change.KindOfQuantity().Set(oldProp.KindOfQuantity(), newProp.KindOfQuantity());
+    change.JsonDescription().Set(oldProp.JsonDescription(), newProp.JsonDescription());
     change.Category().Set(oldProp.Category(), newProp.Category());
     change.Enumeration().Set(oldProp.Enumeration(), newProp.Enumeration());
     change.ExtendedTypeName().Set(oldProp.ExtendedTypeName(), newProp.ExtendedTypeName());
@@ -2184,6 +2186,7 @@ Utf8CP ECChange::TypeToString(Type type)
             case Type::IsPrimitive: return "IsPrimitive";
             case Type::IsPrimitiveArray: return "IsPrimitiveArray";
             case Type::IsNavigation: return "IsNavigation";
+            case Type::JsonDescription: return "JsonDescription";
             case Type::KindOfQuantities: return "KindOfQuantities";
             case Type::KindOfQuantity: return "KindOfQuantity";
             case Type::KoqPersistenceUnit: return "KoqPersistenceUnit";

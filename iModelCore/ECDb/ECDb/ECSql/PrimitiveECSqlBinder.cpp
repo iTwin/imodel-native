@@ -210,6 +210,36 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
             }
         }
 
+    if (GetTypeInfo().GetPrimitiveType() == PRIMITIVETYPE_Json)
+        {
+        if (Utf8String::IsNullOrEmpty(value))
+            {
+            LOG.errorv("Type mismatch. Cannot bind null or empty string to json parameter.");
+            return ECSqlStatus::Error;
+            }
+
+        rapidjson::Document doc;
+        doc.Parse(value);
+        if (doc.HasParseError())
+            {
+            LOG.errorv("Type mismatch. Cannot bind value to json parameter: '%s' is not well-formed JSON", value);
+            return ECSqlStatus::Error;
+            }
+
+        if (const auto propMap = GetTypeInfo().GetPropertyMap(); propMap != nullptr)
+            {
+            const auto primitiveProp = propMap->GetProperty().GetAsPrimitiveProperty();
+            BeAssert(primitiveProp != nullptr);
+
+            const auto jsonDescription = (primitiveProp != nullptr) ? primitiveProp->GetJsonDescription() : nullptr;
+            if (jsonDescription != nullptr && !jsonDescription->ValidateJson(doc))
+                {
+                LOG.errorv("Cannot bind value to json parameter: value does not conform to JsonDescription '%s'.", jsonDescription->GetFullName().c_str());
+                return ECSqlStatus::Error;
+                }
+            }
+        }
+
     const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "Failed to bind string value to parameter.");

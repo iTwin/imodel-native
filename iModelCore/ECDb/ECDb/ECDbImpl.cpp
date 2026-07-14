@@ -112,6 +112,7 @@ bool IdFactory::Reset() const {
     m_indexIdSeq = IdSequence::Create(m_ecdb, TABLE_Index, COL_DEFAULTNAME_Id);
     m_indexColumnIdSeq = IdSequence::Create(m_ecdb, TABLE_IndexColumn, COL_DEFAULTNAME_Id);
     m_kindOfQuantityIdSeq = IdSequence::Create(m_ecdb, TABLE_KindOfQuantity, COL_DEFAULTNAME_Id);
+    m_jsonDescriptionIdSeq = IdSequence::Create(m_ecdb, TABLE_JsonDescription, COL_DEFAULTNAME_Id);
     m_phenomenonIdSeq = IdSequence::Create(m_ecdb, TABLE_Phenomenon, COL_DEFAULTNAME_Id);
     m_propertyIdSeq = IdSequence::Create(m_ecdb, TABLE_Property, COL_DEFAULTNAME_Id);
     m_propertyCategoryIdSeq = IdSequence::Create(m_ecdb, TABLE_PropertyCategory, COL_DEFAULTNAME_Id);
@@ -141,6 +142,7 @@ bool IdFactory::IsValid() const {
         m_indexIdSeq != nullptr &&
         m_indexColumnIdSeq != nullptr &&
         m_kindOfQuantityIdSeq != nullptr &&
+        m_jsonDescriptionIdSeq != nullptr &&
         m_phenomenonIdSeq != nullptr &&
         m_propertyIdSeq != nullptr &&
         m_propertyCategoryIdSeq != nullptr &&

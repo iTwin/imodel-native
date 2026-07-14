@@ -755,6 +755,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(pugi::xml_node schemaNode, E
             return 0 == strcmp(CONSTANT_ELEMENT, nodeName);
         case ECSchemaElementType::Format:
             return 0 == strcmp(FORMAT_ELEMENT, nodeName);
+        case ECSchemaElementType::JsonDescription:
+            return 0 == strcmp(JSON_DESCRIPTION_ELEMENT, nodeName);
         }
 
     return false;
@@ -799,6 +801,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(pugi::xml_node schemaNode, E
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Constant);
         else if (IsSchemaChildElementNode(candidateNode, ECSchemaElementType::Format))
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Format);
+        else if (IsSchemaChildElementNode(candidateNode, ECSchemaElementType::JsonDescription))
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::JsonDescription);
         }
     }
 
@@ -1040,6 +1044,13 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaContents(SchemaXmlReaderImpl* reader
 
     // KindOfQuantity
     status = reader->ReadSchemaChildFromXml<KindOfQuantity>(schemaOut, schemaNode, ECSchemaElementType::KindOfQuantity);
+    if (SchemaReadStatus::Success != status)
+        {
+        return status;
+        }
+
+    // JsonDescription for properties with json primitive type
+    status = reader->ReadSchemaChildFromXml<JsonDescription>(schemaOut, schemaNode, ECSchemaElementType::JsonDescription);
     if (SchemaReadStatus::Success != status)
         {
         return status;
@@ -1296,6 +1307,15 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
             if (nullptr != propertyCategory)
                 if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<PropertyCategory>(*propertyCategory)))
                     return writeChildStatus;
+            }
+        else if (elementType == ECSchemaElementType::JsonDescription)
+            {
+            const auto jd = m_ecSchema.GetJsonDescriptionCP(elementName);
+            if (nullptr != jd)
+                {
+                if (const auto jdStatus = jd->WriteXml(m_xmlWriter, m_ecXmlVersion); jdStatus != SchemaWriteStatus::Success)
+                    return jdStatus;
+                }
             }
         else if (ECSchemaElementType::UnitSystem == elementType)
             {
