@@ -10,17 +10,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
-// Companion tests for PhysicalMappingOrderIssues.md and DeterministicSchemaRegistry.md §A.8.
-//
-// These tests probe, one physical-mapping decision at a time, whether the artifact a
-// schema import produces is a pure function of the schema (order-INdependent) or a
-// function of the file's import history (order-DEPENDENT). They all operate in the
-// `opts.m_schemaLockHeld == false` regime: additive-only changes, no data transform.
-//
-// Import the SAME schemas into two files in different orders and compare the resulting
-// physical mapping. Each test documents, in its trailing comment, whether the divergence
-// it targets can be removed by the ID / slot reservation technique described in
-// DeterministicSchemaRegistry.md.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PhysicalMappingOrderIssuesTestFixture : public ECDbTestFixture
@@ -181,127 +170,12 @@ struct PhysicalMappingOrderIssuesTestFixture : public ECDbTestFixture
     };
 
 //=======================================================================================
-// ISSUE 1 - Shared-column SLOT assignment (which psN a property lands in).
-//
-// Solvable by reservation: reserve (Class, Property) -> shared-column slot.
-//
-// Finding: for additive-only changes, ECDb's name-based reuse + persisted derived-class
-// check already makes the shared-column NAME a (near) pure function of the schema, so the
-// slot is stable across import order today. Reservation would GUARANTEE this even if the
-// allocation heuristics change or asymmetric add-on cases are introduced later.
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PhysicalMappingOrderIssuesTestFixture, SharedColumnSlot_IsStableAcrossImportOrder)
-    {
-    // File 1: Common -> Sub1 -> Sub2
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_slot_1.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    const Utf8String order1_A1 = GetMapping("sub1", "ClassA", "A1").m_columnName;
-    const Utf8String order1_A2 = GetMapping("sub1", "ClassA", "A2").m_columnName;
-    m_ecdb.CloseDb();
-
-    // File 2: Common -> Sub2 -> Sub1 (Sub1 and Sub2 swapped)
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_slot_2.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    const Utf8String order2_A1 = GetMapping("sub1", "ClassA", "A1").m_columnName;
-    const Utf8String order2_A2 = GetMapping("sub1", "ClassA", "A2").m_columnName;
-
-    printf("SharedColumnSlot: order1 A1=%s A2=%s | order2 A1=%s A2=%s\n",
-           order1_A1.c_str(), order1_A2.c_str(), order2_A1.c_str(), order2_A2.c_str());
-
-    ASSERT_FALSE(order1_A1.empty());
-    ASSERT_FALSE(order2_A1.empty());
-
-    // The shared-column SLOT is order-independent today. Reservation would pin it.
-    EXPECT_STREQ(order1_A1.c_str(), order2_A1.c_str()) << "ClassA.A1 shared-column slot diverged by import order";
-    EXPECT_STREQ(order1_A2.c_str(), order2_A2.c_str()) << "ClassA.A2 shared-column slot diverged by import order";
-    }
-
-//=======================================================================================
-// ISSUE 2 - Overflow SPILLOVER (whether a property lands in the primary table or the
-// _Overflow table).
-//
-// Solvable by reservation: reserve (Class, Property) -> (Table, Column). Once the target
-// table is reserved, the spillover boundary is no longer recomputed per file.
-//
-// Finding: the boundary is driven by MaxSharedColumnsBeforeOverflow and the widest class,
-// both pure functions of the schema, so it is stable across order today.
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PhysicalMappingOrderIssuesTestFixture, OverflowSpillover_IsStableAcrossImportOrder)
-    {
-    // File 1: Common -> Sub1 -> Sub2
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_overflow_1.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    const Utf8String order1_B3_table = GetMapping("sub2", "ClassB", "B3").m_tableName;
-    m_ecdb.CloseDb();
-
-    // File 2: Common -> Sub2 -> Sub1
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_overflow_2.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    const Utf8String order2_B3_table = GetMapping("sub2", "ClassB", "B3").m_tableName;
-
-    printf("OverflowSpillover: order1 B3 table=%s | order2 B3 table=%s\n",
-           order1_B3_table.c_str(), order2_B3_table.c_str());
-
-    ASSERT_FALSE(order1_B3_table.empty());
-    ASSERT_FALSE(order2_B3_table.empty());
-
-    // Which table B3 lands in is order-independent today. Reservation would pin it.
-    EXPECT_STREQ(order1_B3_table.c_str(), order2_B3_table.c_str()) << "ClassB.B3 spilled to a different table by import order";
-    }
-
-//=======================================================================================
-// ISSUE 3 - Physical COLUMN ORDER (the left-to-right ordinal order of columns in a table).
-//
-// Solvable by reservation: reserve (Class, Property) -> column ordinal, or derive the
-// order deterministically from the reserved slot names.
-//
-// Finding: new shared columns are appended in the deterministic sequence ps1, ps2, ...,
-// so the physical column order is stable across import order today.
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PhysicalMappingOrderIssuesTestFixture, PhysicalColumnOrder_IsStableAcrossImportOrder)
-    {
-    // File 1: Common -> Sub1 -> Sub2
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_order_1.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    const std::vector<Utf8String> order1_cols = GetPhysicalColumnOrder("cmn_Element");
-    m_ecdb.CloseDb();
-
-    // File 2: Common -> Sub2 -> Sub1
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_order_2.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    const std::vector<Utf8String> order2_cols = GetPhysicalColumnOrder("cmn_Element");
-
-    ASSERT_FALSE(order1_cols.empty());
-    ASSERT_FALSE(order2_cols.empty());
-
-    // The physical column order is order-independent today. Reservation would pin it.
-    EXPECT_EQ(order1_cols, order2_cols) << "Physical column order of cmn_Element diverged by import order";
-    }
-
-//=======================================================================================
-// ISSUE 4 - Physical ROW IDs of the mapping metadata (ec_PropertyMap.Id and
+// Physical ROW IDs of the mapping metadata (ec_PropertyMap.Id and
 // ec_PropertyPath.Id; the same reasoning applies to ec_Table / ec_Column / ec_Index).
 //
 // These rows are created in class-import order and drawn from per-kind monotonic
 // counters, so the SAME logical mapping gets DIFFERENT row ids depending on order. This
 // is a genuine, reliably reproducible physical divergence.
-//
-// Solvable by reservation - but ONLY if the reserved ID kinds are extended to include the
-// physical kinds (PropertyMap, PropertyPath, Table, Column, Index, IndexColumn), which
-// DeterministicSchemaRegistry.md (section B.3) currently EXCLUDES. Reserving them removes
-// this divergence at the cost of the "false conflict" risk called out in that document.
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PhysicalMappingOrderIssuesTestFixture, PhysicalMappingRowIds_AreImportOrderDependent)
     {
@@ -338,14 +212,10 @@ TEST_F(PhysicalMappingOrderIssuesTestFixture, PhysicalMappingRowIds_AreImportOrd
     }
 
 //=======================================================================================
-// ISSUE 5 - Table WIDTH / physical column SET depends on the schema SUBSET a file imported.
-//
-// NOT solvable by reservation. The physical shape of a shared table is a function of ALL
+// The physical shape of a shared table is a function of ALL
 // classes mapped into it, i.e. of WHICH schemas the file actually contains - not of any
 // single schema in isolation. Two files that legitimately hold different subsets of the
-// hierarchy will always have differently shaped tables, and no per-element reservation can
-// change that (the reservation pins each present property's column, but cannot conjure
-// columns for classes the file does not contain).
+// hierarchy will always have differently shaped tables.
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PhysicalMappingOrderIssuesTestFixture, TableWidthDependsOnSchemaSubset_NotSolvableByReservation)
     {
@@ -376,60 +246,7 @@ TEST_F(PhysicalMappingOrderIssuesTestFixture, TableWidthDependsOnSchemaSubset_No
         << "cmn_Element has the same physical width regardless of which subclasses the file contains";
     }
 
-//=======================================================================================
-// ISSUE 6 - On-disk / SQLite physical storage (root pages, page allocation, b-tree byte
-// layout).
-//
-// NOT solvable by reservation. These artifacts are a function of the file's write history
-// (creation order of tables, inserts, VACUUM, free-list state), not of the schema or of
-// any logical/physical ID. No reservation ledger can control them; achieving byte identity
-// here would require a different mechanism entirely (e.g. canonical rebuild / clone).
-//
-// This test is intentionally lenient: it documents the artifact rather than asserting a
-// specific divergence, because SQLite root pages are an implementation detail that is
-// outside the reservation model by construction.
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PhysicalMappingOrderIssuesTestFixture, OnDiskPhysicalLayout_IsOutsideReservationModel)
-    {
-    auto readRootPages = [&]() -> Utf8String
-        {
-        Utf8String result;
-        CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-            "SELECT name, rootpage FROM sqlite_master WHERE type='table' ORDER BY name");
-        EXPECT_TRUE(stmt.IsValid());
-        while (stmt.IsValid() && BE_SQLITE_ROW == stmt->Step())
-            result.append(stmt->GetValueText(0)).append("=").append(std::to_string(stmt->GetValueInt64(1)).c_str()).append(";");
-        return result;
-        };
-
-    // File 1: Common -> Sub1 -> Sub2
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_disk_1.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    const Utf8String order1_rootPages = readRootPages();
-    m_ecdb.CloseDb();
-
-    // File 2: Common -> Sub2 -> Sub1
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("physmap_disk_2.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetCommonSchema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub2Schema())));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(GetSub1Schema())));
-    const Utf8String order2_rootPages = readRootPages();
-
-    printf("OnDiskRootPages: order1=[%s] order2=[%s]\n", order1_rootPages.c_str(), order2_rootPages.c_str());
-
-    // We only assert the artifact exists; its byte-level determinism is a non-goal that the
-    // reservation technique explicitly does not address.
-    ASSERT_FALSE(order1_rootPages.empty());
-    ASSERT_FALSE(order2_rootPages.empty());
-    }
-
 //---------------------------------------------------------------------------------------
-// A base class mapped TablePerHierarchy + ShareColumns, so every subclass property is
-// packed into reusable shared columns (ps1, ps2, ...). The shared column a property gets
-// is assigned when that subclass is imported, so the assignment is a function of history.
-//
 // Proves that the physical mapping produced by a schema import (which shared column a
 // property lands in) depends on the ORDER in which schemas are imported — it is NOT a
 // pure function of the schema. This is the "structural changes are order-dependent"
