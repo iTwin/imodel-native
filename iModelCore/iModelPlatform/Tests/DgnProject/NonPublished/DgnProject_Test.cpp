@@ -192,6 +192,148 @@ TEST_F(DgnDbTest, CreateIModel)
     ASSERT_TRUE(dgnProj != nullptr);
 }
 
+/*---------------------------------------------------------------------------------**/ /**
+* Verify that an in-memory iModel can be created and written to, and that a secondary connection
+* (the mechanism used by Concurrent Query and EC Presentation) shares the same in-memory data.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, CreateInMemoryIModel)
+{
+    // An empty file name requests an in-memory iModel.
+    DbResult status;
+    CreateDgnDbParams params(TEST_NAME);
+    DgnDbPtr dgndb = DgnDb::CreateIModel(&status, BeFileName(), params);
+    ASSERT_EQ(BE_SQLITE_OK, status) << status;
+    ASSERT_TRUE(dgndb.IsValid());
+
+    // The database has no backing file, and it must be reachable by a reopen name for secondary connections.
+    EXPECT_TRUE(dgndb->IsInMemoryDb());
+    EXPECT_TRUE(Utf8String::IsNullOrEmpty(dgndb->GetDbFileName()));
+    EXPECT_FALSE(Utf8String::IsNullOrEmpty(dgndb->GetDbFileNameForReopen()));
+
+    // Write some data.
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
+    ASSERT_TRUE(model.IsValid());
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*dgndb, "TestCategory");
+    ASSERT_TRUE(categoryId.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, dgndb->SaveChanges());
+
+    // Open a secondary (read-only) connection - the same mechanism used by Concurrent Query and EC
+    // Presentation. For a private ":memory:" database this would open a separate empty database and either
+    // fail (no property table) or see no data. With the shared-cache in-memory database it must see the
+    // data written on the primary connection.
+    Db secondaryDb;
+    ASSERT_EQ(BE_SQLITE_OK, dgndb->OpenSecondaryConnection(secondaryDb, Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No)));
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(secondaryDb, "SELECT count(*) FROM ec_Class"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_GT(stmt.GetValueInt(0), 0) << "secondary connection should see the shared in-memory schema data";
+    stmt.Finalize();
+    secondaryDb.CloseDb();
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* Verify that a shared in-memory iModel can be opened by its shared-cache URI while the creating
+* connection is still open.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, OpenInMemoryIModelByUri)
+{
+    DbResult status;
+    CreateDgnDbParams params(TEST_NAME);
+    DgnDbPtr dgndb = DgnDb::CreateIModel(&status, BeFileName(), params);
+    ASSERT_EQ(BE_SQLITE_OK, status) << status;
+    ASSERT_TRUE(dgndb.IsValid());
+
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
+    ASSERT_TRUE(model.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, dgndb->SaveChanges());
+
+    // Build the shared-cache URI from the reopen name and open a second full connection to the same iModel.
+    Utf8String uri;
+    uri.Sprintf("file:%s?mode=memory&cache=shared", dgndb->GetDbFileNameForReopen());
+
+    DbResult openStatus;
+    DgnDbPtr dgndb2 = DgnDb::OpenIModelDb(&openStatus, BeFileName(uri.c_str(), true), DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_EQ(BE_SQLITE_OK, openStatus) << openStatus;
+    ASSERT_TRUE(dgndb2.IsValid());
+    EXPECT_TRUE(dgndb2->IsInMemoryDb());
+
+    // The second connection must see the model inserted on the first connection.
+    EXPECT_TRUE(dgndb2->Models().GetModel(model->GetModelId()).IsValid());
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* Verify that an existing on-disk iModel can be opened as a writable in-memory copy, and that the
+* in-memory copy can be written back out to a new file (the load/save round-trip).
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, OpenInMemoryCopyOfIModel)
+{
+    // Create an on-disk seed iModel with some data.
+    BeFileName seedFileName;
+    BeTest::GetHost().GetOutputRoot(seedFileName);
+    seedFileName.AppendToPath(L"InMemoryCopySeed.bim");
+    if (BeFileName::DoesPathExist(seedFileName))
+        BeFileName::BeDeleteFile(seedFileName);
+
+    DgnModelId seedModelId;
+    {
+        DbResult status;
+        CreateDgnDbParams params(TEST_NAME);
+        DgnDbPtr seed = DgnDb::CreateIModel(&status, seedFileName, params);
+        ASSERT_EQ(BE_SQLITE_OK, status) << status;
+        ASSERT_TRUE(seed.IsValid());
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*seed, "SeedPartition");
+        ASSERT_TRUE(model.IsValid());
+        seedModelId = model->GetModelId();
+        ASSERT_EQ(BE_SQLITE_OK, seed->SaveChanges());
+        seed->CloseDb();
+    }
+
+    // Open a writable in-memory copy of the on-disk iModel.
+    DbResult status;
+    DgnDbPtr memDb = DgnDb::OpenInMemoryCopyOfIModel(&status, seedFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(BE_SQLITE_OK, status) << status;
+    ASSERT_TRUE(memDb.IsValid());
+    EXPECT_TRUE(memDb->IsInMemoryDb());
+
+    // The copy must contain the data from the seed file...
+    EXPECT_TRUE(memDb->Models().GetModel(seedModelId).IsValid()) << "in-memory copy should contain the seed model";
+
+    // ...and it must be writable, without affecting the source file.
+    PhysicalModelPtr memModel = DgnDbTestUtils::InsertPhysicalModel(*memDb, "InMemoryPartition");
+    ASSERT_TRUE(memModel.IsValid());
+    DgnModelId memModelId = memModel->GetModelId();
+    ASSERT_EQ(BE_SQLITE_OK, memDb->SaveChanges());
+
+    // Write the in-memory copy (including the new model) out to a new file.
+    BeFileName outFileName;
+    BeTest::GetHost().GetOutputRoot(outFileName);
+    outFileName.AppendToPath(L"InMemoryCopyOut.bim");
+    if (BeFileName::DoesPathExist(outFileName))
+        BeFileName::BeDeleteFile(outFileName);
+    ASSERT_EQ(BE_SQLITE_OK, memDb->VacuumInto(outFileName.GetNameUtf8().c_str()));
+    memDb->CloseDb();
+
+    // The source file must be unchanged (no new model), while the saved-out file must contain both models.
+    {
+        DbResult openStat;
+        DgnDbPtr reopenedSeed = DgnDb::OpenIModelDb(&openStat, seedFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_EQ(BE_SQLITE_OK, openStat) << openStat;
+        EXPECT_TRUE(reopenedSeed->Models().GetModel(seedModelId).IsValid());
+        EXPECT_FALSE(reopenedSeed->Models().GetModel(memModelId).IsValid()) << "source file must not be modified by in-memory edits";
+    }
+    {
+        DbResult openStat;
+        DgnDbPtr saved = DgnDb::OpenIModelDb(&openStat, outFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_EQ(BE_SQLITE_OK, openStat) << openStat;
+        EXPECT_TRUE(saved->Models().GetModel(seedModelId).IsValid());
+        EXPECT_TRUE(saved->Models().GetModel(memModelId).IsValid()) << "saved-out file must contain in-memory edits";
+    }
+}
+
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod

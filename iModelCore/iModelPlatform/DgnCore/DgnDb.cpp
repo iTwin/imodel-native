@@ -13,6 +13,23 @@
 static WCharCP s_dotBim   = L".bim";
 
 /*---------------------------------------------------------------------------------**//**
+* Determine whether the supplied name/params request an in-memory iModel (either the ":memory:"
+* sentinel, an empty name, or a "mode=memory" shared-cache URI). In-memory iModels have no file on
+* disk, so the usual path handling (appending ".bim", checking for existence) must be skipped.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isInMemoryIModelName(Utf8StringCR name, BeSQLite::Db::OpenParams const& params) {
+    if (name.empty() || name.Equals(BEDB_MemoryDb) || name.ContainsI("mode=memory"))
+        return true;
+
+    for (auto const& param : params.m_queryParams) {
+        if (param.ContainsI("mode=memory"))
+            return true;
+    }
+    return false;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * used to check names saved in categories, models, etc.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -664,7 +681,8 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, con
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::DoOpenIModel(BeFileNameCR fileNameIn, OpenParams const& params) {
     BeFileName fileName(fileNameIn);
-    if (!params.m_skipFileCheck && !fileName.DoesPathExist())
+    bool inMemory = isInMemoryIModelName(fileNameIn.GetNameUtf8(), params);
+    if (!inMemory && !params.m_skipFileCheck && !fileName.DoesPathExist())
         fileName.SupplyDefaultNameParts(s_dotBim);
 
     m_fileName = fileName.GetNameUtf8();
@@ -704,16 +722,88 @@ DgnDbPtr DgnDb::OpenIModelDb(DbResult* outResult, BeFileNameCR fileName, OpenPar
     return (status != BE_SQLITE_OK) ? nullptr : dgnDb;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* Open a private, writable in-memory copy of an existing on-disk iModel. The source file is opened
+* read-only and its entire contents are copied (via SQLite's online backup API) into a uniquely-named,
+* shared-cache in-memory database, which is then opened as a DgnDb.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr DgnDb::OpenInMemoryCopyOfIModel(DbResult* outResult, BeFileNameCR sourceFileName, OpenParams const& openParams) {
+    DbResult ALLOW_NULL_OUTPUT(status, outResult);
+
+    // Open the source iModel read-only as a plain BeSQLite database so we can copy its pages.
+    Db source;
+    status = source.OpenBeSQLiteDb(sourceFileName, Db::OpenParams(Db::OpenMode::Readonly));
+    if (BE_SQLITE_OK != status)
+        return nullptr;
+
+    // The in-memory destination must be created with the same page size as the source, otherwise the
+    // SQLite backup API refuses to copy into an in-memory database.
+    int sourcePageSize = 0;
+    {
+        Statement stmt(source, "PRAGMA page_size");
+        if (BE_SQLITE_ROW == stmt.Step())
+            sourcePageSize = stmt.GetValueInt(0);
+    }
+    if (sourcePageSize <= 0)
+        sourcePageSize = (int) Db::PageSize::PAGESIZE_4K;
+
+    // Create a uniquely-named, shared-cache in-memory database to receive the copy. A named shared-cache
+    // database (rather than a private ":memory:" one) lets additional connections opened via
+    // Db::OpenSecondaryConnection - e.g. Concurrent Query and EC Presentation - reach the same in-memory data.
+    Utf8String memName;
+    memName.Sprintf("imodel_mem_%s", BeGuid(true).ToString().c_str());
+    Db::CreateParams createParams((Db::PageSize) sourcePageSize);
+    createParams.AddQueryParam("mode=memory");
+    createParams.AddQueryParam("cache=shared");
+
+    Db holder;
+    status = holder.CreateNewDb(memName.c_str(), createParams);
+    if (BE_SQLITE_OK != status)
+        return nullptr;
+
+    status = holder.CopyFrom(source);
+    source.CloseDb();
+    if (BE_SQLITE_OK != status)
+        return nullptr;
+
+    holder.SaveChanges();
+
+    // Open a DgnDb against the same shared-cache in-memory database. This is a second connection that
+    // shares the in-memory data with 'holder'; once it is open, releasing 'holder' (when it goes out of
+    // scope below) leaves the DgnDb connection to keep the shared in-memory database alive.
+    // Pass the shared name plus the in-memory query params (rather than a pre-built URI) so they combine
+    // correctly with any query params already present on openParams and are recorded for reuse by
+    // secondary connections (Concurrent Query, EC Presentation).
+    OpenParams memoryOpenParams(openParams);
+    memoryOpenParams.AddQueryParam("mode=memory");
+    memoryOpenParams.AddQueryParam("cache=shared");
+    BeFileName memFileName;
+    memFileName.SetNameUtf8(memName.c_str());
+    DgnDbPtr db = DgnDb::OpenIModelDb(&status, memFileName, memoryOpenParams);
+    return (BE_SQLITE_OK == status) ? db : nullptr;
+}
+
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const& params) {
+DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const& paramsIn) {
     BeFileName iModelName(inFileName);
+    CreateDgnDbParams params(paramsIn);
 
     bool memoryDb = false;
-    if (inFileName.IsEmpty()) {
+    Utf8String inNameUtf8 = inFileName.GetNameUtf8();
+    if (inFileName.IsEmpty() || inNameUtf8.Equals(BEDB_MemoryDb)) {
         memoryDb = true;
-        iModelName.SetNameUtf8(BEDB_MemoryDb);
+        // Create a uniquely named, shared-cache in-memory database. Using a named shared-cache database
+        // (rather than a private ":memory:" one) allows additional connections opened via
+        // Db::OpenSecondaryConnection - e.g. Concurrent Query and EC Presentation - to reach the same
+        // in-memory data instead of each opening a separate, empty database.
+        Utf8String memName;
+        memName.Sprintf("imodel_mem_%s", BeGuid(true).ToString().c_str());
+        iModelName.SetNameUtf8(memName.c_str());
+        params.AddQueryParam("mode=memory");
+        params.AddQueryParam("cache=shared");
     } else {
         iModelName.SupplyDefaultNameParts(s_dotBim);
         if (params.m_overwriteExisting && BeFileName::DoesPathExist(iModelName)) {
@@ -724,7 +814,7 @@ DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const
         }
     }
 
-    if (!params.m_seedDb.empty()) {
+    if (!memoryDb && !params.m_seedDb.empty()) {
         BeFileNameStatus status = BeFileName::BeCopyFile(params.m_seedDb.c_str(), iModelName);
         if (BeFileNameStatus::Success != status)
             return BE_SQLITE_ERROR_FileExists;
@@ -734,7 +824,7 @@ DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    // iModels should always use WAL journal mode
+    // iModels should always use WAL journal mode (not available for in-memory databases)
     if (!memoryDb)
         EnableWalMode(true);
 

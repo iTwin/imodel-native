@@ -648,6 +648,11 @@ export declare namespace IModelJsNative {
     public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
+    /** Create a new iModel. If `fileName` is an empty string or `":memory:"`, an in-memory iModel is
+     * created instead of a file on disk. In-memory iModels are backed by a uniquely named, shared-cache
+     * SQLite database so that Concurrent Query and EC Presentation work against them. The iModel exists
+     * only for the lifetime of this connection and is discarded when it is closed.
+     */
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
@@ -751,7 +756,16 @@ export declare namespace IModelJsNative {
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
-    public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
+    /** Open an existing iModel. `dbName` is normally a file path, but may also be an in-memory database
+     * name/URI (e.g. `"file:<name>?mode=memory&cache=shared"`) to open an additional connection to a
+     * shared-cache in-memory iModel that is currently open elsewhere in this process.
+     *
+     * Pass `props.openAsInMemoryCopy === true` to copy the on-disk iModel at `dbName` into a private,
+     * writable in-memory database and open that copy. Changes made to the in-memory copy are not written
+     * back to `dbName`; to persist them, use `vacuum({ into: "<file>.bim" })` to write the in-memory
+     * contents out to a new file.
+     */
+    public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions & { openAsInMemoryCopy?: boolean }, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public processGeometryStream(requestProps: any/* ElementGeometryOptions */): IModelStatus;

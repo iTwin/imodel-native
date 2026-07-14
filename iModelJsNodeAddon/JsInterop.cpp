@@ -569,10 +569,15 @@ DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
         THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "Root subject name is missing", IModelJsNativeErrorKey::BadArg);
 
     BeFileName filename(filenameIn);
-    BeFileName path = filename.GetDirectoryName();
-    if (!path.DoesPathExist()) {
-        Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist";
-        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), err.c_str(), IModelJsNativeErrorKey::NotFound);
+    // An empty name or the ":memory:" sentinel requests an in-memory iModel, which has no directory
+    // on disk. Only validate the directory for file-backed iModels.
+    bool inMemory = filenameIn.empty() || filenameIn.Equals(BEDB_MemoryDb);
+    if (!inMemory) {
+        BeFileName path = filename.GetDirectoryName();
+        if (!path.DoesPathExist()) {
+            Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist";
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), err.c_str(), IModelJsNativeErrorKey::NotFound);
+        }
     }
 
     CreateDgnDbParams params(rootSubject[json_name()].asCString());

@@ -353,16 +353,26 @@ static bool DeleteSQLiteDbFile(BeFileNameCR path)
 static BeFileName GetCacheDbPath(BeFileNameCR directory, IConnectionCR connection)
     {
     BeFileName path;
+    Utf8CP ecdbFileName = connection.GetECDb().GetDbFileName();
+    // In-memory iModels have no backing file name, so fall back to the iModel's GUID to form a unique
+    // cache base. Without this, multiple in-memory iModels would derive the same cache path and collide.
+    bool inMemory = Utf8String::IsNullOrEmpty(ecdbFileName);
     if (directory.IsEmpty())
         {
-        path = BeFileName(connection.GetECDb().GetTempFileBaseName().c_str());
+        Utf8String base = connection.GetECDb().GetTempFileBaseName();
+        if (base.empty())
+            base = connection.GetECDb().GetDbGuid().ToString();
+        path = BeFileName(base.c_str());
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Cache directory not set, using base path: '%s'", path.GetNameUtf8().c_str()));
         }
     else
         {
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, directory.DoesPathExist(), Utf8PrintfString("Provided cache directory does not exist: '%s'", directory.GetNameUtf8().c_str()));
         path = directory;
-        path.AppendToPath(BeFileName(connection.GetECDb().GetDbFileName()).GetFileNameAndExtension().c_str());
+        Utf8String fileNamePart = inMemory
+            ? connection.GetECDb().GetDbGuid().ToString()
+            : Utf8String(BeFileName(ecdbFileName).GetFileNameAndExtension().c_str());
+        path.AppendToPath(BeFileName(fileNamePart.c_str()).c_str());
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesCache, LOG_TRACE, Utf8PrintfString("Cache directory set, using base path: '%s'", path.GetNameUtf8().c_str()));
         }
     path.AppendString(NAVNODES_CACHE_DB_SUFFIX);

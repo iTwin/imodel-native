@@ -168,9 +168,13 @@ private:
         uint64_t mmapSize = 0;
         if (primaryConnection.GetManager().GetProps().GetMmapFileSize().IsNull())
             {
-            BeFileNameStatus fileSizeResult = BeFileName(m_db.GetDbFileName()).GetFileSize(mmapSize);
-            if (BeFileNameStatus::Success != fileSizeResult)
-                DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, false, Utf8PrintfString("%p ProxyConnection[%s] failed to get file size, result = %d", this, m_primaryConnection.GetId().c_str(), (int)fileSizeResult));
+            // In-memory databases have no backing file, so there is nothing to memory-map.
+            if (!m_db.IsInMemoryDb())
+                {
+                BeFileNameStatus fileSizeResult = BeFileName(m_db.GetDbFileName()).GetFileSize(mmapSize);
+                if (BeFileNameStatus::Success != fileSizeResult)
+                    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, false, Utf8PrintfString("%p ProxyConnection[%s] failed to get file size, result = %d", this, m_primaryConnection.GetId().c_str(), (int)fileSizeResult));
+                }
             }
         else
             {

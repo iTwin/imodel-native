@@ -830,6 +830,74 @@ describe("basic tests", () => {
     withWal.closeFile();
   });
 
+  it("in-memory iModel supports concurrent query", async () => {
+    const memDb = new iModelJsNative.DgnDb();
+    // An empty file name (or ":memory:") requests an in-memory iModel that is never written to disk.
+    memDb.createIModel("", { rootSubject: { name: "in-memory" } });
+    assert.isTrue(memDb.isOpen());
+
+    const query = async (ecsql: string) => {
+      const request: DbQueryRequest = {
+        kind: DbRequestKind.ECSql,
+        query: ecsql,
+      };
+      return new Promise<DbQueryResponse>((resolve) => {
+        memDb.concurrentQueryExecute(request, (response) => resolve(response as DbQueryResponse));
+      });
+    };
+
+    // Concurrent query runs on secondary connections. For an in-memory iModel these must reach the same
+    // shared-cache in-memory data - otherwise the query would run against an empty/missing database.
+    const resp = await query("SELECT count(*) FROM Bis.Element");
+    assert(resp.status === DbResponseStatus.Done, `unexpected status ${resp.status}, error: '${resp.error}'`);
+    assert(resp.error === "");
+    assert(Number(resp.data[0]) > 0, "concurrent query on in-memory iModel should see the schema-created elements");
+
+    memDb.closeFile();
+  });
+
+  it("open on-disk iModel as writable in-memory copy", () => {
+    // Create an on-disk seed iModel with a bit of data.
+    const seedDbName = path.join(getOutputDir(), "inMemoryCopySeed.bim");
+    if (fs.existsSync(seedDbName))
+      fs.removeSync(seedDbName);
+    const seed = new iModelJsNative.DgnDb();
+    seed.createIModel(seedDbName, { rootSubject: { name: "in-memory copy seed" } });
+    seed.saveChanges();
+    seed.closeFile();
+
+    // Open a writable in-memory copy of the on-disk file. Changes are not written back to the source file.
+    const memDb = new iModelJsNative.DgnDb();
+    memDb.openIModel(seedDbName, OpenMode.ReadWrite, undefined, { openAsInMemoryCopy: true });
+    assert.isTrue(memDb.isOpen());
+    assert.isFalse(memDb.isReadonly());
+
+    // The copy must contain the schema/data from the seed file (the root subject element).
+    const countElements = (db: IModelJsNative.DgnDb): number => {
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(db, "SELECT count(*) FROM bis_Element");
+      assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+      const n = stmt.getValueInteger(0);
+      stmt.dispose();
+      return n;
+    };
+    assert.isAbove(countElements(memDb), 0, "in-memory copy should contain the seed schema/data");
+
+    // Persist the in-memory copy to a new file via vacuum-into, then verify it opens and has the data.
+    const outDbName = path.join(getOutputDir(), "inMemoryCopyOut.bim");
+    if (fs.existsSync(outDbName))
+      fs.removeSync(outDbName);
+    memDb.vacuum({ into: outDbName });
+    memDb.closeFile();
+    assert.isTrue(fs.existsSync(outDbName));
+
+    const reopened = new iModelJsNative.DgnDb();
+    reopened.openIModel(outDbName, OpenMode.Readonly);
+    assert.isTrue(reopened.isOpen());
+    assert.isAbove(countElements(reopened), 0, "saved-out file should contain the copied data");
+    reopened.closeFile();
+  });
+
   it("testGetSchemaProps", async () => {
     assert.isTrue(dgndb.isOpen());
     expect(() => dgndb.getSchemaProps("DoesNotExist")).to.throw("schema not found").with.property("errorNumber", IModelStatus.NotFound);

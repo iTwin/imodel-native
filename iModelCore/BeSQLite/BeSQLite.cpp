@@ -2657,6 +2657,26 @@ static Utf8String getDbUri(Utf8CP dbName, Db::OpenParams const& params) {
     return uri;
 }
 
+//---------------------------------------------------------------------------------------
+// Determine whether the supplied name and query params describe an in-memory (or temporary)
+// database that has no backing file on disk. Such databases must not be subjected to the
+// on-disk file-validity/existence checks performed before opening or creating.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool isInMemoryDbName(Utf8CP dbName, bvector<Utf8String> const& queryParams) {
+    if (Utf8String::IsNullOrEmpty(dbName) || 0 == strcmp(dbName, BEDB_MemoryDb))
+        return true;
+
+    if (Utf8String(dbName).ContainsI("mode=memory"))
+        return true;
+
+    for (auto const& param : queryParams) {
+        if (param.ContainsI("mode=memory"))
+            return true;
+    }
+    return false;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2675,7 +2695,7 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
     Utf8String dbName = getDbUri(inName, params);
 
     OpenMode openMode = OpenMode::Create;
-    if (!dbName.Equals(BEDB_MemoryDb) && !params.m_skipFileCheck) {
+    if (!isInMemoryDbName(inName, params.m_queryParams) && !params.m_skipFileCheck) {
         BeFileName dbFileName(dbName);
         if (dbFileName.DoesPathExist()) {
             if (params.m_failIfDbExists)
@@ -2706,6 +2726,13 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_isCloudDb = params.m_fromContainer;
+
+    // Remember the name/URI and query params used to create this Db so that secondary connections can be
+    // reopened against the same database. This is essential for in-memory databases, where GetDbFileName()
+    // (sqlite3_db_filename) returns an empty string and cannot be used to reach the same shared-cache database.
+    m_dbFileNameForReopen = inName;
+    for (auto const& param : params.m_queryParams)
+        m_openQueryParams.push_back(param);
 
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
@@ -3423,6 +3450,8 @@ void Db::DoCloseDb()
 
     m_statements.Empty();
     DELETE_AND_CLEAR(m_dbFile);
+    m_openQueryParams.clear();
+    m_dbFileNameForReopen.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3520,6 +3549,29 @@ Utf8CP Db::GetDbFileName() const
     return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Db::IsInMemoryDb() const
+    {
+    // Both temporary databases (null/empty name) and in-memory databases (":memory:" or a "mode=memory" URI)
+    // have no backing file, so sqlite3_db_filename returns an empty string for them.
+    return IsDbOpen() && Utf8String::IsNullOrEmpty(GetDbFileName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP Db::GetDbFileNameForReopen() const
+    {
+    Utf8CP fileName = GetDbFileName();
+    // For in-memory databases GetDbFileName() returns an empty string, which cannot be used to reach the same
+    // shared-cache database. Fall back to the original name/URI base that was used to open or create this Db.
+    if (Utf8String::IsNullOrEmpty(fileName))
+        return m_dbFileNameForReopen.c_str();
+    return fileName;
+    }
+
 #define IS_SQLITE_FILE_SIGNATURE(toCheck) (0 == memcmp((Utf8CP)header, toCheck, strlen(toCheck)))
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -3594,7 +3646,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
         return BE_SQLITE_ERROR_AlreadyOpen;
 
     DbResult rc = BE_SQLITE_OK;
-    if (!params.m_skipFileCheck) {
+    if (!params.m_skipFileCheck && !isInMemoryDbName(inName, params.m_queryParams)) {
         rc = isValidDbFile(inName);
         if (BE_SQLITE_OK != rc)
             return rc;
@@ -3629,6 +3681,11 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     // set the tempfileBase from open params
     m_tempfileBase = params.m_tempfileBase;
     m_isCloudDb = params.m_fromContainer;
+
+    // Remember the name/URI used to open this Db so that secondary connections can be reopened against the
+    // same database. This is essential for in-memory databases, where GetDbFileName() (sqlite3_db_filename)
+    // returns an empty string and cannot be used to reach the same shared-cache database.
+    m_dbFileNameForReopen = inName;
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
@@ -3773,7 +3830,7 @@ DbResult Db::OpenSecondaryConnection(Db& newConnection, OpenParams params) const
         params.AddQueryParam(param.c_str());
     }
 
-    return newConnection.OpenBeSQLiteDb(GetDbFileName(), params);
+    return newConnection.OpenBeSQLiteDb(GetDbFileNameForReopen(), params);
     }
 
 /** Perform a checkpoint operation if this database is in WAL mode. */
@@ -6741,6 +6798,25 @@ DbResult Db::Vacuum(int newPageSizeInBytes) {
 DbResult Db::VacuumInto(Utf8CP newFileName) {
     SuspendDefaultTxn noDefault(*this);
     return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
+}
+
+/** copy the entire contents of another database into this one using SQLite's online backup API. */
+DbResult Db::CopyFrom(DbCR source, Utf8CP sourceDbName, Utf8CP destDbName) {
+    sqlite3* destDb = GetSqlDb();
+    sqlite3* srcDb = source.GetSqlDb();
+    if (nullptr == destDb || nullptr == srcDb)
+        return BE_SQLITE_ERROR;
+
+    // The backup API requires that the destination connection have no open transaction, so suspend
+    // the default transaction (if any) for the duration of the copy.
+    SuspendDefaultTxn noDefault(*this);
+
+    sqlite3_backup* backup = sqlite3_backup_init(destDb, destDbName, srcDb, sourceDbName);
+    if (nullptr == backup)
+        return (DbResult) sqlite3_errcode(destDb);
+
+    sqlite3_backup_step(backup, -1); // copy all pages in a single step
+    return (DbResult) sqlite3_backup_finish(backup);
 }
 
 DbResult Db::Analyze() {

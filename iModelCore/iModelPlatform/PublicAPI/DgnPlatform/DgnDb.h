@@ -345,6 +345,16 @@ public:
     //! </ul>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenIModelDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
+    //! Open a private, writable in-memory copy of an existing (on-disk) iModel.
+    //! @param[out] status BE_SQLITE_OK if the in-memory copy was opened, error code otherwise. May be NULL.
+    //! @param[in] sourceFileName The on-disk iModel to copy into memory. It is opened read-only and is not modified.
+    //! @param[in] openParams Parameters used to open the resulting in-memory DgnDb. The open mode controls whether the
+    //! in-memory copy is writable; the source file is always opened read-only.
+    //! @return a reference counted pointer to the in-memory DgnDb, or an invalid pointer on failure.
+    //! @remarks The returned DgnDb has no backing file; changes made to it are not persisted to @p sourceFileName. To
+    //! save the in-memory contents back to a file, use Db::VacuumInto (or Db::CopyFrom into a new on-disk Db).
+    DGNPLATFORM_EXPORT static DgnDbPtr OpenInMemoryCopyOfIModel(BeSQLite::DbResult* status, BeFileNameCR sourceFileName, OpenParams const& openParams);
+
     //! Create and open a new DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully created, error code otherwise. May be NULL.
     //! @param[in] filename The name of the file for the new DgnDb. Must be a valid filename on the local

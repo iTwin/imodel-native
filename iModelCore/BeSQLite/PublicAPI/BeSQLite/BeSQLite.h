@@ -2714,6 +2714,11 @@ protected:
     // The query params used to open this database, so that code that opens another connection can reuse them.
     bvector<Utf8String> m_openQueryParams;
 
+    // The name/URI base used to open or create this database. For in-memory databases sqlite3_db_filename()
+    // returns an empty string, so this value is used to reopen secondary connections to the same
+    // (shared-cache) in-memory database. See GetDbFileNameForReopen and OpenSecondaryConnection.
+    Utf8String m_dbFileNameForReopen;
+
     // a fileName that can be used as the "base" for creating temporary files related to this Db. If not present, use the file name.
     Utf8String m_tempfileBase;
 
@@ -2944,6 +2949,17 @@ public:
 
     //! @return The name of the physical file associated with this Db. nullptr if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
+
+    //! Determine whether this Db is held entirely in memory (i.e. it has no backing file on disk).
+    //! This is true both for temporary databases (opened/created with a null or empty name) and for
+    //! in-memory databases (opened/created with the BEDB_MemoryDb sentinel or a "mode=memory" URI).
+    BE_SQLITE_EXPORT bool IsInMemoryDb() const;
+
+    //! @return The name/URI that should be used to open an additional connection to this Db (e.g. from
+    //! OpenSecondaryConnection). For file-backed databases this is the physical file name. For in-memory
+    //! databases, where GetDbFileName() returns an empty string, this returns the original name/URI base
+    //! used to open or create the Db so that a secondary connection can reach the same shared-cache database.
+    BE_SQLITE_EXPORT Utf8CP GetDbFileNameForReopen() const;
 
     // Get the "base" name that can be used for creating a temporary file related to this Db. Callers should append a unique string to this value (e.g "-tiles")
     // to form a full path for a temporary file. The path is guaranteed to be a filename in an existing writable directory.
@@ -3334,6 +3350,17 @@ public:
     //! @param newFileName path to new db
     //! @return BE_SQLITE_OK if successful
     BE_SQLITE_EXPORT DbResult VacuumInto(Utf8CP newFileName);
+
+    //! Copy the entire contents of another database into this one using SQLite's online backup API.
+    //! This database (the destination) is completely overwritten with the contents of @p source.
+    //! @param[in] source The (open) database to copy from.
+    //! @param[in] sourceDbName The name of the schema within @p source to copy (usually "main").
+    //! @param[in] destDbName The name of the schema within this Db to copy into (usually "main").
+    //! @return BE_SQLITE_OK if successful.
+    //! @note This is useful, for example, to load an on-disk database into an in-memory Db. For an
+    //! in-memory destination the destination page size must match the source page size (a freshly
+    //! created in-memory Db should be created with a matching page size).
+    BE_SQLITE_EXPORT DbResult CopyFrom(DbCR source, Utf8CP sourceDbName = "main", Utf8CP destDbName = "main");
 
     //! Vacuum a file and optionally change page_size.
     //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.

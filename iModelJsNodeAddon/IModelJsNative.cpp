@@ -1193,11 +1193,24 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         BeJsConst props(info[3]);
         bool skipWriteLockCheck = false;
+        bool openAsInMemoryCopy = false;
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
             if (tempFileBase.isString())
                 openParams.m_tempfileBase = tempFileBase.asString();
             skipWriteLockCheck = props[JSON_NAME(skipWriteLockCheck)].asBool(false);
+            openAsInMemoryCopy = props["openAsInMemoryCopy"].asBool(false);
+        }
+
+        if (openAsInMemoryCopy) {
+            // Copy the on-disk iModel into a private, writable in-memory database and open that instead.
+            NativeLogging::CategoryLogger("BeSQLite").infov(L"Opening in-memory copy of DgnDb %ls", BeFileName(dbName).c_str());
+            DbResult result;
+            auto dgndb = DgnDb::OpenInMemoryCopyOfIModel(&result, BeFileName(dbName), openParams);
+            if (BE_SQLITE_OK != result || !dgndb.IsValid())
+                JsInterop::throwSqlResult("error opening in-memory copy of iModel", dbName.c_str(), result);
+            SetDgnDb(*dgndb);
+            return;
         }
 
         addContainerParams(Value(), dbName, openParams, info[4], skipWriteLockCheck);
