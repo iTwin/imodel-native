@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_VQUIC_CURL_QUICHE_H
-#define HEADER_CURL_VQUIC_CURL_QUICHE_H
+#ifndef HEADER_CURL_VQUIC_CF_NGTCP2_H
+#define HEADER_CURL_VQUIC_CF_NGTCP2_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -25,21 +25,39 @@
  ***************************************************************************/
 #include "curl_setup.h"
 
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_QUICHE)
+#if !defined(CURL_DISABLE_HTTP) && defined(USE_NGTCP2) && defined(USE_NGHTTP3)
 
-#include <quiche.h>
-#include <openssl/ssl.h>
-
-struct Curl_cfilter;
-struct Curl_easy;
-
-void Curl_quiche_ver(char *p, size_t len);
-
-CURLcode Curl_cf_quiche_create(struct Curl_cfilter **pcf,
-                               struct Curl_easy *data,
-                               struct connectdata *conn,
-                               const struct Curl_addrinfo *ai);
-
+#ifdef HAVE_NETINET_UDP_H
+#include <netinet/udp.h>
 #endif
 
-#endif /* HEADER_CURL_VQUIC_CURL_QUICHE_H */
+#include <ngtcp2/ngtcp2_crypto.h>
+#ifdef OPENSSL_QUIC_API2
+#include <ngtcp2/ngtcp2_crypto_ossl.h>
+#endif
+#include <nghttp3/nghttp3.h>
+#ifdef USE_OPENSSL
+#include <openssl/ssl.h>
+#elif defined(USE_WOLFSSL)
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
+#include <wolfssl/quic.h>
+#endif
+
+struct Curl_cfilter;
+
+#include "urldata.h"
+
+CURLcode Curl_cf_ngtcp2_create(struct Curl_cfilter **pcf,
+                               struct Curl_easy *data,
+                               struct Curl_peer *origin,
+                               struct Curl_peer *peer,
+                               struct connectdata *conn,
+                               struct Curl_sockaddr_ex *addr);
+
+CURLcode Curl_cf_ngtcp2_insert_after(struct Curl_cfilter *cf_at,
+                               struct Curl_peer *origin,
+                               struct Curl_peer *peer);
+#endif
+
+#endif /* HEADER_CURL_VQUIC_CF_NGTCP2_H */

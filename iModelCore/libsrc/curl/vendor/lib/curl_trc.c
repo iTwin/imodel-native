@@ -28,8 +28,10 @@
 #include "cfilters.h"
 #include "multiif.h"
 
+#include "cf-dns.h"
+#include "cf-recvbuf.h"
 #include "cf-socket.h"
-#include "connect.h"
+#include "cf-setup.h"
 #include "http2.h"
 #include "http_proxy.h"
 #include "cf-h1-proxy.h"
@@ -222,6 +224,12 @@ struct curl_trc_feat Curl_trc_feat_timer = {
   "TIMER",
   CURL_LOG_LVL_NONE,
 };
+#ifdef USE_THREADS
+struct curl_trc_feat Curl_trc_feat_threads = {
+  "THREADS",
+  CURL_LOG_LVL_NONE,
+};
+#endif
 #endif
 
 #ifndef CURL_DISABLE_VERBOSE_STRINGS
@@ -274,6 +282,19 @@ void Curl_trc_cf_infof(struct Curl_easy *data, const struct Curl_cfilter *cf,
     va_list ap;
     va_start(ap, fmt);
     trc_infof(data, data->state.feat, cf->cft->name, cf->sockindex, fmt, ap);
+    va_end(ap);
+  }
+}
+
+void Curl_trc_feat_infof(struct Curl_easy *data,
+                         struct curl_trc_feat *feat,
+                         const char *fmt, ...)
+{
+  DEBUGASSERT(feat);
+  if(Curl_trc_ft_is_verbose(data, feat)) {
+    va_list ap;
+    va_start(ap, fmt);
+    trc_infof(data, feat, NULL, 0, fmt, ap);
     va_end(ap);
   }
 }
@@ -336,7 +357,6 @@ static const char * const Curl_trc_mstate_names[] = {
   "PENDING",
   "SETUP",
   "CONNECT",
-  "RESOLVING",
   "CONNECTING",
   "PROTOCONNECT",
   "PROTOCONNECTING",
@@ -512,6 +532,9 @@ static struct trc_feat_def trc_feats[] = {
   { &Curl_trc_feat_write,     TRC_CT_NONE },
   { &Curl_trc_feat_dns,       TRC_CT_NETWORK },
   { &Curl_trc_feat_timer,     TRC_CT_NETWORK },
+#ifdef USE_THREADS
+  { &Curl_trc_feat_threads,   TRC_CT_NONE },
+#endif
 #ifndef CURL_DISABLE_FTP
   { &Curl_trc_feat_ftp,       TRC_CT_PROTOCOL },
 #endif
@@ -535,11 +558,15 @@ struct trc_cft_def {
 };
 
 static struct trc_cft_def trc_cfts[] = {
+  { &Curl_cft_dns,            TRC_CT_NETWORK },
   { &Curl_cft_tcp,            TRC_CT_NETWORK },
   { &Curl_cft_udp,            TRC_CT_NETWORK },
   { &Curl_cft_unix,           TRC_CT_NETWORK },
   { &Curl_cft_tcp_accept,     TRC_CT_NETWORK },
   { &Curl_cft_ip_happy,       TRC_CT_NETWORK },
+#ifndef CURL_DISABLE_WEBSOCKETS
+  { &Curl_cft_recvbuf,        TRC_CT_PROTOCOL },
+#endif
   { &Curl_cft_setup,          TRC_CT_PROTOCOL },
 #if !defined(CURL_DISABLE_HTTP) && defined(USE_NGHTTP2)
   { &Curl_cft_nghttp2,        TRC_CT_PROTOCOL },
@@ -555,6 +582,9 @@ static struct trc_cft_def trc_cfts[] = {
   { &Curl_cft_h1_proxy,       TRC_CT_PROXY },
 #ifdef USE_NGHTTP2
   { &Curl_cft_h2_proxy,       TRC_CT_PROXY },
+#endif
+#if defined(USE_PROXY_HTTP3) && defined(USE_NGHTTP3)
+  { &Curl_cft_h3_proxy,       TRC_CT_PROXY },
 #endif
   { &Curl_cft_http_proxy,     TRC_CT_PROXY },
 #endif /* !CURL_DISABLE_HTTP */

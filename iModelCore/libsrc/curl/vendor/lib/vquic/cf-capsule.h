@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_RTMP_H
-#define HEADER_CURL_RTMP_H
+#ifndef HEADER_CURL_CF_CAPSULE_H
+#define HEADER_CURL_CF_CAPSULE_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Howard Chu, <hyc@highlandsun.com>
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -23,14 +23,18 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-extern const struct Curl_scheme Curl_scheme_rtmp;
-extern const struct Curl_scheme Curl_scheme_rtmpt;
-extern const struct Curl_scheme Curl_scheme_rtmpe;
-extern const struct Curl_scheme Curl_scheme_rtmpte;
-extern const struct Curl_scheme Curl_scheme_rtmps;
-extern const struct Curl_scheme Curl_scheme_rtmpts;
-#ifdef USE_LIBRTMP
-void Curl_rtmp_version(char *version, size_t len);
-#endif
+#include "curl_setup.h"
 
-#endif /* HEADER_CURL_RTMP_H */
+#if !defined(CURL_DISABLE_PROXY) && !defined(CURL_DISABLE_HTTP)
+
+/* Insert a capsule protocol filter after `cf_at` in the filter chain.
+ * The capsule filter encapsulates/decapsulates UDP datagrams using
+ * the HTTP Datagram capsule format (RFC 9297). */
+CURLcode Curl_cf_capsule_insert_after(struct Curl_cfilter *cf_at,
+                                      struct Curl_easy *data);
+
+extern struct Curl_cftype Curl_cft_capsule;
+
+#endif /* !CURL_DISABLE_PROXY && !CURL_DISABLE_HTTP */
+
+#endif /* HEADER_CURL_CF_CAPSULE_H */

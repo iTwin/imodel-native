@@ -40,7 +40,7 @@
 # Shared between CMakeLists.txt and Makefile.am
 
 # Using the backslash as line continuation character might be problematic with
-# some make flavours. If we ever want to change this in a portable manner then
+# some make flavors. If we ever want to change this in a portable manner then
 # we should consider this idea :
 # CSRC1 = file1.c file2.c file3.c
 # CSRC2 = file4.c file5.c file6.c
@@ -599,6 +599,7 @@ FILECMD = @FILECMD@
 FISH_FUNCTIONS_DIR = @FISH_FUNCTIONS_DIR@
 GCOV = @GCOV@
 GREP = @GREP@
+H2O = @H2O@
 HAVE_LIBZ = @HAVE_LIBZ@
 HTTPD = @HTTPD@
 HTTPD_NGHTTPX = @HTTPD_NGHTTPX@
@@ -938,8 +939,8 @@ CHECKSRC = $(CS_$(V))
 CS_0 = @echo "  RUN     " $@;
 CS_1 = 
 CS_ = $(CS_0)
-_tidy_cflags := $(am__append_9)
-TIDYFLAGS := $(am__append_8)
+_tidy_cflags = $(am__append_9)
+TIDYFLAGS = $(am__append_8)
 all: all-am
 
 .SUFFIXES:
@@ -3100,7 +3101,8 @@ checksrc:
 
 tidy: $(HUGE) $(CA_EMBED_CSOURCE)
 	(_curl_cfiles=`echo ' $(CURL_CFILES)' | sed -e 's/ +/ /g' -e 's| | $(srcdir)/|g'`; \
-	@CLANG_TIDY@ --config-file=$(top_srcdir)/.clang-tidy.yml $(TIDYFLAGS) $(CURL_CLANG_TIDYFLAGS) $$_curl_cfiles $(curl_cfiles_gen) -- $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS) -DHAVE_CONFIG_H $(_tidy_cflags))
+	@CLANG_TIDY@ --config-file=$(top_srcdir)/.clang-tidy.yml $(TIDYFLAGS) $(CURL_CLANG_TIDYFLAGS) $$_curl_cfiles $(curl_cfiles_gen) \
+	  -- $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS) -DHAVE_CONFIG_H $(_tidy_cflags))
 
 listhelp:
 	(cd $(top_srcdir)/docs/cmdline-opts && make listhelp)
