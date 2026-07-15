@@ -2,6 +2,14 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
+# prewire.mke - Stage pugixml public headers and license into the BuildContext.
+#
+# The upstream headers (pugixml.hpp, pugiconfig.hpp) and the license now come from the vcpkg
+# build (see ./pugixml.mke and overlay-ports/pugixml). pugiconfig.hpp is the *patched* header
+# that carries our dllexport/dllimport annotation. The Bentley wrapper headers (BePugiXml.h,
+# BePugiXmlHelper.h) are ours and stay checked in under src/. Destination paths are unchanged
+# so consumers keep including <pugixml/src/...>.
+#---------------------------------------------------------------------------------------------
 %include mdl.mki
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9,17 +17,34 @@
 %error
 %endif
 
+pugixmlDir = $(_MakeFilePath)
+libsrcDir  = $(pugixmlDir)../
+SrcDir     = $(pugixmlDir)src/
+
+#--------------------------------------------------------------------------------------
+#   Resolve the vcpkg triplet and install root. The vcpkg_install_pugixml chain part always
+#   runs as Static, so the installed headers live under the static OutputRootDir. Redirect
+#   dynamic builds to that same location (their OutputRootDir omits the "static/" segment).
+#--------------------------------------------------------------------------------------
+%include $(libsrcDir)vcpkg.mki
+%if defined (CREATE_STATIC_LIBRARIES)
+vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/pugixml/
+%else
+vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/pugixml/
+%endif
+vcpkgTripletDir = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir = $(vcpkgTripletDir)include/
+
 DeliveryDir         = $(BuildContext)Delivery/
 VendorApiContextDir = $(BuildContext)VendorAPI/pugixml/src/
-SrcDir           = $(_MakeFilePath)src/
 
-$(DeliveryDir)pugixml-license.md : $(_MakeFilePath)LICENSE.md
+$(DeliveryDir)pugixml-license.md : $(vcpkgTripletDir)share/pugixml/copyright
     $(LinkFirstDepToFirstTarget)
 
-$(VendorApiContextDir)pugixml.hpp : $(SrcDir)pugixml.hpp
+$(VendorApiContextDir)pugixml.hpp : $(vcpkgIncludeDir)pugixml.hpp
     $(LinkFirstDepToFirstTarget)
 
-$(VendorApiContextDir)pugiconfig.hpp : $(SrcDir)pugiconfig.hpp
+$(VendorApiContextDir)pugiconfig.hpp : $(vcpkgIncludeDir)pugiconfig.hpp
     $(LinkFirstDepToFirstTarget)
 
 $(VendorApiContextDir)BePugiXmlHelper.h : $(SrcDir)BePugiXmlHelper.h
