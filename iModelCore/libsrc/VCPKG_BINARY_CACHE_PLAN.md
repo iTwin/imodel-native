@@ -28,8 +28,9 @@
 > **Done & verified (2026-07-15):** all of the above are in place — `VCPKG_BINARY_SOURCES` is set to
 > the `x-azcopy` config in CI, the Build step runs inside `AzureCLI@2` (connection
 > **`vcpkg-cache updater`**, SP `c598ebd4…` with `Storage Blob Data Contributor`), and a CI build
-> **uploaded** zlib+minizip to the container (`Completed submission … to 1 binary cache(s)`). The
-> next same-pins build should now **restore** from it.
+> **uploaded** zlib+minizip to the container (`Completed submission … to 1 binary cache(s)`), and a
+> warm same-pins build **restores** from it (spot-checked 2026-07-15; see the "CI build times"
+> table for measured per-job savings).
 
 ## Goal
 
@@ -283,10 +284,10 @@ fetched by vcpkg (verify in Step 0) rather than needing the `azure-devops` exten
 
 ## Step 3 — ✅ (CI) Grant the build identity write access to the container (RBAC)
 
-> **CI done (2026-07-15); developer grant still open.** The `vcpkg-cache updater` service
+> **CI done (2026-07-15); developer grant deferred.** The `vcpkg-cache updater` service
 > connection's SP (`c598ebd4-…`) **already holds `Storage Blob Data Contributor`** on
-> `imodelnativevcpkg`, so the CI write path is satisfied. Still open: the **per-developer**
-> read grant for the optional Step 0 / Step 4 local opt-in.
+> `imodelnativevcpkg`, so the CI write path is satisfied. The **per-developer** read grant is
+> **not being provisioned for now** (needs Owner/UAA, and is low-value per Step 0) — see Step 4.
 
 > **Open (new for `x-azcopy`).** The old `upack` **Feed Publisher** grant is irrelevant now.
 > Access to the blob container is via **Azure RBAC data roles**, not feed permissions or a SAS.
@@ -360,13 +361,19 @@ accessed in 30 days are auto-deleted, so the cache is self-pruning.
 
 ---
 
-## Step 4 — ⚠️ Document the developer opt-in in `VCPKG.md` (rework for `x-azcopy`)
+## Step 4 — 🚫 Developer opt-in — NOT supported for now (permissions)
 
-> **⚠️ Needs rework (backend pivot).** The section exists but documents the `x-az-universal`
-> opt-in. Update it to the `x-azcopy` read-only opt-in below (`az login` +
-> `AZCOPY_AUTO_LOGIN_TYPE=AZCLI` + the `read` config string), and update the "How It Works"
-> resolution bullet to say `x-azcopy` blob instead of the feed. Keep the Step 0 perf caveat: the
-> shared cache is **not worthwhile for macOS developers** and matters mainly for CI.
+> **Not being supported for now.** The read-only developer opt-in requires developers to hold
+> `Storage Blob Data Reader` on the container. This need **not** be per-developer: granting the
+> role once to an existing **developer Entra group** (the same way `BCSM-Cloud-Ops-Engineers`
+> already holds `Storage Blob Data Contributor` on the account) would cover everyone in that group
+> with a single assignment — the practical path if this is ever enabled. Either way it still needs
+> **Owner / User Access Administrator** to create that one assignment (not being provisioned for
+> this now). Combined with the Step 0 perf finding — the shared cache is only *marginally* faster
+> than a clean build and **slower than a warm local `files` cache**, so it's **not worthwhile for
+> developers** anyway — the developer path is **deferred**. CI (the real beneficiary) is
+> unaffected; `VCPKG.md` is **not** being updated with a shared-cache opt-in. The instructions
+> below are retained only as a reference **if** a group read grant is ever approved.
 
 Developers need **Storage Blob Data Reader** on the container (Step 3) plus a one-time `az login`;
 AzCopy then reuses that session:
@@ -391,14 +398,14 @@ Also add `x-azcopy` / the shared cache to the "How It Works" narrative so the fa
 
 ---
 
-## Step 5 — 🟡 Verify (uploads confirmed 2026-07-15; restore pending)
+## Step 5 — ✅ Verify (uploads + restores confirmed 2026-07-15)
 
-> **First CI build uploaded successfully (2026-07-15).** A CI build logged
-> `Starting submission of minizip:arm64-osx@1.3.1#1 to 1 binary cache(s)` and
-> `Completed submission of zlib:arm64-osx@1.3.2#1 … (1/2)` / `minizip … (2/2)` — i.e. the
-> `x-azcopy` **write** path works (no 403). Still to confirm: a **second** build with unchanged
-> version pins logging `Restored … from …` (the cross-machine ABI-hash hit and the actual
-> time savings).
+> **End-to-end confirmed (2026-07-15).** *Uploads:* a CI build logged `Completed submission of
+> zlib:arm64-osx@1.3.2#1 … / minizip … to 1 binary cache(s)` (write path, no 403). *Restores:* warm
+> same-pins builds were spot-checked and **restore** prebuilt binaries (per-package `Installing
+> N/M …` handled in a few ms, no `Building …`), and the measured **Warm shared cache** times in the
+> "CI build times" table below beat both the cold and local-`files` baselines on every job except
+> **macOS** (which is ~flat, exactly as the Step 0 perf finding predicted).
 
 1. **First CI build after the change** logs
    `vcpkg: binary-sources=clear;x-azcopy,...` (from
@@ -458,9 +465,11 @@ fleet-wide `az` upgrade the options below contemplated is unnecessary.
 
 ## CI build times
 
-Measured vcpkg-install (or full-build) times per triplet across three scenarios, to quantify the
-shared cache's payoff. Fill in each cell (wall-clock; note the unit, e.g. `mm:ss`). Add the
-pipeline run URL / build id in a footnote if useful.
+Measured **whole Build-job** wall-clock times (`hh:mm:ss`, each cell prefixed with the CI machine /
+build id) across three scenarios, to quantify the shared cache's payoff. These are full-job times,
+not just the vcpkg-install portion (see note 2), so the cache's effect is diluted by the rest of
+`bb build` — yet the **Warm shared cache** column is still the fastest on every job except macOS
+(≈flat there, as Step 0 predicted).
 
 - **Cold (populates cache)** — clean build with an empty shared cache: vcpkg **compiles from
   source** and **uploads** (`Completed submission … to 1 binary cache(s)`). Upper bound.
@@ -478,9 +487,9 @@ pipeline run URL / build id in a footnote if useful.
 | Build iOS XCFramework | BuildMacM1Minion71: 00:13:14 | BuildMacM1Minion54: 00:16:05 | BuildMacM1Minion56: 00:13:11 |
 | Build Android Package | imode18a80014Q4: 01:01:52 | imode18a80014QQ: 01:06:58 | imode18a80014R4: 00:52:24 |
 
-> Notes: (1) The `Build iOSARM64` and `Build AndroidARM64` stages are **skipped** in CI; the iOS
+> Notes: (1) The `Build iOSARM64` and `Build AndroidARM64` stages are **skipped** in when manually running a CI pipeline; the iOS
 > and Android binaries are produced by **Build iOS XCFramework** (`arm64-ios` + `x64-ios`) and
-> **Build Android Package** (`arm64-android` + `x64-android`) respectively. `Build itwinjs-core`
+> **Build Android Package** (`arm64-android` + `x64-android`) respectively in this case. `Build itwinjs-core`
 > is the TypeScript build and doesn't use the vcpkg cache. `x64-windows-static-veracode` is the
 > Veracode static-analysis pipeline, not one of these stages. (2) For the fairest comparison,
 > capture the **vcpkg install** portion (from `vcpkg: binary-sources=…` to `All requested
