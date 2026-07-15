@@ -706,6 +706,22 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 };
 
 //=======================================================================================
+// A minimal RAII scope guard that invokes a callback when it goes out of scope, including
+// while the stack is unwinding from a thrown exception. Used to keep persistent tracker and
+// transaction state consistent across operations that may throw partway through.
+//=======================================================================================
+struct SQLiteDbScopeGuard {
+private:
+    std::function<void()> m_onExit;
+public:
+    explicit SQLiteDbScopeGuard(std::function<void()> onExit) : m_onExit(std::move(onExit)) {}
+    ~SQLiteDbScopeGuard() { if (m_onExit) m_onExit(); }
+    void Dismiss() { m_onExit = nullptr; }
+    SQLiteDbScopeGuard(SQLiteDbScopeGuard const&) = delete;
+    SQLiteDbScopeGuard& operator=(SQLiteDbScopeGuard const&) = delete;
+};
+
+//=======================================================================================
 // A ChangeTracker used only to capture DDL/data changes on a generic SQLiteDb, so they
 // can be written out to an iModel-format changeset file for testing purposes.
 //! @bsiclass
@@ -844,6 +860,12 @@ public:
         if (m_changeTracker.IsNull())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "change tracking was not started", IModelJsNativeErrorKey::BadArg);
 
+        // Consistently end tracking whether we succeed or throw below. EnableTracking(false) suspends
+        // the session, so if a write fails and we returned without ending, a caller that fixes the
+        // output path and retries without calling startChangeTracking() again would silently omit all
+        // subsequent changes. Ending on every path makes startChangeTracking() a required precondition.
+        SQLiteDbScopeGuard endTracking([this]() { m_changeTracker->EndTracking(); });
+
         m_changeTracker->EnableTracking(false);
         BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
         const bool hasSchemaChanges = m_changeTracker->HasDdlChanges();
@@ -855,8 +877,6 @@ public:
         stat = writer.FromChangeTrack(*m_changeTracker);
         if (stat != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
-
-        m_changeTracker->EndTracking();
     }
 
     //! Apply a changeset file (in the same on-disk format used for iModel changesets) to this
@@ -878,6 +898,13 @@ public:
         if (stat != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "error reading changeset file", stat);
 
+        // Roll back any partially-applied changes (DDL or DML) on failure. TryExecuteSql may commit
+        // some statements of the concatenated DDL payload before a later one fails, and ApplyChanges
+        // may fail partway through the row-level changes. In either case the caller must not be left
+        // able to saveChanges() and persist a partially-applied changeset.
+        bool applied = false;
+        SQLiteDbScopeGuard rollbackOnError([&]() { if (!applied) db.AbandonChanges(); });
+
         if (containsSchemaChanges && !ddlChanges._IsEmpty()) {
             stat = db.TryExecuteSql(ddlChanges.ToString().c_str());
             if (stat != BE_SQLITE_OK)
@@ -889,10 +916,10 @@ public:
         // all of the row-level changes here, regardless of whether the changeset also contains DDL.
         auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
         stat = changesetReader.ApplyChanges(db, applyArgs);
-        if (stat != BE_SQLITE_OK) {
-            db.AbandonChanges();
+        if (stat != BE_SQLITE_OK)
             BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
-        }
+
+        applied = true;
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
