@@ -4,7 +4,7 @@ This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select
 
 A specific version of vcpkg is cloned from its official git URL during `bb pull`. The version used is controlled by the `Guid` setting for the `vcpkg` entry in [bbconfig.json](../../../imodel-native-internal/bbconfig.json). At build time, the vcpkg part runs the appropriate vcpkg install script located in this source tree.
 
-By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. CI additionally publishes its vcpkg binaries to a **shared** Azure Artifacts cache; developers may optionally point at it read-only (see [Shared binary cache (optional)](#shared-binary-cache-optional) below), but at least on macOS (and possibly all platforms) this is unlikely to be worthwhile.
+By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. CI additionally publishes its vcpkg binaries to a **shared** Azure Blob Storage cache (vcpkg's `x-azcopy` provider); a read-only developer opt-in is **not currently offered** (see [Shared binary cache](#shared-binary-cache) below), and at least on macOS (and possibly all platforms) it would be unlikely to be worthwhile anyway.
 
 > **Note:** On all platforms, use `IMODEL_VCPKG_ROOT` (not `VCPKG_ROOT`) if you need to override the vcpkg location. The build wrappers check `IMODEL_VCPKG_ROOT` first, avoiding conflicts with tooling that may set `VCPKG_ROOT` to an undesired location. Since the build system installs the required version of vcpkg automatically, setting `IMODEL_VCPKG_ROOT` is not recommended.
 
@@ -169,38 +169,15 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
 - All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
 - Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
-- **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the vcpkg tree, so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. CI sets it to the shared Azure Artifacts (`x-az-universal`) feed to publish/restore binaries across agents. Setting it to `clear` disables all caching.
+- **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the vcpkg tree, so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. CI sets it to a shared Azure Blob Storage cache (vcpkg's `x-azcopy` provider) to publish/restore binaries across agents. Setting it to `clear` disables all caching.
 
-## Shared binary cache (optional)
+## Shared binary cache
 
-CI publishes its vcpkg binaries to a **shared** cache backed by Azure Artifacts Universal Packages (vcpkg's `x-az-universal` provider, against the org-scoped `upack` feed). Any agent — or developer — whose vcpkg ABI hash matches an already-published entry can **restore** the prebuilt binaries instead of recompiling from source. The heavy win is OpenSSL (~1,200 translation units × 6 triplets).
+CI publishes its vcpkg binaries to a **shared** cache backed by **Azure Blob Storage** (vcpkg's [`x-azcopy`](https://learn.microsoft.com/en-us/vcpkg/reference/binarycaching#azure-blob-storage-with-azcopy) provider, against the `vcpkg-cache` container in the `imodelnativevcpkg` storage account). Any agent whose vcpkg ABI hash matches an already-published entry can **restore** the prebuilt binaries instead of recompiling from source. The heavy win is OpenSSL (~1,200 translation units × 6 triplets) — which is why the cache exists for **CI**, where every agent starts cold.
 
-> **Most developers should not bother — especially on macOS.** A clean local macOS build is already the fastest of all our platforms, and measured end-to-end it is only *marginally* faster when every vcpkg binary is pulled from the shared cache — and it is *slower* than a normal local build that reuses the on-disk `files` cache. So for day-to-day macOS work, leave `VCPKG_BINARY_SOURCES` **unset** and rely on the local cache. The shared cache may pay off more on **other operating systems** (Windows/Linux), where clean vcpkg builds are comparatively slower, and it is genuinely valuable in **CI**, where every agent starts cold — which is the real reason it exists.
+On CI the cache is read-write: the Build step runs inside an `AzureCLI@2` task so AzCopy authenticates to the blob container via **Entra ID** (`AZCOPY_AUTO_LOGIN_TYPE=AZCLI`), with `VCPKG_BINARY_SOURCES` set to `clear;x-azcopy,https://imodelnativevcpkg.blob.core.windows.net/vcpkg-cache,readwrite`. No SAS token or secret is involved — access is granted by an Azure RBAC data role on the container. AzCopy itself is auto-fetched by vcpkg, so no agent provisioning or `az` upgrade is required.
 
-If you still want read-only restores (e.g. a first-ever build on a fresh Windows/Linux machine), opt in:
-
-1. **Authenticate once** (BentleyBuild already requires the Azure CLI + `azure-devops` extension):
-
-   ```sh
-   az login
-   az extension add --name azure-devops   # if not already installed
-   ```
-
-2. **Set the read-only cache source** in your shell profile:
-
-   ```sh
-   # ~/.zshrc or ~/.bashrc
-   export VCPKG_BINARY_SOURCES="clear;x-az-universal,https://dev.azure.com/bentleycs,,upack,read"
-   ```
-
-   ```powershell
-   # $PROFILE
-   $env:VCPKG_BINARY_SOURCES = "clear;x-az-universal,https://dev.azure.com/bentleycs,,upack,read"
-   ```
-
-   The empty project field (the double comma) is required: the `upack` feed is **organization-scoped**, and supplying a project makes vcpkg pass `--scope project`, which fails with `TF1600011: The feed with ID 'upack' doesn't exist`.
-
-To go back to the default local-only cache, simply unset `VCPKG_BINARY_SOURCES`.
+> **No developer opt-in right now.** A read-only developer path would require each developer (or a developer Entra group) to hold the **Storage Blob Data Reader** role on the container, which is **not currently being provisioned**. It is also low value: measured end-to-end, restoring every vcpkg binary from the shared cache is only *marginally* faster than a clean local build and *slower* than a normal local build that reuses the on-disk `files` cache. So for day-to-day work — especially on macOS, already our fastest clean build — leave `VCPKG_BINARY_SOURCES` **unset** and rely on the local cache. If a group read grant is ever approved, opting in is a one-time `az login` plus, in your shell profile, `export AZCOPY_AUTO_LOGIN_TYPE=AZCLI` and `export VCPKG_BINARY_SOURCES="clear;x-azcopy,https://imodelnativevcpkg.blob.core.windows.net/vcpkg-cache,read"` (unset it to return to the default local-only cache).
 
 ## Version Pinning
 
