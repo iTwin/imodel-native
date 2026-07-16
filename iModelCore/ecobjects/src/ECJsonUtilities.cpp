@@ -205,9 +205,14 @@ BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, BeJsConst json) {
     double y = 0.0;
 
     if (json.isObject()) {
-        if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
-            SUCCESS != PointCoordinateFromJson(y, json, json_y()))
-            return ERROR;
+        bool lowercaseFailed = SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
+            SUCCESS != PointCoordinateFromJson(y, json, json_y());
+        if (lowercaseFailed) {
+            // Try uppercase keys
+            if (SUCCESS != PointCoordinateFromJson(x, json, Json::StaticString("X")) ||
+                SUCCESS != PointCoordinateFromJson(y, json, Json::StaticString("Y")))
+                return ERROR;
+        }
     } else if (json.isArray()) {
         // Must be equal to the length of a valid DPoint2d array.
         if (2 != json.size())
