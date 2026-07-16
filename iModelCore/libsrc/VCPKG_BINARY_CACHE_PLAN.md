@@ -289,6 +289,21 @@ fetched by vcpkg (verify in Step 0) rather than needing the `azure-devops` exten
 > `imodelnativevcpkg`, so the CI write path is satisfied. The **per-developer** read grant is
 > **not being provisioned for now** (needs Owner/UAA, and is low-value per Step 0) — see Step 4.
 
+> **⬜ Follow-up — narrow the writer grant to the container (PR review, least privilege).** The
+> existing CI grant is at **account** scope (`imodelnativevcpkg`), which confers read/write/delete
+> over **every current and future container** in that account, while this integration needs only
+> the single `vcpkg-cache` container. This is achievable (Azure RBAC supports container-scoped data
+> roles — the container-scoped `az role assignment create` is already shown below) and **should**
+> be done: create the **container-scoped** `Storage Blob Data Contributor` assignment for SP
+> `c598ebd4-…`, then **remove** the account-scoped one. It's an **Owner / User Access
+> Administrator** action (plain Contributor can't (re)assign roles), so it's tracked as a follow-up
+> rather than done here. This matters more once the **PR-build cache-writer trust boundary** is
+> tightened: limiting the writer to one container caps the blast radius of a compromised or
+> untrusted PR build to the cache container alone, not the whole account. (Caveat: if a writer's
+> role were **inherited** from a subscription/account assignment it couldn't be narrowed at the
+> child scope — but this SP's grant is a dedicated account-scoped assignment, so it can simply be
+> replaced with a container-scoped one.)
+
 > **Open (new for `x-azcopy`).** The old `upack` **Feed Publisher** grant is irrelevant now.
 > Access to the blob container is via **Azure RBAC data roles**, not feed permissions or a SAS.
 > The identity the agents' `az` session resolves to (Step 0 tells you which) needs the write role.
@@ -306,8 +321,9 @@ fetched by vcpkg (verify in Step 0) rather than needing the `azure-devops` exten
 
 Whichever Entra ID identity AzCopy authenticates as on CI (the agent's `az login` identity — a
 service principal or managed identity) must have **Storage Blob Data Contributor** (read + write)
-scoped to the storage account `imodelnativevcpkg` (or just the `vcpkg-cache` container) for the CI
-`readwrite` path to upload. Developers need only **Storage Blob Data Reader** for the read-only
+scoped to the **`vcpkg-cache` container** (preferred, least privilege — grant it on the whole
+storage account `imodelnativevcpkg` only if a container-scoped assignment isn't feasible) for the
+CI `readwrite` path to upload. Developers need only **Storage Blob Data Reader** for the read-only
 path. Set these in the storage account's **Access Control (IAM) → Role assignments** (ask the
 storage account owner if you can't self-assign).
 
@@ -341,20 +357,30 @@ storage account owner if you can't self-assign).
 > target sub *BentleyConnect Dev*) is backed by SP appId
 > **`c598ebd4-4084-4e64-8463-891b44dbcd8a`**, which **already holds `Storage Blob Data Contributor`**
 > (+ `Reader`) on `imodelnativevcpkg` — verified via `az role assignment list`. So the CI write path
-> needs **no further grant**; the next build's `PUT` should return `Stored … to …`.
+> needs **no further grant**; the next build's `PUT` should return `Stored … to …`. **This grant is
+> at account scope and should be narrowed to the `vcpkg-cache` container** (least privilege — see the
+> follow-up note at the top of this Step): add the container-scoped assignment below, then remove
+> the account-scoped one.
 >
 > The earlier candidate `IModel-NA-EXT-BLD-2` (SP `c0e1d0b2-…`, target *Dev Test Labs*) was the
-> **wrong** connection and had no data role; it is no longer referenced. If a data role ever needs
-> (re)granting, the command is:
+> **wrong** connection and had no data role; it is no longer referenced. The **preferred**
+> (container-scoped, least-privilege) grant command is:
 > ```sh
 > az role assignment create \
 >   --assignee c598ebd4-4084-4e64-8463-891b44dbcd8a \
 >   --role "Storage Blob Data Contributor" \
 >   --scope "/subscriptions/13cac5cb-2ec6-48c6-9a90-5a776f6aed90/resourceGroups/dev-iTwinBuildCache-rg/providers/Microsoft.Storage/storageAccounts/imodelnativevcpkg/blobServices/default/containers/vcpkg-cache"
 > ```
-> (Container-scoped, least privilege; drop the `/blobServices/.../vcpkg-cache` suffix for account
-> scope.) The **per-developer** grant (your own identity, for Step 0) is the same command with your
-> object id.
+> After it's in place, delete the broader account-scoped assignment:
+> ```sh
+> az role assignment delete \
+>   --assignee c598ebd4-4084-4e64-8463-891b44dbcd8a \
+>   --role "Storage Blob Data Contributor" \
+>   --scope "/subscriptions/13cac5cb-2ec6-48c6-9a90-5a776f6aed90/resourceGroups/dev-iTwinBuildCache-rg/providers/Microsoft.Storage/storageAccounts/imodelnativevcpkg"
+> ```
+> (Drop the `/blobServices/.../vcpkg-cache` suffix only if a container-scoped assignment isn't
+> feasible.) The **per-developer** grant (your own identity, for Step 0) is the same `create`
+> command with your object id — likewise scope it to the container.
 
 **Blob lifecycle-management rule** (see "Retention" below) is **done (2026-07-15)**: blobs not
 accessed in 30 days are auto-deleted, so the cache is self-pruning.
