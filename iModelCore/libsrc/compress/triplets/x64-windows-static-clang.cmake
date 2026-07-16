@@ -8,6 +8,12 @@ set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../windows-clang-cl.toolchain.cmake")
 
+# Setting VCPKG_CHAINLOAD_TOOLCHAIN_FILE disables vcpkg's automatic Visual Studio (vcvars)
+# environment setup; re-enable it so clang-cl still gets the MSVC SDK headers and CRT import
+# libraries (INCLUDE/LIB). Without it, vcpkg's compiler detection fails ("unable to detect the
+# active compiler's information").
+set(VCPKG_LOAD_VCVARS_ENV ON)
+
 # Match our previous build: minizip without crypt/uncrypt support
 set(VCPKG_C_FLAGS "${VCPKG_C_FLAGS} /DNOCRYPT /DNOUNCRYPT")
 set(VCPKG_CXX_FLAGS "${VCPKG_CXX_FLAGS} /DNOCRYPT /DNOUNCRYPT")

@@ -20,8 +20,9 @@
 # and link flags, and it already special-cases clang-cl (e.g. it omits /MP). It must run, or
 # vcpkg's compiler detection fails ("unable to detect the active compiler's information").
 # Therefore we select clang-cl and then *include* windows.cmake rather than replacing it.
-# vcpkg still activates the MSVC developer environment (INCLUDE/LIB) for the build, which
-# clang-cl (MSVC-ABI) consumes.
+# NOTE: setting VCPKG_CHAINLOAD_TOOLCHAIN_FILE also disables vcpkg's automatic vcvars setup, so
+# each *-clang triplet sets VCPKG_LOAD_VCVARS_ENV ON to restore the MSVC developer environment
+# (INCLUDE/LIB) that clang-cl (MSVC-ABI) needs to find the Windows SDK and CRT.
 #---------------------------------------------------------------------------------------------
 if(NOT DEFINED ENV{LLVM_DIR})
     message(FATAL_ERROR "windows-clang-cl.toolchain.cmake: LLVM_DIR is not set; cannot locate clang-cl.")
