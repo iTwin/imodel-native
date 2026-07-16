@@ -49,6 +49,7 @@
 #include "curl_addrinfo.h"
 #include "fake_addrinfo.h"
 #include "curlx/inet_pton.h"
+#include "curlx/strparse.h"
 
 /*
  * Curl_freeaddrinfo()
@@ -59,7 +60,7 @@
  * any function call which actually allocates a Curl_addrinfo struct.
  */
 
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 910) && \
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 910) &&     \
   defined(__OPTIMIZE__) && defined(__unix__) && defined(__i386__)
   /* workaround icc 9.1 optimizer issue */
 #  define vqualifier volatile
@@ -113,7 +114,7 @@ int Curl_getaddrinfo_ex(const char *nodename,
 
   /* traverse the addrinfo list */
 
-  for(ai = aihead; ai != NULL; ai = ai->ai_next) {
+  for(ai = aihead; ai; ai = ai->ai_next) {
     size_t namelen = ai->ai_canonname ? strlen(ai->ai_canonname) + 1 : 0;
     /* ignore elements with unsupported address family,
        settle family-specific sockaddr structure size. */
@@ -256,7 +257,7 @@ struct Curl_addrinfo *Curl_he2ai(const struct hostent *he, int port)
     /* no input == no output! */
     return NULL;
 
-  DEBUGASSERT((he->h_name != NULL) && (he->h_addr_list != NULL));
+  DEBUGASSERT(he->h_name && he->h_addr_list);
 
   for(i = 0; (curr = he->h_addr_list[i]) != NULL; i++) {
     size_t ss_size;
@@ -404,7 +405,7 @@ static CURLcode ip2addr(struct Curl_addrinfo **addrp, int af,
  * Given an IPv4 or IPv6 dotted string address, this converts it to a proper
  * allocated Curl_addrinfo struct and returns it.
  */
-CURLcode Curl_str2addr(const char *dotted, int port,
+CURLcode Curl_str2addr(const char *dotted, uint16_t port,
                        struct Curl_addrinfo **addrp)
 {
   struct in_addr in;
@@ -422,10 +423,15 @@ CURLcode Curl_str2addr(const char *dotted, int port,
   return CURLE_BAD_FUNCTION_ARGUMENT; /* bad input format */
 }
 
-bool Curl_is_ipaddr(const char *address)
+bool Curl_is_ipv4addr(const char *address)
 {
   struct in_addr in;
-  if(curlx_inet_pton(AF_INET, address, &in) > 0)
+  return (curlx_inet_pton(AF_INET, address, &in) > 0);
+}
+
+bool Curl_is_ipaddr(const char *address)
+{
+  if(Curl_is_ipv4addr(address))
     return TRUE;
 #ifdef USE_IPV6
   {
@@ -438,37 +444,76 @@ bool Curl_is_ipaddr(const char *address)
   return FALSE;
 }
 
+bool Curl_looks_like_ipv6(const char *s, size_t len, bool maybe_url_encoded,
+                          struct Curl_str *host, struct Curl_str *zone)
+{
+  const char *zonep = NULL;
+  size_t i = 0, hlen = 0, zlen = 0;
+
+  if(host)
+    memset(host, 0, sizeof(*host));
+  if(zone)
+    memset(zone, 0, sizeof(*zone));
+
+  for(i = 0; i < len; ++i, ++hlen) {
+    if(!s[i] || !(ISXDIGIT(s[i]) || (s[i] == ':') || (s[i] == '.')))
+      break;
+  }
+
+  if((i < len) && (s[i] == '%')) { /* address followed by a zone? */
+    i += 1;
+    if(maybe_url_encoded && !strncmp("25", s + i, 2))
+      i += 2;
+    zonep = s + i;
+    for(; i < len; ++i, ++zlen) {
+      /* Allow unreserved characters as defined in RFC 3986 */
+      if(!s[i] || !(ISALPHA(s[i]) || ISXDIGIT(s[i]) || (s[i] == '-') ||
+                    (s[i] == '.') || (s[i] == '_') || (s[i] == '~')))
+        break;
+    }
+  }
+
+  if(i != len)
+    return FALSE; /* invalid chars in zone */
+  if(host && hlen) {
+    host->str = s;
+    host->len = hlen;
+  }
+  if(zone && zlen) {
+    zone->str = zonep;
+    zone->len = zlen;
+  }
+  return TRUE;
+}
+
 #ifdef USE_UNIX_SOCKETS
 /**
  * Given a path to a Unix domain socket, return a newly allocated Curl_addrinfo
  * struct initialized with this path.
- * Set '*longpath' to TRUE if the error is a too long path.
+ * Returns CURLE_TOO_LARGE when path is too long.
  */
-struct Curl_addrinfo *Curl_unix2addr(const char *path, bool *longpath,
-                                     bool abstract)
+CURLcode Curl_unix2addr(const char *path, bool abstract,
+                        struct Curl_addrinfo **paddr)
 {
   struct Curl_addrinfo *ai;
   struct sockaddr_un *sa_un;
   size_t path_len;
 
-  *longpath = FALSE;
+  *paddr = NULL;
+
+  /* sun_path must be able to store the null-terminated path */
+  path_len = strlen(path) + 1;
+  if(path_len > sizeof(sa_un->sun_path))
+    return CURLE_TOO_LARGE;
 
   ai = curlx_calloc(1,
                     sizeof(struct Curl_addrinfo) + sizeof(struct sockaddr_un));
   if(!ai)
-    return NULL;
-  ai->ai_addr = (void *)((char *)ai + sizeof(struct Curl_addrinfo));
+    return CURLE_OUT_OF_MEMORY;
 
+  ai->ai_addr = (void *)((char *)ai + sizeof(struct Curl_addrinfo));
   sa_un = (void *)ai->ai_addr;
   sa_un->sun_family = AF_UNIX;
-
-  /* sun_path must be able to store the null-terminated path */
-  path_len = strlen(path) + 1;
-  if(path_len > sizeof(sa_un->sun_path)) {
-    curlx_free(ai);
-    *longpath = TRUE;
-    return NULL;
-  }
 
   ai->ai_family = AF_UNIX;
   ai->ai_socktype = SOCK_STREAM; /* assume reliable transport for HTTP */
@@ -481,7 +526,8 @@ struct Curl_addrinfo *Curl_unix2addr(const char *path, bool *longpath,
   else
     memcpy(sa_un->sun_path, path, path_len); /* copy NUL byte */
 
-  return ai;
+  *paddr = ai;
+  return CURLE_OK;
 }
 #endif
 
@@ -557,7 +603,7 @@ int curl_dbg_getaddrinfo(const char *hostname,
 
 #if defined(HAVE_GETADDRINFO) && defined(USE_RESOLVE_ON_IPS)
 /*
- * Work-arounds the sin6_port is always zero bug on iOS 9.3.2 and macOS
+ * Works around the sin6_port is always zero bug on iOS 9.3.2 and macOS
  * 10.11.5.
  */
 void Curl_addrinfo_set_port(struct Curl_addrinfo *addrinfo, int port)
@@ -567,7 +613,7 @@ void Curl_addrinfo_set_port(struct Curl_addrinfo *addrinfo, int port)
 #ifdef USE_IPV6
   struct sockaddr_in6 *addr6;
 #endif
-  for(ca = addrinfo; ca != NULL; ca = ca->ai_next) {
+  for(ca = addrinfo; ca; ca = ca->ai_next) {
     switch(ca->ai_family) {
     case AF_INET:
       addr = (void *)ca->ai_addr; /* storage area for this info */

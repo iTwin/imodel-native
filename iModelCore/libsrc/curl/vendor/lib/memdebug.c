@@ -65,14 +65,14 @@ static struct backtrace_state *btstate;
 static char membuf[10000];
 static size_t memwidx = 0; /* write index */
 
-#if defined(USE_THREADS_POSIX) || defined(USE_THREADS_WIN32)
+#ifdef USE_MUTEX
 static bool dbg_mutex_init = 0;
 static curl_mutex_t dbg_mutex;
 #endif
 
 static bool curl_dbg_lock(void)
 {
-#if defined(USE_THREADS_POSIX) || defined(USE_THREADS_WIN32)
+#ifdef USE_MUTEX
   if(dbg_mutex_init) {
     Curl_mutex_acquire(&dbg_mutex);
     return TRUE;
@@ -83,7 +83,7 @@ static bool curl_dbg_lock(void)
 
 static void curl_dbg_unlock(bool was_locked)
 {
-#if defined(USE_THREADS_POSIX) || defined(USE_THREADS_WIN32)
+#ifdef USE_MUTEX
   if(was_locked)
     Curl_mutex_release(&dbg_mutex);
 #else
@@ -99,6 +99,7 @@ static void curl_dbg_log_locked(const char *format, ...) CURL_PRINTF(1, 2);
    _exit() comes after the atexit handlers are called. curl/curl#6620 */
 static void curl_dbg_cleanup(void)
 {
+  bool locked = curl_dbg_lock();
   if(curl_dbg_logfile &&
      curl_dbg_logfile != stderr &&
      curl_dbg_logfile != stdout) {
@@ -108,7 +109,8 @@ static void curl_dbg_cleanup(void)
     fclose(curl_dbg_logfile);
   }
   curl_dbg_logfile = NULL;
-#if defined(USE_THREADS_POSIX) || defined(USE_THREADS_WIN32)
+  curl_dbg_unlock(locked);
+#ifdef USE_MUTEX
   if(dbg_mutex_init) {
     Curl_mutex_destroy(&dbg_mutex);
     dbg_mutex_init = FALSE;
@@ -157,7 +159,7 @@ void curl_dbg_memdebug(const char *logname)
       setbuf(curl_dbg_logfile, (char *)NULL);
 #endif
   }
-#if defined(USE_THREADS_POSIX) || defined(USE_THREADS_WIN32)
+#ifdef USE_MUTEX
   if(!dbg_mutex_init) {
     dbg_mutex_init = TRUE;
     Curl_mutex_init(&dbg_mutex);
@@ -267,7 +269,7 @@ char *curl_dbg_strdup(const char *str, int line, const char *source)
   char *mem;
   size_t len;
 
-  DEBUGASSERT(str != NULL);
+  DEBUGASSERT(str);
 
   if(countcheck("strdup", line, source))
     return NULL;
@@ -292,7 +294,7 @@ wchar_t *curl_dbg_wcsdup(const wchar_t *str, int line, const char *source)
   wchar_t *mem;
   size_t wsiz, bsiz;
 
-  DEBUGASSERT(str != NULL);
+  DEBUGASSERT(str);
 
   if(countcheck("wcsdup", line, source))
     return NULL;
@@ -508,7 +510,7 @@ int curl_dbg_fclose(FILE *file, int line, const char *source)
 {
   int res;
 
-  DEBUGASSERT(file != NULL);
+  DEBUGASSERT(file);
 
   if(source)
     curl_dbg_log("FILE %s:%d fclose(%p)\n", source, line, (void *)file);
