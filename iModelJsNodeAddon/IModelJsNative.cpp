@@ -898,13 +898,6 @@ public:
         if (stat != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "error reading changeset file", stat);
 
-        // Roll back any partially-applied changes (DDL or DML) on failure. TryExecuteSql may commit
-        // some statements of the concatenated DDL payload before a later one fails, and ApplyChanges
-        // may fail partway through the row-level changes. In either case the caller must not be left
-        // able to saveChanges() and persist a partially-applied changeset.
-        bool applied = false;
-        SQLiteDbScopeGuard rollbackOnError([&]() { if (!applied) db.AbandonChanges(); });
-
         if (containsSchemaChanges && !ddlChanges._IsEmpty()) {
             stat = db.TryExecuteSql(ddlChanges.ToString().c_str());
             if (stat != BE_SQLITE_OK)
@@ -914,12 +907,12 @@ public:
         // NOTE: unlike DgnDb, a generic SQLiteDb has no ECDb schema import step, so DDL (applied above)
         // and the row-level (DML) changes captured in the changeset are entirely separate - apply
         // all of the row-level changes here, regardless of whether the changeset also contains DDL.
+        // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
+        // any changes applied so far.
         auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
         stat = changesetReader.ApplyChanges(db, applyArgs);
         if (stat != BE_SQLITE_OK)
             BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
-
-        applied = true;
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
