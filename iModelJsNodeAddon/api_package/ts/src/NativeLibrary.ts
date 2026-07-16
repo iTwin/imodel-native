@@ -14,17 +14,17 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ChangesetIndexAndId, CodeProps, CodeSpecProperties, PerStatementHealthStats as CorePerStatementHealthStats, TxnProps as CoreTxnProps, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
   ElementGeometryBuilderParamsForPart,
   ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
-  IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
+  IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelExtentsProps, ModelLoadProps,
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, RscFontEncodingProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
 import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -402,13 +402,9 @@ export declare namespace IModelJsNative {
     pathname: string;
   }
 
-  interface PerStatementHealthStats {
-    sqlStatement: string;
-    dbOperation: string;
-    rowCount: number;
-    elapsedMs: number;
-    fullTableScans: number;
-  }
+  /** @see `PerStatementHealthStats` from `@itwin/core-common` */
+  type PerStatementHealthStats = CorePerStatementHealthStats;
+
   interface ChangesetHealthStats {
     changesetId: string;
     uncompressedSizeBytes: number;
@@ -418,7 +414,7 @@ export declare namespace IModelJsNative {
     deletedRows: number;
     totalElapsedMs: number;
     totalFullTableScans: number;
-    perStatementStats: [PerStatementHealthStats];
+    perStatementStats: PerStatementHealthStats[];
   }
   interface ECSqlRowAdaptorOptions {
     abbreviateBlobs?: boolean;
@@ -444,12 +440,8 @@ export declare namespace IModelJsNative {
     fileExt: string;
   }
 
-  interface FontEncodingProps {
-    codePage?: number;
-    degree?: number;
-    plusMinus?: number;
-    diameter?: number;
-  }
+  /** @see `RscFontEncodingProps` from `@itwin/core-common` */
+  type FontEncodingProps = RscFontEncodingProps;
 
   interface ResolveInstanceKeyArgs {
     partialKey?: { id: Id64String, baseClassName: string };
@@ -560,18 +552,8 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
-  export interface TxnProps {
-    id: TxnIdString;
-    sessionId: number;
-    nextId?: TxnIdString;
-    prevId?: TxnIdString;
-    props: { description?: string; source?: string, appData: { [key: string]: any } };
-    type: "Data" | "ECSchema" | "Ddl";
-    reversed: boolean;
-    grouped: boolean;
-    timestamp: string; // ISO 8601 format
-  }
-
+  /** @see `TxnProps` from `@itwin/core-common` */
+  export type TxnProps = CoreTxnProps;
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
@@ -592,12 +574,8 @@ export declare namespace IModelJsNative {
 
 
 
-  // ###TODO import from core-common
-  interface ModelExtentsResponseProps {
-    id: Id64String;
-    extents: Range3dProps;
-    status: IModelStatus;
-  }
+  /** @see `ModelExtentsProps` from `@itwin/core-common` */
+  type ModelExtentsResponseProps = ModelExtentsProps;
 
   interface TextLayoutRangesProps {
     layout: Range2dProps;
@@ -874,7 +852,7 @@ export declare namespace IModelJsNative {
     public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
   }
 
-  class ECDb implements IDisposable, IConcurrentQueryManager {
+  class ECDb implements IConcurrentQueryManager {
     constructor();
     public abandonChanges(): DbResult;
     public closeDb(): void;
@@ -911,7 +889,7 @@ export declare namespace IModelJsNative {
     public clearECDbCache(): void;
   }
 
-  class ChangedElementsECDb implements IDisposable {
+  class ChangedElementsECDb {
     constructor();
     public dispose(): void;
     public createDb(db: DgnDb, dbName: string): DbResult;
@@ -925,7 +903,7 @@ export declare namespace IModelJsNative {
     public cleanCaches(): void;
   }
 
-  class ECSqlStatement implements IDisposable {
+  class ECSqlStatement {
     constructor();
     public clearBindings(): DbResult;
     public dispose(): void;
@@ -1052,7 +1030,7 @@ export declare namespace IModelJsNative {
   /** Parameters for creating a new SQLiteDb */
   type SQLiteDbCreateParams = SQLiteDbOpenOrCreateParams & PageSize;
 
-  class SQLiteDb implements SQLiteOps, IDisposable {
+  class SQLiteDb implements SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
     public abandonChanges(): void;
@@ -1083,7 +1061,7 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
   }
 
-  class SqliteStatement implements IDisposable {
+  class SqliteStatement {
     constructor();
     public bindBlob(param: number | string, val: Uint8Array | ArrayBuffer | SharedArrayBuffer): DbResult;
     public bindDouble(param: number | string, val: number): DbResult;
@@ -1466,7 +1444,7 @@ export declare namespace IModelJsNative {
     useMmap?: boolean | number;
   }
 
-  class ECPresentationManager implements IDisposable {
+  class ECPresentationManager {
     constructor(props: ECPresentationManagerProps);
     public forceLoadSchemas(db: DgnDb): Promise<ECPresentationManagerResponse<void>>;
     public setupRulesetDirectories(directories: string[]): ECPresentationManagerResponse<void>;
@@ -1596,12 +1574,12 @@ export declare namespace IModelJsNative {
     public disableStrictMode(): void;
   }
 
-  class DisableNativeAssertions implements IDisposable {
+  class DisableNativeAssertions {
     constructor();
     public dispose(): void;
   }
 
-  class ImportContext implements IDisposable {
+  class ImportContext {
     constructor(sourceDb: DgnDb, targetDb: DgnDb);
     public dispose(): void;
     public dump(outputFileName: string): BentleyStatus;
