@@ -781,6 +781,49 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
     return SchemaStatus::Success;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchemas, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri, SchemaImportReservation const& reservation) {
+    if (importSchemas.empty())
+        return SchemaStatus::Success;
+
+    // always disallow major schema upgrades for domain schema imports. Major schema upgrades are only allowed across software generations
+    importOptions = importOptions | SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas;
+
+    DgnDbR dgndb = GetDgnDb();
+    if (dgndb.IsReadonly()) {
+        BeAssert(false && "Cannot import schemas into a Readonly Db");
+        return SchemaStatus::DbIsReadonly;
+    }
+
+    if (!m_allowSchemaImport) {
+        BeAssert(false && "ImportSchemas is prohibited");
+        return SchemaStatus::SchemaImportFailed;
+    }
+
+    if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG)) {
+        LOG.debug("Schemas to be imported (reserved ids):");
+        for (ECSchemaCP schema : importSchemas)
+            LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
+    }
+
+    auto const rc = dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken(), uri, reservation);
+    if (!rc.IsOk()) {
+        DbResult result = dgndb.AbandonChanges();
+        UNUSED_VARIABLE(result);
+        BeAssert(result == BE_SQLITE_OK);
+        if (rc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
+            return SchemaStatus::DataTransformRequired;
+        return SchemaStatus::SchemaImportFailed;
+    }
+
+    if (dgndb.DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
+        return SchemaStatus::SchemaImportFailed;
+
+    return SchemaStatus::Success;
+}
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -541,11 +541,105 @@ export declare namespace IModelJsNative {
     readonly customAttributes?: Array<{ [value: string]: any }>;
   }
 
+  /** Per-table count of IdFactory::NextId() calls during a dry-run schema import. */
+  interface SchemaImportIdTally {
+    readonly classCount: number;
+    readonly classHasBaseClassesCount: number;
+    readonly columnCount: number;
+    readonly customAttributeCount: number;
+    readonly enumerationCount: number;
+    readonly formatCount: number;
+    readonly formatCompositeUnitCount: number;
+    readonly indexCount: number;
+    readonly indexColumnCount: number;
+    readonly kindOfQuantityCount: number;
+    readonly phenomenonCount: number;
+    readonly propertyCount: number;
+    readonly propertyCategoryCount: number;
+    readonly propertyMapCount: number;
+    readonly propertyPathCount: number;
+    readonly relationshipConstraintCount: number;
+    readonly relationshipConstraintClassCount: number;
+    readonly schemaCount: number;
+    readonly schemaReferenceCount: number;
+    readonly tableCount: number;
+    readonly unitCount: number;
+    readonly unitSystemCount: number;
+  }
+
+  /** Snapshot of each IdSequence seed value after IdFactory::Reset(), used as a base-state fingerprint. */
+  interface SchemaImportBaseFingerprint {
+    readonly classBase: number;
+    readonly classHasBaseClassesBase: number;
+    readonly columnBase: number;
+    readonly customAttributeBase: number;
+    readonly enumerationBase: number;
+    readonly formatBase: number;
+    readonly formatCompositeUnitBase: number;
+    readonly indexBase: number;
+    readonly indexColumnBase: number;
+    readonly kindOfQuantityBase: number;
+    readonly phenomenonBase: number;
+    readonly propertyBase: number;
+    readonly propertyCategoryBase: number;
+    readonly propertyMapBase: number;
+    readonly propertyPathBase: number;
+    readonly relationshipConstraintBase: number;
+    readonly relationshipConstraintClassBase: number;
+    readonly schemaBase: number;
+    readonly schemaReferenceBase: number;
+    readonly tableBase: number;
+    readonly unitBase: number;
+    readonly unitSystemBase: number;
+  }
+
+  /** Result of computeSchemaImportReservation: per-table tallies and the base fingerprint. */
+  interface SchemaImportReservationResult {
+    readonly succeeded: boolean;
+    readonly tally: SchemaImportIdTally;
+    readonly baseFingerprint: SchemaImportBaseFingerprint;
+  }
+
+  /** Reserved id range for a single IdSequence during a SchemaSync-reserved import. */
+  interface IdSequenceReservation {
+    readonly startId: number;
+    readonly count: number;
+  }
+
+  /** Full set of reserved id ranges for all IdSequences in a SchemaSync-reserved import. */
+  interface SchemaImportReservation {
+    readonly forceReservedIds?: boolean;
+    readonly classRange?: IdSequenceReservation;
+    readonly classHasBaseClassesRange?: IdSequenceReservation;
+    readonly columnRange?: IdSequenceReservation;
+    readonly customAttributeRange?: IdSequenceReservation;
+    readonly enumerationRange?: IdSequenceReservation;
+    readonly formatRange?: IdSequenceReservation;
+    readonly formatCompositeUnitRange?: IdSequenceReservation;
+    readonly indexRange?: IdSequenceReservation;
+    readonly indexColumnRange?: IdSequenceReservation;
+    readonly kindOfQuantityRange?: IdSequenceReservation;
+    readonly phenomenonRange?: IdSequenceReservation;
+    readonly propertyRange?: IdSequenceReservation;
+    readonly propertyCategoryRange?: IdSequenceReservation;
+    readonly propertyMapRange?: IdSequenceReservation;
+    readonly propertyPathRange?: IdSequenceReservation;
+    readonly relationshipConstraintRange?: IdSequenceReservation;
+    readonly relationshipConstraintClassRange?: IdSequenceReservation;
+    readonly schemaRange?: IdSequenceReservation;
+    readonly schemaReferenceRange?: IdSequenceReservation;
+    readonly tableRange?: IdSequenceReservation;
+    readonly unitRange?: IdSequenceReservation;
+    readonly unitSystemRange?: IdSequenceReservation;
+  }
+
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
     readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+    /** If provided, reserved SchemaSync ids are used instead of local MAX(Id)+1. */
+    readonly schemaImportReservation?: SchemaImportReservation;
   }
 
   interface SchemaLocalDbInfo {
@@ -732,6 +826,8 @@ export declare namespace IModelJsNative {
     public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
+    /** Dry-run schema import: returns per-table id tallies and base fingerprint without modifying the database. */
+    public computeSchemaImportReservation(schemaFileNames: string[], sourceType?: "file" | "xml"): SchemaImportReservationResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;

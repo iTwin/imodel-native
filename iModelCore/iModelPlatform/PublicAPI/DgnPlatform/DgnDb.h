@@ -380,6 +380,17 @@ public:
     //! compatible version number.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false, SyncDbUri uri = SyncDbUri());
+    //! Import schemas using pre-reserved SchemaSync metadata ids.
+    //! @param[in] schemas  List of ECSchemas to import.
+    //! @param[in] schemaLockHeld  Whether the schema write lock is held.
+    //! @param[in] uri  SchemaSync sync-db URI.
+    //! @param[in] reservation  Reserved id ranges; all 22 IdSequences must have non-empty ranges.
+    //! @return SchemaStatus
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld, SyncDbUri uri, BeSQLite::EC::SchemaImportReservation const& reservation);
+    //! Compute the id demand (tally) of importing the given schemas, without actually modifying the database.
+    //! @param[in] schemas  List of ECSchemas to dry-run-import.
+    //! @return SchemaImportReservationResult with per-table tallies and the base fingerprint.
+    DGNPLATFORM_EXPORT BeSQLite::EC::SchemaImportReservationResult ComputeSchemaImportReservation(bvector<ECN::ECSchemaCP> const& schemas) const;
     DGNPLATFORM_EXPORT PullResult PullSchemaChanges(SyncDbUri uri);
 
     //! Drop a unreferenced schema with no instances

@@ -223,6 +223,8 @@ public:
     SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
     SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
+    SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri, SchemaImportReservation const& reservation) const;
+    SchemaImportReservationResult ComputeSchemaImportReservation(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;

@@ -595,9 +595,13 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
     //release stmt so that it can be reused to insert base classes
     stmt = nullptr;
 
-    //Import All baseCases
+    //Import All baseCases — sort by full class name for deterministic id assignment
     int baseClassIndex = 0;
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+    bvector<ECClassCP> sortedBaseClasses(ecClass.GetBaseClasses().begin(), ecClass.GetBaseClasses().end());
+    std::sort(sortedBaseClasses.begin(), sortedBaseClasses.end(), [](ECClassCP a, ECClassCP b) {
+        return strcmp(a->GetFullName(), b->GetFullName()) < 0;
+    });
+    for (ECClassCP baseClass : sortedBaseClasses)
         {
         if (SUCCESS != ImportClass(ctx, *baseClass))
             return ERROR;
@@ -606,7 +610,14 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
             return ERROR;
         }
 
-    for (ECPropertyCP ecProperty : ecClass.GetProperties(false))
+    // Sort properties by name for deterministic id and ordinal assignment
+    bvector<ECPropertyCP> sortedProperties;
+    for (ECPropertyCP p : ecClass.GetProperties(false))
+        sortedProperties.push_back(p);
+    std::sort(sortedProperties.begin(), sortedProperties.end(), [](ECPropertyCP a, ECPropertyCP b) {
+        return a->GetName() < b->GetName();
+    });
+    for (ECPropertyCP ecProperty : sortedProperties)
         {
         const int propertyIndex = ctx.GetNextPropertyOrdinal(classId);
         if (SUCCESS != ImportProperty(ctx, *ecProperty, propertyIndex))
@@ -1348,7 +1359,12 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(Context& ctx, ECClassId
     if (stmt == nullptr)
         return ERROR;
 
-    for (ECClassCP constraintClass : relationshipConstraint.GetConstraintClasses())
+    // Sort constraint classes by full name for deterministic id assignment
+    bvector<ECClassCP> sortedConstraintClasses(relationshipConstraint.GetConstraintClasses().begin(), relationshipConstraint.GetConstraintClasses().end());
+    std::sort(sortedConstraintClasses.begin(), sortedConstraintClasses.end(), [](ECClassCP a, ECClassCP b) {
+        return strcmp(a->GetFullName(), b->GetFullName()) < 0;
+    });
+    for (ECClassCP constraintClass : sortedConstraintClasses)
         {
         if (SUCCESS != ImportClass(ctx, *constraintClass))
             return ERROR;
@@ -1674,8 +1690,16 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::ImportCustomAttributes(Context& ctx, IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
     {
-    int ordinal = 0;
+    // Collect and sort by CA class full name for deterministic id and ordinal assignment
+    bvector<IECInstancePtr> sortedCAs;
     for (IECInstancePtr ca : sourceContainer.GetCustomAttributes(false))
+        sortedCAs.push_back(ca);
+    std::sort(sortedCAs.begin(), sortedCAs.end(), [](IECInstancePtr const& a, IECInstancePtr const& b) {
+        return strcmp(a->GetClass().GetFullName(), b->GetClass().GetFullName()) < 0;
+    });
+
+    int ordinal = 0;
+    for (IECInstancePtr const& ca : sortedCAs)
         {
         //import CA classes first
         ECClassCR caClass = ca->GetClass();

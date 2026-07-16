@@ -174,6 +174,118 @@ struct SchemaImportResult final
     };
 
 //=======================================================================================
+//! Per-table count of IdFactory::NextId() calls during a dry-run schema import.
+//! Returned by SchemaManager::ComputeSchemaImportReservation.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaImportIdTally {
+    uint64_t classCount = 0;
+    uint64_t classHasBaseClassesCount = 0;
+    uint64_t columnCount = 0;
+    uint64_t customAttributeCount = 0;
+    uint64_t enumerationCount = 0;
+    uint64_t formatCount = 0;
+    uint64_t formatCompositeUnitCount = 0;
+    uint64_t indexCount = 0;
+    uint64_t indexColumnCount = 0;
+    uint64_t kindOfQuantityCount = 0;
+    uint64_t phenomenonCount = 0;
+    uint64_t propertyCount = 0;
+    uint64_t propertyCategoryCount = 0;
+    uint64_t propertyMapCount = 0;
+    uint64_t propertyPathCount = 0;
+    uint64_t relationshipConstraintCount = 0;
+    uint64_t relationshipConstraintClassCount = 0;
+    uint64_t schemaCount = 0;
+    uint64_t schemaReferenceCount = 0;
+    uint64_t tableCount = 0;
+    uint64_t unitCount = 0;
+    uint64_t unitSystemCount = 0;
+};
+
+//=======================================================================================
+//! Snapshot of each IdSequence's seed value just after IdFactory::Reset() during a dry run.
+//! Used as a base-state fingerprint so callers can later verify the import runs on the same base.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaImportBaseFingerprint {
+    uint64_t classBase = 0;
+    uint64_t classHasBaseClassesBase = 0;
+    uint64_t columnBase = 0;
+    uint64_t customAttributeBase = 0;
+    uint64_t enumerationBase = 0;
+    uint64_t formatBase = 0;
+    uint64_t formatCompositeUnitBase = 0;
+    uint64_t indexBase = 0;
+    uint64_t indexColumnBase = 0;
+    uint64_t kindOfQuantityBase = 0;
+    uint64_t phenomenonBase = 0;
+    uint64_t propertyBase = 0;
+    uint64_t propertyCategoryBase = 0;
+    uint64_t propertyMapBase = 0;
+    uint64_t propertyPathBase = 0;
+    uint64_t relationshipConstraintBase = 0;
+    uint64_t relationshipConstraintClassBase = 0;
+    uint64_t schemaBase = 0;
+    uint64_t schemaReferenceBase = 0;
+    uint64_t tableBase = 0;
+    uint64_t unitBase = 0;
+    uint64_t unitSystemBase = 0;
+};
+
+//=======================================================================================
+//! Result of SchemaManager::ComputeSchemaImportReservation.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaImportReservationResult {
+    bool succeeded = false;
+    SchemaImportIdTally tally;
+    SchemaImportBaseFingerprint baseFingerprint;
+};
+
+//=======================================================================================
+//! Reserved id range for a single IdSequence during a SchemaSync-reserved import.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct IdSequenceReservation {
+    uint64_t startId = 0;  //!< Absolute start id for this sequence (directly above MAX(Id) in the sync db at reserve time)
+    uint64_t count = 0;    //!< number of reserved ids in this range
+    bool IsSet() const { return count > 0; }
+};
+
+//=======================================================================================
+//! Full set of reserved id ranges for all IdSequences in a SchemaSync-reserved import.
+//! Passed to SchemaManager::ImportSchemas to use pre-allocated ids instead of local MAX(Id)+1.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaImportReservation {
+    //! If true, all 22 sequences must have a non-empty range; no fallback to local MAX(Id) is allowed.
+    bool forceReservedIds = false;
+    IdSequenceReservation classRange;
+    IdSequenceReservation classHasBaseClassesRange;
+    IdSequenceReservation columnRange;
+    IdSequenceReservation customAttributeRange;
+    IdSequenceReservation enumerationRange;
+    IdSequenceReservation formatRange;
+    IdSequenceReservation formatCompositeUnitRange;
+    IdSequenceReservation indexRange;
+    IdSequenceReservation indexColumnRange;
+    IdSequenceReservation kindOfQuantityRange;
+    IdSequenceReservation phenomenonRange;
+    IdSequenceReservation propertyRange;
+    IdSequenceReservation propertyCategoryRange;
+    IdSequenceReservation propertyMapRange;
+    IdSequenceReservation propertyPathRange;
+    IdSequenceReservation relationshipConstraintRange;
+    IdSequenceReservation relationshipConstraintClassRange;
+    IdSequenceReservation schemaRange;
+    IdSequenceReservation schemaReferenceRange;
+    IdSequenceReservation tableRange;
+    IdSequenceReservation unitRange;
+    IdSequenceReservation unitSystemRange;
+};
+
+//=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
 //! @ingroup ECDbGroup
 // @bsiclass
@@ -514,6 +626,31 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             SchemaImportOptions options,
             SchemaImportToken const* token = nullptr,
             SchemaSync::SyncDbUri syncDbUri = SchemaSync::SyncDbUri()) const;
+
+        //! Imports schemas using pre-reserved SchemaSync metadata ids.
+        //! @param[in] schemas  List of ECSchemas to import.
+        //! @param[in] options  Schema import options.
+        //! @param[in] token    Schema import token (may be nullptr).
+        //! @param[in] syncDbUri  SchemaSync URI.
+        //! @param[in] reservation  Reserved id ranges for all IdSequences. Must not be nullptr when called.
+        //! @return SchemaImportResult
+        ECDB_EXPORT SchemaImportResult ImportSchemas(
+            bvector<ECN::ECSchemaCP> const& schemas,
+            SchemaImportOptions options,
+            SchemaImportToken const* token,
+            SchemaSync::SyncDbUri syncDbUri,
+            SchemaImportReservation const& reservation) const;
+
+        //! Computes how many ids each ec_* table would need if the given schemas were imported,
+        //! without actually modifying the database. Uses a rolled-back savepoint internally.
+        //! @param[in] schemas  List of ECSchemas to dry-run-import.
+        //! @param[in] options  Import options (typically None).
+        //! @param[in] token    Schema import token (may be nullptr).
+        //! @return SchemaImportReservationResult with per-table tallies and the base fingerprint.
+        ECDB_EXPORT SchemaImportReservationResult ComputeSchemaImportReservation(
+            bvector<ECN::ECSchemaCP> const& schemas,
+            SchemaImportOptions options = SchemaImportOptions::None,
+            SchemaImportToken const* token = nullptr) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.

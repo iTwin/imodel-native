@@ -1197,6 +1197,82 @@ SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> con
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri schemaSync, SchemaImportReservation const& reservation) const
+    {
+    ECDB_PERF_LOG_SCOPE("Schema import (reserved ids)");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas (reserved)");
+    OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    SchemaImportContext ctx(m_ecdb, options, &reservation);
+    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token, schemaSync);
+    ResetIds(schemas);
+    m_ecdb.ClearECDbCache();
+    OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas (reserved)");
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaImportReservationResult MainSchemaManager::ComputeSchemaImportReservation(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
+    {
+    SchemaImportReservationResult result;
+    if (schemas.empty())
+        {
+        result.succeeded = true;
+        return result;
+        }
+
+    IdFactory& idFactory = GetECDb().GetImpl().GetIdFactory();
+
+    // Enable counting mode — NextId() will tally calls and return throwaway ids
+    idFactory.EnableCountingMode();
+
+    // Start a nested savepoint so all db mutations are rolled back when we're done
+    Savepoint sp(const_cast<ECDbR>(GetECDb()), "ComputeSchemaImportReservation");
+    if (!sp.IsActive())
+        {
+        idFactory.DisableCountingMode();
+        LOG.error("ComputeSchemaImportReservation: Failed to begin savepoint.");
+        return result;
+        }
+
+    // Run the import — inside counting mode this tallies NextId() calls without allocating real ids.
+    // The SyncDbUri is intentionally empty to skip any SchemaSync Pull/Push in the dry run.
+    SchemaImportContext ctx(m_ecdb, options);
+    const SchemaImportResult importResult = ImportSchemas(ctx, schemas, token, SchemaSync::SyncDbUri());
+
+    if (importResult.IsOk())
+        {
+        // Capture fingerprint (current m_id seeds after Reset()) and tallies (NextId() call counts)
+        idFactory.FillBaseFingerprint(result.baseFingerprint);
+        idFactory.FillTally(result.tally);
+        result.succeeded = true;
+        }
+    else
+        {
+        LOG.debug("ComputeSchemaImportReservation: dry-run import failed — returning empty result.");
+        }
+
+    // Always roll back; never persist dry-run changes
+    sp.Cancel();
+
+    // Reset in-memory schema ids that were set to fake values during the dry-run
+    ResetIds(schemas);
+
+    // Restore in-memory ECDb cache and reseed IdFactory from the rolled-back db state
+    idFactory.DisableCountingMode();
+    m_ecdb.ClearECDbCache();
+    idFactory.Reset();
+
+    return result;
+    }
+
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void MainSchemaManager::ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const {
@@ -1271,6 +1347,10 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return SchemaImportResult::ERROR;
         }
 
+    // Apply reserved id ranges if a reservation was provided in the import context
+    if (ctx.GetReservation() != nullptr)
+        GetECDb().GetImpl().GetIdFactory().ApplyReservation(*ctx.GetReservation());
+
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
     if (!policy.IsSupported())
         {
@@ -1336,6 +1416,9 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 LOG.error("Failed to import ECSchemas: Failed to create id factory.");
                 return SchemaImportResult::ERROR;
                 }
+            // Re-apply reserved id ranges after Pull re-seeds the factory
+            if (ctx.GetReservation() != nullptr)
+                GetECDb().GetImpl().GetIdFactory().ApplyReservation(*ctx.GetReservation());
             }
         }
     for (auto schema: schemas) {

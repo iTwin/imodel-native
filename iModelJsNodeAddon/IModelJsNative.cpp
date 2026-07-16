@@ -2346,6 +2346,48 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
+        // Parse optional schemaImportReservation
+        BeSQLite::EC::SchemaImportReservation reservation;
+        const auto jsReservation = jsOpts.Get(JsInterop::json_schemaImportReservation());
+        if (jsReservation.IsObject())
+            {
+            auto resObj = jsReservation.As<Napi::Object>();
+            auto readUInt64 = [](Napi::Value v, uint64_t defaultVal = 0) -> uint64_t {
+                if (v.IsNumber()) return (uint64_t)v.As<Napi::Number>().Int64Value();
+                return defaultVal;
+            };
+            auto readRange = [&readUInt64](Napi::Value v, BeSQLite::EC::IdSequenceReservation& r) {
+                if (!v.IsObject()) return;
+                auto obj = v.As<Napi::Object>();
+                r.startId = readUInt64(obj.Get("startId"));
+                r.count   = readUInt64(obj.Get("count"));
+            };
+            reservation.forceReservedIds   = resObj.Get(JsInterop::json_forceReservedIds()).ToBoolean();
+            readRange(resObj.Get("classRange"),                      reservation.classRange);
+            readRange(resObj.Get("classHasBaseClassesRange"),        reservation.classHasBaseClassesRange);
+            readRange(resObj.Get("columnRange"),                     reservation.columnRange);
+            readRange(resObj.Get("customAttributeRange"),            reservation.customAttributeRange);
+            readRange(resObj.Get("enumerationRange"),                reservation.enumerationRange);
+            readRange(resObj.Get("formatRange"),                     reservation.formatRange);
+            readRange(resObj.Get("formatCompositeUnitRange"),        reservation.formatCompositeUnitRange);
+            readRange(resObj.Get("indexRange"),                      reservation.indexRange);
+            readRange(resObj.Get("indexColumnRange"),                reservation.indexColumnRange);
+            readRange(resObj.Get("kindOfQuantityRange"),             reservation.kindOfQuantityRange);
+            readRange(resObj.Get("phenomenonRange"),                 reservation.phenomenonRange);
+            readRange(resObj.Get("propertyRange"),                   reservation.propertyRange);
+            readRange(resObj.Get("propertyCategoryRange"),           reservation.propertyCategoryRange);
+            readRange(resObj.Get("propertyMapRange"),                reservation.propertyMapRange);
+            readRange(resObj.Get("propertyPathRange"),               reservation.propertyPathRange);
+            readRange(resObj.Get("relationshipConstraintRange"),     reservation.relationshipConstraintRange);
+            readRange(resObj.Get("relationshipConstraintClassRange"),reservation.relationshipConstraintClassRange);
+            readRange(resObj.Get("schemaRange"),                     reservation.schemaRange);
+            readRange(resObj.Get("schemaReferenceRange"),            reservation.schemaReferenceRange);
+            readRange(resObj.Get("tableRange"),                      reservation.tableRange);
+            readRange(resObj.Get("unitRange"),                       reservation.unitRange);
+            readRange(resObj.Get("unitSystemRange"),                 reservation.unitSystemRange);
+            options.m_reservation = &reservation;
+            }
+
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
         if (DbResult::BE_SQLITE_OK != result)
@@ -2394,6 +2436,80 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             ret.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
 
         return ret;
+        }
+
+    //! Dry-run schema import that returns per-table id tallies and the base fingerprint.
+    //! Accepts the same first argument as importSchemas (array of file paths) or importXmlSchemas (array of XML strings).
+    //! Optional second argument: "xml" (default "file") to use XmlString source.
+    Napi::Value ComputeSchemaImportReservation(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaSources);
+        bool isXml = false;
+        if (info.Length() >= 2 && info[1].IsString())
+            isXml = (info[1].As<Napi::String>().Utf8Value() == "xml");
+
+        SchemaSourceType sourceType = isXml ? SchemaSourceType::XmlString : SchemaSourceType::File;
+        auto const tallyResult = JsInterop::ComputeSchemaImportReservation(db, schemaSources, sourceType);
+
+        Napi::Object out = Napi::Object::New(info.Env());
+        out.Set("succeeded", Napi::Boolean::New(info.Env(), tallyResult.succeeded));
+
+        // Build tally sub-object
+        Napi::Object tallyObj = Napi::Object::New(info.Env());
+        auto const& t = tallyResult.tally;
+        tallyObj.Set("classCount",                      Napi::Number::New(info.Env(), (double)t.classCount));
+        tallyObj.Set("classHasBaseClassesCount",        Napi::Number::New(info.Env(), (double)t.classHasBaseClassesCount));
+        tallyObj.Set("columnCount",                     Napi::Number::New(info.Env(), (double)t.columnCount));
+        tallyObj.Set("customAttributeCount",            Napi::Number::New(info.Env(), (double)t.customAttributeCount));
+        tallyObj.Set("enumerationCount",                Napi::Number::New(info.Env(), (double)t.enumerationCount));
+        tallyObj.Set("formatCount",                     Napi::Number::New(info.Env(), (double)t.formatCount));
+        tallyObj.Set("formatCompositeUnitCount",        Napi::Number::New(info.Env(), (double)t.formatCompositeUnitCount));
+        tallyObj.Set("indexCount",                      Napi::Number::New(info.Env(), (double)t.indexCount));
+        tallyObj.Set("indexColumnCount",                Napi::Number::New(info.Env(), (double)t.indexColumnCount));
+        tallyObj.Set("kindOfQuantityCount",             Napi::Number::New(info.Env(), (double)t.kindOfQuantityCount));
+        tallyObj.Set("phenomenonCount",                 Napi::Number::New(info.Env(), (double)t.phenomenonCount));
+        tallyObj.Set("propertyCount",                   Napi::Number::New(info.Env(), (double)t.propertyCount));
+        tallyObj.Set("propertyCategoryCount",           Napi::Number::New(info.Env(), (double)t.propertyCategoryCount));
+        tallyObj.Set("propertyMapCount",                Napi::Number::New(info.Env(), (double)t.propertyMapCount));
+        tallyObj.Set("propertyPathCount",               Napi::Number::New(info.Env(), (double)t.propertyPathCount));
+        tallyObj.Set("relationshipConstraintCount",     Napi::Number::New(info.Env(), (double)t.relationshipConstraintCount));
+        tallyObj.Set("relationshipConstraintClassCount",Napi::Number::New(info.Env(), (double)t.relationshipConstraintClassCount));
+        tallyObj.Set("schemaCount",                     Napi::Number::New(info.Env(), (double)t.schemaCount));
+        tallyObj.Set("schemaReferenceCount",            Napi::Number::New(info.Env(), (double)t.schemaReferenceCount));
+        tallyObj.Set("tableCount",                      Napi::Number::New(info.Env(), (double)t.tableCount));
+        tallyObj.Set("unitCount",                       Napi::Number::New(info.Env(), (double)t.unitCount));
+        tallyObj.Set("unitSystemCount",                 Napi::Number::New(info.Env(), (double)t.unitSystemCount));
+        out.Set("tally", tallyObj);
+
+        // Build baseFingerprint sub-object
+        Napi::Object fpObj = Napi::Object::New(info.Env());
+        auto const& fp = tallyResult.baseFingerprint;
+        fpObj.Set("classBase",                      Napi::Number::New(info.Env(), (double)fp.classBase));
+        fpObj.Set("classHasBaseClassesBase",        Napi::Number::New(info.Env(), (double)fp.classHasBaseClassesBase));
+        fpObj.Set("columnBase",                     Napi::Number::New(info.Env(), (double)fp.columnBase));
+        fpObj.Set("customAttributeBase",            Napi::Number::New(info.Env(), (double)fp.customAttributeBase));
+        fpObj.Set("enumerationBase",                Napi::Number::New(info.Env(), (double)fp.enumerationBase));
+        fpObj.Set("formatBase",                     Napi::Number::New(info.Env(), (double)fp.formatBase));
+        fpObj.Set("formatCompositeUnitBase",        Napi::Number::New(info.Env(), (double)fp.formatCompositeUnitBase));
+        fpObj.Set("indexBase",                      Napi::Number::New(info.Env(), (double)fp.indexBase));
+        fpObj.Set("indexColumnBase",                Napi::Number::New(info.Env(), (double)fp.indexColumnBase));
+        fpObj.Set("kindOfQuantityBase",             Napi::Number::New(info.Env(), (double)fp.kindOfQuantityBase));
+        fpObj.Set("phenomenonBase",                 Napi::Number::New(info.Env(), (double)fp.phenomenonBase));
+        fpObj.Set("propertyBase",                   Napi::Number::New(info.Env(), (double)fp.propertyBase));
+        fpObj.Set("propertyCategoryBase",           Napi::Number::New(info.Env(), (double)fp.propertyCategoryBase));
+        fpObj.Set("propertyMapBase",                Napi::Number::New(info.Env(), (double)fp.propertyMapBase));
+        fpObj.Set("propertyPathBase",               Napi::Number::New(info.Env(), (double)fp.propertyPathBase));
+        fpObj.Set("relationshipConstraintBase",     Napi::Number::New(info.Env(), (double)fp.relationshipConstraintBase));
+        fpObj.Set("relationshipConstraintClassBase",Napi::Number::New(info.Env(), (double)fp.relationshipConstraintClassBase));
+        fpObj.Set("schemaBase",                     Napi::Number::New(info.Env(), (double)fp.schemaBase));
+        fpObj.Set("schemaReferenceBase",            Napi::Number::New(info.Env(), (double)fp.schemaReferenceBase));
+        fpObj.Set("tableBase",                      Napi::Number::New(info.Env(), (double)fp.tableBase));
+        fpObj.Set("unitBase",                       Napi::Number::New(info.Env(), (double)fp.unitBase));
+        fpObj.Set("unitSystemBase",                 Napi::Number::New(info.Env(), (double)fp.unitSystemBase));
+        out.Set("baseFingerprint", fpObj);
+
+        return out;
         }
 
     Napi::Value ExportSchema(NapiInfoCR info)
@@ -3249,6 +3365,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
+            InstanceMethod("computeSchemaImportReservation", &NativeDgnDb::ComputeSchemaImportReservation),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),

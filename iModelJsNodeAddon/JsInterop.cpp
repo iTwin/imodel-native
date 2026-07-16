@@ -946,7 +946,11 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemas.size())
         return BE_SQLITE_ERROR;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status;
+    if (opts.m_reservation != nullptr)
+        status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str()), *opts.m_reservation);
+    else
+        status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         {
         Utf8String contextDesc = schemaContext->GetDescription();
@@ -987,6 +991,63 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
         return dgndb.SaveChanges();
 
     return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BeSQLite::EC::SchemaImportReservationResult JsInterop::ComputeSchemaImportReservation(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType)
+    {
+    if (schemaSources.empty())
+        return {};
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
+    SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
+    JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
+
+    if (sourceType == SchemaSourceType::File)
+        {
+        for (auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it)
+            {
+            BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
+            BeFileName schemaDirectory(BeFileName::DevAndDir, schemaFile.GetWCharCP());
+            schemaContext->AddSchemaPath(schemaDirectory, true);
+            }
+        }
+
+    bvector<ECSchemaCP> schemas;
+    for (Utf8String schemaSource : schemaSources)
+        {
+        ECSchemaPtr schema;
+        SchemaReadStatus schemaStatus;
+        if (sourceType == SchemaSourceType::File)
+            {
+            BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
+            if (!schemaFile.DoesPathExist())
+                return {};
+            schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
+            }
+        else
+            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaSource.c_str(), *schemaContext);
+
+        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
+            continue;
+
+        if (SchemaReadStatus::Success != schemaStatus)
+            return {};
+
+        schemas.push_back(schema.get());
+        }
+
+    if (schemas.empty())
+        {
+        BeSQLite::EC::SchemaImportReservationResult result;
+        result.succeeded = true;
+        return result;
+        }
+
+    return dgndb.ComputeSchemaImportReservation(schemas);
     }
 
 //---------------------------------------------------------------------------------------

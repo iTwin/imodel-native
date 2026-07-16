@@ -477,6 +477,7 @@ private:
     SchemaStatus ValidateSchemaReferences(SchemaStatus& status, bvector<ECN::ECSchemaPtr>* schemasToImport, ECN::ECSchemaReadContextR schemaContext, bset<ECN::ECSchemaP>& validatedSchemas);
     static SchemaStatus DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions, SyncDbUri uri = SyncDbUri());
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions, SyncDbUri uri, BeSQLite::EC::SchemaImportReservation const& reservation);
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions, SyncDbUri uri = SyncDbUri());
     BeSQLite::EC::DropSchemaResult DoDropSchema(Utf8StringCR name, bool logIssue = true);
     BeSQLite::EC::DropSchemaResult DoDropSchemas(bvector<Utf8String> schemaNames, bool logIssue = true);
