@@ -11,5 +11,5 @@ set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../windows-clan
 # CRT / iterator-debug-level rationale).
 set(VCPKG_BUILD_TYPE release)
 
-# No /RTC*: clang-cl does not implement the MSVC runtime checks. (The build is release-only
-# anyway, so the MSVC triplet's debug /RTCsu never applied.)
+# Release-only (above), so no debug runtime-check flags apply. clang-cl does not implement
+# /RTC anyway.

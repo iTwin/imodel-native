@@ -12,5 +12,6 @@ set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../windows-clan
 set(VCPKG_C_FLAGS "${VCPKG_C_FLAGS} /DNOCRYPT /DNOUNCRYPT")
 set(VCPKG_CXX_FLAGS "${VCPKG_CXX_FLAGS} /DNOCRYPT /DNOUNCRYPT")
 
-# No /RTC*: clang-cl does not implement the MSVC runtime checks, so (unlike the MSVC
-# x64-windows-static triplet) the debug runtime-check flags are intentionally omitted.
+# The chainload toolchain includes vcpkg's windows.cmake, which still adds /RTC1 to debug
+# builds. clang-cl does not implement the MSVC runtime checks and ignores /RTC1 with an
+# "unused argument" warning, so no /RTC handling is needed here.
