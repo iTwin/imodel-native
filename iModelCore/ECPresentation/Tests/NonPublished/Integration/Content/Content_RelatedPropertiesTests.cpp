@@ -9422,6 +9422,134 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PicksUpOnlyPropertiesOfRela
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesSeparateFieldsForRelatedPropertiesWithDifferentInstanceFilters, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesSeparateFieldsForRelatedPropertiesWithDifferentInstanceFilters)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("A_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR inst){inst.SetValue("Prop", ECValue(1));});
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR inst){inst.SetValue("Prop", ECValue(2));});
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1000, false, "",
+        bvector<MultiSchemaClass*>{ new MultiSchemaClass(classA->GetSchema().GetName(), true, { classA->GetName() }) },
+        bvector<MultiSchemaClass*>(), true));
+    rules->AddPresentationRule(*rule);
+
+    auto relatedPropertyModifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    rules->AddPresentationRule(*relatedPropertyModifier);
+
+    auto relatedPropertySpec1 = new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward)),
+        { new PropertySpecification("Prop", 1000, "First") }, RelationshipMeaning::RelatedInstance, true);
+    relatedPropertySpec1->SetInstanceFilter("this.Prop = 1");
+    relatedPropertyModifier->AddRelatedProperty(*relatedPropertySpec1);
+
+    auto relatedPropertySpec2 = new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward)),
+        { new PropertySpecification("Prop", 1000, "Second") }, RelationshipMeaning::RelatedInstance, true);
+    relatedPropertySpec2->SetInstanceFilter("this.Prop = 2");
+    relatedPropertyModifier->AddRelatedProperty(*relatedPropertySpec2);
+
+    // get the content
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_STREQ("First", descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
+
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[1]->AsNestedContentField()->GetFields().size());
+    EXPECT_STREQ("Second", descriptor->GetVisibleFields()[1]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
+
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
+                }],
+            "Values": {
+                "%s": 1
+                },
+            "DisplayValues": {
+                "%s": "1"
+                },
+            "MergedFieldNames": []
+            }],
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
+                }],
+            "Values": {
+                "%s": 2
+                },
+            "DisplayValues": {
+                "%s": "2"
+                },
+            "MergedFieldNames": []
+            }]
+        })",
+
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        classB->GetId().ToString().c_str(), b1->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "Prop"), FIELD_NAME(classB, "Prop"),
+
+        NESTED_CONTENT_FIELD_NAME_C(classA, classB, 2),
+        classB->GetId().ToString().c_str(), b2->GetInstanceId().c_str(),
+        FIELD_NAME_C(classB, "Prop", 2), FIELD_NAME_C(classB, "Prop", 2)
+
+        ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsRelatedPropertiesAndRelationshipProperties, R"*(
