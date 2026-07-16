@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -548,6 +548,44 @@ describe("basic tests", () => {
 
     return { elementId, partId };
   }
+
+  it("re-reads forceUseId after JS onInsert", () => {
+    try {
+      const sequenceValue = dgndb.queryLocalValue("bis_elementidsequence");
+      const nextLocalId = Number(BigInt(sequenceValue ?? "0") & 0xFFFFFFFFFFn) + 100;
+      const forcedId = Id64.fromLocalAndBriefcaseIds(nextLocalId, dgndb.getBriefcaseId());
+
+      const mockJsDb: any = {
+        getJsClass: () => ({
+          onInsert(arg: { iModel: any, props: GeometryPartProps & { id?: Id64String }, options: { forceUseId?: boolean } }) {
+            expect(arg.iModel).to.equal(mockJsDb);
+            expect(arg.options).to.deep.equal({});
+            arg.props.id = forcedId;
+            arg.options.forceUseId = true;
+          },
+          onInsertElement(){},
+          onInserted(){},
+          onInsertedElement(){},
+        }),
+      };
+      dgndb.setIModelDb(mockJsDb);
+
+      const geometryPartProps: GeometryPartProps = {
+        classFullName: "BisCore:GeometryPart",
+        model: IModel.dictionaryId,
+        code: Code.createEmpty(),
+        geom: [
+          { box: { origin: [0, 0, 0], baseX: 10, baseY: 10, height: 1 } }
+        ]
+      };
+
+      const partId = dgndb.insertElement(geometryPartProps, {});
+      expect(partId).to.equal(forcedId);
+    } finally {
+      dgndb.setIModelDb(undefined);
+      dgndb.abandonChanges();
+    }
+  });
 
   it("exportGraphicsAsync enumerates parts directly if array is not provided", async () => {
     try {
