@@ -2289,9 +2289,9 @@ static void AssignClassAliases(bvector<RelatedClassPath*> const& paths, ECClassU
                     // we don't care about testedPath anymore
                     break;
                     }
-                else if (&currStep.GetTargetClass().GetClass() != &testedStep.GetTargetClass().GetClass())
+                else if (&currStep.GetTargetClass().GetClass() != &testedStep.GetTargetClass().GetClass() || currStep.GetTargetInstanceFilter() != testedStep.GetTargetInstanceFilter())
                     {
-                    // source and relationship are same, but target differs - we can reuse relationship if both steps are non-optional
+                    // source and relationship are same, but target or its instance filter differs - we can reuse relationship if both steps are non-optional
                     if (!currStep.IsTargetOptional() && !testedStep.IsTargetOptional() && matchingStepsCount > maxMatchingStepsCount)
                         lastMatchingRelationship = &testedStep.GetRelationship();
                     break;
