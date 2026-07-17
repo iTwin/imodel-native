@@ -45,12 +45,22 @@ struct SchemaSyncHelper final {
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationHelper final {
-    //! DDL to create the reservation table in the sync-db.
+    //! DDL to create the id-reservation table in the sync-db.
+    //! KeyMap is a FlexBuffer BLOB: a map from content-key (TEXT) to reserved id (UInt64).
     static constexpr Utf8CP RESERVATION_TABLE_DDL =
         "CREATE TABLE IF NOT EXISTS [schema_reservation_ids] "
         "([TableName] TEXT NOT NULL PRIMARY KEY, "
         "[LastReservedId] INTEGER NOT NULL DEFAULT 0, "
-        "[KeyMap] TEXT NOT NULL DEFAULT '{}')";
+        "[KeyMap] BLOB)";
+
+    //! DDL to create the column-assignment reservation table in the sync-db.
+    //! KeyMap is a FlexBuffer BLOB: a map from property-content-key (TEXT) to a
+    //! two-element vector [columnOrd (UInt64), columnId (UInt64)].
+    static constexpr Utf8CP RESERVATION_COLUMNS_TABLE_DDL =
+        "CREATE TABLE IF NOT EXISTS [schema_reservation_columns] "
+        "([PhysicalTableName] TEXT NOT NULL PRIMARY KEY, "
+        "[LastUsedColumnOrd] INTEGER NOT NULL DEFAULT 0, "
+        "[KeyMap] BLOB)";
 
     // Table-name constants for all reserved EC metadata and mapping tables.
     static constexpr Utf8CP RES_TABLE_SCHEMA         = "ec_Schema";
@@ -83,6 +93,21 @@ struct SchemaReservationHelper final {
     static BentleyStatus WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store);
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                          bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+    // Column-assignment reservation helpers (§3a).
+    static Utf8String FindPrimaryTableForClass(ECDbCR localDb, ECN::ECClassCR ecClass);
+    static BentleyStatus ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store);
+    static BentleyStatus WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store);
+    static BentleyStatus SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store);
+    static BentleyStatus LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store);
+    static BentleyStatus WriteColumnStoreToSyncDb(Db& syncDb, SchemaReservationColumnStore const& store);
+    //! Walk @p schema and allocate per-physical-table column ordinals for every new property
+    //! that maps to a shared-column or overflow physical table. Queries @p localDb for
+    //! existing class-map information to determine the physical table name.
+    static void WalkSchemaForColumnReservation(ECN::ECSchemaCR schema, ECDbCR localDb,
+                                               SchemaReservationStore& idStore,
+                                               SchemaReservationColumnStore& colStore,
+                                               bset<Utf8String, CompareIUtf8Ascii>& visited);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

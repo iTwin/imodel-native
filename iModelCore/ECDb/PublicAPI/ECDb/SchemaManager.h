@@ -143,6 +143,8 @@ public:
     ECDB_EXPORT BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri) const;
     //! Load the reservation store from the sync-db (read-only) for keyed-mode id allocation.
     ECDB_EXPORT BentleyStatus LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const;
+    //! Load the column-assignment reservation store from the sync-db (read-only) for mapping-phase keyed allocation.
+    ECDB_EXPORT BentleyStatus LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const;
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
@@ -257,6 +259,79 @@ struct SchemaReservationStore final {
     SchemaReservationTableStore propertyPath;
     SchemaReservationTableStore ecIndex;
     SchemaReservationTableStore indexColumn;
+};
+
+//=======================================================================================
+//! Entry in the per-physical-table column reservation store (§3a of the
+//! SchemaImportReservation plan): the reserved column ordinal within the physical
+//! SQLite table and the corresponding reserved ec_Column.Id.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnEntry final {
+    uint64_t columnOrd = 0; //!< reserved ordinal (physical column position) in the SQLite table
+    uint64_t columnId  = 0; //!< reserved ec_Column.Id for this column
+};
+
+//=======================================================================================
+//! Per-physical-SQLite-table store for the property-key → column assignment used by
+//! the mapping-phase reservation system (§3a).  One row per shared-column/overflow
+//! physical table in schema_reservation_columns; keyed by content, idempotent.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnTableStore final {
+private:
+    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> m_keyToEntry;
+    uint64_t m_lastUsedColumnOrd = 0; //!< monotonic counter seeded from high-water mark
+
+public:
+    //! Return the reserved entry for @p key, or nullptr if absent.
+    SchemaReservationColumnEntry const* Lookup(Utf8StringCR key) const {
+        auto it = m_keyToEntry.find(key);
+        return it != m_keyToEntry.end() ? &it->second : nullptr;
+    }
+    //! Allocate the next column ordinal for @p key if not yet reserved, using @p columnId
+    //! as the ec_Column.Id. Returns the (existing or newly allocated) entry.
+    SchemaReservationColumnEntry GetOrAllocate(Utf8StringCR key, uint64_t columnId) {
+        auto it = m_keyToEntry.find(key);
+        if (it != m_keyToEntry.end())
+            return it->second;
+        SchemaReservationColumnEntry entry;
+        entry.columnOrd = ++m_lastUsedColumnOrd;
+        entry.columnId  = columnId;
+        m_keyToEntry.emplace(key, entry);
+        return entry;
+    }
+    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToEntry; }
+    uint64_t GetLastUsedColumnOrd() const { return m_lastUsedColumnOrd; }
+    void SetLastUsedColumnOrd(uint64_t ord) { m_lastUsedColumnOrd = ord; }
+    //! Set the counter only if it has not been set yet (used when seeding from MAX(Ordinal)).
+    void SeedLastUsedColumnOrd(uint64_t ord) { if (m_lastUsedColumnOrd == 0) m_lastUsedColumnOrd = ord; }
+    void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) { m_keyToEntry.emplace(key, entry); }
+    void Clear() { m_keyToEntry.clear(); m_lastUsedColumnOrd = 0; }
+};
+
+//=======================================================================================
+//! Full column-assignment reservation store keyed by physical SQLite table name.
+//! Written into the sync-db by ReserveSchemaImport (§3a) and read back by
+//! ImportSchemas so that DbMappingManager assigns the same column ordinals on every
+//! briefcase.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnStore final {
+private:
+    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> m_physTableStores;
+public:
+    //! Return (or create) the per-physical-table store for @p physicalTableName.
+    SchemaReservationColumnTableStore& GetOrCreate(Utf8StringCR physicalTableName) {
+        return m_physTableStores[physicalTableName];
+    }
+    //! Return the per-physical-table store for @p physicalTableName, or nullptr if absent.
+    SchemaReservationColumnTableStore const* TryGet(Utf8StringCR physicalTableName) const {
+        auto it = m_physTableStores.find(physicalTableName);
+        return it != m_physTableStores.end() ? &it->second : nullptr;
+    }
+    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> const& GetStores() const { return m_physTableStores; }
+    void Clear() { m_physTableStores.clear(); }
 };
 
 //=======================================================================================
