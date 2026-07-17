@@ -40,10 +40,11 @@
 /* Please keep the SSL backend-specific #if branches in this order:
  *
  * 1. USE_OPENSSL
- * 2. USE_GNUTLS
- * 3. USE_MBEDTLS
- * 4. USE_COMMON_CRYPTO
+ * 2. USE_WOLFSSL
+ * 3. USE_GNUTLS
+ * 4. USE_MBEDTLS
  * 5. USE_WIN32_CRYPTO
+ * 6. USE_COMMON_CRYPTO
  *
  * This ensures that the same SSL branch gets activated throughout this source
  * file even if multiple backends are enabled at the same time.
@@ -86,8 +87,34 @@ static void my_sha256_final(unsigned char *digest, void *in)
   EVP_MD_CTX_destroy(ctx->openssl_ctx);
 }
 
+#elif defined(USE_WOLFSSL)
+#include <wolfssl/options.h>
+#include <wolfssl/wolfcrypt/sha256.h>
+
+typedef struct wc_Sha256 my_sha256_ctx;
+
+static CURLcode my_sha256_init(void *in)
+{
+  if(wc_InitSha256(in))
+    return CURLE_FAILED_INIT;
+  return CURLE_OK;
+}
+
+static void my_sha256_update(void *in,
+                             const unsigned char *data,
+                             unsigned int length)
+{
+  (void)wc_Sha256Update(in, data, (word32)length);
+}
+
+static void my_sha256_final(unsigned char *digest, void *in)
+{
+  (void)wc_Sha256Final(in, digest);
+}
+
 #elif defined(USE_GNUTLS)
-#include <nettle/sha.h>
+#include <nettle/sha2.h>
+#include <nettle/version.h>
 
 typedef struct sha256_ctx my_sha256_ctx;
 
@@ -106,11 +133,15 @@ static void my_sha256_update(void *ctx,
 
 static void my_sha256_final(unsigned char *digest, void *ctx)
 {
+#if NETTLE_VERSION_MAJOR >= 4
+  sha256_digest(ctx, digest);
+#else
   sha256_digest(ctx, SHA256_DIGEST_SIZE, digest);
+#endif
 }
 
 #elif defined(USE_MBEDTLS) && \
-  defined(PSA_WANT_ALG_SHA_256) && PSA_WANT_ALG_SHA_256  /* mbedTLS 4+ */
+  defined(PSA_WANT_ALG_SHA_256) && PSA_WANT_ALG_SHA_256
 #include <psa/crypto.h>
 
 typedef psa_hash_operation_t my_sha256_ctx;
@@ -229,7 +260,7 @@ static void my_sha256_final(unsigned char *digest, void *in)
     (a)[0] = (unsigned char)((((unsigned long)(val)) >> 24) & 0xff); \
     (a)[1] = (unsigned char)((((unsigned long)(val)) >> 16) & 0xff); \
     (a)[2] = (unsigned char)((((unsigned long)(val)) >>  8) & 0xff); \
-    (a)[3] = (unsigned char) (((unsigned long)(val)) & 0xff);        \
+    (a)[3] = (unsigned char)(((unsigned long)(val)) & 0xff);         \
   } while(0)
 
 #define WPA_PUT_BE64(a, val)                            \
@@ -452,14 +483,19 @@ static void my_sha256_final(unsigned char *out, void *ctx)
  * Returns CURLE_OK on success.
  */
 CURLcode Curl_sha256it(unsigned char *output, const unsigned char *input,
-                       const size_t len)
+                       size_t len)
 {
   CURLcode result;
   my_sha256_ctx ctx;
 
   result = my_sha256_init(&ctx);
   if(!result) {
-    my_sha256_update(&ctx, input, curlx_uztoui(len));
+    do {
+      unsigned int ilen = (unsigned int)CURLMIN(len, UINT_MAX);
+      my_sha256_update(&ctx, input, ilen);
+      len -= ilen;
+      input += ilen;
+    } while(len);
     my_sha256_final(output, &ctx);
   }
   return result;
