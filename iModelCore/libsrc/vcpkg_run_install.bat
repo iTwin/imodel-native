@@ -171,12 +171,14 @@ if "%ANDROID_NDK_HOME%"=="" (
 
 set "OVERLAY_TRIPLETS=%MANIFEST_DIR%\triplets"
 set "OVERLAY_ARG="
-if exist "%OVERLAY_TRIPLETS%" set "OVERLAY_ARG=--overlay-triplets=%OVERLAY_TRIPLETS%"
+rem Quote the path value: a manifest/checkout path may contain spaces, and %OVERLAY_ARG%
+rem is expanded unquoted on the vcpkg command line, so cmd would otherwise split it.
+if exist "%OVERLAY_TRIPLETS%" set OVERLAY_ARG=--overlay-triplets="%OVERLAY_TRIPLETS%"
 
 rem Allow a manifest to ship overlay ports (e.g. a locally-patched crashpad that
 rem builds with clang-cl) in a "ports" subdirectory alongside vcpkg.json.
 set "OVERLAY_PORTS=%MANIFEST_DIR%\ports"
-if exist "%OVERLAY_PORTS%" set "OVERLAY_ARG=%OVERLAY_ARG% --overlay-ports=%OVERLAY_PORTS%"
+if exist "%OVERLAY_PORTS%" set OVERLAY_ARG=%OVERLAY_ARG% --overlay-ports="%OVERLAY_PORTS%"
 
 echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, install-root=%INSTALL_ROOT%)
 echo vcpkg: exe="%VCPKG_EXE%"
