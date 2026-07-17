@@ -15,6 +15,10 @@ set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../windows-clan
 # active compiler's information").
 set(VCPKG_LOAD_VCVARS_ENV ON)
 
+# vcpkg scrubs the build environment; whitelist LLVM_DIR so the chainload toolchain can locate
+# clang-cl via $ENV{LLVM_DIR} in every phase (detect_compiler, compiler-ABI try_compile, build).
+set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
+
 # Match our previous build: minizip without crypt/uncrypt support
 set(VCPKG_C_FLAGS "${VCPKG_C_FLAGS} /DNOCRYPT /DNOUNCRYPT")
 set(VCPKG_CXX_FLAGS "${VCPKG_CXX_FLAGS} /DNOCRYPT /DNOUNCRYPT")

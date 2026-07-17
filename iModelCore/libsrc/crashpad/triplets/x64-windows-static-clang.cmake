@@ -13,6 +13,10 @@ set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../windows-clan
 # active compiler's information").
 set(VCPKG_LOAD_VCVARS_ENV ON)
 
+# vcpkg scrubs the build environment; whitelist LLVM_DIR so the chainload toolchain can locate
+# clang-cl via $ENV{LLVM_DIR} in every phase (detect_compiler, compiler-ABI try_compile, build).
+set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
+
 # Force full release builds in vcpkg for this triplet (see x64-windows-static.cmake for the
 # CRT / iterator-debug-level rationale).
 set(VCPKG_BUILD_TYPE release)

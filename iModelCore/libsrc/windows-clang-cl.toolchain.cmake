@@ -25,7 +25,9 @@
 # (INCLUDE/LIB) that clang-cl (MSVC-ABI) needs to find the Windows SDK and CRT.
 #---------------------------------------------------------------------------------------------
 if(NOT DEFINED ENV{LLVM_DIR})
-    message(FATAL_ERROR "windows-clang-cl.toolchain.cmake: LLVM_DIR is not set; cannot locate clang-cl.")
+    message(FATAL_ERROR "windows-clang-cl.toolchain.cmake: LLVM_DIR is not set; cannot locate clang-cl. "
+        "The *-clang triplets must whitelist it via VCPKG_ENV_PASSTHROUGH so it survives vcpkg's "
+        "scrubbed build environment.")
 endif()
 
 file(TO_CMAKE_PATH "$ENV{LLVM_DIR}" _bsi_llvm_dir)
@@ -40,15 +42,31 @@ endif()
 set(CMAKE_C_COMPILER   "${_bsi_llvm_dir}/bin/clang-cl.exe")
 set(CMAKE_CXX_COMPILER "${_bsi_llvm_dir}/bin/clang-cl.exe")
 
-# Resolve vcpkg's stock Windows toolchain relative to the main vcpkg toolchain file
-# (<vcpkg>/scripts/buildsystems/vcpkg.cmake -> <vcpkg>/scripts/toolchains/windows.cmake) and
-# include it so it provides CMAKE_SYSTEM_NAME, the CRT selection, and all compile/link flags.
-get_filename_component(_bsi_vcpkg_scripts_dir "${CMAKE_TOOLCHAIN_FILE}" DIRECTORY)
-get_filename_component(_bsi_vcpkg_scripts_dir "${_bsi_vcpkg_scripts_dir}" DIRECTORY)
-set(_bsi_windows_toolchain "${_bsi_vcpkg_scripts_dir}/toolchains/windows.cmake")
+# Resolve vcpkg's stock Windows toolchain (<vcpkg>/scripts/toolchains/windows.cmake) from the
+# vcpkg root. CMAKE_TOOLCHAIN_FILE is NOT reliable here: during the compiler-ABI try_compile
+# CMake re-runs this toolchain with CMAKE_TOOLCHAIN_FILE empty, which previously produced the
+# bogus path "/toolchains/windows.cmake". vcpkg exposes its root differently per phase:
+#   * port configure       -> _VCPKG_ROOT_DIR is passed as a -D cache entry
+#   * try_compile (ABI)     -> Z_VCPKG_ROOT_DIR is forwarded via CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
+# (this chainload runs at vcpkg.cmake:208, before Z_VCPKG_ROOT_DIR is computed at :398, so we
+# cannot rely on Z_VCPKG_ROOT_DIR during the outer port configure). Prefer whichever is set.
+set(_bsi_vcpkg_root "")
+if(DEFINED Z_VCPKG_ROOT_DIR AND Z_VCPKG_ROOT_DIR)
+    set(_bsi_vcpkg_root "${Z_VCPKG_ROOT_DIR}")
+elseif(DEFINED _VCPKG_ROOT_DIR AND _VCPKG_ROOT_DIR)
+    set(_bsi_vcpkg_root "${_VCPKG_ROOT_DIR}")
+endif()
+
+if(NOT _bsi_vcpkg_root)
+    message(FATAL_ERROR "windows-clang-cl.toolchain.cmake: could not determine the vcpkg root "
+        "(neither Z_VCPKG_ROOT_DIR nor _VCPKG_ROOT_DIR is set).")
+endif()
+
+file(TO_CMAKE_PATH "${_bsi_vcpkg_root}" _bsi_vcpkg_root)
+set(_bsi_windows_toolchain "${_bsi_vcpkg_root}/scripts/toolchains/windows.cmake")
 
 if(NOT EXISTS "${_bsi_windows_toolchain}")
-    message(FATAL_ERROR "windows-clang-cl.toolchain.cmake: could not locate vcpkg's windows.cmake at '${_bsi_windows_toolchain}' (CMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}').")
+    message(FATAL_ERROR "windows-clang-cl.toolchain.cmake: could not locate vcpkg's windows.cmake at '${_bsi_windows_toolchain}' (vcpkg root='${_bsi_vcpkg_root}').")
 endif()
 
 include("${_bsi_windows_toolchain}")

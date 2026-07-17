@@ -8,6 +8,13 @@ set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/../../windows-clang-cl.toolchain.cmake")
 
+# vcpkg builds ports in a scrubbed environment and does not forward arbitrary environment
+# variables into the toolchain/build process. The chainload toolchain locates clang-cl via
+# $ENV{LLVM_DIR}, so that variable must be whitelisted or it arrives empty and configuration
+# fails with "LLVM_DIR is not set". VCPKG_ENV_PASSTHROUGH makes it available for the whole
+# build (including the detect_compiler and compiler-ABI try_compile steps).
+set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
+
 # Setting VCPKG_CHAINLOAD_TOOLCHAIN_FILE disables vcpkg's automatic Visual Studio (vcvars)
 # environment setup; re-enable it so clang-cl still gets the MSVC SDK headers and CRT import
 # libraries (INCLUDE/LIB). Without it, vcpkg's compiler detection fails ("unable to detect the
