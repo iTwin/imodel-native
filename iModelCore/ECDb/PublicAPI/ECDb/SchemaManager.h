@@ -184,9 +184,11 @@ struct SchemaImportResult final
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationTableStore final {
+private:
     bmap<Utf8String, uint64_t, CompareIUtf8Ascii> m_keyToId; //!< key → reserved id
     uint64_t m_lastReservedId = 0; //!< monotonic counter seeded from MAX(Id) of the table in the sync db
 
+public:
     //! Return the reserved id for @p key; allocate a new one (next counter value) if key is absent.
     uint64_t GetOrAllocate(Utf8StringCR key) {
         auto it = m_keyToId.find(key);
@@ -205,6 +207,23 @@ struct SchemaReservationTableStore final {
 
     //! True if @p key already has a reserved id.
     bool HasKey(Utf8StringCR key) const { return m_keyToId.find(key) != m_keyToId.end(); }
+
+    //! Read-only access to the full key→id map (e.g. for iteration during serialization).
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToId; }
+    //! Mutable access to the key→id map; required by IdSequence::SetKeyedMode.
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii>& GetKeyMap() { return m_keyToId; }
+
+    //! Return the current last-reserved-id counter.
+    uint64_t GetLastReservedId() const { return m_lastReservedId; }
+    //! Overwrite the last-reserved-id counter (used when loading from the sync-db).
+    void SetLastReservedId(uint64_t id) { m_lastReservedId = id; }
+    //! Set the last-reserved-id counter only if it has not been set yet (i.e. still 0).
+    void SeedLastReservedId(uint64_t id) { if (m_lastReservedId == 0) m_lastReservedId = id; }
+
+    //! Clear the key map and reset the counter; call before populating from the sync-db.
+    void Clear() { m_keyToId.clear(); m_lastReservedId = 0; }
+    //! Insert a single key→id entry (used when loading key-map JSON from the sync-db).
+    void AddEntry(Utf8StringCR key, uint64_t id) { m_keyToId.emplace(key, id); }
 };
 
 //=======================================================================================
@@ -214,7 +233,7 @@ struct SchemaReservationTableStore final {
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationStore final {
-    // Metadata tables (§2.1)
+    // Metadata tables (2.1)
     SchemaReservationTableStore schema;
     SchemaReservationTableStore schemaReference;
     SchemaReservationTableStore ecClass;
@@ -231,7 +250,7 @@ struct SchemaReservationStore final {
     SchemaReservationTableStore relationshipConstraint;
     SchemaReservationTableStore relationshipConstraintClass;
     SchemaReservationTableStore customAttribute;
-    // Mapping tables (§3a)
+    // Mapping tables (3a)
     SchemaReservationTableStore ecTable;
     SchemaReservationTableStore column;
     SchemaReservationTableStore propertyMap;

@@ -176,28 +176,28 @@ std::unique_ptr<IdFactory> IdFactory::Create(ECDbCR ecdb) {
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
 void IdFactory::SetKeyedMode(SchemaReservationStore& store) const {
-    m_schemaIdSeq->SetKeyedMode(store.schema.m_keyToId);
-    m_schemaReferenceIdSeq->SetKeyedMode(store.schemaReference.m_keyToId);
-    m_classIdSeq->SetKeyedMode(store.ecClass.m_keyToId);
-    m_classHasBaseClassesIdSeq->SetKeyedMode(store.classHasBaseClasses.m_keyToId);
-    m_propertyIdSeq->SetKeyedMode(store.property.m_keyToId);
-    m_enumerationIdSeq->SetKeyedMode(store.enumeration.m_keyToId);
-    m_kindOfQuantityIdSeq->SetKeyedMode(store.kindOfQuantity.m_keyToId);
-    m_unitSystemIdSeq->SetKeyedMode(store.unitSystem.m_keyToId);
-    m_phenomenonIdSeq->SetKeyedMode(store.phenomenon.m_keyToId);
-    m_unitIdSeq->SetKeyedMode(store.unit.m_keyToId);
-    m_formatIdSeq->SetKeyedMode(store.format.m_keyToId);
-    m_formatCompositeUnitIdSeq->SetKeyedMode(store.formatCompositeUnit.m_keyToId);
-    m_propertyCategoryIdSeq->SetKeyedMode(store.propertyCategory.m_keyToId);
-    m_relationshipConstraintIdSeq->SetKeyedMode(store.relationshipConstraint.m_keyToId);
-    m_relationshipConstraintClassIdSeq->SetKeyedMode(store.relationshipConstraintClass.m_keyToId);
-    m_customAttributeIdSeq->SetKeyedMode(store.customAttribute.m_keyToId);
-    m_tableIdSeq->SetKeyedMode(store.ecTable.m_keyToId);
-    m_columnIdSeq->SetKeyedMode(store.column.m_keyToId);
-    m_propertyMapSeq->SetKeyedMode(store.propertyMap.m_keyToId);
-    m_propertyPathIdSeq->SetKeyedMode(store.propertyPath.m_keyToId);
-    m_indexIdSeq->SetKeyedMode(store.ecIndex.m_keyToId);
-    m_indexColumnIdSeq->SetKeyedMode(store.indexColumn.m_keyToId);
+    m_schemaIdSeq->SetKeyedMode(store.schema.GetKeyMap());
+    m_schemaReferenceIdSeq->SetKeyedMode(store.schemaReference.GetKeyMap());
+    m_classIdSeq->SetKeyedMode(store.ecClass.GetKeyMap());
+    m_classHasBaseClassesIdSeq->SetKeyedMode(store.classHasBaseClasses.GetKeyMap());
+    m_propertyIdSeq->SetKeyedMode(store.property.GetKeyMap());
+    m_enumerationIdSeq->SetKeyedMode(store.enumeration.GetKeyMap());
+    m_kindOfQuantityIdSeq->SetKeyedMode(store.kindOfQuantity.GetKeyMap());
+    m_unitSystemIdSeq->SetKeyedMode(store.unitSystem.GetKeyMap());
+    m_phenomenonIdSeq->SetKeyedMode(store.phenomenon.GetKeyMap());
+    m_unitIdSeq->SetKeyedMode(store.unit.GetKeyMap());
+    m_formatIdSeq->SetKeyedMode(store.format.GetKeyMap());
+    m_formatCompositeUnitIdSeq->SetKeyedMode(store.formatCompositeUnit.GetKeyMap());
+    m_propertyCategoryIdSeq->SetKeyedMode(store.propertyCategory.GetKeyMap());
+    m_relationshipConstraintIdSeq->SetKeyedMode(store.relationshipConstraint.GetKeyMap());
+    m_relationshipConstraintClassIdSeq->SetKeyedMode(store.relationshipConstraintClass.GetKeyMap());
+    m_customAttributeIdSeq->SetKeyedMode(store.customAttribute.GetKeyMap());
+    m_tableIdSeq->SetKeyedMode(store.ecTable.GetKeyMap());
+    m_columnIdSeq->SetKeyedMode(store.column.GetKeyMap());
+    m_propertyMapSeq->SetKeyedMode(store.propertyMap.GetKeyMap());
+    m_propertyPathIdSeq->SetKeyedMode(store.propertyPath.GetKeyMap());
+    m_indexIdSeq->SetKeyedMode(store.ecIndex.GetKeyMap());
+    m_indexColumnIdSeq->SetKeyedMode(store.indexColumn.GetKeyMap());
 }
 
 //--------------------------------------------------------------------------------------

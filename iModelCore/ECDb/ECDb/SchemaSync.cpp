@@ -1412,8 +1412,7 @@ DbResult SchemaSyncHelper::UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri 
 
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store) {
-    store.m_keyToId.clear();
-    store.m_lastReservedId = 0;
+    store.Clear();
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(syncDb,
@@ -1424,7 +1423,7 @@ BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableNa
     if (stmt.Step() != BE_SQLITE_ROW)
         return SUCCESS;
 
-    store.m_lastReservedId = (uint64_t) stmt.GetValueInt64(0);
+    store.SetLastReservedId((uint64_t) stmt.GetValueInt64(0));
     Utf8CP mapJson = stmt.GetValueText(1);
     if (mapJson == nullptr || mapJson[0] == '\0')
         return SUCCESS;
@@ -1435,7 +1434,7 @@ BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableNa
         return SUCCESS;
 
     doc.ForEachProperty([&store](Utf8CP name, BeJsConst val) -> bool {
-        store.m_keyToId.emplace(name, (uint64_t) val.asInt64());
+        store.AddEntry(name, (uint64_t) val.asInt64());
         return false;
     });
     return SUCCESS;
@@ -1445,7 +1444,7 @@ BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableNa
 BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store) {
     BeJsDocument doc;
     doc.SetEmptyObject();
-    for (auto const& kv : store.m_keyToId)
+    for (auto const& kv : store.GetKeyMap())
         doc[kv.first.c_str()] = (int64_t) kv.second;
 
     Utf8String mapJson = doc.Stringify();
@@ -1457,7 +1456,7 @@ BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableN
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
         return ERROR;
-    if (BE_SQLITE_OK != stmt.BindInt64(2, (int64_t) store.m_lastReservedId))
+    if (BE_SQLITE_OK != stmt.BindInt64(2, (int64_t) store.GetLastReservedId()))
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindText(3, mapJson, Statement::MakeCopy::Yes))
         return ERROR;
@@ -1467,14 +1466,12 @@ BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableN
 //---------------------------------------------------------------------------------------
 void SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
     auto seedOne = [&localDb](SchemaReservationTableStore& ts, Utf8CP tableName) {
-        if (ts.m_lastReservedId > 0)
-            return;
         Statement stmt;
         if (BE_SQLITE_OK != stmt.Prepare(localDb,
                 SqlPrintfString("SELECT COALESCE(MAX(Id),0) FROM [main].[%s]", tableName).GetUtf8CP()))
             return;
         if (stmt.Step() == BE_SQLITE_ROW)
-            ts.m_lastReservedId = (uint64_t) stmt.GetValueInt64(0);
+            ts.SeedLastReservedId((uint64_t) stmt.GetValueInt64(0));
     };
 
     seedOne(store.schema,                     "ec_Schema");
