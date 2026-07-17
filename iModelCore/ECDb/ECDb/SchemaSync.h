@@ -41,4 +41,48 @@ struct SchemaSyncHelper final {
     static DbResult UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri syncDbUri, bool thisDbToSyncDb);
 };
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationHelper final {
+    //! DDL to create the reservation table in the sync-db.
+    static constexpr Utf8CP RESERVATION_TABLE_DDL =
+        "CREATE TABLE IF NOT EXISTS [schema_reservation_ids] "
+        "([TableName] TEXT NOT NULL PRIMARY KEY, "
+        "[LastReservedId] INTEGER NOT NULL DEFAULT 0, "
+        "[KeyMap] TEXT NOT NULL DEFAULT '{}')";
+
+    // Table-name constants for all reserved EC metadata and mapping tables.
+    static constexpr Utf8CP RES_TABLE_SCHEMA         = "ec_Schema";
+    static constexpr Utf8CP RES_TABLE_SCHEMAREF      = "ec_SchemaReference";
+    static constexpr Utf8CP RES_TABLE_CLASS          = "ec_Class";
+    static constexpr Utf8CP RES_TABLE_CLASSBASES     = "ec_ClassHasBaseClasses";
+    static constexpr Utf8CP RES_TABLE_PROPERTY       = "ec_Property";
+    static constexpr Utf8CP RES_TABLE_ENUM           = "ec_Enumeration";
+    static constexpr Utf8CP RES_TABLE_KOQ            = "ec_KindOfQuantity";
+    static constexpr Utf8CP RES_TABLE_UNITSYSTEM     = "ec_UnitSystem";
+    static constexpr Utf8CP RES_TABLE_PHENOMENON     = "ec_Phenomenon";
+    static constexpr Utf8CP RES_TABLE_UNIT           = "ec_Unit";
+    static constexpr Utf8CP RES_TABLE_FORMAT         = "ec_Format";
+    static constexpr Utf8CP RES_TABLE_FORMATUNIT     = "ec_FormatCompositeUnit";
+    static constexpr Utf8CP RES_TABLE_PROPCAT        = "ec_PropertyCategory";
+    static constexpr Utf8CP RES_TABLE_RELCONSTRAINT  = "ec_RelationshipConstraint";
+    static constexpr Utf8CP RES_TABLE_RELCONSTRCLASS = "ec_RelationshipConstraintClass";
+    static constexpr Utf8CP RES_TABLE_CA             = "ec_CustomAttribute";
+    static constexpr Utf8CP RES_TABLE_TABLE          = "ec_Table";
+    static constexpr Utf8CP RES_TABLE_COLUMN         = "ec_Column";
+    static constexpr Utf8CP RES_TABLE_PROPMAP        = "ec_PropertyMap";
+    static constexpr Utf8CP RES_TABLE_PROPPATH       = "ec_PropertyPath";
+    static constexpr Utf8CP RES_TABLE_INDEX          = "ec_Index";
+    static constexpr Utf8CP RES_TABLE_INDEXCOL       = "ec_IndexColumn";
+
+    static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store);
+    static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store);
+    static void SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
+    static BentleyStatus LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store);
+    static BentleyStatus WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store);
+    static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
+                                         bset<Utf8String, CompareIUtf8Ascii>& visited);
+};
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

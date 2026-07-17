@@ -1406,42 +1406,12 @@ DbResult SchemaSyncHelper::UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri 
 }
 
 //======================================================================================
-// Content-key-based reservation store helpers.
-// Moved here from SchemaManagerDispatcher.cpp — all reservation logic belongs with
-// SchemaSync since it operates on the sync-db.
+// Content-key-based reservation store helpers — SchemaReservationHelper.
+// Constants and declarations live in SchemaSync.h (SchemaReservationHelper).
 //======================================================================================
 
-static constexpr Utf8CP RESERVATION_TABLE_DDL =
-    "CREATE TABLE IF NOT EXISTS [schema_reservation_ids] "
-    "([TableName] TEXT NOT NULL PRIMARY KEY, "
-    "[LastReservedId] INTEGER NOT NULL DEFAULT 0, "
-    "[KeyMap] TEXT NOT NULL DEFAULT '{}')";
-
-static constexpr Utf8CP RES_TABLE_SCHEMA         = "ec_Schema";
-static constexpr Utf8CP RES_TABLE_SCHEMAREF      = "ec_SchemaReference";
-static constexpr Utf8CP RES_TABLE_CLASS          = "ec_Class";
-static constexpr Utf8CP RES_TABLE_CLASSBASES     = "ec_ClassHasBaseClasses";
-static constexpr Utf8CP RES_TABLE_PROPERTY       = "ec_Property";
-static constexpr Utf8CP RES_TABLE_ENUM           = "ec_Enumeration";
-static constexpr Utf8CP RES_TABLE_KOQ            = "ec_KindOfQuantity";
-static constexpr Utf8CP RES_TABLE_UNITSYSTEM     = "ec_UnitSystem";
-static constexpr Utf8CP RES_TABLE_PHENOMENON     = "ec_Phenomenon";
-static constexpr Utf8CP RES_TABLE_UNIT           = "ec_Unit";
-static constexpr Utf8CP RES_TABLE_FORMAT         = "ec_Format";
-static constexpr Utf8CP RES_TABLE_FORMATUNIT     = "ec_FormatCompositeUnit";
-static constexpr Utf8CP RES_TABLE_PROPCAT        = "ec_PropertyCategory";
-static constexpr Utf8CP RES_TABLE_RELCONSTRAINT  = "ec_RelationshipConstraint";
-static constexpr Utf8CP RES_TABLE_RELCONSTRCLASS = "ec_RelationshipConstraintClass";
-static constexpr Utf8CP RES_TABLE_CA             = "ec_CustomAttribute";
-static constexpr Utf8CP RES_TABLE_TABLE          = "ec_Table";
-static constexpr Utf8CP RES_TABLE_COLUMN         = "ec_Column";
-static constexpr Utf8CP RES_TABLE_PROPMAP        = "ec_PropertyMap";
-static constexpr Utf8CP RES_TABLE_PROPPATH       = "ec_PropertyPath";
-static constexpr Utf8CP RES_TABLE_INDEX          = "ec_Index";
-static constexpr Utf8CP RES_TABLE_INDEXCOL       = "ec_IndexColumn";
-
 //---------------------------------------------------------------------------------------
-static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store) {
+BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store) {
     store.m_keyToId.clear();
     store.m_lastReservedId = 0;
 
@@ -1472,7 +1442,7 @@ static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservat
 }
 
 //---------------------------------------------------------------------------------------
-static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store) {
+BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store) {
     BeJsDocument doc;
     doc.SetEmptyObject();
     for (auto const& kv : store.m_keyToId)
@@ -1495,7 +1465,7 @@ static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReserva
 }
 
 //---------------------------------------------------------------------------------------
-static void SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
+void SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
     auto seedOne = [&localDb](SchemaReservationTableStore& ts, Utf8CP tableName) {
         if (ts.m_lastReservedId > 0)
             return;
@@ -1532,7 +1502,7 @@ static void SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStor
 }
 
 //---------------------------------------------------------------------------------------
-static BentleyStatus LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store) {
+BentleyStatus SchemaReservationHelper::LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store) {
     if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_SCHEMA,         store.schema))          return ERROR;
     if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_SCHEMAREF,      store.schemaReference)) return ERROR;
     if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_CLASS,          store.ecClass))         return ERROR;
@@ -1559,7 +1529,7 @@ static BentleyStatus LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservatio
 }
 
 //---------------------------------------------------------------------------------------
-static BentleyStatus WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store) {
+BentleyStatus SchemaReservationHelper::WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store) {
     if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_SCHEMA,         store.schema))          return ERROR;
     if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_SCHEMAREF,      store.schemaReference)) return ERROR;
     if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_CLASS,          store.ecClass))         return ERROR;
@@ -1586,8 +1556,8 @@ static BentleyStatus WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservation
 }
 
 //---------------------------------------------------------------------------------------
-static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
-                                     bset<Utf8String, CompareIUtf8Ascii>& visited) {
+void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
+                                                        bset<Utf8String, CompareIUtf8Ascii>& visited) {
     if (visited.find(schema.GetName()) != visited.end())
         return;
     visited.insert(schema.GetName());
@@ -1682,7 +1652,7 @@ BentleyStatus SchemaSync::LoadReservationStore(SyncDbUri const& syncDbUri, Schem
         return ERROR;
     if (!syncDb.TableExists("schema_reservation_ids"))
         return ERROR;
-    return LoadReservationStoreFromSyncDb(syncDb, store);
+    return SchemaReservationHelper::LoadReservationStoreFromSyncDb(syncDb, store);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1703,25 +1673,25 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
         LOG.errorv("ReserveSchemaImport: Failed to open sync db at '%s'.", syncDbUri.GetUri().c_str());
         return ERROR;
     }
-    if (BE_SQLITE_OK != syncDb.ExecuteSql(RESERVATION_TABLE_DDL)) {
+    if (BE_SQLITE_OK != syncDb.ExecuteSql(SchemaReservationHelper::RESERVATION_TABLE_DDL)) {
         LOG.error("ReserveSchemaImport: Failed to create reservation table.");
         return ERROR;
     }
 
     SchemaReservationStore store;
-    if (SUCCESS != LoadReservationStoreFromSyncDb(syncDb, store)) {
+    if (SUCCESS != SchemaReservationHelper::LoadReservationStoreFromSyncDb(syncDb, store)) {
         LOG.error("ReserveSchemaImport: Failed to read reservation store.");
         return ERROR;
     }
 
-    SeedLastReservedIdsFromLocalDb(m_conn, store);
+    SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(m_conn, store);
 
     bset<Utf8String, CompareIUtf8Ascii> visited;
     for (ECN::ECSchemaCP schema : schemas)
         if (schema != nullptr)
-            WalkSchemaForReservation(*schema, store, visited);
+            SchemaReservationHelper::WalkSchemaForReservation(*schema, store, visited);
 
-    if (SUCCESS != WriteReservationStoreToSyncDb(syncDb, store)) {
+    if (SUCCESS != SchemaReservationHelper::WriteReservationStoreToSyncDb(syncDb, store)) {
         LOG.error("ReserveSchemaImport: Failed to write reservation store.");
         return ERROR;
     }
