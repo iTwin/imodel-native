@@ -19,47 +19,42 @@ struct IdFactory final: NonCopyableClass {
     struct IdSequence final: NonCopyableClass {
         private:
             mutable std::atomic<uint64_t> m_id;
-            mutable std::atomic<uint64_t> m_tally{0};
             bool m_isInitializedFromTable;
-            bool m_countingMode = false;
-            bool m_reservedMode = false;
-            uint64_t m_reservedStartId = 0;
-            uint64_t m_reservedCount = 0;
-            mutable std::atomic<uint64_t> m_reservedConsumed{0};
+            // Content-key-based keyed mode
+            bool m_keyedMode = false;
+            bmap<Utf8String, uint64_t, CompareIUtf8Ascii>* m_keyToIdMap = nullptr; //!< non-owning ptr into SchemaReservationTableStore
         public:
             explicit IdSequence(uint64_t id, bool isInitializedFromTable) :m_id(id), m_isInitializedFromTable(isInitializedFromTable){}
             BeInt64Id NextId() const {
                 BeAssert(m_isInitializedFromTable);
-                if (m_countingMode) {
-                    // Return a valid unique id well above the local range so INSERTs succeed
-                    // inside the rolled-back dry-run savepoint. m_id is NOT incremented so the
-                    // base fingerprint (m_id) remains correct.
-                    uint64_t count = ++m_tally;
-                    return BeInt64Id(0x0000010000000000ULL + count);
-                }
-                if (m_reservedMode) {
-                    uint64_t i = m_reservedConsumed++;
-                    BeAssert(i < m_reservedCount && "Reserved id sequence exhausted");
-                    if (i >= m_reservedCount)
-                        return BeInt64Id(0);
-                    return BeInt64Id(m_reservedStartId + i);
-                }
                 return BeInt64Id(++m_id);
             }
-            bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
-            bool IsCountingMode() const { return m_countingMode; }
-            bool IsReservedMode() const { return m_reservedMode; }
-            void EnableCountingMode() { m_countingMode = true; m_tally = 0; }
-            void DisableCountingMode() { m_countingMode = false; }
-            uint64_t GetTally() const { return m_tally.load(); }
-            uint64_t GetSeedValue() const { return m_id.load(); }
-            void SetReservedRange(uint64_t startId, uint64_t count) {
-                m_reservedStartId = startId;
-                m_reservedCount = count;
-                m_reservedMode = (count > 0);
-                m_reservedConsumed = 0;
+            //! Content-key-based id lookup (§4).  In keyed mode returns the reserved id for @p key;
+            //! returns BeInt64Id(0) (invalid) if the key is absent — caller must propagate as an error.
+            //! An empty @p key is treated as "no key available" and falls back to NextId() even in keyed mode
+            //! (used by schema-upgrade / replace paths that do not have a content key readily available).
+            //! In all other modes falls back to NextId() so call-sites work identically in both modes.
+            BeInt64Id NextIdForKey(Utf8StringCR key) const {
+                if (m_keyedMode && m_keyToIdMap != nullptr && !key.empty()) {
+                    auto it = m_keyToIdMap->find(key);
+                    if (it == m_keyToIdMap->end())
+                        return BeInt64Id(0); // unreserved-key: BindId will bind NULL → INSERT will fail
+                    return BeInt64Id(it->second);
+                }
+                return NextId();
             }
-            void ClearReservedRange() { m_reservedMode = false; m_reservedConsumed = 0; m_reservedCount = 0; }
+            bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
+            bool IsKeyedMode() const { return m_keyedMode; }
+            //! Enter content-key-based keyed mode backed by @p keyToIdMap (non-owning reference).
+            void SetKeyedMode(bmap<Utf8String, uint64_t, CompareIUtf8Ascii>& keyToIdMap) {
+                m_keyedMode = true;
+                m_keyToIdMap = &keyToIdMap;
+            }
+            //! Leave keyed mode; subsequent calls go back to the normal NextId() increment.
+            void ClearKeyedMode() {
+                m_keyedMode = false;
+                m_keyToIdMap = nullptr;
+            }
             static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
     };
 
@@ -86,8 +81,6 @@ struct IdFactory final: NonCopyableClass {
         mutable std::unique_ptr<IdSequence> m_tableIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitSystemIdSeq;
-        //! If true, all sequences are in counting mode. Reset() re-enables it after recreating sequences.
-        mutable bool m_countingModeActive = false;
         ECDbCR m_ecdb;
     public:
         explicit IdFactory(ECDbCR);
@@ -115,19 +108,13 @@ struct IdFactory final: NonCopyableClass {
         IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
         bool IsValid() const;
         bool Reset() const;
-        //! Enable counting mode on all sequences. In counting mode NextId() tallies calls and returns 0.
-        //! Counting mode is preserved across Reset() calls (Reset() only re-seeds m_id, not the tally).
-        void EnableCountingMode() const;
-        //! Disable counting mode on all sequences.
-        void DisableCountingMode() const;
-        //! Fill @p out with the count of NextId() calls per sequence since counting mode was last enabled.
-        void FillTally(SchemaImportIdTally& out) const;
-        //! Fill @p out with the current seed (m_id) of each sequence, capturing the base state after Reset().
-        void FillBaseFingerprint(SchemaImportBaseFingerprint& out) const;
-        //! Apply reserved id ranges to all sequences. After this call, NextId() returns reserved ids.
-        void ApplyReservation(SchemaImportReservation const& reservation) const;
-        //! Clear all reserved id ranges, reverting sequences to normal mode.
-        void ClearReservation() const;
+        //! Put all sequences into content-key-based keyed mode.
+        //! Each sequence's NextIdForKey() will look up ids from the corresponding table in @p store.
+        void SetKeyedMode(SchemaReservationStore& store) const;
+        //! Clear keyed mode on all sequences; subsequent NextIdForKey() calls fall back to NextId().
+        void ClearKeyedMode() const;
+        //! True when all sequences are in keyed mode.
+        bool IsKeyedMode() const { return m_classIdSeq->IsKeyedMode(); }
         static std::unique_ptr<IdFactory> Create(ECDbCR ecdb);
 };
 

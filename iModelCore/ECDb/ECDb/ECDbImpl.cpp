@@ -126,10 +126,6 @@ bool IdFactory::Reset() const {
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
     if (!IsValid())
         return false;
-    // Restore counting mode on new sequences if it was active before Reset().
-    // This ensures dry-run tally accumulates across Reset() calls during ComputeSchemaImportReservation.
-    if (m_countingModeActive)
-        EnableCountingMode();
     return true;
 }
 //--------------------------------------------------------------------------------------
@@ -179,171 +175,57 @@ std::unique_ptr<IdFactory> IdFactory::Create(ECDbCR ecdb) {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void IdFactory::EnableCountingMode() const {
-    m_countingModeActive = true;
-    m_classIdSeq->EnableCountingMode();
-    m_classHasBaseClassesIdSeq->EnableCountingMode();
-    m_columnIdSeq->EnableCountingMode();
-    m_customAttributeIdSeq->EnableCountingMode();
-    m_enumerationIdSeq->EnableCountingMode();
-    m_formatIdSeq->EnableCountingMode();
-    m_formatCompositeUnitIdSeq->EnableCountingMode();
-    m_indexIdSeq->EnableCountingMode();
-    m_indexColumnIdSeq->EnableCountingMode();
-    m_kindOfQuantityIdSeq->EnableCountingMode();
-    m_phenomenonIdSeq->EnableCountingMode();
-    m_propertyIdSeq->EnableCountingMode();
-    m_propertyCategoryIdSeq->EnableCountingMode();
-    m_propertyMapSeq->EnableCountingMode();
-    m_propertyPathIdSeq->EnableCountingMode();
-    m_relationshipConstraintIdSeq->EnableCountingMode();
-    m_relationshipConstraintClassIdSeq->EnableCountingMode();
-    m_schemaIdSeq->EnableCountingMode();
-    m_schemaReferenceIdSeq->EnableCountingMode();
-    m_tableIdSeq->EnableCountingMode();
-    m_unitIdSeq->EnableCountingMode();
-    m_unitSystemIdSeq->EnableCountingMode();
+void IdFactory::SetKeyedMode(SchemaReservationStore& store) const {
+    m_schemaIdSeq->SetKeyedMode(store.schema.m_keyToId);
+    m_schemaReferenceIdSeq->SetKeyedMode(store.schemaReference.m_keyToId);
+    m_classIdSeq->SetKeyedMode(store.ecClass.m_keyToId);
+    m_classHasBaseClassesIdSeq->SetKeyedMode(store.classHasBaseClasses.m_keyToId);
+    m_propertyIdSeq->SetKeyedMode(store.property.m_keyToId);
+    m_enumerationIdSeq->SetKeyedMode(store.enumeration.m_keyToId);
+    m_kindOfQuantityIdSeq->SetKeyedMode(store.kindOfQuantity.m_keyToId);
+    m_unitSystemIdSeq->SetKeyedMode(store.unitSystem.m_keyToId);
+    m_phenomenonIdSeq->SetKeyedMode(store.phenomenon.m_keyToId);
+    m_unitIdSeq->SetKeyedMode(store.unit.m_keyToId);
+    m_formatIdSeq->SetKeyedMode(store.format.m_keyToId);
+    m_formatCompositeUnitIdSeq->SetKeyedMode(store.formatCompositeUnit.m_keyToId);
+    m_propertyCategoryIdSeq->SetKeyedMode(store.propertyCategory.m_keyToId);
+    m_relationshipConstraintIdSeq->SetKeyedMode(store.relationshipConstraint.m_keyToId);
+    m_relationshipConstraintClassIdSeq->SetKeyedMode(store.relationshipConstraintClass.m_keyToId);
+    m_customAttributeIdSeq->SetKeyedMode(store.customAttribute.m_keyToId);
+    m_tableIdSeq->SetKeyedMode(store.ecTable.m_keyToId);
+    m_columnIdSeq->SetKeyedMode(store.column.m_keyToId);
+    m_propertyMapSeq->SetKeyedMode(store.propertyMap.m_keyToId);
+    m_propertyPathIdSeq->SetKeyedMode(store.propertyPath.m_keyToId);
+    m_indexIdSeq->SetKeyedMode(store.ecIndex.m_keyToId);
+    m_indexColumnIdSeq->SetKeyedMode(store.indexColumn.m_keyToId);
 }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void IdFactory::DisableCountingMode() const {
-    m_countingModeActive = false;
-    m_classIdSeq->DisableCountingMode();
-    m_classHasBaseClassesIdSeq->DisableCountingMode();
-    m_columnIdSeq->DisableCountingMode();
-    m_customAttributeIdSeq->DisableCountingMode();
-    m_enumerationIdSeq->DisableCountingMode();
-    m_formatIdSeq->DisableCountingMode();
-    m_formatCompositeUnitIdSeq->DisableCountingMode();
-    m_indexIdSeq->DisableCountingMode();
-    m_indexColumnIdSeq->DisableCountingMode();
-    m_kindOfQuantityIdSeq->DisableCountingMode();
-    m_phenomenonIdSeq->DisableCountingMode();
-    m_propertyIdSeq->DisableCountingMode();
-    m_propertyCategoryIdSeq->DisableCountingMode();
-    m_propertyMapSeq->DisableCountingMode();
-    m_propertyPathIdSeq->DisableCountingMode();
-    m_relationshipConstraintIdSeq->DisableCountingMode();
-    m_relationshipConstraintClassIdSeq->DisableCountingMode();
-    m_schemaIdSeq->DisableCountingMode();
-    m_schemaReferenceIdSeq->DisableCountingMode();
-    m_tableIdSeq->DisableCountingMode();
-    m_unitIdSeq->DisableCountingMode();
-    m_unitSystemIdSeq->DisableCountingMode();
-}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+------
-void IdFactory::FillTally(SchemaImportIdTally& out) const {
-    out.classCount = m_classIdSeq->GetTally();
-    out.classHasBaseClassesCount = m_classHasBaseClassesIdSeq->GetTally();
-    out.columnCount = m_columnIdSeq->GetTally();
-    out.customAttributeCount = m_customAttributeIdSeq->GetTally();
-    out.enumerationCount = m_enumerationIdSeq->GetTally();
-    out.formatCount = m_formatIdSeq->GetTally();
-    out.formatCompositeUnitCount = m_formatCompositeUnitIdSeq->GetTally();
-    out.indexCount = m_indexIdSeq->GetTally();
-    out.indexColumnCount = m_indexColumnIdSeq->GetTally();
-    out.kindOfQuantityCount = m_kindOfQuantityIdSeq->GetTally();
-    out.phenomenonCount = m_phenomenonIdSeq->GetTally();
-    out.propertyCount = m_propertyIdSeq->GetTally();
-    out.propertyCategoryCount = m_propertyCategoryIdSeq->GetTally();
-    out.propertyMapCount = m_propertyMapSeq->GetTally();
-    out.propertyPathCount = m_propertyPathIdSeq->GetTally();
-    out.relationshipConstraintCount = m_relationshipConstraintIdSeq->GetTally();
-    out.relationshipConstraintClassCount = m_relationshipConstraintClassIdSeq->GetTally();
-    out.schemaCount = m_schemaIdSeq->GetTally();
-    out.schemaReferenceCount = m_schemaReferenceIdSeq->GetTally();
-    out.tableCount = m_tableIdSeq->GetTally();
-    out.unitCount = m_unitIdSeq->GetTally();
-    out.unitSystemCount = m_unitSystemIdSeq->GetTally();
-}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+------
-void IdFactory::FillBaseFingerprint(SchemaImportBaseFingerprint& out) const {
-    out.classBase = m_classIdSeq->GetSeedValue();
-    out.classHasBaseClassesBase = m_classHasBaseClassesIdSeq->GetSeedValue();
-    out.columnBase = m_columnIdSeq->GetSeedValue();
-    out.customAttributeBase = m_customAttributeIdSeq->GetSeedValue();
-    out.enumerationBase = m_enumerationIdSeq->GetSeedValue();
-    out.formatBase = m_formatIdSeq->GetSeedValue();
-    out.formatCompositeUnitBase = m_formatCompositeUnitIdSeq->GetSeedValue();
-    out.indexBase = m_indexIdSeq->GetSeedValue();
-    out.indexColumnBase = m_indexColumnIdSeq->GetSeedValue();
-    out.kindOfQuantityBase = m_kindOfQuantityIdSeq->GetSeedValue();
-    out.phenomenonBase = m_phenomenonIdSeq->GetSeedValue();
-    out.propertyBase = m_propertyIdSeq->GetSeedValue();
-    out.propertyCategoryBase = m_propertyCategoryIdSeq->GetSeedValue();
-    out.propertyMapBase = m_propertyMapSeq->GetSeedValue();
-    out.propertyPathBase = m_propertyPathIdSeq->GetSeedValue();
-    out.relationshipConstraintBase = m_relationshipConstraintIdSeq->GetSeedValue();
-    out.relationshipConstraintClassBase = m_relationshipConstraintClassIdSeq->GetSeedValue();
-    out.schemaBase = m_schemaIdSeq->GetSeedValue();
-    out.schemaReferenceBase = m_schemaReferenceIdSeq->GetSeedValue();
-    out.tableBase = m_tableIdSeq->GetSeedValue();
-    out.unitBase = m_unitIdSeq->GetSeedValue();
-    out.unitSystemBase = m_unitSystemIdSeq->GetSeedValue();
-}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+------
-void IdFactory::ApplyReservation(SchemaImportReservation const& reservation) const {
-    m_classIdSeq->SetReservedRange(reservation.classRange.startId, reservation.classRange.count);
-    m_classHasBaseClassesIdSeq->SetReservedRange(reservation.classHasBaseClassesRange.startId, reservation.classHasBaseClassesRange.count);
-    m_columnIdSeq->SetReservedRange(reservation.columnRange.startId, reservation.columnRange.count);
-    m_customAttributeIdSeq->SetReservedRange(reservation.customAttributeRange.startId, reservation.customAttributeRange.count);
-    m_enumerationIdSeq->SetReservedRange(reservation.enumerationRange.startId, reservation.enumerationRange.count);
-    m_formatIdSeq->SetReservedRange(reservation.formatRange.startId, reservation.formatRange.count);
-    m_formatCompositeUnitIdSeq->SetReservedRange(reservation.formatCompositeUnitRange.startId, reservation.formatCompositeUnitRange.count);
-    m_indexIdSeq->SetReservedRange(reservation.indexRange.startId, reservation.indexRange.count);
-    m_indexColumnIdSeq->SetReservedRange(reservation.indexColumnRange.startId, reservation.indexColumnRange.count);
-    m_kindOfQuantityIdSeq->SetReservedRange(reservation.kindOfQuantityRange.startId, reservation.kindOfQuantityRange.count);
-    m_phenomenonIdSeq->SetReservedRange(reservation.phenomenonRange.startId, reservation.phenomenonRange.count);
-    m_propertyIdSeq->SetReservedRange(reservation.propertyRange.startId, reservation.propertyRange.count);
-    m_propertyCategoryIdSeq->SetReservedRange(reservation.propertyCategoryRange.startId, reservation.propertyCategoryRange.count);
-    m_propertyMapSeq->SetReservedRange(reservation.propertyMapRange.startId, reservation.propertyMapRange.count);
-    m_propertyPathIdSeq->SetReservedRange(reservation.propertyPathRange.startId, reservation.propertyPathRange.count);
-    m_relationshipConstraintIdSeq->SetReservedRange(reservation.relationshipConstraintRange.startId, reservation.relationshipConstraintRange.count);
-    m_relationshipConstraintClassIdSeq->SetReservedRange(reservation.relationshipConstraintClassRange.startId, reservation.relationshipConstraintClassRange.count);
-    m_schemaIdSeq->SetReservedRange(reservation.schemaRange.startId, reservation.schemaRange.count);
-    m_schemaReferenceIdSeq->SetReservedRange(reservation.schemaReferenceRange.startId, reservation.schemaReferenceRange.count);
-    m_tableIdSeq->SetReservedRange(reservation.tableRange.startId, reservation.tableRange.count);
-    m_unitIdSeq->SetReservedRange(reservation.unitRange.startId, reservation.unitRange.count);
-    m_unitSystemIdSeq->SetReservedRange(reservation.unitSystemRange.startId, reservation.unitSystemRange.count);
-}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+------
-void IdFactory::ClearReservation() const {
-    m_classIdSeq->ClearReservedRange();
-    m_classHasBaseClassesIdSeq->ClearReservedRange();
-    m_columnIdSeq->ClearReservedRange();
-    m_customAttributeIdSeq->ClearReservedRange();
-    m_enumerationIdSeq->ClearReservedRange();
-    m_formatIdSeq->ClearReservedRange();
-    m_formatCompositeUnitIdSeq->ClearReservedRange();
-    m_indexIdSeq->ClearReservedRange();
-    m_indexColumnIdSeq->ClearReservedRange();
-    m_kindOfQuantityIdSeq->ClearReservedRange();
-    m_phenomenonIdSeq->ClearReservedRange();
-    m_propertyIdSeq->ClearReservedRange();
-    m_propertyCategoryIdSeq->ClearReservedRange();
-    m_propertyMapSeq->ClearReservedRange();
-    m_propertyPathIdSeq->ClearReservedRange();
-    m_relationshipConstraintIdSeq->ClearReservedRange();
-    m_relationshipConstraintClassIdSeq->ClearReservedRange();
-    m_schemaIdSeq->ClearReservedRange();
-    m_schemaReferenceIdSeq->ClearReservedRange();
-    m_tableIdSeq->ClearReservedRange();
-    m_unitIdSeq->ClearReservedRange();
-    m_unitSystemIdSeq->ClearReservedRange();
+void IdFactory::ClearKeyedMode() const {
+    m_schemaIdSeq->ClearKeyedMode();
+    m_schemaReferenceIdSeq->ClearKeyedMode();
+    m_classIdSeq->ClearKeyedMode();
+    m_classHasBaseClassesIdSeq->ClearKeyedMode();
+    m_propertyIdSeq->ClearKeyedMode();
+    m_enumerationIdSeq->ClearKeyedMode();
+    m_kindOfQuantityIdSeq->ClearKeyedMode();
+    m_unitSystemIdSeq->ClearKeyedMode();
+    m_phenomenonIdSeq->ClearKeyedMode();
+    m_unitIdSeq->ClearKeyedMode();
+    m_formatIdSeq->ClearKeyedMode();
+    m_formatCompositeUnitIdSeq->ClearKeyedMode();
+    m_propertyCategoryIdSeq->ClearKeyedMode();
+    m_relationshipConstraintIdSeq->ClearKeyedMode();
+    m_relationshipConstraintClassIdSeq->ClearKeyedMode();
+    m_customAttributeIdSeq->ClearKeyedMode();
+    m_tableIdSeq->ClearKeyedMode();
+    m_columnIdSeq->ClearKeyedMode();
+    m_propertyMapSeq->ClearKeyedMode();
+    m_propertyPathIdSeq->ClearKeyedMode();
+    m_indexIdSeq->ClearKeyedMode();
+    m_indexColumnIdSeq->ClearKeyedMode();
 }
 
 //--------------------------------------------------------------------------------------

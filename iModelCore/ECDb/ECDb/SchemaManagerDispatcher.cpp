@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------------------------
+﻿/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -1197,82 +1197,6 @@ SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> con
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri schemaSync, SchemaImportReservation const& reservation) const
-    {
-    ECDB_PERF_LOG_SCOPE("Schema import (reserved ids)");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas (reserved)");
-    OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    SchemaImportContext ctx(m_ecdb, options, &reservation);
-    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token, schemaSync);
-    ResetIds(schemas);
-    m_ecdb.ClearECDbCache();
-    OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas (reserved)");
-    return stat;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportReservationResult MainSchemaManager::ComputeSchemaImportReservation(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
-    {
-    SchemaImportReservationResult result;
-    if (schemas.empty())
-        {
-        result.succeeded = true;
-        return result;
-        }
-
-    IdFactory& idFactory = GetECDb().GetImpl().GetIdFactory();
-
-    // Enable counting mode — NextId() will tally calls and return throwaway ids
-    idFactory.EnableCountingMode();
-
-    // Start a nested savepoint so all db mutations are rolled back when we're done
-    Savepoint sp(const_cast<ECDbR>(GetECDb()), "ComputeSchemaImportReservation");
-    if (!sp.IsActive())
-        {
-        idFactory.DisableCountingMode();
-        LOG.error("ComputeSchemaImportReservation: Failed to begin savepoint.");
-        return result;
-        }
-
-    // Run the import — inside counting mode this tallies NextId() calls without allocating real ids.
-    // The SyncDbUri is intentionally empty to skip any SchemaSync Pull/Push in the dry run.
-    SchemaImportContext ctx(m_ecdb, options);
-    const SchemaImportResult importResult = ImportSchemas(ctx, schemas, token, SchemaSync::SyncDbUri());
-
-    if (importResult.IsOk())
-        {
-        // Capture fingerprint (current m_id seeds after Reset()) and tallies (NextId() call counts)
-        idFactory.FillBaseFingerprint(result.baseFingerprint);
-        idFactory.FillTally(result.tally);
-        result.succeeded = true;
-        }
-    else
-        {
-        LOG.debug("ComputeSchemaImportReservation: dry-run import failed — returning empty result.");
-        }
-
-    // Always roll back; never persist dry-run changes
-    sp.Cancel();
-
-    // Reset in-memory schema ids that were set to fake values during the dry-run
-    ResetIds(schemas);
-
-    // Restore in-memory ECDb cache and reseed IdFactory from the rolled-back db state
-    idFactory.DisableCountingMode();
-    m_ecdb.ClearECDbCache();
-    idFactory.Reset();
-
-    return result;
-    }
-
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void MainSchemaManager::ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const {
@@ -1293,6 +1217,13 @@ void MainSchemaManager::ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const 
 //+---------------+---------------+---------------+---------------+---------------+------
 VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
     return m_vsm;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const {
+    return m_schemaSync.ReserveSchemaImport(schemas, syncDbUri);
 }
 
 //#define ALLOW_ECDB_SCHEMAIMPORT_DUMP
@@ -1321,6 +1252,15 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
     {
+    // RAII guard: ensure IdFactory keyed mode is cleared on every return path (Â§4 cleanup).
+    struct KeyedModeGuard {
+        IdFactory* m_factory;
+        bool m_active;
+        explicit KeyedModeGuard(IdFactory& f) : m_factory(&f), m_active(false) {}
+        ~KeyedModeGuard() { if (m_active) m_factory->ClearKeyedMode(); }
+        void Activate() { m_active = true; }
+    } keyedModeGuard(GetECDb().GetImpl().GetIdFactory());
+
     #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
     /*
     In Debug builds, the environment variable can be set to a directory path to
@@ -1347,10 +1287,6 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return SchemaImportResult::ERROR;
         }
 
-    // Apply reserved id ranges if a reservation was provided in the import context
-    if (ctx.GetReservation() != nullptr)
-        GetECDb().GetImpl().GetIdFactory().ApplyReservation(*ctx.GetReservation());
-
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
     if (!policy.IsSupported())
         {
@@ -1373,53 +1309,22 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
     const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
-    const auto localDbInfo = schemaSync.GetInfo();
 
-    if (!isSchemaSyncDisabled)
+    // When SchemaSync is active and a sync-db URI is available, activate keyed mode so that
+    // NextIdForKey() looks up pre-reserved ids from the sync-db reservation store.
+    if (!isSchemaSyncDisabled && !resolvedSyncDbUri.IsEmpty())
         {
-        if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
+        SchemaReservationStore& store = ctx.AllocateReservationStore();
+        if (SUCCESS != schemaSync.LoadReservationStore(resolvedSyncDbUri, store))
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
-                "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().c_str(),
-                resolvedSyncDbUri.GetUri().c_str()
-            );
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
+                "Failed to import ECSchemas. Unable to load reservation store from sync-db. uri: {%s}.",
+                resolvedSyncDbUri.GetUri().c_str());
             return SchemaImportResult::ERROR;
             }
-
-        if (!localDbInfo.IsEmpty())
-            {
-            if (resolvedSyncDbUri.IsEmpty())
-                {
-                m_ecdb.GetImpl().Issues().ReportV(
-                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
-                    "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
-
-                    localDbInfo.GetSyncId().c_str()
-                );
-                return SchemaImportResult::ERROR;
-                }
-
-            if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
-                {
-                m_ecdb.GetImpl().Issues().ReportV(
-                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                    "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
-                    localDbInfo.GetSyncId().c_str(),
-                    resolvedSyncDbUri.GetUri().c_str()
-                );
-                return SchemaImportResult::ERROR;
-                }
-            if (!GetECDb().GetImpl().GetIdFactory().Reset())
-                {
-                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-                return SchemaImportResult::ERROR;
-                }
-            // Re-apply reserved id ranges after Pull re-seeds the factory
-            if (ctx.GetReservation() != nullptr)
-                GetECDb().GetImpl().GetIdFactory().ApplyReservation(*ctx.GetReservation());
-            }
+        GetECDb().GetImpl().GetIdFactory().SetKeyedMode(store);
+        keyedModeGuard.Activate();
         }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
@@ -1475,19 +1380,6 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         {
         LOG.debug("MainSchemaManager::ImportSchemas - failed to MapSchemas");
         return rc;
-        }
-
-    if (!isSchemaSyncDisabled && !localDbInfo.IsEmpty() && rc.IsOk())
-        {
-        if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
-            {
-            m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().c_str(),
-                resolvedSyncDbUri.GetUri().c_str());
-            return SchemaImportResult::ERROR;
-            }
         }
 
     return SchemaImportResult::OK;

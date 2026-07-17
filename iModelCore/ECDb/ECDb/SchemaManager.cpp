@@ -44,16 +44,9 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri, SchemaImportReservation const& reservation) const
+BentleyStatus SchemaManager::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const
     {
-    return Main().ImportSchemas(schemas, options, token, syncDbUri, reservation);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportReservationResult SchemaManager::ComputeSchemaImportReservation(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token) const
-    {
-    return Main().ComputeSchemaImportReservation(schemas, options, token);
+    return Main().ReserveSchemaImport(schemas, syncDbUri);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod

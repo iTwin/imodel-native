@@ -651,44 +651,6 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld, SchemaSync::SyncDbUri uri, SchemaImportReservation const& reservation)
-    {
-    bvector<ECN::ECSchemaCP> schemasToImport;
-    SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
-    if (status != SchemaStatus::Success)
-        {
-        BeAssert(false && "One or more schemas are incompatible.");
-        return status;
-        }
-
-    return Domains().DoImportSchemas(schemasToImport, schemaLockHeld ?
-        SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade:
-        SchemaManager::SchemaImportOptions::None, uri, reservation);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaImportReservationResult DgnDb::ComputeSchemaImportReservation(bvector<ECN::ECSchemaCP> const& schemas) const
-    {
-    bvector<ECN::ECSchemaCP> schemasToImport;
-    SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
-    if (status != SchemaStatus::Success)
-        return SchemaImportReservationResult{};
-
-    if (schemasToImport.empty())
-        {
-        SchemaImportReservationResult result;
-        result.succeeded = true;
-        return result;
-        }
-
-    return Schemas().ComputeSchemaImportReservation(schemasToImport, SchemaManager::SchemaImportOptions::None, GetSchemaImportToken());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas, size_t* numImported)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;

@@ -398,7 +398,6 @@ struct JsInterop {
         bool m_schemaLockHeld = true;
         bool m_skipSaveChanges = false;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
-        SchemaImportReservation* m_reservation = nullptr; //!< If non-null, use reserved ids instead of local MAX(Id)+1.
         };
 
     BE_JSON_NAME(accessToken)
@@ -470,8 +469,6 @@ struct JsInterop {
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
     BE_JSON_NAME(schemaLockHeld)
-    BE_JSON_NAME(schemaImportReservation)
-    BE_JSON_NAME(forceReservedIds)
     BE_JSON_NAME(schemaSyncDbUri)
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
@@ -568,7 +565,10 @@ public:
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
-    static BeSQLite::EC::SchemaImportReservationResult ComputeSchemaImportReservation(DgnDbR, bvector<Utf8String> const&, SchemaSourceType);
+    //! Content-key-based reservation write (§3 of SchemaImportReservation plan).
+    //! Walks the schemas, allocates ids from sync-db per-table counters, and writes the key→id
+    //! blobs into the sync-db reservation rows.  Returns ERROR on failure (details logged).
+    static BentleyStatus ReserveSchemaImport(DgnDbR, bvector<Utf8String> const& schemaSources, SchemaSourceType, Utf8StringCR syncDbUri);
     static DbResult ImportFunctionalSchema(DgnDbR);
     static BentleyStatus ConvertSchemas(bvector<Utf8String> const& inputStrings, bvector<Utf8String>& outputStrings, ECSchemaReadContextPtr schemaContext, bool convertCA);
     static ChangesetPropsPtr GetChangesetProps(Utf8StringCR dbGuid, BeJsConst arg);

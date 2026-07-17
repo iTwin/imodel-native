@@ -11,6 +11,7 @@
 #include <ECObjects/SchemaComparer.h>
 #include <re2/re2.h>
 #include <numeric>
+#include <memory>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -249,20 +250,13 @@ struct SchemaImportContext final
         TransformData m_transformData;
         RemapManager m_remapManager;
         bool m_semanticRebasing;
-        SchemaImportReservation const* m_reservation = nullptr; //!< Optional reserved id ranges; nullptr means normal local-MAX mode.
+        std::unique_ptr<SchemaReservationStore> m_reservationStore; //!< Heap-allocated keyed-mode store; owned for the lifetime of this context.
 
     public:
         SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, bool semanticRebasing = false)
             : m_ecdb(ecdb),
                 m_semanticRebasing(semanticRebasing),
                 m_options(options),
-                m_builtinSchemaNames(ProfileManager::GetECDbSchemaNames()),
-				m_remapManager(ecdb){}
-        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, SchemaImportReservation const* reservation, bool semanticRebasing = false)
-            : m_ecdb(ecdb),
-                m_semanticRebasing(semanticRebasing),
-                m_options(options),
-                m_reservation(reservation),
                 m_builtinSchemaNames(ProfileManager::GetECDbSchemaNames()),
 				m_remapManager(ecdb){}
         bool AllowDataTransform();
@@ -276,7 +270,11 @@ struct SchemaImportContext final
         MainSchemaManager const& GetSchemaManager() const;
         RemapManager& RemapManager() { return m_remapManager; }
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
-        SchemaImportReservation const* GetReservation() const { return m_reservation; }
+        //! Allocates the reservation store on the heap and returns a reference for population.
+        SchemaReservationStore& AllocateReservationStore() {
+            m_reservationStore = std::make_unique<SchemaReservationStore>();
+            return *m_reservationStore;
+        }
         SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
         TransformData& GetDataTransform() {return m_transformData; }

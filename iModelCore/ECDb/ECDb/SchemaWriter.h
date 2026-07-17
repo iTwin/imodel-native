@@ -196,8 +196,8 @@ struct SchemaWriter final
         static BentleyStatus ImportPropertyCategory(Context&, ECN::PropertyCategoryCR);
         static BentleyStatus ImportProperty(Context&, ECN::ECPropertyCR, int ordinal);
         static BentleyStatus ImportRelationshipClass(Context&, ECN::ECRelationshipClassCP);
-        static BentleyStatus ImportRelationshipConstraint(Context&, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
-        static BentleyStatus ImportCustomAttributes(Context&, ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
+        static BentleyStatus ImportRelationshipConstraint(Context&, ECN::ECRelationshipClassCR relClass, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
+        static BentleyStatus ImportCustomAttributes(Context&, ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, Utf8StringCR containerKey);
 
         static BentleyStatus BindPropertyMinMaxValue(Context&, Statement&, int paramIndex, ECN::ECPropertyCR, ECN::ECValueCR);
         static BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::ECPropertyCR);
@@ -206,10 +206,10 @@ struct SchemaWriter final
         static BentleyStatus BindPropertyCategory(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
 
         static BentleyStatus InsertSchemaEntry(ECDbCR, ECN::ECSchemaCR);  //!< Also used by ProfileUpgrader_4002
-        static BentleyStatus InsertBaseClassEntry(Context&, ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
-        static BentleyStatus InsertRelationshipConstraintEntry(Context&, ECRelationshipConstraintId& constraintId, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
+        static BentleyStatus InsertBaseClassEntry(Context&, ECN::ECClassCR ecClass, ECN::ECClassCR baseClass, int ordinal);
+        static BentleyStatus InsertRelationshipConstraintEntry(Context&, ECRelationshipConstraintId& constraintId, ECN::ECRelationshipClassCR relClass, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         static BentleyStatus InsertSchemaReferenceEntries(Context&, ECN::ECSchemaCR);
-        static BentleyStatus InsertCAEntry(Context&, ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
+        static BentleyStatus InsertCAEntry(Context&, ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal, Utf8StringCR containerKey);
         static BentleyStatus ReplaceCAEntry(Context&, ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
         static BentleyStatus DeleteCAEntry(int& ordinal, Context&, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
@@ -262,6 +262,26 @@ struct SchemaWriter final
     public:
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
         static DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& schemaImportCtx, bool logIssue);
+
+        // ---- Content-key derivation helpers (§2.1 of the SchemaImportReservation plan) ----
+        // Keys compare case-insensitively; components are joined with ':'.
+        // All names are used as-is (mixed case); bmap uses CompareIUtf8Ascii for lookups.
+        static Utf8String DeriveSchemaKey(ECN::ECSchemaCR schema);
+        static Utf8String DeriveSchemaReferenceKey(ECN::ECSchemaCR schema, ECN::ECSchemaCR referencedSchema);
+        static Utf8String DeriveClassKey(ECN::ECClassCR ecClass);
+        static Utf8String DeriveClassHasBaseClassesKey(ECN::ECClassCR ecClass, ECN::ECClassCR baseClass);
+        static Utf8String DerivePropertyKey(ECN::ECPropertyCR property);
+        static Utf8String DeriveEnumerationKey(ECN::ECEnumerationCR ecEnum);
+        static Utf8String DeriveKindOfQuantityKey(ECN::KindOfQuantityCR koq);
+        static Utf8String DeriveUnitSystemKey(ECN::UnitSystemCR unitSystem);
+        static Utf8String DerivePhenomenonKey(ECN::PhenomenonCR phenomenon);
+        static Utf8String DeriveUnitKey(ECN::ECUnitCR unit);
+        static Utf8String DeriveFormatKey(ECN::ECFormatCR format);
+        static Utf8String DeriveFormatCompositeUnitKey(ECN::ECFormatCR format, int ordinal);
+        static Utf8String DerivePropertyCategoryKey(ECN::PropertyCategoryCR cat);
+        static Utf8String DeriveRelationshipConstraintKey(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end);
+        static Utf8String DeriveRelationshipConstraintClassKey(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass);
+        static Utf8String DeriveCustomAttributeKey(Utf8StringCR containerKey, ECN::ECClassCR caClass);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
