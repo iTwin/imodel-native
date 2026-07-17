@@ -166,7 +166,10 @@ elseif(VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_MINGW)
         # clang-cl does not use MSVC whole-program optimization, and llvm-lib/lld-link do not
         # accept /LTCG. mini_chromium compiles with /W4 /WX; clang 22 emits additional warnings
         # that would break the build under -Werror, so relax it for third-party crashpad code.
-        set(DISABLE_WHOLE_PROGRAM_OPTIMIZATION "extra_cflags=\"-Wno-error\"")
+        # The MSVC STL (14.44 / VS2022 17.14+) requires Clang 19+ by default and hard-errors
+        # (STL1000) on older toolsets. CI ships Clang 18, so define
+        # _ALLOW_COMPILER_AND_STL_VERSION_MISMATCH to permit it, matching winntclangmdl.mki.
+        set(DISABLE_WHOLE_PROGRAM_OPTIMIZATION "extra_cflags=\"-Wno-error /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH\"")
     else()
         set(DISABLE_WHOLE_PROGRAM_OPTIMIZATION "\
             extra_cflags=\"/GL-\" \
