@@ -1,3 +1,14 @@
+# Local vcpkg overlay port for crashpad. Used on WINDOWS ONLY: vcpkg_run_install.bat passes
+# --overlay-ports for this directory, while vcpkg_run_install.sh (Linux/macOS/Android) does
+# not, so those platforms build crashpad from the upstream vcpkg registry port instead.
+#
+# Forked from the upstream vcpkg registry `crashpad` port at version 2024-04-11#13, then
+# modified locally (extra patches plus the clang-cl / MSBuild-header handling below). See
+# ../../readme.md ("Updating crashpad") for the full version-update procedure. On Windows the
+# version built is pinned by the three REF commit hashes below (crashpad, mini_chromium,
+# lss), not by the top-level iModelCore/libsrc/crashpad/vcpkg.json constraint; keep them in
+# sync with the upstream version used by the other platforms.
+
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 
 vcpkg_from_git(
