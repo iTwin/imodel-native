@@ -173,6 +173,11 @@ set "OVERLAY_TRIPLETS=%MANIFEST_DIR%\triplets"
 set "OVERLAY_ARG="
 if exist "%OVERLAY_TRIPLETS%" set "OVERLAY_ARG=--overlay-triplets=%OVERLAY_TRIPLETS%"
 
+rem Allow a manifest to ship overlay ports (e.g. a locally-patched crashpad that
+rem builds with clang-cl) in a "ports" subdirectory alongside vcpkg.json.
+set "OVERLAY_PORTS=%MANIFEST_DIR%\ports"
+if exist "%OVERLAY_PORTS%" set "OVERLAY_ARG=%OVERLAY_ARG% --overlay-ports=%OVERLAY_PORTS%"
+
 echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, install-root=%INSTALL_ROOT%)
 echo vcpkg: exe="%VCPKG_EXE%"
 echo vcpkg: root="%VCPKG_ROOT%"
