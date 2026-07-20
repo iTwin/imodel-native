@@ -1427,7 +1427,7 @@ BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableNa
     store.SetLastReservedId((uint64_t) stmt.GetValueInt64(0));
 
     const void* blobData = stmt.GetValueBlob(1);
-    int blobSize = stmt.GetValueBytes(1);
+    int blobSize = stmt.GetColumnBytes(1);
     if (blobData == nullptr || blobSize <= 0)
         return SUCCESS;
 
@@ -1848,7 +1848,7 @@ BentleyStatus SchemaReservationHelper::ReadColumnTableStore(Db& syncDb, Utf8CP p
     store.SetLastUsedColumnOrd((uint64_t) stmt.GetValueInt64(0));
 
     const void* blobData = stmt.GetValueBlob(1);
-    int blobSize = stmt.GetValueBytes(1);
+    int blobSize = stmt.GetColumnBytes(1);
     if (blobData == nullptr || blobSize <= 0)
         return SUCCESS;
 

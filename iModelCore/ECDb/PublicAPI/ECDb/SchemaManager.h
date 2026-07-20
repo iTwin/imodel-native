@@ -9,6 +9,161 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+//! Per-table in-memory store for the content-key → reserved-id mapping used by the
+//! content-key-based SchemaSync reservation system (§2/§3 of the SchemaImportReservation plan).
+//! Keys compare case-insensitively, matching ECObjects name semantics.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationTableStore final {
+private:
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> m_keyToId; //!< key → reserved id
+    uint64_t m_lastReservedId = 0; //!< monotonic counter seeded from MAX(Id) of the table in the sync db
+
+public:
+    //! Return the reserved id for @p key; allocate a new one (next counter value) if key is absent.
+    uint64_t GetOrAllocate(Utf8StringCR key) {
+        auto it = m_keyToId.find(key);
+        if (it != m_keyToId.end())
+            return it->second;
+        uint64_t id = ++m_lastReservedId;
+        m_keyToId.emplace(key, id);
+        return id;
+    }
+
+    //! Return the reserved id for @p key, or 0 if absent.
+    uint64_t Lookup(Utf8StringCR key) const {
+        auto it = m_keyToId.find(key);
+        return it != m_keyToId.end() ? it->second : 0;
+    }
+
+    //! True if @p key already has a reserved id.
+    bool HasKey(Utf8StringCR key) const { return m_keyToId.find(key) != m_keyToId.end(); }
+
+    //! Read-only access to the full key→id map (e.g. for iteration during serialization).
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToId; }
+    //! Mutable access to the key→id map; required by IdSequence::SetKeyedMode.
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii>& GetKeyMap() { return m_keyToId; }
+
+    //! Return the current last-reserved-id counter.
+    uint64_t GetLastReservedId() const { return m_lastReservedId; }
+    //! Overwrite the last-reserved-id counter (used when loading from the sync-db).
+    void SetLastReservedId(uint64_t id) { m_lastReservedId = id; }
+    //! Set the last-reserved-id counter only if it has not been set yet (i.e. still 0).
+    void SeedLastReservedId(uint64_t id) { if (m_lastReservedId == 0) m_lastReservedId = id; }
+
+    //! Clear the key map and reset the counter; call before populating from the sync-db.
+    void Clear() { m_keyToId.clear(); m_lastReservedId = 0; }
+    //! Insert a single key→id entry (used when loading key-map JSON from the sync-db).
+    void AddEntry(Utf8StringCR key, uint64_t id) { m_keyToId.emplace(key, id); }
+};
+
+//=======================================================================================
+//! Full set of per-table stores for the content-key → reserved-id reservation used by SchemaSync.
+//! Written into the sync-db by ReserveSchemaImport (§3) and read back by ImportSchemas in
+//! keyed mode (§4).  Covers all 16 metadata tables plus the 6 mapping tables (§3a).
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationStore final {
+    // Metadata tables (2.1)
+    SchemaReservationTableStore schema;
+    SchemaReservationTableStore schemaReference;
+    SchemaReservationTableStore ecClass;
+    SchemaReservationTableStore classHasBaseClasses;
+    SchemaReservationTableStore property;
+    SchemaReservationTableStore enumeration;
+    SchemaReservationTableStore kindOfQuantity;
+    SchemaReservationTableStore unitSystem;
+    SchemaReservationTableStore phenomenon;
+    SchemaReservationTableStore unit;
+    SchemaReservationTableStore format;
+    SchemaReservationTableStore formatCompositeUnit;
+    SchemaReservationTableStore propertyCategory;
+    SchemaReservationTableStore relationshipConstraint;
+    SchemaReservationTableStore relationshipConstraintClass;
+    SchemaReservationTableStore customAttribute;
+    // Mapping tables (3a)
+    SchemaReservationTableStore ecTable;
+    SchemaReservationTableStore column;
+    SchemaReservationTableStore propertyMap;
+    SchemaReservationTableStore propertyPath;
+    SchemaReservationTableStore ecIndex;
+    SchemaReservationTableStore indexColumn;
+};
+
+//=======================================================================================
+//! Entry in the per-physical-table column reservation store (§3a of the
+//! SchemaImportReservation plan): the reserved column ordinal within the physical
+//! SQLite table and the corresponding reserved ec_Column.Id.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnEntry final {
+    uint64_t columnOrd = 0; //!< reserved ordinal (physical column position) in the SQLite table
+    uint64_t columnId  = 0; //!< reserved ec_Column.Id for this column
+};
+
+//=======================================================================================
+//! Per-physical-SQLite-table store for the property-key → column assignment used by
+//! the mapping-phase reservation system (§3a).  One row per shared-column/overflow
+//! physical table in schema_reservation_columns; keyed by content, idempotent.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnTableStore final {
+private:
+    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> m_keyToEntry;
+    uint64_t m_lastUsedColumnOrd = 0; //!< monotonic counter seeded from high-water mark
+
+public:
+    //! Return the reserved entry for @p key, or nullptr if absent.
+    SchemaReservationColumnEntry const* Lookup(Utf8StringCR key) const {
+        auto it = m_keyToEntry.find(key);
+        return it != m_keyToEntry.end() ? &it->second : nullptr;
+    }
+    //! Allocate the next column ordinal for @p key if not yet reserved, using @p columnId
+    //! as the ec_Column.Id. Returns the (existing or newly allocated) entry.
+    SchemaReservationColumnEntry GetOrAllocate(Utf8StringCR key, uint64_t columnId) {
+        auto it = m_keyToEntry.find(key);
+        if (it != m_keyToEntry.end())
+            return it->second;
+        SchemaReservationColumnEntry entry;
+        entry.columnOrd = ++m_lastUsedColumnOrd;
+        entry.columnId  = columnId;
+        m_keyToEntry.emplace(key, entry);
+        return entry;
+    }
+    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToEntry; }
+    uint64_t GetLastUsedColumnOrd() const { return m_lastUsedColumnOrd; }
+    void SetLastUsedColumnOrd(uint64_t ord) { m_lastUsedColumnOrd = ord; }
+    //! Set the counter only if it has not been set yet (used when seeding from MAX(Ordinal)).
+    void SeedLastUsedColumnOrd(uint64_t ord) { if (m_lastUsedColumnOrd == 0) m_lastUsedColumnOrd = ord; }
+    void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) { m_keyToEntry.emplace(key, entry); }
+    void Clear() { m_keyToEntry.clear(); m_lastUsedColumnOrd = 0; }
+};
+
+//=======================================================================================
+//! Full column-assignment reservation store keyed by physical SQLite table name.
+//! Written into the sync-db by ReserveSchemaImport (§3a) and read back by
+//! ImportSchemas so that DbMappingManager assigns the same column ordinals on every
+//! briefcase.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnStore final {
+private:
+    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> m_physTableStores;
+public:
+    //! Return (or create) the per-physical-table store for @p physicalTableName.
+    SchemaReservationColumnTableStore& GetOrCreate(Utf8StringCR physicalTableName) {
+        return m_physTableStores[physicalTableName];
+    }
+    //! Return the per-physical-table store for @p physicalTableName, or nullptr if absent.
+    SchemaReservationColumnTableStore const* TryGet(Utf8StringCR physicalTableName) const {
+        auto it = m_physTableStores.find(physicalTableName);
+        return it != m_physTableStores.end() ? &it->second : nullptr;
+    }
+    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> const& GetStores() const { return m_physTableStores; }
+    void Clear() { m_physTableStores.clear(); }
+};
+
+//=======================================================================================
 //! Schema change event type
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
@@ -190,161 +345,6 @@ struct SchemaImportResult final
         bool operator == (Status r) const { return r == m_status; }
         bool operator != (Status r) const { return r != m_status; }
     };
-
-//=======================================================================================
-//! Per-table in-memory store for the content-key → reserved-id mapping used by the
-//! content-key-based SchemaSync reservation system (§2/§3 of the SchemaImportReservation plan).
-//! Keys compare case-insensitively, matching ECObjects name semantics.
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SchemaReservationTableStore final {
-private:
-    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> m_keyToId; //!< key → reserved id
-    uint64_t m_lastReservedId = 0; //!< monotonic counter seeded from MAX(Id) of the table in the sync db
-
-public:
-    //! Return the reserved id for @p key; allocate a new one (next counter value) if key is absent.
-    uint64_t GetOrAllocate(Utf8StringCR key) {
-        auto it = m_keyToId.find(key);
-        if (it != m_keyToId.end())
-            return it->second;
-        uint64_t id = ++m_lastReservedId;
-        m_keyToId.emplace(key, id);
-        return id;
-    }
-
-    //! Return the reserved id for @p key, or 0 if absent.
-    uint64_t Lookup(Utf8StringCR key) const {
-        auto it = m_keyToId.find(key);
-        return it != m_keyToId.end() ? it->second : 0;
-    }
-
-    //! True if @p key already has a reserved id.
-    bool HasKey(Utf8StringCR key) const { return m_keyToId.find(key) != m_keyToId.end(); }
-
-    //! Read-only access to the full key→id map (e.g. for iteration during serialization).
-    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToId; }
-    //! Mutable access to the key→id map; required by IdSequence::SetKeyedMode.
-    bmap<Utf8String, uint64_t, CompareIUtf8Ascii>& GetKeyMap() { return m_keyToId; }
-
-    //! Return the current last-reserved-id counter.
-    uint64_t GetLastReservedId() const { return m_lastReservedId; }
-    //! Overwrite the last-reserved-id counter (used when loading from the sync-db).
-    void SetLastReservedId(uint64_t id) { m_lastReservedId = id; }
-    //! Set the last-reserved-id counter only if it has not been set yet (i.e. still 0).
-    void SeedLastReservedId(uint64_t id) { if (m_lastReservedId == 0) m_lastReservedId = id; }
-
-    //! Clear the key map and reset the counter; call before populating from the sync-db.
-    void Clear() { m_keyToId.clear(); m_lastReservedId = 0; }
-    //! Insert a single key→id entry (used when loading key-map JSON from the sync-db).
-    void AddEntry(Utf8StringCR key, uint64_t id) { m_keyToId.emplace(key, id); }
-};
-
-//=======================================================================================
-//! Full set of per-table stores for the content-key → reserved-id reservation used by SchemaSync.
-//! Written into the sync-db by ReserveSchemaImport (§3) and read back by ImportSchemas in
-//! keyed mode (§4).  Covers all 16 metadata tables plus the 6 mapping tables (§3a).
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SchemaReservationStore final {
-    // Metadata tables (2.1)
-    SchemaReservationTableStore schema;
-    SchemaReservationTableStore schemaReference;
-    SchemaReservationTableStore ecClass;
-    SchemaReservationTableStore classHasBaseClasses;
-    SchemaReservationTableStore property;
-    SchemaReservationTableStore enumeration;
-    SchemaReservationTableStore kindOfQuantity;
-    SchemaReservationTableStore unitSystem;
-    SchemaReservationTableStore phenomenon;
-    SchemaReservationTableStore unit;
-    SchemaReservationTableStore format;
-    SchemaReservationTableStore formatCompositeUnit;
-    SchemaReservationTableStore propertyCategory;
-    SchemaReservationTableStore relationshipConstraint;
-    SchemaReservationTableStore relationshipConstraintClass;
-    SchemaReservationTableStore customAttribute;
-    // Mapping tables (3a)
-    SchemaReservationTableStore ecTable;
-    SchemaReservationTableStore column;
-    SchemaReservationTableStore propertyMap;
-    SchemaReservationTableStore propertyPath;
-    SchemaReservationTableStore ecIndex;
-    SchemaReservationTableStore indexColumn;
-};
-
-//=======================================================================================
-//! Entry in the per-physical-table column reservation store (§3a of the
-//! SchemaImportReservation plan): the reserved column ordinal within the physical
-//! SQLite table and the corresponding reserved ec_Column.Id.
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SchemaReservationColumnEntry final {
-    uint64_t columnOrd = 0; //!< reserved ordinal (physical column position) in the SQLite table
-    uint64_t columnId  = 0; //!< reserved ec_Column.Id for this column
-};
-
-//=======================================================================================
-//! Per-physical-SQLite-table store for the property-key → column assignment used by
-//! the mapping-phase reservation system (§3a).  One row per shared-column/overflow
-//! physical table in schema_reservation_columns; keyed by content, idempotent.
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SchemaReservationColumnTableStore final {
-private:
-    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> m_keyToEntry;
-    uint64_t m_lastUsedColumnOrd = 0; //!< monotonic counter seeded from high-water mark
-
-public:
-    //! Return the reserved entry for @p key, or nullptr if absent.
-    SchemaReservationColumnEntry const* Lookup(Utf8StringCR key) const {
-        auto it = m_keyToEntry.find(key);
-        return it != m_keyToEntry.end() ? &it->second : nullptr;
-    }
-    //! Allocate the next column ordinal for @p key if not yet reserved, using @p columnId
-    //! as the ec_Column.Id. Returns the (existing or newly allocated) entry.
-    SchemaReservationColumnEntry GetOrAllocate(Utf8StringCR key, uint64_t columnId) {
-        auto it = m_keyToEntry.find(key);
-        if (it != m_keyToEntry.end())
-            return it->second;
-        SchemaReservationColumnEntry entry;
-        entry.columnOrd = ++m_lastUsedColumnOrd;
-        entry.columnId  = columnId;
-        m_keyToEntry.emplace(key, entry);
-        return entry;
-    }
-    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToEntry; }
-    uint64_t GetLastUsedColumnOrd() const { return m_lastUsedColumnOrd; }
-    void SetLastUsedColumnOrd(uint64_t ord) { m_lastUsedColumnOrd = ord; }
-    //! Set the counter only if it has not been set yet (used when seeding from MAX(Ordinal)).
-    void SeedLastUsedColumnOrd(uint64_t ord) { if (m_lastUsedColumnOrd == 0) m_lastUsedColumnOrd = ord; }
-    void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) { m_keyToEntry.emplace(key, entry); }
-    void Clear() { m_keyToEntry.clear(); m_lastUsedColumnOrd = 0; }
-};
-
-//=======================================================================================
-//! Full column-assignment reservation store keyed by physical SQLite table name.
-//! Written into the sync-db by ReserveSchemaImport (§3a) and read back by
-//! ImportSchemas so that DbMappingManager assigns the same column ordinals on every
-//! briefcase.
-// @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct SchemaReservationColumnStore final {
-private:
-    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> m_physTableStores;
-public:
-    //! Return (or create) the per-physical-table store for @p physicalTableName.
-    SchemaReservationColumnTableStore& GetOrCreate(Utf8StringCR physicalTableName) {
-        return m_physTableStores[physicalTableName];
-    }
-    //! Return the per-physical-table store for @p physicalTableName, or nullptr if absent.
-    SchemaReservationColumnTableStore const* TryGet(Utf8StringCR physicalTableName) const {
-        auto it = m_physTableStores.find(physicalTableName);
-        return it != m_physTableStores.end() ? &it->second : nullptr;
-    }
-    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> const& GetStores() const { return m_physTableStores; }
-    void Clear() { m_physTableStores.clear(); }
-};
 
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
@@ -687,6 +687,12 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             SchemaImportOptions options,
             SchemaImportToken const* token = nullptr,
             SchemaSync::SyncDbUri syncDbUri = SchemaSync::SyncDbUri()) const;
+
+        //! Reserve content-key-based ids for @p schemas in the sync-db. Must be called before ImportSchemas.
+        //! @param[in] schemas List of schemas to reserve
+        //! @param[in] syncDbUri URI of the sync-db
+        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+        ECDB_EXPORT BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.

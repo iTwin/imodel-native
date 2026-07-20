@@ -124,9 +124,7 @@ bool IdFactory::Reset() const {
     m_tableIdSeq = IdSequence::Create(m_ecdb, TABLE_Table, COL_DEFAULTNAME_Id);
     m_unitIdSeq = IdSequence::Create(m_ecdb, TABLE_Unit, COL_DEFAULTNAME_Id);
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
-    if (!IsValid())
-        return false;
-    return true;
+    return IsValid();
 }
 //--------------------------------------------------------------------------------------
 // @bsimethod

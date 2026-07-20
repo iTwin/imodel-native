@@ -1226,7 +1226,7 @@ BentleyStatus MainSchemaManager::ReserveSchemaImport(bvector<ECN::ECSchemaCP> co
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
     const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
-    if(!isschemaSyncDisabled && !resolvedSyncDbUri.IsEmpty()) {
+    if(!isSchemaSyncDisabled && !resolvedSyncDbUri.IsEmpty()) {
         return m_schemaSync.ReserveSchemaImport(schemas, syncDbUri);
     }
     LOG.info("SchemaSync is disabled or no sync-db URI is available. Skipping schema import reservation.");
