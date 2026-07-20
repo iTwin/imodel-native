@@ -191,7 +191,7 @@ class ECSqlParams final {
             ECDB_EXPORT ECSqlParam(std::string const& name, DPoint2d const& val);
             ECDB_EXPORT ECSqlParam(std::string const& name, DPoint3d const& val);
             ECDB_EXPORT ECSqlParam(std::string const& name, bvector<Byte> const& val);
-            virtual ~ECSqlParam(){}
+            ~ECSqlParam(){} // Class is final, so not virtual
             ECDB_EXPORT int GetIndex() const;
             bool IsNull() const { return m_type == Type::Null;}
             Json::Value const& GetValue() const { return m_val; }
@@ -221,7 +221,7 @@ class ECSqlParams final {
         ECDB_EXPORT ECSqlParams& operator = (ECSqlParams && rhs);
         ECDB_EXPORT ECSqlParams& operator = (const ECSqlParams & rhs);
         explicit ECSqlParams(Json::Value const& v) { FromJs(v); }
-        virtual ~ECSqlParams(){}
+        ~ECSqlParams(){} // Class is final, so not virtual
         bool IsEmpty() const { return m_params.size() == 0; }
         size_t Count() const { return m_params.size(); }
         auto& GetParam(std::string const& name) { return m_params[name]; }
