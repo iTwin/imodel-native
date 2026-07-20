@@ -1473,38 +1473,40 @@ BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableN
 }
 
 //---------------------------------------------------------------------------------------
-void SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
-    auto seedOne = [&localDb](SchemaReservationTableStore& ts, Utf8CP tableName) {
+BentleyStatus SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
+    auto seedOne = [&localDb](SchemaReservationTableStore& ts, Utf8CP tableName) -> bool {
         Statement stmt;
         if (BE_SQLITE_OK != stmt.Prepare(localDb,
                 SqlPrintfString("SELECT COALESCE(MAX(Id),0) FROM [main].[%s]", tableName).GetUtf8CP()))
-            return;
+            return false;
         if (stmt.Step() == BE_SQLITE_ROW)
             ts.SeedLastReservedId((uint64_t) stmt.GetValueInt64(0));
+        return true;
     };
 
-    seedOne(store.schema,                     RES_TABLE_SCHEMA);
-    seedOne(store.schemaReference,            RES_TABLE_SCHEMAREF);
-    seedOne(store.ecClass,                    RES_TABLE_CLASS);
-    seedOne(store.classHasBaseClasses,        RES_TABLE_CLASSBASES);
-    seedOne(store.property,                   RES_TABLE_PROPERTY);
-    seedOne(store.enumeration,                RES_TABLE_ENUM);
-    seedOne(store.kindOfQuantity,             RES_TABLE_KOQ);
-    seedOne(store.unitSystem,                 RES_TABLE_UNITSYSTEM);
-    seedOne(store.phenomenon,                 RES_TABLE_PHENOMENON);
-    seedOne(store.unit,                       RES_TABLE_UNIT);
-    seedOne(store.format,                     RES_TABLE_FORMAT);
-    seedOne(store.formatCompositeUnit,        RES_TABLE_FORMATUNIT);
-    seedOne(store.propertyCategory,           RES_TABLE_PROPCAT);
-    seedOne(store.relationshipConstraint,     RES_TABLE_RELCONSTRAINT);
-    seedOne(store.relationshipConstraintClass,RES_TABLE_RELCONSTRCLASS);
-    seedOne(store.customAttribute,            RES_TABLE_CA);
-    seedOne(store.ecTable,                    RES_TABLE_TABLE);
-    seedOne(store.column,                     RES_TABLE_COLUMN);
-    seedOne(store.propertyMap,                RES_TABLE_PROPMAP);
-    seedOne(store.propertyPath,               RES_TABLE_PROPPATH);
-    seedOne(store.ecIndex,                    RES_TABLE_INDEX);
-    seedOne(store.indexColumn,                RES_TABLE_INDEXCOL);
+    if (!seedOne(store.schema,                     RES_TABLE_SCHEMA))          return ERROR;
+    if (!seedOne(store.schemaReference,            RES_TABLE_SCHEMAREF))       return ERROR;
+    if (!seedOne(store.ecClass,                    RES_TABLE_CLASS))           return ERROR;
+    if (!seedOne(store.classHasBaseClasses,        RES_TABLE_CLASSBASES))      return ERROR;
+    if (!seedOne(store.property,                   RES_TABLE_PROPERTY))        return ERROR;
+    if (!seedOne(store.enumeration,                RES_TABLE_ENUM))            return ERROR;
+    if (!seedOne(store.kindOfQuantity,             RES_TABLE_KOQ))             return ERROR;
+    if (!seedOne(store.unitSystem,                 RES_TABLE_UNITSYSTEM))      return ERROR;
+    if (!seedOne(store.phenomenon,                 RES_TABLE_PHENOMENON))      return ERROR;
+    if (!seedOne(store.unit,                       RES_TABLE_UNIT))            return ERROR;
+    if (!seedOne(store.format,                     RES_TABLE_FORMAT))          return ERROR;
+    if (!seedOne(store.formatCompositeUnit,        RES_TABLE_FORMATUNIT))      return ERROR;
+    if (!seedOne(store.propertyCategory,           RES_TABLE_PROPCAT))         return ERROR;
+    if (!seedOne(store.relationshipConstraint,     RES_TABLE_RELCONSTRAINT))   return ERROR;
+    if (!seedOne(store.relationshipConstraintClass,RES_TABLE_RELCONSTRCLASS))  return ERROR;
+    if (!seedOne(store.customAttribute,            RES_TABLE_CA))              return ERROR;
+    if (!seedOne(store.ecTable,                    RES_TABLE_TABLE))           return ERROR;
+    if (!seedOne(store.column,                     RES_TABLE_COLUMN))          return ERROR;
+    if (!seedOne(store.propertyMap,                RES_TABLE_PROPMAP))         return ERROR;
+    if (!seedOne(store.propertyPath,               RES_TABLE_PROPPATH))        return ERROR;
+    if (!seedOne(store.ecIndex,                    RES_TABLE_INDEX))           return ERROR;
+    if (!seedOne(store.indexColumn,                RES_TABLE_INDEXCOL))        return ERROR;
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1693,7 +1695,10 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
         return ERROR;
     }
 
-    SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(m_conn, store);
+    if (SUCCESS != SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(m_conn, store)) {
+        LOG.error("ReserveSchemaImport: Failed to seed reserved ids from local db.");
+        return ERROR;
+    }
 
     bset<Utf8String, CompareIUtf8Ascii> visited;
     for (ECN::ECSchemaCP schema : schemas)
@@ -1720,7 +1725,10 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
         return ERROR;
     }
 
-    SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(m_conn, colStore);
+    if (SUCCESS != SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(m_conn, colStore)) {
+        LOG.error("ReserveSchemaImport: Failed to seed column ordinals from local db.");
+        return ERROR;
+    }
 
     bset<Utf8String, CompareIUtf8Ascii> colVisited;
     for (ECN::ECSchemaCP schema : schemas)

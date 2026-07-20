@@ -88,7 +88,7 @@ struct SchemaReservationHelper final {
 
     static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store);
     static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store);
-    static void SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
+    static BentleyStatus SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
     static BentleyStatus LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store);
     static BentleyStatus WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store);
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
