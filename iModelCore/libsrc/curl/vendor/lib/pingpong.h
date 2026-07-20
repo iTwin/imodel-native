@@ -64,11 +64,15 @@ struct pingpong {
   CURLcode (*statemachine)(struct Curl_easy *data, struct connectdata *conn);
   bool (*endofresp)(struct Curl_easy *data, struct connectdata *conn,
                     const char *ptr, size_t len, int *code);
-  BIT(initialised);
+  BIT(initialized);
   BIT(pending_resp);  /* set TRUE when a server response is pending or in
                          progress, and is cleared once the last response is
                          read */
 };
+
+/* Default pingpong response timeout in milliseconds, unless a transfer
+ * has CURLOPT_SERVER_RESPONSE_TIMEOUT(_MS) set. */
+#define PINGPONG_TIMEOUT_MS      (60 * 1000)
 
 #define PINGPONG_SETUP(pp, s, e) \
   do {                           \
@@ -88,10 +92,10 @@ CURLcode Curl_pp_statemach(struct Curl_easy *data, struct pingpong *pp,
 /* initialize stuff to prepare for reading a fresh new response */
 void Curl_pp_init(struct pingpong *pp, const struct curltime *pnow);
 
-/* Returns timeout in ms. 0 or negative number means the timeout has already
-   triggered */
-timediff_t Curl_pp_state_timeout(struct Curl_easy *data,
-                                 struct pingpong *pp);
+/* Returns time remaining in ms. 0 or negative number means the
+  timeout has already triggered */
+timediff_t Curl_pp_state_timeleft_ms(struct Curl_easy *data,
+                                     struct pingpong *pp);
 
 /***********************************************************************
  *

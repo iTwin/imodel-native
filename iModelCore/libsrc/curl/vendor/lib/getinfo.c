@@ -67,17 +67,15 @@ void Curl_initinfo(struct Curl_easy *data)
   info->httpauthpicked = 0;
   info->numconnects = 0;
 
-  curlx_free(info->contenttype);
-  info->contenttype = NULL;
-
-  curlx_free(info->wouldredirect);
-  info->wouldredirect = NULL;
+  curlx_safefree(info->contenttype);
+  curlx_safefree(info->wouldredirect);
 
   memset(&info->primary, 0, sizeof(info->primary));
   info->retry_after = 0;
 
   info->conn_scheme = 0;
   info->conn_protocol = 0;
+  info->used_proxy = 0;
 
 #ifdef USE_SSL
   Curl_ssl_free_certinfo(data);
@@ -414,6 +412,9 @@ static CURLcode getinfo_offt(struct Curl_easy *data, CURLINFO info,
   case CURLINFO_FILETIME_T:
     *param_offt = (curl_off_t)data->info.filetime;
     break;
+  case CURLINFO_SIZE_DELIVERED:
+    *param_offt = data->progress.deliver;
+    break;
   case CURLINFO_SIZE_UPLOAD_T:
     *param_offt = data->progress.ul.cur_size;
     break;
@@ -582,14 +583,16 @@ static CURLcode getinfo_slist(struct Curl_easy *data, CURLINFO info,
     break;
   case CURLINFO_TLS_SESSION:
   case CURLINFO_TLS_SSL_PTR: {
+    int query = (info == CURLINFO_TLS_SSL_PTR) ?
+      CF_QUERY_SSL_INFO : CF_QUERY_SSL_CTX_INFO;
     struct curl_tlssessioninfo **tsip = (struct curl_tlssessioninfo **)
-                                        param_slistp;
+      param_slistp;
     struct curl_tlssessioninfo *tsi = &data->tsi;
 
     /* we are exposing a pointer to internal memory with unknown
      * lifetime here. */
     *tsip = tsi;
-    if(!Curl_conn_get_ssl_info(data, data->conn, FIRSTSOCKET, tsi)) {
+    if(!Curl_conn_get_ssl_info(data, data->conn, FIRSTSOCKET, query, tsi)) {
       tsi->backend = Curl_ssl_backend();
       tsi->internals = NULL;
     }

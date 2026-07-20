@@ -8,4 +8,32 @@
         <RequiredRepository>vcpkg</RequiredRepository>
     </Part>
 
+    <!-- Sequential vcpkg install chain.  Each part runs vcpkg install for one consumer and
+         gates the next consumer behind it, so no two vcpkg processes ever run concurrently.
+         Order only matters when packages share vcpkg state (binary cache, running.lock, etc.),
+         but when it does matter it matters a great deal — concurrent runs against the same
+         install root will collide on vcpkg-running.lock and corrupt the build.
+         Consumers depend on their named part here instead of directly on "vcpkg". -->
+    <Part Name="vcpkg_install_compress" BentleyBuildMakeFile="vcpkg_install_compress.mke">
+        <SubPart PartName="vcpkg"/>
+    </Part>
+    <Part Name="vcpkg_install_png" BentleyBuildMakeFile="vcpkg_install_png.mke">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
+    </Part>
+    <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_png" LibType="Static"/>
+    </Part>
+    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_openssl" LibType="Static"/>
+    </Part>
+
 </BuildContext>

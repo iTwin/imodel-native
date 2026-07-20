@@ -3022,6 +3022,142 @@ TEST(CurveVector, Centroid)
     Check::ClearGeometry ("CurveVector.Centroid");
     }
 
+bool ResolveExtend(int extendCode, bool isCandidate)
+    {
+    if (extendCode == 0)
+        return false;
+    if (extendCode == 2)
+        return true;
+    return isCandidate;
+    }
+
+// extendCode (0,1,2) = (none, first&last, all)
+void TestCCIExtendedA (CurveVectorCR cVectorA, CurveVectorCR cVectorB, int extendCode, size_t expectedCount)
+    {
+    DMatrix4d matrix;
+    matrix.InitIdentity();
+    size_t nA = cVectorA.size();
+    size_t nB = cVectorB.size();
+    CurveVectorPtr intersectionsA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    CurveVectorPtr intersectionsB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    Check::SaveTransformed(cVectorA);
+    Check::SaveTransformed(cVectorB);
+
+    for (size_t iA = 0; iA < nA; iA++)
+        {
+        for (size_t iB = 0; iB < nB; iB++)
+            {
+            CurveCurve::IntersectionsXY(*intersectionsA, *intersectionsB, cVectorA.at(iA).get(), cVectorB.at(iB).get(), &matrix,
+                ResolveExtend (extendCode, iA == 0),
+                ResolveExtend(extendCode, iA + 1 == nA),
+                ResolveExtend(extendCode, iB == 0),
+                ResolveExtend(extendCode, iB + 1 == nB));
+            }
+        }
+    for (size_t k = 0; k < intersectionsA->size(); k++)
+        {
+        PartialCurveDetail detailA, detailB;
+        if (Check::True(CurveCurve::GetPartialCurveDetailPair(*intersectionsA, *intersectionsB, k, detailA, detailB), "DetailAccess"))
+            {
+            DPoint3d xyz;
+            detailA.parentCurve->FractionToPoint(detailA.fraction0, xyz);
+            Check::SaveTransformedMarker(xyz, -0.2);
+            }
+        }
+    Check::Size (expectedCount, intersectionsA->size ());
+    }
+
+// run intersection in both orders -- counts should not change.
+void TestCCIExtended(CurveVectorCR cVectorA, CurveVectorCR cVectorB, int extendCode, size_t expectedCount)
+    {
+    SaveAndRestoreCheckTransform shifter(0, 20, 0);
+    TestCCIExtendedA (cVectorA, cVectorB, extendCode, expectedCount);
+    Check::Shift (20,0,0);
+    TestCCIExtendedA(cVectorB, cVectorA, extendCode, expectedCount);
+    }
+
+TEST(CurveVector, ExtendedIntersectionsInChain)
+    {
+    CurveVectorPtr cVectorA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    cVectorA->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(-2,0,0, 2,1,0)));
+    cVectorA->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(2,1,0, 2,3,0)));
+    cVectorA->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(2,3,0, 0,4,0)));
+
+    CurveVectorPtr cVectorB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    cVectorB->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(-0,2,0, 10,2,0)));
+
+    DPoint3d pointQ = DPoint3d::From(0, 4.25, 0);
+
+    if (true)
+        {
+        SaveAndRestoreCheckTransform shifter(60, 0, 0);
+        TestCCIExtended(*cVectorA, *cVectorB, 0, 1);
+        TestCCIExtended(*cVectorA, *cVectorB, 1, 1);
+        TestCCIExtended(*cVectorA, *cVectorB, 2, 3);
+        }
+    if (true)
+        {
+        SaveAndRestoreCheckTransform shifter (60,0,0);
+        cVectorB->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(10, 2, 0, pointQ.x, pointQ.y, pointQ.z)));
+        TestCCIExtended(*cVectorA, *cVectorB, 0, 1);
+        TestCCIExtended(*cVectorA, *cVectorB, 1, 2);
+        TestCCIExtended(*cVectorA, *cVectorB, 2, 6);
+        }
+    if (true)
+        {
+        SaveAndRestoreCheckTransform shifter(60, 0, 0);
+        cVectorB->push_back(ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc(pointQ, DPoint3d::From (-1, 3,0), DPoint3d::From (-1,0,0))));
+        TestCCIExtended(*cVectorA, *cVectorB, 0, 2);
+        TestCCIExtended(*cVectorA, *cVectorB, 1, 3);
+        TestCCIExtended(*cVectorA, *cVectorB, 2, 12);
+        }
+
+    Check::ClearGeometry("CurveVector.ExtendedIntersectionsInChain");
+    }
+
+TEST(CurveVector, ExtendedIntersectionsWithBSpline)
+    {
+    bvector<DPoint3d> pts;
+    pts.push_back(DPoint3d::From(-5,5));
+    pts.push_back(DPoint3d::From(0,6));
+    pts.push_back(DPoint3d::From(3,2));
+    pts.push_back(DPoint3d::From(-1,-4));
+    pts.push_back(DPoint3d::From(-4,0));
+
+    MSInterpolationCurve fitCurve;
+    fitCurve.InitFromPointsAndEndTangents(pts, false, -1, nullptr, true, false, false, false);
+    CurveVectorPtr curveA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    curveA->push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(fitCurve));
+
+    auto arc = DEllipse3d::From(0,5,0, 15,0,0, 0,1,0, 4.0, 0.7);
+    DPoint3d arcPts[2];
+    arc.EvaluateEndPoints(arcPts[0], arcPts[1]);
+    CurveVectorPtr curveB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    curveB->push_back(ICurvePrimitive::CreateArc(arc));
+    curveB->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(arcPts[1], DPoint3d::FromZero())));
+
+    CurveVectorPtr curveC = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    Transform::From(RotMatrix::FromScale(0.5), DPoint3d::From(3,0)).Multiply(pts);
+    curveC->push_back(ICurvePrimitive::CreateLineString(pts));
+    curveC->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(pts.back(), DPoint3d::From(0,-0.5))));
+
+    if (true)
+        {
+        SaveAndRestoreCheckTransform shifter(70, 0, 0);     // dtor applies Check::Shift() for following if block
+        TestCCIExtended(*curveA, *curveB, 0, 1);
+        TestCCIExtended(*curveA, *curveB, 1, 5);
+        TestCCIExtended(*curveA, *curveB, 2, 6);
+        }
+    if (true)
+        {
+        TestCCIExtended(*curveA, *curveC, 0, 2);
+        TestCCIExtended(*curveA, *curveC, 1, 4);
+        TestCCIExtended(*curveA, *curveC, 2, 6);
+        }
+
+    Check::ClearGeometry("CurveVector.ExtendedIntersectionsWithBSpline");
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

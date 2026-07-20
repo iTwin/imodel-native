@@ -55,6 +55,80 @@ TEST_F(ECSqlPragmasTestFixture, ecsql_ver)
     }
 
 //---------------------------------------------------------------------------------------
+// A pragma must execute its underlying logic against the data-source connection (the read-only
+// connection used to execute the statement), not the schema/parse connection. This mirrors regular
+// ECSQL, which prepares/steps against the data-source connection. In concurrent query the parse
+// connection is a shared schema-source connection that does NOT carry the executing connection's
+// synced attached databases, so running a pragma there would observe the wrong connection's state.
+//
+// PRAGMA db_list reports the attached databases of whichever connection runs it, so it is a direct,
+// observable proxy for which connection executed the pragma.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, pragma_runs_on_data_source_connection)
+    {
+    // A standalone ECDb file that will be attached as a table space to the data-source connection only.
+    BeFileName attachedECDbPath = ECDbTestFixture::BuildECDbPath("pragmaDataSourceAttached.ecdb");
+    if (attachedECDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedECDbPath.BeDeleteFile());
+
+    {
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+    ASSERT_EQ(BE_SQLITE_OK, attached.SaveChanges());
+    attached.CloseDb();
+    }
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("pragmaDataSource.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    BeFileName mainFile(m_ecdb.GetDbFileName(), true);
+
+    // Two independent read-only connections to the SAME ECDb file. 'parseConn' plays the role of the
+    // shared schema-source connection (no attachments); 'dataSourceConn' plays the role of a worker
+    // connection that has an attached table space synced to it.
+    ECDb parseConn;
+    ASSERT_EQ(BE_SQLITE_OK, parseConn.OpenBeSQLiteDb(mainFile, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    ECDb dataSourceConn;
+    ASSERT_EQ(BE_SQLITE_OK, dataSourceConn.OpenBeSQLiteDb(mainFile, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, dataSourceConn.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+
+    // PRAGMA db_list columns: sno(0), alias(1), fileName(2), profile(3).
+    auto listsAttachedAlias = [](ECSqlStatement& stmt)
+        {
+        bool found = false;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            if (Utf8String(stmt.GetValueText(1)).EqualsIAscii("attached"))
+                found = true;
+            }
+        return found;
+        };
+
+    // Multi-threaded prepare: parse against parseConn, execute against dataSourceConn. The pragma must
+    // run on the data-source connection and therefore observe ITS attached 'attached' table space.
+    ECSqlStatement multiConnStmt;
+    ASSERT_EQ(ECSqlStatus::Success, multiConnStmt.Prepare(parseConn.Schemas(), dataSourceConn, "PRAGMA db_list"));
+    EXPECT_EQ(static_cast<Db const*>(&dataSourceConn), multiConnStmt.GetDataSourceDb())
+        << "pragma should be associated with the data-source connection";
+    EXPECT_TRUE(listsAttachedAlias(multiConnStmt))
+        << "PRAGMA db_list must run on the data-source connection, which has the 'attached' table space";
+
+    // Control: the parse connection has no attachment, so a single-connection db_list omits it. This is
+    // what the multi-connection statement would have reported if the pragma had (incorrectly) run on the
+    // parse connection.
+    ECSqlStatement parseConnStmt;
+    ASSERT_EQ(ECSqlStatus::Success, parseConnStmt.Prepare(parseConn, "PRAGMA db_list"));
+    EXPECT_FALSE(listsAttachedAlias(parseConnStmt))
+        << "the parse/schema-source connection has no 'attached' table space";
+
+    // Sanity: a single-connection db_list on the data-source connection lists it too.
+    ECSqlStatement dataSourceStmt;
+    ASSERT_EQ(ECSqlStatus::Success, dataSourceStmt.Prepare(dataSourceConn, "PRAGMA db_list"));
+    EXPECT_TRUE(listsAttachedAlias(dataSourceStmt));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlPragmasTestFixture, experimental_features_enabled){

@@ -10,6 +10,7 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <optional>
+#include <mutex>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -34,6 +35,11 @@ static NativeLogging::CategoryLogger s_logger("ECDb.ConcurrentQuery");
 static Utf8String GetTimestamp() {
     return DateTime::GetCurrentTime().ToTimestampString();
 }
+
+// Reserved connection id for the shared schema-source connection. Worker connections are numbered
+// 1..poolSize and the synchronous connection is 0, so UINT16_MAX never collides with either and the
+// schema-source connection is never handed out by ConnectionCache::GetConnection().
+static constexpr uint16_t SCHEMA_SOURCE_CONN_ID = UINT16_MAX;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -78,36 +84,110 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
-    BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
-    while(!ecdbMutex.try_lock()) {
-        if(queue.GetState() == RunnableRequestQueue::State::Stop) {
-            status = ECSqlStatus::Error;
-            isShutDownInProgress = true;
-            ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+
+    if (usePrimaryConn) {
+        // When using primary connection, we must hold the ECDb mutex to serialize access
+        // to the primary's issue listener and schema manager.
+        BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
+        while(!ecdbMutex.try_lock()) {
+            if(queue.GetState() == RunnableRequestQueue::State::Stop) {
+                status = ECSqlStatus::Error;
+                isShutDownInProgress = true;
+                ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+                return nullptr;
+            }
+            std::this_thread::yield();
+        }
+        ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
+        if (status != ECSqlStatus::Success) {
+            ecsql_error = err_scope.GetLastError();
+            ecdbMutex.unlock();
             return nullptr;
         }
-        std::this_thread::yield();
-    }
-    ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
-    if (usePrimaryConn)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    else {
-        if (m_doNotUsePrimaryConnToPrepare) {
+        ecdbMutex.unlock();
+    } else {
+        // For worker connections, parse/resolve schemas against a dedicated, shared schema-source
+        // connection (a warm cache shared by all workers) while binding/stepping against the worker's
+        // own read-only connection. This restores the shared-cache performance of the old design
+        // without the deadlock: the schema-source connection has its own ECDb impl mutex and its own
+        // SQLite handle, both disjoint from the primary's. The main thread's deadlock partner
+        // (primary SQLite mutex held by sqlite3_step + primary ECDb mutex needed by ExtractInstFunc)
+        // therefore never shares a lock with this prepare path. The schema-source connection is never
+        // stepped with ExtractInstFunc, so it has no SQLite->ECDb ordering of its own either.
+        //
+        // Invalidation invariant: the shared schema cache must only be cleared when no worker is
+        // stepping against it (in-flight row adaptors hold raw references into it). All schema changes
+        // on the primary go through ECDb::ClearECDbCache, which calls ConcurrentQueryMgr::Shutdown --
+        // draining/joining all workers and tearing down this whole connection cache (including the
+        // schema-source connection) -- before the primary's own schema manager is cleared. The
+        // schema-source connection is therefore rebuilt fresh on the next query, and we never clear its
+        // cache here. (Pure data-version changes that do NOT touch schema go through the per-request
+        // CachedConnection::Execute refresh on the worker connection; the shared schema cache stays
+        // valid because the schema is unchanged.) The schema-source connection also carries no attached
+        // table spaces, so queries that target one (or are otherwise invalid against it) fall back to
+        // the worker's own connection below.
+        bool preparedAgainstSchemaSource = false;
+        if (CachedConnection* schemaSource = m_conn.GetSchemaSourceConnection()) {
+            ECDb const& schemaDb = schemaSource->GetDb();
+            // Serialize access to the shared schema cache on the schema-source connection's OWN ECDb
+            // impl mutex (a std::recursive_mutex, so the dispatcher's inner locks on the same thread are
+            // fine). This is a different mutex than the primary's, so it cannot form an AB-BA cycle with
+            // the main thread. Hold it across the whole prepare so concurrent worker prepares can't
+            // interleave their lazy schema loads.
+            BeMutex& schemaMutex = schemaDb.GetImpl().GetMutex();
+            while (!schemaMutex.try_lock()) {
+                if (queue.GetState() == RunnableRequestQueue::State::Stop) {
+                    status = ECSqlStatus::Error;
+                    isShutDownInProgress = true;
+                    ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+                    return nullptr;
+                }
+                std::this_thread::yield();
+            }
+            {
+                // RAII unlock so the shared schema mutex is released on every exit path, including an
+                // exception thrown from schema loading (which would otherwise leak the lock and wedge
+                // all future worker prepares).
+                struct SchemaLockGuard final { BeMutex& m_mutex; ~SchemaLockGuard() { m_mutex.unlock(); } } guard{ schemaMutex };
+                // Re-check shutdown now that we hold the schema mutex: Shutdown() may have arrived
+                // while we were spinning to acquire it. Bail before starting a (potentially slow)
+                // Prepare so we don't stall Shutdown() under concurrent prepare load. The guard above
+                // releases the mutex on this early return. Mirrors the primary-conn spin path.
+                if (queue.GetState() == RunnableRequestQueue::State::Stop) {
+                    status = ECSqlStatus::Error;
+                    isShutDownInProgress = true;
+                    ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+                    return nullptr;
+                }
+                // Suppress logging on this attempt: a failure is expected for queries targeting an
+                // attached table space (the schema-source connection has none) or for genuinely invalid
+                // ECSQL; both are retried against the worker's own connection below, which reports
+                // errors normally.
+                status = newCachedAdaptor->GetStatement().Prepare(schemaDb.Schemas(), m_conn.GetDb(), ecsql, false);
+            }
+            preparedAgainstSchemaSource = status == ECSqlStatus::Success;
+        }
+
+        if (!preparedAgainstSchemaSource) {
+            // Either the shared schema-source connection is unavailable, or the ECSQL could not be
+            // prepared against it (attached table space, or a genuine error). Prepare against the
+            // worker's own connection, which has the synced attachments and reports errors normally.
+            // This never touches the primary's locks, so it remains deadlock-free. (Slower than the
+            // shared path, but only for these uncommon queries, and the result is then cached.)
+            ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
             status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
-        } else {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+            if (status != ECSqlStatus::Success) {
+                ecsql_error = err_scope.GetLastError();
+                return nullptr;
+            }
         }
     }
-    if (status != ECSqlStatus::Success) {
-        ecsql_error = err_scope.GetLastError();
-        ecdbMutex.unlock();
-        return nullptr;
-    }
+
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
-    ecdbMutex.unlock();
     return newCachedAdaptor;
 
 
@@ -205,21 +285,26 @@ void CachedConnection::SyncAttachDbs() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
-    if (m_db.IsDbOpen()) {
-        // Check if the primary file data version has changed
-        uint32_t dataVersion;
-        if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion)) {
-            if (dataVersion != m_primaryFileDataVer) {
-                m_db.ClearECDbCache();
-                m_db.ClearDbCache();
-                m_primaryFileDataVer = dataVersion;
-            }
-        }
-    }
+    // Drop this connection's caches if the primary's file data version changed (schema import /
+    // changeset apply) so the worker re-prepares against current schemas.
+    RefreshIfPrimaryChanged();
 
     SyncAttachDbs();
     SetRequest(std::move(request));
-    cb(m_adaptorCache, *m_request);
+    // A query executor thread must never let an exception escape: an unhandled exception on a worker
+    // thread terminates the process, and the request's promise would never be satisfied, so callers
+    // blocked in Future::Get()/Wait() would hang forever. Convert any failure into an error response.
+    try {
+        cb(m_adaptorCache, *m_request);
+    } catch (std::exception const& ex) {
+        if (m_request != nullptr && !m_request->IsCompleted())
+            m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, ex.what()));
+        log_error("%s unhandled exception while executing query: %s", GetTimestamp().c_str(), ex.what());
+    } catch (...) {
+        if (m_request != nullptr && !m_request->IsCompleted())
+            m_request->SetResponse(m_request->CreateErrorResponse(QueryResponse::Status::Error, "unknown error while executing query"));
+        log_error("%s unhandled non-standard exception while executing query.", GetTimestamp().c_str());
+    }
     ClearRequest();
 }
 //---------------------------------------------------------------------------------------
@@ -262,13 +347,6 @@ CachedConnection::~CachedConnection() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void CachedConnection::SetAdaptorCacheSize(uint32_t newSize) {
-    recursive_guard_t lock(m_mutexReq);
-    m_adaptorCache.SetMaxCacheSize(newSize);
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 void CachedConnection::Reset(bool detachDbs) {
     recursive_guard_t lock(m_mutexReq);
     m_adaptorCache.Reset();
@@ -277,6 +355,26 @@ void CachedConnection::Reset(bool detachDbs) {
         m_db.DetachChangeCache();
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void CachedConnection::RefreshIfPrimaryChanged() {
+    if (!m_db.IsDbOpen())
+        return;
+
+    uint32_t dataVersion;
+    if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion) && dataVersion != m_primaryFileDataVer) {
+        m_db.ClearECDbCache();
+        m_db.ClearDbCache();
+        m_primaryFileDataVer = dataVersion;
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+CachedConnection* CachedConnection::GetSchemaSourceConnection() { return m_cache.GetSchemaSourceConnection(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -398,6 +496,9 @@ std::shared_ptr<CachedConnection> ConnectionCache::GetConnection() {
         }
     }
     if (m_conns.size() < m_poolSize) {
+        // Worker connection ids must never collide with SCHEMA_SOURCE_CONN_ID (UINT16_MAX). The
+        // default pool size makes this unreachable, but assert the invariant explicitly.
+        BeAssert(m_conns.size() < UINT16_MAX - 1);
         m_conns.push_back(CachedConnection::Make(*this, (uint16_t)m_conns.size() + 1));
         return m_conns.back();
     }
@@ -417,32 +518,24 @@ CachedConnection& ConnectionCache::GetSyncConnection() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
-    recursive_guard_t lock(m_mutex);
-    uint32_t used_count = 0;
-    while (used_count != m_conns.size()) {
-        used_count = 0;
-        for (auto& it : m_conns) {
-            if (it.use_count() == 1)  {
-                ++used_count;
-            } else {
-                it->InterruptIf(
-                    [](RunnableRequestBase const& request) {
-                        return true;
-                    },
-                    true);
-            }
-        }
-        std::this_thread::yield();
-    }
-    if (reset_conn) {
-        if(m_syncConn)
-            m_syncConn->Reset(detach_dbs);
+CachedConnection* ConnectionCache::GetSchemaSourceConnection() {
+    if (!m_primaryDb.IsDbOpen())
+        return nullptr;
 
-        for (auto& it : m_conns) {
-            it->Reset(detach_dbs);
-        }
+    recursive_guard_t lock(m_mutex);
+    if (m_schemaConn == nullptr) {
+        m_schemaConn = CachedConnection::Make(*this, SCHEMA_SOURCE_CONN_ID);
+        if (m_schemaConn == nullptr)
+            return nullptr;
+
+        // The schema-source connection deliberately carries NO attached table spaces: it is used only
+        // to resolve main-table-space schemas (the common, performance-critical case). Queries that
+        // target an attached table space fail to prepare against it and fall back to the worker's own
+        // connection (see QueryAdaptorCache::TryGet). Not syncing attachments here is what lets us
+        // avoid ever clearing this shared cache mid-flight (which would be a use-after-free for
+        // in-flight row adaptors).
     }
+    return m_schemaConn.get();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -921,8 +1014,14 @@ void RunnableRequestBase::SetResponse(QueryResponse::Ptr response) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 QueryResponse::Future RunnableRequestWithPromise::GetFuture() {
-   return QueryResponse::Future( new QueryResponse::Future::Impl([&](){
-       GetQueue().CancelRequest(GetId());
+   // Capture the queue pointer and request id by value rather than `this`. The RunnableRequest
+   // is destroyed as soon as the query completes (CachedConnection::ClearRequest), but the Future
+   // (and this cancel callback) can outlive it. Dereferencing the request here would be a
+   // use-after-free; CancelRequest(id) is a safe no-op once the request has left the queue.
+   auto* queue = &GetQueue();
+   const auto id = GetId();
+   return QueryResponse::Future( new QueryResponse::Future::Impl([queue, id](){
+       queue->CancelRequest(id);
    }, m_promise.get_future()));
 }
 
@@ -1099,15 +1198,6 @@ std::string IJsSerializable::Stringify(StringifyFormat format) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlRowProperty::List QueryHelper::GetMetaInfo(CachedQueryAdaptor& adp, bool classIdToClassNames) {
-    ECSqlRowProperty::List props;
-
-    return props;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 void ECSqlRowProperty::ToJs(BeJsValue& val) const {
     val.toObject();
     val[JClass]=m_className;
@@ -1187,6 +1277,14 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
     auto& options = adaptor.GetOptions();
     auto conn = cachedAdaptor.GetWorkerConn();
+    // RAII: guarantees the progress handler installed below (which captures this stack frame and the
+    // request by reference) is removed on every exit path - normal completion, error, or exception.
+    // If it were left installed, it would fire the next time this connection is reused and dereference
+    // freed memory (a production crash).
+    struct ProgressHandlerGuard final {
+        Db const* m_conn;
+        ~ProgressHandlerGuard() { if (m_conn != nullptr && m_conn->IsDbOpen()) m_conn->SetProgressHandler(nullptr); }
+    } progressHandlerGuard{ conn };
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
@@ -1205,9 +1303,6 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
         else
             runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done));
-    
-        if (conn->IsDbOpen())
-            conn->SetProgressHandler(nullptr);
     };
     auto setError = [&] (QueryResponse::Status status, std::string err) {
         runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
@@ -1423,7 +1518,18 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                             runnableQuery.GetId());
 
                         if (runnableQuery.GetRequest().UsePrimaryConnection()) {
-                            QueryHelper::Execute(adaptorCache, runnableQuery);
+                            // Primary-connection requests must run synchronously on the caller thread
+                            // (see RunnableRequestQueue::Enqueue -> ExecuteSynchronously). Executing them
+                            // here on a worker thread would prepare against the primary connection while
+                            // holding the primary ECDb mutex, reintroducing the worker/main-thread deadlock
+                            // fixed in QueryAdaptorCache::TryGet (primary ECDb mutex held while accessing
+                            // primary SQLite, vs. main thread holding primary SQLite and needing the ECDb mutex).
+                            BeAssert(false && "primary-connection request must not run on a worker thread");
+                            log_error("%s primary-connection request [id=%" PRIu32 "] reached worker thread; refusing to avoid deadlock.",
+                                GetTimestamp().c_str(), runnableQuery.GetId());
+                            runnableQuery.SetResponse(runnableQuery.CreateErrorResponse(
+                                QueryResponse::Status::Error,
+                                "primary-connection request must be executed synchronously on the caller thread"));
                         } else {
                             Savepoint txn(adaptorCache.GetConnection().GetDbR(), "concurrent_query");
                             QueryHelper::Execute(adaptorCache, runnableQuery);
@@ -1632,7 +1738,16 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::s_config = ConcurrentQuer
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Get() {
+// Serializes access to the global s_config snapshot. Config can be reset at runtime from the JS
+// main thread (ConcurrentQueryResetConfig) while worker threads read it during query execution, so
+// Get() returns a copy taken under this lock rather than a reference into the shared global.
+static std::mutex& GetConfigMutex() {
+    static std::mutex s_configMutex;
+    return s_configMutex;
+}
+
+ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::Get() {
+    std::lock_guard<std::mutex> lock(GetConfigMutex());
     return s_config;
 }
 
@@ -1640,8 +1755,11 @@ const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Get() {
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Reset(std::optional<Config> conf) {
-    s_config = conf.value_or(ConcurrentQueryMgr::Config::GetFromEnv());
+ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::Reset(std::optional<Config> conf) {
+    // Compute the (possibly env-derived) new config outside the lock; only the swap needs protection.
+    Config newConf = conf.value_or(ConcurrentQueryMgr::Config::GetFromEnv());
+    std::lock_guard<std::mutex> lock(GetConfigMutex());
+    s_config = newConf;
     return s_config;
 }
 
@@ -2292,7 +2410,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
 QueryAdaptorCache::QueryAdaptorCache(CachedConnection& conn):m_conn(conn){
     auto config = ConcurrentQueryMgr::Config::Get();
     m_maxEntries = config.GetStatementCacheSizePerWorker();
-    m_doNotUsePrimaryConnToPrepare = config.GetDoNotUsePrimaryConnToPrepare();
 }
 
 //---------------------------------------------------------------------------------------

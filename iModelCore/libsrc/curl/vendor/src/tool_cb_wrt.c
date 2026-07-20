@@ -61,6 +61,7 @@ bool tool_create_output_file(struct OutStruct *outs,
     if(config->file_clobber_mode == CLOBBER_NEVER && fd == -1) {
       int next_num = 1;
       struct dynbuf fbuffer;
+      char *newfile;
       curlx_dyn_init(&fbuffer, 1025);
       /* !checksrc! disable ERRNOVAR 1 */
       while(fd == -1 && /* have not successfully opened a file */
@@ -78,8 +79,11 @@ bool tool_create_output_file(struct OutStruct *outs,
           /* Keep retrying in the hope that it is not interrupted sometime */
         } while(fd == -1 && errno == EINTR);
       }
-      outs->filename = curlx_dyn_ptr(&fbuffer); /* remember the new one */
-      outs->alloc_filename = TRUE;
+      newfile = curlx_dyn_ptr(&fbuffer); /* remember the new one */
+      if(newfile) {
+        outs->filename = newfile;
+        outs->alloc_filename = TRUE;
+      }
     }
     /* An else statement to not overwrite existing files and not retry with
        new numbered names (which would cover
@@ -121,12 +125,12 @@ static size_t win_console(intptr_t fhnd, struct OutStruct *outs,
   /* attempt to complete an incomplete UTF-8 sequence from previous call. the
      sequence does not have to be well-formed. */
   if(outs->utf8seq[0] && rlen) {
-    bool complete = false;
+    bool complete = FALSE;
     /* two byte sequence (lead byte 110yyyyy) */
     if(0xC0 <= outs->utf8seq[0] && outs->utf8seq[0] < 0xE0) {
       outs->utf8seq[1] = *rbuf++;
       --rlen;
-      complete = true;
+      complete = TRUE;
     }
     /* three byte sequence (lead byte 1110zzzz) */
     else if(0xE0 <= outs->utf8seq[0] && outs->utf8seq[0] < 0xF0) {
@@ -137,7 +141,7 @@ static size_t win_console(intptr_t fhnd, struct OutStruct *outs,
       if(rlen && !outs->utf8seq[2]) {
         outs->utf8seq[2] = *rbuf++;
         --rlen;
-        complete = true;
+        complete = TRUE;
       }
     }
     /* four byte sequence (lead byte 11110uuu) */
@@ -153,7 +157,7 @@ static size_t win_console(intptr_t fhnd, struct OutStruct *outs,
       if(rlen && !outs->utf8seq[3]) {
         outs->utf8seq[3] = *rbuf++;
         --rlen;
-        complete = true;
+        complete = TRUE;
       }
     }
 
@@ -209,8 +213,7 @@ static size_t win_console(intptr_t fhnd, struct OutStruct *outs,
 
     /* grow the buffer if needed */
     if(len > global->term.len) {
-      wchar_t *buf = (wchar_t *)curlx_realloc(global->term.buf,
-                                              len * sizeof(wchar_t));
+      wchar_t *buf = curlx_realloc(global->term.buf, len * sizeof(wchar_t));
       if(!buf)
         return CURL_WRITEFUNC_ERROR;
       global->term.len = len;

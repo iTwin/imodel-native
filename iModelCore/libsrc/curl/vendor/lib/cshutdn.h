@@ -33,7 +33,7 @@ struct Curl_share;
 struct Curl_sigpipe_ctx;
 
 /* Run the shutdown of the connection once.
- * Will shortly attach/detach `data` to `conn` while doing so.
+ * Shortly attach/detach `data` to `conn` while doing so.
  * `done` will be set TRUE if any error was encountered or if
  * the connection was shut down completely. */
 void Curl_cshutdn_run_once(struct Curl_easy *data,
@@ -54,7 +54,7 @@ void Curl_cshutdn_terminate(struct Curl_easy *data,
 struct cshutdn {
   struct Curl_llist list;    /* connections being shut down */
   struct Curl_multi *multi;  /* the multi owning this */
-  BIT(initialised);
+  BIT(initialized);
 };
 
 /* Init as part of the given multi handle. */
@@ -78,7 +78,7 @@ size_t Curl_cshutdn_dest_count(struct Curl_easy *data,
 bool Curl_cshutdn_close_oldest(struct Curl_easy *data,
                                const char *destination);
 
-/* Add a connection to have it shut down. Will terminate the oldest
+/* Add a connection to have it shut down. Terminate the oldest
  * connection when total connection limit of multi is being reached. */
 void Curl_cshutdn_add(struct cshutdn *cshutdn,
                       struct connectdata *conn,

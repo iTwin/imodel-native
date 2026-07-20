@@ -904,11 +904,14 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
     
     // We want to manually add all schema folders here so when we later try and lookup schemas, the right paths are always consistently available
-    for(auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it)
+    if (sourceType == SchemaSourceType::File)
         {
-        BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
-        BeFileName schemaDirectory (BeFileName::DevAndDir, schemaFile.GetWCharCP());
-        schemaContext->AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
+        for(auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it)
+            {
+            BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
+            BeFileName schemaDirectory (BeFileName::DevAndDir, schemaFile.GetWCharCP());
+            schemaContext->AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
+            }
         }
 
     bvector<ECSchemaCP> schemas;

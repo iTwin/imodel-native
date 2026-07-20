@@ -108,7 +108,7 @@ template<typename T_Db> struct SQLiteOps {
     T_Db& GetOpenedDb(NapiInfoCR info) {
         auto* db = _GetMyDb();
         if (db == nullptr || !db->IsDbOpen())
-           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         return *db;
     }
@@ -299,7 +299,7 @@ template<typename T_Db> struct SQLiteOps {
         auto db = &GetOpenedDb(info);
         if (db == nullptr)
             {
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
             return;
             }
         auto dgnDb = dynamic_cast<DgnDbP>(db);
@@ -706,6 +706,33 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 };
 
 //=======================================================================================
+// A minimal RAII scope guard that invokes a callback when it goes out of scope, including
+// while the stack is unwinding from a thrown exception. Used to keep persistent tracker and
+// transaction state consistent across operations that may throw partway through.
+//=======================================================================================
+struct SQLiteDbScopeGuard {
+private:
+    std::function<void()> m_onExit;
+public:
+    explicit SQLiteDbScopeGuard(std::function<void()> onExit) : m_onExit(std::move(onExit)) {}
+    ~SQLiteDbScopeGuard() { if (m_onExit) m_onExit(); }
+    void Dismiss() { m_onExit = nullptr; }
+    SQLiteDbScopeGuard(SQLiteDbScopeGuard const&) = delete;
+    SQLiteDbScopeGuard& operator=(SQLiteDbScopeGuard const&) = delete;
+};
+
+//=======================================================================================
+// A ChangeTracker used only to capture DDL/data changes on a generic SQLiteDb, so they
+// can be written out to an iModel-format changeset file for testing purposes.
+//! @bsiclass
+//=======================================================================================
+struct SQLiteDbChangeTracker : BeSQLite::ChangeTracker {
+    SQLiteDbChangeTracker(BeSQLite::DbR db) : BeSQLite::ChangeTracker("SQLiteDb") { SetDb(&db); }
+    OnCommitStatus _OnCommit(bool, Utf8CP) override { return OnCommitStatus::Commit; }
+    BeSQLite::DdlChangesCR GetDdlChanges() const { return m_ddlChanges; }
+};
+
+//=======================================================================================
 // Projects the BeSQLite::Db class into JS
 //! @bsiclass
 //=======================================================================================
@@ -713,6 +740,7 @@ struct SQLiteDb : Napi::ObjectWrap<SQLiteDb>, SQLiteOps<Db> {
 private:
     DEFINE_CONSTRUCTOR
     Db m_db;
+    RefCountedPtr<SQLiteDbChangeTracker> m_changeTracker;
     Db* _GetMyDb() override { return &m_db; }
 
 public:
@@ -800,15 +828,105 @@ public:
             JsInterop::throwSqlResult("error in abandonChanges", db.GetDbFileName(), status);
     }
 
+    //! Begin capturing DDL/data changes made to this SQLiteDb. Used only to produce test
+    //! changeset files - not part of any product workflow.
+    void StartChangeTracking(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (m_changeTracker.IsNull())
+            m_changeTracker = new SQLiteDbChangeTracker(db);
+        // Db::ExecuteDdl only records DDL into the tracker registered via SetChangeTracker (db.m_dbFile->m_tracker) -
+        // the session extension used for row-level changes attaches directly via ChangeTracker::SetDb/CreateSession,
+        // but DDL capture requires this explicit registration too.
+        db.SetChangeTracker(m_changeTracker.get());
+        m_changeTracker->Restart();
+    }
+
+    //! Execute a DDL statement (e.g. CREATE/ALTER/DROP TABLE) so that, if change tracking is
+    //! active, the DDL is captured by the tracker. This is required because DDL is never
+    //! captured by the SQLite session extension used for row-level (DML) changes.
+    void ExecuteDdl(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, ddl);
+        auto stat = db.ExecuteDdl(ddl.c_str());
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error executing ddl", db.GetDbFileName(), stat);
+    }
+
+    //! Write out the changes captured since startChangeTracking() was called, to a changeset
+    //! file in the same on-disk format used for iModel changesets. Used only for testing.
+    void CreateChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, pathname);
+        if (m_changeTracker.IsNull())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "change tracking was not started", IModelJsNativeErrorKey::BadArg);
+
+        // Consistently end tracking whether we succeed or throw below. EnableTracking(false) suspends
+        // the session, so if a write fails and we returned without ending, a caller that fixes the
+        // output path and retries without calling startChangeTracking() again would silently omit all
+        // subsequent changes. Ending on every path makes startChangeTracking() a required precondition.
+        SQLiteDbScopeGuard endTracking([this]() { m_changeTracker->EndTracking(); });
+
+        m_changeTracker->EnableTracking(false);
+        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+        const bool hasSchemaChanges = m_changeTracker->HasDdlChanges();
+        BeSQLite::ChangesetFileWriter writer(filePath, hasSchemaChanges, m_changeTracker->GetDdlChanges(), &db);
+        auto stat = writer.Initialize();
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error creating changeset file", filePath.GetNameUtf8().c_str(), stat);
+
+        stat = writer.FromChangeTrack(*m_changeTracker);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
+    }
+
+    //! Apply a changeset file (in the same on-disk format used for iModel changesets) to this
+    //! SQLiteDb. Unlike DgnDb.applyChangeset, this does *not* validate the changeset header
+    //! (parentId/changesetId) against the current state of the db - it simply applies the
+    //! changes. Any conflict encountered while applying causes the entire apply to fail.
+    void ApplyChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, pathname);
+
+        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+        bvector<BeFileName> files;
+        files.push_back(filePath);
+        BeSQLite::ChangesetFileReaderBase changesetReader(files, &db);
+
+        bool containsSchemaChanges = false;
+        BeSQLite::DdlChanges ddlChanges;
+        auto stat = changesetReader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
+        if (stat != BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "error reading changeset file", stat);
+
+        if (containsSchemaChanges && !ddlChanges._IsEmpty()) {
+            stat = db.TryExecuteSql(ddlChanges.ToString().c_str());
+            if (stat != BE_SQLITE_OK)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "error applying ddl changes from changeset", stat);
+        }
+
+        // NOTE: unlike DgnDb, a generic SQLiteDb has no ECDb schema import step, so DDL (applied above)
+        // and the row-level (DML) changes captured in the changeset are entirely separate - apply
+        // all of the row-level changes here, regardless of whether the changeset also contains DDL.
+        // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
+        // any changes applied so far.
+        auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
+        stat = changesetReader.ApplyChanges(db, applyArgs);
+        if (stat != BE_SQLITE_OK)
+            BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
+    }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "SQLiteDb", {
             InstanceMethod("abandonChanges", &SQLiteDb::AbandonChanges),
+            InstanceMethod("applyChangeset", &SQLiteDb::ApplyChangeset),
             InstanceMethod("closeDb", &SQLiteDb::CloseDb),
+            InstanceMethod("createChangeset", &SQLiteDb::CreateChangeset),
             InstanceMethod("createDb", &SQLiteDb::CreateDb),
             InstanceMethod("dispose", &SQLiteDb::Dispose),
             InstanceMethod("embedFile", &SQLiteDb::EmbedFile),
             InstanceMethod("embedFontFile", &SQLiteDb::EmbedFontFile),
+            InstanceMethod("executeDdl", &SQLiteDb::ExecuteDdl),
             InstanceMethod("extractEmbeddedFile", &SQLiteDb::ExtractEmbeddedFile),
             InstanceMethod("getFilePath", &SQLiteDb::GetFilePath),
             InstanceMethod("getLastInsertRowId", &SQLiteDb::GetLastInsertRowId),
@@ -824,6 +942,7 @@ public:
             InstanceMethod("restartDefaultTxn", &SQLiteDb::RestartDefaultTxn),
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
+            InstanceMethod("startChangeTracking", &SQLiteDb::StartChangeTracking),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
             InstanceMethod("analyze", &SQLiteDb::Analyze),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
@@ -1747,6 +1866,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
         JsInterop::UpdateElement(db, elemProps);
+    }
+
+    void ChangeElementParent(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, props);
+        JsInterop::ChangeElementParent(db, props);
+    }
+
+    void ChangeElementModel(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, props);
+        JsInterop::ChangeElementModel(db, props);
     }
 
     void DeleteElement(NapiInfoCR info) {
@@ -3306,6 +3437,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("changeElementParent", &NativeDgnDb::ChangeElementParent),
+            InstanceMethod("changeElementModel", &NativeDgnDb::ChangeElementModel),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
@@ -5058,7 +5191,7 @@ public:
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
         }
@@ -5074,9 +5207,12 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
         REQUIRE_ARGUMENT_BOOL(2, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
@@ -5088,9 +5224,12 @@ public:
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_BOOL(1, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
@@ -5103,9 +5242,12 @@ public:
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         REQUIRE_ARGUMENT_STRING(1, idStr);
         REQUIRE_ARGUMENT_BOOL(2, invert);
+        if(!NativeDgnDb::InstanceOf(dbObj))
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
 
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
@@ -5161,17 +5303,8 @@ private:
         else
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
         if (!ecdb || !ecdb->IsDbOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         return ecdb;
-        }
-    
-    Changes::Change::Stage GetStage(NapiInfoCR info, int targetStage)
-        {
-        if (targetStage < 0 || targetStage > 1)
-            THROW_JS_TYPE_EXCEPTION("Invalid stage. Expected 0 (Old) or 1 (New)");
-        if(targetStage == 0)
-            return Changes::Change::Stage::Old;
-        return Changes::Change::Stage::New;
         }
 
     ChangesetReader::PropertyFilter GetPropertyFilter(NapiInfoCR info, int modeInt)
@@ -5200,6 +5333,53 @@ private:
         return static_cast<size_t>(val);
         }
 
+    // Builds the ChangesetRowMetadata object for the current reader row.
+    Napi::Value BuildRowMetadata(Napi::Env env)
+        {
+        BeJsNapiObject metadata(env);
+        Utf8String tableName;
+        if (m_reader.GetTableName(tableName) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetTableName() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["tableName"] = tableName.c_str();
+        DbOpcode opcode;
+        if (m_reader.GetOpcode(opcode) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "GetOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["opCode"] = static_cast<int>(opcode);
+        bool isIndirectChange;
+        if (m_reader.IsIndirectChange(isIndirectChange) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["isIndirectChange"] = isIndirectChange;
+        bool isECTable;
+        if (m_reader.IsECTable(isECTable) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "IsECTable() failed", IModelJsNativeErrorKey::ChangesetError);
+        metadata["isECTable"] = isECTable;
+        return metadata;
+        }
+
+    // Builds a ChangesetRowValue for the given stage, or returns undefined when that stage has no columns.
+    Napi::Value BuildRowValue(Napi::Env env, ECSqlRowAdaptor& adaptor, Changes::Change::Stage stage)
+        {
+        if (m_reader.GetColumnCount(stage) == 0)
+            return env.Undefined();
+        BeJsNapiObject rv(env);
+        BeJsValue rowJson = rv["data"];
+        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stage)) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
+        Utf8String instanceKey;
+        if (m_reader.GetInstanceKey(stage, instanceKey) != SUCCESS)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
+        rv["key"] = instanceKey.c_str();
+        const auto* names = m_reader.GetChangeFetchedPropertyNames();
+        if (names == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
+        BeJsValue changeFetchedPropNames = rv["changeFetchedPropNames"];
+        changeFetchedPropNames.SetEmptyArray();
+        uint32_t idx = 0;
+        for (auto const& name : *names)
+            changeFetchedPropNames[idx++] = name;
+        return rv;
+        }
+
 public:
     NativeChangesetReader(NapiInfoCR info) : BeObjectWrap<NativeChangesetReader>(info) {}
     ~NativeChangesetReader() { SetInDestructor(); }
@@ -5215,8 +5395,6 @@ public:
             InstanceMethod("openTxn",             &NativeChangesetReader::OpenTxn),
             InstanceMethod("close",               &NativeChangesetReader::Close),
             InstanceMethod("step",                &NativeChangesetReader::Step),
-            InstanceMethod("getValue",            &NativeChangesetReader::GetValue),
-            InstanceMethod("getChangeMetadata",     &NativeChangesetReader::GetChangeMetadata),
             InstanceMethod("setTableNameFilters",   &NativeChangesetReader::SetTableNameFilters),
             InstanceMethod("setOpCodeFilters",      &NativeChangesetReader::SetOpCodeFilters),
             InstanceMethod("setClassNameFilters",   &NativeChangesetReader::SetClassNameFilters),
@@ -5266,8 +5444,8 @@ public:
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
@@ -5285,8 +5463,8 @@ public:
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
         if (changeset == nullptr)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
@@ -5305,8 +5483,8 @@ public:
         if(!NativeDgnDb::InstanceOf(dbObj))
             THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb object");
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
-        if (!nativeDgnDb->IsOpen())
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+        if (!nativeDgnDb || !nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db not open", DgnDbStatus::NotOpen);
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str()))
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
@@ -5324,83 +5502,41 @@ public:
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "close() failed", IModelJsNativeErrorKey::ChangesetError);
         }
 
-    Napi::Value GetChangeMetadata(NapiInfoCR info)
-        {
-        BeJsNapiObject out(info.Env());
-        Utf8String tableName;
-        BentleyStatus rc = m_reader.GetTableName(tableName);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getTableName() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["tableName"] = tableName.c_str();
-        DbOpcode opcode;
-        rc = m_reader.GetOpcode(opcode);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getOpcode() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["opCode"] = static_cast<int>(opcode);
-        bool isIndirectChange;
-        rc = m_reader.IsIndirectChange(isIndirectChange);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "isIndirectChange() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["isIndirectChange"] = isIndirectChange;
-        bool isECTable;
-        rc = m_reader.IsECTable(isECTable);
-        if (rc != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "isECTable() failed", IModelJsNativeErrorKey::ChangesetError);
-        out["isECTable"] = isECTable;
-        return out;
-        }
-
     Napi::Value Step(NapiInfoCR info)
         {
-        DbResult rc = m_reader.Step();
-        if(rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "step() failed", rc);
-        return Napi::Boolean::New(Env(), rc == BE_SQLITE_ROW);
-        }
-
-    Napi::Value GetValue(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_INTEGER(0, stage);
+        REQUIRE_ARGUMENT_INTEGER(0, numOfRows);
         REQUIRE_ARGUMENT_ANY_OBJ(1, optObj);
+
+        if (numOfRows <= 0)
+            THROW_JS_TYPE_EXCEPTION("numOfRows must be a positive integer");
 
         ECDb const* ecdb = m_reader.GetECDb();
         if (nullptr == ecdb)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "getValue() called when no ECDb is associated with the ECChangesetReader", IModelJsNativeErrorKey::BadArg);
-        
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no ECDb associated", IModelJsNativeErrorKey::BadArg);
 
-        Changes::Change::Stage stageEnum = GetStage(info, stage);
-
-        if(m_reader.GetColumnCount(stageEnum) == 0)
-            return Env().Undefined(); //if there are no columns, return undefined instead of an empty object
-        
         BeJsValue opts(optObj);
         ECSqlRowAdaptor adaptor(*ecdb);
         adaptor.GetOptions().FromJson(opts);
-        // filling data
-        BeJsNapiObject out(info.Env());
-        BeJsValue rowJson = out["data"];
-        if (adaptor.RenderRowAsObject(rowJson, ChangesetRow(m_reader, stageEnum)) != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to render row", IModelJsNativeErrorKey::ChangesetError);
-        // filling instance key
-        Utf8String instanceKey;
-        if (m_reader.GetInstanceKey(stageEnum, instanceKey) != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get instance key", IModelJsNativeErrorKey::ChangesetError);
-        out["key"] = instanceKey.c_str();
-        
-        // filling fetched changeset properties
-        std::vector<Utf8String> names;
-        if (m_reader.GetChangeFetchedPropertyNames(names) != SUCCESS)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get change fetched property names", IModelJsNativeErrorKey::ChangesetError);
-        
-        BeJsValue changeFetchedPropNames = out["changeFetchedPropNames"];
-        changeFetchedPropNames.SetEmptyArray();
-        uint32_t i = 0;
-        for (auto const& name : names) 
+
+        Napi::Array result = Napi::Array::New(Env());
+        uint32_t count = 0;
+
+        for (int i = 0; i < numOfRows; ++i)
             {
-            changeFetchedPropNames[i] = name;
-            i++;
+            DbResult rc = m_reader.Step();
+            if (rc == BE_SQLITE_DONE)
+                break;
+            if (rc != BE_SQLITE_ROW)
+                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "step() failed", rc);
+
+            Napi::Object rowData = Napi::Object::New(Env());
+            rowData.Set("metadata", BuildRowMetadata(Env()));
+            rowData.Set("oldValues", BuildRowValue(Env(), adaptor, Changes::Change::Stage::Old));
+            rowData.Set("newValues", BuildRowValue(Env(), adaptor, Changes::Change::Stage::New));
+            result[count++] = rowData;
             }
-        return out;
+
+        return result;
         }
     void SetTableNameFilters(NapiInfoCR info)
         {
@@ -5539,7 +5675,7 @@ public:
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
+            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "db not open", Env());
 
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
@@ -5887,7 +6023,7 @@ public:
         }
 
         if (!db || !db->IsDbOpen())
-          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
+          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "db not open", IModelJsNativeErrorKey::NotOpen);
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);

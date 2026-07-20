@@ -800,6 +800,8 @@ export declare namespace IModelJsNative {
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
+    public changeElementParent(props: { id: Id64String, parentId: Id64String }): void;
+    public changeElementModel(props: { id: Id64String, modelId: Id64String }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
@@ -1054,11 +1056,25 @@ export declare namespace IModelJsNative {
     constructor();
     public readonly cloudContainer?: CloudContainer;
     public abandonChanges(): void;
+    /**
+     * Apply a changeset file - in the same on-disk format used for iModel changesets - to this SQLiteDb.
+     * Unlike DgnDb.applyChangeset, this does *not* validate the changeset header (parentId/changesetId)
+     * against the current state of the db - it simply applies the changes. Any conflict encountered while
+     * applying causes the entire apply to fail and throw.
+     */
+    public applyChangeset(changesetFile: LocalFileName): void;
     public closeDb(): void;
+    /**
+     * Write out the changes captured since startChangeTracking() was called, to a changeset file in the
+     * same on-disk format used for iModel changesets. Used only for testing.
+     */
+    public createChangeset(changesetFile: LocalFileName): void;
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
     public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
+    /** Execute a DDL statement so it will be captured by change tracking, if active. */
+    public executeDdl(ddl: string): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;
@@ -1074,6 +1090,8 @@ export declare namespace IModelJsNative {
     public restartDefaultTxn(): void;
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
+    /** Begin capturing DDL/data changes made to this SQLiteDb. Used only to produce test changeset files. */
+    public startChangeTracking(): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
@@ -1563,6 +1581,18 @@ export declare namespace IModelJsNative {
     changeFetchedPropNames: string[]
   }
 
+  interface ChangesetRowMetadata {
+    tableName: string;
+    opCode: DbOpcode;
+    isIndirectChange: boolean;
+    isECTable: boolean;
+  }
+  interface ChangesetRowData {
+    metadata: ChangesetRowMetadata;
+    oldValues: ChangesetRowValue | undefined;
+    newValues: ChangesetRowValue | undefined;
+  }
+
   class ChangesetReader {
     constructor();
     public openFile(db: AnyECDb, fileName: string, invert: boolean, propFilter: number): void;
@@ -1571,9 +1601,7 @@ export declare namespace IModelJsNative {
     public openInMemoryChanges(db: DgnDb, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean, propFilter: number, spillThresholdBytes: number): void;
     public close(): void;
-    public step(): boolean;
-    public getValue(stage: number, arg: ECSqlRowAdaptorOptions): ChangesetRowValue | undefined;
-    public getChangeMetadata(): { tableName: string, opCode: DbOpcode, isIndirectChange: boolean, isECTable: boolean };
+    public step(numOfRows: number, rowOptions: ECSqlRowAdaptorOptions): ChangesetRowData[];
     public setTableNameFilters(tableNames: string[]): void;
     public setOpCodeFilters(ops: string[]): void;
     public setClassNameFilters(classNames: string[]): void;

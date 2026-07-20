@@ -1474,6 +1474,11 @@ void Check::SaveTransformed(ICurvePrimitiveCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));
     }
+void Check::SaveTransformed(ICurvePrimitivePtr &data)
+    {
+    if (data.IsValid())
+        SaveTransformed(IGeometry::Create(data->Clone()));
+    }
 void Check::SaveTransformed(PolyfaceHeaderCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));
@@ -1641,6 +1646,7 @@ void Check::SaveTransformed(DPlane3dCR plane, double scale)
     cell->push_back(ICurvePrimitive::CreateLine(planeNormal));
     Check::SaveTransformed(cell);
     }
+
 DPoint3d Check::TransformPoint(DPoint3dCR xyz)
     {
     return s_transform * xyz;
