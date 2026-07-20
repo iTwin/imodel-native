@@ -1855,6 +1855,27 @@ BentleyStatus SchemaReservationHelper::WriteColumnTableStore(Db& syncDb, Utf8CP 
 BentleyStatus SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store) {
     // Seed per-physical-table monotonic counters from the current MAX(Ordinal) in ec_Column.
     // This ensures newly-allocated ordinals are above any already-used ones.
+    //
+    // Only Primary (0) and Overflow (3) tables are considered — the other two table types need no
+    // ordinal coordination across briefcases, for the reasons below:
+    //
+    //   Joined tables (Type=1, JoinedTablePerDirectSubclass):
+    //     Each subclass gets its *own* private physical table whose columns are named directly from
+    //     the property name, not drawn from a shared ordinal pool.  Two offline briefcases adding
+    //     property "Foo" to a joined-table class will both produce the same deterministically-named
+    //     column in that class's table without any coordination — there is no shared counter to
+    //     protect, so no conflict is possible.
+    //
+    //   Existing tables (Type=2):
+    //     These are pre-existing SQLite tables that ECDb never creates or alters; the import only
+    //     maps EC properties to columns that must already exist.  ECDb allocates nothing in these
+    //     tables, so there is nothing to coordinate across briefcases.
+    //
+    // Primary and Overflow tables both participate in the SharedData shared-column pool
+    // (TablePerHierarchy with ShareColumnsMode::Yes).  Multiple subclasses compete for generic
+    // ordinal slots in the same physical table; without the coordinated counter two offline
+    // briefcases would draw different ordinals for the same property, producing conflicting
+    // column assignments for different EC content.
     Statement stmt;
     const Utf8CP sql =
         "SELECT t.[Name], COALESCE(MAX(c.[Ordinal]), 0) "
