@@ -29,14 +29,24 @@
         # triplet.  A library opts in by setting vcpkgUseVeracodeTriplet = 1 before
         # including this file.  Libraries whose triplets set no -RTC flags (e.g. OpenSSL)
         # need no veracode variant and simply leave this undefined.
-        vcpkgTriplet = x64-windows-static-veracode
+        vcpkgTripletBase = x64-windows-static-veracode
     %elif defined (vcpkgWindowsMDCRT)
         # Caller explicitly requested the dynamic-CRT static triplet (e.g. a Windows DLL that
         # must link /MD to match the rest of the Bentley build).  Set vcpkgWindowsMDCRT = 1
         # before including this file to activate this branch.
-        vcpkgTriplet = x64-windows-static-md
+        vcpkgTripletBase = x64-windows-static-md
     %else
-        vcpkgTriplet = x64-windows-static
+        vcpkgTripletBase = x64-windows-static
+    %endif
+    %if $(BUILD_TOOLSET) == "WINDOWS_CLANG"
+        # The clang-cl (WINDOWS_CLANG) toolset builds the vcpkg packages with BentleyBuild's
+        # own LLVM clang-cl via a chainload toolchain (windows-clang-cl.toolchain.cmake). Each
+        # MSVC triplet has a parallel "-clang" overlay triplet, so the clang toolset gets a
+        # distinct vcpkg ABI hash and never shares binary-cache entries with the MSVC (Visual
+        # Studio) build even though the two are ABI-compatible.
+        vcpkgTriplet = $(vcpkgTripletBase)-clang
+    %else
+        vcpkgTriplet = $(vcpkgTripletBase)
     %endif
 %else
     %error Unsupported TARGET_PROCESSOR_ARCHITECTURE for vcpkg: $(TARGET_PROCESSOR_ARCHITECTURE)
