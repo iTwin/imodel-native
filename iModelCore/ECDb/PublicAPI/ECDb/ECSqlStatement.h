@@ -697,6 +697,11 @@ struct IJsSerializable {
     public:
         ECDB_EXPORT virtual void ToJs(BeJsValue&) const = 0;
         ECDB_EXPORT std::string Stringify(StringifyFormat format = StringifyFormat::Default) const;
+        // Note: making the destructor virtual is required for proper cleanup of derived classes.
+        // However, making it pure virtual is functionally equivalent given the pure virtual ToJs
+        // method above, and making it pure virtual would require an empty implementation in a cpp
+        // file to provide a definition, since it is required by the subclass destructors.
+        virtual ~IJsSerializable() {}
 };
 
 //=======================================================================================
@@ -742,7 +747,7 @@ struct ECSqlRowProperty final: IJsSerializable {
         ECSqlRowProperty():m_index(-1), m_isGenerated(false){}
         ECSqlRowProperty(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index)
             :m_index(index), m_extendedType(extendedType), m_className(className), m_accessString(accessString), m_jsonName(jsonName), m_name(name), m_typeName(typeName), m_isGenerated(generated){}
-        ~ECSqlRowProperty(){} // Class is final, so not virtual
+        virtual ~ECSqlRowProperty(){}
         std::string const& GetClassName() const { return m_className;}
         std::string const& GetAccessString() const { return m_accessString;}
         std::string const& GetJsonName() const { return m_jsonName;}
