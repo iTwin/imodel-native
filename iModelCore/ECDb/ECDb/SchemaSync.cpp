@@ -3,6 +3,11 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+// flatbuffers is consumed as a headers-only VendorAPI (util.cpp is never compiled/linked).
+// On MSVC, FLATBUFFERS_LOCALE_INDEPENDENT defaults to 1, which makes flexbuffers.h reference
+// flatbuffers::ClassicLocale::instance_ (defined only in util.cpp), causing an unresolved
+// external symbol at link time. Forcing it to 0 keeps flexbuffers.h fully header-only.
+#define FLATBUFFERS_LOCALE_INDEPENDENT 0
 #include <flatbuffers/flexbuffers.h>
 
 USING_NAMESPACE_BENTLEY_EC
