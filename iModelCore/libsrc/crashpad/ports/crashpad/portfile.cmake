@@ -114,9 +114,14 @@ elseif(VCPKG_TARGET_IS_LINUX)
     # official builds keep their default linker regardless of what is installed.
     # vcpkg scrubs the environment for port builds; vcpkg_run_install.sh forwards
     # this variable via VCPKG_KEEP_ENV_VARS.
-    if(DEFINED ENV{CRASHPAD_USE_LLD})
-        message(STATUS "CRASHPAD_USE_LLD is set: linking crashpad with lld")
-        string(APPEND OPTIONS " extra_ldflags=\"-fuse-ld=lld\"")
+    if(DEFINED ENV{CRASHPAD_USE_LLD} AND NOT "$ENV{CRASHPAD_USE_LLD}" STREQUAL "")
+        find_program(CRASHPAD_LLD NAMES ld.lld lld)
+        if(CRASHPAD_LLD)
+            message(STATUS "CRASHPAD_USE_LLD is set and lld was found (${CRASHPAD_LLD}): linking crashpad with lld")
+            string(APPEND OPTIONS " extra_ldflags=\"-fuse-ld=lld\"")
+        else()
+            message(WARNING "CRASHPAD_USE_LLD is set but lld was not found; linking crashpad with the default linker")
+        endif()
     endif()
 
 elseif(VCPKG_TARGET_IS_OSX)
