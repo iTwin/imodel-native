@@ -2522,7 +2522,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
     // we want cascade delete to work during rebase.
     bool fkNoAction = !pmConf.IsRebasingLocalChanges();
-    const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
+    const bool ignoreNoop = false; //pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
         if(change.IsIndirect())
@@ -2600,8 +2600,27 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         dataApplyArgs.ApplyOnlyDataChanges();
     }
 
+    std::unique_ptr<ChangeGroup> pElementDeletes;
+
     if (directChangesOnly) {
-        dataApplyArgs.SetFilterChange([](Changes::Change const& change) {
+        dataApplyArgs.SetFilterChange([&pElementDeletes](Changes::Change const& change) {
+            if (change.GetOpcode() == DbOpcode::Delete)
+                {
+                    // Skip bis_Element deletes for now, but record them in a separate changegroup for later.
+                    // This will allow us to detect conflicts in derived-class tables, which would otherwise by CASCADE-deleted.
+                    // Accept all other deletions, even indirect ones, because those same derived-class table rows are usually
+                    // deleted in indirect changes (because they're CASCADE-deleted by the bis_Element delete), and we want to
+                    // detect conflicts in those tables too.
+                    if (change.GetTableName() == "bis_Element")
+                        {
+                        if (!pElementDeletes)
+                            pElementDeletes = std::make_unique<ChangeGroup>();
+                        pElementDeletes->AddChange(change);
+                        return ChangeStream::FilterChangeAction::Skip;
+                        }
+                    else
+                        return ChangeStream::FilterChangeAction::Accept;
+                }
             return change.IsDirect()
                 ? ChangeStream::FilterChangeAction::Accept
                 : ChangeStream::FilterChangeAction::Skip;
@@ -2613,7 +2632,17 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         const auto result = [&]() {
             auto _v = pmConf.IsRebasingLocalChanges() ? nullptr : std::make_unique<DisableTracking>(*this);
             UNUSED_VARIABLE(_v);
-            return changeset.ApplyChanges(m_dgndb, dataApplyArgs);
+            DbResult result = changeset.ApplyChanges(m_dgndb, dataApplyArgs);
+            if (result == DbResult::BE_SQLITE_OK && pElementDeletes)
+                {
+                // Now apply the bis_Element deletes that were skipped above, so we can detect conflicts in derived-class tables.
+                auto elementDeleteArgs = dataApplyArgs;
+                elementDeleteArgs.SetFilterChange([](Changes::Change const&) { return ChangeStream::FilterChangeAction::Accept; });
+                LocalChangeSet elementDeletesChangeset(m_dgndb, 0, TxnType::Data, "element deletes");
+                elementDeletesChangeset.FromChangeGroup(*pElementDeletes);
+                result = elementDeletesChangeset.ApplyChanges(m_dgndb, elementDeleteArgs);
+                }
+            return result;
         }();
 
         if (result != BE_SQLITE_OK) {

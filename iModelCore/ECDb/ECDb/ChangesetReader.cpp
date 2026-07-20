@@ -240,6 +240,8 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     if (!ecdb.GetColumns(columns, conflict.GetTableName().c_str()))
         return BentleyStatus::ERROR;
 
+    DbOpcode opcode = conflict.GetOpcode();
+
     std::unordered_map<Utf8String, DbValue> originalDbValues;
     std::unordered_map<Utf8String, DbValue> theirDbValues;
     std::unordered_map<Utf8String, DbValue> ourDbValues;
@@ -247,7 +249,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     for(int i = 0; i < static_cast<int>(columns.size()); ++i)
         {
             auto originalValue = conflict.GetOldValue(i);
-            auto ourValue = conflict.GetNewValue(i);
+            auto ourValue = opcode == DbOpcode::Update || opcode == DbOpcode::Insert ? conflict.GetNewValue(i) : DbValue(nullptr);
 
             // GetConflictValue will get any column from the current database row.
             // But we only need it if is this column is in the conflicting changeset.
