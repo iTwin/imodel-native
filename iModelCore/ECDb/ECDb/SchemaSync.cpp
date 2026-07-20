@@ -1432,8 +1432,10 @@ BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableNa
         return SUCCESS;
 
     auto root = flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(blobData), (size_t) blobSize);
-    if (!root.IsMap())
-        return SUCCESS;
+    if (!root.IsMap()) {
+        LOG.errorv("SchemaReservationHelper::ReadTableStore(): KeyMap blob for table '%s' is not a map.", tableName);
+        return ERROR;
+    }
 
     auto map  = root.AsMap();
     auto keys = map.Keys();
@@ -1481,28 +1483,28 @@ void SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, Sch
             ts.SeedLastReservedId((uint64_t) stmt.GetValueInt64(0));
     };
 
-    seedOne(store.schema,                     "ec_Schema");
-    seedOne(store.schemaReference,            "ec_SchemaReference");
-    seedOne(store.ecClass,                    "ec_Class");
-    seedOne(store.classHasBaseClasses,        "ec_ClassHasBaseClasses");
-    seedOne(store.property,                   "ec_Property");
-    seedOne(store.enumeration,                "ec_Enumeration");
-    seedOne(store.kindOfQuantity,             "ec_KindOfQuantity");
-    seedOne(store.unitSystem,                 "ec_UnitSystem");
-    seedOne(store.phenomenon,                 "ec_Phenomenon");
-    seedOne(store.unit,                       "ec_Unit");
-    seedOne(store.format,                     "ec_Format");
-    seedOne(store.formatCompositeUnit,        "ec_FormatCompositeUnit");
-    seedOne(store.propertyCategory,           "ec_PropertyCategory");
-    seedOne(store.relationshipConstraint,     "ec_RelationshipConstraint");
-    seedOne(store.relationshipConstraintClass,"ec_RelationshipConstraintClass");
-    seedOne(store.customAttribute,            "ec_CustomAttribute");
-    seedOne(store.ecTable,                    "ec_Table");
-    seedOne(store.column,                     "ec_Column");
-    seedOne(store.propertyMap,                "ec_PropertyMap");
-    seedOne(store.propertyPath,               "ec_PropertyPath");
-    seedOne(store.ecIndex,                    "ec_Index");
-    seedOne(store.indexColumn,                "ec_IndexColumn");
+    seedOne(store.schema,                     RES_TABLE_SCHEMA);
+    seedOne(store.schemaReference,            RES_TABLE_SCHEMAREF);
+    seedOne(store.ecClass,                    RES_TABLE_CLASS);
+    seedOne(store.classHasBaseClasses,        RES_TABLE_CLASSBASES);
+    seedOne(store.property,                   RES_TABLE_PROPERTY);
+    seedOne(store.enumeration,                RES_TABLE_ENUM);
+    seedOne(store.kindOfQuantity,             RES_TABLE_KOQ);
+    seedOne(store.unitSystem,                 RES_TABLE_UNITSYSTEM);
+    seedOne(store.phenomenon,                 RES_TABLE_PHENOMENON);
+    seedOne(store.unit,                       RES_TABLE_UNIT);
+    seedOne(store.format,                     RES_TABLE_FORMAT);
+    seedOne(store.formatCompositeUnit,        RES_TABLE_FORMATUNIT);
+    seedOne(store.propertyCategory,           RES_TABLE_PROPCAT);
+    seedOne(store.relationshipConstraint,     RES_TABLE_RELCONSTRAINT);
+    seedOne(store.relationshipConstraintClass,RES_TABLE_RELCONSTRCLASS);
+    seedOne(store.customAttribute,            RES_TABLE_CA);
+    seedOne(store.ecTable,                    RES_TABLE_TABLE);
+    seedOne(store.column,                     RES_TABLE_COLUMN);
+    seedOne(store.propertyMap,                RES_TABLE_PROPMAP);
+    seedOne(store.propertyPath,               RES_TABLE_PROPPATH);
+    seedOne(store.ecIndex,                    RES_TABLE_INDEX);
+    seedOne(store.indexColumn,                RES_TABLE_INDEXCOL);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1562,7 +1564,7 @@ BentleyStatus SchemaReservationHelper::WriteReservationStoreToSyncDb(Db& syncDb,
 //---------------------------------------------------------------------------------------
 void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                                         bset<Utf8String, CompareIUtf8Ascii>& visited) {
-    if (visited.find(schema.GetName()) != visited.end())
+    if (visited.find(schema.GetName()) != visited.end()) // This schema is already visited, so we don't need to process it again.
         return;
     visited.insert(schema.GetName());
 
@@ -1577,11 +1579,11 @@ void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, S
 
     for (ECClassCP ecClass : schema.GetClasses()) {
         if (ecClass == nullptr) continue;
-        store.ecClass.GetOrAllocate(SchemaWriter::DeriveClassKey(*ecClass));
-        for (ECClassCP base : ecClass->GetBaseClasses())
+        store.ecClass.GetOrAllocate(SchemaWriter::DeriveClassKey(*ecClass)); // Allocate the class key
+        for (ECClassCP base : ecClass->GetBaseClasses()) // Allocate the base class keys
             if (base != nullptr)
-                store.classHasBaseClasses.GetOrAllocate(SchemaWriter::DeriveClassHasBaseClassesKey(*ecClass, *base));
-        for (ECPropertyCP prop : ecClass->GetProperties(false))
+                store.classHasBaseClasses.GetOrAllocate(SchemaWriter::DeriveClassHasBaseClassesKey(*ecClass, *base)); // Allocate the class-has-base-classes key
+        for (ECPropertyCP prop : ecClass->GetProperties(false)) // Allocate the property keys
             if (prop != nullptr)
                 store.property.GetOrAllocate(SchemaWriter::DerivePropertyKey(*prop));
 
@@ -1591,10 +1593,11 @@ void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, S
                 ECRelationshipConstraintCR constraint = (end == ECRelationshipEnd_Source)
                     ? relClass->GetSource() : relClass->GetTarget();
                 store.relationshipConstraint.GetOrAllocate(SchemaWriter::DeriveRelationshipConstraintKey(*relClass, end));
-                for (ECClassCP cc : constraint.GetConstraintClasses())
+                for (ECClassCP cc : constraint.GetConstraintClasses()) {
                     if (cc != nullptr)
                         store.relationshipConstraintClass.GetOrAllocate(
                             SchemaWriter::DeriveRelationshipConstraintClassKey(*relClass, end, *cc));
+                } 
                 Utf8String ck = SchemaWriter::DeriveRelationshipConstraintKey(*relClass, end);
                 for (IECInstancePtr ca : constraint.GetCustomAttributes(false))
                     store.customAttribute.GetOrAllocate(SchemaWriter::DeriveCustomAttributeKey(ck, ca->GetClass()));
@@ -1637,9 +1640,11 @@ void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, S
         }
     }
 
-    for (PropertyCategoryCP cat : schema.GetPropertyCategories())
-        if (cat != nullptr) store.propertyCategory.GetOrAllocate(SchemaWriter::DerivePropertyCategoryKey(*cat));
-
+    for (PropertyCategoryCP cat : schema.GetPropertyCategories()) {
+        if (cat != nullptr) 
+            store.propertyCategory.GetOrAllocate(SchemaWriter::DerivePropertyCategoryKey(*cat));
+    }
+        
     Utf8String sk = SchemaWriter::DeriveSchemaKey(schema);
     for (ECN::IECInstancePtr ca : schema.GetCustomAttributes(false))
         store.customAttribute.GetOrAllocate(SchemaWriter::DeriveCustomAttributeKey(sk, ca->GetClass()));
@@ -1930,18 +1935,41 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
 
     for (ECN::ECClassCP ecClass : schema.GetClasses()) {
         if (ecClass == nullptr) continue;
-        // Relationship classes use link-table or FK mapping — no shared columns.
+
+        // Relationship classes use a link-table strategy (one physical SQLite row per
+        // relationship instance keyed on SourceECInstanceId / TargetECInstanceId) or an FK
+        // column on the source entity table — neither of which uses the shared-column TPH pool
+        // that this reservation pass manages.  Because all briefcases apply the same mapping
+        // strategy for relationship classes (determined entirely by schema metadata, not by any
+        // runtime counter), skipping them here does not create any divergence: every briefcase
+        // will independently arrive at the same link-table / FK layout without needing a
+        // coordinated column-ordinal reservation. (TODO: I need verification on this.)
         if (ecClass->IsRelationshipClass()) continue;
 
         auto const& ownedProps = ecClass->GetProperties(false);
+        // Only classes that introduce their own properties can require new column slots.
+        // An abstract intermediate class (or a pure-mixin) that contributes zero owned
+        // properties will, during the real mapping phase, share every column already
+        // allocated for the concrete base or sibling that does own properties.  Skipping
+        // such a class here is therefore consistent across all briefcases: none of them
+        // will allocate a new column for it, so the per-physical-table ordinal counter
+        // advances by the same amount on every briefcase.
         if (ownedProps.empty()) continue;
 
         // Find the primary physical table this class maps to (or will map to via its ancestors).
         Utf8String physTable = FindPrimaryTableForClass(localDb, *ecClass);
         if (physTable.empty()) {
-            // Brand-new class hierarchy not yet in ec_ClassMap.  The table name is not
-            // yet known without running the mapping phase, so skip for now.  Phase 2
-            // will derive table names for new hierarchies before the lock is acquired.
+            // This class belongs to a brand-new hierarchy that has never been imported into
+            // localDb, so ec_ClassMap has no row for it yet and the physical table name
+            // cannot be determined without running the full mapping phase.
+            //
+            // From the cross-briefcase consistency perspective this is safe to skip: all
+            // briefcases that start from the same common synced base will see the same absent
+            // ec_ClassMap entry and will skip this class identically.  Phase 2 of the
+            // reservation protocol (not yet implemented) will derive table names for new
+            // hierarchies before the sync-db write-lock is acquired, closing this gap.
+            // Until then, such classes are reserved through the schema lock path where
+            // coordination is guaranteed by mutual exclusion rather than by pre-reservation.
             continue;
         }
 
@@ -1949,12 +1977,30 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
 
         for (ECN::ECPropertyCP prop : ownedProps) {
             if (prop == nullptr) continue;
-            // Navigation properties map to FK columns that are handled separately.
+
+            // Navigation properties are stored as FK columns (e.g. SourceECInstanceId /
+            // TargetECInstanceId) whose ordinals are chosen by the relationship-constraint
+            // mapping path, not by the shared-column TPH machinery.  That path is
+            // deterministic purely from schema metadata (it always uses a fixed set of
+            // well-known column names), so it requires no coordination through the sync-db
+            // counter — every briefcase derives the same FK column layout independently.
+            // Including navigation properties here would advance the per-physical-table
+            // ordinal counter unnecessarily and cause the real import on one briefcase to
+            // consume a higher ordinal than was reserved, breaking cross-briefcase alignment.
             if (prop->GetIsNavigation()) continue;
 
             Utf8String propKey = SchemaWriter::DerivePropertyKey(*prop);
 
-            // Idempotent: skip if this property key already has an entry.
+            // Idempotent reservation — cross-briefcase safety for concurrent writers:
+            // The sync-db write-lock serializes callers so that at most one briefcase updates
+            // the reservation store at a time.  However, a second briefcase that acquires the
+            // lock after the first has already written a reservation will re-read the updated
+            // blobs, find the key already present here, and skip it — leaving the
+            // (columnOrd, columnId) pair that the first briefcase wrote untouched.  Both
+            // briefcases will therefore consume exactly the same ordinal and id for this
+            // property during their respective imports, which is the core invariant the
+            // reservation protocol must preserve.  Overwriting an existing entry would
+            // allocate a new ordinal and silently break that invariant.
             if (colTableStore.Lookup(propKey) != nullptr) continue;
 
             // Allocate a fresh ec_Column.Id from the id store and a new column ordinal

@@ -6256,7 +6256,7 @@ bool SchemaWriter::Context::ReservedPropertyNamesPolicy::Evaluate(IssueDataSourc
     }
 
 // =====================================================================================
-// Content-key derivation helpers (§2.1 of the SchemaImportReservation plan).
+// Content-key derivation helpers.
 // Keys are joined with ':' and compared case-insensitively via bmap<...,CompareIUtf8Ascii>.
 // =====================================================================================
 
