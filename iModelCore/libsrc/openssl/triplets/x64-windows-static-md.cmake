@@ -1,3 +1,8 @@
+# To force a rebuild and a fresh vcpkg binary-cache entry for this triplet, increment the
+# number below. Triplet file contents feed into vcpkg's ABI hash, so bumping this value
+# invalidates the cached binaries and forces the library to be rebuilt.
+# CACHE_BUST = 1
+
 # x64-windows-static-md: 64-bit Windows, static library linkage, dynamic CRT (/MD).
 # Use this triplet when OpenSSL will be re-linked into a DLL that uses the dynamic CRT
 # (msvcrt.lib), which is the standard for all Bentley Windows builds.  This keeps the
