@@ -1,6 +1,7 @@
-# Local vcpkg overlay port for crashpad. Used on WINDOWS ONLY: vcpkg_run_install.bat passes
-# --overlay-ports for this directory, while vcpkg_run_install.sh (Linux/macOS/Android) does
-# not, so those platforms build crashpad from the upstream vcpkg registry port instead.
+# Local vcpkg overlay port for crashpad, used on ALL platforms: both
+# vcpkg_run_install.bat (Windows) and vcpkg_run_install.sh (Linux/macOS/Android) pass
+# --overlay-ports for this directory, so crashpad always builds from this fork instead of
+# the upstream vcpkg registry port.
 #
 # Forked from the upstream vcpkg registry `crashpad` port at version 2024-04-11#13, then
 # modified locally (extra patches plus the clang-cl / MSBuild-header handling below). See
@@ -102,6 +103,21 @@ if(VCPKG_TARGET_IS_ANDROID)
 
 elseif(VCPKG_TARGET_IS_LINUX)
     string(APPEND OPTIONS " target_os=\"linux\"")
+    # Newer libc++/libstdc++ (the GCC 13+ header-hygiene change) no longer pull
+    # <cstdint> in transitively, so crashpad's util/file/filesystem.h fails with
+    # "unknown type name 'uint64_t'". Force-include <cstdint> so it compiles.
+    # (Upstream crashpad bug; header still lacks the include.)
+    string(APPEND OPTIONS " extra_cflags_cc=\"-include cstdint\"")
+    # GNU ld.bfd 2.46 mis-links the crashpad handler (leaves DT_INIT pointing at
+    # stale metadata -> the handler segfaults on startup). Setting CRASHPAD_USE_LLD
+    # links the handler with lld instead. Explicit opt-in (not auto-detected) so
+    # official builds keep their default linker regardless of what is installed.
+    # vcpkg scrubs the environment for port builds; vcpkg_run_install.sh forwards
+    # this variable via VCPKG_KEEP_ENV_VARS.
+    if(DEFINED ENV{CRASHPAD_USE_LLD})
+        message(STATUS "CRASHPAD_USE_LLD is set: linking crashpad with lld")
+        string(APPEND OPTIONS " extra_ldflags=\"-fuse-ld=lld\"")
+    endif()
 
 elseif(VCPKG_TARGET_IS_OSX)
     string(APPEND OPTIONS " target_os=\"mac\"")
