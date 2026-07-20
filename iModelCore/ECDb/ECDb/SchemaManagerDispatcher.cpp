@@ -1223,7 +1223,14 @@ VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const {
-    return m_schemaSync.ReserveSchemaImport(schemas, syncDbUri);
+    auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
+    const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
+    auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
+    if(!isschemaSyncDisabled && !resolvedSyncDbUri.IsEmpty()) {
+        return m_schemaSync.ReserveSchemaImport(schemas, syncDbUri);
+    }
+    LOG.info("SchemaSync is disabled or no sync-db URI is available. Skipping schema import reservation.");
+    return SUCCESS;
 }
 
 //#define ALLOW_ECDB_SCHEMAIMPORT_DUMP
@@ -1309,6 +1316,9 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
     const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
+
+    if (SUCCESS != ReserveSchemaImport(schemas, syncDbUri))
+        return SchemaImportResult::ERROR;
 
     // When SchemaSync is active and a sync-db URI is available, activate keyed mode so that
     // NextIdForKey() looks up pre-reserved ids from the sync-db reservation store.
