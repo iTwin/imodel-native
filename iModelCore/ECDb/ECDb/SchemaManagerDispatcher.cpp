@@ -1320,6 +1320,26 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     if (SUCCESS != ReserveSchemaImport(schemas, syncDbUri))
         return SchemaImportResult::ERROR;
 
+    // RAII guard: if the import fails on any code path after the reservation was written,
+    // roll back the open sync-db transaction so the sync-db is left unchanged.
+    struct ReservationTxGuard {
+        SchemaSync& m_sync;
+        bool m_committed = false;
+        explicit ReservationTxGuard(SchemaSync& s) : m_sync(s) {}
+        ~ReservationTxGuard() {
+            if (!m_committed) {
+                if (SUCCESS != m_sync.AbandonPendingReservation())
+                    LOG.error("ReservationTxGuard: Failed to roll back reservation transaction on import failure.");
+            }
+        }
+        BentleyStatus Commit() {
+            const auto rc = m_sync.CommitPendingReservation();
+            if (SUCCESS == rc)
+                m_committed = true;
+            return rc;
+        }
+    } reservationTxGuard(schemaSync);
+
     // When SchemaSync is active and a sync-db URI is available, activate keyed mode so that
     // NextIdForKey() looks up pre-reserved ids from the sync-db reservation store.
     if (!isSchemaSyncDisabled && !resolvedSyncDbUri.IsEmpty())
@@ -1382,8 +1402,11 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (schemasToMap.empty())
+    if (schemasToMap.empty()) {
+        if (SUCCESS != reservationTxGuard.Commit())
+            return SchemaImportResult::ERROR;
         return SchemaImportResult::OK;
+    }
 
     if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb))
         {
@@ -1404,6 +1427,8 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
+    if (SUCCESS != reservationTxGuard.Commit())
+        return SchemaImportResult::ERROR;
     return SchemaImportResult::OK;
     }
 

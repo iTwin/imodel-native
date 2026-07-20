@@ -109,6 +109,8 @@ private:
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
     int64_t m_modifiedRowCount;
+    Db m_pendingReservationDb;
+    bool m_hasPendingReservation = false;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
@@ -140,7 +142,17 @@ public:
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr);
     ECDB_EXPORT Status Push(SyncDbUri const&);
     //! Reserve content-key-based ids for @p schemas in the sync-db. Must be called before ImportSchemas.
-    ECDB_EXPORT BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri) const;
+    //! Does NOT commit — the caller must call CommitPendingReservation() on success or
+    //! AbandonPendingReservation() on failure to commit or roll back the open transaction.
+    ECDB_EXPORT BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri);
+    //! Commit the reservation transaction opened by the last successful ReserveSchemaImport call.
+    //! No-op if no reservation transaction is pending.
+    //! @return SUCCESS if the transaction was committed successfully, ERROR otherwise.
+    BentleyStatus CommitPendingReservation();
+    //! Roll back the reservation transaction opened by the last successful ReserveSchemaImport call.
+    //! No-op if no reservation transaction is pending.
+    //! @return SUCCESS if the transaction was rolled back successfully, ERROR otherwise.
+    BentleyStatus AbandonPendingReservation();
     //! Load the reservation store from the sync-db (read-only) for keyed-mode id allocation.
     ECDB_EXPORT BentleyStatus LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const;
     //! Load the column-assignment reservation store from the sync-db (read-only) for mapping-phase keyed allocation.

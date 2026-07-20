@@ -1669,7 +1669,7 @@ BentleyStatus SchemaSync::LoadReservationStore(SyncDbUri const& syncDbUri, Schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri) const {
+BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri) {
     if (schemas.empty())
         return SUCCESS;
     if (syncDbUri.IsEmpty()) {
@@ -1677,26 +1677,30 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
         return ERROR;
     }
 
-    Db syncDb;
     Db::OpenParams openParams(Db::OpenMode::ReadWrite);
     SchemaSync::ParseQueryParams(openParams, syncDbUri);
-    if (BE_SQLITE_OK != syncDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams)) {
+    if (BE_SQLITE_OK != m_pendingReservationDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams)) {
         LOG.errorv("ReserveSchemaImport: Failed to open sync db at '%s'.", syncDbUri.GetUri().c_str());
         return ERROR;
     }
-    if (BE_SQLITE_OK != syncDb.ExecuteSql(SchemaReservationHelper::RESERVATION_TABLE_DDL)) {
+    m_hasPendingReservation = true;
+
+    if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_TABLE_DDL)) {
         LOG.error("ReserveSchemaImport: Failed to create reservation table.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
     SchemaReservationStore store;
-    if (SUCCESS != SchemaReservationHelper::LoadReservationStoreFromSyncDb(syncDb, store)) {
+    if (SUCCESS != SchemaReservationHelper::LoadReservationStoreFromSyncDb(m_pendingReservationDb, store)) {
         LOG.error("ReserveSchemaImport: Failed to read reservation store.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
     if (SUCCESS != SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(m_conn, store)) {
         LOG.error("ReserveSchemaImport: Failed to seed reserved ids from local db.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
@@ -1705,8 +1709,9 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
         if (schema != nullptr)
             SchemaReservationHelper::WalkSchemaForReservation(*schema, store, visited);
 
-    if (SUCCESS != SchemaReservationHelper::WriteReservationStoreToSyncDb(syncDb, store)) {
+    if (SUCCESS != SchemaReservationHelper::WriteReservationStoreToSyncDb(m_pendingReservationDb, store)) {
         LOG.error("ReserveSchemaImport: Failed to write reservation store.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
@@ -1714,19 +1719,22 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
     // Phase 1 column-assignment reservation (§3a): per-physical-table
     // monotonic column-ordinal counters in schema_reservation_columns.
     // ---------------------------------------------------------------
-    if (BE_SQLITE_OK != syncDb.ExecuteSql(SchemaReservationHelper::RESERVATION_COLUMNS_TABLE_DDL)) {
+    if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_COLUMNS_TABLE_DDL)) {
         LOG.error("ReserveSchemaImport: Failed to create column reservation table.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
     SchemaReservationColumnStore colStore;
-    if (SUCCESS != SchemaReservationHelper::LoadColumnStoreFromSyncDb(syncDb, colStore)) {
+    if (SUCCESS != SchemaReservationHelper::LoadColumnStoreFromSyncDb(m_pendingReservationDb, colStore)) {
         LOG.error("ReserveSchemaImport: Failed to read column reservation store.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
     if (SUCCESS != SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(m_conn, colStore)) {
         LOG.error("ReserveSchemaImport: Failed to seed column ordinals from local db.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
@@ -1735,15 +1743,47 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
         if (schema != nullptr)
             SchemaReservationHelper::WalkSchemaForColumnReservation(*schema, m_conn, store, colStore, colVisited);
 
-    if (SUCCESS != SchemaReservationHelper::WriteColumnStoreToSyncDb(syncDb, colStore)) {
+    if (SUCCESS != SchemaReservationHelper::WriteColumnStoreToSyncDb(m_pendingReservationDb, colStore)) {
         LOG.error("ReserveSchemaImport: Failed to write column reservation store.");
+        AbandonPendingReservation();
         return ERROR;
     }
 
-    if (BE_SQLITE_OK != syncDb.SaveChanges()) {
-        LOG.error("ReserveSchemaImport: Failed to save changes to sync db.");
+    // NOTE: SaveChanges() is intentionally NOT called here.
+    // The sync-db write transaction remains open; the caller (ImportSchemas) is responsible
+    // for calling CommitPendingReservation() on success or AbandonPendingReservation() on failure.
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSync::CommitPendingReservation() {
+    if (!m_hasPendingReservation)
+        return SUCCESS;
+    const auto rc = m_pendingReservationDb.SaveChanges();
+    if (BE_SQLITE_OK != rc) {
+        LOG.error("SchemaSync::CommitPendingReservation: Failed to commit reservation transaction.");
         return ERROR;
     }
+    m_pendingReservationDb.CloseDb();
+    m_hasPendingReservation = false;
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSync::AbandonPendingReservation() {
+    if (!m_hasPendingReservation)
+        return SUCCESS;
+    const auto rc = m_pendingReservationDb.AbandonChanges();
+    if (BE_SQLITE_OK != rc) {
+        LOG.error("SchemaSync::AbandonPendingReservation: Failed to roll back reservation transaction.");
+        return ERROR;
+    }
+    m_pendingReservationDb.CloseDb();
+    m_hasPendingReservation = false;
     return SUCCESS;
 }
 
