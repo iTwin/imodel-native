@@ -370,15 +370,23 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
         stmt->BindInt(11, primaryKeyOrdinal);
 
     stmt->BindInt(12, Enum::ToInt(column.GetKind()));
-    stmt->BindId(13, m_schemaManager.GetECDb().GetImpl().GetIdFactory().Column().NextId());
+    // §3a: if the column was pre-assigned a reserved id (via AddSharedColumn(DbColumnId)),
+    // bind that id directly so every briefcase inserts the same ec_Column.Id for the
+    // same physical column.  Otherwise fall back to the normal NextId() increment.
+    const bool hasReservedId = column.HasId();
+    stmt->BindId(13, hasReservedId ? BeInt64Id(column.GetId().GetValue())
+                                   : m_schemaManager.GetECDb().GetImpl().GetIdFactory().Column().NextId());
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const DbColumnId colId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
-    if (!colId.IsValid())
-        return ERROR;
+    if (!hasReservedId)
+        {
+        const DbColumnId colId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
+        if (!colId.IsValid())
+            return ERROR;
 
-    const_cast<DbColumn&>(column).SetId(colId);
+        const_cast<DbColumn&>(column).SetId(colId);
+        }
     return SUCCESS;
     }
 
@@ -1230,6 +1238,18 @@ DbColumn* DbTable::AddSharedColumn()
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
     return AddColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedData, PersistenceType::Physical);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbColumn* DbTable::AddSharedColumn(DbColumnId reservedId)
+    {
+    BeAssert(reservedId.IsValid() && "Reserved column id must be valid");
+    Utf8String generatedName;
+    m_sharedColumnNameGenerator.Generate(generatedName);
+    BeAssert(FindColumn(generatedName.c_str()) == nullptr);
+    return AddColumn(reservedId, generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedData, PersistenceType::Physical);
     }
 
 //---------------------------------------------------------------------------------------

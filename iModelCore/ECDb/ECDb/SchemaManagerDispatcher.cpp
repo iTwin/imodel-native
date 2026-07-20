@@ -1335,6 +1335,18 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             }
         GetECDb().GetImpl().GetIdFactory().SetKeyedMode(store);
         keyedModeGuard.Activate();
+
+        // Load the column-assignment reservation store (§3a) so that DbMappingManager
+        // can assign the same reserved (columnOrd, columnId) on every briefcase.
+        SchemaReservationColumnStore& colStore = ctx.AllocateColumnStore();
+        if (SUCCESS != schemaSync.LoadColumnStore(resolvedSyncDbUri, colStore))
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
+                "Failed to import ECSchemas. Unable to load column reservation store from sync-db. uri: {%s}.",
+                resolvedSyncDbUri.GetUri().c_str());
+            return SchemaImportResult::ERROR;
+            }
         }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {

@@ -411,10 +411,33 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
 
         }
 
+    // §3a column-reservation: when a column store is available (SchemaSync keyed mode),
+    // look up the property's reserved (columnOrd, columnId) and create the shared column
+    // with the pre-assigned ec_Column.Id so every briefcase uses the same id.
+    if (SchemaReservationColumnStore const* colStore = ctx.GetColumnStore())
+        {
+        DbTable const* effectiveTable = GetEffectiveTable(ctx);
+        if (effectiveTable != nullptr)
+            {
+            Utf8String propKey = SchemaWriter::DerivePropertyKey(prop);
+            if (SchemaReservationColumnTableStore const* tableStore = colStore->TryGet(effectiveTable->GetName()))
+                {
+                if (SchemaReservationColumnEntry const* entry = tableStore->Lookup(propKey))
+                    {
+                    // Reserved id found — create the column with the pre-assigned id so
+                    // InsertColumn binds this id directly rather than calling NextId().
+                    DbColumn* newColumn = GetEffectiveTable(ctx)->AddSharedColumn(DbColumnId(entry->columnId));
+                    if (newColumn == nullptr)
+                        return nullptr;
+                    return RegisterColumnMap(accessString, newColumn);
+                    }
+                }
+            }
+        }
+
     auto* column = ReuseOrCreateSharedColumn(ctx);
     return RegisterColumnMap(accessString, column);
     }
-    
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------

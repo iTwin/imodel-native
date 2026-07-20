@@ -251,6 +251,7 @@ struct SchemaImportContext final
         RemapManager m_remapManager;
         bool m_semanticRebasing;
         std::unique_ptr<SchemaReservationStore> m_reservationStore; //!< Heap-allocated keyed-mode store; owned for the lifetime of this context.
+        std::unique_ptr<SchemaReservationColumnStore> m_columnStore; //!< Heap-allocated column reservation store (§3a); owned for the lifetime of this context.
 
     public:
         SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, bool semanticRebasing = false)
@@ -275,6 +276,13 @@ struct SchemaImportContext final
             m_reservationStore = std::make_unique<SchemaReservationStore>();
             return *m_reservationStore;
         }
+        //! Allocates the column-assignment reservation store on the heap and returns a reference for population.
+        SchemaReservationColumnStore& AllocateColumnStore() {
+            m_columnStore = std::make_unique<SchemaReservationColumnStore>();
+            return *m_columnStore;
+        }
+        //! Returns the column-assignment reservation store, or nullptr if not loaded.
+        SchemaReservationColumnStore const* GetColumnStore() const { return m_columnStore.get(); }
         SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
         TransformData& GetDataTransform() {return m_transformData; }
