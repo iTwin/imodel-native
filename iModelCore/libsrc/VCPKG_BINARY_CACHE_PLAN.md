@@ -447,6 +447,221 @@ Also add `x-azcopy` / the shared cache to the "How It Works" narrative so the fa
 4. **Measure** the `x-azcopy` restore time; if it regresses, revisit container region/tiering or
    AzCopy concurrency env vars.
 
+### Per-platform cache-push logs (2026-07-20 full publish run)
+
+The full multi-platform publish run on **2026-07-20** confirmed every expected library was built
+from source and **uploaded** to the shared cache on every platform. Each `Completed submission …
+to 1 binary cache(s)` line is a successful push; submission lines only appear for freshly-built
+(cache-miss) packages, so these logs double as proof the packages were built this run. The raw
+`Submissions-*.txt` logs are embedded below (collapsed).
+
+Coverage summary — the core libraries (`zlib`, `minizip`, `libpng`, `openssl`) built and cached on
+**all** platforms; `crashpad` additionally built and cached on the desktop platforms only:
+
+| Platform (triplet) | zlib | minizip | libpng | openssl | crashpad |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| LinuxX64 (`x64-linux`) | ✓ | ✓ | ✓ | ✓ 3.6.3 | ✓ |
+| MacOSARM64 (`arm64-osx`) | ✓ | ✓ | ✓ | ✓ 3.6.3 | ✓ |
+| Winx64 (`x64-windows-static`, openssl `-md`) | ✓ | ✓ | ✓ | ✓ 3.6.3 | ✓ |
+| Winx64-clang (`x64-windows-static-clang`, openssl `-md-clang`) | ✓ | ✓ | ✓ | ✓ 3.6.3 | ✓ |
+| iOSARM64 (`arm64-ios`) | ✓ | ✓ | ✓ | ✓ 3.6.3 | — (n/a) |
+| AndroidARM64 (`arm64-android` + `x64-android`) | ✓ | ✓ | ✓ | ✓ 3.6.3 | — (n/a) |
+
+Notes on the intentional variations:
+- **`crashpad` is desktop-only** — it does not build on iOS or Android, so its absence from those
+  logs is expected, not a gap.
+- **LinuxX64 builds a second OpenSSL (`3.6.2`) plus `curl`** — pulled transitively by
+  `crashpad → curl[…,openssl,…]`, whose baseline resolves OpenSSL to `3.6.2` independently of the
+  `3.6.3` pin on our own `openssl` port. This skew is Linux-only (Windows/macOS crashpad don't take
+  the curl dependency) and is tracked separately, out of scope for this PR.
+- **`vcpkg-cmake*` / `vcpkg-gn` / `vcpkg-get-python-packages`** entries are build-time helper ports
+  (host tools; iOS/Android list them under the `arm64-osx` host), not shipped libraries.
+- **`zlib` is submitted multiple times per platform** — the sequential per-library install
+  invocations each rebuild it rather than restoring the first run's just-written entry; redundant
+  but harmless (same `zlib@1.3.2#1`).
+- **AndroidARM64** ran twice (intermittent Java OOM on the first compile); all vcpkg builds/uploads
+  completed on the first run, so `Submissions-AndroidARM64-1.txt` is the complete cache-push record.
+
+<details>
+<summary><code>Submissions-LinuxX64.txt</code> (x64-linux)</summary>
+
+```text
+2026-07-20T17:01:04.6343793Z Starting submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:01:04.6353866Z Starting submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:01:04.6373127Z Starting submission of zlib:x64-linux@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:01:04.6374774Z Completed submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in 6 s
+2026-07-20T17:01:04.6388009Z Starting submission of vcpkg-cmake-get-vars:x64-linux@2025-05-29 to 1 binary cache(s) in the background
+2026-07-20T17:01:04.6406786Z Starting submission of minizip:x64-linux@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:01:04.6417824Z Completed submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in 4 s
+2026-07-20T17:01:04.6419248Z Completed submission of zlib:x64-linux@1.3.2#1 to 1 binary cache(s) in 3.6 s (1/3)
+2026-07-20T17:01:04.6420391Z Completed submission of vcpkg-cmake-get-vars:x64-linux@2025-05-29 to 1 binary cache(s) in 3.3 s (2/3)
+2026-07-20T17:01:04.6421200Z Completed submission of minizip:x64-linux@1.3.1#1 to 1 binary cache(s) in 3.6 s (3/3)
+2026-07-20T17:01:51.1185536Z Starting submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:01:51.1196207Z Starting submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:01:51.1210916Z Starting submission of zlib:x64-linux@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:01:51.1212179Z Completed submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in 3.5 s
+2026-07-20T17:01:51.1212843Z Completed submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in 3.7 s
+2026-07-20T17:01:51.1227570Z Starting submission of libpng:x64-linux@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:01:51.1233713Z Completed submission of zlib:x64-linux@1.3.2#1 to 1 binary cache(s) in 3.5 s
+2026-07-20T17:01:51.1234944Z Completed submission of libpng:x64-linux@1.6.58 to 1 binary cache(s) in 3.7 s (1/1)
+2026-07-20T17:04:49.3143496Z Starting submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:04:49.3148858Z Starting submission of vcpkg-cmake-get-vars:x64-linux@2025-05-29 to 1 binary cache(s) in the background
+2026-07-20T17:04:49.3152888Z Starting submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:04:49.3167063Z Starting submission of openssl:x64-linux@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:04:49.3170127Z Completed submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in 2.4 s
+2026-07-20T17:04:49.3170468Z Completed submission of vcpkg-cmake-get-vars:x64-linux@2025-05-29 to 1 binary cache(s) in 2.5 s
+2026-07-20T17:04:49.3170801Z Completed submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in 3.5 s
+2026-07-20T17:04:49.3171394Z Completed submission of openssl:x64-linux@3.6.3 to 1 binary cache(s) in 4.3 s (1/1)
+2026-07-20T17:20:58.1920571Z Starting submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1925151Z Starting submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1932235Z Starting submission of zlib:x64-linux@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1940669Z Starting submission of vcpkg-tool-gn:x64-linux@2025-08-05#1 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1941292Z Completed submission of vcpkg-cmake-config:x64-linux@2024-05-23 to 1 binary cache(s) in 2.4 s
+2026-07-20T17:20:58.1944866Z Starting submission of vcpkg-gn:x64-linux@2025-08-05 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1947580Z Starting submission of vcpkg-get-python-packages:x64-linux@2025-04-05 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1952875Z Starting submission of vcpkg-cmake-get-vars:x64-linux@2025-05-29 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1965980Z Starting submission of openssl:x64-linux@3.6.2 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1966571Z Completed submission of vcpkg-cmake:x64-linux@2024-04-23 to 1 binary cache(s) in 2.4 s
+2026-07-20T17:20:58.1966893Z Completed submission of zlib:x64-linux@1.3.2#1 to 1 binary cache(s) in 2.5 s
+2026-07-20T17:20:58.1967205Z Completed submission of vcpkg-tool-gn:x64-linux@2025-08-05#1 to 1 binary cache(s) in 2.8 s
+2026-07-20T17:20:58.1967532Z Completed submission of vcpkg-gn:x64-linux@2025-08-05 to 1 binary cache(s) in 2.4 s
+2026-07-20T17:20:58.1967857Z Completed submission of vcpkg-get-python-packages:x64-linux@2025-04-05 to 1 binary cache(s) in 2.4 s
+2026-07-20T17:20:58.1968192Z Completed submission of vcpkg-cmake-get-vars:x64-linux@2025-05-29 to 1 binary cache(s) in 2.4 s
+2026-07-20T17:20:58.1974406Z Starting submission of curl[core,non-http,openssl,ssl]:x64-linux@8.20.0#2 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1974999Z Completed submission of openssl:x64-linux@3.6.2 to 1 binary cache(s) in 4.4 s
+2026-07-20T17:20:58.1990023Z Starting submission of crashpad:x64-linux@2024-04-11#13 to 1 binary cache(s) in the background
+2026-07-20T17:20:58.1994273Z Completed submission of curl[core,non-http,openssl,ssl]:x64-linux@8.20.0#2 to 1 binary cache(s) in 2.8 s
+2026-07-20T17:20:58.1994887Z Completed submission of crashpad:x64-linux@2024-04-11#13 to 1 binary cache(s) in 3.6 s (1/1)
+```
+
+</details>
+
+<details>
+<summary><code>Submissions-MacOSARM64.txt</code> (arm64-osx)</summary>
+
+```text
+2026-07-20T17:00:22.8649110Z Starting submission of zlib:arm64-osx@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:00:22.8659290Z Starting submission of minizip:arm64-osx@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:00:22.8662130Z Completed submission of zlib:arm64-osx@1.3.2#1 to 1 binary cache(s) in 3.8 s (1/2)
+2026-07-20T17:00:22.8662400Z Completed submission of minizip:arm64-osx@1.3.1#1 to 1 binary cache(s) in 2.6 s (2/2)
+2026-07-20T17:00:59.6993260Z Starting submission of zlib:arm64-osx@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:00:59.7000050Z Starting submission of libpng:arm64-osx@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:00:59.7002500Z Completed submission of zlib:arm64-osx@1.3.2#1 to 1 binary cache(s) in 6 s (1/2)
+2026-07-20T17:00:59.7002760Z Completed submission of libpng:arm64-osx@1.6.58 to 1 binary cache(s) in 4.2 s (2/2)
+2026-07-20T17:02:55.5678050Z Starting submission of openssl:arm64-osx@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:02:55.5680490Z Completed submission of openssl:arm64-osx@3.6.3 to 1 binary cache(s) in 5.3 s (1/1)
+2026-07-20T17:17:31.0746520Z Starting submission of crashpad:arm64-osx@2024-04-11#13 to 1 binary cache(s) in the background
+2026-07-20T17:17:31.0760090Z Completed submission of crashpad:arm64-osx@2024-04-11#13 to 1 binary cache(s) in 3.4 s (1/1)
+```
+
+</details>
+
+<details>
+<summary><code>Submissions-Winx64.txt</code> (x64-windows-static; openssl on x64-windows-static-md)</summary>
+
+```text
+2026-07-20T17:07:52.0945389Z Starting submission of zlib:x64-windows-static@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:07:52.0960678Z Starting submission of minizip:x64-windows-static@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:07:52.0967953Z Completed submission of zlib:x64-windows-static@1.3.2#1 to 1 binary cache(s) in 3.2 s (1/2)
+2026-07-20T17:07:52.0968558Z Completed submission of minizip:x64-windows-static@1.3.1#1 to 1 binary cache(s) in 3 s (2/2)
+2026-07-20T17:10:48.4349393Z Starting submission of zlib:x64-windows-static@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:10:48.4357983Z Starting submission of libpng:x64-windows-static@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:10:48.4360837Z Completed submission of zlib:x64-windows-static@1.3.2#1 to 1 binary cache(s) in 12 s
+2026-07-20T17:10:48.4361424Z Completed submission of libpng:x64-windows-static@1.6.58 to 1 binary cache(s) in 3.3 s (1/1)
+2026-07-20T17:15:16.7611924Z Starting submission of openssl:x64-windows-static-md@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:15:16.7615196Z Completed submission of openssl:x64-windows-static-md@3.6.3 to 1 binary cache(s) in 7.9 s (1/1)
+2026-07-20T17:38:07.7129974Z Starting submission of zlib:x64-windows-static@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:38:07.7146358Z Starting submission of crashpad:x64-windows-static@2024-04-11#13 to 1 binary cache(s) in the background
+2026-07-20T17:38:07.7149899Z Completed submission of zlib:x64-windows-static@1.3.2#1 to 1 binary cache(s) in 3 s
+2026-07-20T17:38:07.7150486Z Completed submission of crashpad:x64-windows-static@2024-04-11#13 to 1 binary cache(s) in 4.8 s (1/1)
+```
+
+</details>
+
+<details>
+<summary><code>Submissions-Winx64-clang.txt</code> (x64-windows-static-clang; openssl on x64-windows-static-md-clang)</summary>
+
+```text
+2026-07-20T17:16:11.6440239Z Starting submission of zlib:x64-windows-static-clang@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:16:11.6456552Z Starting submission of minizip:x64-windows-static-clang@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:16:11.6464075Z Completed submission of zlib:x64-windows-static-clang@1.3.2#1 to 1 binary cache(s) in 3.1 s (1/2)
+2026-07-20T17:16:11.6464884Z Completed submission of minizip:x64-windows-static-clang@1.3.1#1 to 1 binary cache(s) in 47 s (2/2)
+2026-07-20T17:16:59.0378824Z Starting submission of zlib:x64-windows-static-clang@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:16:59.0387404Z Starting submission of libpng:x64-windows-static-clang@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:16:59.0390220Z Completed submission of zlib:x64-windows-static-clang@1.3.2#1 to 1 binary cache(s) in 3 s
+2026-07-20T17:16:59.0390798Z Completed submission of libpng:x64-windows-static-clang@1.6.58 to 1 binary cache(s) in 3.1 s (1/1)
+2026-07-20T17:20:43.4639507Z Starting submission of openssl:x64-windows-static-md-clang@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:20:43.4642819Z Completed submission of openssl:x64-windows-static-md-clang@3.6.3 to 1 binary cache(s) in 7.4 s (1/1)
+2026-07-20T17:37:24.3141149Z Starting submission of zlib:x64-windows-static-clang@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:37:24.3158385Z Starting submission of crashpad:x64-windows-static-clang@2024-04-11#13 to 1 binary cache(s) in the background
+2026-07-20T17:37:24.3161994Z Completed submission of zlib:x64-windows-static-clang@1.3.2#1 to 1 binary cache(s) in 3 s
+2026-07-20T17:37:24.3162582Z Completed submission of crashpad:x64-windows-static-clang@2024-04-11#13 to 1 binary cache(s) in 3.4 s (1/1)
+```
+
+</details>
+
+<details>
+<summary><code>Submissions-iOSARM64.txt</code> (arm64-ios targets; arm64-osx host helper ports)</summary>
+
+```text
+2026-07-20T17:00:06.6482540Z Starting submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:00:06.6486630Z Starting submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:00:06.6492060Z Starting submission of zlib:arm64-ios@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:00:06.6496540Z Starting submission of vcpkg-cmake-get-vars:arm64-osx@2025-05-29 to 1 binary cache(s) in the background
+2026-07-20T17:00:06.6502270Z Starting submission of minizip:arm64-ios@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:00:06.6512820Z Completed submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in 2.6 s
+2026-07-20T17:00:06.6513340Z Completed submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in 3.3 s (1/4)
+2026-07-20T17:00:06.6513600Z Completed submission of zlib:arm64-ios@1.3.2#1 to 1 binary cache(s) in 2.7 s (2/4)
+2026-07-20T17:00:06.6513870Z Completed submission of vcpkg-cmake-get-vars:arm64-osx@2025-05-29 to 1 binary cache(s) in 2.6 s (3/4)
+2026-07-20T17:00:06.6514130Z Completed submission of minizip:arm64-ios@1.3.1#1 to 1 binary cache(s) in 2.7 s (4/4)
+2026-07-20T17:00:41.9745130Z Starting submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:00:41.9749430Z Starting submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:00:41.9754800Z Starting submission of zlib:arm64-ios@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:00:41.9768560Z Starting submission of libpng:arm64-ios@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:00:41.9770690Z Completed submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in 3.6 s
+2026-07-20T17:00:41.9771440Z Completed submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in 2.6 s (1/3)
+2026-07-20T17:00:41.9771970Z Completed submission of zlib:arm64-ios@1.3.2#1 to 1 binary cache(s) in 2.9 s (2/3)
+2026-07-20T17:00:41.9772270Z Completed submission of libpng:arm64-ios@1.6.58 to 1 binary cache(s) in 2.6 s (3/3)
+2026-07-20T17:02:12.4438000Z Starting submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in the background
+2026-07-20T17:02:12.4461420Z Starting submission of vcpkg-cmake-get-vars:arm64-osx@2025-05-29 to 1 binary cache(s) in the background
+2026-07-20T17:02:12.4465390Z Starting submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in the background
+2026-07-20T17:02:12.4475500Z Starting submission of openssl:arm64-ios@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:02:12.4477600Z Completed submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in 2.6 s
+2026-07-20T17:02:12.4477870Z Completed submission of vcpkg-cmake-get-vars:arm64-osx@2025-05-29 to 1 binary cache(s) in 2.8 s
+2026-07-20T17:02:12.4478140Z Completed submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in 2.6 s
+2026-07-20T17:02:12.4478570Z Completed submission of openssl:arm64-ios@3.6.3 to 1 binary cache(s) in 3.9 s (1/1)
+```
+
+</details>
+
+<details>
+<summary><code>Submissions-AndroidARM64-1.txt</code> (arm64-android + x64-android)</summary>
+
+```text
+2026-07-20T17:09:31.5481458Z Starting submission of zlib:arm64-android@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:09:31.5490065Z Starting submission of minizip:arm64-android@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:09:31.5494174Z Completed submission of zlib:arm64-android@1.3.2#1 to 1 binary cache(s) in 13 s
+2026-07-20T17:09:31.5494730Z Completed submission of minizip:arm64-android@1.3.1#1 to 1 binary cache(s) in 13 s (1/1)
+2026-07-20T17:10:50.1750573Z Starting submission of zlib:arm64-android@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:10:50.1760654Z Starting submission of libpng:arm64-android@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:10:50.1763408Z Completed submission of zlib:arm64-android@1.3.2#1 to 1 binary cache(s) in 3.1 s
+2026-07-20T17:10:50.1763967Z Completed submission of libpng:arm64-android@1.6.58 to 1 binary cache(s) in 3.2 s (1/1)
+2026-07-20T17:16:20.9965598Z Starting submission of openssl:arm64-android@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:16:20.9968758Z Completed submission of openssl:arm64-android@3.6.3 to 1 binary cache(s) in 7.9 s (1/1)
+2026-07-20T17:33:25.9887101Z Starting submission of zlib:x64-android@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:33:25.9903821Z Starting submission of minizip:x64-android@1.3.1#1 to 1 binary cache(s) in the background
+2026-07-20T17:33:25.9911408Z Completed submission of zlib:x64-android@1.3.2#1 to 1 binary cache(s) in 3.2 s (1/2)
+2026-07-20T17:33:25.9912014Z Completed submission of minizip:x64-android@1.3.1#1 to 1 binary cache(s) in 6.7 s (2/2)
+2026-07-20T17:35:09.8165661Z Starting submission of zlib:x64-android@1.3.2#1 to 1 binary cache(s) in the background
+2026-07-20T17:35:09.8181475Z Starting submission of libpng:x64-android@1.6.58 to 1 binary cache(s) in the background
+2026-07-20T17:35:09.8186352Z Completed submission of zlib:x64-android@1.3.2#1 to 1 binary cache(s) in 3 s
+2026-07-20T17:35:09.8187317Z Completed submission of libpng:x64-android@1.6.58 to 1 binary cache(s) in 3.1 s (1/1)
+2026-07-20T17:41:04.6387803Z Starting submission of openssl:x64-android@3.6.3 to 1 binary cache(s) in the background
+2026-07-20T17:41:04.6390988Z Completed submission of openssl:x64-android@3.6.3 to 1 binary cache(s) in 7.7 s (1/1)
+```
+
+</details>
+
 ---
 
 ## Step 6 — ✅ RESOLVED by the `x-azcopy` pivot (history: Azure CLI version blocker)
