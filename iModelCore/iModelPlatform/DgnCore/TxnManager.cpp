@@ -593,6 +593,7 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
     }
 
     // Note: column in Db is named "IsSchemaChange", but we store TxnType there.
+    TxnId savedTxnId = m_curr; // capture before Increment() is called below
     enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,TxnType=5,Change=6};
     CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(Id,Deleted,Grouped,Operation,IsSchemaChange,Change) VALUES(?,?,?,?,?,?)");
     stmt->BindInt64(Column::Id, m_curr.GetValue());
@@ -680,6 +681,16 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
                 return rc;
                 }
         }
+    }
+
+    // Snapshot the element->class-id mapping for any updated elements so that
+    // conflict resolution during rebase can identify the class even after the
+    // row has been deleted by an upstream changeset.
+    if (txnType == TxnType::Data) {
+        m_dgndb.ExecuteSql(SqlPrintfString(
+            "INSERT OR IGNORE INTO dgn_TxnElemClassIds (TxnId, ElementId, ClassId) "
+            "SELECT %" PRId64 ", ElementId, ECClassId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ChangeType=%d",
+            (int64_t)savedTxnId.GetValue(), (int)TxnTable::ChangeType::Update).GetUtf8CP());
     }
 
     if (txnType != TxnType::Data)
@@ -831,6 +842,10 @@ void TxnManager::Initialize(SessionOption option) {
     m_reversedTxn.clear();
     m_multiTxnOp.clear();
     TXN_DEBUG(">> TxnManager initialized. Current TxnId: %s", BeInt64Id(m_curr.GetValue()).ToHexStr().c_str());
+
+    // Create the element-class-id side table if this is an older briefcase that pre-dates it.
+    if (!m_dgndb.IsReadonly() && !m_dgndb.TableExists("dgn_TxnElemClassIds"))
+        m_dgndb.ExecuteSql("CREATE TABLE dgn_TxnElemClassIds (TxnId INTEGER NOT NULL, ElementId INTEGER NOT NULL, ClassId INTEGER NOT NULL, PRIMARY KEY (TxnId, ElementId))");
 }
 
 /**
@@ -1017,6 +1032,7 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
+               TABLE_NAME_STARTS_WITH("dgn_TxnElemClassIds") ||
                TABLE_NAME_STARTS_WITH("ec_cache_") ||
                DgnSearchableText::IsUntrackedFts5Table(tableName)
             ) ? TrackChangesForTable::No : TrackChangesForTable::Yes;
@@ -3260,6 +3276,7 @@ void TxnManager::DeleteAllTxns() {
         }
     }
 
+    m_dgndb.ExecuteSql("DELETE FROM dgn_TxnElemClassIds");
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
     m_dgndb.SaveChanges();
     Initialize(SessionOption::New);
@@ -3284,6 +3301,7 @@ void TxnManager::DeleteReversedTxns() {
         }
     }
 
+    m_dgndb.ExecuteSql("DELETE FROM dgn_TxnElemClassIds WHERE TxnId IN (SELECT Id FROM " DGN_TABLE_Txns " WHERE Deleted=1)");
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1"); // these transactions are no longer reinstateable. Throw them away.
 }
 
@@ -3308,6 +3326,8 @@ void TxnManager::DeleteFromStartTo(TxnId lastId) {
             DeleteTxnFile(txnId);
         }
     }
+
+    m_dgndb.ExecuteSql(SqlPrintfString("DELETE FROM dgn_TxnElemClassIds WHERE TxnId < %" PRId64, lastId.GetValue()).GetUtf8CP());
 
     Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE_Txns " WHERE Id < ?");
     stmt.BindInt64(1, lastId.GetValue());
@@ -4474,6 +4494,9 @@ bool TxnManager::PullMergeEraseTxn(TxnId txnId) {
         return false;
     }
     BeAssert(m_dgndb.GetModifiedRowCount() == 1); // we should have deleted exactly one row
+
+    m_dgndb.ExecuteSql(SqlPrintfString("DELETE FROM dgn_TxnElemClassIds WHERE TxnId=%" PRId64, txnId.GetValue()).GetUtf8CP());
+
     TXN_DEBUG(">> PullMergeEraseTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     return true;
 }

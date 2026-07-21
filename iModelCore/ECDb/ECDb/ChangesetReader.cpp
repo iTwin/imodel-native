@@ -243,7 +243,8 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
         return BentleyStatus::ERROR;
 
     DbOpcode opcode = conflict.GetOpcode();
-    bool ourValueAvailable = (opcode == DbOpcode::Update || opcode == DbOpcode::Insert);
+    bool originalValueAvailable = opcode == DbOpcode::Update || opcode == DbOpcode::Delete;
+    bool ourValueAvailable = opcode == DbOpcode::Update || opcode == DbOpcode::Insert;
     bool theirValueAvailable = cause == ChangeSet::ConflictCause::Data || cause == ChangeSet::ConflictCause::Conflict;
 
     std::unordered_map<Utf8String, DbValue> originalDbValues;
@@ -252,43 +253,44 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     std::unordered_set<Utf8String> conflictColumns;
     for(int i = 0; i < static_cast<int>(columns.size()); ++i)
         {
-            DbValue originalValue = conflict.GetOldValue(i);
-            DbValue ourValue = ourValueAvailable ? conflict.GetNewValue(i) : DbValue(nullptr);
+        DbValue originalValue = originalValueAvailable ? conflict.GetOldValue(i) : DbValue(nullptr);
+        DbValue ourValue = ourValueAvailable ? conflict.GetNewValue(i) : DbValue(nullptr);
 
-            // GetConflictValue will get any column from the current database row.
-            // But we only need it if is this column is in the conflicting changeset.
-            DbValue theirValue = theirValueAvailable && (originalValue.IsValid() || ourValue.IsValid())
-                ? conflict.GetConflictValue(i)
-                : DbValue(nullptr);
+        // GetConflictValue will get any column from the current database row.
+        // But we only need it if this column is in the conflicting changeset.
+        DbValue theirValue = theirValueAvailable && (originalValue.IsValid() || ourValue.IsValid())
+            ? conflict.GetConflictValue(i)
+            : DbValue(nullptr);
 
-            // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
-            if (conflict.IsPrimaryKeyColumn(i))
-                {
-                if (ourValueAvailable && !ourValue.IsValid())
-                    ourValue = originalValue;
-                if (theirValueAvailable && !theirValue.IsValid())
-                    theirValue = originalValue;
-                }
+        // SQLite changesets store PK column values only in the Old slot for UPDATE and DELETE.
+        // For INSERT, it will only be in the New slot.
+        if (conflict.IsPrimaryKeyColumn(i))
+            {
+            DbValue pkValue = originalValueAvailable ? originalValue : ourValue;
+            if (ourValueAvailable && !ourValue.IsValid())
+                ourValue = pkValue;
+            if (theirValueAvailable && !theirValue.IsValid())
+                theirValue = pkValue;
+            }
 
-            if (originalValue.IsValid())
-                originalDbValues.emplace(columns[i], originalValue);
-            if (ourValue.IsValid())
-                ourDbValues.emplace(columns[i], ourValue);
-            if (theirValue.IsValid())
-                theirDbValues.emplace(columns[i], theirValue);
+        if (originalValue.IsValid())
+            originalDbValues.emplace(columns[i], originalValue);
+        if (ourValue.IsValid())
+            ourDbValues.emplace(columns[i], ourValue);
+        if (theirValue.IsValid())
+            theirDbValues.emplace(columns[i], theirValue);
 
-            // Determine which columns represent genuine conflicts.
-            // A column is in conflict if "their" value is different from the "original" value.
-            // Note that "our" value may be the same as "their" value, but if it is different from "original", it is still a conflict.
-            // Also flag conflict columns when they deleted (no THEIR) or inserted (no ORIGINAL).
-            bool hasOriginalOrTheir = originalValue.IsValid() || theirValue.IsValid();
-            if (hasOriginalOrTheir && (!originalValue.IsValid() || !theirValue.IsValid() || !DbValuesAreEqual(originalValue, theirValue)))
-                {
-                conflictColumns.emplace(columns[i]);
-                }
+        // Determine which columns represent genuine conflicts.
+        // A column is in conflict if "their" value is different from the "original" value.
+        // Note that "our" value may be the same as "their" value, but if it is different from "original", it is still a conflict.
+        // Also flag conflict columns when they deleted (no THEIR) or inserted (no ORIGINAL).
+        bool hasOriginalOrTheir = originalValue.IsValid() || theirValue.IsValid();
+        if (hasOriginalOrTheir && (!originalValue.IsValid() || !theirValue.IsValid() || !DbValuesAreEqual(originalValue, theirValue)))
+            {
+            conflictColumns.emplace(columns[i]);
+            }
         }
 
-    // TODO: Resolving the class ID _only_ from the original row is not sufficient.
     ECClassId classId;
     bool isClassIdFromChangeset = false;
     if (ChangesetValueFactory::ResolveClassId(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset) != SUCCESS)

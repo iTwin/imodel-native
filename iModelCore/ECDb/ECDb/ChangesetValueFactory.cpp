@@ -701,6 +701,43 @@ bool ChangesetValueFactory::TryResolveClassIdFromChangeset(
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool ChangesetValueFactory::TryResolveClassIdFromTxnElemMap(
+    DbTable const& dbTable,
+    ColumnValueMap const& columnValues,
+    ECDbCR conn, ECClassId& classIdOut) {
+
+    // This table only exists in DgnDb instances; skip cheaply for plain ECDb.
+    if (!conn.TableExists("dgn_TxnElemClassIds"))
+        return false;
+
+    // Requires a single-column PK so we can use it as the ElementId key.
+    PrimaryKeyDbConstraint const* pk = dbTable.GetPrimaryKeyConstraint();
+    if (pk == nullptr || pk->GetColumns().size() != 1)
+        return false;
+
+    auto it = columnValues.find(pk->GetColumns()[0]->GetName());
+    if (it == columnValues.end() || !it->second.IsValid() || it->second.IsNull())
+        return false;
+
+    CachedStatementPtr stmt = conn.GetCachedStatement(
+        "SELECT ClassId FROM dgn_TxnElemClassIds WHERE ElementId=? LIMIT 1");
+    if (stmt.IsNull())
+        return false;
+
+    stmt->BindUInt64(1, it->second.GetValueUInt64());
+    if (stmt->Step() != BE_SQLITE_ROW) {
+        ClearStatement(stmt);
+        return false;
+    }
+
+    classIdOut = ECClassId(stmt->GetValueUInt64(0));
+    ClearStatement(stmt);
+    return classIdOut.IsValid();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool ChangesetValueFactory::TryResolveClassIdFromDbSeek(
     DbTable const& dbTable,
     ColumnValueMap const& columnValues,
@@ -891,6 +928,9 @@ BentleyStatus ChangesetValueFactory::ResolveClassId(
                    tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
     } else if (TryResolveClassIdFromDbSeek(tbl, columnValues, conn, resolvedClassIdOut)) {
         LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " via DB seek.",
+                   tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
+    } else if (TryResolveClassIdFromTxnElemMap(tbl, columnValues, conn, resolvedClassIdOut)) {
+        LOG.debugv("Table '%s': resolved ECClassId %" PRIu64 " via txn element class map.",
                    tbl.GetName().c_str(), resolvedClassIdOut.GetValueUnchecked());
     } else {
         const ClassMap* classMapOut = GetRootClassMap(tbl, conn);

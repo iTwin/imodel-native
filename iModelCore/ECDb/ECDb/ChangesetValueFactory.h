@@ -177,6 +177,15 @@ private:
                                              ECDbCR conn,
                                              ECClassId& outClassId);
 
+    //! Tries to resolve ECClassId from the local dgn_TxnElemClassIds side table.
+    //! This is a fallback for NOTFOUND rebase conflicts where the row was deleted
+    //! upstream but the local changeset has an UPDATE for it.  Returns false if
+    //! the table is absent (non-DgnDb ECDb) or the element is not recorded.
+    static bool TryResolveClassIdFromTxnElemMap(DbTable const& dbTable,
+                                                 ColumnValueMap const& columnValues,
+                                                 ECDbCR conn,
+                                                 ECClassId& outClassId);
+
     //! Reads ECInstanceId from @p columnValues, validates it, creates the field.
     //! Returns SUCCESS and populates outputs on success; ERROR otherwise.
     static BentleyStatus ResolveInstanceId(ClassMap const& classMap,

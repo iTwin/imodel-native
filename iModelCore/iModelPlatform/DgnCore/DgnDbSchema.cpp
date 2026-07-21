@@ -322,6 +322,11 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params) {
                                 "Time TIMESTAMP DEFAULT(julianday('now')),"
                                 "Change BLOB");
 
+    CreateTable("dgn_TxnElemClassIds", "TxnId INTEGER NOT NULL,"
+                                       "ElementId INTEGER NOT NULL,"
+                                       "ClassId INTEGER NOT NULL,"
+                                       "PRIMARY KEY (TxnId, ElementId)");
+
     CreateTable(DGN_TABLE_Font, "Id INTEGER PRIMARY KEY,"
                                 "Type INT,"
                                 "Name CHAR NOT NULL COLLATE NOCASE,"
