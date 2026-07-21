@@ -2396,11 +2396,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return ret;
         }
 
-    //! Content-key reservation write (§3 of SchemaImportReservation plan).
-    //! Arguments:
-    //!   0 — string[] schemaFileNames (or XML strings when sourceType=="xml")
-    //!   1 — string syncDbUri
-    //!   2 — optional "xml" to use XmlString source (default "file")
     void ReserveSchemaImport(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);

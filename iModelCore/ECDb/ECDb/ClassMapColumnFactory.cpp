@@ -411,7 +411,7 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
 
         }
 
-    // §3a column-reservation: when a column store is available (SchemaSync keyed mode),
+    // when a column store is available (SchemaSync keyed mode),
     // look up the property's reserved (columnOrd, columnId) and create the shared column
     // with the pre-assigned ec_Column.Id so every briefcase uses the same id.
     if (SchemaReservationColumnStore const* colStore = ctx.GetColumnStore())

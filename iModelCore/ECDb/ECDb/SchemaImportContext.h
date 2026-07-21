@@ -251,7 +251,7 @@ struct SchemaImportContext final
         RemapManager m_remapManager;
         bool m_semanticRebasing;
         std::unique_ptr<SchemaReservationStore> m_reservationStore; //!< Heap-allocated keyed-mode store; owned for the lifetime of this context.
-        std::unique_ptr<SchemaReservationColumnStore> m_columnStore; //!< Heap-allocated column reservation store (§3a); owned for the lifetime of this context.
+        std::unique_ptr<SchemaReservationColumnStore> m_columnStore; //!< Heap-allocated column reservation store; owned for the lifetime of this context.
 
     public:
         SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, bool semanticRebasing = false)

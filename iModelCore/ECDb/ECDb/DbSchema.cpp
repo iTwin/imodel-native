@@ -370,7 +370,7 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
         stmt->BindInt(11, primaryKeyOrdinal);
 
     stmt->BindInt(12, Enum::ToInt(column.GetKind()));
-    // §3a: if the column was pre-assigned a reserved id (via AddSharedColumn(DbColumnId)),
+    // if the column was pre-assigned a reserved id (via AddSharedColumn(DbColumnId)),
     // bind that id directly so every briefcase inserts the same ec_Column.Id for the
     // same physical column.  Otherwise fall back to the normal NextId() increment.
     const bool hasReservedId = column.HasId();

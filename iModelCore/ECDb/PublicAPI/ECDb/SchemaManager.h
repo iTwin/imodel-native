@@ -10,7 +10,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! Per-table in-memory store for the content-key → reserved-id mapping used by the
-//! content-key-based SchemaSync reservation system (§2/§3 of the SchemaImportReservation plan).
+//! content-key-based SchemaSync reservation system.
 //! Keys compare case-insensitively, matching ECObjects name semantics.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -59,8 +59,8 @@ public:
 
 //=======================================================================================
 //! Full set of per-table stores for the content-key → reserved-id reservation used by SchemaSync.
-//! Written into the sync-db by ReserveSchemaImport (§3) and read back by ImportSchemas in
-//! keyed mode (§4).  Covers all 16 metadata tables plus the 6 mapping tables (§3a).
+//! Written into the sync-db by ReserveSchemaImport and read back by ImportSchemas in
+//! keyed mode. Covers all 16 metadata tables plus the 6 mapping tables.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationStore final {
@@ -91,8 +91,7 @@ struct SchemaReservationStore final {
 };
 
 //=======================================================================================
-//! Entry in the per-physical-table column reservation store (§3a of the
-//! SchemaImportReservation plan): the reserved column ordinal within the physical
+//! Entry in the per-physical-table column reservation store: the reserved column ordinal within the physical
 //! SQLite table and the corresponding reserved ec_Column.Id.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -103,7 +102,7 @@ struct SchemaReservationColumnEntry final {
 
 //=======================================================================================
 //! Per-physical-SQLite-table store for the property-key → column assignment used by
-//! the mapping-phase reservation system (§3a).  One row per shared-column/overflow
+//! the mapping-phase reservation system. One row per shared-column/overflow
 //! physical table in schema_reservation_columns; keyed by content, idempotent.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -141,7 +140,7 @@ public:
 
 //=======================================================================================
 //! Full column-assignment reservation store keyed by physical SQLite table name.
-//! Written into the sync-db by ReserveSchemaImport (§3a) and read back by
+//! Written into the sync-db by ReserveSchemaImport and read back by
 //! ImportSchemas so that DbMappingManager assigns the same column ordinals on every
 //! briefcase.
 // @bsiclass

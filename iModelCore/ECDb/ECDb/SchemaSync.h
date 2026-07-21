@@ -94,7 +94,7 @@ struct SchemaReservationHelper final {
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                          bset<Utf8String, CompareIUtf8Ascii>& visited);
 
-    // Column-assignment reservation helpers (§3a).
+    // Column-assignment reservation helpers.
     static Utf8String FindPrimaryTableForClass(ECDbCR localDb, ECN::ECClassCR ecClass);
     static BentleyStatus ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store);
     static BentleyStatus WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store);

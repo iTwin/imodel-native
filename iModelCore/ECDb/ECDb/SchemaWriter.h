@@ -263,7 +263,6 @@ struct SchemaWriter final
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
         static DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& schemaImportCtx, bool logIssue);
 
-        // ---- Content-key derivation helpers (§2.1 of the SchemaImportReservation plan) ----
         // Keys compare case-insensitively; components are joined with ':'.
         // All names are used as-is (mixed case); bmap uses CompareIUtf8Ascii for lookups.
         static Utf8String DeriveSchemaKey(ECN::ECSchemaCR schema);

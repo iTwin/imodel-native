@@ -989,9 +989,6 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     return BE_SQLITE_OK;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod — content-key reservation write (§3 of SchemaImportReservation plan)
-//---------------------------------------------------------------------------------------
 BentleyStatus JsInterop::ReserveSchemaImport(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, Utf8StringCR syncDbUri) {
     if (schemaSources.empty())
         return SUCCESS;

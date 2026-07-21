@@ -1259,7 +1259,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
     {
-    // RAII guard: ensure IdFactory keyed mode is cleared on every return path (Â§4 cleanup).
+    // RAII guard: ensure IdFactory keyed mode is cleared on every return path.
     struct KeyedModeGuard {
         IdFactory* m_factory;
         bool m_active;
@@ -1356,7 +1356,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         GetECDb().GetImpl().GetIdFactory().SetKeyedMode(store);
         keyedModeGuard.Activate();
 
-        // Load the column-assignment reservation store (§3a) so that DbMappingManager
+        // Load the column-assignment reservation store so that DbMappingManager
         // can assign the same reserved (columnOrd, columnId) on every briefcase.
         SchemaReservationColumnStore& colStore = ctx.AllocateColumnStore();
         if (SUCCESS != schemaSync.LoadColumnStore(resolvedSyncDbUri, colStore))

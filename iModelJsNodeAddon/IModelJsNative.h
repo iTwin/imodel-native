@@ -565,9 +565,9 @@ public:
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
-    //! Content-key-based reservation write (§3 of SchemaImportReservation plan).
+    //! Content-key-based reservation write.
     //! Walks the schemas, allocates ids from sync-db per-table counters, and writes the key→id
-    //! blobs into the sync-db reservation rows.  Returns ERROR on failure (details logged).
+    //! blobs into the sync-db reservation rows. Returns ERROR on failure (details logged).
     static BentleyStatus ReserveSchemaImport(DgnDbR, bvector<Utf8String> const& schemaSources, SchemaSourceType, Utf8StringCR syncDbUri);
     static DbResult ImportFunctionalSchema(DgnDbR);
     static BentleyStatus ConvertSchemas(bvector<Utf8String> const& inputStrings, bvector<Utf8String>& outputStrings, ECSchemaReadContextPtr schemaContext, bool convertCA);

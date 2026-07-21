@@ -29,7 +29,7 @@ struct IdFactory final: NonCopyableClass {
                 BeAssert(m_isInitializedFromTable);
                 return BeInt64Id(++m_id);
             }
-            //! Content-key-based id lookup (§4).  In keyed mode returns the reserved id for @p key;
+            //! Content-key-based id lookup.  In keyed mode returns the reserved id for @p key;
             //! returns BeInt64Id(0) (invalid) if the key is absent — caller must propagate as an error.
             //! An empty @p key is treated as "no key available" and falls back to NextId() even in keyed mode
             //! (used by schema-upgrade / replace paths that do not have a content key readily available).

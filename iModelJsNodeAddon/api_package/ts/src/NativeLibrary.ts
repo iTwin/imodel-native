@@ -732,17 +732,6 @@ export declare namespace IModelJsNative {
     public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
-    /**
-     * Content-key-based reservation write (§3 of the SchemaImportReservation plan).
-     * Walks the given schemas, derives content keys for every ec_* metadata row each
-     * schema would insert, allocates ids from per-table monotonic counters in the sync-db,
-     * and writes the key → id maps as JSON blobs into the sync-db reservation rows.
-     * Must be called while the caller holds the sync-db write-lock.
-     * Returns void; throws on error.
-     * @param schemaFileNames Paths to schema XML files (or XML strings when sourceType="xml").
-     * @param syncDbUri URI of the SchemaSync db holding the reservation rows.
-     * @param sourceType Optional; "file" (default) or "xml".
-     */
     public reserveSchemaImport(schemaFileNames: string[], syncDbUri: string, sourceType?: "file" | "xml"): void;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;

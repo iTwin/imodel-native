@@ -1472,7 +1472,7 @@ BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableN
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindInt64(2, (int64_t) store.GetLastReservedId()))
         return ERROR;
-    if (BE_SQLITE_OK != stmt.BindBlob(3, buf.data(), (int) buf.size(), Statement::MakeCopy::Yes))
+    if (BE_SQLITE_OK != stmt.BindBlob(3, buf.data(), (int) buf.size(), Statement::MakeCopy::No))
         return ERROR;
     return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
 }
@@ -1721,7 +1721,7 @@ BentleyStatus SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& sc
     }
 
     // ---------------------------------------------------------------
-    // Phase 1 column-assignment reservation (§3a): per-physical-table
+    // Phase 1 column-assignment reservation: per-physical-table
     // monotonic column-ordinal counters in schema_reservation_columns.
     // ---------------------------------------------------------------
     if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_COLUMNS_TABLE_DDL)) {
@@ -1791,10 +1791,6 @@ BentleyStatus SchemaSync::AbandonPendingReservation() {
     m_hasPendingReservation = false;
     return SUCCESS;
 }
-
-//======================================================================================
-// Column-assignment reservation helpers — SchemaReservationHelper (§3a).
-//======================================================================================
 
 //---------------------------------------------------------------------------------------
 // Helper: return the primary physical SQLite table name that @p ecClass (or the first
@@ -1899,7 +1895,7 @@ BentleyStatus SchemaReservationHelper::WriteColumnTableStore(Db& syncDb, Utf8CP 
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindInt64(2, (int64_t) store.GetLastUsedColumnOrd()))
         return ERROR;
-    if (BE_SQLITE_OK != stmt.BindBlob(3, buf.data(), (int) buf.size(), Statement::MakeCopy::Yes))
+    if (BE_SQLITE_OK != stmt.BindBlob(3, buf.data(), (int) buf.size(), Statement::MakeCopy::No))
         return ERROR;
     return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
 }
