@@ -117,6 +117,25 @@ if [ -d "$OVERLAY_TRIPLETS" ]; then
     OVERLAY_ARGS+=(--overlay-triplets="$OVERLAY_TRIPLETS")
 fi
 
+# Use custom overlay ports from the manifest directory (if present), mirroring
+# vcpkg_run_install.bat. This makes Linux/macOS/Android build from the local
+# crashpad fork (ports/crashpad) instead of the upstream registry port, so
+# platform fixes not yet upstream are picked up on every platform.
+OVERLAY_PORTS="$MANIFEST_DIR/ports"
+if [ -d "$OVERLAY_PORTS" ]; then
+    OVERLAY_ARGS+=(--overlay-ports="$OVERLAY_PORTS")
+fi
+
+# vcpkg scrubs the environment for port builds. Forward CRASHPAD_USE_LLD (opt-in
+# to link the crashpad handler with lld; needed on hosts whose GNU ld mis-links
+# it, e.g. binutils 2.46) so the crashpad portfile can see it. Note: toggling the
+# variable does not change the package ABI hash, so a previously cached crashpad
+# binary may be restored; clear it from $VCPKG_DEFAULT_BINARY_CACHE to force a
+# relink.
+if [ -n "${CRASHPAD_USE_LLD:-}" ]; then
+    export VCPKG_KEEP_ENV_VARS="CRASHPAD_USE_LLD${VCPKG_KEEP_ENV_VARS:+;$VCPKG_KEEP_ENV_VARS}"
+fi
+
 "$VCPKG_EXE" install \
     --triplet "$TRIPLET" \
     --downloads-root="$DOWNLOADS_ROOT" \
