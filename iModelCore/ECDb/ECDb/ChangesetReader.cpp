@@ -223,6 +223,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
 /*static*/ BentleyStatus ChangesetReader::GetConflictColumnValues(
     ECDbCR ecdb,
     ChangesetReader::PropertyFilter propertyFilter,
+    ChangeSet::ConflictCause cause,
     Changes::Change const& conflict,
     std::vector<std::unique_ptr<IECSqlValue>>& outOriginalValues,
     std::vector<std::unique_ptr<IECSqlValue>>& outTheirValues,
@@ -232,6 +233,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     outOriginalValues.clear();
     outTheirValues.clear();
     outOurValues.clear();
+    outConflictPropertyAccessStrings.clear();
 
     DbTable const* dbTable = ecdb.Schemas().Main().GetDbSchema().FindTable(conflict.GetTableName());
     if (!dbTable) return BentleyStatus::ERROR;
@@ -241,6 +243,8 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
         return BentleyStatus::ERROR;
 
     DbOpcode opcode = conflict.GetOpcode();
+    bool ourValueAvailable = (opcode == DbOpcode::Update || opcode == DbOpcode::Insert);
+    bool theirValueAvailable = cause == ChangeSet::ConflictCause::Data || cause == ChangeSet::ConflictCause::Conflict;
 
     std::unordered_map<Utf8String, DbValue> originalDbValues;
     std::unordered_map<Utf8String, DbValue> theirDbValues;
@@ -248,21 +252,21 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     std::unordered_set<Utf8String> conflictColumns;
     for(int i = 0; i < static_cast<int>(columns.size()); ++i)
         {
-            auto originalValue = conflict.GetOldValue(i);
-            auto ourValue = opcode == DbOpcode::Update || opcode == DbOpcode::Insert ? conflict.GetNewValue(i) : DbValue(nullptr);
+            DbValue originalValue = conflict.GetOldValue(i);
+            DbValue ourValue = ourValueAvailable ? conflict.GetNewValue(i) : DbValue(nullptr);
 
             // GetConflictValue will get any column from the current database row.
             // But we only need it if is this column is in the conflicting changeset.
-            auto theirValue = originalValue.IsValid() || ourValue.IsValid()
+            DbValue theirValue = theirValueAvailable && (originalValue.IsValid() || ourValue.IsValid())
                 ? conflict.GetConflictValue(i)
                 : DbValue(nullptr);
 
             // SQLite changesets store PK column values only in the Old slot, even for UPDATE.
             if (conflict.IsPrimaryKeyColumn(i))
                 {
-                if (!ourValue.IsValid())
+                if (ourValueAvailable && !ourValue.IsValid())
                     ourValue = originalValue;
-                if (!theirValue.IsValid())
+                if (theirValueAvailable && !theirValue.IsValid())
                     theirValue = originalValue;
                 }
 
@@ -276,7 +280,9 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
             // Determine which columns represent genuine conflicts.
             // A column is in conflict if "their" value is different from the "original" value.
             // Note that "our" value may be the same as "their" value, but if it is different from "original", it is still a conflict.
-            if (originalValue.IsValid() && theirValue.IsValid() && !DbValuesAreEqual(originalValue, theirValue))
+            // Also flag conflict columns when they deleted (no THEIR) or inserted (no ORIGINAL).
+            bool hasOriginalOrTheir = originalValue.IsValid() || theirValue.IsValid();
+            if (hasOriginalOrTheir && (!originalValue.IsValid() || !theirValue.IsValid() || !DbValuesAreEqual(originalValue, theirValue)))
                 {
                 conflictColumns.emplace(columns[i]);
                 }
@@ -291,9 +297,9 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
 
     if (ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, outOriginalValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, outTheirValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+    if (theirValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, outTheirValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, outOurValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+    if (ourValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, ourDbValues, classId, isClassIdFromChangeset, outOurValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
 
     // Build conflict property access strings from conflict column names.

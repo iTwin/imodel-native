@@ -174,6 +174,7 @@ public:
     ECDB_EXPORT static BentleyStatus GetConflictColumnValues(
         ECDbCR ecdb,
         ChangesetReader::PropertyFilter propertyFilter,
+        ChangeSet::ConflictCause cause,
         Changes::Change const& conflict,
         std::vector<std::unique_ptr<IECSqlValue>>& outOriginalValues,
         std::vector<std::unique_ptr<IECSqlValue>>& outTheirValues,

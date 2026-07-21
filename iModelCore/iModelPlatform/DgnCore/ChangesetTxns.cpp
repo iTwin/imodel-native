@@ -216,6 +216,7 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         ChangesetReader::GetConflictColumnValues(
             m_dgndb,
             ChangesetReader::PropertyFilter::All,
+            cause,
             iter,
             originalValues,
             theirValues,
@@ -239,6 +240,7 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
             THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
 
         BeJsValue conflictsJson = out["conflicts"];
+        conflictsJson.toArray();
         for (Utf8String const& accessString : conflictPropertyAccessStrings) {
             BeJsValue conflictJson = conflictsJson.appendValue();
             conflictJson = accessString;
