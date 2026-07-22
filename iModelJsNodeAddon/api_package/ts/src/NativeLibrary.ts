@@ -1057,16 +1057,21 @@ export declare namespace IModelJsNative {
     public readonly cloudContainer?: CloudContainer;
     public abandonChanges(): void;
     /**
-     * Apply a changeset file - in the same on-disk format used for iModel changesets - to this SQLiteDb.
-     * Unlike DgnDb.applyChangeset, this does *not* validate the changeset header (parentId/changesetId)
-     * against the current state of the db - it simply applies the changes. Any conflict encountered while
-     * applying causes the entire apply to fail and throw.
+     * Apply a raw sqlite changeset file - the plain, uncompressed byte stream produced by the sqlite
+     * session extension - to this SQLiteDb. This is *not* the same on-disk format used for iModel
+     * changesets. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
+     * (parentId/changesetId) against the current state of the db, and it does *not* support DDL/schema
+     * changes (raw sqlite changesets cannot represent them) - it simply applies the row-level changes.
+     * Any conflict encountered while applying causes the entire apply to fail and throw.
      */
     public applyChangeset(changesetFile: LocalFileName): void;
     public closeDb(): void;
     /**
-     * Write out the changes captured since startChangeTracking() was called, to a changeset file in the
-     * same on-disk format used for iModel changesets. Used only for testing.
+     * Write out the changes captured since startChangeTracking() was called, to a changeset file holding
+     * the raw sqlite changeset (the plain, uncompressed byte stream produced by the sqlite session
+     * extension) - this is *not* the same on-disk format used for iModel changesets. Raw sqlite changesets
+     * cannot represent DDL/schema changes, so this throws if any DDL was captured since
+     * startChangeTracking() was called. Used only for testing.
      */
     public createChangeset(changesetFile: LocalFileName): void;
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
