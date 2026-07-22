@@ -29,4 +29,5 @@
 %endif
 
 always:
+    $(BBPYTHONCMD) $(_MakeFilePath)report_vcpkg_cache.py
     $(BBPYTHONCMD) $(_MakeFilePath)bootstrap_vcpkg_with_timeout.py $(SrcRoot)vcpkg
