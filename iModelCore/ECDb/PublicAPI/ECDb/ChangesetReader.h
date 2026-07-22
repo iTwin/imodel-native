@@ -180,6 +180,37 @@ public:
         std::vector<std::unique_ptr<IECSqlValue>>& outTheirValues,
         std::vector<std::unique_ptr<IECSqlValue>>& outOurValues,
         std::vector<Utf8String>& outConflictPropertyAccessStrings);
+
+    //! Gets a JSON report of the conflict, including the values of the columns involved in the conflict.
+    //! The report is structured as follows:
+    //!
+    //! ```js
+    //! {
+    //!   // The original property values as they were when we originally made our changes. Undefined on INSERT.
+    //!   "original": { "Prop1": 123, ... },
+    //!   // The property values that were in the database when we attempted to apply our changes. Defined only on Data conflicts or primary key conflicts.
+    //!   "theirs": { "Prop1": 456, ... },
+    //!   // The property values that we attempted to apply. Undefined on DELETE.
+    //!   "ours": { "Prop1": 789, ... },
+    //!   // The specific properties for which the current DB value is different from the value when we originally made our change.
+    //!   "dataConflictProperties": [ "Prop1", ... ],
+    //!   // UNIQUE constraints that become violated by our change.
+    //!   "uniqueConstraintViolations": [
+    //!     {
+    //!       // The properties that form the UNIQUE constraint that was violated.
+    //!       "uniqueConstraintProperties": [ "Prop1", ... ],
+    //!       // The existing row in the database that causes this UNIQUE constraint to be violated.
+    //!       "conflictingRow": { "Prop1": 456, ... }
+    //!     }
+    //!   ]
+    //! }
+    //! ```
+    ECDB_EXPORT static BentleyStatus GetConflictReportJson(
+        ECDbCR ecdb,
+        ChangesetReader::PropertyFilter propertyFilter,
+        ChangeSet::ConflictCause cause,
+        Changes::Change const& conflict,
+        BeJsValue& outJsonReport);
 };
 
 

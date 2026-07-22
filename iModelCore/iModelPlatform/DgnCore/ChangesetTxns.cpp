@@ -209,42 +209,16 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
     }));
     arg.Set("getEcChange", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-        std::vector<std::unique_ptr<IECSqlValue>> originalValues;
-        std::vector<std::unique_ptr<IECSqlValue>> theirValues;
-        std::vector<std::unique_ptr<IECSqlValue>> ourValues;
-        std::vector<Utf8String> conflictPropertyAccessStrings;
-        ChangesetReader::GetConflictColumnValues(
+        BeJsNapiObject out(env);
+
+        BentleyStatus status = ChangesetReader::GetConflictReportJson(
             m_dgndb,
             ChangesetReader::PropertyFilter::All,
             cause,
             iter,
-            originalValues,
-            theirValues,
-            ourValues,
-            conflictPropertyAccessStrings);
-
-        ECSqlRowAdaptor adaptor(m_dgndb);
-        adaptor.GetOptions().SetIncludeNulls(true);
-        BeJsNapiObject out(env);
-
-        BeJsValue originalRowJson = out["original"];
-        if (adaptor.RenderRowAsObject(originalRowJson, ConflictRow(originalValues)) != SUCCESS)
-            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
-
-        BeJsValue theirsRowJson = out["theirs"];
-        if (adaptor.RenderRowAsObject(theirsRowJson, ConflictRow(theirValues)) != SUCCESS)
-            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
-
-        BeJsValue oursRowJson = out["ours"];
-        if (adaptor.RenderRowAsObject(oursRowJson, ConflictRow(ourValues)) != SUCCESS)
-            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to render row", DgnDbStatus::ReadError); // TODO: appropriate error code?
-
-        BeJsValue conflictsJson = out["conflicts"];
-        conflictsJson.toArray();
-        for (Utf8String const& accessString : conflictPropertyAccessStrings) {
-            BeJsValue conflictJson = conflictsJson.appendValue();
-            conflictJson = accessString;
-        }
+            out);
+        if (status != SUCCESS)
+            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to get conflict report", DgnDbStatus::BadArg);
 
         return out;
     }));
