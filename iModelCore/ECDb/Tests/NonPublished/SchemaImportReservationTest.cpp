@@ -277,6 +277,98 @@ TEST_F(SchemaSyncTestFixture, AddClassByVersionBump)
     }
 
 // ---------------------------------------------------------------------------------------
+// Test 5: CrossBriefcaseColumnDeterminism
+// Two briefcases that share a common base (one TPH class with properties already mapped)
+// both import a property-adding schema upgrade through the shared sync channel.
+// Because column assignment is keyed by content and coordinated through the sync-db
+// reservation store, both briefcases must assign identical ec_Column.Id and
+// ec_Column.Ordinal to each newly-added property.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, CrossBriefcaseColumnDeterminism)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    // Create b1 and import the base schema (v1.0.0 with ClassA, p1, p2 in TPH).
+    // After PullMergePush the sync-db reservation store is written for p1 and p2.
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(BuildClassWithPropsSchema()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import v1.0.0");
+
+    // Create b2 after b1 pushed the base schema — b2 gets ClassA already in ec_ClassMap,
+    // which is required for FindPrimaryTableForClass to resolve the physical table name
+    // during column reservation.
+    auto b2 = hub.CreateBriefcase();
+
+    // Build v1.0.1: adds a third property p3 to ClassA.
+    Utf8String schemaV101 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ClassA">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="p1" typeName="int" />
+                <ECProperty propertyName="p2" typeName="string" />
+                <ECProperty propertyName="p3" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // b1 imports v1.0.1 — reserves the column ordinal + column id for p3 in the sync-db.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaV101.c_str()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import v1.0.1");
+
+    // b2 imports the same v1.0.1 — reads the already-reserved column id for p3 from
+    // the sync-db and uses it, so it gets the identical ec_Column.Id.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaV101.c_str()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // Helper: return (ec_Column.Id, ec_Column.Ordinal) for the column that maps
+    // the named property of ClassA in the given ECDb.
+    auto getColumnInfo = [](ECDbCR db, Utf8CP propName) -> std::pair<uint64_t, int>
+        {
+        CachedStatementPtr stmt = db.GetCachedStatement(
+            "SELECT c.Id, c.Ordinal "
+            "FROM   ec_Column       c "
+            "JOIN   ec_PropertyMap  pm ON pm.ColumnId = c.Id "
+            "JOIN   ec_PropertyPath pp ON pp.Id = pm.PropertyPathId "
+            "JOIN   ec_Class        cls ON cls.Id = pm.ClassId "
+            "WHERE  cls.Name = 'ClassA' AND pp.AccessString = ?");
+        if (!stmt)
+            return {0, -1};
+        stmt->BindText(1, propName, Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_ROW)
+            return {0, -1};
+        return {static_cast<uint64_t>(stmt->GetValueInt64(0)), stmt->GetValueInt(1)};
+        };
+
+    auto [colId1_p3, colOrd1_p3] = getColumnInfo(*b1, "p3");
+    auto [colId2_p3, colOrd2_p3] = getColumnInfo(*b2, "p3");
+
+    ASSERT_GT(colId1_p3, UINT64_C(0)) << "b1: ec_Column.Id for p3 must be valid";
+    ASSERT_GT(colId2_p3, UINT64_C(0)) << "b2: ec_Column.Id for p3 must be valid";
+    ASSERT_GE(colOrd1_p3, 0)          << "b1: ec_Column.Ordinal for p3 must be non-negative";
+    ASSERT_GE(colOrd2_p3, 0)          << "b2: ec_Column.Ordinal for p3 must be non-negative";
+
+    EXPECT_EQ(colId1_p3, colId2_p3)
+        << "ec_Column.Id for p3 must be identical across both briefcases (content-keyed column reservation)";
+    EXPECT_EQ(colOrd1_p3, colOrd2_p3)
+        << "ec_Column.Ordinal for p3 must be identical across both briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
 // Test 6: CrossBriefcaseIdDeterminism
 // Two briefcases from an identical base each import the same schema through the shared
 // sync channel.  Because reservation is content-keyed, both briefcases must end up with
