@@ -291,13 +291,101 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
             }
         }
 
+    // For UNIQUE constraint conflicts, sqlite3changeset_conflict() is unavailable.
+    // Probe each UNIQUE index on the table to find which one already holds a row that
+    // conflicts with our new values, then fetch that row as Theirs.
+    std::vector<DbDupValue> ownedTheirConstraintValues;
+    if (cause == ChangeSet::ConflictCause::Constraint && !ourDbValues.empty()) {
+        std::vector<Utf8String> violatingCols;
+
+        Statement indexListStmt;
+        if (BE_SQLITE_OK == indexListStmt.Prepare(ecdb,
+                Utf8PrintfString("PRAGMA [main].[index_list]([%s])", conflict.GetTableName().c_str()).c_str())) {
+            while (BE_SQLITE_ROW == indexListStmt.Step() && violatingCols.empty()) {
+                // index_list columns: seq(0), name(1), unique(2), origin(3), partial(4)
+                if (indexListStmt.GetValueInt(2) == 0)
+                    continue; // not a unique index
+
+                Utf8String indexName = indexListStmt.GetValueText(1);
+
+                // Collect the column names covered by this index.
+                std::vector<Utf8String> idxCols;
+                Statement indexInfoStmt;
+                if (BE_SQLITE_OK == indexInfoStmt.Prepare(ecdb,
+                        Utf8PrintfString("PRAGMA [main].[index_info]([%s])", indexName.c_str()).c_str())) {
+                    while (BE_SQLITE_ROW == indexInfoStmt.Step()) {
+                        // index_info columns: seqno(0), cid(1), name(2)
+                        Utf8CP colName = indexInfoStmt.GetValueText(2);
+                        if (colName != nullptr)
+                            idxCols.push_back(colName);
+                    }
+                }
+                if (idxCols.empty())
+                    continue;
+
+                // Skip this index if any of its columns is absent or null in our new row.
+                // (NULL values never violate a UNIQUE constraint.)
+                bool allPresent = true;
+                for (Utf8StringCR col : idxCols) {
+                    auto it = ourDbValues.find(col);
+                    if (it == ourDbValues.end() || !it->second.IsValid() || it->second.IsNull()) {
+                        allPresent = false;
+                        break;
+                    }
+                }
+                if (!allPresent)
+                    continue;
+
+                // SELECT all table columns WHERE the indexed columns match our new values.
+                // A returned row confirms the violation and gives us the full Theirs data.
+                Utf8String selectPart;
+                for (size_t i = 0; i < columns.size(); ++i) {
+                    if (!selectPart.empty()) selectPart.append(", ");
+                    selectPart.append("[").append(columns[i]).append("]");
+                }
+                Utf8String wherePart;
+                for (Utf8StringCR col : idxCols) {
+                    if (!wherePart.empty()) wherePart.append(" AND ");
+                    wherePart.append("[").append(col).append("]=?");
+                }
+                Utf8String sql = Utf8PrintfString("SELECT %s FROM [%s] WHERE %s LIMIT 1",
+                    selectPart.c_str(), conflict.GetTableName().c_str(), wherePart.c_str());
+
+                Statement theirStmt;
+                if (BE_SQLITE_OK != theirStmt.Prepare(ecdb, sql.c_str()))
+                    continue;
+
+                int bindIdx = 1;
+                for (Utf8StringCR col : idxCols)
+                    theirStmt.BindDbValue(bindIdx++, ourDbValues.at(col));
+
+                if (BE_SQLITE_ROW == theirStmt.Step()) {
+                    ownedTheirConstraintValues.reserve(columns.size());
+                    for (size_t i = 0; i < columns.size(); ++i) {
+                        ownedTheirConstraintValues.push_back(theirStmt.GetDbValue((int)i));
+                        theirDbValues.emplace(columns[i], static_cast<DbValue const&>(ownedTheirConstraintValues.back()));
+                    }
+                    theirValueAvailable = true;
+                    violatingCols = std::move(idxCols);
+                }
+            }
+        }
+
+        // Mark only the violating index columns as "in conflict".
+        if (!violatingCols.empty()) {
+            conflictColumns.clear();
+            for (Utf8StringCR col : violatingCols)
+                conflictColumns.emplace(col);
+        }
+    }
+
     ECClassId classId;
     bool isClassIdFromChangeset = false;
     if (ChangesetValueFactory::ResolveClassId(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset) != SUCCESS)
         return BentleyStatus::ERROR;
 
 
-    if (ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, outOriginalValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
+    if (originalValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, originalDbValues, classId, isClassIdFromChangeset, outOriginalValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;
     if (theirValueAvailable && ChangesetValueFactory::Create(ecdb, *dbTable, theirDbValues, classId, isClassIdFromChangeset, outTheirValues, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
         return BentleyStatus::ERROR;

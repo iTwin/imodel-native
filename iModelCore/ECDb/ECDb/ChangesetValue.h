@@ -47,13 +47,13 @@ protected:
 
 //=======================================================================================
 //! IECSqlValue for a single-column property (primitive, system, blob, array, etc.).
-//! Stores the DbValue directly; callers are responsible for ensuring pointer validity
-//! for the lifetime of this object.
+//! Duplicates the supplied DbValue via sqlite3_value_dup at construction so the caller
+//! need not keep any external sqlite3_value alive beyond this call.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ChangesetPrimitiveValue final : ChangesetValueBase {
 private:
-    DbValue        m_value;
+    DbDupValue     m_value; //!< owns the duplicated sqlite3_value (null iff value was invalid)
     DateTime::Info m_datetimeInfo;
 
     bool         _IsNull() const override;

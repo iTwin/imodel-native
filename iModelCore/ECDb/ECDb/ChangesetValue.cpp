@@ -119,7 +119,9 @@ IECSqlValueIterable const& ChangesetValueBase::_GetArrayIterable() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangesetPrimitiveValue::ChangesetPrimitiveValue(ECSqlColumnInfo const& colInfo, DbValue const& value, DateTime::Info const& dtInfo)
-    : ChangesetValueBase(colInfo), m_value(value), m_datetimeInfo(dtInfo)
+    : ChangesetValueBase(colInfo),
+      m_value(value.GetSqlValueP()),
+      m_datetimeInfo(dtInfo)
     {}
 
 //-----------------------------------------------------------------------------------------
