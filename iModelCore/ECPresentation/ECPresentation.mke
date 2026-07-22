@@ -6,6 +6,8 @@ BUILD_WITH_C20=1
 ENABLE_VARIABLE_HIDING_WARNINGS=1
 %include mdl.mki
 
+appName = iTwinECPresentation
+
 #--------------------------------------------------------------------------------------
 # Directories & Files
 #--------------------------------------------------------------------------------------
@@ -39,6 +41,7 @@ PchArgumentsDepends = $(ECPresentationDependencies)
 CCPchOpts =% $(UsePrecompiledHeaderOptions)
 CPchOpts  =% $(UsePrecompiledHeaderOptions)
 MultiCompileIntermediatePdbFile =% $(PchOutputDir)$(CCompPDBName).pdb
+LIB_PDB_NAME = Pch/objects.pdb
 
 #--------------------------------------------------------------------------------------
 #   Compile
