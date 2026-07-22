@@ -36,4 +36,17 @@
         <SubPart PartName="vcpkg_install_openssl" LibType="Static"/>
     </Part>
 
+    <!-- Stable "build every vcpkg-managed library" aggregate.  It exists so the protected
+         cache-warmer pipeline can target a single, unchanging part name
+         (`-p vcpkg_install_all`) instead of the current chain tail, whose name changes whenever a
+         new install step is appended.  When you add a new vcpkg_install_* consumer above, add a
+         matching <SubPart> here so the warmer keeps publishing the full set to the shared binary
+         cache.  This part is not referenced by the normal product build; it is only a warmer target. -->
+    <Part Name="vcpkg_install_all">
+        <SubPart PartName="vcpkg_install_compress"/>
+        <SubPart PartName="vcpkg_install_png"/>
+        <SubPart PartName="vcpkg_install_openssl"/>
+        <SubPart PartName="vcpkg_install_crashpad"/>
+    </Part>
+
 </BuildContext>
