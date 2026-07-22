@@ -44,6 +44,8 @@ Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the 
 
 ## Setup
 
+> **Note**: If you do not have a recent enough version of `cmake`, vcpkg will automatically download and install one as part of the build. However, this will happen multiple times due to the way that the build works, and will also be deleted each time you delete your build output or run a TMR build. Consequently, it is *strongly* recommended that you have a new enough version installed on your computer. Presently, that means version 4.3.2 or later, but that could change in the future. If you look in `$OutRoot/<bb platform>/static/vcpkg_installed/compress/downloads/tools/` and see a `cmake-<version>-<vcpkg platform>` directory, that means you don't have the required version and need to install one at least as recent as the one there.
+
 ### macOS
 
 Install these prerequisites via Homebrew:
