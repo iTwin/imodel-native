@@ -170,10 +170,19 @@ if "%ANDROID_NDK_HOME%"=="" (
 )
 
 set "OVERLAY_TRIPLETS=%MANIFEST_DIR%\triplets"
-set "OVERLAY_ARG="
+set "OVERLAY_TRIPLET_FILE=%OVERLAY_TRIPLETS%\%TRIPLET%.cmake"
+rem Require a repo-provided overlay triplet for the requested triplet. Every supported build must
+rem use one of our custom triplet files: they carry CACHE_BUST markers and build flags that feed
+rem vcpkg's ABI hash, so falling back to vcpkg's built-in triplets would silently produce binaries
+rem with a different ABI and defeat the cache-busting scheme. Error out instead of using a default.
+if not exist "%OVERLAY_TRIPLET_FILE%" (
+    echo Error: no custom overlay triplet "%TRIPLET%" found at "%OVERLAY_TRIPLET_FILE%"
+    echo This build requires a repo-provided triplet; vcpkg's built-in triplets must not be used.
+    exit /b 1
+)
 rem Quote the path value: a manifest/checkout path may contain spaces, and %OVERLAY_ARG%
 rem is expanded unquoted on the vcpkg command line, so cmd would otherwise split it.
-if exist "%OVERLAY_TRIPLETS%" set OVERLAY_ARG=--overlay-triplets="%OVERLAY_TRIPLETS%"
+set OVERLAY_ARG=--overlay-triplets="%OVERLAY_TRIPLETS%"
 
 rem Allow a manifest to ship overlay ports (e.g. a locally-patched crashpad that
 rem builds with clang-cl) in a "ports" subdirectory alongside vcpkg.json.
