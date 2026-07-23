@@ -13,11 +13,24 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 void DumpSchemasToFile(bvector<ECSchemaCP> const& schemas, Utf8CP directory, Utf8CP subdir)
     {
-    for (auto schema: schemas)
+    // Dump the full closure including referenced schemas, so the dump can be reloaded elsewhere.
+    bvector<ECSchemaCP> allSchemas;
+    bset<Utf8CP, CompareIUtf8Ascii> seenNames;
+    bvector<ECSchemaCP> worklist(schemas);
+    while (!worklist.empty())
         {
-        if(schema == nullptr)
+        ECSchemaCP schema = worklist.back();
+        worklist.pop_back();
+        if (schema == nullptr || !seenNames.insert(schema->GetName().c_str()).second)
             continue;
 
+        allSchemas.push_back(schema);
+        for (auto const& ref : schema->GetReferencedSchemas())
+            worklist.push_back(ref.second.get());
+        }
+
+    for (auto schema: allSchemas)
+        {
         BeFileName fileName;
         fileName.AppendUtf8(directory);
         WString wSubdir(subdir, BentleyCharEncoding::Utf8);
@@ -28,7 +41,17 @@ void DumpSchemasToFile(bvector<ECSchemaCP> const& schemas, Utf8CP directory, Utf
         fileName.append(L".ecschema.xml");
         if(fileName.DoesPathExist())
             fileName.BeDeleteFile();
-        schema->WriteToXmlFile(fileName.c_str());
+
+        // Serialize at the schema's own ECVersion. Requesting a newer version than the schema's
+        // own makes SchemaXmlWriter::Serialize abort before anything is written, which used to
+        // leave 0-byte files behind without any log message.
+        const auto status = schema->WriteToXmlFile(fileName.c_str(), schema->GetECVersion());
+        if (SchemaWriteStatus::Success != status)
+            {
+            LOG.errorv("Failed to dump schema '%s' to '%s' (SchemaWriteStatus=%d). Removing the incomplete file.",
+                schema->GetFullSchemaName().c_str(), fileName.GetNameUtf8().c_str(), (int)status);
+            fileName.BeDeleteFile();
+            }
         }
     };
 
@@ -350,7 +373,7 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
                 continue; // already brought in as a referenced schema while copying an earlier new schema
 
             ECSchemaPtr copiedSchema;
-            auto copyStatus = rightSchema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation());
+            auto copyStatus = rightSchema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation(), options.GetRenamePropertyOnConflict());
             if (copyStatus != ECObjectsStatus::Success || !copiedSchema.IsValid())
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
@@ -523,7 +546,7 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
                     {
                     ECSchemaPtr rightReferencedSchema = it->second;
                     ECSchemaPtr copiedSchema;
-                    auto copyStatus = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation());
+                    auto copyStatus = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation(), options.GetRenamePropertyOnConflict());
                     if (copyStatus != ECObjectsStatus::Success)
                         {
                         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
@@ -594,7 +617,7 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
             }
 
         ECClassP createdClass;
-        status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation());
+        status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation(), options.GetRenamePropertyOnConflict());
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
           {
           result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0029,
