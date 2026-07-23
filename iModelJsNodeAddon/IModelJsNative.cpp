@@ -853,9 +853,12 @@ public:
     }
 
     //! Write out the changes captured since startChangeTracking() was called, to a changeset
-    //! file in the same on-disk format used for iModel changesets. Used only for testing.
+    //! file holding the raw sqlite changeset (the plain, uncompressed byte stream produced by
+    //! the sqlite session extension) - this is *not* the same format used for iModel changesets.
+    //! Raw sqlite changesets cannot represent DDL/schema changes, so this throws if any DDL was
+    //! captured since startChangeTracking() was called.
     void CreateChangeset(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
+        GetWritableDb(info);
         REQUIRE_ARGUMENT_STRING(0, pathname);
         if (m_changeTracker.IsNull())
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "change tracking was not started", IModelJsNativeErrorKey::BadArg);
@@ -867,50 +870,40 @@ public:
         SQLiteDbScopeGuard endTracking([this]() { m_changeTracker->EndTracking(); });
 
         m_changeTracker->EnableTracking(false);
-        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
-        const bool hasSchemaChanges = m_changeTracker->HasDdlChanges();
-        BeSQLite::ChangesetFileWriter writer(filePath, hasSchemaChanges, m_changeTracker->GetDdlChanges(), &db);
-        auto stat = writer.Initialize();
-        if (stat != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("error creating changeset file", filePath.GetNameUtf8().c_str(), stat);
+        if (m_changeTracker->HasDdlChanges())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "raw sqlite changesets cannot capture DDL/schema changes", IModelJsNativeErrorKey::BadArg);
 
-        stat = writer.FromChangeTrack(*m_changeTracker);
+        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+        BeSQLite::ChangeSet changeSet;
+        auto stat = changeSet.FromChangeTrack(*m_changeTracker);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error creating changeset", filePath.GetNameUtf8().c_str(), stat);
+
+        stat = changeSet.Write(pathname);
         if (stat != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
     }
 
-    //! Apply a changeset file (in the same on-disk format used for iModel changesets) to this
-    //! SQLiteDb. Unlike DgnDb.applyChangeset, this does *not* validate the changeset header
-    //! (parentId/changesetId) against the current state of the db - it simply applies the
-    //! changes. Any conflict encountered while applying causes the entire apply to fail.
+    //! Apply a raw sqlite changeset file (the plain, uncompressed byte stream produced by the
+    //! sqlite session extension - *not* the same format used for iModel changesets) to this
+    //! SQLiteDb. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
+    //! (parentId/changesetId) against the current state of the db, and it does *not* support
+    //! DDL/schema changes (raw sqlite changesets cannot represent them) - it simply applies the
+    //! row-level changes. Any conflict encountered while applying causes the entire apply to fail.
     void ApplyChangeset(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_STRING(0, pathname);
 
         BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
-        bvector<BeFileName> files;
-        files.push_back(filePath);
-        BeSQLite::ChangesetFileReaderBase changesetReader(files, &db);
-
-        bool containsSchemaChanges = false;
-        BeSQLite::DdlChanges ddlChanges;
-        auto stat = changesetReader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
+        BeSQLite::ChangeSet changeSet;
+        auto stat = changeSet.Read(pathname);
         if (stat != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "error reading changeset file", stat);
+            JsInterop::throwSqlResult("error reading changeset file", filePath.GetNameUtf8().c_str(), stat);
 
-        if (containsSchemaChanges && !ddlChanges._IsEmpty()) {
-            stat = db.TryExecuteSql(ddlChanges.ToString().c_str());
-            if (stat != BE_SQLITE_OK)
-                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "error applying ddl changes from changeset", stat);
-        }
-
-        // NOTE: unlike DgnDb, a generic SQLiteDb has no ECDb schema import step, so DDL (applied above)
-        // and the row-level (DML) changes captured in the changeset are entirely separate - apply
-        // all of the row-level changes here, regardless of whether the changeset also contains DDL.
         // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
         // any changes applied so far.
         auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
-        stat = changesetReader.ApplyChanges(db, applyArgs);
+        stat = changeSet.ApplyChanges(db, applyArgs);
         if (stat != BE_SQLITE_OK)
             BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
     }

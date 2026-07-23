@@ -697,6 +697,11 @@ struct IJsSerializable {
     public:
         ECDB_EXPORT virtual void ToJs(BeJsValue&) const = 0;
         ECDB_EXPORT std::string Stringify(StringifyFormat format = StringifyFormat::Default) const;
+        // Note: making the destructor virtual is required for proper cleanup of derived classes.
+        // However, making it pure virtual is functionally equivalent given the pure virtual ToJs
+        // method above, and making it pure virtual would require an empty implementation in a cpp
+        // file to provide a definition, since it is required by the subclass destructors.
+        virtual ~IJsSerializable() {}
 };
 
 //=======================================================================================
