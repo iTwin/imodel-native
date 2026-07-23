@@ -912,7 +912,20 @@ boolean_primary:
 
 boolean_test:
         boolean_primary
+        /* X IS [NOT] NULL|TRUE|FALSE|UNKNOWN, and the X IS [NOT] (ClassName) type predicate. */
     |   boolean_primary SQL_TOKEN_IS sql_not truth_value
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+        }
+        /* X IS [NOT] <value_exp>: SQLite null-safe comparison between two operands.
+           Any value expression is allowed on the right-hand side. A right-hand operand
+           that is exactly NULL/TRUE/FALSE/UNKNOWN or the parenthesized (ClassName) form
+           reduces via 'truth_value' above (it has the lower rule number). */
+    |   boolean_primary SQL_TOKEN_IS sql_not value_exp
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -973,12 +986,42 @@ type_list:
         }
     ;
 
+/* 'opt_only' is inlined here (rather than 'opt_only table_node') so that the type predicate
+   stays reachable: without it, the empty 'opt_only' reduction loses a shift/reduce race
+   against value_exp's property_path in the 'X IS (...)' context.
+   A type predicate is reached only for a *qualified* class name (schema.Class), an ONLY/ALL
+   prefix, or a comma-separated list. A single *unqualified* name in parentheses - e.g.
+   'X IS (S2)' - still reduces as a parenthesized value_exp (null-safe comparison), not a
+   type predicate; so if an identifier is both a class and a property name, the value-
+   expression (property) reading wins.
+   A *qualified* name in parentheses - e.g. 'X IS (alias.prop)' - does reduce here as a type
+   predicate, but the semantic layer (ECSqlParser::TryParseParenthesizedNameAsValueExp)
+   reinterprets it as a property reference (null-safe comparison) when the name does not resolve
+   to a class. See ECSqlStatementTests IsAndIsNotOperatorNullSafeSemantics. */
 type_list_item:
-    opt_only table_node
+    table_node
     {
     $$ = SQL_NEW_RULE;
+    $$->append(CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only)));
     $$->append($1);
-    $$->append($2);
+    }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ONLY table_node
+    {
+    $$ = SQL_NEW_RULE;
+    OSQLParseNode* pOptOnly = CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only));
+    pOptOnly->append($1);
+    pOptOnly->append($2 = CREATE_NODE("ONLY", SQL_NODE_NAME));
+    $$->append(pOptOnly);
+    $$->append($3);
+    }
+    |   opt_disqualify_polymorphic_constraint SQL_TOKEN_ALL table_node
+    {
+    $$ = SQL_NEW_RULE;
+    OSQLParseNode* pOptOnly = CREATE_NODE("", SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::opt_only));
+    pOptOnly->append($1);
+    pOptOnly->append($2 = CREATE_NODE("ALL", SQL_NODE_NAME));
+    $$->append(pOptOnly);
+    $$->append($3);
     }
     ;
 
