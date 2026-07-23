@@ -11,6 +11,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 #define CHANGESET_FORMAT_VERSION  0x10
 #define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
+#define CHANGESET_APPMODEL_MARKER   "AppModelChangeset"
 #define JSON_PROP_DDL                   "DDL"
 #define JSON_PROP_ContainsSchemaChanges "ContainsSchemaChanges"
 
@@ -77,6 +78,53 @@ public:
     }
 };
 
+//=======================================================================================
+// LZMA Header written to the beginning of an AppModel changeset file.
+// This is intentionally a distinct format from ChangesetLzmaHeader: it uses the marker
+// "AppModelChangeset" and a larger identifier buffer to hold it. The iModel header layout
+// (ChangesetLzmaHeader) must never change to preserve backwards compatibility, so AppModel
+// changesets carry their own self-describing header instead.
+// @bsiclass
+//=======================================================================================
+struct AppModelChangesetHeader {
+private:
+    uint16_t m_sizeOfHeader;
+    char m_idString[20];
+    uint16_t m_formatVersionNumber;
+    uint16_t m_compressionType;
+
+public:
+    static const int formatVersionNumber = CHANGESET_FORMAT_VERSION;
+    enum CompressionType {
+        LZMA2 = 2
+    };
+
+    AppModelChangesetHeader() {
+        CharCP idString = CHANGESET_APPMODEL_MARKER;
+        BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
+        memset(this, 0, sizeof(*this));
+        m_sizeOfHeader = (uint16_t)sizeof(AppModelChangesetHeader);
+        strcpy(m_idString, idString);
+        m_compressionType = CompressionType::LZMA2;
+        m_formatVersionNumber = formatVersionNumber;
+    }
+
+    int GetVersion() { return m_formatVersionNumber; }
+
+    bool IsValid() {
+        if (m_sizeOfHeader != sizeof(AppModelChangesetHeader))
+            return false;
+
+        if (strcmp(m_idString, CHANGESET_APPMODEL_MARKER))
+            return false;
+
+        if (formatVersionNumber != m_formatVersionNumber)
+            return false;
+
+        return m_compressionType == LZMA2;
+    }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -93,8 +141,11 @@ DbResult ChangesetFileWriter::StartOutput() {
     }
 
     ChangesetLzmaHeader header;
+    AppModelChangesetHeader appModelHeader;
     uint32_t bytesWritten;
-    ZipErrors zipStatus = m_outLzmaFileStream->_Write(&header, sizeof(header), bytesWritten);
+    ZipErrors zipStatus = (m_kind == ChangesetKind::AppModel)
+        ? m_outLzmaFileStream->_Write(&appModelHeader, sizeof(appModelHeader), bytesWritten)
+        : m_outLzmaFileStream->_Write(&header, sizeof(header), bytesWritten);
     if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -168,7 +219,7 @@ DbResult ChangesetFileWriter::WritePrefix() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const *dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams) {
+ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const *dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams, ChangesetKind kind) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams), m_kind(kind) {
     m_prefix = "";
     if (!containsEcSchemaChanges && ddlChanges._IsEmpty())
         return;
@@ -206,10 +257,18 @@ DbResult ChangesetFileReaderBase::Reader::StartInput() {
         return BE_SQLITE_ERROR;
     }
 
-    ChangesetLzmaHeader header;
-    uint32_t actuallyRead;
-    m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
-    if (actuallyRead != sizeof(header) || !header.IsValid()) {
+    uint32_t actuallyRead = 0;
+    bool headerValid = false;
+    if (m_base.m_kind == ChangesetKind::AppModel) {
+        AppModelChangesetHeader header;
+        m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
+        headerValid = (actuallyRead == sizeof(header)) && header.IsValid();
+    } else {
+        ChangesetLzmaHeader header;
+        m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
+        headerValid = (actuallyRead == sizeof(header)) && header.IsValid();
+    }
+    if (!headerValid) {
         BeAssert(false && "Attempt to read an invalid revision version");
         return BE_SQLITE_ERROR_InvalidChangeSetVersion;
     }

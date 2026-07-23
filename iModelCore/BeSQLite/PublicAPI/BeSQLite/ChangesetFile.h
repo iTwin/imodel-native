@@ -11,6 +11,17 @@
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 //=======================================================================================
+//! Identifies the "kind" of a changeset file, which selects the on-disk header format/marker.
+//! iModel changesets and AppModel changesets share the same body format but use different,
+//! self-describing headers so that a reader of one kind rejects a file of the other kind.
+// @bsiclass
+//=======================================================================================
+enum class ChangesetKind {
+    iModel = 0,   //!< Standard iModel changeset (header marker "ChangeSetLzma").
+    AppModel = 1, //!< AppModel changeset (header marker "AppModelChangeset").
+};
+
+//=======================================================================================
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass
 //=======================================================================================
@@ -18,6 +29,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReaderBase : ChangeStream {
 private:
     Db const* m_db; // Used only for debugging
     bvector<BeFileName> m_files;
+    ChangesetKind m_kind;
 
     struct Reader : Changes::Reader {
         ChangesetFileReaderBase const& m_base;
@@ -46,8 +58,9 @@ public:
     bool _IsEmpty() const override { return m_files.size() == 0; }
     RefCountedPtr<Reader> MakeReader() const { return new Reader(*this); }
     RefCountedPtr<Changes::Reader> _GetReader() const override { return MakeReader(); }
-    ChangesetFileReaderBase(bvector<BeFileName> const& files, Db const* db = nullptr) : m_files(files), m_db(db) {}
+    ChangesetFileReaderBase(bvector<BeFileName> const& files, Db const* db = nullptr, ChangesetKind kind = ChangesetKind::iModel) : m_files(files), m_db(db), m_kind(kind) {}
     Db const* GetDb() const { return m_db; }
+    ChangesetKind GetChangesetKind() const { return m_kind; }
 };
 
 //=======================================================================================
@@ -61,6 +74,7 @@ private:
     BeFileLzmaOutStream* m_outLzmaFileStream;
     Utf8String m_prefix;
     Db const* m_db; // Only for debugging
+    ChangesetKind m_kind;
 
     DbResult StartOutput();
     BE_SQLITE_EXPORT void FinishOutput();
@@ -73,7 +87,8 @@ private:
 
 public:
     BE_SQLITE_EXPORT ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const*,
-                                         BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
+                                         BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams(),
+                                         ChangesetKind kind = ChangesetKind::iModel);
     BE_SQLITE_EXPORT DbResult Initialize();
     ~ChangesetFileWriter() { FinishOutput(); }
 };
