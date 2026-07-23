@@ -1,7 +1,7 @@
 # To force a rebuild and a fresh vcpkg binary-cache entry for this triplet, increment the
 # number below. Triplet file contents feed into vcpkg's ABI hash, so bumping this value
 # invalidates the cached binaries and forces the library to be rebuilt.
-# CACHE_BUST = 2
+# CACHE_BUST = 3
 
 # Crashpad only builds as a static library (see crashpad.PartFile.xml ExcludeLibType="Dynamic"),
 # so force static library linkage here.  Without this overlay triplet vcpkg would fall back to
