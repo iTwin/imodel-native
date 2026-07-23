@@ -15,6 +15,7 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
+#include "../iModelCore/iModelPlatform/DgnCore/GeomStreamVTab.h"
 #include <chrono>
 #include <tuple>
 
@@ -1297,6 +1298,20 @@ ECInstanceId JsInterop::GetInstanceIdFromInstance(ECDbCR ecdb, BeJsConst jsonIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::SetMaxTileCacheSize(uint64_t maxBytes) {
   T_HOST.Visualization().SetMaxTileCacheSize(maxBytes);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t JsInterop::GetMaxGeomStreamVTabBytes() {
+    return GeomStreamModule::GetMaxGeomStreamVTabBytes();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::SetMaxGeomStreamVTabBytes(size_t bytes) {
+    GeomStreamModule::SetMaxGeomStreamVTabBytes(bytes);
 }
 
 //---------------------------------------------------------------------------------------
