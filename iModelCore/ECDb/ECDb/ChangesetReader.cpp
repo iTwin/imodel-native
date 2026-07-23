@@ -374,6 +374,11 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
                 if (indexListStmt.GetValueInt(2) == 0)
                     continue; // not a unique index
 
+                // TODO currently ignoring partial indices. We'd have to evaluate the WHERE clause
+                // to properly determine if our row is in the index.
+                if (indexListStmt.GetValueInt(4) != 0)
+                    continue; // partial index
+
                 Utf8String indexName = indexListStmt.GetValueText(1);
 
                 // Collect the column names covered by this index.
