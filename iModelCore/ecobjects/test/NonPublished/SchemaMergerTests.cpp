@@ -137,13 +137,16 @@ BentleyStatus LoadSchemasFromDirectory(BeFileNameCR directoryPath, ECSchemaReadC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     {
-    BeFileName leftSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Left");
-    BeFileName rightSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Right");
-    BeFileName dumpResultTo(L"/mnt/wdblack-data/data/schemaMerge/");
+    // Dump from the MicroStation connector IfcApplicationDomain merge failure.
+    // NOTE: The available dump is incomplete - referenced schemas (IFC4, IFC2x3, ...) were
+    // not part of the merge inputs so they are missing from Left/Right, and several schemas
+    // in the Result folder are 0-byte files because their (invalid) relationships failed to
+    // serialize. Loading will fail until we get a complete dump including references.
+    BeFileName leftSchemaPath(L"/home/rob/Downloads/Schemas/Left");
+    BeFileName rightSchemaPath(L"/home/rob/Downloads/Schemas/Right");
+    BeFileName dumpResultTo(L"/home/rob/Downloads/Schemas/RemergeDump/");
     // Filter input schemas to just these names, use empty vector to include all
-    bvector<Utf8String> schemasToInclude = { "OpenPlant_3D", "BentleyBase",
-      "BisCore", "BusinessKey", "CoreCustomAttributes", "DesignSync",
-      "IntegratedStructuralModel", "OpenPlant", "OpenPlant_CustomAttributes" };
+    bvector<Utf8String> schemasToInclude;
 
     NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
@@ -241,6 +244,39 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     for (auto schema : result.GetResults())
       {
       printf("Schema: %s, Version: %s\n", schema->GetName().c_str(), schema->GetSchemaKey().GetVersionString().c_str());
+      }
+
+    // Second stage: merge the result set into an empty target with references merged.
+    // This mirrors the connector's final merge of the converted schemas into the iModel,
+    // which is where the production failure occurred (New-schema CopySchema path).
+    printf("******* Performing second-stage merge into empty target *******\n");
+    bvector<ECSchemaCP> emptyLeft;
+    bvector<ECSchemaCP> stage2Right = result.GetResults();
+
+    SchemaMergeResult stage2Result;
+    TestIssueListener stage2Issues;
+    stage2Result.AddIssueListener(stage2Issues);
+
+    SchemaMergeOptions stage2Options;
+    stage2Options.SetKeepVersion(true);
+    stage2Options.SetRenamePropertyOnConflict(true);
+    stage2Options.SetRenameSchemaItemOnConflict(true);
+    stage2Options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(stage2Result, emptyLeft, stage2Right, stage2Options));
+
+    if(!stage2Issues.m_issues.empty())
+      {
+      printf("******* Issues reported during second-stage merge: *******\n");
+      for (auto& issue : stage2Issues.m_issues)
+        {
+        printf("- Severity: %d, Category: %s, Type: %s, Id: %s, Message: %s\n",
+            static_cast<int>(issue.severity),
+            static_cast<const char*>(issue.category),
+            static_cast<const char*>(issue.type),
+            static_cast<const char*>(issue.id),
+            issue.message.c_str());
+        }
       }
     }
 #endif // ENABLE_TROUBLESHOOT_MERGE_TEST
@@ -3485,6 +3521,190 @@ TEST_F(SchemaMergerTests, LeftOnlyAndNewSchemaReferenceUpgradedReference)
     };
 
     CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Reproduces a V8 connector schema merge failure:
+* A new (right-only) schema derives a class from a base class in a referenced schema that
+* already exists in the merge result at different content: the result's base class carries
+* a same-named property with an incompatible type (double vs string). The New-schema path
+* copies the schema via plain CopySchema, which re-resolves the reference by name against
+* the result context and strictly re-validates property overrides - so it fails with
+* DataTypeMismatch ("Schema ... from right side failed to be copied"). The Modified-merge
+* path would have tolerated this via RenamePropertyOnConflict /
+* IgnoreIncompatiblePropertyTypeChanges; the New-schema path must handle the conflict too.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, NewSchemaWithPropertyTypeConflictAgainstExistingReference)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="PropertySet">
+            <ECProperty propertyName="Station" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    // The incoming set was built against a version of RefSchema whose base class does not
+    // have the Station property, so the local string property is valid on the right side.
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="PropertySet" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="AppSchema" alias="app" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
+          <ECEntityClass typeName="Pset">
+            <BaseClass>ref:PropertySet</BaseClass>
+            <ECProperty propertyName="Station" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    TestIssueListener issues;
+    result.AddIssueListener(issues);
+
+    // Options used by the V8 converter (DgnDbSync) merges
+    SchemaMergeOptions options;
+    options.SetKeepVersion(true);
+    options.SetRenamePropertyOnConflict(true);
+    options.SetRenameSchemaItemOnConflict(true);
+    options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    // The incoming property is copied under a unique name, the base class property stays untouched -
+    // consistent with how the Modified-schema path treats a conflicting new property.
+    ECSchemaP appSchema = result.GetSchema("AppSchema");
+    ASSERT_NE(nullptr, appSchema);
+    ECClassCP pset = appSchema->GetClassCP("Pset");
+    ASSERT_NE(nullptr, pset);
+    ECPropertyP renamedProperty = pset->GetPropertyP("Station_1", false);
+    ASSERT_NE(nullptr, renamedProperty);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, renamedProperty->GetAsPrimitiveProperty()->GetType());
+    ECPropertyP baseProperty = pset->GetPropertyP("Station", true);
+    ASSERT_NE(nullptr, baseProperty);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Double, baseProperty->GetAsPrimitiveProperty()->GetType());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Reproduces the full V8 connector merge chain:
+* Stage 1 merges two versions of a converted schema set with DoNotMergeReferences and
+* IgnoreIncompatiblePropertyTypeChanges (per-version merge). The right side moved the
+* Station property to double on both the referenced base class and the derived class; the
+* ignore option keeps the derived property as string. Because references are not merged,
+* the result's AppSchema still points at the original left RefSchema, so the base class
+* gaining the double property is never checked against the derived string property - the
+* merge succeeds but the result SET is internally inconsistent.
+* Stage 2 merges that result set into a target that already holds the referenced schema at
+* its upgraded content (like an iModel that received it through an earlier run). AppSchema
+* takes the New-schema CopySchema path, gets re-based onto the target's RefSchema (Station
+* double) and used to fail with DataTypeMismatch when re-validating the string property
+* override. With conflict resolution in the copy path, the derived property is renamed.
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, IgnoredPropertyTypeChangeThenMergeIntoEmptyTarget)
+    {
+    bvector<Utf8CP> stage1LeftXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="PropertySet" />
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="AppSchema" alias="app" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
+          <ECEntityClass typeName="Pset">
+            <BaseClass>ref:PropertySet</BaseClass>
+            <ECProperty propertyName="Station" typeName="string" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr stage1LeftContext = InitializeReadContextWithAllSchemas(stage1LeftXml);
+    bvector<ECN::ECSchemaCP> stage1LeftSchemas = stage1LeftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> stage1RightXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="PropertySet">
+            <ECProperty propertyName="Station" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="AppSchema" alias="app" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
+          <ECEntityClass typeName="Pset">
+            <BaseClass>ref:PropertySet</BaseClass>
+            <ECProperty propertyName="Station" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr stage1RightContext = InitializeReadContextWithAllSchemas(stage1RightXml);
+    bvector<ECN::ECSchemaCP> stage1RightSchemas = stage1RightContext->GetCache().GetSchemas();
+
+    // Options used by the V8 converter (DgnDbSync) per-version merges
+    SchemaMergeOptions stage1Options;
+    stage1Options.SetKeepVersion(true);
+    stage1Options.SetRenamePropertyOnConflict(true);
+    stage1Options.SetRenameSchemaItemOnConflict(true);
+    stage1Options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+    stage1Options.SetDoNotMergeReferences(true);
+
+    SchemaMergeResult stage1Result;
+    ASSERT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(stage1Result, stage1LeftSchemas, stage1RightSchemas, stage1Options));
+
+    // Stage 2: merge the stage 1 result into a target that already contains the reference
+    // schema at its upgraded content, this time merging references (like merging the
+    // converted set into iModel schemas).
+    bvector<Utf8CP> stage2LeftXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="PropertySet">
+            <ECProperty propertyName="Station" typeName="double" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr stage2LeftContext = InitializeReadContextWithAllSchemas(stage2LeftXml);
+    bvector<ECN::ECSchemaCP> stage2LeftSchemas = stage2LeftContext->GetCache().GetSchemas();
+    // Only pass the merged AppSchema; passing the whole stage 1 result would provide two RefSchema
+    // objects with different content (stage 1 did not merge references), making the input ambiguous.
+    bvector<ECSchemaCP> stage2RightSchemas { stage1Result.GetSchema("AppSchema") };
+
+    SchemaMergeOptions stage2Options;
+    stage2Options.SetKeepVersion(true);
+    stage2Options.SetRenamePropertyOnConflict(true);
+    stage2Options.SetRenameSchemaItemOnConflict(true);
+    stage2Options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+
+    SchemaMergeResult stage2Result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(stage2Result, stage2LeftSchemas, stage2RightSchemas, stage2Options));
+
+    // The inconsistency created by the ignored type change is resolved during the copy by renaming
+    // the derived string property; the base class double property stays untouched.
+    ECSchemaP appSchema = stage2Result.GetSchema("AppSchema");
+    ASSERT_NE(nullptr, appSchema);
+    ECClassCP pset = appSchema->GetClassCP("Pset");
+    ASSERT_NE(nullptr, pset);
+    ECPropertyP renamedProperty = pset->GetPropertyP("Station_1", false);
+    ASSERT_NE(nullptr, renamedProperty);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, renamedProperty->GetAsPrimitiveProperty()->GetType());
+    ECPropertyP baseProperty = pset->GetPropertyP("Station", true);
+    ASSERT_NE(nullptr, baseProperty);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Double, baseProperty->GetAsPrimitiveProperty()->GetType());
     }
 
 /*---------------------------------------------------------------------------------**//**
