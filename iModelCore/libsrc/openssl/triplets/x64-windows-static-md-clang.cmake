@@ -1,7 +1,7 @@
 # To force a rebuild and a fresh vcpkg binary-cache entry for this triplet, increment the
 # number below. Triplet file contents feed into vcpkg's ABI hash, so bumping this value
 # invalidates the cached binaries and forces the library to be rebuilt.
-# CACHE_BUST = 2
+# CACHE_BUST = 3
 
 # x64-windows-static-md-clang: clang-cl variant of x64-windows-static-md (static library
 # linkage, dynamic CRT /MD), built with BentleyBuild's LLVM clang-cl via the shared chainload

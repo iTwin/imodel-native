@@ -1,7 +1,7 @@
 # To force a rebuild and a fresh vcpkg binary-cache entry for this triplet, increment the
 # number below. Triplet file contents feed into vcpkg's ABI hash, so bumping this value
 # invalidates the cached binaries and forces the library to be rebuilt.
-# CACHE_BUST = 2
+# CACHE_BUST = 3
 
 set(VCPKG_TARGET_ARCHITECTURE x64)
 set(VCPKG_CRT_LINKAGE dynamic)
