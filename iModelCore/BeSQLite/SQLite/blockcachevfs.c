@@ -224,6 +224,7 @@ struct sqlite3_bcvfs {
   char *zCacheFile;               /* Full path to cache file */
   int nRequest;                   /* SQLITE_BCV_NREQUEST value */
   int nHttpTimeout;               /* SQLITE_BCV_HTTPTIMEOUT value */
+  int bCompress;                  /* SQLITE_BCV_COMPRESS value */
 
   i64 iNextLocalId;
   BcvfsFile *pFileList;
@@ -619,7 +620,13 @@ static void bcvfsFetchBlockCb(
   BcvfsFile *pFile = (BcvfsFile*)pCtx;
   if( rc==SQLITE_OK ){
     i64 iOff = (pFile->pEntry->iPos * pFile->pFs->c.szBlk);
-    rc = bcvWritefile(pFile->pCacheFile, aData, nData, iOff);
+    u8 *aDecomp = 0;
+    int nDecomp = 0;
+    rc = bcvBlockInflate(aData, nData, &aDecomp, &nDecomp);
+    if( rc==SQLITE_OK ){
+      rc = bcvWritefile(pFile->pCacheFile, aDecomp, nDecomp, iOff);
+    }
+    sqlite3_free(aDecomp);
   }else{
     /* TODO: log the error somehow */
   }
@@ -4018,6 +4025,9 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal){
           pFs->bCurlVerbose = (iVal ? 1 : 0);
           bcvfsFreeAllBcv(pFs);
           break;
+        case SQLITE_BCV_COMPRESS:
+          pFs->bCompress = (iVal ? 1 : 0);
+          break;
         case SQLITE_BCV_HTTPLOG_NENTRY:
         case SQLITE_BCV_HTTPLOG_TIMEOUT:
           bcvLogConfig(pFs->c.pLog, op, iVal);
@@ -4580,6 +4590,7 @@ struct UploadDb {
 typedef struct UploadBlockCtx UploadBlockCtx;
 struct UploadBlockCtx {
   UploadCtx2 *pCtx;
+  u8 *aZip;                       /* Compressed payload being uploaded (owned) */
 };
 
 struct UploadCtx2 {
@@ -4614,6 +4625,7 @@ static void bcvfsUploadBlockDone(void *pArg, int rc, char *zETag){
       if( zETag ) pCtx->zErrMsg = sqlite3_mprintf("%s", zETag);
     }
   }
+  sqlite3_free(p->aZip);
   sqlite3_free(p);
 }
 
@@ -4723,6 +4735,7 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
       u8 aNew[BCV_MAX_NAMEBYTES]; /* New name for block */
       u8 *aBuf = (u8*)&p[1];      /* Buffer to load block data into */
 
+      p->aZip = 0;
       rc = bcvReadfile(pCtx->pCacheFile, aBuf, nBuf, (i64)nBuf*pEntry->iPos);
       memcpy(aNew, aName, nName);
       if( nName>=BCV_MIN_MD5_NAMEBYTES ){
@@ -4740,12 +4753,23 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
         char zFile[BCV_MAX_FSNAMEBYTES];
         bcvBlockidToText(NAMEBYTES(pCtx->pMan), aNew, zFile);
         p->pCtx = pCtx;
-        rc = bcvDispatchPut(pCtx->pDisp, pCtx->pBcv,
-            zFile, 0, aBuf, nBuf, (void*)p, bcvfsUploadBlockDone
-        );
+        if( pCtx->pFs->bCompress ){
+          int nZip = 0;
+          rc = bcvBlockDeflate(aBuf, nBuf, &p->aZip, &nZip);
+          if( rc==SQLITE_OK ){
+            rc = bcvDispatchPut(pCtx->pDisp, pCtx->pBcv,
+                zFile, 0, p->aZip, nZip, (void*)p, bcvfsUploadBlockDone
+            );
+          }
+        }else{
+          rc = bcvDispatchPut(pCtx->pDisp, pCtx->pBcv,
+              zFile, 0, aBuf, nBuf, (void*)p, bcvfsUploadBlockDone
+          );
+        }
         if( rc==SQLITE_OK ){
           rc = pCtx->rc;
         }else{
+          sqlite3_free(p->aZip);
           sqlite3_free(p);
         }
       }else{
@@ -5517,7 +5541,13 @@ static void bcvfsPrefetchCb(
 
   if( p->rc==SQLITE_OK ){
     i64 iOff = (pEntry->iPos * pFs->c.szBlk);
-    p->rc = bcvWritefile(p->pCacheFile, aData, nData, iOff);
+    u8 *aDecomp = 0;
+    int nDecomp = 0;
+    p->rc = bcvBlockInflate(aData, nData, &aDecomp, &nDecomp);
+    if( p->rc==SQLITE_OK ){
+      p->rc = bcvWritefile(p->pCacheFile, aDecomp, nDecomp, iOff);
+    }
+    sqlite3_free(aDecomp);
   }
 
   ENTER_VFS_MUTEX; {
