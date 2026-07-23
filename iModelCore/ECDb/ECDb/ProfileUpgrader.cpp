@@ -21,26 +21,6 @@ DbResult ProfileUpgrader_4006::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (const auto stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_JsonDescription); BE_SQLITE_OK != stat)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_JsonDescription ": %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    if (const auto stat = ecdb.GetImpl().ExecuteDDL(
-            "ALTER TABLE " TABLE_Property " ADD COLUMN JsonDescriptionId INTEGER REFERENCES " TABLE_JsonDescription "(Id) ON DELETE SET NULL"); BE_SQLITE_OK != stat)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Could not add JsonDescriptionId column to " TABLE_Property ": %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    if (const auto stat = ecdb.GetImpl().ExecuteDDL(
-            "CREATE INDEX ix_ec_Property_JsonDescriptionId ON " TABLE_Property "(JsonDescriptionId)"); BE_SQLITE_OK != stat)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Could not create index ix_ec_Property_JsonDescriptionId: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
     return BE_SQLITE_OK;
     }
 

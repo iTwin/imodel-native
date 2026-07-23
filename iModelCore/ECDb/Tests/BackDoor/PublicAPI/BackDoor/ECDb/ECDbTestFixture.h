@@ -279,17 +279,6 @@ struct TestIssueListener : ECN::IIssueListener
     Utf8String GetLastMessage() const { return IsEmpty() ? Utf8String() : m_issues.back().message; }
     void ClearIssues() { m_issues.clear(); }
     bool IsEmpty() const { return m_issues.empty(); }
-
-    std::vector<Utf8String> GetIssuesBySeverity(ECN::IssueSeverity severity) const
-        {
-        std::vector<Utf8String> filteredIssues;
-        for (const auto& issue : m_issues)
-            {
-            if (issue.severity == severity)
-                filteredIssues.push_back(issue.message);
-            }
-        return filteredIssues;
-        }
     };
 
 END_ECDBUNITTESTS_NAMESPACE

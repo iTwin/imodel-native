@@ -23,7 +23,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_Index "ec_Index"
 #define TABLE_IndexColumn "ec_IndexColumn"
 #define TABLE_KindOfQuantity "ec_KindOfQuantity"
-#define TABLE_JsonDescription "ec_JsonDescription"
 #define TABLE_Phenomenon "ec_Phenomenon"
 #define TABLE_Property "ec_Property"
 #define TABLE_PropertyCategory "ec_PropertyCategory"

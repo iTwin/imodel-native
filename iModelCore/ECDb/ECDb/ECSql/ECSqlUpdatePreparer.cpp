@@ -129,18 +129,6 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
             {
             NativeSqlBuilder::List rhsNativeSqlSnippets;
             ValueExp const* valueExp = assignmentExp.GetValueExp();
-
-            // Validate JSON literals against the target property type.
-            if (!valueExp->IsParameterExp() && valueExp->GetType() == Exp::Type::LiteralValue)
-                {
-                stat = ECSqlExpPreparer::ValidateJsonLiteralForAssignment(ctx, valueExp->GetAs<LiteralValueExp>().GetRawValue(), assignmentExp.GetPropertyNameExp()->GetPropertyMap());
-                if (!stat.IsSuccess())
-                    {
-                    ctx.PopScope();
-                    return stat;
-                    }
-                }
-
             //if value is null exp, we need to pass target operand snippets
             if (!valueExp->IsParameterExp() && valueExp->GetTypeInfo().IsNull())
                 stat = ECSqlExpPreparer::PrepareNullExp(rhsNativeSqlSnippets, ctx, *valueExp, sqlSnippetCount);

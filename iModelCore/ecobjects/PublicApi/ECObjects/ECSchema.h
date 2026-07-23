@@ -57,7 +57,6 @@ using UnitSystemMap = bmap<Utf8CP, UnitSystemP, less_str>;
 using PhenomenonMap = bmap<Utf8CP, PhenomenonP, less_str>;
 using UnitMap = bmap<Utf8CP, ECUnitP, less_str>;
 using FormatMap = bmap<Utf8CP, ECFormatP, less_str>;
-using JsonDescriptionMap = std::map<Utf8CP, JsonDescriptionP, less_str>;
 
 using ECCustomAttributeCollection = bvector<IECInstancePtr>;
 struct ECCustomAttributeInstanceIterable;
@@ -310,7 +309,6 @@ private:
     ECValidatedName         m_validatedName;
     KindOfQuantityCP        m_kindOfQuantity;
     PropertyCategoryCP      m_propertyCategory;
-    JsonDescriptionCP       m_jsonDescription;
     mutable ECPropertyId    m_ecPropertyId;
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;
@@ -539,12 +537,6 @@ public:
 
     //! Returns whether the PropertyCategory has been set explicitly and not inherited from base property
     bool IsCategoryDefinedLocally() const {return nullptr != m_propertyCategory;}
-
-    //! Returns whether the JsonDescription has been set explicitly and not inherited from base property
-    bool IsJsonDescriptionDefinedLocally() const {return nullptr != m_jsonDescription;}
-
-    JsonDescriptionCP GetJsonDescription() const {return m_jsonDescription;}
-    ECOBJECTS_EXPORT ECObjectsStatus SetJsonDescription(JsonDescriptionCP jsonDescription);
 
     //! Returns whether this property has an extended type specified
     ECOBJECTS_EXPORT bool HasExtendedType() const;
@@ -1390,58 +1382,6 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT bool ToJson(BeJsValue outValue, bool includeSchemaVersion = false) const {return ToJson(outValue, true, includeSchemaVersion);}
 };
-
-//=======================================================================================
-//! The in-memory representation of a JsonDescription as defined by ECSchemaXML
-//! @bsiclass
-//=======================================================================================
-struct JsonDescription final : NonCopyableClass
-    {
-    friend struct ECSchema;
-    friend struct SchemaXmlWriter; // needed for WriteXml() method
-    friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
-    friend struct SchemaJsonWriter; // needed for the ToJson() method
-
-    private:
-    ECSchemaCR m_schema;
-    ECValidatedName m_name;
-    Utf8String m_displayLabel;
-    Utf8String m_description;
-    Utf8String m_jsonSchema;
-    mutable JsonDescriptionId m_jsonDescriptionId;
-    mutable void* m_compiledJsonSchema = nullptr;
-
-    CachedSchemaQualifiedName m_fullName;
-
-    explicit JsonDescription(ECSchemaCR schema) : m_schema(schema) {}
-
-    public:
-    ECOBJECTS_EXPORT ~JsonDescription();
-
-    ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this JsonDescription is defined in
-    Utf8StringCR GetName() const { return m_name.GetName(); }
-    Utf8StringCR GetDisplayLabel() const { return m_displayLabel; }
-    Utf8StringCR GetDescription() const { return m_description; }
-    Utf8StringCR GetJsonSchema() const { return m_jsonSchema; }
-
-    ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel) { m_displayLabel = displayLabel; return ECObjectsStatus::Success; }
-    ECObjectsStatus SetDescription(Utf8StringCR description) { m_description = description; return ECObjectsStatus::Success; }
-
-    void SetId(JsonDescriptionId id) { BeAssert(!m_jsonDescriptionId.IsValid()); m_jsonDescriptionId = id; } //!< Intended to be called by ECDb or a similar system
-    JsonDescriptionId GetId() const { BeAssert(HasId()); return m_jsonDescriptionId; } //!< Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    bool HasId() const { return m_jsonDescriptionId.IsValid(); }
-    void ResetId() { m_jsonDescriptionId.Invalidate(); }
-
-    SchemaReadStatus ReadXml(pugi::xml_node, ECSchemaReadContextR);
-    SchemaWriteStatus WriteXml(BePugiXmlWriterR, ECVersion) const;
-    bool ToJson(BeJsValue outValue, bool standalone = false, bool includeSchemaVersion = false) const;
-
-    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetJsonSchema(Utf8CP jsonSchema);
-    ECOBJECTS_EXPORT void SetName(Utf8CP name);
-    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
-    ECOBJECTS_EXPORT bool ValidateJson(rapidjson::Document const& doc) const;
-    };
 
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
@@ -2903,15 +2843,6 @@ using SchemaItemContainer<PropertyCategoryMap, PropertyCategoryP>::SchemaItemCon
 };
 
 //=======================================================================================
-// @bsistruct
-//=======================================================================================
-struct JsonDescriptionContainer : SchemaItemContainer<JsonDescriptionMap, JsonDescriptionP>
-{
-friend struct ECSchema;
-using SchemaItemContainer<JsonDescriptionMap, JsonDescriptionP>::SchemaItemContainer;
-};
-
-//=======================================================================================
 //! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.
 //! @bsiclass
 //=======================================================================================
@@ -3097,7 +3028,7 @@ struct SupplementalSchemaInfo;
 typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
 enum class ECSchemaElementType
-    {
+{
     ECClass,
     ECEnumeration,
     KindOfQuantity,
@@ -3107,9 +3038,8 @@ enum class ECSchemaElementType
     Unit,
     InvertedUnit,
     Constant,
-    Format,
-    JsonDescription
-    };
+    Format
+};
 
 //=======================================================================================
 //! Wraps another schema locater and returns copies of its located schemas.
@@ -3314,7 +3244,6 @@ private:
     ECEnumerationContainer  m_enumerationContainer;
     KindOfQuantityContainer m_kindOfQuantityContainer;
     PropertyCategoryContainer m_propertyCategoryContainer;
-    JsonDescriptionContainer  m_jsonDescriptionContainer;
     FormatContainer         m_formatContainer;
     SchemaUnitContext       m_unitsContext;
     mutable BeMutex         m_mutex;
@@ -3329,7 +3258,6 @@ private:
     EnumerationMap              m_enumerationMap;
     KindOfQuantityMap           m_kindOfQuantityMap;
     PropertyCategoryMap         m_propertyCategoryMap;
-    JsonDescriptionMap          m_jsonDescriptionMap;
     FormatMap                   m_formatMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
@@ -3345,8 +3273,7 @@ private:
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
         m_hasExplicitDisplayLabel(false), m_minRequiredECVersion(ECVersion::V3_2), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
-        m_propertyCategoryContainer(m_propertyCategoryMap), m_jsonDescriptionContainer(m_jsonDescriptionMap), m_formatContainer(m_formatMap),
-        m_unitsContext(*this), m_schemaOrigin()
+        m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this), m_schemaOrigin()
         { }
     virtual ~ECSchema();
 
@@ -3516,10 +3443,6 @@ public:
     PropertyCategoryContainerCR GetPropertyCategories() const {return m_propertyCategoryContainer;} //!< Returns an iterable container of PropertyCategories sorted by name.
     uint32_t GetPropertyCategoryCount() const {return (uint32_t) m_propertyCategoryMap.size();} //!< Gets the number of PropertyCategories in the schema.
     ECObjectsStatus DeletePropertyCategory(PropertyCategoryR propertyCategory) {return DeleteSchemaChild<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap);} //!< Removes a PropertyCategory from this schema.
-
-    JsonDescriptionContainerCR GetJsonDescriptions() const {return m_jsonDescriptionContainer;} //!< Returns an iterable container of JsonDescriptions sorted by name.
-    uint32_t GetJsonDescriptionCount() const {return (uint32_t)m_jsonDescriptionMap.size();} //!< Gets the number of JsonDescriptions in the schema.
-    ECObjectsStatus DeleteJsonDescription(JsonDescriptionR jsonDescription) {return DeleteSchemaChild<JsonDescription, JsonDescriptionMap>(jsonDescription, &m_jsonDescriptionMap);} //!< Removes a JsonDescription from this schema.
 
     UnitSystemContainerCR GetUnitSystems() const {return m_unitsContext.GetUnitSystems();} //!< Returns an iterable container of UnitSystems sorted by name.
     uint32_t GetUnitSystemCount() const {return m_unitsContext.GetUnitSystemCount();} //!< Gets the number of UnitSystems in the schema.
@@ -3846,21 +3769,6 @@ public:
     //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT PropertyCategoryCP LookupPropertyCategory(Utf8CP name, bool useFullName = false) const;
-
-    //! Create a new JsonDescription within the context of this schema.
-    //! @param[out] jsonDescription The newly created JsonDescription.
-    //! @param[in]  name             The name of the JsonDescription.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateJsonDescription(JsonDescriptionP& jsonDescription, Utf8CP name);
-
-    //! Get a JsonDescription by name within the context of this schema.
-    //! @param[in]  name     The name of the JsonDescription to lookup.  This must be an unqualified (short) name.
-    //! @return   A const pointer to an ECN::JsonDescription if the named JsonDescription exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT JsonDescriptionCP GetJsonDescriptionCP(Utf8CP name) const { return const_cast<ECSchemaP> (this)->GetJsonDescriptionP(name); }
-
-    //! Get a JsonDescription by name within the context of this schema.
-    //! @param[in]  name     The name of the JsonDescription to lookup.  This must be an unqualified (short) name.
-    //! @return   A pointer to an ECN::JsonDescription if the named JsonDescription exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT JsonDescriptionP GetJsonDescriptionP(Utf8CP name) { return GetSchemaChild<JsonDescription, JsonDescriptionMap>(name, &m_jsonDescriptionMap); }
 
     //! Get a unit system by name within the context of this schema.
     //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.

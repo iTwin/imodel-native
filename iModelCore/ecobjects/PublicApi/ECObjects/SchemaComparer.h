@@ -77,7 +77,6 @@ public:
         IsPrimitive,
         IsPrimitiveArray,
         IsNavigation,
-        JsonDescription,
         KindOfQuantities,
         KindOfQuantity,
         KoqRelativeError,
@@ -637,7 +636,6 @@ struct PropertyChange final : public SchemaElementChange
         BooleanChange& IsReadonly() { return Get<BooleanChange>(Type::IsReadonly); }
         Int32Change& Priority() { return Get<Int32Change>(Type::PropertyPriority); }
         StringChange& KindOfQuantity() { return Get<StringChange>(Type::KindOfQuantity); }
-        StringChange& JsonDescription() { return Get<StringChange>(Type::JsonDescription); }
         StringChange& Enumeration() { return Get<StringChange>(Type::Enumeration); }
         StringChange& Category() { return Get<StringChange>(Type::PropertyCategory); }
 

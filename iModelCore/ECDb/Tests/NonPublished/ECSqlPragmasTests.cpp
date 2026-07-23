@@ -875,7 +875,7 @@ TEST_F(ECSqlPragmasTestFixture, PragmaKnownFeatures_ReturnsRegistry)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_known_features.ecdb"));
 
     std::vector<std::tuple<Utf8CP, Utf8CP, Utf8CP>> features = {
-        { "json-primitive-type", "JSON primitive type with json description Schema Item", "ReadOnly" },
+        { "json-primitive-type", "JSON Primitive Types", "ReadOnly" },
     };
 
     ECSqlStatement stmt;

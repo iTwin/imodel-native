@@ -20,9 +20,8 @@ static bool DetectJsonPrimitiveType(ECDbCR ecdb)
 
 #define KNOWN_FEATURES { \
     { "json-primitive-type", FeatureInfo{ \
-        Feature::JsonPrimitiveType, \
         "json-primitive-type", \
-        "JSON primitive type with json description Schema Item", \
+        "JSON Primitive Types", \
         Compat::ReadOnly, \
         DetectJsonPrimitiveType} \
     } \
@@ -94,31 +93,6 @@ FeatureInfo const* FeatureManager::FindKnownFeature(Utf8StringCR featureName)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static
-Utf8CP FeatureManager::FeatureToString(Feature feature)
-    {
-    switch (feature)
-        {
-        case Feature::JsonPrimitiveType: return "json-primitive-type";
-        default:
-            BeAssert(false && "Unhandled feature");
-            return "";
-        }
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-bool FeatureManager::IsFeatureKnown(Feature feature)
-    {
-    return s_knownFeatures->find(FeatureToString(feature)) != s_knownFeatures->end();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
 bool FeatureManager::IsFeatureKnown(Utf8StringCR featureName)
     {
     return s_knownFeatures->find(featureName) != s_knownFeatures->end();

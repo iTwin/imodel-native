@@ -47,9 +47,6 @@
 #define FORMAT_COMPOSITE_UNIT_ELEMENT       "Unit"
 #define FORMAT_COMPOSITE_UNITS_ELEMENT      "units"
 
-#define JSON_DESCRIPTION_ELEMENT            "JsonDescription"
-#define JSON_DESCRIPTION_ATTRIBUTE          "jsonDescription"
-
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"
 

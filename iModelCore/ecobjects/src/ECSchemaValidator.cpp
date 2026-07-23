@@ -183,15 +183,6 @@ bool ECSchemaValidator::Validate(ECSchemaCR schema)
     for (KindOfQuantityCP koq : schema.GetKindOfQuantities())
         RunKindOfQuantityValidators(*koq);
 
-    for (JsonDescriptionCP jsonDesc : schema.GetJsonDescriptions())
-        {
-        if (jsonDesc->GetJsonSchema().empty())
-            {
-            LOG.errorv("JsonDescription '%s' in schema '%s' has no JSON Schema body. A JsonDescription must define a JSON Schema.", jsonDesc->GetFullName().c_str(), schema.GetName().c_str());
-            m_validated = false;
-            }
-        }
-
     if (m_validated)
         LOG.debugv(FMTSTR_VALIDATION_SUCCESS, "Schema", schema.GetName().c_str());
     else

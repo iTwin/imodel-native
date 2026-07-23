@@ -532,8 +532,6 @@ Utf8CP SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType elementTy
             return INVERTED_UNIT_ELEMENT;
         case ECSchemaElementType::Constant:
             return CONSTANT_ELEMENT;
-        case ECSchemaElementType::JsonDescription:
-            return JSON_DESCRIPTION_ELEMENT;
         }
 
     return EMPTY_STRING;

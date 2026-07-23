@@ -69,24 +69,6 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(std::move(nativeSqlSnippets));
         }
 
-    // Validate JSON literals against their target property types.
-    {
-    const auto& propNames = propNameListExp->GetChildren();
-    const auto& values    = exp.GetValuesExp()->GetChildren();
-    const auto count = std::min(propNames.size(), values.size());
-    for (auto i = 0U; i < count; ++i)
-        {
-        const auto& valueExp = values[i]->GetAs<ValueExp>();
-        if (!valueExp.IsParameterExp() && valueExp.GetType() == Exp::Type::LiteralValue)
-            {
-            const auto& propNameExp = propNames[i]->GetAs<PropertyNameExp>();
-            const auto stat = ECSqlExpPreparer::ValidateJsonLiteralForAssignment(ctx, valueExp.GetAs<LiteralValueExp>().GetRawValue(), propNameExp.GetPropertyMap());
-            if (!stat.IsSuccess())
-                return stat;
-            }
-        }
-    }
-
     status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, *exp.GetValuesExp(), insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
     if (!status.IsSuccess())
         return status;

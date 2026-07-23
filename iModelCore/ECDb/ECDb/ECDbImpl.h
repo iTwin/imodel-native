@@ -38,7 +38,6 @@ struct IdFactory final: NonCopyableClass {
         mutable std::unique_ptr<IdSequence> m_indexIdSeq;
         mutable std::unique_ptr<IdSequence> m_indexColumnIdSeq;
         mutable std::unique_ptr<IdSequence> m_kindOfQuantityIdSeq;
-        mutable std::unique_ptr<IdSequence> m_jsonDescriptionIdSeq;
         mutable std::unique_ptr<IdSequence> m_phenomenonIdSeq;
         mutable std::unique_ptr<IdSequence> m_propertyIdSeq;
         mutable std::unique_ptr<IdSequence> m_propertyCategoryIdSeq;
@@ -64,7 +63,6 @@ struct IdFactory final: NonCopyableClass {
         IdSequence& Index() const { return *m_indexIdSeq; }
         IdSequence& IndexColumn() const { return *m_indexColumnIdSeq; }
         IdSequence& KindOfQuantity() const { return *m_kindOfQuantityIdSeq; }
-        IdSequence& JsonDescription() const { return *m_jsonDescriptionIdSeq; }
         IdSequence& Phenomenon() const { return *m_phenomenonIdSeq; }
         IdSequence& Property() const { return *m_propertyIdSeq; }
         IdSequence& PropertyCategory() const { return *m_propertyCategoryIdSeq; }

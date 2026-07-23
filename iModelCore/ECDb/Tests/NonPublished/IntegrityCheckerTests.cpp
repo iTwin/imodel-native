@@ -855,14 +855,6 @@ TEST_F(IntegrityCheckerFixture, check_ec_profile) {
     ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
     ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
-    ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4005/imodel2.ecdb", "4005.bim", Db::OpenMode::ReadWrite));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
-
-    ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4006/imodel2.ecdb", "4006.bim", Db::OpenMode::ReadWrite));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
-
     executeTest();
 }
 

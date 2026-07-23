@@ -28,8 +28,7 @@ enum class Feature
     ECVersions,
     NamedEnumerators,
     UnitsAndFormats,
-    SystemPropertiesHaveIdExtendedType, // corresponds to ECDbSystem schema version 5.0.1 or newer
-    JsonPrimitiveType
+    SystemPropertiesHaveIdExtendedType // corresponds to ECDbSystem schema version 5.0.1 or newer
     };
 
 //defines the minimum profile versions each feature requires
@@ -48,7 +47,6 @@ using FeatureDetector = bool (*)(ECDbCR);
 
 struct ECDB_EXPORT FeatureInfo
     {
-    Feature feature;
     Utf8CP name;
     Utf8CP description;
     Compat compat;
@@ -71,8 +69,6 @@ private:
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
     static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
 
-    static Utf8CP FeatureToString(Feature feature);
-
 public:
     //! convenience method to check whether EC3.2 features (units, named enumerators) are available in the given file
     static bool IsEC32Available(ECDbCR ecdb) { return IsAvailable(ecdb, Feature::UnitsAndFormats); }
@@ -82,7 +78,6 @@ public:
     static bool IsAvailable(ECDbCR, std::vector<Feature> const&);
 
     static bool IsFeatureKnown(Utf8StringCR featureName);
-    static bool IsFeatureKnown(Feature feature);
     static std::vector<FeatureInfo const*> GetAllKnownFeatures();
     static BentleyStatus InsertFeature(ECDbCR ecdb, Utf8StringCR featureName);
     static BentleyStatus DeleteFeature(ECDbCR ecdb, Utf8StringCR featureName);
