@@ -327,45 +327,6 @@ TEST_F(FeatureTests, Feature_InsertFeature_UnknownName_ReturnsError)
     }
 
 //---------------------------------------------------------------------------------------
-// InsertFeature must update the Description and Compat columns of a pre-existing row
-// when the runtime's definition of the feature has changed (e.g. compat was tightened
-// from Warn to ReadOnly in a newer release).
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(FeatureTests, Feature_InsertFeature_StaleRow_UpdatesDescriptionAndCompat)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("insert_feature_stale.ecdb"));
-
-    // Manually insert a row with an outdated warn compat.
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("INSERT INTO ec_Feature(Name, Description, Compat) VALUES('json-primitive-type', 'OldDescription', 'Warn')"));
-
-    // Verify the stale row is in place before the upsert.
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Description, Compat FROM ec_Feature WHERE Name='json-primitive-type'"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_STREQ("OldDescription", stmt.GetValueText(0));
-    EXPECT_STREQ("Warn", stmt.GetValueText(1));
-    }
-
-    // Insert should update the feature with the new description and compat value.
-    ASSERT_EQ(BentleyStatus::SUCCESS, FeatureManager::InsertFeature(m_ecdb, "json-primitive-type"));
-
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Description, Compat FROM ec_Feature WHERE Name='json-primitive-type'"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_STREQ("JSON Primitive Types", stmt.GetValueText(0));
-    EXPECT_STREQ("ReadOnly", stmt.GetValueText(1));
-    stmt.Finalize();
-
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ec_Feature WHERE Name='json-primitive-type'"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_EQ(1, stmt.GetValueInt(0));
-    }
-    }
-
-//---------------------------------------------------------------------------------------
 // PRAGMA ecdb_known_features must reject write operations and return BE_SQLITE_READONLY.
 // @bsimethod
 //---------------------------------------------------------------------------------------

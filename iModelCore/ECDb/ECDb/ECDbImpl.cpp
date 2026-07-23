@@ -233,7 +233,6 @@ DbResult ECDb::Impl::ValidateFeaturesOnDbOpen() const
 
     std::vector<Utf8String> warnFeatures;
     std::vector<Utf8String> readOnlyFeatures;
-    m_featuresBlockingSchemaImport.clear();
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
