@@ -142,9 +142,12 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     // not part of the merge inputs so they are missing from Left/Right, and several schemas
     // in the Result folder are 0-byte files because their (invalid) relationships failed to
     // serialize. Loading will fail until we get a complete dump including references.
-    BeFileName leftSchemaPath(L"<path-to-left-schemas>");
-    BeFileName rightSchemaPath(L"<path-to-right-schemas>");
-    BeFileName dumpResultTo(L"<path-to-output-dump-dir>");
+    BeFileName leftSchemaPath(L"<path-to-left-schemas>");
+
+    BeFileName rightSchemaPath(L"<path-to-right-schemas>");
+
+    BeFileName dumpResultTo(L"<path-to-output-dump-dir>");
+
     // Filter input schemas to just these names, use empty vector to include all
     bvector<Utf8String> schemasToInclude;
 
@@ -3610,7 +3613,7 @@ TEST_F(SchemaMergerTests, NewSchemaWithPropertyTypeConflictAgainstExistingRefere
 * its upgraded content (like an iModel that received it through an earlier run). AppSchema
 * takes the New-schema CopySchema path, gets re-based onto the target's RefSchema (Station
 * double) and used to fail with DataTypeMismatch when re-validating the string property
-* override. With conflict resolution in the copy path, the derived property is renamed.
+TEST_F(SchemaMergerTests, IgnoredPropertyTypeChangeThenMergeIntoTargetWithUpgradedReference)
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, IgnoredPropertyTypeChangeThenMergeIntoEmptyTarget)
