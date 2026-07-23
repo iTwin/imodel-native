@@ -1,7 +1,7 @@
 # To force a rebuild and a fresh vcpkg binary-cache entry for this triplet, increment the
 # number below. Triplet file contents feed into vcpkg's ABI hash, so bumping this value
 # invalidates the cached binaries and forces the library to be rebuilt.
-# CACHE_BUST = 1
+# CACHE_BUST = 2
 
 # x64-windows-static-clang: 64-bit Windows, static library linkage, built with BentleyBuild's
 # LLVM clang-cl via the shared chainload toolchain (../../windows-clang-cl.toolchain.cmake).
