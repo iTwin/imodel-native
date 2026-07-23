@@ -3613,10 +3613,9 @@ TEST_F(SchemaMergerTests, NewSchemaWithPropertyTypeConflictAgainstExistingRefere
 * its upgraded content (like an iModel that received it through an earlier run). AppSchema
 * takes the New-schema CopySchema path, gets re-based onto the target's RefSchema (Station
 * double) and used to fail with DataTypeMismatch when re-validating the string property
-TEST_F(SchemaMergerTests, IgnoredPropertyTypeChangeThenMergeIntoTargetWithUpgradedReference)
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaMergerTests, IgnoredPropertyTypeChangeThenMergeIntoEmptyTarget)
+TEST_F(SchemaMergerTests, IgnoredPropertyTypeChangeThenMergeIntoTargetWithUpgradedReference)
     {
     bvector<Utf8CP> stage1LeftXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
