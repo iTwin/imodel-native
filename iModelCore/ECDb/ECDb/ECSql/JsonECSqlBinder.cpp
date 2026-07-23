@@ -136,7 +136,6 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, BeJsConst 
             }
 
             case ECN::PRIMITIVETYPE_String:
-            case ECN::PRIMITIVETYPE_Json:
             {
             if (!json.isString())
                 return ECSqlStatus::Error;
@@ -403,7 +402,6 @@ ECSqlStatus JsonECSqlBinder::BindPrimitiveValue(IECSqlBinder& binder, RapidJsonV
             }
 
             case ECN::PRIMITIVETYPE_String:
-            case ECN::PRIMITIVETYPE_Json:
             {
             if (!json.IsString())
                 return ECSqlStatus::Error;

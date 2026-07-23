@@ -6,27 +6,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// Detects whether any property in the DB uses the json primitive type (PRIMITIVETYPE_Json).
-//---------------------------------------------------------------------------------------
-static bool DetectJsonPrimitiveType(ECDbCR ecdb)
-    {
-    Statement stmt;
-    if (stmt.Prepare(ecdb, "SELECT 1 FROM main.ec_Property WHERE PrimitiveType=? LIMIT 1") != BE_SQLITE_OK)
-        return false;
-    stmt.BindInt(1, static_cast<int>(ECN::PRIMITIVETYPE_Json));
-    return stmt.Step() == BE_SQLITE_ROW;
-    }
-
-#define KNOWN_FEATURES { \
-    { "json-primitive-type", FeatureInfo{ \
-        "json-primitive-type", \
-        "JSON Primitive Types", \
-        Compat::ReadOnly, \
-        DetectJsonPrimitiveType} \
-    } \
-}
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------

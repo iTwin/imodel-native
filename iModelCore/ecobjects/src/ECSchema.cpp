@@ -591,8 +591,6 @@ ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajor
         ecVersion = ECVersion::V3_1;
     else if (ecMajorVersion == 3 && ecMinorVersion == 2)
         ecVersion = ECVersion::V3_2;
-    else if (ecMajorVersion == 3 && ecMinorVersion == 3)
-        ecVersion = ECVersion::V3_3;
     else
         return ECObjectsStatus::InvalidECVersion;
 
@@ -637,8 +635,6 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
             return "3.1";
         case ECVersion::V3_2:
             return "3.2";
-        case ECVersion::V3_3:
-            return "3.3";
         }
     return nullptr;
     }
@@ -1495,7 +1491,6 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
         case ECVersion::V3_0:
         case ECVersion::V3_1:
         case ECVersion::V3_2:
-        case ECVersion::V3_3:
             m_ecVersion = ecVersion;
             break;
         default:
@@ -3631,21 +3626,6 @@ namespace
         return true;
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECVersion ECSchema::GetRequiredECVersion() const
-    {
-    ECVersion required = m_minRequiredECVersion;
-
-    // A referenced schema might need a higher version.
-    for (auto const& ref : GetReferencedSchemas())
-        required = std::max(required, ref.second->GetECVersion());
-
-    return required;
-    }
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

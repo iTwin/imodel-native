@@ -36,7 +36,7 @@ struct SchemaDeserializationTest : ECTestFixture
     void VerifyWidgetsSchema(ECSchemaPtr const& schema)
         {
         ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_3));
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2));
 
         EXPECT_STREQ("Widgets", schema->GetName().c_str());
         EXPECT_STREQ("wid", schema->GetAlias().c_str());
@@ -2520,10 +2520,10 @@ TEST_F(SchemaDeserializationTest, RoundtripSchemaWithEmptyElements)
     The intent of this test is to verify we can load schemas with such "empty" (containing white space) elements
     */
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="Ref" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">  </ECSchema>)xml";
+            <ECSchema schemaName="Ref" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">  </ECSchema>)xml";
 
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="MySchema" alias="ms" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+    <ECSchema schemaName="MySchema" alias="ms" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="Ref" version="01.00.00" alias="ref"> </ECSchemaReference>
         <ECCustomAttributes> </ECCustomAttributes>
 
@@ -2710,7 +2710,7 @@ TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext)
 TEST_F(SchemaDeserializationTest, EmptyStringPropertyTagInCA)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECCustomAttributeClass typeName="GeneralCustomAttribute" appliesTo="Schema, AnyClass">
                     <ECProperty propertyName="Primitive" typeName="string"/>
                 </ECCustomAttributeClass>
@@ -2885,103 +2885,6 @@ TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
     ASSERT_TRUE(testLogger.m_messages.size() == 5);
     ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_ERROR, "Abstract Constraint Violation (ResolveIssues: No): The Source-Constraint of 'TestSchema:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
     }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, JsonPrimitive_ParsedFromV33Schema_Succeeds)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECEntityClass typeName="TestClass">
-                <ECProperty propertyName="TestClass" typeName="json" />
-            </ECEntityClass>
-        </ECSchema>)xml";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
-
-    ECClassCP cls = schema->GetClassCP("TestClass");
-    ASSERT_NE(nullptr, cls);
-    ECPropertyP prop = cls->GetPropertyP("TestClass");
-    ASSERT_NE(nullptr, prop);
-
-    ASSERT_TRUE(prop->GetIsPrimitive());
-    EXPECT_EQ(PRIMITIVETYPE_Json, prop->GetAsPrimitiveProperty()->GetType());
-    EXPECT_STREQ("json", prop->GetTypeName().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, JsonPrimitive_ParsedFromV32Schema_Fails)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-
-    // A V3.2 schema claiming a 'json' property is malformed and must be rejected unconditionally.
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECEntityClass typeName="TestClass">
-                <ECProperty propertyName="TestClass" typeName="json" />
-            </ECEntityClass>
-        </ECSchema>)xml";
-
-    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, JsonPrimitive_GetRequiredECVersion_ReturnsV33)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECEntityClass typeName="TestClass">
-                <ECProperty propertyName="TestClass" typeName="json" />
-            </ECEntityClass>
-        </ECSchema>)xml";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
-    EXPECT_EQ(ECVersion::V3_3, schema->GetRequiredECVersion());
-
-    
-    ECSchemaPtr anotherSchema;
-    ECSchema::CreateSchema(anotherSchema, "TestSchema2", "ts2", 1, 0, 0, ECVersion::V3_3);
-
-    ECEntityClassP cls;
-    anotherSchema->CreateEntityClass(cls, "TestClass2");
-
-    PrimitiveECPropertyP prop;
-    cls->CreatePrimitiveProperty(prop, "TestClass2", PRIMITIVETYPE_Json);
-
-    EXPECT_EQ(ECVersion::V3_3, anotherSchema->GetRequiredECVersion());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, JsonPrimitive_NoJsonProperty_GetRequiredECVersion_ReturnsV32)
-    {
-    // A V3.3 schema without any json property still has a baseline of V3_2 unless something bumps it.
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECEntityClass typeName="TestClass">
-                <ECProperty propertyName="Name" typeName="string" />
-            </ECEntityClass>
-        </ECSchema>)xml";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ctx));
-    EXPECT_LT(schema->GetRequiredECVersion(), ECVersion::V3_3);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

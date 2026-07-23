@@ -256,7 +256,6 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             break;
             }
             case ECN::PRIMITIVETYPE_String:
-            case ECN::PRIMITIVETYPE_Json:
             {
             auto str = value.GetText();
             val.SetUtf8CP(str);

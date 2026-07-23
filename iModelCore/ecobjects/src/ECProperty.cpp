@@ -23,18 +23,7 @@ SchemaReadStatus ReadTypeNameWithPruning(pugi::xml_node node, ECPropertyP prop, 
 
     auto setTypeStatus = prop->SetTypeName(typeName);
     if (setTypeStatus == ECObjectsStatus::Success)
-        {
-        // json type requires ECXml 3.3; reject it unconditionally if found in an older schema XML
-        PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
-        if (primProp != nullptr && primProp->GetType() == PRIMITIVETYPE_Json &&
-            prop->GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_3))
-            {
-            LOG.errorv("Invalid ECSchemaXML: property '%s.%s' uses type 'json' which requires ECXml 3.3 or later.",
-                prop->GetClass().GetFullName(), prop->GetName().c_str());
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
         return SchemaReadStatus::Success;
-        }
 
     Utf8String alias;
     Utf8String className;
@@ -1408,9 +1397,6 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
         _AdjustMinMaxAfterTypeChange();
         InvalidateClassLayout();
         }
-
-    if (primitiveType == PRIMITIVETYPE_Json)
-        GetClass().GetSchema().NoteRequiredECVersion(ECVersion::V3_3);
 
     return ECObjectsStatus::Success;
     }
