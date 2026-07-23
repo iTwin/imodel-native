@@ -221,7 +221,7 @@ DbResult ECDb::Impl::OnDbCreated() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ValidateFeaturesOnDbOpen() const
+DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
     {
     // Either the profile version does not support ec_Feature table or else the ECDb file is not using any features yet.
     if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6) || !m_ecdb.TableExists(TABLE_Feature))
@@ -230,9 +230,6 @@ DbResult ECDb::Impl::ValidateFeaturesOnDbOpen() const
     Statement stmt;
     if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Compat from main." TABLE_Feature); status != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
-
-    std::vector<Utf8String> warnFeatures;
-    std::vector<Utf8String> readOnlyFeatures;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -248,20 +245,25 @@ DbResult ECDb::Impl::ValidateFeaturesOnDbOpen() const
         const Utf8String compat = stmt.GetValueText(1);
         if (compat.EqualsI("Warn"))
             {
-            warnFeatures.push_back(featureName);
+            m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
+                "ECDb file uses unknown feature '%s'. Some data may not be accessible.",
+                featureName.c_str());
             continue;
             }
         if (compat.EqualsI("ReadOnly"))
             {
             if (m_ecdb.IsReadonly())
                 continue;
-
-            readOnlyFeatures.push_back(featureName);
-            continue;
+            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
+                "ECDb file uses unknown feature '%s'. The file can only be opened read-only.",
+                featureName.c_str());
+            return BE_SQLITE_READONLY;
             }
         if (compat.EqualsI("NoSchemaImport"))
             {
-            m_featuresBlockingSchemaImport.push_back(featureName);
+            m_featureBlockingSchemaImport = featureName;
             continue;
             }
         if (compat.EqualsI("Refuse"))
@@ -270,38 +272,9 @@ DbResult ECDb::Impl::ValidateFeaturesOnDbOpen() const
                 IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
                 "ECDb file uses unknown feature '%s'. The file cannot be opened by this ECDb runtime.",
                 featureName.c_str());
-
             return BE_SQLITE_ERROR;
             }
-        }
-
-    if (warnFeatures.empty() && readOnlyFeatures.empty() && m_featuresBlockingSchemaImport.empty())
-        return BE_SQLITE_OK;
-
-    if (!warnFeatures.empty())
-        {
-        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
-            "ECDb file uses unknown features %s. Some data may not be accessible.",
-            BeStringUtilities::Join(warnFeatures, ", ", true).c_str());
-        }
-
-    if (!m_featuresBlockingSchemaImport.empty())
-        {
-        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
-            "ECDb file uses unknown features %s. The file will restrict all schema imports. However, it can still be written to.",
-            BeStringUtilities::Join(m_featuresBlockingSchemaImport, ", ", true).c_str());
-        }
-
-    if (!readOnlyFeatures.empty())
-        {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
-            "ECDb file uses unknown features %s. The file can only be opened read-only.",
-            BeStringUtilities::Join(readOnlyFeatures, ", ", true).c_str());
-        return BE_SQLITE_READONLY;
-        }
+        }    
 
     return BE_SQLITE_OK;
     }
@@ -316,7 +289,7 @@ DbResult ECDb::Impl::OnDbOpening() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ValidateFeaturesOnDbOpen();
+    return ValidateECFeaturesOnDbOpen();
     }
 
 //--------------------------------------------------------------------------------------

@@ -39,12 +39,12 @@ SchemaSync& SchemaManager::GetSchemaSync() const
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri) const
     {
-    const auto featuresBlockingSchemaImport = Main().GetECDb().GetImpl().GetFeaturesBlockingSchemaImport();
-    if (!featuresBlockingSchemaImport.empty())
+    const auto featureBlockingSchemaImport = Main().GetECDb().GetImpl().GetFeatureBlockingSchemaImport();
+    if (!featureBlockingSchemaImport.empty())
         {
         Main().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
             IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
-            "Schema import is not allowed. The ECDb file uses an unknown feature %s that disables schema imports.", BeStringUtilities::Join(featuresBlockingSchemaImport, ", ", true).c_str());
+            "Schema import is not allowed. The ECDb file uses an unknown feature '%s' that disables schema imports.", featureBlockingSchemaImport.c_str());
         return SchemaImportResult::ERROR;
         }
     return Main().ImportSchemas(schemas, options, token, syncDbUri);
