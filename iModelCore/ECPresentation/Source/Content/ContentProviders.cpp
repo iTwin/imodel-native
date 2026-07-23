@@ -510,6 +510,23 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool ShouldLoadRelatedContent(ECClassCR itemClass, ContentDescriptor::RelatedContentField const& field)
+    {
+    if (!itemClass.Is(field.GetPathFromSelectToContentClass().front().GetSourceClass()))
+        return false;
+
+    // Note: `field.GetActualSourceClasses()` returns a list of classes that doesn't necessarily point to item's class. For
+    // example, with `A -> B -> C` relationship path, we may be loading content for B instance (item class), in which case `C` field's 
+	// path is going to be `B -> C` and `field.GetActualSourceClasses()` would point to `A`.
+    if (!field.GetParent() && field.GetActualSourceClasses())
+        return ContainerHelpers::Contains(*field.GetActualSourceClasses(), &itemClass);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDescriptor::Field*> const& fields) const
     {
     for (ContentDescriptor::Field const* field : fields)
@@ -519,13 +536,7 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDes
             auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Handle nested content field `%s`", field->GetUniqueName().c_str()));
             bool needsLoad = true;
             ContentDescriptor::RelatedContentField const* relatedContentField = field->AsNestedContentField()->AsRelatedContentField();
-            if (relatedContentField
-                && item.GetClass()
-                && (
-                    !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass())
-                    || relatedContentField->GetActualSourceClasses() && !ContainerHelpers::Contains(*relatedContentField->GetActualSourceClasses(), item.GetClass())
-                    )
-                )
+            if (relatedContentField && item.GetClass() && !ShouldLoadRelatedContent(*item.GetClass(), *relatedContentField))
                 {
                 // do not attempt to load related content for related content fields that don't match current item
                 needsLoad = false;

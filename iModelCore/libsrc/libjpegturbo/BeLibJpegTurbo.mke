@@ -72,6 +72,12 @@ dirToSearch = $(turboJpegSrcDir)src/
     libJpegturbo_SIMD="None"
     cDefs + -DNO_SIMD=1
 
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxARM64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/linux/ -I$(turboJpegSrcDir)simd/arm/
+
+    libJpegturbo_SIMD="Arm64"
+
 %elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64"
 
     cIncs + -I$(turboJpegSrcDir)platforms/other/
