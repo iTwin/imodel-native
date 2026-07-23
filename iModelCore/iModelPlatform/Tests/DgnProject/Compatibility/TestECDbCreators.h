@@ -27,6 +27,7 @@
 #define TESTECDB_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.ecdb"
 #define TESTECDB_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.ecdb"
 #define TESTECDB_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.ecdb"
+#define TESTECDB_JSON_PRIMITIVE "jsonprimitive.ecdb"
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
                               std::make_shared<EC31EnumsTestECDbCreator>(), \
@@ -39,7 +40,8 @@
                               std::make_shared<EC32KoqsTestECDbCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestECDbCreator>(), \
                               std::make_shared<EC32KoqsSchemaUpgradeTestECDbCreator>(), \
-                              std::make_shared<EC32UnitsTestECDbCreator>()}
+                              std::make_shared<EC32UnitsTestECDbCreator>(), \
+                              std::make_shared<JsonPrimitiveTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass
@@ -581,4 +583,16 @@ struct EC32UnitsTestECDbCreator final : TestECDbCreator
     public:
         EC32UnitsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32UNITS) {}
         ~EC32UnitsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass
+//======================================================================================
+struct JsonPrimitiveTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override;
+    public:
+        JsonPrimitiveTestECDbCreator() : TestECDbCreator(TESTECDB_JSON_PRIMITIVE) {}
+        ~JsonPrimitiveTestECDbCreator() {}
     };

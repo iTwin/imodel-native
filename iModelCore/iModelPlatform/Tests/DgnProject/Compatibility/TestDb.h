@@ -7,6 +7,8 @@
 #include "CompatibilityTestFixture.h"
 #include "Profiles.h"
 
+#define TABLE_FEATURE "ec_Feature"
+
 //=======================================================================================
 // Features that were added later. Use TestDb::SupportsFeature to check whether a certain file supports a 
 // feature or not.
@@ -18,7 +20,8 @@ enum class ECDbFeature
     PersistedECVersions,
     NamedEnumerators,
     UnitsAndFormats,
-    SystemPropertiesHaveIdExtendedType
+    SystemPropertiesHaveIdExtendedType,
+    FeatureTable
     };
 
 //=======================================================================================
@@ -82,6 +85,11 @@ protected:
     void AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP definition) const;
 
     void AssertLoadSchemas() const;
+
+    bool FeatureTableExistsInDb() const;
+    int GetFeatureRowCount() const;
+    bool HasFeatureRow(Utf8CP featureName) const;
+    Utf8String GetFeatureCompat(Utf8CP featureName) const;
     };
 
 //=======================================================================================

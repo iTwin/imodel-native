@@ -218,6 +218,23 @@ void Assert_BuiltinSchemaVersions_4_0_0_5 (TestECDb& testDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_4_0_0_6(TestECDb& testDb)
+    {
+    // No EC schema changes in this profile version. The only addition is the ec_Feature table.
+    Assert_BuiltinSchemaVersions_4_0_0_5(testDb);
+
+    EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+
+    // A plain empty ECDb file has no active features: ec_Feature must be empty
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT count(*) FROM " TABLE_FEATURE)) << testDb.GetDescription();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+    EXPECT_EQ(0, stmt.GetValueInt(0)) << "ec_Feature must be empty for a plain empty ECDb file | " << testDb.GetDescription();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_4_X_X_X(TestECDb& testDb)
     {
     EXPECT_LE(5, testDb.GetSchemaCount()) << testDb.GetDescription();
@@ -238,6 +255,9 @@ void Assert_BuiltinSchemaVersions_4_X_X_X(TestECDb& testDb)
     //Standard schema versions
     EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
     EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+
+    // Newer files are >= 4.0.0.6, so ec_Feature table must exist
+    EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
     }
 
 //---------------------------------------------------------------------------------------
@@ -266,14 +286,16 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_4_0_0_3(testDb);
                     else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
                         Assert_BuiltinSchemaVersions_4_0_0_4(testDb);
+                    else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5))
+                        Assert_BuiltinSchemaVersions_4_0_0_5(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5))
-                        Assert_BuiltinSchemaVersions_4_0_0_5(testDb);
+                    if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 6))
+                        Assert_BuiltinSchemaVersions_4_0_0_6(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
@@ -1289,11 +1311,21 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
                     }
+                else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5))
+                    {
+                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    }
                 else
                     FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                 break;
             case ProfileState::Age::UpToDate:
-                if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5))
+                if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5) ||
+                    testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 6))
                     {
                     ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
@@ -2363,6 +2395,156 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
                 }
 
             testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersions)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+
+            if (!testDb.SupportsFeature(ECDbFeature::FeatureTable))
+                {
+                // Files at profile < 4.0.0.6: ec_Feature table must NOT exist
+                EXPECT_FALSE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+                continue;
+                }
+
+            // Files at profile >= 4.0.0.6: ec_Feature table must exist
+            EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+
+            // For UpToDate files (fresh or just upgraded), the plain empty ECDb has no active
+            // features, so ec_Feature must be empty. Skip the count check for Newer files
+            // since future runtimes may register additional features we don't know about.
+            if (testDb.GetAge() != ProfileState::Age::Newer)
+                {
+                Statement stmt;
+                ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT count(*) FROM " TABLE_FEATURE)) << testDb.GetDescription();
+                ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+                EXPECT_EQ(0, stmt.GetValueInt(0)) << "ec_Feature must be empty for a plain empty ECDb file | " << testDb.GetDescription();
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, FeatureTable_ProfileUpgrade_CreatesEmptyTable)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+        {
+        if (testFile.GetAge() != ProfileState::Age::Older)
+            continue; // only verify the upgrade path from older files
+
+        TestECDb testDb(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
+        ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+        testDb.AssertProfileVersion();
+
+        // After upgrade the file must be at current profile version
+        EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), testDb.GetECDbProfileVersion()) << testDb.GetDescription();
+        EXPECT_EQ(ProfileState::Age::UpToDate, testDb.GetAge()) << testDb.GetDescription();
+
+        // The upgrader must have created the ec_Feature table
+        EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+
+        // An empty ECDb file does not use any features: ec_Feature must be empty after upgrade
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT count(*) FROM " TABLE_FEATURE)) << testDb.GetDescription();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+        EXPECT_EQ(0, stmt.GetValueInt(0)) << "ec_Feature must be empty after upgrading a plain empty ECDb file | " << testDb.GetDescription();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, JsonPrimitive_FeatureTableState)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_JSON_PRIMITIVE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+
+            // TESTECDB_JSON_PRIMITIVE is always created at >= 4.0.0.6
+            EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+
+            // Verify the json-primitive-type feature row is present with Compat=ReadOnly
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT Compat FROM " TABLE_FEATURE " WHERE Name='json-primitive-type'")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "json-primitive-type feature row must be present | " << testDb.GetDescription();
+            EXPECT_STREQ("ReadOnly", stmt.GetValueText(0)) << "json-primitive-type Compat must be ReadOnly | " << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, JsonPrimitive_ECSqlRoundTrip)
+    {
+    static constexpr Utf8CP existingJsonData[] = {
+        R"({"count":1,"label":"first"})",
+        R"([10,20,30])",
+        R"("hello")",
+    };
+
+    static constexpr Utf8CP testJson = R"({"answer":42,"name":"test"})";
+
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_JSON_PRIMITIVE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            // Verify the class and its json-typed property are loaded correctly
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "JsonHolder");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
+
+            ECPropertyCP dataProp = cl->GetPropertyP("Data");
+            ASSERT_TRUE(dataProp != nullptr && dataProp->GetIsPrimitive()) << testDb.GetDescription();
+            EXPECT_EQ(PRIMITIVETYPE_Json, dataProp->GetAsPrimitiveProperty()->GetType()) << testDb.GetDescription();
+
+            // Verify the seeded rows read back exactly
+            ECSqlStatement seededStmt;
+            ASSERT_EQ(ECSqlStatus::Success, seededStmt.Prepare(testDb.GetDb(), "SELECT Data FROM ts.JsonHolder ORDER BY ECInstanceId ASC")) << testDb.GetDescription();
+            for (Utf8CP expected : existingJsonData)
+                {
+                ASSERT_EQ(BE_SQLITE_ROW, seededStmt.Step()) << testDb.GetDescription();
+                EXPECT_STREQ(expected, seededStmt.GetValueText(0)) << "Seeded JSON value must read back exactly | " << testDb.GetDescription();
+                }
+            EXPECT_EQ(BE_SQLITE_DONE, seededStmt.Step()) << "Must have exactly " << std::size(existingJsonData) << " seeded rows | " << testDb.GetDescription();
+            seededStmt.Finalize();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // INSERT a JSON value and verify it round-trips exactly
+            ECSqlStatement insertStmt;
+            ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(testDb.GetDb(), "INSERT INTO ts.JsonHolder(Data) VALUES(?)")) << testDb.GetDescription();
+            ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, testJson, IECSqlBinder::MakeCopy::No)) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << testDb.GetDescription();
+            insertStmt.Finalize();
+
+            ECSqlStatement selectStmt;
+            ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(testDb.GetDb(), "SELECT Data FROM ts.JsonHolder ORDER BY ECInstanceId DESC LIMIT 1")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step()) << testDb.GetDescription();
+            EXPECT_STREQ(testJson, selectStmt.GetValueText(0)) << "JSON value must round-trip through ECSql INSERT/SELECT | " << testDb.GetDescription();
             }
         }
     }
