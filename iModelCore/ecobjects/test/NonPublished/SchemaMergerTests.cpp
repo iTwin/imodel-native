@@ -142,9 +142,9 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     // not part of the merge inputs so they are missing from Left/Right, and several schemas
     // in the Result folder are 0-byte files because their (invalid) relationships failed to
     // serialize. Loading will fail until we get a complete dump including references.
-    BeFileName leftSchemaPath(L"/home/rob/Downloads/Schemas/Left");
-    BeFileName rightSchemaPath(L"/home/rob/Downloads/Schemas/Right");
-    BeFileName dumpResultTo(L"/home/rob/Downloads/Schemas/RemergeDump/");
+    BeFileName leftSchemaPath(L"<path-to-left-schemas>");
+    BeFileName rightSchemaPath(L"<path-to-right-schemas>");
+    BeFileName dumpResultTo(L"<path-to-output-dump-dir>");
     // Filter input schemas to just these names, use empty vector to include all
     bvector<Utf8String> schemasToInclude;
 
