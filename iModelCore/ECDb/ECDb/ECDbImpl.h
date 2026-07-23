@@ -172,6 +172,7 @@ private:
     mutable std::unique_ptr<SupportInstanceQueryFunc> m_supportInstanceQueryFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
+    mutable Utf8String m_featureBlockingSchemaImport;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     mutable SnappyFromMemory m_snappyReader;
     mutable SnappyToBlob m_snappyWriter;
@@ -208,6 +209,7 @@ private:
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
     DbResult OnDbOpened(OpenParams const& params) const;
+    DbResult ValidateECFeaturesOnDbOpen() const;
     void RegisterECSqlPragmas() const;
     void OnInit() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
@@ -239,6 +241,7 @@ public:
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
+    Utf8StringCR GetFeatureBlockingSchemaImport() const { return m_featureBlockingSchemaImport; }
 
     template<typename T>
     T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {

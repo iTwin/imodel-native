@@ -67,6 +67,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "CREATE UNIQUE INDEX uix_ec_FormatCompositeUnit_FormatId_Ordinal ON " TABLE_FormatCompositeUnit "(FormatId,Ordinal);" \
                        "CREATE INDEX ix_ec_FormatCompositeUnit_UnitId ON " TABLE_FormatCompositeUnit "(UnitId);"
 
+#define TABLEDDL_Feature "CREATE TABLE " TABLE_Feature "(" \
+            "Name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE," \
+            "Description TEXT NOT NULL," \
+            "Compat TEXT NOT NULL CHECK(Compat IN ('Warn','ReadOnly','NoSchemaImport','Refuse')));"
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -88,6 +93,17 @@ public:
         return returnValue;
         }
     };
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ProfileUpgrader_4006 final : ProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        DbResult _Upgrade(ECDbCR) const override;
+    };
+
 
 //=======================================================================================
 // @bsiclass

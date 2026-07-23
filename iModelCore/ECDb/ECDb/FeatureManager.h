@@ -4,8 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDb.h>
-#include "ProfileManager.h"
-#include "IssueReporter.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -41,10 +39,24 @@ enum class Feature
     {Feature::SystemPropertiesHaveIdExtendedType, ProfileVersion(4, 0, 0, 2)} \
     }
 
+enum class Compat { Warn, ReadOnly, NoSchemaImport, Refuse };
+
+//! Function that returns true if the feature is currently in use in the given ECDb.
+//! Set to nullptr for write-once features (e.g. profile-upgrade changes)
+using FeatureDetector = bool (*)(ECDbCR);
+
+struct ECDB_EXPORT FeatureInfo
+    {
+    Utf8CP name;
+    Utf8CP description;
+    Compat compat;
+    FeatureDetector featureDetector;
+    };
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct FeatureManager final
+struct ECDB_EXPORT FeatureManager final
     {
 private:
     FeatureManager() = delete;
@@ -52,8 +64,10 @@ private:
 
     //non-POD static members must never be destroyed (Bentley guideline)
     static std::map<Feature, ProfileVersion> const* s_featureMinimumVersions;
+    static std::map<Utf8String, FeatureInfo> const* s_knownFeatures;
 
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
+    static FeatureInfo const* FindKnownFeature(Utf8StringCR featureName);
 
 public:
     //! convenience method to check whether EC3.2 features (units, named enumerators) are available in the given file
@@ -62,6 +76,18 @@ public:
     static bool SchemaRequiresProfileUpgrade(ECDbCR ecdb, ECN::ECSchemaCR ecSchema);
     static bool IsAvailable(ECDbCR ecdb, Feature feature) { return IsAvailable(ecdb.GetECDbProfileVersion(), feature); }
     static bool IsAvailable(ECDbCR, std::vector<Feature> const&);
+
+    static bool IsFeatureKnown(Utf8StringCR featureName);
+    static std::vector<FeatureInfo const*> GetAllKnownFeatures();
+    static BentleyStatus InsertFeature(ECDbCR ecdb, Utf8StringCR featureName);
+    static BentleyStatus DeleteFeature(ECDbCR ecdb, Utf8StringCR featureName);
+    static Utf8CP FeatureCompatToString(Compat compat);
+
+    //! Reconciles all schema-driven feature rows after a schema modification (import or drop).
+    //! Inserts or removes rows based on the current state of the database.
+    //! TODO Rohit: This needs further discussion.
+    //! This was easy for the Json primitive type as we can just check the db. But it might get expensive where in memory scans might be needed.
+    static BentleyStatus ReconcileSchemaFeatures(ECDbCR ecdb);
     };
 
 

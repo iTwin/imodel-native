@@ -19,6 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_Enumeration "ec_Enumeration"
 #define TABLE_Format "ec_Format"
 #define TABLE_FormatCompositeUnit "ec_FormatCompositeUnit"
+#define TABLE_Feature "ec_Feature"
 #define TABLE_Index "ec_Index"
 #define TABLE_IndexColumn "ec_IndexColumn"
 #define TABLE_KindOfQuantity "ec_KindOfQuantity"

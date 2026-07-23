@@ -3615,7 +3615,7 @@ void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool i
 
 namespace
     {
-    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
+    bool IsSchemaSerializable(ECSchemaCR schema)
         {
         if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
             {
@@ -3633,7 +3633,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     {
     ecSchemaXml.clear();
 
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
@@ -3662,7 +3662,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     {
     ecSchemaXml.clear();
 
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
     BePugiXmlWriterPtr xmlWriter = BePugiXmlWriter::Create();
@@ -3705,7 +3705,7 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
@@ -3734,7 +3734,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!IsSchemaSerializable(*this))
         return false;
 
     ecSchemaJsonValue.SetNull();

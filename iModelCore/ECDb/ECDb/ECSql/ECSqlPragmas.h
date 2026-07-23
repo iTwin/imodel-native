@@ -175,6 +175,28 @@ struct PragmaSchemaView : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct PragmaECDbKnownFeatures : PragmaManager::GlobalHandler {
+    PragmaECDbKnownFeatures():GlobalHandler("ecdb_known_features", "returns all features supported by the current ECDb runtime") {}
+    ~PragmaECDbKnownFeatures() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbKnownFeatures>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaECDbUsedFeatures : PragmaManager::GlobalHandler {
+    PragmaECDbUsedFeatures():GlobalHandler("ecdb_used_features", "returns all features used by the current ECDb") {}
+    ~PragmaECDbUsedFeatures() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbUsedFeatures>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct SHA3Helper final {
     enum class HashSize {
         SHA3_224 = 224,
