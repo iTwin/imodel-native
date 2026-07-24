@@ -189,6 +189,7 @@ public:
     //!   // The original property values as they were when we originally made our changes. Undefined on INSERT.
     //!   "original": { "Prop1": 123, ... },
     //!   // The property values that were in the database when we attempted to apply our changes. Defined only on Data conflicts or primary key conflicts.
+    //!   // For unique constraint violations, see the "conflictingRow" property of each unique constraint violation.
     //!   "theirs": { "Prop1": 456, ... },
     //!   // The property values that we attempted to apply. Undefined on DELETE.
     //!   "ours": { "Prop1": 789, ... },

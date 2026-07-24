@@ -242,6 +242,9 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     bool originalValueAvailable = opcode == DbOpcode::Update || opcode == DbOpcode::Delete;
     bool ourValueAvailable = opcode == DbOpcode::Update || opcode == DbOpcode::Insert;
     bool theirValueAvailable = cause == ChangeSet::ConflictCause::Data || cause == ChangeSet::ConflictCause::Conflict;
+    bool theyDeleted = cause == ChangeSet::ConflictCause::NotFound;
+    bool weInserted = opcode == DbOpcode::Insert;
+    bool theyInserted = weInserted && cause == ChangeSet::ConflictCause::Conflict;
 
     std::unordered_map<Utf8String, DbValue> originalDbValues;
     std::unordered_map<Utf8String, DbValue> theirDbValues;
@@ -279,9 +282,10 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
         // Determine which columns represent genuine conflicts.
         // A column is in conflict if "their" value is different from the "original" value.
         // Note that "our" value may be the same as "their" value, but if it is different from "original", it is still a conflict.
-        // Also flag conflict columns when they deleted (no THEIR) or inserted (no ORIGINAL).
-        bool hasOriginalOrTheir = originalValue.IsValid() || theirValue.IsValid();
-        if (hasOriginalOrTheir && (!originalValue.IsValid() || !theirValue.IsValid() || !DbValuesAreEqual(originalValue, theirValue)))
+        bool dataConflict = originalValue.IsValid() && theirValue.IsValid() && !DbValuesAreEqual(originalValue, theirValue);
+        bool ourUpdateTheirDeleteConflict = theyDeleted && originalValue.IsValid() && ourValue.IsValid() && !DbValuesAreEqual(originalValue, ourValue);
+        bool bothInsertConflict = weInserted && theyInserted && theirValueAvailable && ourValueAvailable && !DbValuesAreEqual(ourValue, theirValue);
+        if (dataConflict || ourUpdateTheirDeleteConflict || bothInsertConflict)
             {
             dataConflictColumns.emplace(columns[i]);
             }
