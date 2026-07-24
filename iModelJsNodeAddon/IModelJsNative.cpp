@@ -706,6 +706,33 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 };
 
 //=======================================================================================
+// A minimal RAII scope guard that invokes a callback when it goes out of scope, including
+// while the stack is unwinding from a thrown exception. Used to keep persistent tracker and
+// transaction state consistent across operations that may throw partway through.
+//=======================================================================================
+struct SQLiteDbScopeGuard {
+private:
+    std::function<void()> m_onExit;
+public:
+    explicit SQLiteDbScopeGuard(std::function<void()> onExit) : m_onExit(std::move(onExit)) {}
+    ~SQLiteDbScopeGuard() { if (m_onExit) m_onExit(); }
+    void Dismiss() { m_onExit = nullptr; }
+    SQLiteDbScopeGuard(SQLiteDbScopeGuard const&) = delete;
+    SQLiteDbScopeGuard& operator=(SQLiteDbScopeGuard const&) = delete;
+};
+
+//=======================================================================================
+// A ChangeTracker used only to capture DDL/data changes on a generic SQLiteDb, so they
+// can be written out to an iModel-format changeset file for testing purposes.
+//! @bsiclass
+//=======================================================================================
+struct SQLiteDbChangeTracker : BeSQLite::ChangeTracker {
+    SQLiteDbChangeTracker(BeSQLite::DbR db) : BeSQLite::ChangeTracker("SQLiteDb") { SetDb(&db); }
+    OnCommitStatus _OnCommit(bool, Utf8CP) override { return OnCommitStatus::Commit; }
+    BeSQLite::DdlChangesCR GetDdlChanges() const { return m_ddlChanges; }
+};
+
+//=======================================================================================
 // Projects the BeSQLite::Db class into JS
 //! @bsiclass
 //=======================================================================================
@@ -713,6 +740,7 @@ struct SQLiteDb : Napi::ObjectWrap<SQLiteDb>, SQLiteOps<Db> {
 private:
     DEFINE_CONSTRUCTOR
     Db m_db;
+    RefCountedPtr<SQLiteDbChangeTracker> m_changeTracker;
     Db* _GetMyDb() override { return &m_db; }
 
 public:
@@ -800,15 +828,98 @@ public:
             JsInterop::throwSqlResult("error in abandonChanges", db.GetDbFileName(), status);
     }
 
+    //! Begin capturing DDL/data changes made to this SQLiteDb. Used only to produce test
+    //! changeset files - not part of any product workflow.
+    void StartChangeTracking(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (m_changeTracker.IsNull())
+            m_changeTracker = new SQLiteDbChangeTracker(db);
+        // Db::ExecuteDdl only records DDL into the tracker registered via SetChangeTracker (db.m_dbFile->m_tracker) -
+        // the session extension used for row-level changes attaches directly via ChangeTracker::SetDb/CreateSession,
+        // but DDL capture requires this explicit registration too.
+        db.SetChangeTracker(m_changeTracker.get());
+        m_changeTracker->Restart();
+    }
+
+    //! Execute a DDL statement (e.g. CREATE/ALTER/DROP TABLE) so that, if change tracking is
+    //! active, the DDL is captured by the tracker. This is required because DDL is never
+    //! captured by the SQLite session extension used for row-level (DML) changes.
+    void ExecuteDdl(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, ddl);
+        auto stat = db.ExecuteDdl(ddl.c_str());
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error executing ddl", db.GetDbFileName(), stat);
+    }
+
+    //! Write out the changes captured since startChangeTracking() was called, to a changeset
+    //! file holding the raw sqlite changeset (the plain, uncompressed byte stream produced by
+    //! the sqlite session extension) - this is *not* the same format used for iModel changesets.
+    //! Raw sqlite changesets cannot represent DDL/schema changes, so this throws if any DDL was
+    //! captured since startChangeTracking() was called.
+    void CreateChangeset(NapiInfoCR info) {
+        GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, pathname);
+        if (m_changeTracker.IsNull())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "change tracking was not started", IModelJsNativeErrorKey::BadArg);
+
+        // Consistently end tracking whether we succeed or throw below. EnableTracking(false) suspends
+        // the session, so if a write fails and we returned without ending, a caller that fixes the
+        // output path and retries without calling startChangeTracking() again would silently omit all
+        // subsequent changes. Ending on every path makes startChangeTracking() a required precondition.
+        SQLiteDbScopeGuard endTracking([this]() { m_changeTracker->EndTracking(); });
+
+        m_changeTracker->EnableTracking(false);
+        if (m_changeTracker->HasDdlChanges())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "raw sqlite changesets cannot capture DDL/schema changes", IModelJsNativeErrorKey::BadArg);
+
+        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+        BeSQLite::ChangeSet changeSet;
+        auto stat = changeSet.FromChangeTrack(*m_changeTracker);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error creating changeset", filePath.GetNameUtf8().c_str(), stat);
+
+        stat = changeSet.Write(pathname);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error writing changeset file", filePath.GetNameUtf8().c_str(), stat);
+    }
+
+    //! Apply a raw sqlite changeset file (the plain, uncompressed byte stream produced by the
+    //! sqlite session extension - *not* the same format used for iModel changesets) to this
+    //! SQLiteDb. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
+    //! (parentId/changesetId) against the current state of the db, and it does *not* support
+    //! DDL/schema changes (raw sqlite changesets cannot represent them) - it simply applies the
+    //! row-level changes. Any conflict encountered while applying causes the entire apply to fail.
+    void ApplyChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, pathname);
+
+        BeFileName filePath(pathname.c_str(), BentleyCharEncoding::Utf8);
+        BeSQLite::ChangeSet changeSet;
+        auto stat = changeSet.Read(pathname);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error reading changeset file", filePath.GetNameUtf8().c_str(), stat);
+
+        // On failure, we simply throw - it is up to the caller to decide whether to abandon or save
+        // any changes applied so far.
+        auto applyArgs = BeSQLite::ApplyChangesArgs::Default().SetAbortOnAnyConflict(true);
+        stat = changeSet.ApplyChanges(db, applyArgs);
+        if (stat != BE_SQLITE_OK)
+            BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
+    }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "SQLiteDb", {
             InstanceMethod("abandonChanges", &SQLiteDb::AbandonChanges),
+            InstanceMethod("applyChangeset", &SQLiteDb::ApplyChangeset),
             InstanceMethod("closeDb", &SQLiteDb::CloseDb),
+            InstanceMethod("createChangeset", &SQLiteDb::CreateChangeset),
             InstanceMethod("createDb", &SQLiteDb::CreateDb),
             InstanceMethod("dispose", &SQLiteDb::Dispose),
             InstanceMethod("embedFile", &SQLiteDb::EmbedFile),
             InstanceMethod("embedFontFile", &SQLiteDb::EmbedFontFile),
+            InstanceMethod("executeDdl", &SQLiteDb::ExecuteDdl),
             InstanceMethod("extractEmbeddedFile", &SQLiteDb::ExtractEmbeddedFile),
             InstanceMethod("getFilePath", &SQLiteDb::GetFilePath),
             InstanceMethod("getLastInsertRowId", &SQLiteDb::GetLastInsertRowId),
@@ -824,6 +935,7 @@ public:
             InstanceMethod("restartDefaultTxn", &SQLiteDb::RestartDefaultTxn),
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
+            InstanceMethod("startChangeTracking", &SQLiteDb::StartChangeTracking),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
             InstanceMethod("analyze", &SQLiteDb::Analyze),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
