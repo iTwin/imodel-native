@@ -1681,7 +1681,7 @@ uint64_t SchemaReservationHelper::LookupFormatCompositeUnitId(ECDbCR localDb, EC
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
-uint64_t SchemaReservationHelper::LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECRelationshipEnd end) {
+uint64_t SchemaReservationHelper::LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
             "SELECT rc.[Id] FROM [main].[ec_RelationshipConstraint] rc "
@@ -1695,7 +1695,7 @@ uint64_t SchemaReservationHelper::LookupRelConstraintId(ECDbCR localDb, ECN::ECR
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
-uint64_t SchemaReservationHelper::LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECRelationshipEnd end, ECN::ECClassCR constraintClass) {
+uint64_t SchemaReservationHelper::LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
             "SELECT rcc.[Id] FROM [main].[ec_RelationshipConstraintClass] rcc "

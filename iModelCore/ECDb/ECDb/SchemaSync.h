@@ -94,8 +94,8 @@ struct SchemaReservationHelper final {
     static uint64_t LookupSchemaReferenceId(ECDbCR localDb, Utf8StringCR schemaName, Utf8StringCR refSchemaName);
     static uint64_t LookupClassHasBaseClassesId(ECDbCR localDb, ECN::ECClassCR ecClass, ECN::ECClassCR baseClass);
     static uint64_t LookupFormatCompositeUnitId(ECDbCR localDb, ECN::ECFormatCR fmt, int ordinal);
-    static uint64_t LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECRelationshipEnd end);
-    static uint64_t LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECRelationshipEnd end, ECN::ECClassCR constraintClass);
+    static uint64_t LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end);
+    static uint64_t LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass);
     static uint64_t LookupCustomAttributeId(ECDbCR localDb, uint64_t containerId, int containerType, ECN::ECClassCR caClass);
     //! Walk @p schema (recursively, dependency-first) and record key→persistedId for every
     //! already-persisted metadata element found in @p localDb.  Called by SeedReservationStoreFromLocalDb.
