@@ -1,0 +1,646 @@
+/*---------------------------------------------------------------------------------------------
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include "ECDbPublishedTests.h"
+#include "MockHubApi.h"
+
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//======================================================================================
+// File-local helpers for inspecting the sync-db reservation tables.
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+// Returns true when the schema_reservation_ids table exists in syncDb.
+//---------------------------------------------------------------------------------------
+static bool ReservationTableExists(ECDbCR syncDb)
+    {
+    return syncDb.TableExists("schema_reservation_ids");
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns the LastReservedId counter for the given metadata table name (e.g. "ec_Class"),
+// or 0 when the table/row is absent.
+//---------------------------------------------------------------------------------------
+static uint64_t GetLastReservedId(ECDbCR syncDb, Utf8CP resTableName)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb,
+            "SELECT [LastReservedId] FROM [schema_reservation_ids] WHERE [TableName]=?"))
+        return 0;
+    if (BE_SQLITE_OK != stmt.BindText(1, resTableName, Statement::MakeCopy::No))
+        return 0;
+    return (stmt.Step() == BE_SQLITE_ROW) ? static_cast<uint64_t>(stmt.GetValueInt64(0)) : 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns true when the schema_reservation_columns table exists in syncDb.
+//---------------------------------------------------------------------------------------
+static bool ColumnReservationTableExists(ECDbCR syncDb)
+    {
+    return syncDb.TableExists("schema_reservation_columns");
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns true when schema_reservation_columns has at least one row.
+//---------------------------------------------------------------------------------------
+static bool HasColumnReservationRow(ECDbCR syncDb)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb, "SELECT COUNT(*) FROM [schema_reservation_columns]"))
+        return false;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return false;
+    return stmt.GetValueInt(0) > 0;
+    }
+
+//======================================================================================
+// Minimal schema XML builders (ECXML 3.1, no BisCore dependency).
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+// Single entity class with no properties.
+//---------------------------------------------------------------------------------------
+static Utf8String BuildSingleClassSchema(Utf8CP version = "01.00.00")
+    {
+    Utf8String xml;
+    xml.Sprintf(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="ClassA" />
+        </ECSchema>)xml",
+        version);
+    return xml;
+    }
+
+//---------------------------------------------------------------------------------------
+// Single entity class with two properties; uses TablePerHierarchy mapping so that
+// schema_reservation_columns is exercised.
+//---------------------------------------------------------------------------------------
+static Utf8String BuildClassWithPropsSchema(Utf8CP version = "01.00.00")
+    {
+    Utf8String xml;
+    xml.Sprintf(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ClassA">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="p1" typeName="int" />
+                <ECProperty propertyName="p2" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml",
+        version);
+    return xml;
+    }
+
+//======================================================================================
+// Tests — all use SchemaImportOptions::None and pass the sync-db URI so that
+// ImportSchemas internally calls ReserveSchemaImport.
+//======================================================================================
+
+// ---------------------------------------------------------------------------------------
+// Test 1: ImportSingleClass_ReservationStorePopulated
+// Verify that importing a schema with one entity class causes the sync-db reservation
+// table to be created and populated with counters > 0 for ec_Class and ec_Schema.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, ImportSingleClass_ReservationStorePopulated)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(BuildSingleClassSchema()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    // The class must be visible in the briefcase.
+    ASSERT_NE(b1->Schemas().GetClass("TestSchema1", "ClassA"), nullptr);
+
+    // The sync-db reservation table must exist and contain counters > 0.
+    schemaSyncDb.WithReadOnly([](ECDbCR syncDb)
+        {
+        ASSERT_TRUE(ReservationTableExists(syncDb)) << "schema_reservation_ids must exist after import";
+        EXPECT_GT(GetLastReservedId(syncDb, "ec_Class"),  UINT64_C(0)) << "ec_Class LastReservedId must be > 0";
+        EXPECT_GT(GetLastReservedId(syncDb, "ec_Schema"), UINT64_C(0)) << "ec_Schema LastReservedId must be > 0";
+        });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 2: ImportClassWithProperties
+// Verify that importing a class with properties writes both schema_reservation_ids
+// (with an ec_Property row) and schema_reservation_columns (for the physical table).
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, ImportClassWithProperties)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(BuildClassWithPropsSchema()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    // Both properties must be present on the class.
+    ECClassCP cls = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(cls, nullptr);
+    EXPECT_EQ(2, cls->GetPropertyCount(false));
+    EXPECT_NE(cls->GetPropertyP("p1"), nullptr);
+    EXPECT_NE(cls->GetPropertyP("p2"), nullptr);
+
+    schemaSyncDb.WithReadOnly([](ECDbCR syncDb)
+        {
+        // ec_Property counter must be present and > 0.
+        ASSERT_TRUE(ReservationTableExists(syncDb));
+        EXPECT_GT(GetLastReservedId(syncDb, "ec_Property"), UINT64_C(0)) << "ec_Property LastReservedId must be > 0";
+
+        // Column-assignment table must exist and have at least one row.
+        ASSERT_TRUE(ColumnReservationTableExists(syncDb)) << "schema_reservation_columns must exist";
+        EXPECT_TRUE(HasColumnReservationRow(syncDb)) << "schema_reservation_columns must have at least one row";
+        });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 3: AddPropertyByVersionBump
+// Import v1.0.0 (one property p1), then v1.0.1 (adds p2). Both imports must succeed
+// with SchemaImportResult::OK and both properties must be present afterward.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, AddPropertyByVersionBump)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    // v1.0.0 — single property p1.
+    auto schemaV1 = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ClassA">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="p1" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, schemaV1, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("v1 import");
+
+    // v1.0.1 — adds property p2.
+    auto schemaV2 = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ClassA">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="p1" typeName="int" />
+                <ECProperty propertyName="p2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, schemaV2, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ECClassCP cls = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(cls, nullptr);
+    EXPECT_NE(cls->GetPropertyP("p1"), nullptr) << "p1 must be present after version bump";
+    EXPECT_NE(cls->GetPropertyP("p2"), nullptr) << "p2 must be present after version bump";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 4: AddClassByVersionBump
+// Import v1.0.0 (ClassA only), then v1.0.1 (ClassA + ClassB). Both classes must be
+// present and both imports must return SchemaImportResult::OK.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, AddClassByVersionBump)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    // v1.0.0 — ClassA only.
+    auto schemaV1 = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="ClassA" />
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, schemaV1, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("v1 import");
+
+    // v1.0.1 — ClassA + ClassB.
+    auto schemaV2 = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="ClassA" />
+            <ECEntityClass typeName="ClassB" />
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, schemaV2, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ASSERT_NE(b1->Schemas().GetClass("TestSchema1", "ClassA"), nullptr) << "ClassA must be present after version bump";
+    ASSERT_NE(b1->Schemas().GetClass("TestSchema1", "ClassB"), nullptr) << "ClassB must be present after version bump";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 5: CrossBriefcaseColumnDeterminism
+// Two briefcases that share a common base (one TPH class with properties already mapped)
+// both import a property-adding schema upgrade through the shared sync channel.
+// Because column assignment is keyed by content and coordinated through the sync-db
+// reservation store, both briefcases must assign identical ec_Column.Id and
+// ec_Column.Ordinal to each newly-added property.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, CrossBriefcaseColumnDeterminism)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    // Create b1 and import the base schema (v1.0.0 with ClassA, p1, p2 in TPH).
+    // After PullMergePush the sync-db reservation store is written for p1 and p2.
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(BuildClassWithPropsSchema()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import v1.0.0");
+
+    // Create b2 after b1 pushed the base schema — b2 gets ClassA already in ec_ClassMap,
+    // which is required for FindPrimaryTableForClass to resolve the physical table name
+    // during column reservation.
+    auto b2 = hub.CreateBriefcase();
+
+    // Build v1.0.1: adds a third property p3 to ClassA.
+    Utf8String schemaV101 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ClassA">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="p1" typeName="int" />
+                <ECProperty propertyName="p2" typeName="string" />
+                <ECProperty propertyName="p3" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // b1 imports v1.0.1 — reserves the column ordinal + column id for p3 in the sync-db.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaV101.c_str()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import v1.0.1");
+
+    // b2 imports the same v1.0.1 — reads the already-reserved column id for p3 from
+    // the sync-db and uses it, so it gets the identical ec_Column.Id.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaV101.c_str()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // Helper: return (ec_Column.Id, ec_Column.Ordinal) for the column that maps
+    // the named property of ClassA in the given ECDb.
+    auto getColumnInfo = [](ECDbCR db, Utf8CP propName) -> std::pair<uint64_t, int>
+        {
+        CachedStatementPtr stmt = db.GetCachedStatement(
+            "SELECT c.Id, c.Ordinal "
+            "FROM   ec_Column       c "
+            "JOIN   ec_PropertyMap  pm ON pm.ColumnId = c.Id "
+            "JOIN   ec_PropertyPath pp ON pp.Id = pm.PropertyPathId "
+            "JOIN   ec_Class        cls ON cls.Id = pm.ClassId "
+            "WHERE  cls.Name = 'ClassA' AND pp.AccessString = ?");
+        if (stmt == nullptr)
+            return {0, -1};
+        stmt->BindText(1, propName, Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_ROW)
+            return {0, -1};
+        return {static_cast<uint64_t>(stmt->GetValueInt64(0)), stmt->GetValueInt(1)};
+        };
+
+    auto [colId1_p3, colOrd1_p3] = getColumnInfo(*b1, "p3");
+    auto [colId2_p3, colOrd2_p3] = getColumnInfo(*b2, "p3");
+
+    ASSERT_GT(colId1_p3, UINT64_C(0)) << "b1: ec_Column.Id for p3 must be valid";
+    ASSERT_GT(colId2_p3, UINT64_C(0)) << "b2: ec_Column.Id for p3 must be valid";
+    ASSERT_GE(colOrd1_p3, 0)          << "b1: ec_Column.Ordinal for p3 must be non-negative";
+    ASSERT_GE(colOrd2_p3, 0)          << "b2: ec_Column.Ordinal for p3 must be non-negative";
+
+    EXPECT_EQ(colId1_p3, colId2_p3)
+        << "ec_Column.Id for p3 must be identical across both briefcases (content-keyed column reservation)";
+    EXPECT_EQ(colOrd1_p3, colOrd2_p3)
+        << "ec_Column.Ordinal for p3 must be identical across both briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 6: CrossBriefcaseIdDeterminism
+// Two briefcases from an identical base each import the same schema through the shared
+// sync channel.  Because reservation is content-keyed, both briefcases must end up with
+// identical ec_Class ids for ClassA.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, CrossBriefcaseIdDeterminism)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    auto b2 = hub.CreateBriefcase();
+
+    // b1 imports first — reserves the content-keyed ids in the sync-db.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(BuildSingleClassSchema()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    // b2 imports the identical schema through the same shared sync channel.
+    // ReserveSchemaImport will find the keys already present and return the same ids.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(BuildSingleClassSchema()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    ECClassCP cls1 = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ECClassCP cls2 = b2->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(cls1, nullptr);
+    ASSERT_NE(cls2, nullptr);
+
+    // Content-keyed ids must be identical across both briefcases.
+    EXPECT_EQ(cls1->GetId().GetValue(), cls2->GetId().GetValue())
+        << "ClassA id must be identical across both briefcases (content-keyed determinism)";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 7: ReimportSameSchemaIsIdempotent
+// Import the same schema version twice.  The second import must return OK, the
+// LastReservedId counter in schema_reservation_ids must not advance, and the class id
+// must remain unchanged.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, ReimportSameSchemaIsIdempotent)
+    {
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    Utf8String schemaXml = BuildSingleClassSchema();
+
+    // First import.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml.c_str()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("first import");
+
+    uint64_t lastIdAfterFirst = 0;
+    schemaSyncDb.WithReadOnly([&](ECDbCR syncDb)
+        {
+        lastIdAfterFirst = GetLastReservedId(syncDb, "ec_Class");
+        });
+    ASSERT_GT(lastIdAfterFirst, UINT64_C(0)) << "ec_Class LastReservedId must be set after first import";
+
+    ECClassCP cls = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(cls, nullptr);
+    uint64_t classIdAfterFirst = cls->GetId().GetValue();
+
+    // Second import of the same schema version — idempotent update must succeed.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml.c_str()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    // Counter must not have advanced — all keys were already reserved.
+    uint64_t lastIdAfterSecond = 0;
+    schemaSyncDb.WithReadOnly([&](ECDbCR syncDb)
+        {
+        lastIdAfterSecond = GetLastReservedId(syncDb, "ec_Class");
+        });
+    EXPECT_EQ(lastIdAfterFirst, lastIdAfterSecond)
+        << "LastReservedId must not advance on re-import of the same schema";
+
+    // Class id must be unchanged after the re-import.
+    cls = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(cls, nullptr);
+    EXPECT_EQ(classIdAfterFirst, cls->GetId().GetValue())
+        << "ClassA id must not change after re-import of the same schema";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 8: InitFromNonEmptyBase_ReservationStorePrePopulated
+// When Init is called on a briefcase that already has a user schema imported, the sync-db
+// reservation store must be pre-populated immediately after Init — without any subsequent
+// ImportSchemas call.  This verifies the §4 Init-seeding behaviour.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, InitFromNonEmptyBase_ReservationStorePrePopulated)
+    {
+    Utf8String schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="SeedTestSchema" alias="sts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="SeedClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="SeedProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+
+    // Import the schema into b1 WITHOUT schema sync so that it is already persisted
+    // in the local db before Init is called.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml.c_str()),
+                     SchemaManager::SchemaImportOptions::None, SchemaSync::SyncDbUri{}));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ECClassCP cls = b1->Schemas().GetClass("SeedTestSchema", "SeedClass");
+    ASSERT_NE(cls, nullptr);
+    ASSERT_TRUE(cls->HasId());
+    uint64_t localClassId = cls->GetId().GetValue();
+
+    // Now call Init — it should seed the existing ids into the sync-db.
+    ASSERT_EQ(SchemaSync::Status::OK,
+        b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "init-seed-test", false));
+
+    // The sync-db reservation store must be present and the ec_Class counter must already
+    // reflect the pre-existing class (no ImportSchemas has been called through sync yet).
+    schemaSyncDb.WithReadOnly([&](ECDbCR syncDb)
+        {
+        ASSERT_TRUE(ReservationTableExists(syncDb))
+            << "schema_reservation_ids must be created by Init";
+        uint64_t classCounter = GetLastReservedId(syncDb, "ec_Class");
+        EXPECT_GE(classCounter, localClassId)
+            << "ec_Class counter must be >= the persisted id of SeedClass after Init seeding";
+
+        ASSERT_TRUE(ColumnReservationTableExists(syncDb))
+            << "schema_reservation_columns must be created by Init";
+        EXPECT_TRUE(HasColumnReservationRow(syncDb))
+            << "schema_reservation_columns must have at least one row after seeding SeedProp";
+        });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 9: InitSeeding_ExistingClassIdPreservedAcrossBriefcases
+// b1 imports a schema without schema sync, then calls Init.  b2 (created after Init)
+// imports a version bump that references the same base class.  The base class id in b2
+// must match the id that was persisted in b1's local db at Init time (verified by
+// comparing ids after both briefcases apply the upgrade).
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, InitSeeding_ExistingClassIdPreservedAcrossBriefcases)
+    {
+    // v1.0.0: base schema with ClassA.
+    Utf8String schemaV1 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="ClassA" />
+        </ECSchema>)xml";
+
+    // v1.0.1: adds ClassB.
+    Utf8String schemaV2 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="ClassA" />
+            <ECEntityClass typeName="ClassB" />
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    // b1 imports v1.0.0 without schema sync, then bootstraps the container.
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaV1.c_str()),
+                     SchemaManager::SchemaImportOptions::None, SchemaSync::SyncDbUri{}));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ECClassCP clsA_before = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(clsA_before, nullptr);
+    uint64_t classAIdInB1 = clsA_before->GetId().GetValue();
+
+    ASSERT_EQ(SchemaSync::Status::OK,
+        b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "preserve-ids-test", false));
+    b1->SaveChanges();
+    b1->PullMergePush("b1 post-init sync");
+
+    // b2 is created after Init — it receives ClassA from the container push.
+    auto b2 = hub.CreateBriefcase();
+
+    // Both briefcases import v1.0.1 (adds ClassB) through the shared sync channel.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaV2.c_str()),
+                     SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 v1.0.1");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaV2.c_str()),
+                     SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // ClassA must have the same id as it had in b1 before Init — the Init-seeding must
+    // have captured it so that all subsequent briefcases share the same id.
+    ECClassCP clsA_b2 = b2->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(clsA_b2, nullptr);
+    EXPECT_EQ(classAIdInB1, clsA_b2->GetId().GetValue())
+        << "ClassA id in b2 must match the id persisted in b1 before Init (Init-seeding)";
+
+    // ClassB ids must agree across both briefcases (normal cross-briefcase determinism).
+    ECClassCP clsB_b1 = b1->Schemas().GetClass("TestSchema1", "ClassB");
+    ECClassCP clsB_b2 = b2->Schemas().GetClass("TestSchema1", "ClassB");
+    ASSERT_NE(clsB_b1, nullptr);
+    ASSERT_NE(clsB_b2, nullptr);
+    EXPECT_EQ(clsB_b1->GetId().GetValue(), clsB_b2->GetId().GetValue())
+        << "ClassB id must be identical across both briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 10: OverrideContainerReInit_SeedsFromCurrentLocal
+// When Init is called with overrideContainer=true on a briefcase that already has a
+// schema imported, the NEW sync container must be seeded from the current local
+// baseline so that subsequent briefcases see consistent ids.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, OverrideContainerReInit_SeedsFromCurrentLocal)
+    {
+    Utf8String schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="ClassA" />
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb1("sync-db-1");
+    SchemaSyncDb schemaSyncDb2("sync-db-2");
+    auto b1 = hub.CreateBriefcase();
+
+    // First Init + import via container-1.
+    ASSERT_EQ(SchemaSync::Status::OK,
+        b1->Schemas().GetSchemaSync().Init(schemaSyncDb1.GetSyncDbUri(), "container-1", false));
+    b1->SaveChanges();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml.c_str()),
+                     SchemaManager::SchemaImportOptions::None, schemaSyncDb1.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    ECClassCP cls = b1->Schemas().GetClass("TestSchema1", "ClassA");
+    ASSERT_NE(cls, nullptr);
+    uint64_t classAId = cls->GetId().GetValue();
+
+    // Re-Init b1 to a new container with overrideContainer=true — must seed from b1's
+    // current local state (which includes ClassA).
+    ASSERT_EQ(SchemaSync::Status::OK,
+        b1->Schemas().GetSchemaSync().Init(schemaSyncDb2.GetSyncDbUri(), "container-2", true));
+
+    schemaSyncDb2.WithReadOnly([&](ECDbCR syncDb)
+        {
+        ASSERT_TRUE(ReservationTableExists(syncDb))
+            << "schema_reservation_ids must exist in the new container after override re-Init";
+        uint64_t classCounter = GetLastReservedId(syncDb, "ec_Class");
+        EXPECT_GE(classCounter, classAId)
+            << "ec_Class counter in new container must reflect ClassA's persisted id";
+        });
+    }
+
+END_ECDBUNITTESTS_NAMESPACE

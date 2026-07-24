@@ -3,6 +3,12 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+// flatbuffers is consumed as a headers-only VendorAPI (util.cpp is never compiled/linked).
+// On MSVC, FLATBUFFERS_LOCALE_INDEPENDENT defaults to 1, which makes flexbuffers.h reference
+// flatbuffers::ClassicLocale::instance_ (defined only in util.cpp), causing an unresolved
+// external symbol at link time. Forcing it to 0 keeps flexbuffers.h fully header-only.
+#define FLATBUFFERS_LOCALE_INDEPENDENT 0
+#include <flatbuffers/flexbuffers.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -573,6 +579,16 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR con
     if (pullResult != Status::OK)
         return pullResult;
 
+    // Seed the reservation stores from the local db baseline into the sync db.
+    // This captures the container baseline exactly once at Init time so that
+    // ReserveSchemaImport never needs to re-seed counters from a briefcase's
+    // divergent local db.
+    {
+        const auto seedResult = SeedReservationStoreInternal(syncDbUri);
+        if (seedResult != Status::OK)
+            return seedResult;
+    } // Ultimately only this part will remain and all the rest of the stuff before will be removed once we have this new technique in place.
+
     if (std::find(additionTables.begin(),additionTables.end(), SchemaSyncHelper::TABLE_BE_PROP) != additionTables.end()){
         // after BE_PROP pull into syncdb it include JLocalDbInfo which
         // need to be deleted as its confusing as it should only be in the briefcase.
@@ -893,6 +909,57 @@ SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableLis
         return Status::ERROR;
     }
 
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::SeedReservationStoreInternal(SyncDbUri const& syncDbUri) {
+    Db::OpenParams openParams(Db::OpenMode::ReadWrite);
+    ParseQueryParams(openParams, syncDbUri);
+    if (BE_SQLITE_OK != m_pendingReservationDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams)) {
+        LOG.errorv("SchemaSync::SeedReservationStoreInternal: Failed to open sync db at '%s'.", syncDbUri.GetUri().c_str());
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+
+    if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_TABLE_DDL)) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to create reservation id table.");
+        AbandonPendingReservation();
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+    if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_COLUMNS_TABLE_DDL)) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to create reservation columns table.");
+        AbandonPendingReservation();
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+
+    SchemaReservationStore resStore;
+    SchemaReservationColumnStore colStore;
+    if (SUCCESS != SchemaReservationHelper::SeedReservationStoreFromLocalDb(m_conn, resStore)) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to seed reservation store from local db.");
+        AbandonPendingReservation();
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+    if (SUCCESS != SchemaReservationHelper::SeedColumnStoreFromLocalDb(m_conn, resStore, colStore)) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to seed column reservation store from local db.");
+        AbandonPendingReservation();
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+    if (SUCCESS != SchemaReservationHelper::WriteReservationStoreToSyncDb(m_pendingReservationDb, resStore)) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to write reservation store to sync db.");
+        AbandonPendingReservation();
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+    if (SUCCESS != SchemaReservationHelper::WriteColumnStoreToSyncDb(m_pendingReservationDb, colStore)) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to write column reservation store to sync db.");
+        AbandonPendingReservation();
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
+    if (Status::OK != CommitPendingReservation()) {
+        LOG.error("SchemaSync::SeedReservationStoreInternal: Failed to commit reservation to sync db.");
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
+    }
     return Status::OK;
 }
 
@@ -1405,5 +1472,1042 @@ DbResult SchemaSyncHelper::UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri 
     return BE_SQLITE_OK;
 }
 
+//======================================================================================
+// Content-key-based reservation store helpers — SchemaReservationHelper.
+// Constants and declarations live in SchemaSync.h (SchemaReservationHelper).
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store) {
+    store.Clear();
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb,
+            "SELECT [LastReservedId],[KeyMap] FROM [schema_reservation_ids] WHERE [TableName]=?"))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
+        return ERROR;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return SUCCESS;
+
+    store.SetLastReservedId((uint64_t) stmt.GetValueInt64(0));
+
+    const void* blobData = stmt.GetValueBlob(1);
+    int blobSize = stmt.GetColumnBytes(1);
+    if (blobData == nullptr || blobSize <= 0)
+        return SUCCESS;
+
+    auto root = flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(blobData), (size_t) blobSize);
+    if (!root.IsMap()) {
+        LOG.errorv("SchemaReservationHelper::ReadTableStore(): KeyMap blob for table '%s' is not a map.", tableName);
+        return ERROR;
+    }
+
+    auto map  = root.AsMap();
+    auto keys = map.Keys();
+    for (size_t i = 0; i < keys.size(); ++i) {
+        Utf8CP key = keys[i].AsKey();
+        if (key == nullptr)
+            continue;
+        store.AddEntry(key, (uint64_t) map[key].AsUInt64());
+    }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store) {
+    flexbuffers::Builder fbb;
+    fbb.Map([&]() {
+        for (auto const& kv : store.GetKeyMap())
+            fbb.UInt(kv.first.c_str(), kv.second);
+    });
+    fbb.Finish();
+    auto const& buf = fbb.GetBuffer();
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb,
+            "INSERT OR REPLACE INTO [schema_reservation_ids] "
+            "([TableName],[LastReservedId],[KeyMap]) VALUES(?,?,?)"))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindInt64(2, (int64_t) store.GetLastReservedId()))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindBlob(3, buf.data(), (int) buf.size(), Statement::MakeCopy::No))
+        return ERROR;
+    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
+    auto seedOne = [&localDb](SchemaReservationTableStore& ts, Utf8CP tableName) -> bool {
+        Statement stmt;
+        if (BE_SQLITE_OK != stmt.Prepare(localDb,
+                SqlPrintfString("SELECT COALESCE(MAX(Id),0) FROM [main].[%s]", tableName).GetUtf8CP()))
+            return false;
+        if (stmt.Step() == BE_SQLITE_ROW)
+            ts.SeedLastReservedId((uint64_t) stmt.GetValueInt64(0));
+        return true;
+    };
+
+    if (!seedOne(store.schema,                     RES_TABLE_SCHEMA))          return ERROR;
+    if (!seedOne(store.schemaReference,            RES_TABLE_SCHEMAREF))       return ERROR;
+    if (!seedOne(store.ecClass,                    RES_TABLE_CLASS))           return ERROR;
+    if (!seedOne(store.classHasBaseClasses,        RES_TABLE_CLASSBASES))      return ERROR;
+    if (!seedOne(store.property,                   RES_TABLE_PROPERTY))        return ERROR;
+    if (!seedOne(store.enumeration,                RES_TABLE_ENUM))            return ERROR;
+    if (!seedOne(store.kindOfQuantity,             RES_TABLE_KOQ))             return ERROR;
+    if (!seedOne(store.unitSystem,                 RES_TABLE_UNITSYSTEM))      return ERROR;
+    if (!seedOne(store.phenomenon,                 RES_TABLE_PHENOMENON))      return ERROR;
+    if (!seedOne(store.unit,                       RES_TABLE_UNIT))            return ERROR;
+    if (!seedOne(store.format,                     RES_TABLE_FORMAT))          return ERROR;
+    if (!seedOne(store.formatCompositeUnit,        RES_TABLE_FORMATUNIT))      return ERROR;
+    if (!seedOne(store.propertyCategory,           RES_TABLE_PROPCAT))         return ERROR;
+    if (!seedOne(store.relationshipConstraint,     RES_TABLE_RELCONSTRAINT))   return ERROR;
+    if (!seedOne(store.relationshipConstraintClass,RES_TABLE_RELCONSTRCLASS))  return ERROR;
+    if (!seedOne(store.customAttribute,            RES_TABLE_CA))              return ERROR;
+    if (!seedOne(store.ecTable,                    RES_TABLE_TABLE))           return ERROR;
+    if (!seedOne(store.column,                     RES_TABLE_COLUMN))          return ERROR;
+    if (!seedOne(store.propertyMap,                RES_TABLE_PROPMAP))         return ERROR;
+    if (!seedOne(store.propertyPath,               RES_TABLE_PROPPATH))        return ERROR;
+    if (!seedOne(store.ecIndex,                    RES_TABLE_INDEX))           return ERROR;
+    if (!seedOne(store.indexColumn,                RES_TABLE_INDEXCOL))        return ERROR;
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store) {
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_SCHEMA,         store.schema))          return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_SCHEMAREF,      store.schemaReference)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_CLASS,          store.ecClass))         return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_CLASSBASES,     store.classHasBaseClasses)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_PROPERTY,       store.property))        return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_ENUM,           store.enumeration))     return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_KOQ,            store.kindOfQuantity))  return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_UNITSYSTEM,     store.unitSystem))      return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_PHENOMENON,     store.phenomenon))      return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_UNIT,           store.unit))            return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_FORMAT,         store.format))          return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_FORMATUNIT,     store.formatCompositeUnit)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_PROPCAT,        store.propertyCategory)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_RELCONSTRAINT,  store.relationshipConstraint)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_RELCONSTRCLASS, store.relationshipConstraintClass)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_CA,             store.customAttribute)) return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_TABLE,          store.ecTable))         return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_COLUMN,         store.column))          return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_PROPMAP,        store.propertyMap))     return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_PROPPATH,       store.propertyPath))    return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_INDEX,          store.ecIndex))         return ERROR;
+    if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_INDEXCOL,       store.indexColumn))     return ERROR;
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store) {
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_SCHEMA,         store.schema))          return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_SCHEMAREF,      store.schemaReference)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_CLASS,          store.ecClass))         return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_CLASSBASES,     store.classHasBaseClasses)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_PROPERTY,       store.property))        return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_ENUM,           store.enumeration))     return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_KOQ,            store.kindOfQuantity))  return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_UNITSYSTEM,     store.unitSystem))      return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_PHENOMENON,     store.phenomenon))      return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_UNIT,           store.unit))            return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_FORMAT,         store.format))          return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_FORMATUNIT,     store.formatCompositeUnit)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_PROPCAT,        store.propertyCategory)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_RELCONSTRAINT,  store.relationshipConstraint)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_RELCONSTRCLASS, store.relationshipConstraintClass)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_CA,             store.customAttribute)) return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_TABLE,          store.ecTable))         return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_COLUMN,         store.column))          return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_PROPMAP,        store.propertyMap))     return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_PROPPATH,       store.propertyPath))    return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_INDEX,          store.ecIndex))         return ERROR;
+    if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_INDEXCOL,       store.indexColumn))     return ERROR;
+    return SUCCESS;
+}
+
+//======================================================================================
+// Init-time seeding helpers — capture the container baseline from the local db once.
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+// SchemaReservationHelper link-row id lookups: each returns the persisted Id of a
+// join/link table row identified by its natural key components, or 0 if absent/error.
+//---------------------------------------------------------------------------------------
+uint64_t SchemaReservationHelper::LookupSchemaReferenceId(ECDbCR localDb, Utf8StringCR schemaName, Utf8StringCR refSchemaName) {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb,
+            "SELECT sr.[Id] FROM [main].[ec_SchemaReference] sr "
+            "JOIN [main].[ec_Schema] s1 ON s1.[Id] = sr.[SchemaId] "
+            "JOIN [main].[ec_Schema] s2 ON s2.[Id] = sr.[ReferencedSchemaId] "
+            "WHERE s1.[Name] = ? AND s2.[Name] = ?"))
+        return 0;
+    stmt.BindText(1, schemaName.c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, refSchemaName.c_str(), Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
+}
+
+uint64_t SchemaReservationHelper::LookupClassHasBaseClassesId(ECDbCR localDb, ECN::ECClassCR ecClass, ECN::ECClassCR baseClass) {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb,
+            "SELECT chbc.[Id] FROM [main].[ec_ClassHasBaseClasses] chbc "
+            "JOIN [main].[ec_Class] c1 ON c1.[Id] = chbc.[ClassId] "
+            "JOIN [main].[ec_Schema] s1 ON s1.[Id] = c1.[SchemaId] "
+            "JOIN [main].[ec_Class] c2 ON c2.[Id] = chbc.[BaseClassId] "
+            "JOIN [main].[ec_Schema] s2 ON s2.[Id] = c2.[SchemaId] "
+            "WHERE s1.[Name] = ? AND c1.[Name] = ? AND s2.[Name] = ? AND c2.[Name] = ?"))
+        return 0;
+    stmt.BindText(1, ecClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, ecClass.GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(3, baseClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(4, baseClass.GetName().c_str(), Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
+}
+
+uint64_t SchemaReservationHelper::LookupFormatCompositeUnitId(ECDbCR localDb, ECN::ECFormatCR fmt, int ordinal) {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb,
+            "SELECT fcu.[Id] FROM [main].[ec_FormatCompositeUnit] fcu "
+            "JOIN [main].[ec_Format] f ON f.[Id] = fcu.[FormatId] "
+            "JOIN [main].[ec_Schema] s ON s.[Id] = f.[SchemaId] "
+            "WHERE s.[Name] = ? AND f.[Name] = ? AND fcu.[Ordinal] = ?"))
+        return 0;
+    stmt.BindText(1, fmt.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, fmt.GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindInt(3, ordinal);
+    return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
+}
+
+uint64_t SchemaReservationHelper::LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end) {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb,
+            "SELECT rc.[Id] FROM [main].[ec_RelationshipConstraint] rc "
+            "JOIN [main].[ec_Class] c ON c.[Id] = rc.[RelationshipClassId] "
+            "JOIN [main].[ec_Schema] s ON s.[Id] = c.[SchemaId] "
+            "WHERE s.[Name] = ? AND c.[Name] = ? AND rc.[RelationshipEnd] = ?"))
+        return 0;
+    stmt.BindText(1, relClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, relClass.GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindInt(3, (int)end);
+    return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
+}
+
+uint64_t SchemaReservationHelper::LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass) {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb,
+            "SELECT rcc.[Id] FROM [main].[ec_RelationshipConstraintClass] rcc "
+            "JOIN [main].[ec_RelationshipConstraint] rc ON rc.[Id] = rcc.[ConstraintId] "
+            "JOIN [main].[ec_Class] relc ON relc.[Id] = rc.[RelationshipClassId] "
+            "JOIN [main].[ec_Schema] rels ON rels.[Id] = relc.[SchemaId] "
+            "JOIN [main].[ec_Class] cc ON cc.[Id] = rcc.[ClassId] "
+            "JOIN [main].[ec_Schema] ccs ON ccs.[Id] = cc.[SchemaId] "
+            "WHERE rels.[Name] = ? AND relc.[Name] = ? AND rc.[RelationshipEnd] = ? AND ccs.[Name] = ? AND cc.[Name] = ?"))
+        return 0;
+    stmt.BindText(1, relClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, relClass.GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindInt(3, (int)end);
+    stmt.BindText(4, constraintClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(5, constraintClass.GetName().c_str(), Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
+}
+
+uint64_t SchemaReservationHelper::LookupCustomAttributeId(ECDbCR localDb, uint64_t containerId, int containerType, ECN::ECClassCR caClass) {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb,
+            "SELECT ca.[Id] FROM [main].[ec_CustomAttribute] ca "
+            "JOIN [main].[ec_Class] cc ON cc.[Id] = ca.[ClassId] "
+            "JOIN [main].[ec_Schema] cs ON cs.[Id] = cc.[SchemaId] "
+            "WHERE ca.[ContainerId] = ? AND ca.[ContainerType] = ? AND cs.[Name] = ? AND cc.[Name] = ?"))
+        return 0;
+    stmt.BindInt64(1, (int64_t)containerId);
+    stmt.BindInt(2, containerType);
+    stmt.BindText(3, caClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(4, caClass.GetName().c_str(), Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
+}
+
+//---------------------------------------------------------------------------------------
+// Walk @p schema recursively (dependency-first) and record, into @p store, the
+// key → persisted-id mapping for every already-persisted metadata element found in
+// @p localDb.  Mirrors WalkSchemaForReservation but calls AddEntry(key, persistedId)
+// instead of GetOrAllocate so that the existing ids are captured without allocating new ones.
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::SeedSchemaFromLocalDb(ECDbCR localDb, ECN::ECSchemaCR schema,
+                                                              SchemaReservationStore& store,
+                                                              bset<Utf8String, CompareIUtf8Ascii>& visited) {
+    if (visited.find(schema.GetName()) != visited.end())
+        return SUCCESS;
+    visited.insert(schema.GetName());
+
+    // ec_Schema
+    if (schema.HasId())
+        store.schema.AddEntry(SchemaWriter::DeriveSchemaKey(schema), schema.GetId().GetValue());
+
+    // ec_SchemaReference — recurse into referenced schemas
+    for (auto const& refPair : schema.GetReferencedSchemas()) {
+        ECN::ECSchemaCP ref = refPair.second.get();
+        if (ref == nullptr) continue;
+        uint64_t srId = LookupSchemaReferenceId(localDb, schema.GetName(), ref->GetName());
+        if (srId != 0)
+            store.schemaReference.AddEntry(SchemaWriter::DeriveSchemaReferenceKey(schema, *ref), srId);
+        if (SUCCESS != SeedSchemaFromLocalDb(localDb, *ref, store, visited))
+            return ERROR;
+    }
+
+    // Classes
+    for (ECN::ECClassCP ecClass : schema.GetClasses()) {
+        if (ecClass == nullptr) continue;
+
+        // ec_Class
+        if (ecClass->HasId())
+            store.ecClass.AddEntry(SchemaWriter::DeriveClassKey(*ecClass), ecClass->GetId().GetValue());
+
+        // ec_ClassHasBaseClasses
+        for (ECN::ECClassCP base : ecClass->GetBaseClasses()) {
+            if (base == nullptr) continue;
+            uint64_t chbcId = LookupClassHasBaseClassesId(localDb, *ecClass, *base);
+            if (chbcId != 0)
+                store.classHasBaseClasses.AddEntry(SchemaWriter::DeriveClassHasBaseClassesKey(*ecClass, *base), chbcId);
+        }
+
+        // ec_Property (owned properties only)
+        for (ECN::ECPropertyCP prop : ecClass->GetProperties(false)) {
+            if (prop == nullptr || !prop->HasId()) continue;
+            store.property.AddEntry(SchemaWriter::DerivePropertyKey(*prop), prop->GetId().GetValue());
+        }
+
+        // ec_RelationshipConstraint + ec_RelationshipConstraintClass + constraint CAs
+        ECN::ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (relClass != nullptr) {
+            for (auto end : { ECRelationshipEnd_Source, ECRelationshipEnd_Target }) {
+                ECN::ECRelationshipConstraintCR constraint = (end == ECRelationshipEnd_Source)
+                    ? relClass->GetSource() : relClass->GetTarget();
+
+                uint64_t rcId = LookupRelConstraintId(localDb, *relClass, end);
+                if (rcId != 0)
+                    store.relationshipConstraint.AddEntry(SchemaWriter::DeriveRelationshipConstraintKey(*relClass, end), rcId);
+
+                for (ECN::ECClassCP cc : constraint.GetConstraintClasses()) {
+                    if (cc == nullptr) continue;
+                    uint64_t rccId = LookupRelConstraintClassId(localDb, *relClass, end, *cc);
+                    if (rccId != 0)
+                        store.relationshipConstraintClass.AddEntry(
+                            SchemaWriter::DeriveRelationshipConstraintClassKey(*relClass, end, *cc), rccId);
+                }
+
+                if (rcId != 0) {
+                    int containerType = (end == ECRelationshipEnd_Source)
+                        ? (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint
+                        : (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
+                    Utf8String ck = SchemaWriter::DeriveRelationshipConstraintKey(*relClass, end);
+                    for (IECInstancePtr ca : constraint.GetCustomAttributes(false)) {
+                        if (!ca.IsValid()) continue;
+                        uint64_t caId = LookupCustomAttributeId(localDb, rcId, containerType, ca->GetClass());
+                        if (caId != 0)
+                            store.customAttribute.AddEntry(SchemaWriter::DeriveCustomAttributeKey(ck, ca->GetClass()), caId);
+                    }
+                }
+            }
+        }
+
+        // Class-level CAs
+        if (ecClass->HasId()) {
+            int containerType = (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class;
+            Utf8String classKey = SchemaWriter::DeriveClassKey(*ecClass);
+            for (IECInstancePtr ca : ecClass->GetCustomAttributes(false)) {
+                if (!ca.IsValid()) continue;
+                uint64_t caId = LookupCustomAttributeId(localDb, ecClass->GetId().GetValue(), containerType, ca->GetClass());
+                if (caId != 0)
+                    store.customAttribute.AddEntry(SchemaWriter::DeriveCustomAttributeKey(classKey, ca->GetClass()), caId);
+            }
+        }
+
+        // Property-level CAs
+        for (ECN::ECPropertyCP prop : ecClass->GetProperties(false)) {
+            if (prop == nullptr || !prop->HasId()) continue;
+            int containerType = (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property;
+            Utf8String pk = SchemaWriter::DerivePropertyKey(*prop);
+            for (IECInstancePtr ca : prop->GetCustomAttributes(false)) {
+                if (!ca.IsValid()) continue;
+                uint64_t caId = LookupCustomAttributeId(localDb, prop->GetId().GetValue(), containerType, ca->GetClass());
+                if (caId != 0)
+                    store.customAttribute.AddEntry(SchemaWriter::DeriveCustomAttributeKey(pk, ca->GetClass()), caId);
+            }
+        }
+    }
+
+    // ec_Enumeration
+    for (ECN::ECEnumerationCP e : schema.GetEnumerations())
+        if (e != nullptr && e->HasId())
+            store.enumeration.AddEntry(SchemaWriter::DeriveEnumerationKey(*e), e->GetId().GetValue());
+
+    // ec_KindOfQuantity
+    for (ECN::KindOfQuantityCP k : schema.GetKindOfQuantities())
+        if (k != nullptr && k->HasId())
+            store.kindOfQuantity.AddEntry(SchemaWriter::DeriveKindOfQuantityKey(*k), k->GetId().GetValue());
+
+    // ec_UnitSystem
+    for (ECN::UnitSystemCP us : schema.GetUnitSystems())
+        if (us != nullptr && us->HasId())
+            store.unitSystem.AddEntry(SchemaWriter::DeriveUnitSystemKey(*us), us->GetId().GetValue());
+
+    // ec_Phenomenon
+    for (ECN::PhenomenonCP ph : schema.GetPhenomena())
+        if (ph != nullptr && ph->HasId())
+            store.phenomenon.AddEntry(SchemaWriter::DerivePhenomenonKey(*ph), ph->GetId().GetValue());
+
+    // ec_Unit
+    for (ECN::ECUnitCP u : schema.GetUnits())
+        if (u != nullptr && u->HasId())
+            store.unit.AddEntry(SchemaWriter::DeriveUnitKey(*u), u->GetId().GetValue());
+
+    // ec_Format + ec_FormatCompositeUnit
+    for (ECN::ECFormatCP fmt : schema.GetFormats()) {
+        if (fmt == nullptr) continue;
+        if (fmt->HasId())
+            store.format.AddEntry(SchemaWriter::DeriveFormatKey(*fmt), fmt->GetId().GetValue());
+        if (fmt->HasComposite()) {
+            Formatting::CompositeValueSpecCR spec = *fmt->GetCompositeSpec();
+            int ord = 0;
+            if (spec.HasMajorUnit()) {
+                uint64_t fcuId = LookupFormatCompositeUnitId(localDb, *fmt, ord);
+                if (fcuId != 0) store.formatCompositeUnit.AddEntry(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord), fcuId);
+                ord++;
+            }
+            if (spec.HasMiddleUnit()) {
+                uint64_t fcuId = LookupFormatCompositeUnitId(localDb, *fmt, ord);
+                if (fcuId != 0) store.formatCompositeUnit.AddEntry(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord), fcuId);
+                ord++;
+            }
+            if (spec.HasMinorUnit()) {
+                uint64_t fcuId = LookupFormatCompositeUnitId(localDb, *fmt, ord);
+                if (fcuId != 0) store.formatCompositeUnit.AddEntry(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord), fcuId);
+                ord++;
+            }
+            if (spec.HasSubUnit()) {
+                uint64_t fcuId = LookupFormatCompositeUnitId(localDb, *fmt, ord);
+                if (fcuId != 0) store.formatCompositeUnit.AddEntry(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord), fcuId);
+            }
+        }
+    }
+
+    // ec_PropertyCategory
+    for (ECN::PropertyCategoryCP cat : schema.GetPropertyCategories())
+        if (cat != nullptr && cat->HasId())
+            store.propertyCategory.AddEntry(SchemaWriter::DerivePropertyCategoryKey(*cat), cat->GetId().GetValue());
+
+    // Schema-level CAs
+    if (schema.HasId()) {
+        int containerType = (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema;
+        Utf8String sk = SchemaWriter::DeriveSchemaKey(schema);
+        for (ECN::IECInstancePtr ca : schema.GetCustomAttributes(false)) {
+            if (!ca.IsValid()) continue;
+            uint64_t caId = LookupCustomAttributeId(localDb, schema.GetId().GetValue(), containerType, ca->GetClass());
+            if (caId != 0)
+                store.customAttribute.AddEntry(SchemaWriter::DeriveCustomAttributeKey(sk, ca->GetClass()), caId);
+        }
+    }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::SeedReservationStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
+    // Walk all schemas loaded from the local db and record key → persisted-id for every
+    // already-persisted metadata element. The counter (MAX(Id) per table) is seeded by
+    // the existing SeedLastReservedIdsFromLocalDb helper.
+    bvector<ECN::ECSchemaCP> allSchemas = localDb.Schemas().GetSchemas(true);
+    bset<Utf8String, CompareIUtf8Ascii> visited;
+    for (ECN::ECSchemaCP schema : allSchemas) {
+        if (schema != nullptr) {
+            if (SUCCESS != SeedSchemaFromLocalDb(localDb, *schema, store, visited))
+                return ERROR;
+        }
+    }
+    return SeedLastReservedIdsFromLocalDb(localDb, store);
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::SeedColumnKeyMapsFromLocalDb(ECDbCR localDb,
+                                                                     SchemaReservationStore& idStore,
+                                                                     SchemaReservationColumnStore& colStore) {
+    // Populate propertyKey → (columnOrd, columnId) for every already-persisted property-to-column
+    // mapping.  Conditions mirror WalkSchemaForColumnReservation:
+    //   pm.ClassId = root_prop.ClassId  → owned (not inherited) properties only
+    //   t.Type IN (0, 3)                → Primary and Overflow tables only
+    //   pp.AccessString NOT LIKE '%.%'  → top-level (non-nested) properties only;
+    //                                     struct leaf fields ("Struct.Field") are excluded because
+    //                                     AllocateSharedColumn looks them up by the leaf key
+    //                                     ("structSchema:StructClass:Field"), which never matches
+    //                                     the top-level reservation key used in the walk
+    //   root_prop.Kind != 4             → exclude navigation properties
+    //
+    // Note: ec_PropertyMap joins through ec_PropertyPath (which stores RootPropertyId and
+    // AccessString); there is no direct PropertyId column on ec_PropertyMap.
+    const Utf8CP sql =
+        "SELECT s.[Name], cls.[Name], root_prop.[Name], t.[Name], col.[Ordinal], col.[Id] "
+        "FROM [main].[ec_PropertyMap] pm "
+        "JOIN [main].[ec_PropertyPath] pp ON pp.[Id] = pm.[PropertyPathId] "
+        "JOIN [main].[ec_Property] root_prop ON root_prop.[Id] = pp.[RootPropertyId] "
+        "JOIN [main].[ec_Class] cls ON cls.[Id] = root_prop.[ClassId] "
+        "JOIN [main].[ec_Schema] s ON s.[Id] = cls.[SchemaId] "
+        "JOIN [main].[ec_Column] col ON col.[Id] = pm.[ColumnId] "
+        "JOIN [main].[ec_Table] t ON t.[Id] = col.[TableId] "
+        "WHERE pm.[ClassId] = root_prop.[ClassId] "
+        "  AND t.[Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Overflow ") "
+        "  AND pp.[AccessString] NOT LIKE '%.%' "
+        "  AND root_prop.[Kind] != 4";
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(localDb, sql))
+        return ERROR;
+
+    DbResult rc;
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        Utf8CP schemaName = stmt.GetValueText(0);
+        Utf8CP className  = stmt.GetValueText(1);
+        Utf8CP propName   = stmt.GetValueText(2);
+        Utf8CP tableName  = stmt.GetValueText(3);
+        if (schemaName == nullptr || className == nullptr || propName == nullptr || tableName == nullptr)
+            continue;
+
+        uint64_t columnOrd = (uint64_t)stmt.GetValueInt64(4);
+        uint64_t columnId  = (uint64_t)stmt.GetValueInt64(5);
+
+        Utf8String propKey = Utf8PrintfString("%s:%s:%s", schemaName, className, propName);
+
+        SchemaReservationColumnEntry entry;
+        entry.columnOrd = columnOrd;
+        entry.columnId  = columnId;
+        colStore.GetOrCreate(tableName).AddEntry(propKey, entry);
+
+        // Also mirror the column id into the id store so both stores stay consistent.
+        idStore.column.AddEntry(propKey, columnId);
+    }
+    return rc == BE_SQLITE_DONE ? SUCCESS : ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::SeedColumnStoreFromLocalDb(ECDbCR localDb,
+                                                                   SchemaReservationStore& idStore,
+                                                                   SchemaReservationColumnStore& colStore) {
+    // Seed the monotonic counter (MAX(Ordinal) per physical table).
+    if (SUCCESS != SeedLastUsedColumnOrdsFromLocalDb(localDb, colStore))
+        return ERROR;
+    // Seed the propertyKey → (columnOrd, columnId) key maps.
+    return SeedColumnKeyMapsFromLocalDb(localDb, idStore, colStore);
+}
+
+//---------------------------------------------------------------------------------------
+void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
+                                                        bset<Utf8String, CompareIUtf8Ascii>& visited) {
+    if (visited.find(schema.GetName()) != visited.end()) // This schema is already visited, so we don't need to process it again.
+        return;
+    visited.insert(schema.GetName());
+
+    store.schema.GetOrAllocate(SchemaWriter::DeriveSchemaKey(schema));
+
+    for (auto const& refPair : schema.GetReferencedSchemas()) {
+        ECN::ECSchemaCP ref = refPair.second.get();
+        if (ref == nullptr) continue;
+        store.schemaReference.GetOrAllocate(SchemaWriter::DeriveSchemaReferenceKey(schema, *ref));
+        WalkSchemaForReservation(*ref, store, visited);
+    }
+
+    for (ECClassCP ecClass : schema.GetClasses()) {
+        if (ecClass == nullptr) continue;
+        store.ecClass.GetOrAllocate(SchemaWriter::DeriveClassKey(*ecClass)); // Allocate the class key
+        for (ECClassCP base : ecClass->GetBaseClasses()) // Allocate the base class keys
+            if (base != nullptr)
+                store.classHasBaseClasses.GetOrAllocate(SchemaWriter::DeriveClassHasBaseClassesKey(*ecClass, *base)); // Allocate the class-has-base-classes key
+        for (ECPropertyCP prop : ecClass->GetProperties(false)) // Allocate the property keys
+            if (prop != nullptr)
+                store.property.GetOrAllocate(SchemaWriter::DerivePropertyKey(*prop));
+
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (relClass != nullptr) {
+            for (auto end : { ECRelationshipEnd_Source, ECRelationshipEnd_Target }) {
+                ECRelationshipConstraintCR constraint = (end == ECRelationshipEnd_Source)
+                    ? relClass->GetSource() : relClass->GetTarget();
+                store.relationshipConstraint.GetOrAllocate(SchemaWriter::DeriveRelationshipConstraintKey(*relClass, end));
+                for (ECClassCP cc : constraint.GetConstraintClasses()) {
+                    if (cc != nullptr)
+                        store.relationshipConstraintClass.GetOrAllocate(
+                            SchemaWriter::DeriveRelationshipConstraintClassKey(*relClass, end, *cc));
+                } 
+                Utf8String ck = SchemaWriter::DeriveRelationshipConstraintKey(*relClass, end);
+                for (IECInstancePtr ca : constraint.GetCustomAttributes(false))
+                    store.customAttribute.GetOrAllocate(SchemaWriter::DeriveCustomAttributeKey(ck, ca->GetClass()));
+            }
+        }
+
+        Utf8String classKey = SchemaWriter::DeriveClassKey(*ecClass);
+        for (IECInstancePtr ca : ecClass->GetCustomAttributes(false))
+            store.customAttribute.GetOrAllocate(SchemaWriter::DeriveCustomAttributeKey(classKey, ca->GetClass()));
+
+        for (ECPropertyCP prop : ecClass->GetProperties(false)) {
+            if (prop == nullptr) continue;
+            Utf8String pk = SchemaWriter::DerivePropertyKey(*prop);
+            for (IECInstancePtr ca : prop->GetCustomAttributes(false))
+                store.customAttribute.GetOrAllocate(SchemaWriter::DeriveCustomAttributeKey(pk, ca->GetClass()));
+        }
+    }
+
+    for (ECEnumerationCP e : schema.GetEnumerations())
+        if (e != nullptr) store.enumeration.GetOrAllocate(SchemaWriter::DeriveEnumerationKey(*e));
+    for (KindOfQuantityCP k : schema.GetKindOfQuantities())
+        if (k != nullptr) store.kindOfQuantity.GetOrAllocate(SchemaWriter::DeriveKindOfQuantityKey(*k));
+    for (UnitSystemCP us : schema.GetUnitSystems())
+        if (us != nullptr) store.unitSystem.GetOrAllocate(SchemaWriter::DeriveUnitSystemKey(*us));
+    for (PhenomenonCP ph : schema.GetPhenomena())
+        if (ph != nullptr) store.phenomenon.GetOrAllocate(SchemaWriter::DerivePhenomenonKey(*ph));
+    for (ECUnitCP u : schema.GetUnits())
+        if (u != nullptr) store.unit.GetOrAllocate(SchemaWriter::DeriveUnitKey(*u));
+
+    for (ECFormatCP fmt : schema.GetFormats()) {
+        if (fmt == nullptr) continue;
+        store.format.GetOrAllocate(SchemaWriter::DeriveFormatKey(*fmt));
+        if (fmt->HasComposite()) {
+            Formatting::CompositeValueSpecCR spec = *fmt->GetCompositeSpec();
+            int ord = 0;
+            if (spec.HasMajorUnit())  { store.formatCompositeUnit.GetOrAllocate(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord)); ord++; }
+            if (spec.HasMiddleUnit()) { store.formatCompositeUnit.GetOrAllocate(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord)); ord++; }
+            if (spec.HasMinorUnit())  { store.formatCompositeUnit.GetOrAllocate(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord)); ord++; }
+            if (spec.HasSubUnit())    { store.formatCompositeUnit.GetOrAllocate(SchemaWriter::DeriveFormatCompositeUnitKey(*fmt, ord)); }
+        }
+    }
+
+    for (PropertyCategoryCP cat : schema.GetPropertyCategories()) {
+        if (cat != nullptr) 
+            store.propertyCategory.GetOrAllocate(SchemaWriter::DerivePropertyCategoryKey(*cat));
+    }
+        
+    Utf8String sk = SchemaWriter::DeriveSchemaKey(schema);
+    for (ECN::IECInstancePtr ca : schema.GetCustomAttributes(false))
+        store.customAttribute.GetOrAllocate(SchemaWriter::DeriveCustomAttributeKey(sk, ca->GetClass()));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSync::LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const {
+    Db syncDb;
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    SchemaSync::ParseQueryParams(openParams, syncDbUri);
+    if (BE_SQLITE_OK != syncDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams))
+        return ERROR;
+    if (!syncDb.TableExists("schema_reservation_ids"))
+        return ERROR;
+    return SchemaReservationHelper::LoadReservationStoreFromSyncDb(syncDb, store);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri) {
+    if (schemas.empty())
+        return Status::OK;
+    if (syncDbUri.IsEmpty()) {
+        LOG.error("ReserveSchemaImport: syncDbUri must not be empty.");
+        return Status::ERROR;
+    }
+
+    Db::OpenParams openParams(Db::OpenMode::ReadWrite);
+    SchemaSync::ParseQueryParams(openParams, syncDbUri);
+    if (BE_SQLITE_OK != m_pendingReservationDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams)) {
+        LOG.errorv("ReserveSchemaImport: Failed to open sync db at '%s'.", syncDbUri.GetUri().c_str());
+        return Status::ERROR;
+    }
+
+    if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_TABLE_DDL)) {
+        LOG.error("ReserveSchemaImport: Failed to create reservation table.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    SchemaReservationStore store;
+    if (SUCCESS != SchemaReservationHelper::LoadReservationStoreFromSyncDb(m_pendingReservationDb, store)) {
+        LOG.error("ReserveSchemaImport: Failed to read reservation store.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    bset<Utf8String, CompareIUtf8Ascii> visited;
+    for (ECN::ECSchemaCP schema : schemas)
+        if (schema != nullptr)
+            SchemaReservationHelper::WalkSchemaForReservation(*schema, store, visited);
+
+    if (SUCCESS != SchemaReservationHelper::WriteReservationStoreToSyncDb(m_pendingReservationDb, store)) {
+        LOG.error("ReserveSchemaImport: Failed to write reservation store.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    // ---------------------------------------------------------------
+    // Phase 1 column-assignment reservation: per-physical-table
+    // monotonic column-ordinal counters in schema_reservation_columns.
+    // ---------------------------------------------------------------
+    if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_COLUMNS_TABLE_DDL)) {
+        LOG.error("ReserveSchemaImport: Failed to create column reservation table.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    SchemaReservationColumnStore colStore;
+    if (SUCCESS != SchemaReservationHelper::LoadColumnStoreFromSyncDb(m_pendingReservationDb, colStore)) {
+        LOG.error("ReserveSchemaImport: Failed to read column reservation store.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    bset<Utf8String, CompareIUtf8Ascii> colVisited;
+    for (ECN::ECSchemaCP schema : schemas)
+        if (schema != nullptr)
+            SchemaReservationHelper::WalkSchemaForColumnReservation(*schema, m_conn, store, colStore, colVisited);
+
+    if (SUCCESS != SchemaReservationHelper::WriteColumnStoreToSyncDb(m_pendingReservationDb, colStore)) {
+        LOG.error("ReserveSchemaImport: Failed to write column reservation store.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    // NOTE: SaveChanges() is intentionally NOT called here.
+    // The sync-db write transaction remains open; the caller (ImportSchemas) is responsible
+    // for calling CommitPendingReservation() on success or AbandonPendingReservation() on failure.
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::CommitPendingReservation() {
+    if (!m_pendingReservationDb.IsDbOpen())
+        return Status::OK;
+    const auto rc = m_pendingReservationDb.SaveChanges();
+    if (BE_SQLITE_OK != rc) {
+        LOG.error("SchemaSync::CommitPendingReservation: Failed to commit reservation transaction.");
+        return Status::ERROR;
+    }
+    m_pendingReservationDb.CloseDb();
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::AbandonPendingReservation() {
+    if (!m_pendingReservationDb.IsDbOpen())
+        return Status::OK;
+    const auto rc = m_pendingReservationDb.AbandonChanges();
+    if (BE_SQLITE_OK != rc) {
+        LOG.error("SchemaSync::AbandonPendingReservation: Failed to roll back reservation transaction.");
+        return Status::ERROR;
+    }
+    m_pendingReservationDb.CloseDb();
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// Helper: return the primary physical SQLite table name that @p ecClass (or the first
+// mapped ancestor in the base-class chain) maps to.  Returns an empty string when the
+// class has no entry in ec_ClassMap yet (brand-new, unmapped class hierarchy).
+//---------------------------------------------------------------------------------------
+Utf8String SchemaReservationHelper::FindPrimaryTableForClass(ECDbCR localDb, ECN::ECClassCR ecClass) {
+    // Query ec_PropertyMap → ec_Column → ec_Table to find the primary table this
+    // class's own properties are stored in.
+    Statement stmt;
+    const Utf8String sql = SqlPrintfString(
+        "SELECT DISTINCT t.[Name] "
+        "FROM [main].[ec_Schema] s "
+        "JOIN [main].[ec_Class] c ON c.[SchemaId] = s.[Id] "
+        "JOIN [main].[ec_PropertyMap] pm ON pm.[ClassId] = c.[Id] "
+        "JOIN [main].[ec_Column] col ON col.[Id] = pm.[ColumnId] "
+        "JOIN [main].[ec_Table] t ON t.[Id] = col.[TableId] AND t.[Type] = %s "
+        "WHERE s.[Name] = ? AND c.[Name] = ? "
+        "LIMIT 1",
+        SQLVAL_DbTable_Type_Primary
+    ).GetUtf8CP();
+
+    if (BE_SQLITE_OK == stmt.Prepare(localDb, sql.c_str())) {
+        stmt.BindText(1, ecClass.GetSchema().GetName().c_str(), Statement::MakeCopy::No);
+        stmt.BindText(2, ecClass.GetName().c_str(), Statement::MakeCopy::No);
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            Utf8CP tableName = stmt.GetValueText(0);
+            if (tableName != nullptr && tableName[0] != '\0')
+                return Utf8String(tableName);
+        }
+    }
+
+    // Recurse into base classes to find the shared physical table (TPH case).
+    for (ECN::ECClassCP base : ecClass.GetBaseClasses()) {
+        if (base == nullptr) continue;
+        Utf8String tbl = FindPrimaryTableForClass(localDb, *base);
+        if (!tbl.empty())
+            return tbl;
+    }
+    return Utf8String();
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store) {
+    store.Clear();
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb,
+            "SELECT [LastUsedColumnOrd],[KeyMap] FROM [schema_reservation_columns] WHERE [PhysicalTableName]=?"))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindText(1, physicalTableName, Statement::MakeCopy::No))
+        return ERROR;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return SUCCESS;
+
+    store.SetLastUsedColumnOrd((uint64_t) stmt.GetValueInt64(0));
+
+    const void* blobData = stmt.GetValueBlob(1);
+    int blobSize = stmt.GetColumnBytes(1);
+    if (blobData == nullptr || blobSize <= 0)
+        return SUCCESS;
+
+    auto root = flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(blobData), (size_t) blobSize);
+    if (!root.IsMap())
+        return SUCCESS;
+
+    auto map  = root.AsMap();
+    auto keys = map.Keys();
+    for (size_t i = 0; i < keys.size(); ++i) {
+        Utf8CP key = keys[i].AsKey();
+        if (key == nullptr) continue;
+        auto vec = map[key].AsVector();
+        if (vec.size() < 2) continue;
+        SchemaReservationColumnEntry entry;
+        entry.columnOrd = (uint64_t) vec[0].AsUInt64();
+        entry.columnId  = (uint64_t) vec[1].AsUInt64();
+        store.AddEntry(key, entry);
+    }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store) {
+    flexbuffers::Builder fbb;
+    fbb.Map([&]() {
+        for (auto const& kv : store.GetKeyMap()) {
+            fbb.Vector(kv.first.c_str(), [&]() {
+                fbb.UInt(kv.second.columnOrd);
+                fbb.UInt(kv.second.columnId);
+            });
+        }
+    });
+    fbb.Finish();
+    auto const& buf = fbb.GetBuffer();
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb,
+            "INSERT OR REPLACE INTO [schema_reservation_columns] "
+            "([PhysicalTableName],[LastUsedColumnOrd],[KeyMap]) VALUES(?,?,?)"))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindText(1, physicalTableName, Statement::MakeCopy::No))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindInt64(2, (int64_t) store.GetLastUsedColumnOrd()))
+        return ERROR;
+    if (BE_SQLITE_OK != stmt.BindBlob(3, buf.data(), (int) buf.size(), Statement::MakeCopy::No))
+        return ERROR;
+    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store) {
+    // Seed per-physical-table monotonic counters from the current MAX(Ordinal) in ec_Column.
+    // This ensures newly-allocated ordinals are above any already-used ones.
+    //
+    // Only Primary (0) and Overflow (3) tables are considered — the other two table types need no
+    // ordinal coordination across briefcases, for the reasons below:
+    //
+    //   Joined tables (Type=1, JoinedTablePerDirectSubclass):
+    //     Each subclass gets its *own* private physical table whose columns are named directly from
+    //     the property name, not drawn from a shared ordinal pool.  Two offline briefcases adding
+    //     property "Foo" to a joined-table class will both produce the same deterministically-named
+    //     column in that class's table without any coordination — there is no shared counter to
+    //     protect, so no conflict is possible.
+    //
+    //   Existing tables (Type=2):
+    //     These are pre-existing SQLite tables that ECDb never creates or alters; the import only
+    //     maps EC properties to columns that must already exist.  ECDb allocates nothing in these
+    //     tables, so there is nothing to coordinate across briefcases.
+    //
+    // Primary and Overflow tables both participate in the SharedData shared-column pool
+    // (TablePerHierarchy with ShareColumnsMode::Yes).  Multiple subclasses compete for generic
+    // ordinal slots in the same physical table; without the coordinated counter two offline
+    // briefcases would draw different ordinals for the same property, producing conflicting
+    // column assignments for different EC content.
+    Statement stmt;
+    const Utf8CP sql =
+        "SELECT t.[Name], COALESCE(MAX(c.[Ordinal]), 0) "
+        "FROM [main].[ec_Table] t "
+        "JOIN [main].[ec_Column] c ON c.[TableId] = t.[Id] "
+        "WHERE t.[Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Overflow ") "
+        "GROUP BY t.[Name]";
+    if (BE_SQLITE_OK != stmt.Prepare(localDb, sql))
+        return ERROR;
+
+    DbResult rc;
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        Utf8CP tableName = stmt.GetValueText(0);
+        if (tableName == nullptr || tableName[0] == '\0') continue;
+        uint64_t maxOrd = (uint64_t) stmt.GetValueInt64(1);
+        store.GetOrCreate(tableName).SeedLastUsedColumnOrd(maxOrd);
+    }
+    return rc == BE_SQLITE_DONE ? SUCCESS : ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store) {
+    store.Clear();
+    if (!syncDb.TableExists("schema_reservation_columns"))
+        return SUCCESS; // table not yet created — nothing to load
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(syncDb,
+            "SELECT [PhysicalTableName] FROM [schema_reservation_columns]"))
+        return ERROR;
+
+    // Collect table names first, then read each store.
+    bvector<Utf8String> physTableNames;
+    DbResult rc;
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        Utf8CP name = stmt.GetValueText(0);
+        if (name != nullptr && name[0] != '\0')
+            physTableNames.push_back(name);
+    }
+    if (rc != BE_SQLITE_DONE)
+        return ERROR;
+
+    for (auto const& name : physTableNames) {
+        SchemaReservationColumnTableStore& ts = store.GetOrCreate(name);
+        if (SUCCESS != ReadColumnTableStore(syncDb, name.c_str(), ts))
+            return ERROR;
+    }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaReservationHelper::WriteColumnStoreToSyncDb(Db& syncDb, SchemaReservationColumnStore const& store) {
+    for (auto const& kv : store.GetStores()) {
+        if (SUCCESS != WriteColumnTableStore(syncDb, kv.first.c_str(), kv.second))
+            return ERROR;
+    }
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+void SchemaReservationHelper::WalkSchemaForColumnReservation(
+    ECN::ECSchemaCR schema,
+    ECDbCR localDb,
+    SchemaReservationStore& idStore,
+    SchemaReservationColumnStore& colStore,
+    bset<Utf8String, CompareIUtf8Ascii>& visited)
+{
+    if (visited.find(schema.GetName()) != visited.end())
+        return;
+    visited.insert(schema.GetName());
+
+    // Recurse into referenced schemas so dependencies are processed first.
+    for (auto const& refPair : schema.GetReferencedSchemas()) {
+        ECN::ECSchemaCP ref = refPair.second.get();
+        if (ref != nullptr)
+            WalkSchemaForColumnReservation(*ref, localDb, idStore, colStore, visited);
+    }
+
+    for (ECN::ECClassCP ecClass : schema.GetClasses()) {
+        if (ecClass == nullptr) continue;
+
+        // Relationship classes use a link-table strategy (one physical SQLite row per
+        // relationship instance keyed on SourceECInstanceId / TargetECInstanceId) or an FK
+        // column on the source entity table — neither of which uses the shared-column TPH pool
+        // that this reservation pass manages.  Because all briefcases apply the same mapping
+        // strategy for relationship classes (determined entirely by schema metadata, not by any
+        // runtime counter), skipping them here does not create any divergence: every briefcase
+        // will independently arrive at the same link-table / FK layout without needing a
+        // coordinated column-ordinal reservation. (TODO: I need verification on this.)
+        if (ecClass->IsRelationshipClass()) continue;
+
+        auto const& ownedProps = ecClass->GetProperties(false);
+        // Only classes that introduce their own properties can require new column slots.
+        // An abstract intermediate class (or a pure-mixin) that contributes zero owned
+        // properties will, during the real mapping phase, share every column already
+        // allocated for the concrete base or sibling that does own properties.  Skipping
+        // such a class here is therefore consistent across all briefcases: none of them
+        // will allocate a new column for it, so the per-physical-table ordinal counter
+        // advances by the same amount on every briefcase.
+        if (ownedProps.empty()) continue;
+
+        // Find the primary physical table this class maps to (or will map to via its ancestors).
+        Utf8String physTable = FindPrimaryTableForClass(localDb, *ecClass);
+        if (physTable.empty()) {
+            // This class belongs to a brand-new hierarchy that has never been imported into
+            // localDb, so ec_ClassMap has no row for it yet and the physical table name
+            // cannot be determined without running the full mapping phase.
+            //
+            // From the cross-briefcase consistency perspective this is safe to skip: all
+            // briefcases that start from the same common synced base will see the same absent
+            // ec_ClassMap entry and will skip this class identically.  Phase 2 of the
+            // reservation protocol (not yet implemented) will derive table names for new
+            // hierarchies before the sync-db write-lock is acquired, closing this gap.
+            // Until then, such classes are reserved through the schema lock path where
+            // coordination is guaranteed by mutual exclusion rather than by pre-reservation.
+            continue;
+        }
+
+        SchemaReservationColumnTableStore& colTableStore = colStore.GetOrCreate(physTable);
+
+        for (ECN::ECPropertyCP prop : ownedProps) {
+            if (prop == nullptr) continue;
+
+            // Navigation properties are stored as FK columns (e.g. SourceECInstanceId /
+            // TargetECInstanceId) whose ordinals are chosen by the relationship-constraint
+            // mapping path, not by the shared-column TPH machinery.  That path is
+            // deterministic purely from schema metadata (it always uses a fixed set of
+            // well-known column names), so it requires no coordination through the sync-db
+            // counter — every briefcase derives the same FK column layout independently.
+            // Including navigation properties here would advance the per-physical-table
+            // ordinal counter unnecessarily and cause the real import on one briefcase to
+            // consume a higher ordinal than was reserved, breaking cross-briefcase alignment.
+            if (prop->GetIsNavigation()) continue;
+
+            Utf8String propKey = SchemaWriter::DerivePropertyKey(*prop);
+
+            // Idempotent reservation — cross-briefcase safety for concurrent writers:
+            // The sync-db write-lock serializes callers so that at most one briefcase updates
+            // the reservation store at a time.  However, a second briefcase that acquires the
+            // lock after the first has already written a reservation will re-read the updated
+            // blobs, find the key already present here, and skip it — leaving the
+            // (columnOrd, columnId) pair that the first briefcase wrote untouched.  Both
+            // briefcases will therefore consume exactly the same ordinal and id for this
+            // property during their respective imports, which is the core invariant the
+            // reservation protocol must preserve.  Overwriting an existing entry would
+            // allocate a new ordinal and silently break that invariant.
+            if (colTableStore.Lookup(propKey) != nullptr) continue;
+
+            // Allocate a fresh ec_Column.Id from the id store and a new column ordinal
+            // from the per-physical-table counter.
+            uint64_t columnId = idStore.column.GetOrAllocate(propKey);
+            colTableStore.GetOrAllocate(propKey, columnId);
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSync::LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const {
+    Db syncDb;
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    SchemaSync::ParseQueryParams(openParams, syncDbUri);
+    if (BE_SQLITE_OK != syncDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams))
+        return ERROR;
+    return SchemaReservationHelper::LoadColumnStoreFromSyncDb(syncDb, store);
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

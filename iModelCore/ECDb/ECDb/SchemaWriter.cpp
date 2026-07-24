@@ -435,7 +435,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             }
         }
 
-    if (SUCCESS != ImportCustomAttributes(ctx, ecSchema, ECContainerId(ecSchema.GetId()), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
+    if (SUCCESS != ImportCustomAttributes(ctx, ecSchema, ECContainerId(ecSchema.GetId()), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, DeriveSchemaKey(ecSchema)))
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0316, "Failed to import custom attributes of ECSchema '%s'.", ecSchema.GetFullSchemaName().c_str());
         return ERROR;
@@ -492,7 +492,7 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(Context& ctx, ECSchemaC
         if (BE_SQLITE_OK != stmt->BindId(2, referenceId))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().SchemaReference().NextId()))
+        if (BE_SQLITE_OK != stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().SchemaReference().NextIdForKey(DeriveSchemaReferenceKey(schema, *reference))))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt->Step())
@@ -580,7 +580,7 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(10, ctx.GetECDb().GetImpl().GetIdFactory().Class().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(10, ctx.GetECDb().GetImpl().GetIdFactory().Class().NextIdForKey(DeriveClassKey(ecClass))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -595,18 +595,29 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
     //release stmt so that it can be reused to insert base classes
     stmt = nullptr;
 
-    //Import All baseCases
+    //Import All baseCases — sort by full class name for deterministic id assignment
     int baseClassIndex = 0;
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+    bvector<ECClassCP> sortedBaseClasses(ecClass.GetBaseClasses().begin(), ecClass.GetBaseClasses().end());
+    std::sort(sortedBaseClasses.begin(), sortedBaseClasses.end(), [](ECClassCP a, ECClassCP b) {
+        return strcmp(a->GetFullName(), b->GetFullName()) < 0;
+    });
+    for (ECClassCP baseClass : sortedBaseClasses)
         {
         if (SUCCESS != ImportClass(ctx, *baseClass))
             return ERROR;
 
-        if (SUCCESS != InsertBaseClassEntry(ctx, classId, *baseClass, baseClassIndex++))
+        if (SUCCESS != InsertBaseClassEntry(ctx, ecClass, *baseClass, baseClassIndex++))
             return ERROR;
         }
 
-    for (ECPropertyCP ecProperty : ecClass.GetProperties(false))
+    // Sort properties by name for deterministic id and ordinal assignment
+    bvector<ECPropertyCP> sortedProperties;
+    for (ECPropertyCP p : ecClass.GetProperties(false))
+        sortedProperties.push_back(p);
+    std::sort(sortedProperties.begin(), sortedProperties.end(), [](ECPropertyCP a, ECPropertyCP b) {
+        return a->GetName() < b->GetName();
+    });
+    for (ECPropertyCP ecProperty : sortedProperties)
         {
         const int propertyIndex = ctx.GetNextPropertyOrdinal(classId);
         if (SUCCESS != ImportProperty(ctx, *ecProperty, propertyIndex))
@@ -623,7 +634,7 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
             return ERROR;
         }
 
-    return ImportCustomAttributes(ctx, ecClass, ECContainerId(classId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class);
+    return ImportCustomAttributes(ctx, ecClass, ECContainerId(classId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, DeriveClassKey(ecClass));
     }
 
 //---------------------------------------------------------------------------------------
@@ -684,7 +695,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
     if (BE_SQLITE_OK != stmt->BindText(7, enumValueJson, Statement::MakeCopy::Yes))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().Enumeration().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().Enumeration().NextIdForKey(DeriveEnumerationKey(ecEnum))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -750,7 +761,7 @@ BentleyStatus SchemaWriter::ImportUnitSystem(Context& ctx, UnitSystemCR us)
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(5, ctx.GetECDb().GetImpl().GetIdFactory().UnitSystem().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(5, ctx.GetECDb().GetImpl().GetIdFactory().UnitSystem().NextIdForKey(DeriveUnitSystemKey(us))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -819,7 +830,7 @@ BentleyStatus SchemaWriter::ImportPhenomenon(Context& ctx, PhenomenonCR ph)
     if (BE_SQLITE_OK != stmt->BindText(5, ph.GetDefinition(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(6, ctx.GetECDb().GetImpl().GetIdFactory().Phenomenon().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(6, ctx.GetECDb().GetImpl().GetIdFactory().Phenomenon().NextIdForKey(DerivePhenomenonKey(ph))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -962,7 +973,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(idIx, ctx.GetECDb().GetImpl().GetIdFactory().Unit().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(idIx, ctx.GetECDb().GetImpl().GetIdFactory().Unit().NextIdForKey(DeriveUnitKey(unit))))
         return ERROR;
 
     DbResult stat = stmt->Step();
@@ -1054,7 +1065,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
             }
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(idx, ctx.GetECDb().GetImpl().GetIdFactory().Format().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(idx, ctx.GetECDb().GetImpl().GetIdFactory().Format().NextIdForKey(DeriveFormatKey(format))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -1089,7 +1100,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
 
     Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
 
-    auto insertUnit = [&ctx] (CachedStatement& stmt, FormatId formatId, Nullable<Utf8String> label, ECUnitCR unit, int ordinal)
+    auto insertUnit = [&ctx, &format] (CachedStatement& stmt, FormatId formatId, Nullable<Utf8String> label, ECUnitCR unit, int ordinal)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, formatId))
             return ERROR;
@@ -1106,7 +1117,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (BE_SQLITE_OK != stmt.BindInt(4, ordinal))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt.BindId(5, ctx.GetECDb().GetImpl().GetIdFactory().FormatCompositeUnit().NextId()))
+        if (BE_SQLITE_OK != stmt.BindId(5, ctx.GetECDb().GetImpl().GetIdFactory().FormatCompositeUnit().NextIdForKey(DeriveFormatCompositeUnitKey(format, ordinal))))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt.Step())
@@ -1243,7 +1254,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().KindOfQuantity().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().KindOfQuantity().NextIdForKey(DeriveKindOfQuantityKey(koq))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -1306,7 +1317,7 @@ BentleyStatus SchemaWriter::ImportPropertyCategory(Context& ctx, PropertyCategor
     if (BE_SQLITE_OK != stmt->BindInt64(5, (int64_t) cat.GetPriority()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(6, ctx.GetECDb().GetImpl().GetIdFactory().PropertyCategory().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(6, ctx.GetECDb().GetImpl().GetIdFactory().PropertyCategory().NextIdForKey(DerivePropertyCategoryKey(cat))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -1326,21 +1337,21 @@ BentleyStatus SchemaWriter::ImportPropertyCategory(Context& ctx, PropertyCategor
 BentleyStatus SchemaWriter::ImportRelationshipClass(Context& ctx, ECN::ECRelationshipClassCP relationship)
     {
     const ECClassId relClassId = relationship->GetId();
-    if (SUCCESS != ImportRelationshipConstraint(ctx, relClassId, relationship->GetSource(), ECRelationshipEnd_Source))
+    if (SUCCESS != ImportRelationshipConstraint(ctx, *relationship, relClassId, relationship->GetSource(), ECRelationshipEnd_Source))
         return ERROR;
 
-    return ImportRelationshipConstraint(ctx, relClassId, relationship->GetTarget(), ECRelationshipEnd_Target);
+    return ImportRelationshipConstraint(ctx, *relationship, relClassId, relationship->GetTarget(), ECRelationshipEnd_Target);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::ImportRelationshipConstraint(Context& ctx, ECClassId relClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd end)
+BentleyStatus SchemaWriter::ImportRelationshipConstraint(Context& ctx, ECN::ECRelationshipClassCR relClass, ECClassId relClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd end)
     {
     BeAssert(relClassId.IsValid());
 
     ECRelationshipConstraintId constraintId;
-    if (SUCCESS != InsertRelationshipConstraintEntry(ctx, constraintId, relClassId, relationshipConstraint, end))
+    if (SUCCESS != InsertRelationshipConstraintEntry(ctx, constraintId, relClass, relClassId, relationshipConstraint, end))
         return ERROR;
 
     BeAssert(constraintId.IsValid());
@@ -1348,7 +1359,12 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(Context& ctx, ECClassId
     if (stmt == nullptr)
         return ERROR;
 
-    for (ECClassCP constraintClass : relationshipConstraint.GetConstraintClasses())
+    // Sort constraint classes by full name for deterministic id assignment
+    bvector<ECClassCP> sortedConstraintClasses(relationshipConstraint.GetConstraintClasses().begin(), relationshipConstraint.GetConstraintClasses().end());
+    std::sort(sortedConstraintClasses.begin(), sortedConstraintClasses.end(), [](ECClassCP a, ECClassCP b) {
+        return strcmp(a->GetFullName(), b->GetFullName()) < 0;
+    });
+    for (ECClassCP constraintClass : sortedConstraintClasses)
         {
         if (SUCCESS != ImportClass(ctx, *constraintClass))
             return ERROR;
@@ -1361,7 +1377,7 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(Context& ctx, ECClassId
         if (BE_SQLITE_OK != stmt->BindId(2, constraintClass->GetId()))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().RelationshipConstraintClass().NextId()))
+        if (BE_SQLITE_OK != stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().RelationshipConstraintClass().NextIdForKey(DeriveRelationshipConstraintClassKey(relClass, end, *constraintClass))))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt->Step())
@@ -1372,14 +1388,15 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(Context& ctx, ECClassId
         }
 
     stmt = nullptr;
+    Utf8String containerKey = DeriveRelationshipConstraintKey(relClass, end);
     SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = end == ECRelationshipEnd_Source ? SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
-    return ImportCustomAttributes(ctx, relationshipConstraint, ECContainerId(constraintId), containerType);
+    return ImportCustomAttributes(ctx, relationshipConstraint, ECContainerId(constraintId), containerType, containerKey);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(Context& ctx, ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
+BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(Context& ctx, ECRelationshipConstraintId& constraintId, ECN::ECRelationshipClassCR relClass, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_RelationshipConstraint(RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId,Id) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
@@ -1423,7 +1440,7 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(Context& ctx, ECRe
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().RelationshipConstraint().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(8, ctx.GetECDb().GetImpl().GetIdFactory().RelationshipConstraint().NextIdForKey(DeriveRelationshipConstraintKey(relClass, endpoint))))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -1642,7 +1659,7 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(idIndex, ctx.GetECDb().GetImpl().GetIdFactory().Property().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(idIndex, ctx.GetECDb().GetImpl().GetIdFactory().Property().NextIdForKey(DerivePropertyKey(ecProperty))))
         return ERROR;
 
     DbResult stat = stmt->Step();
@@ -1659,7 +1676,7 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
 
     const_cast<ECPropertyR>(ecProperty).SetId(propId);
 
-    auto result = ImportCustomAttributes(ctx, ecProperty, ECContainerId(propId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property);
+    auto result = ImportCustomAttributes(ctx, ecProperty, ECContainerId(propId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property, DerivePropertyKey(ecProperty));
     if(result != SUCCESS)
       {
       return result;
@@ -1672,17 +1689,25 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::ImportCustomAttributes(Context& ctx, IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
+BentleyStatus SchemaWriter::ImportCustomAttributes(Context& ctx, IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, Utf8StringCR containerKey)
     {
-    int ordinal = 0;
+    // Collect and sort by CA class full name for deterministic id and ordinal assignment
+    bvector<IECInstancePtr> sortedCAs;
     for (IECInstancePtr ca : sourceContainer.GetCustomAttributes(false))
+        sortedCAs.push_back(ca);
+    std::sort(sortedCAs.begin(), sortedCAs.end(), [](IECInstancePtr const& a, IECInstancePtr const& b) {
+        return strcmp(a->GetClass().GetFullName(), b->GetClass().GetFullName()) < 0;
+    });
+
+    int ordinal = 0;
+    for (IECInstancePtr const& ca : sortedCAs)
         {
         //import CA classes first
         ECClassCR caClass = ca->GetClass();
         if (SUCCESS != ImportClass(ctx, caClass))
             return ERROR;
 
-        if (SUCCESS != InsertCAEntry(ctx, *ca, caClass.GetId(), sourceContainerId, containerType, ordinal))
+        if (SUCCESS != InsertCAEntry(ctx, *ca, caClass.GetId(), sourceContainerId, containerType, ordinal, containerKey))
             return ERROR;
 
         ordinal++;
@@ -1752,12 +1777,12 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
             }
 
 
-        if (BE_SQLITE_OK != stmt->BindId(10, ecdb.GetImpl().GetIdFactory().Schema().NextId()))
+        if (BE_SQLITE_OK != stmt->BindId(10, ecdb.GetImpl().GetIdFactory().Schema().NextIdForKey(DeriveSchemaKey(schema))))
             return ERROR;
         }
     else
         {
-        if (BE_SQLITE_OK != stmt->BindId(8, ecdb.GetImpl().GetIdFactory().Schema().NextId()))
+        if (BE_SQLITE_OK != stmt->BindId(8, ecdb.GetImpl().GetIdFactory().Schema().NextIdForKey(DeriveSchemaKey(schema))))
             return ERROR;
         }
 
@@ -1775,13 +1800,13 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::InsertBaseClassEntry(Context& ctx, ECClassId ecClassId, ECClassCR baseClass, int ordinal)
+BentleyStatus SchemaWriter::InsertBaseClassEntry(Context& ctx, ECClassCR ecClass, ECClassCR baseClass, int ordinal)
     {
     CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_ClassHasBaseClasses(ClassId,BaseClassId,Ordinal,Id) VALUES(?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
+    if (BE_SQLITE_OK != stmt->BindId(1, ecClass.GetId()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(2, baseClass.GetId()))
@@ -1790,7 +1815,7 @@ BentleyStatus SchemaWriter::InsertBaseClassEntry(Context& ctx, ECClassId ecClass
     if (BE_SQLITE_OK != stmt->BindInt(3, ordinal))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(4, ctx.GetECDb().GetImpl().GetIdFactory().ClassHasBaseClasses().NextId()))
+    if (BE_SQLITE_OK != stmt->BindId(4, ctx.GetECDb().GetImpl().GetIdFactory().ClassHasBaseClasses().NextIdForKey(DeriveClassHasBaseClassesKey(ecClass, baseClass))))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
@@ -1984,7 +2009,7 @@ BentleyStatus SchemaWriter::BindPropertyCategory(Context& ctx, Statement& stmt, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::InsertCAEntry(Context& ctx, IECInstanceR customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
+BentleyStatus SchemaWriter::InsertCAEntry(Context& ctx, IECInstanceR customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal, Utf8StringCR containerKey)
     {
     CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_CustomAttribute(ContainerId,ContainerType,ClassId,Ordinal,Instance,Id) VALUES(?,?,?,?,?,?)");
     if (stmt == nullptr)
@@ -2032,7 +2057,7 @@ BentleyStatus SchemaWriter::InsertCAEntry(Context& ctx, IECInstanceR customAttri
         return ERROR;
         }
 
-    auto id = ctx.GetECDb().GetImpl().GetIdFactory().CustomAttribute().NextId();
+    auto id = ctx.GetECDb().GetImpl().GetIdFactory().CustomAttribute().NextIdForKey(DeriveCustomAttributeKey(containerKey, customAttribute.GetClass()));
     if (BE_SQLITE_OK != stmt->BindId(6, id))
         {
         LOG.errorv("SchemaWriter::InsertCAEntry - failed to BindId for custom attribute %s", id.IsValid() ? id.ToString().c_str() : "\"invalid\"");
@@ -2102,7 +2127,8 @@ BentleyStatus SchemaWriter::ReplaceCAEntry(Context& ctx, IECInstanceR customAttr
     if (DeleteCAEntry(ordinal, ctx, ecClassId, containerId, containerType) != SUCCESS)
         return ERROR;
 
-    return InsertCAEntry(ctx, customAttribute, ecClassId, containerId, containerType, ordinal);
+    // Schema upgrade/replace path: no content key available here; pass "" to fall back to NextId().
+    return InsertCAEntry(ctx, customAttribute, ecClassId, containerId, containerType, ordinal, "");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2861,7 +2887,8 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
                 return ERROR;
                 }
 
-            if (InsertCAEntry(ctx, *ca, ca->GetClass().GetId(), containerId, containerType, ++customAttributeIndex) != SUCCESS)
+            // Schema upgrade path: no content key available here; pass "" to fall back to NextId().
+            if (InsertCAEntry(ctx, *ca, ca->GetClass().GetId(), containerId, containerType, ++customAttributeIndex, "") != SUCCESS)
                 {
                 LOG.debugv("SchemaWriter::UpdateCustomAttributes - Failed to InsertCAEntry for %s on %s", ca->GetClass().GetFullName(), newContainer.GetContainerName().c_str());
                 return ERROR;
@@ -3113,7 +3140,7 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
             if (SUCCESS != ImportClass(ctx, *baseClass))
                 return ERROR;
 
-            if (SUCCESS != InsertBaseClassEntry(ctx, newClass.GetId(), *baseClass, baseClassIndex++))
+            if (SUCCESS != InsertBaseClassEntry(ctx, newClass, *baseClass, baseClassIndex++))
                 return ERROR;
             }
         }
@@ -3476,7 +3503,9 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
 
             stmt->BindId(1, oldSchema.GetId());
             stmt->BindId(2, referenceSchemaId);
-            stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().SchemaReference().NextId());
+            // newRef.GetName() is the referenced schema name; oldSchema is the referencing schema.
+            stmt->BindId(3, ctx.GetECDb().GetImpl().GetIdFactory().SchemaReference().NextIdForKey(
+                Utf8PrintfString("%s:%s", oldSchema.GetName().c_str(), newRef.GetName().c_str())));
             if (stmt->Step() != BE_SQLITE_DONE)
                 {
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0374,
@@ -6225,4 +6254,124 @@ bool SchemaWriter::Context::ReservedPropertyNamesPolicy::Evaluate(IssueDataSourc
         }
     return false;
     }
+
+// =====================================================================================
+// Content-key derivation helpers.
+// Keys are joined with ':' and compared case-insensitively via bmap<...,CompareIUtf8Ascii>.
+// =====================================================================================
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveSchemaKey(ECN::ECSchemaCR schema) {
+    return schema.GetName();
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveSchemaReferenceKey(ECN::ECSchemaCR schema, ECN::ECSchemaCR referencedSchema) {
+    return Utf8PrintfString("%s:%s", schema.GetName().c_str(), referencedSchema.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveClassKey(ECN::ECClassCR ecClass) {
+    return Utf8PrintfString("%s:%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveClassHasBaseClassesKey(ECN::ECClassCR ecClass, ECN::ECClassCR baseClass) {
+    // baseClass.GetFullName() returns "SchemaName.ClassName"
+    return Utf8PrintfString("%s:%s:%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), baseClass.GetFullName());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DerivePropertyKey(ECN::ECPropertyCR property) {
+    return Utf8PrintfString("%s:%s:%s", property.GetClass().GetSchema().GetName().c_str(), property.GetClass().GetName().c_str(), property.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveEnumerationKey(ECN::ECEnumerationCR ecEnum) {
+    return Utf8PrintfString("%s:%s", ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveKindOfQuantityKey(ECN::KindOfQuantityCR koq) {
+    return Utf8PrintfString("%s:%s", koq.GetSchema().GetName().c_str(), koq.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveUnitSystemKey(ECN::UnitSystemCR unitSystem) {
+    return Utf8PrintfString("%s:%s", unitSystem.GetSchema().GetName().c_str(), unitSystem.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DerivePhenomenonKey(ECN::PhenomenonCR phenomenon) {
+    return Utf8PrintfString("%s:%s", phenomenon.GetSchema().GetName().c_str(), phenomenon.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveUnitKey(ECN::ECUnitCR unit) {
+    return Utf8PrintfString("%s:%s", unit.GetSchema().GetName().c_str(), unit.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveFormatKey(ECN::ECFormatCR format) {
+    return Utf8PrintfString("%s:%s", format.GetSchema().GetName().c_str(), format.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveFormatCompositeUnitKey(ECN::ECFormatCR format, int ordinal) {
+    return Utf8PrintfString("%s:%s:%d", format.GetSchema().GetName().c_str(), format.GetName().c_str(), ordinal);
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DerivePropertyCategoryKey(ECN::PropertyCategoryCR cat) {
+    return Utf8PrintfString("%s:%s", cat.GetSchema().GetName().c_str(), cat.GetName().c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveRelationshipConstraintKey(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end) {
+    return Utf8PrintfString("%s:%s:%d", relClass.GetSchema().GetName().c_str(), relClass.GetName().c_str(), (int)end);
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveRelationshipConstraintClassKey(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass) {
+    // constraintClass.GetFullName() returns "SchemaName.ClassName"
+    return Utf8PrintfString("%s:%s:%d:%s", relClass.GetSchema().GetName().c_str(), relClass.GetName().c_str(), (int)end, constraintClass.GetFullName());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DeriveCustomAttributeKey(Utf8StringCR containerKey, ECN::ECClassCR caClass) {
+    return Utf8PrintfString("%s:%s", containerKey.c_str(), caClass.GetFullName());
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

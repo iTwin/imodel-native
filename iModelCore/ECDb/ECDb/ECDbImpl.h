@@ -20,10 +20,41 @@ struct IdFactory final: NonCopyableClass {
         private:
             mutable std::atomic<uint64_t> m_id;
             bool m_isInitializedFromTable;
+            // Content-key-based keyed mode
+            bool m_keyedMode = false;
+            bmap<Utf8String, uint64_t, CompareIUtf8Ascii>* m_keyToIdMap = nullptr; //!< non-owning ptr into SchemaReservationTableStore
         public:
             explicit IdSequence(uint64_t id, bool isInitializedFromTable) :m_id(id), m_isInitializedFromTable(isInitializedFromTable){}
-            BeInt64Id NextId() const { BeAssert(m_isInitializedFromTable); return BeInt64Id(++m_id); }
+            BeInt64Id NextId() const {
+                BeAssert(m_isInitializedFromTable);
+                return BeInt64Id(++m_id);
+            }
+            //! Content-key-based id lookup.  In keyed mode returns the reserved id for @p key;
+            //! returns BeInt64Id(0) (invalid) if the key is absent — caller must propagate as an error.
+            //! An empty @p key is treated as "no key available" and falls back to NextId() even in keyed mode
+            //! (used by schema-upgrade / replace paths that do not have a content key readily available).
+            //! In all other modes falls back to NextId() so call-sites work identically in both modes.
+            BeInt64Id NextIdForKey(Utf8StringCR key) const {
+                if (m_keyedMode && m_keyToIdMap != nullptr && !key.empty()) {
+                    auto it = m_keyToIdMap->find(key);
+                    if (it == m_keyToIdMap->end())
+                        return BeInt64Id(0); // unreserved-key: BindId will bind NULL → INSERT will fail
+                    return BeInt64Id(it->second);
+                }
+                return NextId();
+            }
             bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
+            bool IsKeyedMode() const { return m_keyedMode; }
+            //! Enter content-key-based keyed mode backed by @p keyToIdMap (non-owning reference).
+            void SetKeyedMode(bmap<Utf8String, uint64_t, CompareIUtf8Ascii>& keyToIdMap) {
+                m_keyedMode = true;
+                m_keyToIdMap = &keyToIdMap;
+            }
+            //! Leave keyed mode; subsequent calls go back to the normal NextId() increment.
+            void ClearKeyedMode() {
+                m_keyedMode = false;
+                m_keyToIdMap = nullptr;
+            }
             static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
     };
 
@@ -77,6 +108,13 @@ struct IdFactory final: NonCopyableClass {
         IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
         bool IsValid() const;
         bool Reset() const;
+        //! Put all sequences into content-key-based keyed mode.
+        //! Each sequence's NextIdForKey() will look up ids from the corresponding table in @p store.
+        void SetKeyedMode(SchemaReservationStore& store) const;
+        //! Clear keyed mode on all sequences; subsequent NextIdForKey() calls fall back to NextId().
+        void ClearKeyedMode() const;
+        //! True when all sequences are in keyed mode.
+        bool IsKeyedMode() const { return m_classIdSeq->IsKeyedMode(); }
         static std::unique_ptr<IdFactory> Create(ECDbCR ecdb);
 };
 
