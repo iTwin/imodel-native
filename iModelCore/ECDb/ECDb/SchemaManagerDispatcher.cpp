@@ -1245,7 +1245,6 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
     {
-    // RAII guard: ensure IdFactory keyed mode is cleared on every return path.
     struct KeyedModeGuard {
         IdFactory* m_factory;
         bool m_active;
@@ -1308,8 +1307,6 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             return SchemaImportResult::ERROR;
     }
 
-    // RAII guard: if the import fails on any code path after the reservation was written,
-    // roll back the open sync-db transaction so the sync-db is left unchanged.
     struct ReservationTxGuard {
         SchemaSync& m_sync;
         bool m_committed = false;
