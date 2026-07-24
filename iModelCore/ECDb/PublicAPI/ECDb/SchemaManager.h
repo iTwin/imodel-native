@@ -264,8 +264,10 @@ private:
     bool m_disabledForProfileUpgrade;
     int64_t m_modifiedRowCount;
     Db m_pendingReservationDb;
-    bool m_hasPendingReservation = false;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
+    //! Seed the reservation stores from the local db baseline into the sync-db at Init time.
+    //! Uses m_pendingReservationDb and CommitPendingReservation / AbandonPendingReservation.
+    Status SeedReservationStoreInternal(SyncDbUri const&);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
@@ -298,19 +300,19 @@ public:
     //! Reserve content-key-based ids for @p schemas in the sync-db. Must be called before ImportSchemas.
     //! Does NOT commit — the caller must call CommitPendingReservation() on success or
     //! AbandonPendingReservation() on failure to commit or roll back the open transaction.
-    ECDB_EXPORT BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri);
+    ECDB_EXPORT Status ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri);
     //! Commit the reservation transaction opened by the last successful ReserveSchemaImport call.
     //! No-op if no reservation transaction is pending.
-    //! @return SUCCESS if the transaction was committed successfully, ERROR otherwise.
-    BentleyStatus CommitPendingReservation();
+    //! @return Status::OK if the transaction was committed successfully, Status::ERROR otherwise.
+    Status CommitPendingReservation();
     //! Roll back the reservation transaction opened by the last successful ReserveSchemaImport call.
     //! No-op if no reservation transaction is pending.
-    //! @return SUCCESS if the transaction was rolled back successfully, ERROR otherwise.
-    BentleyStatus AbandonPendingReservation();
+    //! @return Status::OK if the transaction was rolled back successfully, Status::ERROR otherwise.
+    Status AbandonPendingReservation();
     //! Load the reservation store from the sync-db (read-only) for keyed-mode id allocation.
-    ECDB_EXPORT BentleyStatus LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const;
+    BentleyStatus LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const;
     //! Load the column-assignment reservation store from the sync-db (read-only) for mapping-phase keyed allocation.
-    ECDB_EXPORT BentleyStatus LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const;
+    BentleyStatus LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const;
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);

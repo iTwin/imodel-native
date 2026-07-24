@@ -1219,20 +1219,6 @@ VirtualSchemaManager const& MainSchemaManager::GetVirtualSchemaManager() const {
     return m_vsm;
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const {
-    auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
-    const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
-    auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
-    if(!isSchemaSyncDisabled && !resolvedSyncDbUri.IsEmpty()) {
-        return m_schemaSync.ReserveSchemaImport(schemas, syncDbUri);
-    }
-    LOG.info("SchemaSync is disabled or no sync-db URI is available. Skipping schema import reservation.");
-    return SUCCESS;
-}
-
 //#define ALLOW_ECDB_SCHEMAIMPORT_DUMP
 #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
 void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> const& schemas, Utf8CP suffix)
@@ -1317,8 +1303,10 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
 
-    if (SUCCESS != ReserveSchemaImport(schemas, syncDbUri))
-        return SchemaImportResult::ERROR;
+    if(!isSchemaSyncDisabled && !resolvedSyncDbUri.IsEmpty()) {
+        if (SchemaSync::Status::OK != schemaSync.ReserveSchemaImport(schemas, syncDbUri))
+            return SchemaImportResult::ERROR;
+    }
 
     // RAII guard: if the import fails on any code path after the reservation was written,
     // roll back the open sync-db transaction so the sync-db is left unchanged.
@@ -1328,13 +1316,13 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         explicit ReservationTxGuard(SchemaSync& s) : m_sync(s) {}
         ~ReservationTxGuard() {
             if (!m_committed) {
-                if (SUCCESS != m_sync.AbandonPendingReservation())
+                if (SchemaSync::Status::OK != m_sync.AbandonPendingReservation())
                     LOG.error("ReservationTxGuard: Failed to roll back reservation transaction on import failure.");
             }
         }
-        BentleyStatus Commit() {
+        SchemaSync::Status Commit() {
             const auto rc = m_sync.CommitPendingReservation();
-            if (SUCCESS == rc)
+            if (SchemaSync::Status::OK == rc)
                 m_committed = true;
             return rc;
         }
@@ -1403,7 +1391,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         }
 
     if (schemasToMap.empty()) {
-        if (SUCCESS != reservationTxGuard.Commit())
+        if (SchemaSync::Status::OK != reservationTxGuard.Commit())
             return SchemaImportResult::ERROR;
         return SchemaImportResult::OK;
     }
@@ -1427,7 +1415,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (SUCCESS != reservationTxGuard.Commit())
+    if (SchemaSync::Status::OK != reservationTxGuard.Commit())
         return SchemaImportResult::ERROR;
     return SchemaImportResult::OK;
     }
