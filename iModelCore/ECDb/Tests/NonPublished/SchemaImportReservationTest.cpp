@@ -346,7 +346,7 @@ TEST_F(SchemaSyncTestFixture, CrossBriefcaseColumnDeterminism)
             "JOIN   ec_PropertyPath pp ON pp.Id = pm.PropertyPathId "
             "JOIN   ec_Class        cls ON cls.Id = pm.ClassId "
             "WHERE  cls.Name = 'ClassA' AND pp.AccessString = ?");
-        if (!stmt)
+        if (stmt == nullptr)
             return {0, -1};
         stmt->BindText(1, propName, Statement::MakeCopy::No);
         if (stmt->Step() != BE_SQLITE_ROW)
