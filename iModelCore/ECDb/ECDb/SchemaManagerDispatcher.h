@@ -212,6 +212,7 @@ private:
 
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
+    BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const;
 public:
     explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
     ~MainSchemaManager() {}
@@ -223,7 +224,6 @@ public:
     SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
     SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
-    BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;

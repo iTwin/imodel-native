@@ -2396,27 +2396,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return ret;
         }
 
-    void ReserveSchemaImport(NapiInfoCR info)
-        {
-        auto& db = GetOpenedDb(info);
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaSources);
-        REQUIRE_ARGUMENT_STRING(1, syncDbUri);
-        bool isXml = false;
-        if (info.Length() >= 3 && info[2].IsString())
-            isXml = (info[2].As<Napi::String>().Utf8Value() == "xml");
-
-        SchemaSourceType sourceType = isXml ? SchemaSourceType::XmlString : SchemaSourceType::File;
-        LastErrorListener lastError(db);
-        BentleyStatus rc = JsInterop::ReserveSchemaImport(db, schemaSources, sourceType, Utf8String(syncDbUri));
-        if (SUCCESS != rc)
-            {
-            if (lastError.HasError())
-                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), DbResult::BE_SQLITE_ERROR);
-            else
-                THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to reserve schema import", DbResult::BE_SQLITE_ERROR);
-            }
-        }
-
     Napi::Value ExportSchema(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
@@ -3270,7 +3249,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
-            InstanceMethod("reserveSchemaImport", &NativeDgnDb::ReserveSchemaImport),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),

@@ -44,13 +44,6 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaManager::ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const
-    {
-    return Main().ReserveSchemaImport(schemas, syncDbUri);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaManager::IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace) const {
       return m_dispatcher->IsSubClassOf(subClassECSqlName, parentClassECSqlName, tableSpace);
 }

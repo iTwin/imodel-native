@@ -687,12 +687,6 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             SchemaImportToken const* token = nullptr,
             SchemaSync::SyncDbUri syncDbUri = SchemaSync::SyncDbUri()) const;
 
-        //! Reserve content-key-based ids for @p schemas in the sync-db. Must be called before ImportSchemas.
-        //! @param[in] schemas List of schemas to reserve
-        //! @param[in] syncDbUri URI of the sync-db
-        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-        ECDB_EXPORT BentleyStatus ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SchemaSync::SyncDbUri const& syncDbUri) const;
-
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.
         //! Consider retrieving single classes instead.

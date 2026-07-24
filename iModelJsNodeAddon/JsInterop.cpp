@@ -989,56 +989,6 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     return BE_SQLITE_OK;
     }
 
-BentleyStatus JsInterop::ReserveSchemaImport(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, Utf8StringCR syncDbUri) {
-    if (schemaSources.empty())
-        return SUCCESS;
-
-    NativeLogging::CategoryLogger logger("JsInterop");
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
-    SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
-    JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
-
-    if (sourceType == SchemaSourceType::File) {
-        for (auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it) {
-            BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
-            BeFileName schemaDirectory(BeFileName::DevAndDir, schemaFile.GetWCharCP());
-            schemaContext->AddSchemaPath(schemaDirectory, true);
-        }
-    }
-
-    bvector<ECSchemaCP> schemas;
-    for (Utf8String schemaSource : schemaSources) {
-        ECSchemaPtr schema;
-        SchemaReadStatus schemaStatus;
-        if (sourceType == SchemaSourceType::File) {
-            BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
-            if (!schemaFile.DoesPathExist())
-                return ERROR;
-            schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
-        } else {
-            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaSource.c_str(), *schemaContext);
-        }
-        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
-            continue;
-        if (SchemaReadStatus::Success != schemaStatus) {
-            logger.errorv("ReserveSchemaImport: Failed to read schema from '%s'.", schemaSource.c_str());
-            return ERROR;
-        }
-        schemas.push_back(schema.get());
-    }
-
-    if (schemas.empty())
-        return SUCCESS;
-
-    BeSQLite::EC::SchemaSync::SyncDbUri uri(syncDbUri.c_str());
-    if (SUCCESS != dgndb.Schemas().ReserveSchemaImport(schemas, uri)) {
-        logger.error("ReserveSchemaImport: ReserveSchemaImport returned error.");
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
