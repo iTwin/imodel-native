@@ -22,6 +22,29 @@ static uint32_t SafeU32Id(int64_t val)
     return UINT32_MAX;
     }
 
+// Narrow a small int field (an ordinal, or a version digit) read from an ec_ table to a
+// byte / 16-bit value for the binary format. These values are tiny by construction, if we ever encounter overflow,
+// it warrants a warning but we still produce a valid blob by saturating to the min/max of the target type.
+// If we hit this and it's valid, the binary format should be updated to use a larger type.
+// Explicitly didn't choose an error here because SchemaView needs to be resilient since it's a "all or nothing"-mechanism.
+// Adding too strict validation would cause consumers to not see any schema at all, which is very disruptive.
+// The warning is enough to catch the issue in testing.
+static uint8_t SafeU8(int val, Utf8CP field)
+    {
+    if (val >= 0 && val <= (int)UINT8_MAX)
+        return (uint8_t)val;
+    ECDbLogger::Get().warningv("SchemaViewWriter: %s value %d does not fit in a uint8_t; saturating", field, val);
+    return val < 0 ? (uint8_t)0 : (uint8_t)UINT8_MAX;
+    }
+
+static uint16_t SafeU16(int val, Utf8CP field)
+    {
+    if (val >= 0 && val <= (int)UINT16_MAX)
+        return (uint16_t)val;
+    ECDbLogger::Get().warningv("SchemaViewWriter: %s value %d does not fit in a uint16_t; saturating", field, val);
+    return val < 0 ? (uint16_t)0 : (uint16_t)UINT16_MAX;
+    }
+
 // Helper: prepare a statement and return error on failure.
 static DbResult PrepareStmt(Statement& stmt, DbCR db, Utf8CP sql)
     {
@@ -73,7 +96,6 @@ static bool IsExcludedSchema(Utf8CP name)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectExcludedSchemaIds(DbCR db)
     {
-    m_excludedSchemaIds.clear();
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, "SELECT Id, Name FROM [main].[ec_Schema]");
     if (rc != BE_SQLITE_OK)
@@ -121,8 +143,6 @@ uint32_t SchemaViewWriter::Intern(Utf8CP str)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveHiddenPropertyCAClassId(DbCR db)
     {
-    m_hiddenPropertyCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -169,8 +189,6 @@ bool SchemaViewWriter::IsHiddenFromInstanceXml(Utf8CP instanceXml, Utf8CP showPr
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveQueryViewCAClassId(DbCR db)
     {
-    m_queryViewCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -201,10 +219,6 @@ uint32_t SchemaViewWriter::InternPropertyDef(PropertyDefRecord const& def)
 
 DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
     {
-    m_propDefs.clear();
-    m_propDefIndex.clear();
-    m_classPropRefs.clear();
-
     // Excluded schemas are filtered at the SQL level via NOT IN for efficiency.
     // Ordered by ClassId,Ordinal so m_classPropRefs preserves per-class order.
     // When the HiddenProperty CA class exists, an extra column (hp_ca.Instance) is added
@@ -232,19 +246,8 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
             "AND hp_ca.ClassId=%" PRIi64 " ",
             (int)ECN::CustomAttributeContainerType::AnyProperty,
             m_hiddenPropertyCAClassId.value()));
-    if (!m_excludedSchemaIds.empty())
-        {
-        sql.append("WHERE c.SchemaId NOT IN (");
-        bool first = true;
-        for (auto id : m_excludedSchemaIds)
-            {
-            if (!first) sql.append(",");
-            sql.append(Utf8PrintfString("%" PRIi64, id));
-            first = false;
-            }
-        sql.append(") ");
-        }
-    sql.append("ORDER BY c.Id, p.Ordinal");
+    AppendSchemaFilter(sql, "c.SchemaId");
+    sql.append(" ORDER BY c.Id, p.Ordinal");
 
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, sql.c_str());
@@ -259,8 +262,8 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
         PropertyDefRecord def;
         def.nameSid       = Intern(Safe(stmt.GetValueText(2)));
         def.descriptionSid= Intern(Safe(stmt.GetValueText(4)));
-        def.kind          = (uint8_t)stmt.GetValueInt(5);
-        def.primitiveType = (uint16_t)stmt.GetValueInt(6);
+        def.kind          = SafeU8(stmt.GetValueInt(5), "property kind");
+        def.primitiveType = SafeU16(stmt.GetValueInt(6), "property primitiveType");
         def.extTypeSid    = Intern(Safe(stmt.GetValueText(7)));
         // FK columns are NULL when absent; GetValueInt64 returns 0 for NULL.
         // EC metadata IDs are 1-based, so 0 is a safe "no reference" sentinel.
@@ -273,7 +276,7 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
         def.arrayMinOccurs= stmt.IsColumnNull(12) ? UINT32_MAX : (uint32_t)stmt.GetValueInt(12);
         def.arrayMaxOccurs= stmt.IsColumnNull(13) ? UINT32_MAX : (uint32_t)stmt.GetValueInt(13);
         def.navRelClassRowId = SafeU32Id(stmt.GetValueInt64(14));
-        def.navDirection  = (uint8_t)stmt.GetValueInt(15);
+        def.navDirection  = SafeU8(stmt.GetValueInt(15), "navigation direction");
         def.isReadonly    = stmt.GetValueInt(16) != 0 ? (uint8_t)1 : (uint8_t)0;
         // HiddenProperty CA: if the JOIN is present, column 17 is hp_ca.Instance
         if (hasHiddenJoin)
@@ -302,7 +305,6 @@ DbResult SchemaViewWriter::CollectPropertyDefsAndRefs(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectMixinClassIds(DbCR db)
     {
-    m_mixinClassIds.clear();
     Statement stmt;
     auto rc = PrepareStmt(stmt, db, Utf8PrintfString(
         "SELECT ca.ContainerId FROM [main].[ec_CustomAttribute] ca "
@@ -323,7 +325,6 @@ DbResult SchemaViewWriter::CollectMixinClassIds(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectQueryViewClassIds(DbCR db)
     {
-    m_queryViewClassIds.clear();
     if (!m_queryViewCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -344,8 +345,6 @@ DbResult SchemaViewWriter::CollectQueryViewClassIds(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveHiddenSchemaCAClassId(DbCR db)
     {
-    m_hiddenSchemaCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -364,8 +363,6 @@ DbResult SchemaViewWriter::ResolveHiddenSchemaCAClassId(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::ResolveHiddenClassCAClassId(DbCR db)
     {
-    m_hiddenClassCAClassId.reset();
-
     Statement stmt;
     auto rc = PrepareStmt(stmt, db,
         "SELECT c.Id FROM [main].[ec_Class] c "
@@ -388,8 +385,6 @@ DbResult SchemaViewWriter::ResolveHiddenClassCAClassId(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
     {
-    m_hiddenSchemaIds.clear();
-    m_schemasWithHiddenClasses.clear();
     if (!m_hiddenSchemaCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -419,8 +414,6 @@ DbResult SchemaViewWriter::CollectHiddenSchemaIds(DbCR db)
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
     {
-    m_hiddenClassIds.clear();
-    m_explicitlyShownClassIds.clear();
     if (!m_hiddenClassCAClassId.has_value())
         return BE_SQLITE_OK;
     Statement stmt;
@@ -443,23 +436,46 @@ DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
     }
 
 //---------------------------------------------------------------------------------------
-// Helper: append WHERE <col> NOT IN (...) for excluded schemas.
+// Helper: append a leading-space " WHERE ..." schema filter for `column`. Always excludes the
+// standard/internal schemas; for a fragment, additionally restricts to the requested set. The two
+// conditions combine with AND, so a requested id that is also an excluded schema is still dropped -
+// matching the whole-schema blob, where a reference into an excluded schema resolves to "absent".
 //---------------------------------------------------------------------------------------
-static void AppendExcludedSchemaFilter(Utf8StringR sql, Utf8CP column, std::unordered_set<int64_t> const& ids)
+void SchemaViewWriter::AppendSchemaFilter(Utf8StringR sql, Utf8CP column) const
     {
-    if (ids.empty())
-        return;
-    sql.append(" WHERE ");
-    sql.append(column);
-    sql.append(" NOT IN (");
-    bool first = true;
-    for (auto id : ids)
+    auto appendIdList = [&sql](std::unordered_set<int64_t> const& ids)
         {
-        if (!first) sql.append(",");
-        sql.append(Utf8PrintfString("%" PRIi64, id));
-        first = false;
+        bool first = true;
+        for (auto id : ids)
+            {
+            if (!first) sql.append(",");
+            sql.append(Utf8PrintfString("%" PRIi64, id));
+            first = false;
+            }
+        };
+
+    bool const hasExclusion = !m_excludedSchemaIds.empty();
+    bool const hasRequest = m_isFragment;
+    if (!hasExclusion && !hasRequest)
+        return;
+
+    sql.append(" WHERE ");
+    if (hasExclusion)
+        {
+        sql.append(column);
+        sql.append(" NOT IN (");
+        appendIdList(m_excludedSchemaIds);
+        sql.append(")");
         }
-    sql.append(")");
+    if (hasRequest)
+        {
+        if (hasExclusion)
+            sql.append(" AND ");
+        sql.append(column);
+        sql.append(" IN (");
+        appendIdList(m_requestedSchemaIds);
+        sql.append(")");
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -496,7 +512,7 @@ DbResult SchemaViewWriter::WritePropertyDefTable()
 DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
     {
     Utf8String sql("SELECT Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM [main].[ec_Schema]");
-    AppendExcludedSchemaFilter(sql, "Id", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "Id");
     sql.append(" ORDER BY Id");
 
     Statement stmt;
@@ -512,9 +528,9 @@ DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         PutSRef(Safe(stmt.GetValueText(1))); // name
-        PutU16((uint16_t)stmt.GetValueInt(5));
-        PutU16((uint16_t)stmt.GetValueInt(6));
-        PutU16((uint16_t)stmt.GetValueInt(7));
+        PutU16(SafeU16(stmt.GetValueInt(5), "schema read version"));
+        PutU16(SafeU16(stmt.GetValueInt(6), "schema write version"));
+        PutU16(SafeU16(stmt.GetValueInt(7), "schema minor version"));
         PutSRef(Safe(stmt.GetValueText(4))); // alias
         PutSRef(Safe(stmt.GetValueText(2))); // label
         PutSRef(Safe(stmt.GetValueText(3))); // description
@@ -533,7 +549,7 @@ DbResult SchemaViewWriter::WriteSchemaTable(DbCR db)
 DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
     {
     Utf8String sql("SELECT e.Id,e.Name,e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues,e.SchemaId FROM [main].[ec_Enumeration] e");
-    AppendExcludedSchemaFilter(sql, "e.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "e.SchemaId");
     sql.append(" ORDER BY e.SchemaId, e.Id");
 
     Statement stmt;
@@ -548,9 +564,9 @@ DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaEcId
+        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaECId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
-        PutU8((uint8_t)stmt.GetValueInt(4));        // primitiveType
+        PutU16(SafeU16(stmt.GetValueInt(4), "enumeration primitiveType")); // full ECN::PrimitiveType, e.g. 0x501 Integer / 0x901 String - does not fit in a byte
         PutU8(stmt.GetValueInt(5) != 0 ? 1 : 0);  // isStrict
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
@@ -568,7 +584,7 @@ DbResult SchemaViewWriter::WriteEnumTable(DbCR db)
 DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
     {
     Utf8String sql("SELECT k.Id,k.Name,k.DisplayLabel,k.Description,k.PersistenceUnit,k.RelativeError,k.PresentationUnits,k.SchemaId FROM [main].[ec_KindOfQuantity] k");
-    AppendExcludedSchemaFilter(sql, "k.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "k.SchemaId");
     sql.append(" ORDER BY k.SchemaId, k.Id");
 
     Statement stmt;
@@ -583,7 +599,7 @@ DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaEcId
+        PutU32(SafeU32Id(stmt.GetValueInt64(7))); // schemaECId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
@@ -604,7 +620,7 @@ DbResult SchemaViewWriter::WriteKoqTable(DbCR db)
 DbResult SchemaViewWriter::WritePropCatTable(DbCR db)
     {
     Utf8String sql("SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Priority,c.SchemaId FROM [main].[ec_PropertyCategory] c");
-    AppendExcludedSchemaFilter(sql, "c.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "c.SchemaId");
     sql.append(" ORDER BY c.SchemaId, c.Id");
 
     Statement stmt;
@@ -619,7 +635,7 @@ DbResult SchemaViewWriter::WritePropCatTable(DbCR db)
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        PutU32(SafeU32Id(stmt.GetValueInt64(5))); // schemaEcId
+        PutU32(SafeU32Id(stmt.GetValueInt64(5))); // schemaECId
         PutSRef(Safe(stmt.GetValueText(1)));       // name
         PutSRef(Safe(stmt.GetValueText(2)));       // label
         PutSRef(Safe(stmt.GetValueText(3)));       // description
@@ -641,7 +657,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
         "SELECT c.Id,c.Name,c.DisplayLabel,c.Description,c.Type,c.Modifier,"
         "c.RelationshipStrength,c.RelationshipStrengthDirection,c.SchemaId "
         "FROM [main].[ec_Class] c");
-    AppendExcludedSchemaFilter(sql, "c.SchemaId", m_excludedSchemaIds);
+    AppendSchemaFilter(sql, "c.SchemaId");
     sql.append(" ORDER BY c.SchemaId, c.Id");
 
     Statement classStmt;
@@ -692,16 +708,16 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
         if (m_queryViewClassIds.count(classId))
             classType = 5; // View
 
-        PutU32(SafeU32Id(schemaId));                  // schemaEcId
+        PutU32(SafeU32Id(schemaId));                  // schemaECId
         PutSRef(Safe(classStmt.GetValueText(1)));     // name
-        PutU8((uint8_t)classType);
-        PutU8((uint8_t)classStmt.GetValueInt(5));     // modifier
+        PutU8(SafeU8(classType, "class type"));
+        PutU8(SafeU8(classStmt.GetValueInt(5), "class modifier"));     // modifier
         PutSRef(Safe(classStmt.GetValueText(2)));     // label
         PutSRef(Safe(classStmt.GetValueText(3)));     // description
         if (classType == 1) // Relationship
             {
-            PutU8((uint8_t)classStmt.GetValueInt(6)); // strength
-            PutU8((uint8_t)classStmt.GetValueInt(7)); // strengthDirection
+            PutU8(SafeU8(classStmt.GetValueInt(6), "relationship strength"));           // strength
+            PutU8(SafeU8(classStmt.GetValueInt(7), "relationship strength direction")); // strengthDirection
             }
         PutU32(SafeU32Id(classId));                   // ecInstanceId
         // Class hidden flag (tri-state):
@@ -728,7 +744,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
             {
             PutSRef(Safe(baseStmt.GetValueText(0))); // schema name
             PutSRef(Safe(baseStmt.GetValueText(1))); // class name
-            PutU8((uint8_t)baseStmt.GetValueInt(2));  // ordinal
+            PutU8(SafeU8(baseStmt.GetValueInt(2), "base class ordinal")); // ordinal
             if (++baseCount == UINT16_MAX)
                 {
                 ECDbLogger::Get().errorv("SchemaViewWriter: class %" PRIi64 " has too many base classes", classId);
@@ -766,7 +782,7 @@ DbResult SchemaViewWriter::WriteClassTable(DbCR db)
             while (constrStmt.Step() == BE_SQLITE_ROW)
                 {
                 int64_t constraintId = constrStmt.GetValueInt64(0);
-                PutU8((uint8_t)constrStmt.GetValueInt(1));  // relEnd
+                PutU8(SafeU8(constrStmt.GetValueInt(1), "relationship constraint end"));  // relEnd (source=0 / target=1, not a class id)
                 PutU32((uint32_t)constrStmt.GetValueInt(2)); // multLower
                 PutU32((uint32_t)constrStmt.GetValueInt(3)); // multUpper
                 PutU8(constrStmt.GetValueInt(4) != 0 ? 1 : 0); // isPolymorphic
@@ -826,14 +842,92 @@ void SchemaViewWriter::WriteStringTable(size_t stOffsetPos)
     }
 
 //---------------------------------------------------------------------------------------
-// Main orchestration - pre-collects metadata, then writes flat tables top-down.
+// Verify every requested fragment schema id is a real ec_Schema row, so a typo or stale id
+// fails the request cleanly instead of silently producing an empty/partial fragment.
+//---------------------------------------------------------------------------------------
+DbResult SchemaViewWriter::ValidateRequestedSchemaIds(DbCR db)
+    {
+    std::unordered_set<int64_t> existing;
+    Statement stmt;
+    auto rc = PrepareStmt(stmt, db, "SELECT Id FROM [main].[ec_Schema]");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        existing.insert(stmt.GetValueInt64(0));
+    for (auto id : m_requestedSchemaIds)
+        {
+        if (existing.find(id) == existing.end())
+            {
+            ECDbLogger::Get().errorv("SchemaViewWriter::ValidateRequestedSchemaIds: requested schema id %" PRIi64 " does not exist", id);
+            return BE_SQLITE_NOTFOUND;
+            }
+        }
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// Public entry: write every non-excluded schema (the whole-schema blob).
 //---------------------------------------------------------------------------------------
 DbResult SchemaViewWriter::WriteAllSchemas(DbCR db)
     {
+    m_isFragment = false;
+    m_requestedSchemaIds.clear();
+    return WriteBlob(db);
+    }
+
+//---------------------------------------------------------------------------------------
+// Public entry: write a fragment - only the requested schemas' owned rows.
+//---------------------------------------------------------------------------------------
+DbResult SchemaViewWriter::WriteSchemas(DbCR db, std::unordered_set<int64_t> const& requestedSchemaIds)
+    {
+    if (requestedSchemaIds.empty())
+        {
+        ECDbLogger::Get().error("SchemaViewWriter::WriteSchemas: requested schema id set is empty");
+        return BE_SQLITE_ERROR;
+        }
+    m_isFragment = true;
+    m_requestedSchemaIds = requestedSchemaIds;
+    if (auto rc = ValidateRequestedSchemaIds(db); rc != BE_SQLITE_OK)
+        return rc;
+    return WriteBlob(db);
+    }
+
+//---------------------------------------------------------------------------------------
+// Reset all per-run accumulation state so a single instance can be reused for multiple
+// WriteAllSchemas / WriteSchemas calls. Centralizing the reset here keeps reuse correct even if
+// a new field is added and its collector forgets to clear.
+// m_isFragment / m_requestedSchemaIds are owned by the public entry points and not reset here.
+//---------------------------------------------------------------------------------------
+void SchemaViewWriter::ResetState()
+    {
     m_output.clear();
-    m_output.reserve(2 * 1024 * 1024);
     m_stringTable.clear();
     m_stringIndex.clear();
+    m_propDefs.clear();
+    m_propDefIndex.clear();
+    m_classPropRefs.clear();
+    m_hiddenPropertyCAClassId.reset();
+    m_hiddenSchemaCAClassId.reset();
+    m_hiddenClassCAClassId.reset();
+    m_queryViewCAClassId.reset();
+    m_excludedSchemaIds.clear();
+    m_mixinClassIds.clear();
+    m_queryViewClassIds.clear();
+    m_hiddenSchemaIds.clear();
+    m_schemasWithHiddenClasses.clear();
+    m_hiddenClassIds.clear();
+    m_explicitlyShownClassIds.clear();
+    }
+
+//---------------------------------------------------------------------------------------
+// Main orchestration - pre-collects metadata, then writes flat tables top-down. The
+// AppendSchemaFilter calls inside the table writers honor m_isFragment / m_requestedSchemaIds,
+// so this body is shared by the whole-schema and fragment entry points.
+//---------------------------------------------------------------------------------------
+DbResult SchemaViewWriter::WriteBlob(DbCR db)
+    {
+    ResetState();
+    m_output.reserve(2 * 1024 * 1024);
     Intern(""); // index 0 = empty string
 
     // Pre-pass: collect metadata needed before writing
