@@ -1514,7 +1514,7 @@ private:
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false, bool resolveConflicts = false);
 
     void OnBaseClassPropertyRemoved(ECPropertyCR baseProperty);
     void OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty);
@@ -2142,7 +2142,7 @@ public:
     //! Copies this constraint to the destination
     //! @param[out] toRelationshipConstraint The relationship constraint to copy to
     //! @param[in] copyReferences If false, a shallow copy of the source relationship constraint will be made meaning it will not copy over any constraint classes or abstract constraint that does not live within the target schema. Instead it will create a schema reference back to the source schema if necessary.
-    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences = false);
+    ECOBJECTS_EXPORT ECObjectsStatus CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences = false, bool resolveConflicts = false);
 
     //! Returns whether the relationship is ordered on this constraint.
     ECOBJECTS_EXPORT bool GetIsOrdered() const;
@@ -3932,7 +3932,10 @@ public:
     //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
     //! @param[in]  newName  If not nullptr, this name will be used as the new name instead of the original name
     //! @param[in]  skipValidation If true, the method will skip validation of the copied class
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidation = false);
+    //! @param[in]  resolveConflicts If true, properties whose name conflicts with an incompatible property in the target base class hierarchy
+    //!             are copied under a unique name (and a RenamedPropertiesMapping custom attribute is added) instead of failing the copy.
+    //!             This can happen when base classes are resolved against a schema context whose content differs from the source's references.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidation = false, bool resolveConflicts = false);
 
     //! Gets the needed referenced schema item from this schema or it's references, copies it, or adds the reference.  The end result is that the output refForCopy is
     //! the correct object reference needed for a copy operation.
@@ -3947,7 +3950,7 @@ public:
     ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
 
     // Specializations because they are used often or are referenced outside of ECSchema
-    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false);
+    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false, bool resolveConflicts = false);
     ECObjectsStatus GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences);
@@ -4006,7 +4009,10 @@ public:
     //! @param schemaOut If successful, will contain a copy of this schema
     //! @param schemaContext If not nullptr, will be used to locate referenced schemas of the schema.  If nullptr, references will not be copied
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false) const;
+    //! @param skipValidation If true, the method will skip validation of the copied classes
+    //! @param resolveConflicts If true, property conflicts against base classes resolved from the schema context are handled by renaming
+    //!        the copied property instead of failing the copy. See CopyClass for details.
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false, bool resolveConflicts = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}
