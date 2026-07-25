@@ -438,11 +438,9 @@ DbResult SHA3Helper::ComputeHash(Utf8StringR hash, DbCR db, SourceType type, Utf
 // schema in ec_Schema), NOT their contents. Backs PRAGMA checksum(schema_token) and the schemaToken
 // column of schema_view / schema_view_fragment. Ordered by Name for a session-stable digest.
 // Limitation: a same-version content change (which ECDb only allows for dynamic schemas) does
-// not change this hash. See the PRAGMA checksum(schema_token) docs.
-// In the future, if we ever need this to deterministically change based on schema contents, a
-// profile update which adds a fingerprint column to ec_Schema would be a correct way to do it.
-// Our existing schema checksums are unreliable, we may need a better standardized hashing method if
-// it ever gets to this.
+// not change this hash.
+// Note: If we ever need to make this track content, we can add a fingerprint column to ec_Schema in a
+// profile update.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SHA3Helper::ComputeSchemaTokenHash(Utf8String& hash, DbCR db, Utf8CP dbAlias, HashSize hashSize) {
@@ -1033,8 +1031,7 @@ DbResult BuildSchemaViewResult(PragmaManager::RowSet& rowSet, ECDbCR ecdb, uint8
 	result->FreezeSchemaChanges();
 
 	// schemaToken is the cheap schema-identity hash (ec_Schema names + versions), identical to
-	// PRAGMA checksum(schema_token), so a fragment and the manifest it was planned from share one
-	// cache-invalidation key.
+	// PRAGMA checksum(schema_token), so a fragment and the manifest it was planned from share one key.
 	Utf8String schemaToken;
 	if (SHA3Helper::ComputeHash(schemaToken, ecdb, SHA3Helper::SourceType::ECDB_SCHEMA_TOKEN, "main", SHA3Helper::HashSize::SHA3_256) != BE_SQLITE_OK) {
 		ecdb.GetImpl().Issues().Report(
@@ -1136,9 +1133,9 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 
 	Utf8String arg(val.GetString().c_str());
 
-	// Optional leading 'v<N>;' format-version token. The version is carried inside the one string
-	// argument (the pragma grammar allows only a single argument). Schema names are ECNames, so
-	// ';' can never occur in one - a semicolon always means a version prefix.
+	// Optional leading 'v<N>;' format-version token. It rides inside the single string argument
+	// because the pragma grammar allows only one. Schema names are ECNames, so a ';' always means a
+	// version prefix.
 	uint8_t requestedVersion = CURRENT_FORMAT_VERSION;
 	Utf8String nameList = arg;
 	size_t const semicolon = arg.find(';');
@@ -1156,10 +1153,9 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 		requestedVersion = (uint8_t)v;
 	}
 
-	// Parse the comma-separated schema name list and resolve each name to its ec_Schema id.
-	// Names are ECNames ([A-Za-z_][A-Za-z0-9_]*), so ',' can never occur in one. A malformed or
-	// unknown name fails the pragma (no partial fragment). Duplicate names are intentionally
-	// de-duplicated (not an error): a caller passing the same schema twice still gets one copy.
+	// Resolve each name in the comma-separated list to its ec_Schema id. Names are ECNames, so ','
+	// can never occur in one. A malformed or unknown name fails the pragma - no partial fragment.
+	// Duplicate names are de-duplicated rather than rejected.
 	bvector<Utf8String> tokens;
 	BeStringUtilities::Split(nameList.c_str(), ",", tokens);
 	std::unordered_set<int64_t> schemaIds;

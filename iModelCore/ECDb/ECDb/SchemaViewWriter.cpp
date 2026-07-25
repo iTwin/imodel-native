@@ -22,13 +22,11 @@ static uint32_t SafeU32Id(int64_t val)
     return UINT32_MAX;
     }
 
-// Narrow a small int field (an ordinal, or a version digit) read from an ec_ table to a
-// byte / 16-bit value for the binary format. These values are tiny by construction, if we ever encounter overflow,
-// it warrants a warning but we still produce a valid blob by saturating to the min/max of the target type.
-// If we hit this and it's valid, the binary format should be updated to use a larger type.
-// Explicitly didn't choose an error here because SchemaView needs to be resilient since it's a "all or nothing"-mechanism.
-// Adding too strict validation would cause consumers to not see any schema at all, which is very disruptive.
-// The warning is enough to catch the issue in testing.
+// Narrow a small int field (an ordinal, or a version digit) read from an ec_ table to a byte /
+// 16-bit value for the binary format. These values are tiny by construction. On overflow we warn and
+// saturate instead of failing: SchemaView is all-or-nothing, so an error here would leave consumers
+// with no schema at all. A warning is enough to catch it in testing, and the fix is to widen the
+// field in the binary format.
 static uint8_t SafeU8(int val, Utf8CP field)
     {
     if (val >= 0 && val <= (int)UINT8_MAX)
@@ -438,8 +436,8 @@ DbResult SchemaViewWriter::CollectHiddenClassIds(DbCR db)
 //---------------------------------------------------------------------------------------
 // Helper: append a leading-space " WHERE ..." schema filter for `column`. Always excludes the
 // standard/internal schemas; for a fragment, additionally restricts to the requested set. The two
-// conditions combine with AND, so a requested id that is also an excluded schema is still dropped -
-// matching the whole-schema blob, where a reference into an excluded schema resolves to "absent".
+// conditions combine with AND, so a requested id that is also excluded is still dropped - matching
+// the whole-schema blob, where a reference into an excluded schema resolves to "absent".
 //---------------------------------------------------------------------------------------
 void SchemaViewWriter::AppendSchemaFilter(Utf8StringR sql, Utf8CP column) const
     {
@@ -893,10 +891,9 @@ DbResult SchemaViewWriter::WriteSchemas(DbCR db, std::unordered_set<int64_t> con
     }
 
 //---------------------------------------------------------------------------------------
-// Reset all per-run accumulation state so a single instance can be reused for multiple
-// WriteAllSchemas / WriteSchemas calls. Centralizing the reset here keeps reuse correct even if
-// a new field is added and its collector forgets to clear.
-// m_isFragment / m_requestedSchemaIds are owned by the public entry points and not reset here.
+// Reset all per-run accumulation state so one instance can serve multiple WriteAllSchemas /
+// WriteSchemas calls. m_isFragment / m_requestedSchemaIds are owned by the public entry points and
+// are not reset here.
 //---------------------------------------------------------------------------------------
 void SchemaViewWriter::ResetState()
     {
