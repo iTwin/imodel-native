@@ -16,6 +16,8 @@ bool FeatureManager::SchemaRequiresProfileUpgrade(ECDbCR ecdb, ECN::ECSchemaCR e
     return ecSchema.OriginalECXmlVersionAtLeast(ECN::ECVersion::V3_2) ? !IsEC32Available(ecdb) : false;
     }
 
+#define KNOWN_FEATURES {}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
