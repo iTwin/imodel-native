@@ -219,6 +219,48 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     }
 }
 
+// Computes the JS-cased member name for a single EC property, mirroring the special-casing
+// done for system properties (e.g. ECInstanceId -> "id") when rendering column values to JSON
+// (see buildValuesJson below / ECSqlRowAdaptor::RenderRow).
+Utf8String GetJsMemberName(ECN::ECPropertyCR ecProperty) {
+    Utf8String memberName = ecProperty.GetName();
+    const auto prim = ecProperty.GetAsPrimitiveProperty();
+    if (prim && !prim->GetExtendedTypeName().empty()) {
+        const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
+        if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+            memberName = ECN::ECJsonSystemNames::Id();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            memberName = ECN::ECJsonSystemNames::ClassName();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
+            memberName = ECN::ECJsonSystemNames::SourceId();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
+            memberName = ECN::ECJsonSystemNames::SourceClassName();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
+            memberName = ECN::ECJsonSystemNames::TargetId();
+        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+            memberName = ECN::ECJsonSystemNames::TargetClassName();
+        else
+            ECN::ECJsonUtilities::LowerFirstChar(memberName);
+    } else {
+        ECN::ECJsonUtilities::LowerFirstChar(memberName);
+    }
+    return memberName;
+}
+
+// Builds the dotted JS-cased access string for a property map by joining the JS member names
+// of every segment from the root property down to (and including) propMap. This lets
+// dataConflictProperties/uniqueConstraintProperties match the JS-cased keys used in the
+// original/theirs/ours/conflictingRow objects built by buildValuesJson below.
+Utf8String GetJsAccessString(PropertyMap const& propMap) {
+    Utf8String jsAccessString;
+    for (PropertyMap const* segment : propMap.GetPath()) {
+        if (!jsAccessString.empty())
+            jsAccessString.append(".");
+        jsAccessString.append(GetJsMemberName(segment->GetProperty()));
+    }
+    return jsAccessString;
+}
+
 }
 
 /*static*/ BentleyStatus ChangesetReader::GetConflictReportJson(
@@ -303,7 +345,9 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
     const ClassMap* classMap = ecdb.Schemas().Main().GetClassMap(*cls);
 
     ECSqlRowAdaptor adaptor(ecdb);
-    adaptor.GetOptions().SetIncludeNulls(true);
+    adaptor.GetOptions()
+        .SetIncludeNulls(true)
+        .SetUseJsNames(true);
 
     // Helper: build a property-keyed JSON object from a DB column value map using IECSqlValues
     auto buildValuesJson = [&](BeJsValue outJson, std::unordered_map<Utf8String, DbValue> const& dbValues) -> BentleyStatus
@@ -317,7 +361,10 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
             if (!field) continue;
             Utf8String accessStr = field->GetColumnInfo().GetPropertyPath().ToString();
             if (accessStr.empty()) continue;
-            adaptor.RenderValue(outJson[accessStr.c_str()], *field);
+
+            const auto memberProp = field->GetColumnInfo().GetProperty();
+            Utf8String memberName = GetJsMemberName(*memberProp);
+            adaptor.RenderValue(outJson[memberName], *field);
             }
         return BentleyStatus::SUCCESS;
         };
@@ -338,7 +385,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
             return BentleyStatus::ERROR;
         }
 
-    // Build dataConflictProperties: property access strings of properties whose DB columns changed
+    // Build dataConflictProperties: JS-cased property access strings of properties whose DB columns changed
     {
     BeJsValue conflictPropsJson = outJsonReport["dataConflictProperties"];
     conflictPropsJson.toArray();
@@ -352,7 +399,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
                 {
                 if (dataConflictColumns.count(col->GetName()))
                     {
-                    conflictPropsJson.appendValue() = propMap->GetAccessString().c_str();
+                    conflictPropsJson.appendValue() = GetJsAccessString(*propMap).c_str();
                     break;
                     }
                 }
@@ -451,7 +498,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
                 BeJsValue violationJson = violationsJson.appendValue();
                 violationJson.toObject();
 
-                // uniqueConstraintProperties: property access strings for the violated index columns
+                // uniqueConstraintProperties: JS-cased property access strings for the violated index columns
                 {
                 std::unordered_set<Utf8String> idxColSet(idxCols.begin(), idxCols.end());
                 BeJsValue constraintPropsJson = violationJson["uniqueConstraintProperties"];
@@ -466,7 +513,7 @@ bool DbValuesAreEqual(DbValue const& a, DbValue const& b) {
                             {
                             if (idxColSet.count(col->GetName()))
                                 {
-                                constraintPropsJson.appendValue() = propMap->GetAccessString().c_str();
+                                constraintPropsJson.appendValue() = GetJsAccessString(*propMap).c_str();
                                 break;
                                 }
                             }
