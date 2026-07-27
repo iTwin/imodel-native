@@ -11,7 +11,7 @@ Libraries built in `iModelCore/libsrc/`.
 | `crashpad` | Chromium Crashpad | 2024-04-11#13 | Yes |
 | `csmap` | CS-MAP | rev 2778 | No |
 | `curl` | libcurl | 8.19.0 | No |
-| `curl/ares` | c-ares | 1.34.5 | No |
+| `curl/ares` | c-ares | 1.34.8 | No |
 | `facebook` | Facebook Folly | 57.0 | No |
 | `flatbuffers` | FlatBuffers | 1.12.0 | No |
 | `freetype2` | FreeType | 2.13.3 | No |
@@ -22,7 +22,7 @@ Libraries built in `iModelCore/libsrc/`.
 | `libjpegturbo` | libjpeg-turbo | 3.1.2 | No |
 | `libxml2` | libxml2 | 2.13.5 | No |
 | `openssl` | OpenSSL | 3.6.3 | Yes |
-| `png` | libpng | 1.6.56 | No |
+| `png` | libpng | 1.6.58 | Yes |
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.12 | No |
 | `rapidjson` | RapidJSON | 1.1.0 | No |

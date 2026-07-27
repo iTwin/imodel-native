@@ -27,7 +27,7 @@
 
 #ifndef CURL_DISABLE_SOCKETPAIR
 
-/* return < 0 for failure to initialise */
+/* return < 0 for failure to initialize */
 int Curl_wakeup_init(curl_socket_t socks[2], bool nonblocking);
 void Curl_wakeup_destroy(curl_socket_t socks[2]);
 
@@ -37,7 +37,7 @@ int Curl_wakeup_signal(curl_socket_t socks[2]);
 CURLcode Curl_wakeup_consume(curl_socket_t socks[2], bool all);
 
 #else
-#define Curl_wakeup_destroy(x)  Curl_nop_stmt
+#define Curl_wakeup_destroy(x) Curl_nop_stmt
 #endif
 
 #endif /* HEADER_CURL_SOCKETPAIR_H */

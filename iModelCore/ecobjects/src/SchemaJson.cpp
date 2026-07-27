@@ -117,7 +117,7 @@ bool SchemaJsonWriter::Serialize()
         }
 
     m_jsonRoot.SetEmptyObject();
-    m_jsonRoot[ECJSON_URI_SPEC_ATTRIBUTE] = (m_ecSchema.GetRequiredECVersion() >= ECVersion::V3_3) ? ECJSON_URI_33 : ECJSON_URI;
+    m_jsonRoot[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_URI;
     m_jsonRoot[NAME_ATTRIBUTE] = m_ecSchema.GetName();
     m_jsonRoot[SCHEMA_VERSION_ATTRIBUTE] = m_ecSchema.GetSchemaKey().GetVersionString();
     m_jsonRoot[ALIAS_ATTRIBUTE] = m_ecSchema.GetAlias();

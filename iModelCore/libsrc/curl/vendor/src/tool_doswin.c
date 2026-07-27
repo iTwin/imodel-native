@@ -25,6 +25,9 @@
 
 #if defined(_WIN32) || defined(MSDOS)
 
+#include "curlx/basename.h" /* for curlx_basename() */
+#include "curlx/version_win32.h" /* for curlx_verify_windows_version() */
+
 #ifdef _WIN32
 #  include <tlhelp32.h>
 #elif !defined(__DJGPP__) || (__DJGPP__ < 2)  /* DJGPP 2.0 has _use_lfn() */
@@ -65,7 +68,7 @@ char **__crt0_glob_function(char *arg)
 #endif
 
 /*
- * Test if truncating a path to a file will leave at least a single character
+ * Test if truncating a path to a file leaves at least a single character
  * in the filename. Filenames suffixed by an alternate data stream cannot be
  * truncated. This performs a dry run, nothing is modified.
  *
@@ -546,7 +549,7 @@ SANITIZEcode sanitize_file_name(char ** const sanitized, const char *file_name,
  *  4. Windows Directory (e.g. C:\Windows)
  *  5. all directories along %PATH%
  *
- * For WinXP and later search order actually depends on registry value:
+ * For Windows XP and later search order actually depends on registry value:
  * HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\SafeProcessSearchMode
  */
 CURLcode FindWin32CACert(struct OperationConfig *config,
@@ -599,7 +602,7 @@ struct curl_slist *GetLoadedModulePaths(void)
 
 #ifdef UNICODE
     /* sizeof(mod.szExePath) is the max total bytes of wchars. the max total
-       bytes of multibyte chars will not be more than twice that. */
+       bytes of multibyte chars is not more than twice that. */
     char buffer[sizeof(mod.szExePath) * 2];
     if(!WideCharToMultiByte(CP_ACP, 0, mod.szExePath, -1,
                             buffer, sizeof(buffer), NULL, NULL))
@@ -636,7 +639,7 @@ static struct TerminalSettings {
   LONG valid;
 } TerminalSettings;
 
-/* Offered by mingw-w64 v7+. MS SDK ~10.16299/~VS2017+. */
+/* Offered by mingw-w64 v7+, MS SDK 10.0.10586.0/VS2015 Update 1+ */
 #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
@@ -675,7 +678,7 @@ static void init_terminal(void)
     return;
 
   if((TerminalSettings.dwOutputMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-    tool_term_has_bold = true;
+    tool_term_has_bold = TRUE;
   else {
     /* The signal handler is set before attempting to change the console mode
        because otherwise a signal would not be caught after the change but
@@ -685,7 +688,7 @@ static void init_terminal(void)
       if(SetConsoleMode(TerminalSettings.hStdOut,
                         (TerminalSettings.dwOutputMode |
                          ENABLE_VIRTUAL_TERMINAL_PROCESSING))) {
-        tool_term_has_bold = true;
+        tool_term_has_bold = TRUE;
         atexit(restore_terminal);
       }
       else {
@@ -767,10 +770,10 @@ curl_socket_t win32_stdin_read_thread(void)
   static curl_socket_t socket_r = CURL_SOCKET_BAD;
 
   if(socket_r != CURL_SOCKET_BAD) {
-    assert(stdin_thread != NULL);
+    assert(stdin_thread);
     return socket_r;
   }
-  assert(stdin_thread == NULL);
+  assert(!stdin_thread);
 
   do {
     curl_socklen_t socksize = 0;
@@ -783,8 +786,8 @@ curl_socket_t win32_stdin_read_thread(void)
       errorf("curlx_calloc() error");
       break;
     }
-    /* Create the listening socket for the thread. When it starts, it will
-    * accept our connection and begin writing STDIN data to the connection. */
+    /* Create the listening socket for the thread. When it starts, it accepts
+     * our connection and begin writing STDIN data to the connection. */
     tdata->socket_l = CURL_SOCKET(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(tdata->socket_l == CURL_SOCKET_BAD) {
       errorf("socket() error: %d", SOCKERRNO);
@@ -801,7 +804,7 @@ curl_socket_t win32_stdin_read_thread(void)
       break;
     }
 
-    /* Bind to any available loopback port */
+    /* Retrieve the assigned loopback port/address */
     if(getsockname(tdata->socket_l, (struct sockaddr *)&selfaddr, &socksize)) {
       errorf("getsockname error: %d", SOCKERRNO);
       break;
@@ -822,7 +825,7 @@ curl_socket_t win32_stdin_read_thread(void)
 
     /* Start up the thread. We do not bother keeping a reference to it
        because it runs until program termination. From here on out all reads
-       from the stdin handle or file descriptor 0 will be reading from the
+       from the stdin handle or file descriptor 0 is reading from the
        socket that is fed by the thread. */
     stdin_thread = CreateThread(NULL, 0, win_stdin_thread_func,
                                 tdata, 0, NULL);

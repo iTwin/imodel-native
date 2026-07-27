@@ -33,7 +33,7 @@
 #ifndef CURL_DISABLE_PROGRESS_METER
 /* Provide a string that is 7 letters long (plus the zero byte).
 
-   Unit test 1636.
+   @unittest 1636
 */
 UNITTEST void time2str(char *r, size_t rsize, curl_off_t seconds);
 UNITTEST void time2str(char *r, size_t rsize, curl_off_t seconds)
@@ -83,7 +83,7 @@ UNITTEST void time2str(char *r, size_t rsize, curl_off_t seconds)
    but never longer than 6 columns (+ one zero byte).
    Add suffix k, M, G when suitable...
 
-   Unit test 1636
+   @unittest 1636
 */
 UNITTEST char *max6out(curl_off_t bytes, char *max6, size_t mlen);
 UNITTEST char *max6out(curl_off_t bytes, char *max6, size_t mlen)
@@ -127,8 +127,10 @@ static void pgrs_speedinit(struct Curl_easy *data)
 }
 
 /*
- * @unittest: 1606
+ * @unittest 1606
  */
+UNITTEST CURLcode pgrs_speedcheck(struct Curl_easy *data,
+                                  const struct curltime *pnow);
 UNITTEST CURLcode pgrs_speedcheck(struct Curl_easy *data,
                                   const struct curltime *pnow)
 {
@@ -211,6 +213,7 @@ void Curl_pgrsReset(struct Curl_easy *data)
   Curl_pgrsSetUploadSize(data, -1);
   Curl_pgrsSetDownloadSize(data, -1);
   data->progress.speeder_c = 0; /* reset speed records */
+  data->progress.deliver = 0;
   pgrs_speedinit(data);
 }
 
@@ -236,6 +239,30 @@ void Curl_pgrsSendPause(struct Curl_easy *data, bool enable)
     pgrs_speedinit(data); /* reset low speed measurements */
   }
 }
+
+#ifdef CURLVERBOSE
+static const char * const pgrs_timer_names[] = {
+  "PGRS-NONE",
+  "PGRS-STARTOP",
+  "PGRS-STARTSINGLE",
+  "PGRS-POSTQUEUE",
+  "PGRS-NAMELOOKUP",
+  "PGRS-CONNECT",
+  "PGRS-APPCONNECT",
+  "PGRS-PRETRANSFER",
+  "PGRS-STARTTRANSFER",
+  "PGRS-POSTRANSFER",
+  "PGRS-STARTACCEPT",
+  "PGRS-REDIRECT",
+};
+
+static const char *pgrs_timer_name(timerid timer)
+{
+  if((size_t)timer < CURL_ARRAYSIZE(pgrs_timer_names))
+    return pgrs_timer_names[(size_t)timer];
+  return "?";
+}
+#endif /* CURLVERBOSE */
 
 /*
  * Curl_pgrsTimeWas(). Store the timestamp time at the given label.
@@ -282,7 +309,6 @@ void Curl_pgrsTimeWas(struct Curl_easy *data, timerid timer,
     delta = &data->progress.t_pretransfer;
     break;
   case TIMER_STARTTRANSFER:
-    delta = &data->progress.t_starttransfer;
     /* prevent updating t_starttransfer unless:
      *   1. this is the first time we are setting t_starttransfer
      *   2. a redirect has occurred since the last time t_starttransfer was set
@@ -290,12 +316,12 @@ void Curl_pgrsTimeWas(struct Curl_easy *data, timerid timer,
      * changing the t_starttransfer time.
      */
     if(data->progress.is_t_startransfer_set) {
+      CURL_TRC_M(data, "[%s] ignored", pgrs_timer_name(timer));
       return;
     }
-    else {
-      data->progress.is_t_startransfer_set = TRUE;
-      break;
-    }
+    data->progress.is_t_startransfer_set = TRUE;
+    delta = &data->progress.t_starttransfer;
+    break;
   case TIMER_POSTRANSFER:
     delta = &data->progress.t_posttransfer;
     break;
@@ -311,7 +337,11 @@ void Curl_pgrsTimeWas(struct Curl_easy *data, timerid timer,
     if(us < 1)
       us = 1; /* make sure at least one microsecond passed */
     *delta += us;
+    CURL_TRC_M(data, "[%s] added %" FMT_TIMEDIFF_T "ns",
+               pgrs_timer_name(timer), us);
   }
+  else
+    CURL_TRC_M(data, "[%s] set", pgrs_timer_name(timer));
 }
 
 /*
@@ -337,6 +367,25 @@ void Curl_pgrsStartNow(struct Curl_easy *data)
   /* the sizes are unknown at start */
   p->dl_size_known = FALSE;
   p->ul_size_known = FALSE;
+}
+
+/* check that the 'delta' amount of bytes are okay to deliver to the
+   application, or return error if not. */
+CURLcode Curl_pgrs_deliver_check(struct Curl_easy *data, size_t delta)
+{
+  if(data->set.max_filesize &&
+     ((curl_off_t)delta > data->set.max_filesize - data->progress.deliver)) {
+    failf(data, "Would have exceeded max file size");
+    return CURLE_FILESIZE_EXCEEDED;
+  }
+  return CURLE_OK;
+}
+
+/* this counts how much data is delivered to the application, which
+   in compressed cases may differ from downloaded amount */
+void Curl_pgrs_deliver_inc(struct Curl_easy *data, size_t delta)
+{
+  data->progress.deliver += delta;
 }
 
 void Curl_pgrs_download_inc(struct Curl_easy *data, size_t delta)
@@ -609,18 +658,18 @@ static void progress_meter(struct Curl_easy *data)
 static CURLcode pgrsupdate(struct Curl_easy *data, bool showprogress)
 {
   if(!data->progress.hide) {
+    int rc;
     if(data->set.fxferinfo) {
-      int result;
       /* There is a callback set, call that */
       Curl_set_in_callback(data, TRUE);
-      result = data->set.fxferinfo(data->set.progress_client,
-                                   data->progress.dl.total_size,
-                                   data->progress.dl.cur_size,
-                                   data->progress.ul.total_size,
-                                   data->progress.ul.cur_size);
+      rc = data->set.fxferinfo(data->set.progress_client,
+                               data->progress.dl.total_size,
+                               data->progress.dl.cur_size,
+                               data->progress.ul.total_size,
+                               data->progress.ul.cur_size);
       Curl_set_in_callback(data, FALSE);
-      if(result != CURL_PROGRESSFUNC_CONTINUE) {
-        if(result) {
+      if(rc != CURL_PROGRESSFUNC_CONTINUE) {
+        if(rc) {
           failf(data, "Callback aborted");
           return CURLE_ABORTED_BY_CALLBACK;
         }
@@ -628,17 +677,16 @@ static CURLcode pgrsupdate(struct Curl_easy *data, bool showprogress)
       }
     }
     else if(data->set.fprogress) {
-      int result;
       /* The older deprecated callback is set, call that */
       Curl_set_in_callback(data, TRUE);
-      result = data->set.fprogress(data->set.progress_client,
-                                   (double)data->progress.dl.total_size,
-                                   (double)data->progress.dl.cur_size,
-                                   (double)data->progress.ul.total_size,
-                                   (double)data->progress.ul.cur_size);
+      rc = data->set.fprogress(data->set.progress_client,
+                               (double)data->progress.dl.total_size,
+                               (double)data->progress.dl.cur_size,
+                               (double)data->progress.ul.total_size,
+                               (double)data->progress.ul.cur_size);
       Curl_set_in_callback(data, FALSE);
-      if(result != CURL_PROGRESSFUNC_CONTINUE) {
-        if(result) {
+      if(rc != CURL_PROGRESSFUNC_CONTINUE) {
+        if(rc) {
           failf(data, "Callback aborted");
           return CURLE_ABORTED_BY_CALLBACK;
         }
@@ -681,4 +729,10 @@ CURLcode Curl_pgrsCheck(struct Curl_easy *data)
 void Curl_pgrsUpdate_nometer(struct Curl_easy *data)
 {
   (void)progress_calc(data, Curl_pgrs_now(data));
+}
+
+void Curl_pgrsCompleted(struct Curl_easy *data)
+{
+  struct Progress * const p = &data->progress;
+  p->timespent = curlx_ptimediff_us(Curl_pgrs_now(data), &p->start);
 }

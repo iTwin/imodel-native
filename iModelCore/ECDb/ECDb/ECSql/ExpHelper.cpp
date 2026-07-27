@@ -67,8 +67,6 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
             return "Point3d";
         case PRIMITIVETYPE_String:
             return "String";
-        case PRIMITIVETYPE_Json:
-            return "Json";
 
         default:
             BeAssert(false && "Unhandled case");

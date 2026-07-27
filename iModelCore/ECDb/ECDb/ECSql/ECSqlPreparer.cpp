@@ -659,9 +659,6 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
             case PRIMITIVETYPE_String:
                 castFormat = "CAST(%s AS TEXT)";
                 break;
-            case PRIMITIVETYPE_Json:
-                castFormat = "CAST(%s AS TEXT)";
-                break;
             default:
                 BeAssert(false && "Unexpected cast target type during preparation");
                 return ERROR;

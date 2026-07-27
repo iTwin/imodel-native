@@ -2709,28 +2709,9 @@ TEST_F(SchemaVersionTest, CreateECVersionTest)
     EXPECT_EQ(ECVersion::V3_2, ecVersion32) << "The ECVersion should have been set to 3.2.";
     EXPECT_STREQ("3.2", ECSchema::GetECVersionString(ecVersion32)) << "The string should be in the major.minor for the provided ECVersion.";
 
-    EXPECT_STREQ("3.3", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.3, therefore the string of it should be equal to 3.3.";
+    EXPECT_EQ(ECVersion::Latest, ecVersion32) << "ECVersion Latest should be equal to 3.2, therefore the comparsion should succeed.";
 
-    ECVersion ecVersion3_3;
-    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion3_3, 3, 3)) << "Creating a 3.3 ECVersion should succeed";
-    EXPECT_EQ(ECVersion::V3_3, ecVersion3_3) << "The ECVersion should have been set to 3.3.";
-    EXPECT_STREQ("3.3", ECSchema::GetECVersionString(ecVersion3_3)) << "The string should be in the major.minor for the provided ECVersion.";
-
-    EXPECT_EQ(ECVersion::Latest, ecVersion3_3) << "ECVersion Latest should be equal to 3.3, therefore the comparsion should succeed.";
-    }
-
-TEST_F(SchemaVersionTest, ShouldRoundTripECXml3_3Schema_Incomplete)
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-        </ECSchema>
-    )xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    ASSERT_TRUE(schema.IsValid());
-    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMinor());
+    EXPECT_STREQ("3.2", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.2, therefore the string of it should be equal to 3.2.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2766,26 +2747,20 @@ TEST_F(SchemaVersionTest, CreateSchemaECVersionTest)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_3)) << "The default schema ECVersion should be EC3.3 so this should validate to true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The default schema ECVersion should be EC3.2 so this should validate to true.";
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The default schema ECVersion should be the latest so this should validate to true.";
     }
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_3)) << "The schema was created as the Latest version which is EC3.3 so this should validate to true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as the Latest version which is EC3.2 so this should validate to true.";
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as the Latest version so this should validate to true.";
-    }
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_3);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_3)) << "The schema was created as an EC3.3 schema.";
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.3 schema so Latest should return true.";
     }
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_2);
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as an EC3.2 schema.";
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.2 schema so Latest should return true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.2 schema so Latest should return true.";
     }
     {
     ECSchemaPtr schema;

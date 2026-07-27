@@ -87,14 +87,14 @@ static void cshutdn_run_once(struct Curl_easy *data,
     return;
   }
 
-  if(!conn->connect_only && Curl_conn_is_connected(conn, FIRSTSOCKET))
+  if(!conn->bits.connect_only && Curl_conn_is_connected(conn, FIRSTSOCKET))
     r1 = Curl_conn_shutdown(data, FIRSTSOCKET, &done1);
   else {
     r1 = CURLE_OK;
     done1 = TRUE;
   }
 
-  if(!conn->connect_only && Curl_conn_is_connected(conn, SECONDARYSOCKET))
+  if(!conn->bits.connect_only && Curl_conn_is_connected(conn, SECONDARYSOCKET))
     r2 = Curl_conn_shutdown(data, SECONDARYSOCKET, &done2);
   else {
     r2 = CURLE_OK;
@@ -150,8 +150,8 @@ void Curl_cshutdn_terminate(struct Curl_easy *data,
   CURL_TRC_M(admin, "[SHUTDOWN] %sclosing connection #%" FMT_OFF_T,
              conn->bits.shutdown_filters ? "" : "force ",
              conn->connection_id);
-  Curl_conn_close(admin, SECONDARYSOCKET);
-  Curl_conn_close(admin, FIRSTSOCKET);
+  Curl_conn_cf_discard_all(admin, conn, SECONDARYSOCKET);
+  Curl_conn_cf_discard_all(admin, conn, FIRSTSOCKET);
   Curl_detach_connection(admin);
 
   if(data->multi)
@@ -322,14 +322,14 @@ int Curl_cshutdn_init(struct cshutdn *cshutdn,
   DEBUGASSERT(multi);
   cshutdn->multi = multi;
   Curl_llist_init(&cshutdn->list, NULL);
-  cshutdn->initialised = TRUE;
+  cshutdn->initialized = TRUE;
   return 0; /* good */
 }
 
 void Curl_cshutdn_destroy(struct cshutdn *cshutdn,
                           struct Curl_easy *data)
 {
-  if(cshutdn->initialised && data) {
+  if(cshutdn->initialized && data) {
     int timeout_ms = 0;
     /* for testing, run graceful shutdown */
 #ifdef DEBUGBUILD

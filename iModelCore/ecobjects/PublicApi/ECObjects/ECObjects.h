@@ -301,8 +301,7 @@ enum class ECVersion : uint32_t
     V3_0 = (0x03 << 16),
     V3_1 = (0x03 << 16 | 0x01),
     V3_2 = (0x03 << 16 | 0x02),
-    V3_3 = (0x03 << 16 | 0x03),
-    Latest = V3_3
+    Latest = V3_2
     };
 
 
@@ -371,8 +370,6 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_Point3d                   = 0x801,
     PRIMITIVETYPE_String                    = 0x901,
     PRIMITIVETYPE_IGeometry                 = 0xa01,
-    //! Introduced in ECXml3.3
-    PRIMITIVETYPE_Json                      = 0xb01,
     };
 
 //! Enumerates the possible return values for evaluating an expression or its value

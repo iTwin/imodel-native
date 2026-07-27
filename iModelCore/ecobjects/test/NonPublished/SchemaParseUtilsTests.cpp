@@ -417,24 +417,8 @@ TEST_F(SchemaParseUtilsTest, ParsePrimitiveType)
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "Bentley.Geometry.Common.IGeometry"));
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_IGeometry, primType);
 
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "json"));
-    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Json, primType) << "ParsePrimitiveType must recognise the EC 3.3 'json' typeName";
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "JSON"));
-    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Json, primType) << "ParsePrimitiveType must be case-insensitive for 'json'";
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "Json"));
-    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Json, primType) << "ParsePrimitiveType must be case-insensitive for 'json'";
-
-
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, ""));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "foo"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, PrimitiveTypeToString_Json)
-    {
-    EXPECT_STREQ("json", SchemaParseUtils::PrimitiveTypeToString(PRIMITIVETYPE_Json)) << "PrimitiveTypeToString must return 'json' for PRIMITIVETYPE_Json";
     }
 
 //---------------------------------------------------------------------------------------

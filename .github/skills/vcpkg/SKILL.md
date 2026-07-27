@@ -18,8 +18,9 @@ All `vcpkg install` calls run through a **single sequential chain** defined in
 ```
 vcpkg (bootstrap)
   └─► vcpkg_install_compress
-        └─► vcpkg_install_openssl
-              └─► vcpkg_install_crashpad
+        └─► vcpkg_install_png
+              └─► vcpkg_install_openssl
+                    └─► vcpkg_install_crashpad
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
@@ -71,7 +72,13 @@ always:
 
 ### 3. Extend the chain in `iModelCore/libsrc/vcpkg.PartFile.xml`
 
-Append at the end of the chain (after the current last link):
+Insert a new link into the chain.  Appending at the end is the simplest choice, but the
+chain only needs to stay **linear** — where a link sits does not affect correctness because
+every consumer depends on its own named part.  Prefer placing a more basic/foundational
+library (e.g. a compression or image codec that other libraries build on) earlier in the
+chain, and insert a new link wherever it reads most naturally alongside its peers.
+
+To append at the end (after the current last link):
 
 ```xml
 <Part Name="vcpkg_install_<mylib>" BentleyBuildMakeFile="vcpkg_install_<mylib>.mke">
@@ -79,7 +86,10 @@ Append at the end of the chain (after the current last link):
 </Part>
 ```
 
-Update the block comment above the chain to name the new last link.
+To insert mid-chain, point the new part at its predecessor and re-parent the following
+link onto the new part, keeping the chain linear.  Whichever position you choose, update
+the sibling `.mke` comment ("Runs after vcpkg_install_<prev>…") on every link whose
+predecessor changed.
 
 ### 4. Wire the consumer PartFile
 
@@ -134,6 +144,16 @@ No `vcpkg_run_install` call in the `.mke` at all — the chain part handles it.
 Libraries that **only** build as static (e.g. compress, crashpad client) can skip the
 `%if defined (CREATE_STATIC_LIBRARIES)` conditional and use `$(OutputRootDir)vcpkg_installed/…`
 directly — their `OutputRootDir` is always the static one.
+
+### 6. Migrating an existing (previously vendored) library
+
+When the library you are moving to vcpkg was previously vendored (its source checked into
+`iModelCore/libsrc/<mylib>/`), the vendored source deletion belongs in the **same** PR as the
+vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will
+likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then
+remove the vendored code in a separate standalone commit within that same PR. Deleting the
+vendored source up front produces too many modified files for Copilot to review, and the review
+may not run at all.
 
 ---
 

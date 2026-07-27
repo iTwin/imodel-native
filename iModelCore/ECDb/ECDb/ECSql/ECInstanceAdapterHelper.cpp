@@ -322,7 +322,6 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
                 break;
 
             case ECN::PRIMITIVETYPE_String:
-            case ECN::PRIMITIVETYPE_Json:
             {
             //if string owner is IECInstance which will be alive until ECInstance adapter is done executing,
             //we don't need to copy

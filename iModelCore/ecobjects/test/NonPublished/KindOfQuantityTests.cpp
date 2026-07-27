@@ -1541,7 +1541,7 @@ TEST_F(KindOfQuantityDeserializationTest, KindOfQuantityIsAppliedToStructAndStru
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_3));
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_2));
 
     ECClassCP aClass = schema->GetClassCP("A");
     ASSERT_NE(nullptr, aClass) << "Could not find 'A' class";
@@ -2863,14 +2863,14 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownUnit)
     {
     // Persistence FUS
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <KindOfQuantity typeName="KoQWithPers" description="Kind of a Description here"
                 displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown perisistence unit in a newer (3.3) version");
     // Presentation FUS
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
@@ -2885,7 +2885,7 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownFormat)
     {
     // Presentation Units
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
@@ -2899,7 +2899,7 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownFormat)
 TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSchema)
     {
     SchemaItem refSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
@@ -2908,7 +2908,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
         </ECSchema>)xml");
 
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
@@ -2952,7 +2952,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
 TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
@@ -2995,7 +2995,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
 TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchema)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <Unit typeName="Test_Unit1" phenomenon="u:LENGTH" unitSystem="u:METRIC" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>

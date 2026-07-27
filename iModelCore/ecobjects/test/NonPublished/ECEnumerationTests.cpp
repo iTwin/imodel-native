@@ -666,7 +666,7 @@ TEST_F(ECEnumerationTest, LookupEnumerationTest)
 TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithUnsupportedBackingTypesForFutureVersions)
     {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Foo1" value="False" />
             </ECEnumeration>
@@ -686,7 +686,7 @@ TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithUnsupportedBackingType
 TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithOtherNodeNameInFutureVersion)
     {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Foo1" value="False" />
                 <Blah name="banana"/>
@@ -707,7 +707,7 @@ TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithOtherNodeNameInFutureV
 TEST_F(ECEnumerationCompatibilityTests, ShouldReadEnumerationFromNewerSchemaSuccessfully)
     {
     SchemaItem missing(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.7">
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Foo1" value="Spaghetti" />
             </ECEnumeration>

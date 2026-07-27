@@ -17,7 +17,7 @@ To add a new library:
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
 3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml) at the end of the chain, with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
 5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
 6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
@@ -28,6 +28,17 @@ To add a new library:
    vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/mylib/
    %endif
    ```
+
+> **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
+
+### Windows triplets: clang vs MSVC
+
+On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clang-cl (`BUILD_TOOLSET == WINDOWS_CLANG`) — and both produce ABI-compatible output. vcpkg's binary-cache ABI hash is derived from the triplet **and** the detected compiler, so if both toolsets used the same triplet *and* the same compiler they would share one cache entry and whichever built first would win. To keep the two builds' cache entries separate, every Windows triplet comes in a matched pair:
+
+- **`x64-windows-static*.cmake`** — the MSVC variant. Its header comment marks it as the Visual Studio / MSVC toolset (the comment also fixes its content, and therefore its ABI hash).
+- **`x64-windows-static*-clang.cmake`** — the clang variant. It sets `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` to the shared [`windows-clang-cl.toolchain.cmake`](windows-clang-cl.toolchain.cmake) (referenced as `${CMAKE_CURRENT_LIST_DIR}/../../windows-clang-cl.toolchain.cmake`), which makes vcpkg build the package with BentleyBuild's own LLVM clang-cl (from `LLVM_DIR`). To avoid losing vcpkg's Windows setup, that toolchain selects clang-cl and then **includes** vcpkg's stock `windows.cmake` (rather than replacing it), so the system name, CRT, and all compile/link flags — plus vcpkg's own clang-cl handling — are preserved; only the compiler changes. (vcpkg's `windows.cmake` still adds `/RTC1` in debug, which clang-cl harmlessly ignores.) The triplet also sets `VCPKG_LOAD_VCVARS_ENV ON`, because setting `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` otherwise **disables** vcpkg's automatic Visual Studio (vcvars) environment setup — without it clang-cl can't find the MSVC SDK headers / CRT libraries and vcpkg's compiler detection fails.
+
+[`vcpkg.mki`](./vcpkg.mki) picks the variant automatically: it computes the base triplet (`x64-windows-static`, `-md`, or `-veracode`) and appends `-clang` when `BUILD_TOOLSET == WINDOWS_CLANG`. So a new Windows library must ship a `-clang` counterpart for **each** base Windows triplet it provides (e.g. if it uses `x64-windows-static-md`, add `x64-windows-static-md-clang`). Non-Windows triplets need no such split — each of those platforms builds with a single toolset.
 
 Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 
@@ -165,8 +176,8 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
-- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
-- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 
 ## Version Pinning
 

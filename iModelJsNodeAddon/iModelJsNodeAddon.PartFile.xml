@@ -7,7 +7,7 @@
     <SubPart PartName="iModelJsNodeAddonPRG"/>
   </Part>
 
-  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,macosx64,macosarm64">
+  <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,linuxarm64,macosx64,macosarm64">
     <SubPart PartName="iModelJsMakePackages"/>
     <SubPart PartName="RunUnitTests"/>
   </Part>
@@ -32,7 +32,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64,MacOSARM64">
+  <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,LinuxARM64,MacOSx64,MacOSARM64">
     <SubProduct ProductName="iModelJsNodeAddon"/>
     <SubPart PartName="iModelJsApiDeclarations"/>
   </Part>
@@ -41,7 +41,7 @@
     <SubPart PartName="iModelJsMakePackagesOpen"/>
   </Part>
 
-  <Part Name="iModelJsMakePackagesOpen" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64,MacOSARM64">
+  <Part Name="iModelJsMakePackagesOpen" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,LinuxARM64,MacOSx64,MacOSARM64">
     <SubProduct ProductName="iModelJsNodeAddonOpen"/>
     <SubPart PartName="iModelJsApiDeclarations"/>
   </Part>

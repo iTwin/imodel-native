@@ -11,7 +11,6 @@
 
 #define ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
 #define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/32/ecschema"
-#define ECJSON_URI_33                       "https://dev.bentley.com/json_schemas/ec/33/ecschema"
 #define ECJSON_SCHEMA_ITEM_URI              "https://dev.bentley.com/json_schemas/ec/32/schemaitem"
 
 #define ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
@@ -209,8 +208,6 @@
 #define EC_PRIMITIVE_TYPENAME_POINT3D       "point3d"
 #define EC_PRIMITIVE_TYPENAME_STRING        "string"
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY     "Bentley.Geometry.Common.IGeometry";
-//! Introduced in ECXml3.3
-#define EC_PRIMITIVE_TYPENAME_JSON                  "json"
 // This is used for matching incoming types to any common geometry type
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY_ROOT "Bentley.GeometryNET.Common"
 #define EC_PRIMITIVE_TYPENAME_IGEOMETRY_ROOT        "Bentley.Geometry.Common"

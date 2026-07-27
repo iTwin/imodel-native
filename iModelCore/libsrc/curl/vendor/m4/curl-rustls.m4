@@ -30,12 +30,12 @@ dnl ----------------------------------------------------
 if test "x$OPT_RUSTLS" != "xno"; then
   ssl_msg=
 
-  dnl backup the pre-ssl variables
+  dnl backup the pre-detection variables
   CLEANLDFLAGS="$LDFLAGS"
   CLEANLDFLAGSPC="$LDFLAGSPC"
   CLEANCPPFLAGS="$CPPFLAGS"
 
-  ## NEW CODE
+  dnl NEW CODE
 
   dnl use pkg-config unless we have been given a path
   dnl even then, try pkg-config first
@@ -57,15 +57,15 @@ if test "x$OPT_RUSTLS" != "xno"; then
 
       RUSTLS_PCDIR="$PREFIX_RUSTLS/lib/pkgconfig"
       if test -f "$RUSTLS_PCDIR/rustls.pc"; then
-        AC_MSG_NOTICE([PKG_CONFIG_LIBDIR will be set to "$RUSTLS_PCDIR"])
+        AC_MSG_NOTICE([PKG_CONFIG_LIBDIR is set to "$RUSTLS_PCDIR"])
         PKGTEST="yes"
       fi
 
       if test "$PKGTEST" != "yes"; then
-        # try lib64 instead
+        dnl try lib64 instead
         RUSTLS_PCDIR="$PREFIX_RUSTLS/lib64/pkgconfig"
         if test -f "$RUSTLS_PCDIR/rustls.pc"; then
-          AC_MSG_NOTICE([PKG_CONFIG_LIBDIR will be set to "$RUSTLS_PCDIR"])
+          AC_MSG_NOTICE([PKG_CONFIG_LIBDIR is set to "$RUSTLS_PCDIR"])
           PKGTEST="yes"
         fi
       fi
@@ -95,7 +95,7 @@ if test "x$OPT_RUSTLS" != "xno"; then
           SSL_CPPFLAGS="-I$PREFIX_RUSTLS/include"
         fi
 
-        dnl we will verify AC_CHECK_LIB later on
+        dnl we verify AC_CHECK_LIB later on
         AC_DEFINE(USE_RUSTLS, 1, [if Rustls is enabled])
         USE_RUSTLS="yes"
       fi
@@ -109,13 +109,13 @@ if test "x$OPT_RUSTLS" != "xno"; then
     CURL_CHECK_PKGCONFIG(rustls, [$RUSTLS_PCDIR])
 
     if test "$PKGCONFIG" != "no"; then
-      SSL_LIBS=`CURL_EXPORT_PCDIR([$RUSTLS_PCDIR]) dnl
+      SSL_LIBS=`CURL_EXPORT_PCDIR([$RUSTLS_PCDIR])
         $PKGCONFIG --libs-only-l --libs-only-other rustls 2>/dev/null`
 
-      SSL_LDFLAGS=`CURL_EXPORT_PCDIR([$RUSTLS_PCDIR]) dnl
+      SSL_LDFLAGS=`CURL_EXPORT_PCDIR([$RUSTLS_PCDIR])
         $PKGCONFIG --libs-only-L rustls 2>/dev/null`
 
-      SSL_CPPFLAGS=`CURL_EXPORT_PCDIR([$RUSTLS_PCDIR]) dnl
+      SSL_CPPFLAGS=`CURL_EXPORT_PCDIR([$RUSTLS_PCDIR])
         $PKGCONFIG --cflags-only-I rustls 2>/dev/null`
 
       AC_MSG_NOTICE([pkg-config: SSL_LIBS: "$SSL_LIBS"])
@@ -185,13 +185,10 @@ if test "x$OPT_RUSTLS" != "xno"; then
 
   test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
 
-  if test "x$OPT_RUSTLS" != "xno" &&
-    test "$RUSTLS_ENABLED" != "1"; then
+  if test "$RUSTLS_ENABLED" != "1"; then
     AC_MSG_NOTICE([OPT_RUSTLS: $OPT_RUSTLS])
     AC_MSG_NOTICE([RUSTLS_ENABLED: $RUSTLS_ENABLED])
     AC_MSG_ERROR([--with-rustls was given but Rustls could not be detected])
   fi
 fi
 ])
-
-RUSTLS_ENABLED

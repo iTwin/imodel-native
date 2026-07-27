@@ -17,11 +17,17 @@
     <Part Name="vcpkg_install_compress" BentleyBuildMakeFile="vcpkg_install_compress.mke">
         <SubPart PartName="vcpkg"/>
     </Part>
-    <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
+    <Part Name="vcpkg_install_png" BentleyBuildMakeFile="vcpkg_install_png.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_compress" LibType="Static"/>
+    </Part>
+    <Part Name="vcpkg_install_openssl" BentleyBuildMakeFile="vcpkg_install_openssl.mke">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_png" LibType="Static"/>
     </Part>
     <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on

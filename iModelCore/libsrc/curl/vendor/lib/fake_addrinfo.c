@@ -41,16 +41,16 @@ void r_freeaddrinfo(struct addrinfo *cahead)
 }
 
 struct context {
-  struct ares_addrinfo *result;
+  struct ares_addrinfo *addr;
 };
 
 static void async_addrinfo_cb(void *userp, int status, int timeouts,
-                              struct ares_addrinfo *result)
+                              struct ares_addrinfo *addr)
 {
   struct context *ctx = (struct context *)userp;
   (void)timeouts;
   if(ARES_SUCCESS == status) {
-    ctx->result = result;
+    ctx->addr = addr;
   }
 }
 
@@ -64,7 +64,7 @@ static struct addrinfo *mk_getaddrinfo(const struct ares_addrinfo *aihead)
   const char *name = aihead->name;
 
   /* traverse the addrinfo list */
-  for(ai = aihead->nodes; ai != NULL; ai = ai->ai_next) {
+  for(ai = aihead->nodes; ai; ai = ai->ai_next) {
     size_t ss_size;
     size_t namelen = name ? strlen(name) + 1 : 0;
     /* ignore elements with unsupported address family,
@@ -184,11 +184,11 @@ int r_getaddrinfo(const char *node,
   /* Wait until no more requests are left to be processed */
   ares_queue_wait_empty(channel, -1);
 
-  if(ctx.result) {
+  if(ctx.addr) {
     /* convert the c-ares version */
-    *res = mk_getaddrinfo(ctx.result);
+    *res = mk_getaddrinfo(ctx.addr);
     /* free the old */
-    ares_freeaddrinfo(ctx.result);
+    ares_freeaddrinfo(ctx.addr);
   }
   else
     rc = EAI_NONAME; /* got nothing */
