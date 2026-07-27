@@ -1303,7 +1303,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
 
     if(!isSchemaSyncDisabled && !resolvedSyncDbUri.IsEmpty()) {
-        if (SchemaSync::Status::OK != schemaSync.ReserveSchemaImport(schemas, syncDbUri))
+        if (SchemaSync::Status::OK != schemaSync.ReserveSchemaImport(schemas, resolvedSyncDbUri))
             return SchemaImportResult::ERROR;
     }
 

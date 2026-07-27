@@ -2093,6 +2093,13 @@ void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, S
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaSync::LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const {
+    // Reuse the pending-reservation connection when it is open so that uncommitted
+    // reservation changes written by ReserveSchemaImport are visible to the caller.
+    if (m_pendingReservationDb.IsDbOpen()) {
+        if (!m_pendingReservationDb.TableExists("schema_reservation_ids"))
+            return ERROR;
+        return SchemaReservationHelper::LoadReservationStoreFromSyncDb(const_cast<Db&>(m_pendingReservationDb), store);
+    }
     Db syncDb;
     Db::OpenParams openParams(Db::OpenMode::Readonly);
     SchemaSync::ParseQueryParams(openParams, syncDbUri);
@@ -2502,6 +2509,10 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaSync::LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const {
+    // Reuse the pending-reservation connection when it is open so that uncommitted
+    // column-reservation changes written by ReserveSchemaImport are visible to the caller.
+    if (m_pendingReservationDb.IsDbOpen())
+        return SchemaReservationHelper::LoadColumnStoreFromSyncDb(const_cast<Db&>(m_pendingReservationDb), store);
     Db syncDb;
     Db::OpenParams openParams(Db::OpenMode::Readonly);
     SchemaSync::ParseQueryParams(openParams, syncDbUri);
