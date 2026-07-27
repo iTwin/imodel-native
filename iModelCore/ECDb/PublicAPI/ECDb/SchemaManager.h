@@ -174,6 +174,8 @@ enum class SchemaChangeType {
 //! Schema change event notify about event that led to schema change.
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
+struct IdFactory; // forward declaration for SchemaSync::KeyedModeGuard
+
 //=======================================================================================
 //! @ingroup ECDbGroup
 // @bsiclass
@@ -257,6 +259,25 @@ struct SchemaSync final {
             ECDB_EXPORT static LocalDbInfo From(BeJsConst);
             ECDB_EXPORT static LocalDbInfo From(DbCR);
 };
+
+    //! RAII guard that clears keyed-mode on the IdFactory on destruction.
+    //! Call Activate() after successfully entering keyed mode.
+    struct KeyedModeGuard {
+        IdFactory* m_factory;
+        bool m_active;
+        explicit KeyedModeGuard(IdFactory& f);
+        ~KeyedModeGuard();
+        void Activate() { m_active = true; }
+    };
+
+    //! RAII guard that abandons a pending reservation transaction on destruction unless Commit() was called.
+    struct ReservationTxGuard {
+        SchemaSync& m_sync;
+        bool m_committed;
+        explicit ReservationTxGuard(SchemaSync& s);
+        ~ReservationTxGuard();
+        Status Commit();
+    };
 
 private:
     ECDbR m_conn;

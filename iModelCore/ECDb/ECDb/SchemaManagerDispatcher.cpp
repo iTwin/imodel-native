@@ -1245,13 +1245,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
     {
-    struct KeyedModeGuard {
-        IdFactory* m_factory;
-        bool m_active;
-        explicit KeyedModeGuard(IdFactory& f) : m_factory(&f), m_active(false) {}
-        ~KeyedModeGuard() { if (m_active) m_factory->ClearKeyedMode(); }
-        void Activate() { m_active = true; }
-    } keyedModeGuard(GetECDb().GetImpl().GetIdFactory());
+    SchemaSync::KeyedModeGuard keyedModeGuard(GetECDb().GetImpl().GetIdFactory());
 
     #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
     /*
@@ -1307,23 +1301,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             return SchemaImportResult::ERROR;
     }
 
-    struct ReservationTxGuard {
-        SchemaSync& m_sync;
-        bool m_committed = false;
-        explicit ReservationTxGuard(SchemaSync& s) : m_sync(s) {}
-        ~ReservationTxGuard() {
-            if (!m_committed) {
-                if (SchemaSync::Status::OK != m_sync.AbandonPendingReservation())
-                    LOG.error("ReservationTxGuard: Failed to roll back reservation transaction on import failure.");
-            }
-        }
-        SchemaSync::Status Commit() {
-            const auto rc = m_sync.CommitPendingReservation();
-            if (SchemaSync::Status::OK == rc)
-                m_committed = true;
-            return rc;
-        }
-    } reservationTxGuard(schemaSync);
+    SchemaSync::ReservationTxGuard reservationTxGuard(schemaSync);
 
     // When SchemaSync is active and a sync-db URI is available, activate keyed mode so that
     // NextIdForKey() looks up pre-reserved ids from the sync-db reservation store.

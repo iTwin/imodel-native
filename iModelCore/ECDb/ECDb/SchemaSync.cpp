@@ -2217,6 +2217,41 @@ SchemaSync::Status SchemaSync::AbandonPendingReservation() {
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::KeyedModeGuard::KeyedModeGuard(IdFactory& f) : m_factory(&f), m_active(false) {}
+
+SchemaSync::KeyedModeGuard::~KeyedModeGuard() {
+    if (m_active)
+        m_factory->ClearKeyedMode();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::ReservationTxGuard::ReservationTxGuard(SchemaSync& s) : m_sync(s), m_committed(false) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::ReservationTxGuard::~ReservationTxGuard() {
+    if (!m_committed) {
+        if (SchemaSync::Status::OK != m_sync.AbandonPendingReservation())
+            LOG.error("ReservationTxGuard: Failed to roll back reservation transaction on import failure.");
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::ReservationTxGuard::Commit() {
+    const auto rc = m_sync.CommitPendingReservation();
+    if (SchemaSync::Status::OK == rc)
+        m_committed = true;
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
 // Helper: return the primary physical SQLite table name that @p ecClass (or the first
 // mapped ancestor in the base-class chain) maps to.  Returns an empty string when the
 // class has no entry in ec_ClassMap yet (brand-new, unmapped class hierarchy).
