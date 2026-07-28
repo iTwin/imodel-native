@@ -825,7 +825,7 @@ ECObjectsStatus setPrimitivePropertyAttributes(ECClassP destClass, PrimitiveProp
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences)
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences, bool resolveConflicts)
     {
     if (nullptr == sourceProperty)
         return ECObjectsStatus::NullPointerValue;
@@ -849,7 +849,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         StructArrayECPropertyCP sourceStructArray = sourceProperty->GetAsStructArrayProperty();
         ECStructClassCP structClass = &sourceStructArray->GetStructElementType();
         ECClassP target;
-        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences)))
+        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences, false, resolveConflicts)))
             {
             delete(destStructArray);
             return status;
@@ -897,7 +897,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         ECStructClassCP structClass = &sourceStruct->GetType();
 
         ECClassP target;
-        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences)))
+        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, structClass, copyReferences, false, resolveConflicts)))
             {
             delete(destStruct);
             return status;
@@ -928,7 +928,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
         ECRelationshipClassCP relationshipClass = sourceNav->GetRelationshipClass();
 
         ECClassP target;
-        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, relationshipClass, copyReferences)))
+        if (ECObjectsStatus::Success != (status = GetSchemaR().GetOrCopyReferencedClassForCopy(sourceProperty->GetClass(), target, relationshipClass, copyReferences, false, resolveConflicts)))
             {
             delete(destNav);
             return status;
@@ -2920,29 +2920,39 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     {
     bool valid = true;
 
+    // Issues on legacy (originally EC2) schemas are tolerated by the callers that pass resolveIssues, so they are logged
+    // with reduced severity. Converted legacy schemas are re-validated on every copy/merge pass, which otherwise floods
+    // the log with the same errors many times over.
+    const bool toleratedLegacyIssues = resolveIssues && m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1);
+
     if (GetConstraintClasses().size() == 0)
         {
-        LOG.errorv("Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
+        LOG.messagev(toleratedLegacyIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+                "Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
                 (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
 
         valid = false;
         }
 
+    // The validators called below already log details about the problems they find. The messages here only summarize the
+    // outcome, so for tolerated legacy issues they are logged as DEBUG to avoid duplicating the details at ERROR severity.
+    const auto summarySeverity = toleratedLegacyIssues ? NativeLogging::SEVERITY::LOG_DEBUG : NativeLogging::SEVERITY::LOG_ERROR;
+
     if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
         {
-        LOG.errorv("Relationship Class Constraint Violation: Role Label validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Role Label validation failed for the '%s' constraint of relationship '%s'",
             m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
         {
-        LOG.errorv("Relationship Class Constraint Violation: Multiplicity validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Multiplicity validation failed for the '%s' constraint of relationship '%s'",
                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
     if (ECObjectsStatus::Success != ValidateAbstractConstraint(resolveIssues))
         {
-        LOG.errorv("Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the '%s' constraint of relationship '%s'",
                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         // Need to stop validation if abstract constraint fails, since it will change the error messages from the class constraint validation.
         m_verified = false;
@@ -2950,7 +2960,7 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
         }
     if (ECObjectsStatus::Success != ValidateClassConstraint())
         {
-        LOG.errorv("Relationship Class Constraint Violation: Class Constraint validation failed for the '%s' constraint of relationship '%s'",
+        LOG.messagev(summarySeverity, "Relationship Class Constraint Violation: Class Constraint validation failed for the '%s' constraint of relationship '%s'",
                    m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
@@ -3877,7 +3887,7 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8StringCR value)
   /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences)
+ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint, bool copyReferences, bool resolveConflicts)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
@@ -3893,7 +3903,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
     if (IsAbstractConstraintDefined())
         {
         ECClassP targetAbstractConstraint;
-        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetAbstractConstraint, GetAbstractConstraint(), copyReferences)))
+        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetAbstractConstraint, GetAbstractConstraint(), copyReferences, false, resolveConflicts)))
             status = toRelationshipConstraint.SetAbstractConstraint(*targetAbstractConstraint);
 
         if (ECObjectsStatus::Success != status)
@@ -3903,7 +3913,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
     for (auto constraintClass : GetConstraintClasses())
         {
         ECClassP targetConstraintClass;
-        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetConstraintClass, constraintClass, copyReferences)))
+        if (ECObjectsStatus::Success == (status = destSchema->GetOrCopyReferencedClassForCopy(GetRelationshipClass(), targetConstraintClass, constraintClass, copyReferences, false, resolveConflicts)))
             if (ECObjectsStatus::Success != (status = toRelationshipConstraint.AddClass(*targetConstraintClass)))
                 break;
         }
