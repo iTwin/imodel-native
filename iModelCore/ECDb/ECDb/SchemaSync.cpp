@@ -2172,7 +2172,7 @@ SchemaSync::Status SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> cons
     bset<Utf8String, CompareIUtf8Ascii> colVisited;
     for (ECN::ECSchemaCP schema : schemas)
         if (schema != nullptr)
-            SchemaReservationHelper::WalkSchemaForColumnReservation(*schema, m_conn, store, colStore, colVisited);
+            SchemaReservationHelper::WalkSchemaForColumnReservation(*schema, store, colStore, colVisited);
 
     if (SUCCESS != SchemaReservationHelper::WriteColumnStoreToSyncDb(m_pendingReservationDb, colStore)) {
         LOG.error("ReserveSchemaImport: Failed to write column reservation store.");
@@ -2447,9 +2447,114 @@ BentleyStatus SchemaReservationHelper::WriteColumnStoreToSyncDb(Db& syncDb, Sche
 }
 
 //---------------------------------------------------------------------------------------
+// Walk the base-class chain upward and return the first base that has an explicit
+// ClassMap CA declaring MapStrategy=TablePerHierarchy.  A base with OwnTable / NotMapped /
+// ExistingTable stops the search (it defines an independent table that is not shared with
+// subclasses).  Returns nullptr when no TPH ancestor is found, meaning the class is its
+// own table root (defaults to OwnTable, or is itself the TPH root if it carries the CA).
+//---------------------------------------------------------------------------------------
+ECN::ECClassCP SchemaReservationHelper::FindTphAncestor(ECN::ECClassCR ecClass) {
+    for (ECN::ECClassCP base : ecClass.GetBaseClasses()) {
+        if (base == nullptr) continue;
+
+        ClassMapCustomAttribute ca;
+        ECDbMapCustomAttributeHelper::TryGetClassMap(ca, *base);
+        if (ca.IsValid()) {
+            Nullable<Utf8String> stratStr;
+            if (SUCCESS == ca.TryGetMapStrategy(stratStr) && !stratStr.IsNull()) {
+                MapStrategy strat;
+                if (SUCCESS == MapStrategyExtendedInfo::ParseMapStrategy(strat, stratStr.Value())) {
+                    if (strat == MapStrategy::TablePerHierarchy)
+                        return base;  // This base IS the TPH root.
+                    // OwnTable / NotMapped / ExistingTable: the base defines an independent table;
+                    // don't recurse further through this branch.
+                    continue;
+                }
+            }
+        }
+
+        // Base has no explicit (or unrecognised) map strategy — it may itself be a TPH subclass.
+        // Recurse upward to find a TPH root in the ancestor chain.
+        ECN::ECClassCP higher = FindTphAncestor(*base);
+        if (higher != nullptr)
+            return higher;
+    }
+    return nullptr;  // No TPH ancestor; the class is its own table root.
+}
+
+//---------------------------------------------------------------------------------------
+// Return the ShareColumnsMode that @p ecClass propagates to its subclasses (not whether
+// the class itself uses shared columns — use ClassUsesSharedColumns for that).
+// Mirrors TablePerHierarchyInfo::DetermineSharedColumnsInfo:
+//   any non-No mode from a base is inherited as Yes by the subclass.
+// (DetermineSharedColumnsInfo is private to TablePerHierarchyInfo and requires an
+// IssueDataSource; only the schema-metadata portion is replicated here.)
+//---------------------------------------------------------------------------------------
+TablePerHierarchyInfo::ShareColumnsMode SchemaReservationHelper::ComputePropagatedShareMode(
+    ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow) {
+    using SCMode = TablePerHierarchyInfo::ShareColumnsMode;
+
+    for (ECN::ECClassCP base : ecClass.GetBaseClasses()) {
+        if (base == nullptr) continue;
+        // Skip bases that define an independent table (OwnTable / NotMapped / ExistingTable).
+        ClassMapCustomAttribute baseMapCA;
+        ECDbMapCustomAttributeHelper::TryGetClassMap(baseMapCA, *base);
+        if (baseMapCA.IsValid()) {
+            Nullable<Utf8String> stratStr;
+            if (SUCCESS == baseMapCA.TryGetMapStrategy(stratStr) && !stratStr.IsNull()) {
+                MapStrategy strat;
+                if (SUCCESS == MapStrategyExtendedInfo::ParseMapStrategy(strat, stratStr.Value()))
+                    if (strat == MapStrategy::OwnTable || strat == MapStrategy::NotMapped ||
+                        strat == MapStrategy::ExistingTable)
+                        continue;
+            }
+        }
+        if (ComputePropagatedShareMode(*base, maxBeforeOverflow) != SCMode::No)
+            return SCMode::Yes;  // Any non-No from a TPH-chain base → inherited Yes.
+    }
+
+    ShareColumnsCustomAttribute shareCA;
+    if (!ECDbMapCustomAttributeHelper::TryGetShareColumns(shareCA, ecClass) || !shareCA.IsValid())
+        return SCMode::No;
+
+    Nullable<bool> applyToSubclassesOnly;
+    shareCA.TryGetApplyToSubclassesOnly(applyToSubclassesOnly);
+    shareCA.TryGetMaxSharedColumnsBeforeOverflow(maxBeforeOverflow);
+    const bool subOnly = !applyToSubclassesOnly.IsNull() && applyToSubclassesOnly.Value();
+    return subOnly ? SCMode::ApplyToSubclassesOnly : SCMode::Yes;
+}
+
+//---------------------------------------------------------------------------------------
+// Return true if @p ecClass itself (not just its subclasses) uses the shared-column strategy.
+// Delegates to ComputePropagatedShareMode for the inheritance traversal; the result is
+// Yes for a fully inheriting subclass, ApplyToSubclassesOnly for the root that carries
+// that CA (meaning it does NOT use shared columns itself), or No if there is no ShareColumns CA.
+//---------------------------------------------------------------------------------------
+bool SchemaReservationHelper::ClassUsesSharedColumns(ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow) {
+    return ComputePropagatedShareMode(ecClass, maxBeforeOverflow) == TablePerHierarchyInfo::ShareColumnsMode::Yes;
+}
+
+//---------------------------------------------------------------------------------------
+// Return true if @p prop has an explicit ColumnName value in its PropertyMap CA, meaning
+// it maps to a named physical column even inside a shared-column TPH table — those columns
+// are derived deterministically from the property name on every briefcase, so they need
+// no coordinated reservation.
+//---------------------------------------------------------------------------------------
+bool SchemaReservationHelper::PropertyHasExplicitColumnName(ECN::ECPropertyCR prop) {
+    ECN::PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
+    if (primProp == nullptr) return false;  // Only primitive properties can carry PropertyMap.ColumnName.
+    PropertyMapCustomAttribute propMapCA;
+    if (!ECDbMapCustomAttributeHelper::TryGetPropertyMap(propMapCA, *primProp) || !propMapCA.IsValid())
+        return false;
+    Nullable<Utf8String> colName;
+    if (SUCCESS != propMapCA.TryGetColumnName(colName))
+        return false;
+    return !colName.IsNull() && !colName.Value().empty();
+}
+
+//---------------------------------------------------------------------------------------
 void SchemaReservationHelper::WalkSchemaForColumnReservation(
     ECN::ECSchemaCR schema,
-    ECDbCR localDb,
     SchemaReservationStore& idStore,
     SchemaReservationColumnStore& colStore,
     bset<Utf8String, CompareIUtf8Ascii>& visited)
@@ -2462,83 +2567,110 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
     for (auto const& refPair : schema.GetReferencedSchemas()) {
         ECN::ECSchemaCP ref = refPair.second.get();
         if (ref != nullptr)
-            WalkSchemaForColumnReservation(*ref, localDb, idStore, colStore, visited);
+            WalkSchemaForColumnReservation(*ref, idStore, colStore, visited);
     }
 
     for (ECN::ECClassCP ecClass : schema.GetClasses()) {
         if (ecClass == nullptr) continue;
 
-        // Relationship classes use a link-table strategy (one physical SQLite row per
-        // relationship instance keyed on SourceECInstanceId / TargetECInstanceId) or an FK
-        // column on the source entity table — neither of which uses the shared-column TPH pool
-        // that this reservation pass manages.  Because all briefcases apply the same mapping
-        // strategy for relationship classes (determined entirely by schema metadata, not by any
-        // runtime counter), skipping them here does not create any divergence: every briefcase
-        // will independently arrive at the same link-table / FK layout without needing a
-        // coordinated column-ordinal reservation. (TODO: I need verification on this.)
+        // Relationship classes use a link-table or FK-column strategy whose layout is
+        // derived entirely from schema metadata (no shared-column pool); skip.
         if (ecClass->IsRelationshipClass()) continue;
+        // Struct and CA classes are never mapped to physical tables.
+        if (ecClass->IsCustomAttributeClass() || ecClass->IsStructClass()) continue;
 
+        // Skip classes explicitly opted out of mapping.
+        {
+            ClassMapCustomAttribute classMapCA;
+            ECDbMapCustomAttributeHelper::TryGetClassMap(classMapCA, *ecClass);
+            if (classMapCA.IsValid()) {
+                Nullable<Utf8String> stratStr;
+                if (SUCCESS == classMapCA.TryGetMapStrategy(stratStr) && !stratStr.IsNull()) {
+                    MapStrategy strat;
+                    if (SUCCESS == MapStrategyExtendedInfo::ParseMapStrategy(strat, stratStr.Value())) {
+                        if (strat == MapStrategy::NotMapped || strat == MapStrategy::ExistingTable)
+                            continue;
+                    }
+                }
+            }
+        }
+
+        // Only classes that introduce at least one owned property can require new column slots.
         auto const& ownedProps = ecClass->GetProperties(false);
-        // Only classes that introduce their own properties can require new column slots.
-        // An abstract intermediate class (or a pure-mixin) that contributes zero owned
-        // properties will, during the real mapping phase, share every column already
-        // allocated for the concrete base or sibling that does own properties.  Skipping
-        // such a class here is therefore consistent across all briefcases: none of them
-        // will allocate a new column for it, so the per-physical-table ordinal counter
-        // advances by the same amount on every briefcase.
         if (ownedProps.empty()) continue;
 
-        // Find the primary physical table this class maps to (or will map to via its ancestors).
-        Utf8String physTable = FindPrimaryTableForClass(localDb, *ecClass);
-        if (physTable.empty()) {
-            // This class belongs to a brand-new hierarchy that has never been imported into
-            // localDb, so ec_ClassMap has no row for it yet and the physical table name
-            // cannot be determined without running the full mapping phase.
-            //
-            // From the cross-briefcase consistency perspective this is safe to skip: all
-            // briefcases that start from the same common synced base will see the same absent
-            // ec_ClassMap entry and will skip this class identically.  Phase 2 of the
-            // reservation protocol (not yet implemented) will derive table names for new
-            // hierarchies before the sync-db write-lock is acquired, closing this gap.
-            // Until then, such classes are reserved through the schema lock path where
-            // coordination is guaranteed by mutual exclusion rather than by pre-reservation.
+        // only reserve columns for classes whose table uses the shared-column strategy
+        // (ShareColumnsMode == Yes).  Classes mapped to non-shared-column tables (OwnTable default,
+        // or TPH without ShareColumns CA) produce named physical columns that are
+        // deterministic across briefcases and need no coordinated reservation.
+        Nullable<uint32_t> maxBeforeOverflow;
+        if (!ClassUsesSharedColumns(*ecClass, maxBeforeOverflow))
+            continue;
+
+        // Derive the primary physical table name purely from schema metadata.
+        // For a TPH subclass, use the TPH root's table name; for a root class (or a class
+        // with OwnTable strategy that somehow uses ShareColumns), use the class's own name.
+        ECN::ECClassCP tphAncestor = FindTphAncestor(*ecClass);
+        ECN::ECClassCR rootClass = (tphAncestor != nullptr) ? *tphAncestor : *ecClass;
+        Utf8String primaryTableName;
+        if (SUCCESS != DbMappingManager::Tables::DetermineTableName(primaryTableName, rootClass)) {
+            LOG.warningv(
+                "WalkSchemaForColumnReservation: could not derive table name for '%s' — skipping.",
+                ecClass->GetFullName());
             continue;
         }
 
-        SchemaReservationColumnTableStore& colTableStore = colStore.GetOrCreate(physTable);
+        // Rule 2: overflow table name follows the deterministic convention from CreateOverflowTable.
+        // The overflow store is created lazily — only if at least one property actually spills.
+        Utf8String overflowTableName = primaryTableName + "_Overflow";
+        SchemaReservationColumnTableStore& primaryStore = colStore.GetOrCreate(primaryTableName);
+        SchemaReservationColumnTableStore* overflowStore = nullptr;  // created on first use
+
+        // kMaxPrimarySharedColumnOrd: the highest valid ordinal for a shared column in the primary
+        // table before the next property must go to overflow.  Ordinals are 0-indexed so ordinals
+        // 0..N give N+1 physical slots; kMaxPhysicalColumnsPerTable slots means the last valid
+        // ordinal is kMaxPhysicalColumnsPerTable - 1.  When MaxSharedColumnsBeforeOverflow is set
+        // that cap (used as an ordinal limit) takes precedence if it is tighter.
+        constexpr uint64_t kMaxPrimarySharedColumnOrd =
+            (uint64_t)ClassMapColumnFactory::kMaxPhysicalColumnsPerTable - 1;
+        uint64_t primaryOrdLimit = kMaxPrimarySharedColumnOrd;
+        if (!maxBeforeOverflow.IsNull() && (uint64_t)maxBeforeOverflow.Value() < primaryOrdLimit)
+            primaryOrdLimit = (uint64_t)maxBeforeOverflow.Value();
 
         for (ECN::ECPropertyCP prop : ownedProps) {
             if (prop == nullptr) continue;
 
-            // Navigation properties are stored as FK columns (e.g. SourceECInstanceId /
-            // TargetECInstanceId) whose ordinals are chosen by the relationship-constraint
-            // mapping path, not by the shared-column TPH machinery.  That path is
-            // deterministic purely from schema metadata (it always uses a fixed set of
-            // well-known column names), so it requires no coordination through the sync-db
-            // counter — every briefcase derives the same FK column layout independently.
-            // Including navigation properties here would advance the per-physical-table
-            // ordinal counter unnecessarily and cause the real import on one briefcase to
-            // consume a higher ordinal than was reserved, breaking cross-briefcase alignment.
+            // Navigation properties map to well-known FK columns (SourceECInstanceId /
+            // TargetECInstanceId).  Their layout is deterministic from schema metadata;
+            // including them here would advance the shared-column counter unnecessarily.
             if (prop->GetIsNavigation()) continue;
+
+            // Properties with an explicit ColumnName CA produce a named physical column.
+            // Named columns are derived deterministically from the property name on every
+            // briefcase, so they need no coordinated slot reservation.
+            if (PropertyHasExplicitColumnName(*prop)) continue;
 
             Utf8String propKey = SchemaWriter::DerivePropertyKey(*prop);
 
-            // Idempotent reservation — cross-briefcase safety for concurrent writers:
-            // The sync-db write-lock serializes callers so that at most one briefcase updates
-            // the reservation store at a time.  However, a second briefcase that acquires the
-            // lock after the first has already written a reservation will re-read the updated
-            // blobs, find the key already present here, and skip it — leaving the
-            // (columnOrd, columnId) pair that the first briefcase wrote untouched.  Both
-            // briefcases will therefore consume exactly the same ordinal and id for this
-            // property during their respective imports, which is the core invariant the
-            // reservation protocol must preserve.  Overwriting an existing entry would
-            // allocate a new ordinal and silently break that invariant.
-            if (colTableStore.Lookup(propKey) != nullptr) continue;
+            // Idempotent: if the key is already reserved in either table, leave the existing
+            // (columnOrd, columnId) pair untouched — overwriting would break cross-briefcase
+            // alignment by allocating a different ordinal for the same property.
+            if (primaryStore.Lookup(propKey) != nullptr)
+                continue;
+            if (const SchemaReservationColumnTableStore* existOvf = colStore.TryGet(overflowTableName))
+                if (existOvf->Lookup(propKey) != nullptr)
+                    continue;
 
-            // Allocate a fresh ec_Column.Id from the id store and a new column ordinal
-            // from the per-physical-table counter.
+            // Decide whether the property goes to the primary table or the overflow table.
+            SchemaReservationColumnTableStore* targetStore = &primaryStore;
+            if (primaryStore.GetLastUsedColumnOrd() >= primaryOrdLimit) {
+                if (overflowStore == nullptr)
+                    overflowStore = &colStore.GetOrCreate(overflowTableName);
+                targetStore = overflowStore;
+            }
+
             uint64_t columnId = idStore.column.GetOrAllocate(propKey);
-            colTableStore.GetOrAllocate(propKey, columnId);
+            targetStore->GetOrAllocate(propKey, columnId);
         }
     }
 }

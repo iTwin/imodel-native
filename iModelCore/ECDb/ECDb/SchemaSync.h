@@ -86,22 +86,6 @@ struct SchemaReservationHelper final {
     static constexpr Utf8CP RES_TABLE_INDEX          = "ec_Index";
     static constexpr Utf8CP RES_TABLE_INDEXCOL       = "ec_IndexColumn";
 
-    static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store);
-    static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store);
-    static BentleyStatus SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
-
-    // Link-row id lookups used by SeedSchemaFromLocalDb (one per join/link table).
-    static uint64_t LookupSchemaReferenceId(ECDbCR localDb, Utf8StringCR schemaName, Utf8StringCR refSchemaName);
-    static uint64_t LookupClassHasBaseClassesId(ECDbCR localDb, ECN::ECClassCR ecClass, ECN::ECClassCR baseClass);
-    static uint64_t LookupFormatCompositeUnitId(ECDbCR localDb, ECN::ECFormatCR fmt, int ordinal);
-    static uint64_t LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end);
-    static uint64_t LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass);
-    static uint64_t LookupCustomAttributeId(ECDbCR localDb, uint64_t containerId, int containerType, ECN::ECClassCR caClass);
-    //! Walk @p schema (recursively, dependency-first) and record key→persistedId for every
-    //! already-persisted metadata element found in @p localDb.  Called by SeedReservationStoreFromLocalDb.
-    static BentleyStatus SeedSchemaFromLocalDb(ECDbCR localDb, ECN::ECSchemaCR schema,
-                                               SchemaReservationStore& store,
-                                               bset<Utf8String, CompareIUtf8Ascii>& visited);
     //! Populate BOTH the key→id map AND the lastReservedId counter for every metadata/mapping
     //! table from the fully-populated local db. Runs once, at Init, to capture the container baseline.
     static BentleyStatus SeedReservationStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
@@ -110,16 +94,6 @@ struct SchemaReservationHelper final {
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                          bset<Utf8String, CompareIUtf8Ascii>& visited);
 
-    // Column-assignment reservation helpers.
-    static Utf8String FindPrimaryTableForClass(ECDbCR localDb, ECN::ECClassCR ecClass);
-    static BentleyStatus ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store);
-    static BentleyStatus WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store);
-    static BentleyStatus SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store);
-    //! Populate propertyKey→(columnOrd,columnId) maps from already-persisted ec_PropertyMap rows
-    //! for Primary/Overflow tables, mirroring columnIds into @p idStore.column.  Called by
-    //! SeedColumnStoreFromLocalDb.
-    static BentleyStatus SeedColumnKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
-                                                      SchemaReservationColumnStore& colStore);
     //! Populate BOTH the propertyKey→(columnOrd,columnId) map AND the per-table lastUsedColumnOrd
     //! counter (and mirror columnIds into idStore.column) from the local db. Runs once, at Init.
     static BentleyStatus SeedColumnStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
@@ -127,12 +101,61 @@ struct SchemaReservationHelper final {
     static BentleyStatus LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store);
     static BentleyStatus WriteColumnStoreToSyncDb(Db& syncDb, SchemaReservationColumnStore const& store);
     //! Walk @p schema and allocate per-physical-table column ordinals for every new property
-    //! that maps to a shared-column or overflow physical table. Queries @p localDb for
-    //! existing class-map information to determine the physical table name.
-    static void WalkSchemaForColumnReservation(ECN::ECSchemaCR schema, ECDbCR localDb,
+    //! that maps to a shared-column or overflow physical table.  Physical table names are derived
+    //! purely from schema metadata (DetermineTableName on the TPH root) so brand-new hierarchies
+    //! that have no ec_ClassMap entry yet are handled without requiring the full-db schema lock.
+    //! Only shared columns in Primary tables and all columns in Overflow tables are reserved;
+    //! named physical columns (PropertyMap.ColumnName CA) are skipped.
+    static void WalkSchemaForColumnReservation(ECN::ECSchemaCR schema,
                                                SchemaReservationStore& idStore,
                                                SchemaReservationColumnStore& colStore,
                                                bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+private:
+    // -----------------------------------------------------------------------
+    // Internal helpers — only called from other SchemaReservationHelper methods.
+    // -----------------------------------------------------------------------
+
+    static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store);
+    static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store);
+    static BentleyStatus SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
+
+    static uint64_t LookupSchemaReferenceId(ECDbCR localDb, Utf8StringCR schemaName, Utf8StringCR refSchemaName);
+    static uint64_t LookupClassHasBaseClassesId(ECDbCR localDb, ECN::ECClassCR ecClass, ECN::ECClassCR baseClass);
+    static uint64_t LookupFormatCompositeUnitId(ECDbCR localDb, ECN::ECFormatCR fmt, int ordinal);
+    static uint64_t LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end);
+    static uint64_t LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass,
+                                               ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass);
+    static uint64_t LookupCustomAttributeId(ECDbCR localDb, uint64_t containerId, int containerType, ECN::ECClassCR caClass);
+    static BentleyStatus SeedSchemaFromLocalDb(ECDbCR localDb, ECN::ECSchemaCR schema,
+                                               SchemaReservationStore& store,
+                                               bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+    static BentleyStatus ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store);
+    static BentleyStatus WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store);
+    static BentleyStatus SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store);
+    static BentleyStatus SeedColumnKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
+                                                      SchemaReservationColumnStore& colStore);
+
+    //! Walk the base-class chain upward and return the first base that declares
+    //! ClassMap CA MapStrategy=TablePerHierarchy.  Returns nullptr when the class is its own root.
+    static ECN::ECClassCP FindTphAncestor(ECN::ECClassCR ecClass);
+    //! Return the ShareColumnsMode that @p ecClass propagates to its subclasses.
+    //! Mirrors the inheritance half of TablePerHierarchyInfo::DetermineSharedColumnsInfo.
+    //! (DetermineSharedColumnsInfo is private to TablePerHierarchyInfo and requires an
+    //! IssueDataSource; only the schema-metadata portion is replicated here.)
+    static TablePerHierarchyInfo::ShareColumnsMode ComputePropagatedShareMode(
+        ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow);
+    //! Return true if @p ecClass itself uses shared-column strategy (ShareColumnsMode == Yes),
+    //! delegating to ComputePropagatedShareMode for the inheritance traversal.
+    static bool ClassUsesSharedColumns(ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow);
+    //! Return true if @p prop carries a PropertyMap.ColumnName CA (named physical column;
+    //! no reservation needed — the column name is deterministic across all briefcases).
+    static bool PropertyHasExplicitColumnName(ECN::ECPropertyCR prop);
+    //! Legacy SQL-based primary-table resolver, retained for reference.
+    //! WalkSchemaForColumnReservation no longer calls this; table names are now derived
+    //! purely from schema metadata via FindTphAncestor + DetermineTableName.
+    static Utf8String FindPrimaryTableForClass(ECDbCR localDb, ECN::ECClassCR ecClass);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

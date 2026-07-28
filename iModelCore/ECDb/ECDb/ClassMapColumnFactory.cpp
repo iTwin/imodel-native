@@ -487,7 +487,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         return;
         }
 
-      const uint32_t maxColumnInBaseTable = 63;
+      const uint32_t maxColumnInBaseTable = ClassMapColumnFactory::kMaxPhysicalColumnsPerTable;
       if(columnsRequired > maxColumnInBaseTable)
         {
         m_putCurrentPropertyToOverflow = true; //in this case we can directly choose overflow

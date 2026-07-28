@@ -138,6 +138,9 @@ struct ClassMapColumnFactory final
     public:
         explicit ClassMapColumnFactory(ClassMap const&);
         ~ClassMapColumnFactory() {};
+        //! Maximum physical SQLite columns per primary/overflow shared-column table.
+        //! Referenced by SchemaSync reservation logic to determine the overflow threshold.
+        static constexpr uint32_t kMaxPhysicalColumnsPerTable = 63;
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
         bool IsColumnInUse(DbColumn const& column) const;
         bool MarkNavPropertyMapColumnUsed(NavigationPropertyMap const& map) const
