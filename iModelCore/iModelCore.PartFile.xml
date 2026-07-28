@@ -56,10 +56,20 @@
 
         <ProductDirectory Name="Assemblies"                                 RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assemblies"             LibType="Static"    Deliver="false"/>
+        <!-- ITwinDaemon is always linked statically, so it delivers its executable here. -->
+        <ProductDirectory Name="StaticAssemblies"       LibType="Static"    RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assets"                                     RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Assets"                 LibType="Static"    RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Libs"                                       RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="Libs"                   LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <!--
+            On x64 this product is built Dynamic, but ITwinDaemon-exe drags in a parallel *static*
+            dependency chain (openssl, curl, rustls, proxyres, ...). Those static libraries have the
+            same file names as their dynamic import libraries, so they cannot share "lib". Give them
+            their own sub-directory (same convention as BeStaticLibDir below). On the platforms that
+            build this product entirely Static there is only one chain, so "lib" stays correct there.
+        -->
+        <ProductDirectory Name="Libs"                   LibType="Static"    Platforms="x64" RelativeTo="Libs" Path="static"/>
         <ProductDirectory Name="PublicApi"                                  RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="PublicApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorApi"                                  RelativeTo="Root" Path="include"/>
