@@ -29,11 +29,31 @@
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_png" LibType="Static"/>
     </Part>
-    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke">
+    <!-- OnlyPlatforms: crashpad is only built on desktop platforms (see crashpad.PartFile.xml
+         OnlyPlatforms="linux*,x*,macos*"), so its vcpkg install must not run on iOS/Android.
+         vcpkg_install_all is built by the cache-warmer on every platform, so gating the install
+         here keeps it out of the iOS/Android warmer runs. -->
+    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke" OnlyPlatforms="linux*,x*,macos*">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_openssl" LibType="Static"/>
+    </Part>
+
+    <!-- Stable "build every vcpkg-managed library" aggregate.  It exists so the protected
+         cache-warmer pipeline can target a single, unchanging part name
+         (`-p vcpkg_install_all`) instead of the current chain tail, whose name changes whenever a
+         new install step is appended.  When you add a new vcpkg_install_* consumer above, add a
+         matching <SubPart> here so the warmer keeps publishing the full set to the shared binary
+         cache.  Platform-specific consumers (e.g. vcpkg_install_crashpad, which is desktop-only)
+         carry their own OnlyPlatforms/ExcludePlatforms filter, so they are naturally skipped on
+         platforms where they do not apply.  This part is not referenced by the normal product
+         build; it is only a warmer target. -->
+    <Part Name="vcpkg_install_all">
+        <SubPart PartName="vcpkg_install_compress"/>
+        <SubPart PartName="vcpkg_install_png"/>
+        <SubPart PartName="vcpkg_install_openssl"/>
+        <SubPart PartName="vcpkg_install_crashpad"/>
     </Part>
 
 </BuildContext>
