@@ -292,6 +292,7 @@ enum class ChangesetStatus : int {
     CannotMergeIntoReversed, //! Cannot merge changes into a DgnDb that has reversed revisions.
     BadVersionId, // illegal version length
     CorruptedTxn, // Fail to decompress txn
+    CannotGenerateChangeset, //! The iModel uses an unknown feature that forbids this runtime from generating changesets.
 };
 
 //=======================================================================================

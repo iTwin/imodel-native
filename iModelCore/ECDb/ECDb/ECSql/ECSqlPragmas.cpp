@@ -1045,6 +1045,7 @@ DbResult PragmaECDbKnownFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecd
 	result->AppendProperty("FeatureName", PRIMITIVETYPE_String);
 	result->AppendProperty("FeatureDescription", PRIMITIVETYPE_String);
 	result->AppendProperty("FeatureCompatibility", PRIMITIVETYPE_String);
+	result->AppendProperty("FeatureFallback", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
 	for (const auto& feature : FeatureManager::GetAllKnownFeatures())
@@ -1053,6 +1054,7 @@ DbResult PragmaECDbKnownFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecd
 		row.appendValue() = feature->name;
 		row.appendValue() = feature->description;
 		row.appendValue() = FeatureManager::FeatureCompatToString(feature->compat);
+		row.appendValue() = FeatureManager::FeatureCompatToString(feature->fallback);
 		}
 	rowSet = std::move(result);
 	return BE_SQLITE_OK;
@@ -1079,10 +1081,11 @@ DbResult PragmaECDbUsedFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb
 	result->AppendProperty("FeatureName", PRIMITIVETYPE_String);
 	result->AppendProperty("FeatureDescription", PRIMITIVETYPE_String);
 	result->AppendProperty("FeatureCompatibility", PRIMITIVETYPE_String);
+	result->AppendProperty("FeatureFallback", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
 
 	Statement stmt;
-	if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Description, Compat FROM " TABLE_Feature))
+	if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Description, Compat, Fallback FROM " TABLE_Feature))
 		{
 		rowSet = std::move(result);
 		return BE_SQLITE_OK;
@@ -1094,6 +1097,7 @@ DbResult PragmaECDbUsedFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb
 		row.appendValue() = stmt.GetValueText(0);
 		row.appendValue() = stmt.GetValueText(1);
 		row.appendValue() = stmt.GetValueText(2);
+		row.appendValue() = stmt.GetValueText(3);
 		}
 	rowSet = std::move(result);
 	return BE_SQLITE_OK;

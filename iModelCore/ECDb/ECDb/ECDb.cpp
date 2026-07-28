@@ -252,6 +252,11 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+std::vector<Utf8String> const& ECDb::GetFeaturesBlockingChangesetGeneration() const { return m_pimpl->GetFeaturesBlockingChangesetGeneration(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 bool ECDb::IsChangeCacheAttached() const { return m_pimpl->IsChangeCacheAttached(); }
 
 //--------------------------------------------------------------------------------------

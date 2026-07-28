@@ -8,6 +8,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <unordered_map>
+#include <vector>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
@@ -346,6 +347,11 @@ public:
     //! Gets the ECClass locator for ECClasses whose schemas are stored in this ECDb file.
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
+
+    //! Names of the unknown features found in this file whose compatibility mode forbids this runtime
+    //! from generating a changeset.
+    //! @return Empty if changeset generation is allowed.
+    ECDB_EXPORT std::vector<Utf8String> const& GetFeaturesBlockingChangesetGeneration() const;
 
     //! @name EC Changes
     //! @{

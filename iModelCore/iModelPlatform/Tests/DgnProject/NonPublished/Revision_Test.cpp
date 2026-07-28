@@ -2476,3 +2476,91 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
         return false;
     });
 }
+
+//---------------------------------------------------------------------------------------
+// An unknown ec_Feature with Compat=NoChangesetGeneration must leave the iModel fully readable
+// and locally writable, but must block changeset generation.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, NoChangesetGenerationFeatureBlocksChangesetCreation)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"NoChangesetGenerationFeature.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    // Sanity check: without any feature rows, changeset creation works.
+    InsertFloor(1, 1);
+    m_db->SaveChanges("Baseline change");
+    ASSERT_TRUE(CreateRevision("-baseline").IsValid()) << "Changeset creation must work before the feature is present";
+
+    // Simulate a file written by a future runtime which uses a feature this runtime does not know,
+    // declaring that older runtimes must not generate changesets from it.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('Future-Feature','A future changeset based feature','NoChangesetGeneration','NoChangesetGeneration')"));
+    m_db->SaveChanges();
+
+    // Reopen to make sure the feature row is picked up.
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    CloseDgnDb();
+    OpenIModelDb(fileName, Db::OpenMode::ReadWrite);
+    ASSERT_TRUE(m_db.IsValid()) << "A NoChangesetGeneration feature must NOT prevent the file from opening";
+    ASSERT_FALSE(m_db->IsReadonly()) << "A NoChangesetGeneration feature must NOT force the file read-only";
+
+    // Reads must still work.
+    ASSERT_TRUE(m_db->Models().Get<PhysicalModel>(m_defaultModelId).IsValid()) << "Reading must remain possible";
+
+    // Local writes must still work.
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change while changeset generation is blocked")) << "Local editing must remain possible";
+
+    // Publishing a changeset must be refused.
+    bool threw = false;
+    try
+        {
+        m_db->Txns().StartCreateChangeset();
+        }
+    catch (const std::runtime_error& e)
+        {
+        threw = true;
+        EXPECT_NE(nullptr, strstr(e.what(), "Future-Feature")) << "The error must name the feature that blocks changeset generation. Actual: " << e.what();
+        }
+    EXPECT_TRUE(threw) << "StartCreateChangeset must throw when an unknown NoChangesetGeneration feature is present";
+    }
+
+//---------------------------------------------------------------------------------------
+// A future compat mode that this runtime does not recognize must degrade via the Fallback
+// column. Here the writer declared NoChangesetGeneration as the fallback, so changeset
+// generation must be blocked while the file stays readable and locally writable.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, UnrecognizedCompatFallsBackToNoChangesetGeneration)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"NoChangesetGenerationFallback.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('future-mode-feature','A feature using a future compat mode','SomeFutureMode','NoChangesetGeneration')"));
+    m_db->SaveChanges();
+
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    CloseDgnDb();
+    OpenIModelDb(fileName, Db::OpenMode::ReadWrite);
+    ASSERT_TRUE(m_db.IsValid()) << "An unrecognized compat with a NoChangesetGeneration fallback must still open";
+    ASSERT_FALSE(m_db->IsReadonly());
+
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change")) << "Local editing must remain possible";
+
+    bool threw = false;
+    try
+        {
+        m_db->Txns().StartCreateChangeset();
+        }
+    catch (std::runtime_error const& e)
+        {
+        threw = true;
+        EXPECT_NE(nullptr, strstr(e.what(), "future-mode-feature")) << "The error must name the feature. Actual: " << e.what();
+        }
+    EXPECT_TRUE(threw) << "An unrecognized compat must degrade to its declared NoChangesetGeneration fallback";
+    }

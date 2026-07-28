@@ -228,7 +228,7 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
         return BE_SQLITE_OK;
 
     Statement stmt;
-    if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Compat from main." TABLE_Feature); status != BE_SQLITE_OK)
+    if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Compat, Fallback from main." TABLE_Feature); status != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
     std::vector<Utf8String> warnFeatures;
@@ -244,37 +244,39 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
         if (FeatureManager::IsFeatureKnown(featureName))
             continue;
 
-        // Issue is not known, look at the compat mode of the issue to decide what to do.
+        // Feature is not known, look at the compat mode of the issue to decide what to do.
         const Utf8String compat = stmt.GetValueText(1);
-        if (compat.EqualsI("Warn"))
+        const Utf8String fallback = stmt.GetValueText(2);
+        switch (FeatureManager::ResolveEffectiveCompat(compat, fallback))
             {
-            warnFeatures.push_back(featureName);
-            continue;
-            }
-        if (compat.EqualsI("ReadOnly"))
-            {
-            if (m_ecdb.IsReadonly())
-                continue;
+            case Compat::Warn:
+                warnFeatures.push_back(featureName);
+                break;
 
-            readOnlyFeatures.push_back(featureName);
-            continue;
-            }
-        if (compat.EqualsI("NoSchemaImport"))
-            {
-            m_featuresBlockingSchemaImport.push_back(featureName);
-            continue;
-            }
-        if (compat.EqualsI("Refuse"))
-            {
-            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
-                "ECDb file uses unknown feature '%s'. The file cannot be opened by this ECDb runtime.",
-                featureName.c_str());
-            return BE_SQLITE_ERROR;
+            case Compat::ReadOnly:
+                if (!m_ecdb.IsReadonly())
+                    readOnlyFeatures.push_back(featureName);
+                break;
+
+            case Compat::NoSchemaImport:
+                m_featuresBlockingSchemaImport.push_back(featureName);
+                break;
+
+            case Compat::NoChangesetGeneration:
+                // The file itself is safe to read and write locally, but this runtime must not publish a changeset from it
+                m_featuresBlockingChangesetGeneration.push_back(featureName);
+                break;
+
+            case Compat::Refuse:
+                m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+                    "ECDb file uses unknown feature '%s'. The file cannot be opened by this ECDb runtime.",
+                    featureName.c_str());
+                return BE_SQLITE_ERROR;
             }
         }
         
-    if (warnFeatures.empty() && readOnlyFeatures.empty() && m_featuresBlockingSchemaImport.empty())
+    if (warnFeatures.empty() && readOnlyFeatures.empty() && m_featuresBlockingSchemaImport.empty() && m_featuresBlockingChangesetGeneration.empty())
         return BE_SQLITE_OK;
 
     if (!warnFeatures.empty())
@@ -291,6 +293,14 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
             IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
             "ECDb file uses unknown features %s. The file will restrict all schema imports. However, it can still be written to.",
             BeStringUtilities::Join(m_featuresBlockingSchemaImport, ", ", true).c_str());
+        }
+
+    if (!m_featuresBlockingChangesetGeneration.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0747,
+            "ECDb file uses unknown features %s. The file cannot generate changesets. However, it can still be read and written to locally.",
+            BeStringUtilities::Join(m_featuresBlockingChangesetGeneration, ", ", true).c_str());
         }
 
     if (!readOnlyFeatures.empty())

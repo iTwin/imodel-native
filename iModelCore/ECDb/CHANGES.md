@@ -7,11 +7,18 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.6` |
 | ECSQL   | `2.0.3.3` |
 
-## ## `06/29/2026`: Added `ec_Feature` table
+## ## `07/28/2026`: Added `ec_Feature` table
 * ECDb profile version change `4.0.0.5` -> `4.0.0.6`.
 * Added `ec_Feature` table to every new ECDb file and to existing files through a profile upgrade.
 * The table is a persistent, self-describing record of which optional features are in use in a specific file.
-* Open-time enforcement: unknown features with `ReadOnly` compat block write access; unknown features with `NoSchemaImport` compat block schema imports/updates; unknown features with `Refuse` compat block all access.
+* Columns: `Name`, `Description`, `Compat`, `Fallback`.
+* Open-time enforcement for features that are **unknown to the reading runtime**, based on the compat mode:
+  * `Warn` - opens normally, reports a warning.
+  * `NoSchemaImport` - opens read-write, but schema imports/updates are blocked.
+  * `NoChangesetGeneration` - opens read-write and may be edited locally, but changeset generation is blocked.
+  * `ReadOnly` - blocks read-write access.
+  * `Refuse` - blocks all access.
+* `Compat` is intentionally *unconstrained* so that a future ECDb runtime can persist a compat mode that does not exist yet. `Fallback` is constrained and tells an older runtime how to degrade when it does not recognize `Compat`. 
 * ECSql version change `2.0.3.2` -> `2.0.3.3`.
 * Added `PRAGMA ecdb_known_features` which returns a list of the features supported by the ECDb runtime.
 * Added `PRAGMA ecdb_used_features` which returns a list of features that are being used in the ECDb file.

@@ -39,7 +39,7 @@ enum class Feature
     {Feature::SystemPropertiesHaveIdExtendedType, ProfileVersion(4, 0, 0, 2)} \
     }
 
-enum class Compat { Warn, ReadOnly, NoSchemaImport, Refuse };
+enum class Compat { Warn, ReadOnly, NoSchemaImport, NoChangesetGeneration, Refuse };
 
 //! Function that returns true if the feature is currently in use in the given ECDb.
 //! Set to nullptr for write-once features (e.g. profile-upgrade changes)
@@ -49,7 +49,10 @@ struct ECDB_EXPORT FeatureInfo
     {
     Utf8CP name;
     Utf8CP description;
+    //! The precise compat mode. May be a mode that older runtimes do not recognize.
     Compat compat;
+    //! For unknown compat, fallback to a known compat.
+    Compat fallback;
     FeatureDetector featureDetector;
     };
 
@@ -82,6 +85,8 @@ public:
     static BentleyStatus InsertFeature(ECDbCR ecdb, Utf8StringCR featureName);
     static BentleyStatus DeleteFeature(ECDbCR ecdb, Utf8StringCR featureName);
     static Utf8CP FeatureCompatToString(Compat compat);
+    static bool TryParseCompat(Utf8StringCR compatString, Compat& compat);
+    static Compat ResolveEffectiveCompat(Utf8StringCR compatString, Utf8StringCR fallbackString);
 
     //! Reconciles all schema-driven feature rows after a schema modification (import or drop).
     //! Inserts or removes rows based on the current state of the database.

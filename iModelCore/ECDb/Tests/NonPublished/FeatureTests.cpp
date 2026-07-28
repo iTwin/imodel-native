@@ -17,9 +17,15 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct FeatureTests : ECDbTestFixture
     {
 protected:
-    DbResult InsertRawFeatureRow(Utf8CP name, Utf8CP compat)
+    //! Inserts a raw feature row. This simulates a file written by a FUTURE ECDb runtime that uses a
+    //! feature the current runtime does not know.
+    //! @param compat the (possibly future/unrecognized) precise compat mode
+    //! @param fallback how this runtime must degrade when it does not recognize @p compat.
+    //!        Defaults to @p compat, which is the normal case for features using existing modes.
+    DbResult InsertRawFeatureRow(Utf8CP name, Utf8CP compat, Utf8CP fallback = nullptr)
         {
-        return m_ecdb.ExecuteSql(Utf8PrintfString("INSERT INTO ec_Feature(Name, Description, Compat) VALUES ('%s', '%s', '%s')", name, "A-Feature-From-The-Future", compat).c_str());
+        return m_ecdb.TryExecuteSql(Utf8PrintfString("INSERT INTO ec_Feature(Name, Description, Compat, Fallback) VALUES ('%s', '%s', '%s', '%s')",
+            name, "A-Feature-From-The-Future", compat, fallback == nullptr ? compat : fallback).c_str());
         }
     };
 
@@ -39,6 +45,7 @@ TEST_F(FeatureTests, FeatureTableSetup)
     EXPECT_TRUE(GetHelper().ColumnExists("ec_Feature", "Name")) << "ec_Feature must have a Name column";
     EXPECT_TRUE(GetHelper().ColumnExists("ec_Feature", "Description")) << "ec_Feature must have a Description column";
     EXPECT_TRUE(GetHelper().ColumnExists("ec_Feature", "Compat")) << "ec_Feature must have a Compat column";
+    EXPECT_TRUE(GetHelper().ColumnExists("ec_Feature", "Fallback")) << "ec_Feature must have a Fallback column";
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ec_Feature")) << "Failed to prepare SELECT COUNT(*) on ec_Feature";
@@ -385,6 +392,86 @@ TEST_F(FeatureTests, Feature_PragmaUsedFeatures_PreMigrationFile_ReturnsEmpty)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_used_features")) << "PRAGMA ecdb_used_features must prepare successfully even without the table";
     EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "PRAGMA ecdb_used_features must return no rows (not an error) when the ec_Feature table is absent";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_ResolveEffectiveCompat)
+    {
+    Compat compat;
+
+    EXPECT_TRUE(FeatureManager::TryParseCompat("Warn", compat));
+    EXPECT_EQ(Compat::Warn, compat);
+    EXPECT_TRUE(FeatureManager::TryParseCompat("noschemaimport", compat));
+    EXPECT_EQ(Compat::NoSchemaImport, compat);
+    EXPECT_TRUE(FeatureManager::TryParseCompat("NoChangesetGeneration", compat));
+    EXPECT_EQ(Compat::NoChangesetGeneration, compat);
+    EXPECT_FALSE(FeatureManager::TryParseCompat("SomeFutureMode", compat));
+
+    // Recognized Compat wins.
+    EXPECT_EQ(Compat::ReadOnly, FeatureManager::ResolveEffectiveCompat("ReadOnly", "Warn"));
+    // Unrecognized Compat degrades to the declared Fallback.
+    EXPECT_EQ(Compat::Warn, FeatureManager::ResolveEffectiveCompat("SomeFutureMode", "Warn"));
+    EXPECT_EQ(Compat::NoChangesetGeneration, FeatureManager::ResolveEffectiveCompat("SomeFutureMode", "NoChangesetGeneration"));
+    // Neither recognized -> fail closed.
+    EXPECT_EQ(Compat::Refuse, FeatureManager::ResolveEffectiveCompat("SomeFutureMode", "AlsoUnknown"));
+    EXPECT_EQ(Compat::Refuse, FeatureManager::ResolveEffectiveCompat("", ""));
+    }
+
+//---------------------------------------------------------------------------------------
+// A future runtime may write a Compat mode this runtime has never heard of. In that case the
+// writer-declared Fallback must drive the behavior.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_UnrecognizedCompat_UsesFallback_Warn)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_fallback_warn.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-benign-feature", "SomeFutureBenignMode", "Warn"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    EXPECT_TRUE(m_ecdb.IsDbOpen());
+    EXPECT_FALSE(m_ecdb.IsReadonly());
+    ASSERT_FALSE(issueListener.IsEmpty());
+    EXPECT_EQ(IssueSeverity::Warning, issueListener.m_issues.back().severity);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_UnrecognizedCompat_UsesFallback_ReadOnly)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_fallback_readonly.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("future-risky-feature", "SomeFutureRiskyMode", "ReadOnly"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    EXPECT_EQ(BE_SQLITE_READONLY, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    EXPECT_FALSE(m_ecdb.IsDbOpen());
+
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)));
+    EXPECT_TRUE(m_ecdb.IsDbOpen());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, Feature_FallbackColumn_RejectsUnknownValues)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_fallback_check.ecdb"));
+
+    // Compat is intentionally unconstrained: it must accept future modes.
+    EXPECT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("f1", "AnyFutureMode", "Warn")) << "Compat can accept values unknown to this runtime";
+
+    // Fallback is constrained to the modes that exist as of 4.0.0.6.
+    EXPECT_NE(BE_SQLITE_OK, InsertRawFeatureRow("f2", "AnyFutureMode", "AnyFutureFallback")) << "Fallback must reject values outside the closed compat set";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -102,11 +102,65 @@ Utf8CP FeatureManager::FeatureCompatToString(Compat compat)
         case Compat::Warn:     return "Warn";
         case Compat::ReadOnly: return "ReadOnly";
         case Compat::NoSchemaImport: return "NoSchemaImport";
+        case Compat::NoChangesetGeneration: return "NoChangesetGeneration";
         case Compat::Refuse:   return "Refuse";
         default:
             BeAssert(false && "Unhandled Compat value");
             return "Warn";
         }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+bool FeatureManager::TryParseCompat(Utf8StringCR compatString, Compat& compat)
+    {
+    if (compatString.EqualsI("Warn"))
+        {
+        compat = Compat::Warn;
+        return true;
+        }
+    if (compatString.EqualsI("ReadOnly"))
+        {
+        compat = Compat::ReadOnly;
+        return true;
+        }
+    if (compatString.EqualsI("NoSchemaImport"))
+        {
+        compat = Compat::NoSchemaImport;
+        return true;
+        }
+    if (compatString.EqualsI("NoChangesetGeneration"))
+        {
+        compat = Compat::NoChangesetGeneration;
+        return true;
+        }
+    if (compatString.EqualsI("Refuse"))
+        {
+        compat = Compat::Refuse;
+        return true;
+        }
+
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+Compat FeatureManager::ResolveEffectiveCompat(Utf8StringCR compatString, Utf8StringCR fallbackString)
+    {
+    Compat compat;
+    // The precise mode, if this runtime understands it.
+    if (TryParseCompat(compatString, compat))
+        return compat;
+
+    // Otherwise the writer told us how to degrade.
+    if (TryParseCompat(fallbackString, compat))
+        return compat;
+
+    return Compat::Refuse;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -125,12 +179,13 @@ BentleyStatus FeatureManager::InsertFeature(ECDbCR ecdb, Utf8StringCR featureNam
 
     // Insert the row into the ECDb file
     Statement stmt;
-    if (stmt.Prepare(ecdb, "INSERT OR IGNORE INTO " TABLE_Feature " (Name, Description, Compat) VALUES (?,?,?)") != BE_SQLITE_OK)
+    if (stmt.Prepare(ecdb, "INSERT OR IGNORE INTO " TABLE_Feature " (Name, Description, Compat, Fallback) VALUES (?,?,?,?)") != BE_SQLITE_OK)
         return BentleyStatus::ERROR;
 
     stmt.BindText(1, info->name, Statement::MakeCopy::No);
     stmt.BindText(2, info->description, Statement::MakeCopy::No);
     stmt.BindText(3, FeatureCompatToString(info->compat), Statement::MakeCopy::No);
+    stmt.BindText(4, FeatureCompatToString(info->fallback), Statement::MakeCopy::No);
 
     if (stmt.Step() == BE_SQLITE_DONE)
         return BentleyStatus::SUCCESS;
