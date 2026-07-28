@@ -11,6 +11,7 @@
 import subprocess
 import sys
 import os
+import stat
 import time
 
 TIMEOUT_SECONDS = 300  # 5 minutes
@@ -38,6 +39,40 @@ def get_vcpkg_hash(vcpkg_dir):
 def get_vcpkg_executable(vcpkg_dir):
     name = "vcpkg.exe" if sys.platform == "win32" else "vcpkg"
     return os.path.join(vcpkg_dir, name)
+
+def clear_stale_vcpkg_executable(vcpkg_dir):
+    """Ensure the bootstrap can (re)create vcpkg(.exe) by clearing a stale copy first.
+
+    The vcpkg bootstrap downloads its tool straight onto vcpkg_dir/vcpkg(.exe), and this
+    directory is reused across CI runs on the same agent. If a previous run left the
+    executable read-only, or a lingering vcpkg/azcopy process from a cancelled run still
+    holds it open, the download's CreateFileW fails with "Access is denied" (error 0x5)
+    and every bootstrap retry hits the same wall. Clear the path up front: delete it when
+    possible, and if it's locked (Windows won't delete/overwrite a running image) rename it
+    aside -- Windows allows renaming an in-use executable, which frees the original name for
+    a fresh download. Best-effort only: failures here are non-fatal so bootstrap still runs.
+    """
+    exe = get_vcpkg_executable(vcpkg_dir)
+    if not os.path.isfile(exe):
+        return
+
+    # Drop a read-only attribute a prior run may have left, then try a plain delete.
+    try:
+        os.chmod(exe, stat.S_IWRITE | stat.S_IREAD)
+    except OSError:
+        pass
+    try:
+        os.remove(exe)
+        return
+    except OSError:
+        pass  # Locked (likely held by a leftover process); fall back to renaming it aside.
+
+    sidecar = "{}.stale-{}".format(exe, int(time.time()))
+    try:
+        os.replace(exe, sidecar)
+        print("Renamed locked vcpkg executable aside as {} so bootstrap can download a fresh copy.".format(sidecar))
+    except OSError as ex:
+        print("Warning: could not clear stale vcpkg executable {}: {}".format(exe, ex), file=sys.stderr)
 
 def main():
     if len(sys.argv) < 2:
@@ -79,6 +114,9 @@ def main():
     for attempt in range(1, MAX_ATTEMPTS + 1):
         print("Running {} with {}-second timeout (attempt {} of {})...".format(
             script, TIMEOUT_SECONDS, attempt, MAX_ATTEMPTS))
+        # Remove/relocate any stale or locked vcpkg executable so the bootstrap download can
+        # write a fresh one instead of failing with "Access is denied" on the existing file.
+        clear_stale_vcpkg_executable(vcpkg_dir)
         try:
             result = subprocess.run(cmd, cwd=vcpkg_dir, timeout=TIMEOUT_SECONDS)
             if result.returncode == 0:
