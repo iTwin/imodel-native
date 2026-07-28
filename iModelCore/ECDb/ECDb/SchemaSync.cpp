@@ -2221,6 +2221,9 @@ SchemaSync::Status SchemaSync::AbandonPendingReservation() {
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::KeyedModeGuard::KeyedModeGuard(IdFactory& f) : m_factory(&f), m_active(false) {}
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::KeyedModeGuard::~KeyedModeGuard() {
     if (m_active)
         m_factory->ClearKeyedMode();
