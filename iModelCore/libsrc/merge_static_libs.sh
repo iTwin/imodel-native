@@ -43,4 +43,4 @@ for LIB in "$@"; do
 done
 
 rm -f "$OUTPUT"
-find "$TMPDIR" -name '*.o' -print0 | xargs -0 ar rcs "$OUTPUT"
+find "$TMPDIR" -type f -name '*.o' -print0 | xargs -0 ar rcs "$OUTPUT"
