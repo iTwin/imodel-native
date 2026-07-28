@@ -231,6 +231,9 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
     if (const auto status = stmt.Prepare(m_ecdb, "SELECT Name, Compat from main." TABLE_Feature); status != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
+    std::vector<Utf8String> warnFeatures;
+    std::vector<Utf8String> readOnlyFeatures;
+
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         const Utf8String featureName = stmt.GetValueText(0);
@@ -245,25 +248,20 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
         const Utf8String compat = stmt.GetValueText(1);
         if (compat.EqualsI("Warn"))
             {
-            m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
-                "ECDb file uses unknown feature '%s'. Some data may not be accessible.",
-                featureName.c_str());
+            warnFeatures.push_back(featureName);
             continue;
             }
         if (compat.EqualsI("ReadOnly"))
             {
             if (m_ecdb.IsReadonly())
                 continue;
-            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
-                "ECDb file uses unknown feature '%s'. The file can only be opened read-only.",
-                featureName.c_str());
-            return BE_SQLITE_READONLY;
+
+            readOnlyFeatures.push_back(featureName);
+            continue;
             }
         if (compat.EqualsI("NoSchemaImport"))
             {
-            m_featureBlockingSchemaImport = featureName;
+            m_featuresBlockingSchemaImport.push_back(featureName);
             continue;
             }
         if (compat.EqualsI("Refuse"))
@@ -274,7 +272,35 @@ DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
                 featureName.c_str());
             return BE_SQLITE_ERROR;
             }
-        }    
+        }
+        
+    if (warnFeatures.empty() && readOnlyFeatures.empty() && m_featuresBlockingSchemaImport.empty())
+        return BE_SQLITE_OK;
+
+    if (!warnFeatures.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
+            "ECDb file uses unknown features %s. Some data may not be accessible.",
+            BeStringUtilities::Join(warnFeatures, ", ", true).c_str());
+        }
+
+    if (!m_featuresBlockingSchemaImport.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+            "ECDb file uses unknown features %s. The file will restrict all schema imports. However, it can still be written to.",
+            BeStringUtilities::Join(m_featuresBlockingSchemaImport, ", ", true).c_str());
+        }
+
+    if (!readOnlyFeatures.empty())
+        {
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
+            "ECDb file uses unknown features %s. The file can only be opened read-only.",
+            BeStringUtilities::Join(readOnlyFeatures, ", ", true).c_str());
+        return BE_SQLITE_READONLY;
+        }
 
     return BE_SQLITE_OK;
     }
