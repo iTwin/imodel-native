@@ -46,7 +46,6 @@ struct SchemaSyncHelper final {
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationHelper final {
     //! DDL to create the id-reservation table in the sync-db.
-    //! KeyMap is a FlexBuffer BLOB: a map from content-key (TEXT) to reserved id (UInt64).
     static constexpr Utf8CP RESERVATION_TABLE_DDL =
         "CREATE TABLE IF NOT EXISTS [schema_reservation_ids] "
         "([TableName] TEXT NOT NULL PRIMARY KEY, "
@@ -54,9 +53,6 @@ struct SchemaReservationHelper final {
         "[KeyMap] BLOB)";
 
     //! DDL to create the column-assignment reservation table in the sync-db.
-    //! KeyMap is a FlexBuffer BLOB: a map from property-content-key (TEXT) to a
-    //! two-element vector [columnOrd (UInt64), columnId (UInt64)].  The per-table high-water
-    //! ordinal and the slot/occupancy view are derived from KeyMap, so no counter is persisted.
     static constexpr Utf8CP RESERVATION_COLUMNS_TABLE_DDL =
         "CREATE TABLE IF NOT EXISTS [schema_reservation_columns] "
         "([PhysicalTableName] TEXT NOT NULL PRIMARY KEY, "
@@ -86,47 +82,32 @@ struct SchemaReservationHelper final {
     static constexpr Utf8CP RES_TABLE_INDEX          = "ec_Index";
     static constexpr Utf8CP RES_TABLE_INDEXCOL       = "ec_IndexColumn";
 
-    //! Populate BOTH the key→id map AND the lastReservedId counter for every metadata/mapping
-    //! table from the fully-populated local db. Runs once, at Init, to capture the container baseline.
+    //! Seed both the key→id map and lastReservedId counter from the local db. Runs once at Init.
     static BentleyStatus SeedReservationStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
     static BentleyStatus LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store);
     static BentleyStatus WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store);
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                          bset<Utf8String, CompareIUtf8Ascii>& visited);
 
-    //! Populate the propertyKey→(columnOrd,columnId) map (and mirror columnIds into idStore.column)
-    //! from the local db, and seed each table's in-memory high-water ordinal baseline. Runs once, at Init.
+    //! Seed the column-assignment store and high-water ordinals from the local db. Runs once at Init.
     static BentleyStatus SeedColumnStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                     SchemaReservationColumnStore& colStore);
     static BentleyStatus LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store);
     static BentleyStatus WriteColumnStoreToSyncDb(Db& syncDb, SchemaReservationColumnStore const& store);
-    //! Walk @p schema and allocate per-physical-table column ordinals for every new property
-    //! that maps to a shared-column or overflow physical table.  Physical table names are derived
-    //! purely from schema metadata (DetermineTableName on the TPH root) so brand-new hierarchies
-    //! that have no ec_ClassMap entry yet are handled without requiring the full-db schema lock.
-    //! Only shared columns in Primary tables and all columns in Overflow tables are reserved;
-    //! named physical columns (PropertyMap.ColumnName CA) are skipped.  A new property reuses an
-    //! existing shared-column slot when no occupant class is the same class, an ancestor, or a
-    //! descendant of the property's owner class (mirroring ClassMapColumnFactory); occupant
-    //! relatedness is resolved through @p classIndex.
+    //! Allocate shared-column ordinals for new properties in @p schema. Reuses slots
+    //! when no occupant is the same class, an ancestor, or a descendant of the property owner.
     static void WalkSchemaForColumnReservation(ECN::ECSchemaCR schema,
                                                SchemaReservationStore& idStore,
                                                SchemaReservationColumnStore& colStore,
                                                bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex,
                                                bset<Utf8String, CompareIUtf8Ascii>& visited);
 
-    //! Populate @p index with classKey ("schema:class") → ECClass for @p schema and its full
-    //! referenced-schema closure, so the column walk can resolve slot occupants to test
-    //! ancestor/descendant relatedness.
+    //! Populate @p index with classKey → ECClass for @p schema and its full reference closure.
     static void CollectClassIndex(ECN::ECSchemaCR schema,
                                   bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii>& index,
                                   bset<Utf8String, CompareIUtf8Ascii>& visited);
 
 private:
-    // -----------------------------------------------------------------------
-    // Internal helpers — only called from other SchemaReservationHelper methods.
-    // -----------------------------------------------------------------------
-
     static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store);
     static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store);
     static BentleyStatus SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
@@ -148,27 +129,20 @@ private:
     static BentleyStatus SeedColumnKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                       SchemaReservationColumnStore& colStore);
 
-    //! Return true if @p slot may be reused by @p ecClass, i.e. no occupant class is the same
-    //! class, an ancestor, or a descendant of @p ecClass.  Occupants are resolved through
-    //! @p classIndex; an occupant that cannot be resolved is treated conservatively as related
-    //! (blocking reuse) so the reservation never assigns a column that could collide.
+    //! Return true if @p slot has no occupant that is the same, an ancestor, or a descendant of @p ecClass.
     static bool IsSlotReusableByClass(SchemaReservationColumnSlot const& slot, ECN::ECClassCR ecClass,
                                       bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex);
 
-    //! Walk the base-class chain upward and return the first base that declares
-    //! ClassMap CA MapStrategy=TablePerHierarchy.  Returns nullptr when the class is its own root.
+    //! Return the first ancestor with ClassMap CA MapStrategy=TablePerHierarchy, or nullptr.
     static ECN::ECClassCP FindTphAncestor(ECN::ECClassCR ecClass);
     //! Return the ShareColumnsMode that @p ecClass propagates to its subclasses.
-    //! Mirrors the inheritance half of TablePerHierarchyInfo::DetermineSharedColumnsInfo.
-    //! (DetermineSharedColumnsInfo is private to TablePerHierarchyInfo and requires an
-    //! IssueDataSource; only the schema-metadata portion is replicated here.)
+    //! Mirrors the schema-metadata part of TablePerHierarchyInfo::DetermineSharedColumnsInfo.
     static TablePerHierarchyInfo::ShareColumnsMode ComputePropagatedShareMode(
         ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow);
     //! Return true if @p ecClass itself uses shared-column strategy (ShareColumnsMode == Yes),
     //! delegating to ComputePropagatedShareMode for the inheritance traversal.
     static bool ClassUsesSharedColumns(ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow);
-    //! Return true if @p prop carries a PropertyMap.ColumnName CA (named physical column;
-    //! no reservation needed — the column name is deterministic across all briefcases).
+    //! Return true if @p prop has an explicit ColumnName CA (no reservation needed).
     static bool PropertyHasExplicitColumnName(ECN::ECPropertyCR prop);
 };
 

@@ -35,7 +35,7 @@ struct IdFactory final: NonCopyableClass {
             //! (used by schema-upgrade / replace paths that do not have a content key readily available).
             //! In all other modes falls back to NextId() so call-sites work identically in both modes.
             BeInt64Id NextIdForKey(Utf8StringCR key) const {
-                if (m_keyedMode && m_keyToIdMap != nullptr && !key.empty()) {
+                if (m_keyedMode && m_keyToIdMap != nullptr) {
                     auto it = m_keyToIdMap->find(key);
                     if (it == m_keyToIdMap->end())
                         return BeInt64Id(0); // unreserved-key: BindId will bind NULL → INSERT will fail

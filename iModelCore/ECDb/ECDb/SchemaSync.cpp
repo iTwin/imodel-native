@@ -1472,12 +1472,9 @@ DbResult SchemaSyncHelper::UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri 
     return BE_SQLITE_OK;
 }
 
-//======================================================================================
-// Content-key-based reservation store helpers — SchemaReservationHelper.
-// Constants and declarations live in SchemaSync.h (SchemaReservationHelper).
-//======================================================================================
-
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store) {
     store.Clear();
 
@@ -1515,6 +1512,8 @@ BentleyStatus SchemaReservationHelper::ReadTableStore(Db& syncDb, Utf8CP tableNa
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store) {
     flexbuffers::Builder fbb;
     fbb.Map([&]() {
@@ -1539,6 +1538,8 @@ BentleyStatus SchemaReservationHelper::WriteTableStore(Db& syncDb, Utf8CP tableN
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
     auto seedOne = [&localDb](SchemaReservationTableStore& ts, Utf8CP tableName) -> bool {
         Statement stmt;
@@ -1576,6 +1577,8 @@ BentleyStatus SchemaReservationHelper::SeedLastReservedIdsFromLocalDb(ECDbCR loc
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::LoadReservationStoreFromSyncDb(Db& syncDb, SchemaReservationStore& store) {
     if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_SCHEMA,         store.schema))          return ERROR;
     if (SUCCESS != ReadTableStore(syncDb, RES_TABLE_SCHEMAREF,      store.schemaReference)) return ERROR;
@@ -1603,6 +1606,8 @@ BentleyStatus SchemaReservationHelper::LoadReservationStoreFromSyncDb(Db& syncDb
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::WriteReservationStoreToSyncDb(Db& syncDb, SchemaReservationStore const& store) {
     if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_SCHEMA,         store.schema))          return ERROR;
     if (SUCCESS != WriteTableStore(syncDb, RES_TABLE_SCHEMAREF,      store.schemaReference)) return ERROR;
@@ -1629,14 +1634,9 @@ BentleyStatus SchemaReservationHelper::WriteReservationStoreToSyncDb(Db& syncDb,
     return SUCCESS;
 }
 
-//======================================================================================
-// Init-time seeding helpers — capture the container baseline from the local db once.
-//======================================================================================
-
 //---------------------------------------------------------------------------------------
-// SchemaReservationHelper link-row id lookups: each returns the persisted Id of a
-// join/link table row identified by its natural key components, or 0 if absent/error.
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t SchemaReservationHelper::LookupSchemaReferenceId(ECDbCR localDb, Utf8StringCR schemaName, Utf8StringCR refSchemaName) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
@@ -1650,6 +1650,9 @@ uint64_t SchemaReservationHelper::LookupSchemaReferenceId(ECDbCR localDb, Utf8St
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t SchemaReservationHelper::LookupClassHasBaseClassesId(ECDbCR localDb, ECN::ECClassCR ecClass, ECN::ECClassCR baseClass) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
@@ -1667,6 +1670,9 @@ uint64_t SchemaReservationHelper::LookupClassHasBaseClassesId(ECDbCR localDb, EC
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t SchemaReservationHelper::LookupFormatCompositeUnitId(ECDbCR localDb, ECN::ECFormatCR fmt, int ordinal) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
@@ -1681,6 +1687,9 @@ uint64_t SchemaReservationHelper::LookupFormatCompositeUnitId(ECDbCR localDb, EC
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t SchemaReservationHelper::LookupRelConstraintId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
@@ -1695,6 +1704,9 @@ uint64_t SchemaReservationHelper::LookupRelConstraintId(ECDbCR localDb, ECN::ECR
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t SchemaReservationHelper::LookupRelConstraintClassId(ECDbCR localDb, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd end, ECN::ECClassCR constraintClass) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
@@ -1714,6 +1726,9 @@ uint64_t SchemaReservationHelper::LookupRelConstraintClassId(ECDbCR localDb, ECN
     return stmt.Step() == BE_SQLITE_ROW ? (uint64_t)stmt.GetValueInt64(0) : 0;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t SchemaReservationHelper::LookupCustomAttributeId(ECDbCR localDb, uint64_t containerId, int containerType, ECN::ECClassCR caClass) {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(localDb,
@@ -1730,11 +1745,8 @@ uint64_t SchemaReservationHelper::LookupCustomAttributeId(ECDbCR localDb, uint64
 }
 
 //---------------------------------------------------------------------------------------
-// Walk @p schema recursively (dependency-first) and record, into @p store, the
-// key → persisted-id mapping for every already-persisted metadata element found in
-// @p localDb.  Mirrors WalkSchemaForReservation but calls AddEntry(key, persistedId)
-// instead of GetOrAllocate so that the existing ids are captured without allocating new ones.
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::SeedSchemaFromLocalDb(ECDbCR localDb, ECN::ECSchemaCR schema,
                                                               SchemaReservationStore& store,
                                                               bset<Utf8String, CompareIUtf8Ascii>& visited) {
@@ -1914,10 +1926,9 @@ BentleyStatus SchemaReservationHelper::SeedSchemaFromLocalDb(ECDbCR localDb, ECN
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::SeedReservationStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& store) {
-    // Walk all schemas loaded from the local db and record key → persisted-id for every
-    // already-persisted metadata element. The counter (MAX(Id) per table) is seeded by
-    // the existing SeedLastReservedIdsFromLocalDb helper.
     bvector<ECN::ECSchemaCP> allSchemas = localDb.Schemas().GetSchemas(true);
     bset<Utf8String, CompareIUtf8Ascii> visited;
     for (ECN::ECSchemaCP schema : allSchemas) {
@@ -1930,22 +1941,11 @@ BentleyStatus SchemaReservationHelper::SeedReservationStoreFromLocalDb(ECDbCR lo
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::SeedColumnKeyMapsFromLocalDb(ECDbCR localDb,
                                                                      SchemaReservationStore& idStore,
                                                                      SchemaReservationColumnStore& colStore) {
-    // Populate columnKey → (columnOrd, columnId) for every already-persisted property-to-column
-    // mapping.  The key is per physical column (one row per ec_PropertyMap), keyed by the leaf
-    // access string qualified by the class that declares the root property — exactly the key the
-    // reserve walk and the mapping-time consumer build via SchemaWriter::DerivePropertyColumnKey.
-    // Conditions mirror WalkSchemaForColumnReservation:
-    //   pm.ClassId = root_prop.ClassId  → owned (not inherited) property mappings only
-    //   t.Type IN (0, 3)                → Primary and Overflow tables only
-    //   root_prop.Kind != 4             → exclude navigation properties (never reserved)
-    // Multi-column properties (Point2d/Point3d/structs) contribute one row per leaf column, and
-    // pp.AccessString already carries the full leaf access string (e.g. "Geo.X", "Struct.Field").
-    //
-    // Note: ec_PropertyMap joins through ec_PropertyPath (which stores RootPropertyId and
-    // AccessString); there is no direct PropertyId column on ec_PropertyMap.
     const Utf8CP sql =
         "SELECT s.[Name], cls.[Name], pp.[AccessString], t.[Name], col.[Ordinal], col.[Id] "
         "FROM [main].[ec_PropertyMap] pm "
@@ -1989,6 +1989,8 @@ BentleyStatus SchemaReservationHelper::SeedColumnKeyMapsFromLocalDb(ECDbCR local
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::SeedColumnStoreFromLocalDb(ECDbCR localDb,
                                                                    SchemaReservationStore& idStore,
                                                                    SchemaReservationColumnStore& colStore) {
@@ -2000,28 +2002,30 @@ BentleyStatus SchemaReservationHelper::SeedColumnStoreFromLocalDb(ECDbCR localDb
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                                         bset<Utf8String, CompareIUtf8Ascii>& visited) {
-    if (visited.find(schema.GetName()) != visited.end()) // This schema is already visited, so we don't need to process it again.
-        return;
-    visited.insert(schema.GetName());
+if (visited.find(schema.GetName()) != visited.end())
+            return;
+        visited.insert(schema.GetName());
 
-    store.schema.GetOrAllocate(SchemaWriter::DeriveSchemaKey(schema));
+        store.schema.GetOrAllocate(SchemaWriter::DeriveSchemaKey(schema));
 
-    for (auto const& refPair : schema.GetReferencedSchemas()) {
-        ECN::ECSchemaCP ref = refPair.second.get();
-        if (ref == nullptr) continue;
-        store.schemaReference.GetOrAllocate(SchemaWriter::DeriveSchemaReferenceKey(schema, *ref));
-        WalkSchemaForReservation(*ref, store, visited);
-    }
+        for (auto const& refPair : schema.GetReferencedSchemas()) {
+            ECN::ECSchemaCP ref = refPair.second.get();
+            if (ref == nullptr) continue;
+            store.schemaReference.GetOrAllocate(SchemaWriter::DeriveSchemaReferenceKey(schema, *ref));
+            WalkSchemaForReservation(*ref, store, visited);
+        }
 
-    for (ECClassCP ecClass : schema.GetClasses()) {
-        if (ecClass == nullptr) continue;
-        store.ecClass.GetOrAllocate(SchemaWriter::DeriveClassKey(*ecClass)); // Allocate the class key
-        for (ECClassCP base : ecClass->GetBaseClasses()) // Allocate the base class keys
-            if (base != nullptr)
-                store.classHasBaseClasses.GetOrAllocate(SchemaWriter::DeriveClassHasBaseClassesKey(*ecClass, *base)); // Allocate the class-has-base-classes key
-        for (ECPropertyCP prop : ecClass->GetProperties(false)) // Allocate the property keys
+        for (ECClassCP ecClass : schema.GetClasses()) {
+            if (ecClass == nullptr) continue;
+            store.ecClass.GetOrAllocate(SchemaWriter::DeriveClassKey(*ecClass));
+            for (ECClassCP base : ecClass->GetBaseClasses())
+                if (base != nullptr)
+                    store.classHasBaseClasses.GetOrAllocate(SchemaWriter::DeriveClassHasBaseClassesKey(*ecClass, *base));
+            for (ECPropertyCP prop : ecClass->GetProperties(false))
             if (prop != nullptr)
                 store.property.GetOrAllocate(SchemaWriter::DerivePropertyKey(*prop));
 
@@ -2092,8 +2096,7 @@ void SchemaReservationHelper::WalkSchemaForReservation(ECN::ECSchemaCR schema, S
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaSync::LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const {
-    // Reuse the pending-reservation connection when it is open so that uncommitted
-    // reservation changes written by ReserveSchemaImport are visible to the caller.
+    // Use pending connection if open so uncommitted reservations are visible.
     if (m_pendingReservationDb.IsDbOpen()) {
         if (!m_pendingReservationDb.TableExists("schema_reservation_ids"))
             return ERROR;
@@ -2151,10 +2154,6 @@ SchemaSync::Status SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> cons
         return Status::ERROR;
     }
 
-    // ---------------------------------------------------------------
-    // Phase 1 column-assignment reservation: per-physical-table
-    // monotonic column-ordinal counters in schema_reservation_columns.
-    // ---------------------------------------------------------------
     if (BE_SQLITE_OK != m_pendingReservationDb.ExecuteSql(SchemaReservationHelper::RESERVATION_COLUMNS_TABLE_DDL)) {
         LOG.error("ReserveSchemaImport: Failed to create column reservation table.");
         AbandonPendingReservation();
@@ -2168,15 +2167,7 @@ SchemaSync::Status SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> cons
         return Status::ERROR;
     }
 
-    // The per-physical-table high-water ordinal is derived from the persisted
-    // propertyKey -> (columnOrd, columnId) map that Init seeded into the sync db (see
-    // GetHighWaterOrd), so it must NOT be re-seeded from the caller's local db here: once
-    // briefcases diverge, the local MAX(Ordinal) can lead the container baseline and push
-    // new ordinals past the agreed value, causing cross-briefcase misalignment. Ordinal
-    // assignment depends solely on the shared sync-db state captured once at Init.
-
-    // Build a classKey -> ECClass index over the incoming schemas and their reference closure so
-    // the column walk can resolve slot occupants when testing ancestor/descendant relatedness.
+    // Build a classKey → ECClass index for slot-occupant relatedness checks.
     bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> classIndex;
     {
         bset<Utf8String, CompareIUtf8Ascii> indexVisited;
@@ -2197,8 +2188,6 @@ SchemaSync::Status SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> cons
     }
 
     // NOTE: SaveChanges() is intentionally NOT called here.
-    // The sync-db write transaction remains open; the caller (ImportSchemas) is responsible
-    // for calling CommitPendingReservation() on success or AbandonPendingReservation() on failure.
     return Status::OK;
 }
 
@@ -2271,6 +2260,8 @@ SchemaSync::Status SchemaSync::ReservationTxGuard::Commit() {
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store) {
     store.Clear();
 
@@ -2308,6 +2299,8 @@ BentleyStatus SchemaReservationHelper::ReadColumnTableStore(Db& syncDb, Utf8CP p
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store) {
     flexbuffers::Builder fbb;
     fbb.Map([&]() {
@@ -2334,37 +2327,9 @@ BentleyStatus SchemaReservationHelper::WriteColumnTableStore(Db& syncDb, Utf8CP 
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store) {
-    // Seed each physical table's in-memory high-water ordinal baseline from the current
-    // MAX(Ordinal) in ec_Column.  This ensures newly-allocated ordinals are above any already-used
-    // ones.  The baseline is not persisted; it is recomputed from the local db on every reservation.
-    //
-    // Only Primary (0) and Overflow (3) tables are considered — the other two table types need no
-    // ordinal coordination across briefcases, for the reasons below:
-    //
-    //   Joined tables (Type=1, JoinedTablePerDirectSubclass):
-    //     Each subclass gets its *own* private physical table whose columns are named directly from
-    //     the property name, not drawn from a shared ordinal pool.  Two offline briefcases adding
-    //     property "Foo" to a joined-table class will both produce the same deterministically-named
-    //     column in that class's table without any coordination — there is no shared counter to
-    //     protect, so no conflict is possible.
-    //
-    //   Existing tables (Type=2):
-    //     These are pre-existing SQLite tables that ECDb never creates or alters; the import only
-    //     maps EC properties to columns that must already exist.  ECDb allocates nothing in these
-    //     tables, so there is nothing to coordinate across briefcases.
-    //
-    // Primary and Overflow tables both participate in the SharedData shared-column pool
-    // (TablePerHierarchy with ShareColumnsMode::Yes).  Multiple subclasses compete for generic
-    // ordinal slots in the same physical table; without the coordinated counter two offline
-    // briefcases would draw different ordinals for the same property, producing conflicting
-    // column assignments for different EC content.
-    //
-    // The counter is restricted to *shared* columns (ColumnKind = SharedData), mirroring
-    // WalkSchemaForColumnReservation which only allocates/advances the counter for shared columns
-    // (named/Default/ECInstanceId/ECClassId columns and navigation/explicit-ColumnName properties
-    // are never reserved).  This also means Primary tables that own no shared column at all produce
-    // no row here and get no store entry, exactly as they get none in the walk.
     Statement stmt;
     const Utf8CP sql =
         "SELECT t.[Name], COALESCE(MAX(c.[Ordinal]), 0) "
@@ -2387,6 +2352,8 @@ BentleyStatus SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(ECDbCR 
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store) {
     store.Clear();
     if (!syncDb.TableExists("schema_reservation_columns"))
@@ -2417,6 +2384,8 @@ BentleyStatus SchemaReservationHelper::LoadColumnStoreFromSyncDb(Db& syncDb, Sch
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReservationHelper::WriteColumnStoreToSyncDb(Db& syncDb, SchemaReservationColumnStore const& store) {
     for (auto const& kv : store.GetStores()) {
         if (SUCCESS != WriteColumnTableStore(syncDb, kv.first.c_str(), kv.second))
@@ -2426,12 +2395,8 @@ BentleyStatus SchemaReservationHelper::WriteColumnStoreToSyncDb(Db& syncDb, Sche
 }
 
 //---------------------------------------------------------------------------------------
-// Walk the base-class chain upward and return the first base that has an explicit
-// ClassMap CA declaring MapStrategy=TablePerHierarchy.  A base with OwnTable / NotMapped /
-// ExistingTable stops the search (it defines an independent table that is not shared with
-// subclasses).  Returns nullptr when no TPH ancestor is found, meaning the class is its
-// own table root (defaults to OwnTable, or is itself the TPH root if it carries the CA).
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECClassCP SchemaReservationHelper::FindTphAncestor(ECN::ECClassCR ecClass) {
     for (ECN::ECClassCP base : ecClass.GetBaseClasses()) {
         if (base == nullptr) continue;
@@ -2462,13 +2427,8 @@ ECN::ECClassCP SchemaReservationHelper::FindTphAncestor(ECN::ECClassCR ecClass) 
 }
 
 //---------------------------------------------------------------------------------------
-// Return the ShareColumnsMode that @p ecClass propagates to its subclasses (not whether
-// the class itself uses shared columns — use ClassUsesSharedColumns for that).
-// Mirrors TablePerHierarchyInfo::DetermineSharedColumnsInfo:
-//   any non-No mode from a base is inherited as Yes by the subclass.
-// (DetermineSharedColumnsInfo is private to TablePerHierarchyInfo and requires an
-// IssueDataSource; only the schema-metadata portion is replicated here.)
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TablePerHierarchyInfo::ShareColumnsMode SchemaReservationHelper::ComputePropagatedShareMode(
     ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow) {
     using SCMode = TablePerHierarchyInfo::ShareColumnsMode;
@@ -2504,21 +2464,15 @@ TablePerHierarchyInfo::ShareColumnsMode SchemaReservationHelper::ComputePropagat
 }
 
 //---------------------------------------------------------------------------------------
-// Return true if @p ecClass itself (not just its subclasses) uses the shared-column strategy.
-// Delegates to ComputePropagatedShareMode for the inheritance traversal; the result is
-// Yes for a fully inheriting subclass, ApplyToSubclassesOnly for the root that carries
-// that CA (meaning it does NOT use shared columns itself), or No if there is no ShareColumns CA.
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaReservationHelper::ClassUsesSharedColumns(ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow) {
     return ComputePropagatedShareMode(ecClass, maxBeforeOverflow) == TablePerHierarchyInfo::ShareColumnsMode::Yes;
 }
 
 //---------------------------------------------------------------------------------------
-// Return true if @p prop has an explicit ColumnName value in its PropertyMap CA, meaning
-// it maps to a named physical column even inside a shared-column TPH table — those columns
-// are derived deterministically from the property name on every briefcase, so they need
-// no coordinated reservation.
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaReservationHelper::PropertyHasExplicitColumnName(ECN::ECPropertyCR prop) {
     ECN::PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
     if (primProp == nullptr) return false;  // Only primitive properties can carry PropertyMap.ColumnName.
@@ -2532,6 +2486,8 @@ bool SchemaReservationHelper::PropertyHasExplicitColumnName(ECN::ECPropertyCR pr
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SchemaReservationHelper::CollectClassIndex(
     ECN::ECSchemaCR schema,
     bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii>& index,
@@ -2554,15 +2510,8 @@ void SchemaReservationHelper::CollectClassIndex(
 }
 
 //---------------------------------------------------------------------------------------
-// A shared-column slot may be reused by ecClass only when it holds no property of ecClass
-// itself, of any of its ancestors, or of any of its descendants — exactly the condition
-// ClassMapColumnFactory::ReuseOrCreateSharedColumn enforces (self/ancestor via the column map,
-// descendant via IsColumnUsedByAnyDerivedClass).  Here the occupant owner classes are resolved
-// through classIndex and the relatedness is tested with ECClass::Is in both directions.
-// An occupant that cannot be resolved (e.g. it belongs to a schema outside the import's
-// reference closure) is treated conservatively as related, so reuse is skipped rather than
-// risk assigning a column that a related class already uses.
-//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaReservationHelper::IsSlotReusableByClass(
     SchemaReservationColumnSlot const& slot, ECN::ECClassCR ecClass,
     bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex)
@@ -2580,6 +2529,8 @@ bool SchemaReservationHelper::IsSlotReusableByClass(
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SchemaReservationHelper::WalkSchemaForColumnReservation(
     ECN::ECSchemaCR schema,
     SchemaReservationStore& idStore,
@@ -2601,10 +2552,8 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
     for (ECN::ECClassCP ecClass : schema.GetClasses()) {
         if (ecClass == nullptr) continue;
 
-        // Relationship classes use a link-table or FK-column strategy whose layout is
-        // derived entirely from schema metadata (no shared-column pool); skip.
+        // Skip classes that don't use shared columns.
         if (ecClass->IsRelationshipClass()) continue;
-        // Struct and CA classes are never mapped to physical tables.
         if (ecClass->IsCustomAttributeClass() || ecClass->IsStructClass()) continue;
 
         // Skip classes explicitly opted out of mapping.
@@ -2627,17 +2576,12 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
         auto const& ownedProps = ecClass->GetProperties(false);
         if (ownedProps.empty()) continue;
 
-        // only reserve columns for classes whose table uses the shared-column strategy
-        // (ShareColumnsMode == Yes).  Classes mapped to non-shared-column tables (OwnTable default,
-        // or TPH without ShareColumns CA) produce named physical columns that are
-        // deterministic across briefcases and need no coordinated reservation.
+        // Only classes using the shared-column strategy need reservation.
         Nullable<uint32_t> maxBeforeOverflow;
         if (!ClassUsesSharedColumns(*ecClass, maxBeforeOverflow))
             continue;
 
-        // Derive the primary physical table name purely from schema metadata.
-        // For a TPH subclass, use the TPH root's table name; for a root class (or a class
-        // with OwnTable strategy that somehow uses ShareColumns), use the class's own name.
+        // Primary table name is derived from the TPH root (or the class itself if no root).
         ECN::ECClassCP tphAncestor = FindTphAncestor(*ecClass);
         ECN::ECClassCR rootClass = (tphAncestor != nullptr) ? *tphAncestor : *ecClass;
         Utf8String primaryTableName;
@@ -2648,8 +2592,7 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
             continue;
         }
 
-        // Rule 2: overflow table name follows the deterministic convention from CreateOverflowTable.
-        // The overflow store is created lazily — only if at least one property actually spills.
+        // Overflow table name follows the naming convention; created lazily.
         Utf8String overflowTableName = primaryTableName + "_Overflow";
         SchemaReservationColumnTableStore& primaryStore = colStore.GetOrCreate(primaryTableName);
         SchemaReservationColumnTableStore* overflowStore = nullptr;  // created on first use
@@ -2657,23 +2600,11 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
         for (ECN::ECPropertyCP prop : ownedProps) {
             if (prop == nullptr) continue;
 
-            // Navigation properties map to well-known FK columns (SourceECInstanceId /
-            // TargetECInstanceId).  Their layout is deterministic from schema metadata;
-            // including them here would advance the shared-column counter unnecessarily.
+            // Navigation and explicitly-named properties are deterministic; skip.
             if (prop->GetIsNavigation()) continue;
-
-            // Properties with an explicit ColumnName CA produce a named physical column.
-            // Named columns are derived deterministically from the property name on every
-            // briefcase, so they need no coordinated slot reservation.
             if (PropertyHasExplicitColumnName(*prop)) continue;
 
-            // A property may occupy several physical columns (Point2d/Point3d, or a struct that
-            // expands into one column per leaf field).  Each physical column is reserved
-            // individually and keyed by its own leaf access string, so the mapping-time consumer
-            // — which calls Allocate once per leaf — resolves the very same reservation.  All
-            // leaves of one property share the same physical table: the real mapping decides
-            // overflow once per property and never splits a single property across the
-            // primary/overflow boundary, so the target table is chosen once for the whole set.
+            // Collect leaf access strings (one per physical column for multi-column properties).
             bvector<Utf8String> leafAccessStrings;
             ClassMapColumnFactory::CollectColumnAccessStrings(*prop, prop->GetName(), leafAccessStrings);
             if (leafAccessStrings.empty()) continue;
@@ -2683,9 +2614,7 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
             for (Utf8StringCR accessString : leafAccessStrings)
                 leafKeys.push_back(SchemaWriter::DerivePropertyColumnKey(*ecClass, accessString));
 
-            // Idempotent: if any leaf is already reserved (in either table) the property was
-            // reserved by an earlier walk; leave every existing (columnOrd, columnId) untouched —
-            // overwriting would break cross-briefcase alignment.
+            // Already reserved by a prior walk — skip.
             bool alreadyReserved = false;
             for (Utf8StringCR leafKey : leafKeys) {
                 if (primaryStore.Lookup(leafKey) != nullptr) { alreadyReserved = true; break; }
@@ -2696,19 +2625,7 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
 
             const size_t columnsRequired = leafKeys.size();
 
-            // Decide the target table for the whole property using the exact same overflow-budget
-            // arithmetic the real allocator runs (ClassMapColumnFactory::EvaluateOverflowFromBudget),
-            // fed from the reservation store instead of the live db so the two never diverge:
-            //   - availablePhysicalColumns: free physical slots left in the base table.  The store's
-            //     high-water ordinal is seeded from MAX(shared ec_Column.Ordinal) and advanced per
-            //     new slot; ordinals are a dense 0-based sequence with shared columns last, so the
-            //     table currently holds (highWater + 1) physical columns and
-            //     kMaxPhysicalColumnsPerTable - (highWater + 1) remain.
-            //   - sharedColumnCount: the number of reserved shared-column slots in the base table.
-            //     (The reserve phase has no RemapManager freed-column set, so none are excluded.)
-            //   - reusableSharedColumnCount: slots reusable by this class (self/ancestor/descendant
-            //     test), mirroring the real allocator's in-use + IsColumnUsedByAnyDerivedClass check.
-            //   - maxSharedColumnsBeforeOverflow: the ShareColumns CA budget (maxBeforeOverflow).
+            // Choose primary or overflow using the same overflow-budget logic as the allocator.
             const uint64_t highWater = primaryStore.GetHighWaterOrd();
             const uint32_t availablePhysicalColumns =
                 ((highWater + 1) < (uint64_t)ClassMapColumnFactory::kMaxPhysicalColumnsPerTable)
@@ -2730,11 +2647,7 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
                 targetStore = overflowStore;
             }
 
-            // Reserve each leaf in the chosen table: reuse a distinct reusable slot when one is
-            // available (each reuse records this class as an occupant, so the next leaf cannot
-            // pick the same slot), otherwise extend the table with a fresh slot + column id.
-            // This mirrors ClassMapColumnFactory::ReuseOrCreateSharedColumn, which reuses a
-            // distinct free shared column per leaf and creates a new one when none is free.
+            // Reuse an available slot or allocate a new one for each leaf.
             for (Utf8StringCR leafKey : leafKeys) {
                 bool reusedSlot = false;
                 for (auto const& slotPair : targetStore->GetSlots()) {
@@ -2763,8 +2676,7 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaSync::LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const {
-    // Reuse the pending-reservation connection when it is open so that uncommitted
-    // column-reservation changes written by ReserveSchemaImport are visible to the caller.
+    // Use pending connection if open so uncommitted column reservations are visible.
     if (m_pendingReservationDb.IsDbOpen())
         return SchemaReservationHelper::LoadColumnStoreFromSyncDb(const_cast<Db&>(m_pendingReservationDb), store);
     Db syncDb;

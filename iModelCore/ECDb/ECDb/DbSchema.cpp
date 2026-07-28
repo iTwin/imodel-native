@@ -242,19 +242,22 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
 
     stmt->BindText(2, table.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(3, Enum::ToInt(table.GetType()));
-    stmt->BindId(4, m_schemaManager.GetECDb().GetImpl().GetIdFactory().Table().NextId());
     if (table.HasExclusiveRootECClass())
         stmt->BindId(4, table.GetExclusiveRootECClassId());
 
+    Utf8String tableKey = table.GetTableSpace().GetName() + ":" + table.GetName();
+    BeInt64Id newTableId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Table().NextIdForKey(tableKey);
+    if (!newTableId.IsValid())
+        {
+        LOG.errorv("Failed to insert table '%s': no reservation for key '%s'", table.GetName().c_str(), tableKey.c_str());
+        return ERROR;
+        }
+    stmt->BindId(5, newTableId);
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const DbTableId tableId = DbUtilities::GetLastInsertedId<DbTableId>(m_schemaManager.GetECDb());
-    if (!tableId.IsValid())
-        return ERROR;
-
-    const_cast<DbTable&>(table).SetId(tableId);
+    const_cast<DbTable&>(table).SetId(DbTableId(newTableId.GetValue()));
 
     bmap<DbColumn const*, int> primaryKeys;
     if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
@@ -826,7 +829,14 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
     if (stmt == nullptr)
         return ERROR;
 
-    auto maxIndexId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Index().NextId();
+    Utf8String indexKey = index.GetTable().GetName() + ":" + index.GetName();
+    BeInt64Id newIndexId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Index().NextIdForKey(indexKey);
+    if (!newIndexId.IsValid())
+        {
+        m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0221,
+            "Failed to persist definition for index %s on table %s: no reservation for key '%s'", index.GetName().c_str(), index.GetTable().GetName().c_str(), indexKey.c_str());
+        return ERROR;
+        }
     stmt->BindId(1, index.GetTable().GetId());
     stmt->BindText(2, index.GetName(), Statement::MakeCopy::No);
     stmt->BindBoolean(3, index.GetIsUnique());
@@ -837,7 +847,7 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
         stmt->BindId(6, index.GetClassId());
 
     stmt->BindBoolean(7, index.AppliesToSubclassesIfPartial());
-    stmt->BindId(8, maxIndexId);
+    stmt->BindId(8, newIndexId);
 
     if (BE_SQLITE_DONE != stmt->Step())
         {
@@ -854,10 +864,13 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
     int i = 0;
     for (DbColumn const* col : index.GetColumns())
         {
-        if (BE_SQLITE_OK != indexColStmt->BindId(1, maxIndexId) ||
+        Utf8String indexColKey = Utf8PrintfString("%s:%d", indexKey.c_str(), i);
+        BeInt64Id newIndexColId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().IndexColumn().NextIdForKey(indexColKey);
+        if (!newIndexColId.IsValid() ||
+            BE_SQLITE_OK != indexColStmt->BindId(1, newIndexId) ||
             BE_SQLITE_OK != indexColStmt->BindId(2, col->GetId()) ||
             BE_SQLITE_OK != indexColStmt->BindInt(3, i) ||
-            BE_SQLITE_OK != indexColStmt->BindId(4, m_schemaManager.GetECDb().GetImpl().GetIdFactory().IndexColumn().NextId()))
+            BE_SQLITE_OK != indexColStmt->BindId(4, newIndexColId))
             {
             BeAssert(false);
             return ERROR;

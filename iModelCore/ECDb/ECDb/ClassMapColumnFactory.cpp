@@ -448,7 +448,7 @@ bool ClassMapColumnFactory::TryGetReservedColumnPlacement(SchemaImportContext& c
     // declaring class from the root segment of the access string so the key matches the one the
     // reserve walk produced (it keys on the walked class).
     const size_t dotPosition = accessString.find('.');
-    Utf8String topName = (dotPosition != Utf8String::npos) ? accessString.substr(0, dotPosition) : accessString;
+    Utf8String topName = (dotPosition != Utf8String::npos) ? Utf8String(accessString.substr(0, dotPosition)) : accessString;
     ECN::ECPropertyCP topProp = m_classMap.GetClass().GetPropertyP(topName.c_str());
     ECN::ECClassCR ownerClass = (topProp != nullptr) ? topProp->GetClass() : m_classMap.GetClass();
 

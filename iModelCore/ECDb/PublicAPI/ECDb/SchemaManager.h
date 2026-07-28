@@ -102,11 +102,8 @@ struct SchemaReservationColumnEntry final {
 };
 
 //=======================================================================================
-//! A derived view of one reserved shared column ("slot") in a physical table: its ordinal,
-//! its reserved ec_Column.Id, and the set of owner class keys ("schema:class") whose
-//! properties occupy this column. Two sibling (mutually unrelated) classes may occupy the
-//! same slot because their rows never coexist. Slots are recomputed from the persisted
-//! propertyKey→(columnOrd,columnId) map; they are never persisted directly.
+//! A derived view of one reserved shared column: its ordinal, ec_Column.Id, and the set
+//! of owner class keys that occupy it. Recomputed from the persisted key map on demand.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationColumnSlot final {
@@ -116,30 +113,24 @@ struct SchemaReservationColumnSlot final {
 };
 
 //=======================================================================================
-//! Per-physical-SQLite-table store for the property-key → column assignment used by
-//! the mapping-phase reservation system. One row per shared-column/overflow
-//! physical table in schema_reservation_columns; keyed by content, idempotent.
-//!
-//! The persisted state is only the propertyKey→(columnOrd,columnId) map. The slot/occupancy
-//! view and the high-water ordinal are derived from that map on demand, so sibling column
-//! reuse can be computed without persisting redundant counters.
+//! Per-physical-table store for property-key → column assignment. Persisted state is
+//! only the key→(columnOrd,columnId) map; slot view and high-water ordinal are derived on demand.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationColumnTableStore final {
 private:
-    // Persisted: propertyKey ("schema:class:prop") → reserved (columnOrd, columnId).
+    // propertyKey ("schema:class:prop") → reserved (columnOrd, columnId)
     bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> m_keyToEntry;
-    // Derived cache: columnOrd → slot. Rebuilt on demand from m_keyToEntry; never persisted.
+    // columnOrd → slot, derived on demand from m_keyToEntry
     mutable bmap<uint64_t, SchemaReservationColumnSlot> m_slots;
     mutable bool m_slotsDirty = true;
-    // In-memory-only high-water baseline seeded from the local db MAX(Ordinal) of pre-existing
-    // shared columns. Not persisted; recomputed on every reservation.
+    // High-water baseline seeded from local db MAX(Ordinal); not persisted
     uint64_t m_seededHighWater = 0;
 
     //! property key is "schema:class:prop"; the owner class key is the "schema:class" prefix.
-    static Utf8String ClassKeyFromPropertyKey(Utf8StringCR propKey) {
+    Utf8String ClassKeyFromPropertyKey(Utf8StringCR propKey) const {
         size_t pos = propKey.rfind(':');
-        return pos == Utf8String::npos ? propKey : propKey.substr(0, pos);
+        return pos == Utf8String::npos ? propKey : Utf8String(propKey.substr(0, pos));
     }
     void RebuildSlots() const {
         m_slots.clear();
@@ -163,8 +154,7 @@ public:
         if (m_slotsDirty) RebuildSlots();
         return m_slots;
     }
-    //! Highest reserved-or-pre-existing shared-column ordinal (derived high-water). Zero means
-    //! no shared column reserved yet in this table.
+    //! Highest reserved shared-column ordinal. Zero if none reserved.
     uint64_t GetHighWaterOrd() const {
         uint64_t hi = m_seededHighWater;
         for (auto const& kv : m_keyToEntry)
@@ -183,10 +173,8 @@ public:
 };
 
 //=======================================================================================
-//! Full column-assignment reservation store keyed by physical SQLite table name.
-//! Written into the sync-db by ReserveSchemaImport and read back by
-//! ImportSchemas so that DbMappingManager assigns the same column ordinals on every
-//! briefcase.
+//! Column-assignment reservation store keyed by physical table name. Ensures every
+//! briefcase assigns the same column ordinals during ImportSchemas.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationColumnStore final {
@@ -304,8 +292,7 @@ struct SchemaSync final {
             ECDB_EXPORT static LocalDbInfo From(DbCR);
 };
 
-    //! RAII guard that clears keyed-mode on the IdFactory on destruction.
-    //! Call Activate() after successfully entering keyed mode.
+    //! Clears keyed-mode on the IdFactory on destruction. Call Activate() after entering keyed mode.
     struct KeyedModeGuard {
         IdFactory* m_factory;
         bool m_active;
@@ -314,7 +301,7 @@ struct SchemaSync final {
         void Activate() { m_active = true; }
     };
 
-    //! RAII guard that abandons a pending reservation transaction on destruction unless Commit() was called.
+    //! Abandons the pending reservation transaction on destruction unless Commit() was called.
     struct ReservationTxGuard {
         SchemaSync& m_sync;
         bool m_committed;
@@ -330,8 +317,7 @@ private:
     int64_t m_modifiedRowCount;
     Db m_pendingReservationDb;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
-    //! Seed the reservation stores from the local db baseline into the sync-db at Init time.
-    //! Uses m_pendingReservationDb and CommitPendingReservation / AbandonPendingReservation.
+    //! Seed the reservation stores from the local db baseline into the sync-db.
     Status SeedReservationStoreInternal(SyncDbUri const&);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
@@ -362,21 +348,15 @@ public:
     ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr);
     ECDB_EXPORT Status Push(SyncDbUri const&);
-    //! Reserve content-key-based ids for @p schemas in the sync-db. Must be called before ImportSchemas.
-    //! Does NOT commit — the caller must call CommitPendingReservation() on success or
-    //! AbandonPendingReservation() on failure to commit or roll back the open transaction.
+    //! Reserve ids for @p schemas in the sync-db. Caller must commit or abandon the open transaction.
     ECDB_EXPORT Status ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri);
-    //! Commit the reservation transaction opened by the last successful ReserveSchemaImport call.
-    //! No-op if no reservation transaction is pending.
-    //! @return Status::OK if the transaction was committed successfully, Status::ERROR otherwise.
+    //! Commit the pending reservation transaction. No-op if none is pending.
     Status CommitPendingReservation();
-    //! Roll back the reservation transaction opened by the last successful ReserveSchemaImport call.
-    //! No-op if no reservation transaction is pending.
-    //! @return Status::OK if the transaction was rolled back successfully, Status::ERROR otherwise.
+    //! Roll back the pending reservation transaction. No-op if none is pending.
     Status AbandonPendingReservation();
-    //! Load the reservation store from the sync-db (read-only) for keyed-mode id allocation.
+    //! Load the id reservation store from the sync-db.
     BentleyStatus LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const;
-    //! Load the column-assignment reservation store from the sync-db (read-only) for mapping-phase keyed allocation.
+    //! Load the column-assignment reservation store from the sync-db.
     BentleyStatus LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const;
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
