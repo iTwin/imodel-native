@@ -2181,8 +2181,27 @@ SchemaSync::Status SchemaSync::ReserveSchemaImport(bvector<ECN::ECSchemaCP> cons
         if (schema != nullptr)
             SchemaReservationHelper::WalkSchemaForColumnReservation(*schema, store, colStore, classIndex, colVisited);
 
+    // Reserve mapping-table ids (ec_Table, ec_PropertyPath, ec_PropertyMap). Runs AFTER the column
+    // walk because it reads primary-vs-overflow placement from the column store as the single source
+    // of truth. Reserve ec_Table for every physical table the column walk produced (incl. overflow).
+    for (auto const& storePair : colStore.GetStores())
+        store.ecTable.GetOrAllocate(Utf8String(TABLESPACE_Main) + ":" + storePair.first);
+
+    bset<Utf8String, CompareIUtf8Ascii> mapVisited;
+    for (ECN::ECSchemaCP schema : schemas)
+        if (schema != nullptr)
+            SchemaReservationHelper::WalkSchemaForMappingReservation(*schema, store, colStore, mapVisited);
+
     if (SUCCESS != SchemaReservationHelper::WriteColumnStoreToSyncDb(m_pendingReservationDb, colStore)) {
         LOG.error("ReserveSchemaImport: Failed to write column reservation store.");
+        AbandonPendingReservation();
+        return Status::ERROR;
+    }
+
+    // Re-persist the id store: the mapping walk populated ecTable/propertyMap/propertyPath after the
+    // earlier WriteReservationStoreToSyncDb call, so those rows must be written again.
+    if (SUCCESS != SchemaReservationHelper::WriteReservationStoreToSyncDb(m_pendingReservationDb, store)) {
+        LOG.error("ReserveSchemaImport: Failed to write mapping reservation store.");
         AbandonPendingReservation();
         return Status::ERROR;
     }
@@ -2668,6 +2687,158 @@ void SchemaReservationHelper::WalkSchemaForColumnReservation(
                 entry.columnId  = idStore.column.GetOrAllocate(leafKey); // new column id
                 targetStore->AddEntry(leafKey, entry);
             }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaReservationHelper::IsClassMappedForReservation(ECN::ECClassCR ecClass)
+{
+    // Relationship classes (link-table / FK maps) and non-mapped class kinds are out of scope
+    // for this walk; their mapping rows are covered elsewhere / listed as residual risk.
+    if (ecClass.IsRelationshipClass())
+        return false;
+    if (ecClass.IsCustomAttributeClass() || ecClass.IsStructClass())
+        return false;
+
+    ClassMapCustomAttribute classMapCA;
+    ECDbMapCustomAttributeHelper::TryGetClassMap(classMapCA, ecClass);
+    if (classMapCA.IsValid()) {
+        Nullable<Utf8String> stratStr;
+        if (SUCCESS == classMapCA.TryGetMapStrategy(stratStr) && !stratStr.IsNull()) {
+            MapStrategy strat;
+            if (SUCCESS == MapStrategyExtendedInfo::ParseMapStrategy(strat, stratStr.Value())) {
+                if (strat == MapStrategy::NotMapped || strat == MapStrategy::ExistingTable)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReservationHelper::DerivePrimaryTableName(ECN::ECClassCR ecClass, Utf8StringR tableName)
+{
+    // Primary table is the TPH root's table (shared by the whole hierarchy) or the class's own.
+    ECN::ECClassCP tphAncestor = FindTphAncestor(ecClass);
+    ECN::ECClassCR rootClass = (tphAncestor != nullptr) ? *tphAncestor : ecClass;
+    return DbMappingManager::Tables::DetermineTableName(tableName, rootClass);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SchemaReservationHelper::ResolveLeafColumnTableName(
+    SchemaReservationColumnStore const& colStore,
+    Utf8StringCR leafColumnKey,
+    Utf8StringCR primaryTableName)
+{
+    // The column-reservation walk is the single source of truth for primary-vs-overflow
+    // placement of shared columns. If the leaf was reserved there, use the physical table
+    // that holds it; otherwise the column is non-shared and lands in the primary table.
+    for (auto const& kv : colStore.GetStores()) {
+        if (kv.second.Lookup(leafColumnKey) != nullptr)
+            return kv.first;
+    }
+    return primaryTableName;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaReservationHelper::ReserveLeafPropertyReservation(
+    SchemaReservationStore& idStore,
+    SchemaReservationColumnStore const& colStore,
+    ECN::ECClassCR mappedClass,
+    ECN::ECClassCR declaringClass,
+    ECN::ECPropertyCR rootProperty,
+    Utf8StringCR accessString,
+    Utf8StringCR primaryTableName)
+{
+    // ec_PropertyPath is keyed by the DECLARING class of the root property (matches the
+    // p.ClassId join on the consume side), so inherited paths reserve a single shared id.
+    Utf8String pathKey = declaringClass.GetSchema().GetName();
+    pathKey += ":";
+    pathKey += declaringClass.GetName();
+    pathKey += ":";
+    pathKey += rootProperty.GetName();
+    pathKey += ":";
+    pathKey += accessString;
+    idStore.propertyPath.GetOrAllocate(pathKey);
+
+    // Resolve the physical table this leaf lands in from the column store (shared columns) or
+    // the class's primary table (non-shared / deterministic columns).
+    Utf8String leafColumnKey = SchemaWriter::DerivePropertyColumnKey(declaringClass, accessString);
+    Utf8String targetTable = ResolveLeafColumnTableName(colStore, leafColumnKey, primaryTableName);
+
+    // ec_PropertyMap is keyed by the CONCRETE mapped class + access string + placement, so each
+    // concrete class (including subclasses reusing inherited/shared columns) reserves its own id.
+    Utf8String mapKey = mappedClass.GetSchema().GetName();
+    mapKey += ":";
+    mapKey += mappedClass.GetName();
+    mapKey += ":";
+    mapKey += accessString;
+    mapKey += ":";
+    mapKey += TABLESPACE_Main;
+    mapKey += ":";
+    mapKey += targetTable;
+    idStore.propertyMap.GetOrAllocate(mapKey);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaReservationHelper::WalkSchemaForMappingReservation(
+    ECN::ECSchemaCR schema,
+    SchemaReservationStore& idStore,
+    SchemaReservationColumnStore const& colStore,
+    bset<Utf8String, CompareIUtf8Ascii>& visited)
+{
+    if (visited.find(schema.GetName()) != visited.end())
+        return;
+    visited.insert(schema.GetName());
+
+    // Recurse into referenced schemas so dependencies are processed first.
+    for (auto const& refPair : schema.GetReferencedSchemas()) {
+        ECN::ECSchemaCP ref = refPair.second.get();
+        if (ref != nullptr)
+            WalkSchemaForMappingReservation(*ref, idStore, colStore, visited);
+    }
+
+    for (ECN::ECClassCP ecClass : schema.GetClasses()) {
+        if (ecClass == nullptr)
+            continue;
+        if (!IsClassMappedForReservation(*ecClass))
+            continue;
+
+        Utf8String primaryTableName;
+        if (SUCCESS != DerivePrimaryTableName(*ecClass, primaryTableName)) {
+            LOG.warningv(
+                "WalkSchemaForMappingReservation: could not derive table name for '%s' — skipping.",
+                ecClass->GetFullName());
+            continue;
+        }
+
+        // Reserve ec_Table for the class's primary table (idempotent across the hierarchy).
+        idStore.ecTable.GetOrAllocate(Utf8String(TABLESPACE_Main) + ":" + primaryTableName);
+
+        // Reserve ec_PropertyPath + ec_PropertyMap for the full property set (owned + inherited).
+        // Each concrete class gets its own ec_PropertyMap rows; the placement (which physical
+        // table each leaf lands in) is read from the column store, never recomputed here.
+        for (ECN::ECPropertyCP prop : ecClass->GetProperties(true)) {
+            if (prop == nullptr)
+                continue;
+            ECN::ECClassCR declaringClass = prop->GetClass();
+
+            bvector<Utf8String> leafAccessStrings;
+            ClassMapColumnFactory::CollectColumnAccessStrings(*prop, prop->GetName(), leafAccessStrings);
+            for (Utf8StringCR accessString : leafAccessStrings)
+                ReserveLeafPropertyReservation(idStore, colStore, *ecClass, declaringClass, *prop,
+                                               accessString, primaryTableName);
         }
     }
 }

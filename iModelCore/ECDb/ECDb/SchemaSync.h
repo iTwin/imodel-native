@@ -107,7 +107,40 @@ struct SchemaReservationHelper final {
                                   bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii>& index,
                                   bset<Utf8String, CompareIUtf8Ascii>& visited);
 
+    //! Reserve ids for the mapping tables ec_Table, ec_PropertyPath, and ec_PropertyMap for
+    //! every mapped entity/mixin class in @p schema. Primary-vs-overflow placement for
+    //! shared columns is READ FROM @p colStore (the single source of truth produced by the
+    //! column-reservation walk) rather than recomputed, so reserve and consume agree.
+    //! Must run AFTER WalkSchemaForColumnReservation. Kept structurally separate from it;
+    //! shared derivations live in the private helpers below.
+    static void WalkSchemaForMappingReservation(ECN::ECSchemaCR schema,
+                                                SchemaReservationStore& idStore,
+                                                SchemaReservationColumnStore const& colStore,
+                                                bset<Utf8String, CompareIUtf8Ascii>& visited);
+
 private:
+    //! Return true if @p ecClass participates in table mapping (skips relationship, custom-attribute,
+    //! and struct classes, and classes whose ClassMap opts out via NotMapped/ExistingTable).
+    static bool IsClassMappedForReservation(ECN::ECClassCR ecClass);
+    //! Derive the primary physical table name for @p ecClass (TPH root's table, or the class's own).
+    //! Returns SUCCESS/ERROR; on success @p tableName holds the derived name.
+    static BentleyStatus DerivePrimaryTableName(ECN::ECClassCR ecClass, Utf8StringR tableName);
+    //! Resolve the physical table a leaf column lands in. If @p leafColumnKey is present in the
+    //! column store, returns the owning physical-table name (primary or overflow); otherwise falls
+    //! back to @p primaryTableName (non-shared / deterministic placement).
+    static Utf8String ResolveLeafColumnTableName(SchemaReservationColumnStore const& colStore,
+                                                 Utf8StringCR leafColumnKey,
+                                                 Utf8StringCR primaryTableName);
+    //! Reserve ec_PropertyPath (keyed by declaring class) and ec_PropertyMap (keyed by concrete
+    //! class + placement) for a single leaf access string of @p mappedClass.
+    static void ReserveLeafPropertyReservation(SchemaReservationStore& idStore,
+                                               SchemaReservationColumnStore const& colStore,
+                                               ECN::ECClassCR mappedClass,
+                                               ECN::ECClassCR declaringClass,
+                                               ECN::ECPropertyCR rootProperty,
+                                               Utf8StringCR accessString,
+                                               Utf8StringCR primaryTableName);
+
     static BentleyStatus ReadTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore& store);
     static BentleyStatus WriteTableStore(Db& syncDb, Utf8CP tableName, SchemaReservationTableStore const& store);
     static BentleyStatus SeedLastReservedIdsFromLocalDb(ECDbCR localDb, SchemaReservationStore& store);
