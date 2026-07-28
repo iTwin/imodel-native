@@ -12,6 +12,7 @@ struct ClassMap;
 struct RelationshipClassEndTableMap;
 struct PropertyMap;
 struct SingleColumnDataPropertyMap;
+struct SchemaReservationColumnEntry;
 
 //======================================================================================
 // @bsiclass
@@ -126,6 +127,13 @@ struct ClassMapColumnFactory final
         DbTable* GetEffectiveTable(SchemaImportContext&) const;
         DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
         DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&) const;
+        //! When SchemaSync column reservation is active, resolve the reserved placement of the
+        //! physical column identified by @p accessString (a leaf column access string such as
+        //! "Geo.X"): whether it was reserved in this class's primary or overflow table, plus the
+        //! reserved entry. @p prop is the ECProperty the access string belongs to (used only to
+        //! detect navigation properties, which are not reserved). Returns false when no column
+        //! reservation is active or the column has no reservation.
+        bool TryGetReservedColumnPlacement(SchemaImportContext&, ECN::ECPropertyCR prop, Utf8StringCR accessString, bool& reservedInOverflow, SchemaReservationColumnEntry const*& outEntry) const;
         bool IsColumnUsedByAnyDerivedClass(DbColumn const&, SchemaImportContext&) const;
         ColumnMaps* GetColumnMaps() const;
         DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
@@ -141,6 +149,26 @@ struct ClassMapColumnFactory final
         //! Maximum physical SQLite columns per primary/overflow shared-column table.
         //! Referenced by SchemaSync reservation logic to determine the overflow threshold.
         static constexpr uint32_t kMaxPhysicalColumnsPerTable = 63;
+        //! Enumerates the leaf column access strings a property expands into, appending them to
+        //! @p out. @p accessString is the property's own access string (its name at the top level,
+        //! or the parent path for a nested struct member). Point3d/Point2d expand into ".X/.Y/.Z"
+        //! columns, navigation into ".Id/.RelECClassId", structs recurse into members, and every
+        //! other property contributes a single column equal to @p accessString. This mirrors the
+        //! per-leaf access strings passed to Allocate during mapping, so the SchemaSync reserve
+        //! walk and the mapping-time consumer agree on the reservation key for each column.
+        static void CollectColumnAccessStrings(ECN::ECPropertyCR property, Utf8StringCR accessString, bvector<Utf8String>& out);
+        //! Pure overflow-budget arithmetic shared by the mapping-time allocator
+        //! (EvaluateIfPropertyGoesToOverflow) and the SchemaSync reserve walk, so the primary-vs-
+        //! overflow decision is computed once and never duplicated. Returns true when a property
+        //! needing @p columnsRequired physical columns must spill into the overflow table given the
+        //! base table's current shared-column budget:
+        //!  - @p availablePhysicalColumns: unused physical column slots left in the base table
+        //!    (kMaxPhysicalColumnsPerTable minus the physical columns it already has);
+        //!  - @p sharedColumnCount: number of (non-freed) shared columns the base table already has;
+        //!  - @p reusableSharedColumnCount: how many of those shared columns can be reused for the
+        //!    property's class (not in use by it, an ancestor, or a descendant);
+        //!  - @p maxSharedColumnsBeforeOverflow: the ShareColumns CA budget (null = unlimited).
+        static bool EvaluateOverflowFromBudget(uint32_t columnsRequired, uint32_t availablePhysicalColumns, uint32_t sharedColumnCount, uint32_t reusableSharedColumnCount, Nullable<uint32_t> const& maxSharedColumnsBeforeOverflow);
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
         bool IsColumnInUse(DbColumn const& column) const;
         bool MarkNavPropertyMapColumnUsed(NavigationPropertyMap const& map) const

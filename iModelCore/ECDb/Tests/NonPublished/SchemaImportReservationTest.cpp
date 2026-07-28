@@ -643,4 +643,201 @@ TEST_F(SchemaSyncTestFixture, OverrideContainerReInit_SeedsFromCurrentLocal)
         });
     }
 
+// ---------------------------------------------------------------------------------------
+// Test 11: TwoSchemaImport_ThenVersionBumpAddsSharedColumn
+//
+// b1 imports two schemas through the shared sync channel:
+//   * TestSchema1 (v1.0.0): ABC (TPH root with ShareColumns, prop abcProp) and
+//     DEF (base ABC, prop defProp).  Because ABC is a TPH root that shares columns, the
+//     properties of ABC/DEF/XYZ all land in ABC's primary physical table as shared columns.
+//   * TestSchema2 (v1.0.0, references TestSchema1): XYZ (base DEF, prop xyzProp).
+//
+// b2 is created after b1 pushes, then imports ONLY TestSchema1 with a version bump to
+// v1.0.1 that adds a single new property defProp2 to DEF.
+//
+// The test inspects:
+//   (a) the sync-db reservation state (id table + column table), and
+//   (b) which property maps to which shared column in each briefcase.
+//
+// Expectations:
+//   * defProp / xyzProp keep identical (ec_Column.Id, Ordinal) across b1 and b2 because
+//     their shared-column assignment was reserved through the sync channel.
+//   * defProp2 (added only in b2) gets a brand-new shared column whose ordinal does not
+//     collide with the already-reserved xyzProp ordinal — the coordinated column counter
+//     hands out a fresh slot above the existing high-water mark.
+//   * All of abcProp/defProp/xyzProp/defProp2 live in the same physical (ABC) table.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, TwoSchemaImport_ThenVersionBumpAddsSharedColumn)
+    {
+    // TestSchema1 v1.0.0 — ABC (TPH + ShareColumns) and DEF : ABC.
+    Utf8CP schema1_v100 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ABC">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="abcProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="DEF">
+                <BaseClass>ABC</BaseClass>
+                <ECProperty propertyName="defProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // TestSchema2 v1.0.0 — references TestSchema1; XYZ : DEF.
+    Utf8CP schema2_v100 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="TestSchema1" version="01.00.00" alias="ts"/>
+            <ECEntityClass typeName="XYZ">
+                <BaseClass>ts:DEF</BaseClass>
+                <ECProperty propertyName="xyzProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // TestSchema1 v1.0.1 — bumps version and adds a single property defProp2 to DEF.
+    Utf8CP schema1_v101 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ABC">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="abcProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="DEF">
+                <BaseClass>ABC</BaseClass>
+                <ECProperty propertyName="defProp" typeName="int" />
+                <ECProperty propertyName="defProp2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    // b1 imports the two schemas — TestSchema1 first (TestSchema2 references it).
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schema1_v100), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schema2_v100), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import TestSchema1 + TestSchema2");
+
+    // All three classes must be present in b1.
+    ASSERT_NE(b1->Schemas().GetClass("TestSchema1", "ABC"), nullptr);
+    ASSERT_NE(b1->Schemas().GetClass("TestSchema1", "DEF"), nullptr);
+    ASSERT_NE(b1->Schemas().GetClass("TestSchema2", "XYZ"), nullptr);
+
+    // b2 is created after b1 pushed — it receives all three classes from the container.
+    auto b2 = hub.CreateBriefcase();
+
+    // b2 imports ONLY TestSchema1 v1.0.1 (adds defProp2 to DEF).
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schema1_v101), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    ECClassCP defB2 = b2->Schemas().GetClass("TestSchema1", "DEF");
+    ASSERT_NE(defB2, nullptr);
+    EXPECT_NE(defB2->GetPropertyP("defProp"),  nullptr) << "defProp must survive the version bump in b2";
+    EXPECT_NE(defB2->GetPropertyP("defProp2"), nullptr) << "defProp2 must be added by the version bump in b2";
+
+    // Helper: return the (columnName, columnId, ordinal, tableName) that a property of a
+    // class maps to in the given ECDb.  Returns {"",0,-1,""} when unmapped.
+    auto getColInfo = [](ECDbCR db, Utf8CP className, Utf8CP accessString)
+        -> std::tuple<Utf8String, uint64_t, int, Utf8String>
+        {
+        CachedStatementPtr stmt = db.GetCachedStatement(
+            "SELECT c.Name, c.Id, c.Ordinal, t.Name "
+            "FROM   ec_Column       c "
+            "JOIN   ec_Table        t   ON t.Id  = c.TableId "
+            "JOIN   ec_PropertyMap  pm  ON pm.ColumnId = c.Id "
+            "JOIN   ec_PropertyPath pp  ON pp.Id = pm.PropertyPathId "
+            "JOIN   ec_Class        cls ON cls.Id = pm.ClassId "
+            "WHERE  cls.Name = ? AND pp.AccessString = ?");
+        if (stmt == nullptr)
+            return {Utf8String(), UINT64_C(0), -1, Utf8String()};
+        stmt->BindText(1, className, Statement::MakeCopy::No);
+        stmt->BindText(2, accessString, Statement::MakeCopy::No);
+        if (stmt->Step() != BE_SQLITE_ROW)
+            return {Utf8String(), UINT64_C(0), -1, Utf8String()};
+        return {Utf8String(stmt->GetValueText(0)),
+                static_cast<uint64_t>(stmt->GetValueInt64(1)),
+                stmt->GetValueInt(2),
+                Utf8String(stmt->GetValueText(3))};
+        };
+
+    // --- Property -> shared column mapping in b1 ---
+    auto [abcCol_b1, abcColId_b1, abcOrd_b1, abcTbl_b1] = getColInfo(*b1, "ABC", "abcProp");
+    auto [defCol_b1, defColId_b1, defOrd_b1, defTbl_b1] = getColInfo(*b1, "DEF", "defProp");
+    auto [xyzCol_b1, xyzColId_b1, xyzOrd_b1, xyzTbl_b1] = getColInfo(*b1, "XYZ", "xyzProp");
+
+    // --- Property -> shared column mapping in b2 ---
+    auto [defCol_b2,  defColId_b2,  defOrd_b2,  defTbl_b2]  = getColInfo(*b2, "DEF", "defProp");
+    auto [def2Col_b2, def2ColId_b2, def2Ord_b2, def2Tbl_b2] = getColInfo(*b2, "DEF", "defProp2");
+    auto [xyzCol_b2,  xyzColId_b2,  xyzOrd_b2,  xyzTbl_b2]  = getColInfo(*b2, "XYZ", "xyzProp");
+
+    printf("[b1] abcProp  -> %s.%s (id=%llu ord=%d)\n", abcTbl_b1.c_str(), abcCol_b1.c_str(), (unsigned long long) abcColId_b1, abcOrd_b1);
+    printf("[b1] defProp  -> %s.%s (id=%llu ord=%d)\n", defTbl_b1.c_str(), defCol_b1.c_str(), (unsigned long long) defColId_b1, defOrd_b1);
+    printf("[b1] xyzProp  -> %s.%s (id=%llu ord=%d)\n", xyzTbl_b1.c_str(), xyzCol_b1.c_str(), (unsigned long long) xyzColId_b1, xyzOrd_b1);
+    printf("[b2] defProp  -> %s.%s (id=%llu ord=%d)\n", defTbl_b2.c_str(), defCol_b2.c_str(), (unsigned long long) defColId_b2, defOrd_b2);
+    printf("[b2] defProp2 -> %s.%s (id=%llu ord=%d)\n", def2Tbl_b2.c_str(), def2Col_b2.c_str(), (unsigned long long) def2ColId_b2, def2Ord_b2);
+    printf("[b2] xyzProp  -> %s.%s (id=%llu ord=%d)\n", xyzTbl_b2.c_str(), xyzCol_b2.c_str(), (unsigned long long) xyzColId_b2, xyzOrd_b2);
+
+    // Every property must be mapped to a valid, shared column.
+    ASSERT_GT(abcColId_b1,  UINT64_C(0));
+    ASSERT_GT(defColId_b1,  UINT64_C(0));
+    ASSERT_GT(xyzColId_b1,  UINT64_C(0));
+    ASSERT_GT(defColId_b2,  UINT64_C(0));
+    ASSERT_GT(def2ColId_b2, UINT64_C(0));
+    ASSERT_GT(xyzColId_b2,  UINT64_C(0));
+
+    // All properties across the hierarchy share ABC's single primary physical table.
+    EXPECT_STREQ(abcTbl_b1.c_str(), defTbl_b1.c_str());
+    EXPECT_STREQ(abcTbl_b1.c_str(), xyzTbl_b1.c_str());
+    EXPECT_STREQ(abcTbl_b1.c_str(), def2Tbl_b2.c_str());
+
+    // Content-keyed shared-column assignment: properties reserved through the sync channel
+    // must land in identical columns in both briefcases.
+    EXPECT_EQ(defColId_b1, defColId_b2) << "defProp column id must match across b1/b2";
+    EXPECT_EQ(defOrd_b1,   defOrd_b2)   << "defProp column ordinal must match across b1/b2";
+    EXPECT_EQ(xyzColId_b1, xyzColId_b2) << "xyzProp column id must match across b1/b2";
+    EXPECT_EQ(xyzOrd_b1,   xyzOrd_b2)   << "xyzProp column ordinal must match across b1/b2";
+
+    // The newly added defProp2 must occupy a brand-new shared column that does not collide
+    // with any previously reserved shared column (in particular xyzProp's).
+    EXPECT_NE(def2ColId_b2, xyzColId_b2) << "defProp2 must not reuse xyzProp's shared column id";
+    EXPECT_NE(def2Ord_b2,   xyzOrd_b2)   << "defProp2 must not reuse xyzProp's shared column ordinal";
+    EXPECT_NE(def2ColId_b2, defColId_b2) << "defProp2 must not reuse defProp's shared column id";
+    EXPECT_NE(def2Ord_b2,   defOrd_b2)   << "defProp2 must not reuse defProp's shared column ordinal";
+
+    // --- Sync-db reservation state ---
+    schemaSyncDb.WithReadOnly([&](ECDbCR syncDb)
+        {
+        ASSERT_TRUE(ReservationTableExists(syncDb)) << "schema_reservation_ids must exist";
+        EXPECT_GT(GetLastReservedId(syncDb, "ec_Class"),    UINT64_C(0)) << "ec_Class counter must be set";
+        EXPECT_GT(GetLastReservedId(syncDb, "ec_Property"), UINT64_C(0)) << "ec_Property counter must be set";
+
+        ASSERT_TRUE(ColumnReservationTableExists(syncDb)) << "schema_reservation_columns must exist";
+        EXPECT_TRUE(HasColumnReservationRow(syncDb))      << "schema_reservation_columns must have a row for ABC's shared table";
+        });
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

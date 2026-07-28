@@ -6299,6 +6299,13 @@ Utf8String SchemaWriter::DerivePropertyKey(ECN::ECPropertyCR property) {
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaWriter::DerivePropertyColumnKey(ECN::ECClassCR ownerClass, Utf8StringCR leafAccessString) {
+    return Utf8PrintfString("%s:%s:%s", ownerClass.GetSchema().GetName().c_str(), ownerClass.GetName().c_str(), leafAccessString.c_str());
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaWriter::DeriveEnumerationKey(ECN::ECEnumerationCR ecEnum) {
     return Utf8PrintfString("%s:%s", ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
 }

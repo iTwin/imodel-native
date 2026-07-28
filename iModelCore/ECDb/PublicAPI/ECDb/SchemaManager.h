@@ -5,6 +5,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <Bentley/BeEvent.h>
+#include <Bentley/bset.h>
 #include <functional>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -101,15 +102,55 @@ struct SchemaReservationColumnEntry final {
 };
 
 //=======================================================================================
+//! A derived view of one reserved shared column ("slot") in a physical table: its ordinal,
+//! its reserved ec_Column.Id, and the set of owner class keys ("schema:class") whose
+//! properties occupy this column. Two sibling (mutually unrelated) classes may occupy the
+//! same slot because their rows never coexist. Slots are recomputed from the persisted
+//! propertyKey→(columnOrd,columnId) map; they are never persisted directly.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnSlot final {
+    uint64_t columnOrd = 0;
+    uint64_t columnId  = 0;
+    bset<Utf8String, CompareIUtf8Ascii> occupants;
+};
+
+//=======================================================================================
 //! Per-physical-SQLite-table store for the property-key → column assignment used by
 //! the mapping-phase reservation system. One row per shared-column/overflow
 //! physical table in schema_reservation_columns; keyed by content, idempotent.
+//!
+//! The persisted state is only the propertyKey→(columnOrd,columnId) map. The slot/occupancy
+//! view and the high-water ordinal are derived from that map on demand, so sibling column
+//! reuse can be computed without persisting redundant counters.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationColumnTableStore final {
 private:
+    // Persisted: propertyKey ("schema:class:prop") → reserved (columnOrd, columnId).
     bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> m_keyToEntry;
-    uint64_t m_lastUsedColumnOrd = 0; //!< monotonic counter seeded from high-water mark
+    // Derived cache: columnOrd → slot. Rebuilt on demand from m_keyToEntry; never persisted.
+    mutable bmap<uint64_t, SchemaReservationColumnSlot> m_slots;
+    mutable bool m_slotsDirty = true;
+    // In-memory-only high-water baseline seeded from the local db MAX(Ordinal) of pre-existing
+    // shared columns. Not persisted; recomputed on every reservation.
+    uint64_t m_seededHighWater = 0;
+
+    //! property key is "schema:class:prop"; the owner class key is the "schema:class" prefix.
+    static Utf8String ClassKeyFromPropertyKey(Utf8StringCR propKey) {
+        size_t pos = propKey.rfind(':');
+        return pos == Utf8String::npos ? propKey : propKey.substr(0, pos);
+    }
+    void RebuildSlots() const {
+        m_slots.clear();
+        for (auto const& kv : m_keyToEntry) {
+            SchemaReservationColumnSlot& slot = m_slots[kv.second.columnOrd];
+            slot.columnOrd = kv.second.columnOrd;
+            slot.columnId  = kv.second.columnId;
+            slot.occupants.insert(ClassKeyFromPropertyKey(kv.first));
+        }
+        m_slotsDirty = false;
+    }
 
 public:
     //! Return the reserved entry for @p key, or nullptr if absent.
@@ -117,25 +158,28 @@ public:
         auto it = m_keyToEntry.find(key);
         return it != m_keyToEntry.end() ? &it->second : nullptr;
     }
-    //! Allocate the next column ordinal for @p key if not yet reserved, using @p columnId
-    //! as the ec_Column.Id. Returns the (existing or newly allocated) entry.
-    SchemaReservationColumnEntry GetOrAllocate(Utf8StringCR key, uint64_t columnId) {
-        auto it = m_keyToEntry.find(key);
-        if (it != m_keyToEntry.end())
-            return it->second;
-        SchemaReservationColumnEntry entry;
-        entry.columnOrd = ++m_lastUsedColumnOrd;
-        entry.columnId  = columnId;
-        m_keyToEntry.emplace(key, entry);
-        return entry;
+    //! Derived slot view keyed by columnOrd (ascending). Rebuilt from the persisted key map.
+    bmap<uint64_t, SchemaReservationColumnSlot> const& GetSlots() const {
+        if (m_slotsDirty) RebuildSlots();
+        return m_slots;
+    }
+    //! Highest reserved-or-pre-existing shared-column ordinal (derived high-water). Zero means
+    //! no shared column reserved yet in this table.
+    uint64_t GetHighWaterOrd() const {
+        uint64_t hi = m_seededHighWater;
+        for (auto const& kv : m_keyToEntry)
+            if (kv.second.columnOrd > hi) hi = kv.second.columnOrd;
+        return hi;
+    }
+    //! Raise the in-memory high-water baseline (from the local db MAX(Ordinal)). Not persisted.
+    void SeedHighWaterOrd(uint64_t ord) { if (ord > m_seededHighWater) m_seededHighWater = ord; }
+    //! Reserve @p key to (columnOrd, columnId). Callers enforce idempotency via Lookup.
+    void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) {
+        m_keyToEntry[key] = entry;
+        m_slotsDirty = true;
     }
     bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToEntry; }
-    uint64_t GetLastUsedColumnOrd() const { return m_lastUsedColumnOrd; }
-    void SetLastUsedColumnOrd(uint64_t ord) { m_lastUsedColumnOrd = ord; }
-    //! Set the counter only if it has not been set yet (used when seeding from MAX(Ordinal)).
-    void SeedLastUsedColumnOrd(uint64_t ord) { if (m_lastUsedColumnOrd == 0) m_lastUsedColumnOrd = ord; }
-    void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) { m_keyToEntry.emplace(key, entry); }
-    void Clear() { m_keyToEntry.clear(); m_lastUsedColumnOrd = 0; }
+    void Clear() { m_keyToEntry.clear(); m_slots.clear(); m_slotsDirty = true; m_seededHighWater = 0; }
 };
 
 //=======================================================================================

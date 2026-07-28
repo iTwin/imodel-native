@@ -270,6 +270,11 @@ struct SchemaWriter final
         static Utf8String DeriveClassKey(ECN::ECClassCR ecClass);
         static Utf8String DeriveClassHasBaseClassesKey(ECN::ECClassCR ecClass, ECN::ECClassCR baseClass);
         static Utf8String DerivePropertyKey(ECN::ECPropertyCR property);
+        //! Column-reservation key for a single physical column of a property, keyed by the leaf
+        //! access string (e.g. "Geo.X" for a Point3d column, "Struct.Field" for a struct member).
+        //! @p ownerClass is the class that declares the top-level property the access string roots in.
+        //! For a simple primitive this reduces to the same value as DerivePropertyKey.
+        static Utf8String DerivePropertyColumnKey(ECN::ECClassCR ownerClass, Utf8StringCR leafAccessString);
         static Utf8String DeriveEnumerationKey(ECN::ECEnumerationCR ecEnum);
         static Utf8String DeriveKindOfQuantityKey(ECN::KindOfQuantityCR koq);
         static Utf8String DeriveUnitSystemKey(ECN::UnitSystemCR unitSystem);

@@ -55,11 +55,11 @@ struct SchemaReservationHelper final {
 
     //! DDL to create the column-assignment reservation table in the sync-db.
     //! KeyMap is a FlexBuffer BLOB: a map from property-content-key (TEXT) to a
-    //! two-element vector [columnOrd (UInt64), columnId (UInt64)].
+    //! two-element vector [columnOrd (UInt64), columnId (UInt64)].  The per-table high-water
+    //! ordinal and the slot/occupancy view are derived from KeyMap, so no counter is persisted.
     static constexpr Utf8CP RESERVATION_COLUMNS_TABLE_DDL =
         "CREATE TABLE IF NOT EXISTS [schema_reservation_columns] "
         "([PhysicalTableName] TEXT NOT NULL PRIMARY KEY, "
-        "[LastUsedColumnOrd] INTEGER NOT NULL DEFAULT 0, "
         "[KeyMap] BLOB)";
 
     // Table-name constants for all reserved EC metadata and mapping tables.
@@ -94,8 +94,8 @@ struct SchemaReservationHelper final {
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                          bset<Utf8String, CompareIUtf8Ascii>& visited);
 
-    //! Populate BOTH the propertyKey→(columnOrd,columnId) map AND the per-table lastUsedColumnOrd
-    //! counter (and mirror columnIds into idStore.column) from the local db. Runs once, at Init.
+    //! Populate the propertyKey→(columnOrd,columnId) map (and mirror columnIds into idStore.column)
+    //! from the local db, and seed each table's in-memory high-water ordinal baseline. Runs once, at Init.
     static BentleyStatus SeedColumnStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                     SchemaReservationColumnStore& colStore);
     static BentleyStatus LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store);
@@ -105,11 +105,22 @@ struct SchemaReservationHelper final {
     //! purely from schema metadata (DetermineTableName on the TPH root) so brand-new hierarchies
     //! that have no ec_ClassMap entry yet are handled without requiring the full-db schema lock.
     //! Only shared columns in Primary tables and all columns in Overflow tables are reserved;
-    //! named physical columns (PropertyMap.ColumnName CA) are skipped.
+    //! named physical columns (PropertyMap.ColumnName CA) are skipped.  A new property reuses an
+    //! existing shared-column slot when no occupant class is the same class, an ancestor, or a
+    //! descendant of the property's owner class (mirroring ClassMapColumnFactory); occupant
+    //! relatedness is resolved through @p classIndex.
     static void WalkSchemaForColumnReservation(ECN::ECSchemaCR schema,
                                                SchemaReservationStore& idStore,
                                                SchemaReservationColumnStore& colStore,
+                                               bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex,
                                                bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+    //! Populate @p index with classKey ("schema:class") → ECClass for @p schema and its full
+    //! referenced-schema closure, so the column walk can resolve slot occupants to test
+    //! ancestor/descendant relatedness.
+    static void CollectClassIndex(ECN::ECSchemaCR schema,
+                                  bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii>& index,
+                                  bset<Utf8String, CompareIUtf8Ascii>& visited);
 
 private:
     // -----------------------------------------------------------------------
@@ -136,6 +147,13 @@ private:
     static BentleyStatus SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store);
     static BentleyStatus SeedColumnKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                       SchemaReservationColumnStore& colStore);
+
+    //! Return true if @p slot may be reused by @p ecClass, i.e. no occupant class is the same
+    //! class, an ancestor, or a descendant of @p ecClass.  Occupants are resolved through
+    //! @p classIndex; an occupant that cannot be resolved is treated conservatively as related
+    //! (blocking reuse) so the reservation never assigns a column that could collide.
+    static bool IsSlotReusableByClass(SchemaReservationColumnSlot const& slot, ECN::ECClassCR ecClass,
+                                      bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex);
 
     //! Walk the base-class chain upward and return the first base that declares
     //! ClassMap CA MapStrategy=TablePerHierarchy.  Returns nullptr when the class is its own root.
