@@ -34,7 +34,23 @@ TEST_F(ECDbCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
         for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
             {
             TestECDb& testDb = *testDbPtr;
-            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+
+            // Feature-aware open: a pulled file may carry ec_Feature rows for features this
+            // runtime does not know. Such files must be handled per their Compat level rather
+            // than assumed to open cleanly. This is data-driven (not version-driven) because
+            // new features do not bump the profile version.
+            const TestDb::ExpectedFeatureBehavior expected = testDb.GetExpectedFeatureBehavior();
+            const bool isReadonlyOpen = testDb.GetOpenParams().IsReadonly();
+            const DbResult expectedOpenResult = isReadonlyOpen ? expected.m_readonlyOpen : expected.m_readWriteOpen;
+
+            const DbResult actualOpenResult = testDb.Open();
+            ASSERT_EQ(expectedOpenResult, actualOpenResult) << testDb.GetDescription();
+
+            // If an unknown feature legitimately prevented the open (ReadOnly on a RW open, or
+            // Refuse), there is nothing further to exercise for this permutation.
+            if (BE_SQLITE_OK != actualOpenResult)
+                continue;
+
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
@@ -2402,7 +2418,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersions)
+TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersionsOfEmptyFile)
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
         {
@@ -2422,9 +2438,6 @@ TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersions)
             // Files at profile >= 4.0.0.6: ec_Feature table must exist
             EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
 
-            // For UpToDate files (fresh or just upgraded), the plain empty ECDb has no active
-            // features, so ec_Feature must be empty. Skip the count check for Newer files
-            // since future runtimes may register additional features we don't know about.
             if (testDb.GetAge() != ProfileState::Age::Newer)
                 {
                 Statement stmt;
@@ -2439,28 +2452,33 @@ TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersions)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbCompatibilityTestFixture, FeatureTable_ProfileUpgrade_CreatesEmptyTable)
+TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersionsOfNonEmptyFile)
     {
-    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+    for (Utf8CP testFileName : {TESTECDB_EC31KOQS, TESTECDB_EC32ENUMS, TESTECDB_EC32UNITS})
         {
-        if (testFile.GetAge() != ProfileState::Age::Older)
-            continue; // only verify the upgrade path from older files
+        for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(testFileName))
+            {
+            if (testFile.GetAge() != ProfileState::Age::Older)
+                continue; // only verify the upgrade path from older files
 
-        TestECDb testDb(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
-        ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
-        testDb.AssertProfileVersion();
+            TestECDb testDb(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
 
-        // After upgrade the file must be at current profile version
-        EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), testDb.GetECDbProfileVersion()) << testDb.GetDescription();
-        EXPECT_EQ(ProfileState::Age::UpToDate, testDb.GetAge()) << testDb.GetDescription();
+            // After upgrade the file must be at the current profile version
+            EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), testDb.GetECDbProfileVersion()) << testDb.GetDescription();
+            EXPECT_EQ(ProfileState::Age::UpToDate, testDb.GetAge()) << testDb.GetDescription();
 
-        // The upgrader must have created the ec_Feature table
-        EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
+            // The upgrader must have created the ec_Feature table
+            EXPECT_TRUE(testDb.GetDb().TableExists(TABLE_FEATURE)) << testDb.GetDescription();
 
-        // An empty ECDb file does not use any features: ec_Feature must be empty after upgrade
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT count(*) FROM " TABLE_FEATURE)) << testDb.GetDescription();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
-        EXPECT_EQ(0, stmt.GetValueInt(0)) << "ec_Feature must be empty after upgrading a plain empty ECDb file | " << testDb.GetDescription();
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT count(*) FROM " TABLE_FEATURE)) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+            EXPECT_EQ(0, stmt.GetValueInt(0)) << "ec_Feature must be empty after upgrading a data-bearing ECDb file | " << testDb.GetDescription();
+
+            // The upgrade must have preserved the existing schema content.
+            EXPECT_LT(0, testDb.GetSchemaCount()) << "Profile upgrade must preserve existing schemas | " << testDb.GetDescription();
+            }
         }
     }

@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <cstddef>
+#include <map>
+#include <set>
 #include "CompatibilityTestFixture.h"
 #include "Profiles.h"
 
@@ -90,6 +92,33 @@ protected:
     int GetFeatureRowCount() const;
     bool HasFeatureRow(Utf8CP featureName) const;
     Utf8String GetFeatureCompat(Utf8CP featureName) const;
+
+    //=======================================================================================
+    // ec_Feature forward-compatibility test helpers.
+    //
+    // Unlike ECDbFeature/SupportsFeature (which are keyed off of the profile version), these
+    // helpers are data driven.
+    // This is required because new features might NOT bump the profile version.
+    // The tests will not distinguish between test files "4.0.0.6 + featureX" and "4.0.0.6, no features".
+    //=======================================================================================
+    struct ExpectedFeatureBehavior
+        {
+        DbResult m_readWriteOpen = BE_SQLITE_OK;
+        DbResult m_readonlyOpen = BE_SQLITE_OK;
+        bool m_schemaImportBlocked = false;
+        bool m_expectWarning = false;
+        };
+
+    //! Reads the ec_Feature rows directly via a plain SQLite open, without opening the ECDb.
+    static std::map<Utf8String, Utf8String> ReadUsedFeaturesRaw(BeFileNameCR filePath);
+
+    //! Returns the set of feature names the current ECDb runtime knows.
+    std::set<Utf8String> GetRuntimeKnownFeatures() const;
+
+    static ExpectedFeatureBehavior ComputeExpectedBehavior(const std::map<Utf8String, Utf8String>& unknownUsedFeatures);
+
+    //! Computes the expected behavior for this test file by combining the file's feature rows with the runtime's known set.
+    ExpectedFeatureBehavior GetExpectedFeatureBehavior() const;
     };
 
 //=======================================================================================
