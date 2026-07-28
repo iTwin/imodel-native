@@ -1105,7 +1105,7 @@ DbResult PragmaSchemaView::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pra
 //=======================================================================================
 namespace {
 // True only for a non-empty run of ASCII decimal digits.
-bool IsAllDigits(Utf8StringCR s) {
+bool IsAllDigits(std::string_view s) {
 	if (s.empty())
 		return false;
 	for (char c : s) {
@@ -1131,25 +1131,30 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 	if (!val.IsString())
 		return reportError("expects a single string argument: a comma-separated list of schema names, optionally prefixed with a 'v<N>;' format-version token.");
 
-	Utf8String arg(val.GetString().c_str());
+	std::string const arg = val.GetString();
 
 	// Optional leading 'v<N>;' format-version token. It rides inside the single string argument
 	// because the pragma grammar allows only one. Schema names are ECNames, so a ';' always means a
-	// version prefix.
+	// version prefix. All parsing below works on views into `arg`; `nameList` stays a suffix of it,
+	// so its data() remains a valid null-terminated string for Split.
 	uint8_t requestedVersion = CURRENT_FORMAT_VERSION;
-	Utf8String nameList = arg;
-	size_t const semicolon = arg.find(';');
-	if (semicolon != Utf8String::npos) {
-		Utf8String versionToken = arg.substr(0, semicolon);
-		nameList = arg.substr(semicolon + 1);
+	std::string_view nameList(arg);
+	size_t const semicolon = nameList.find(';');
+	if (semicolon != std::string_view::npos) {
+		std::string_view const versionToken = nameList.substr(0, semicolon);
+		nameList.remove_prefix(semicolon + 1);
 		if (versionToken.size() < 2 || (versionToken[0] != 'v' && versionToken[0] != 'V'))
 			return reportError("malformed version prefix; expected 'v<N>;' (for example 'v1;').");
-		Utf8String digits = versionToken.substr(1);
+		std::string_view const digits = versionToken.substr(1);
 		if (!IsAllDigits(digits))
 			return reportError("malformed version prefix; expected 'v<N>;' with N a positive integer.");
-		int64_t v = (int64_t)strtoll(digits.c_str(), nullptr, 10);
+		uint32_t v = 0;
+		if (digits.size() <= 3) { // longer runs cannot be a supported version; leave v = 0 to fail the range check
+			for (char c : digits)
+				v = v * 10 + (uint32_t)(c - '0');
+		}
 		if (v < 1 || v > CURRENT_FORMAT_VERSION)
-			return reportError(Utf8PrintfString("unsupported format version %" PRId64 ". Supported versions: 1-%d.", v, (int)CURRENT_FORMAT_VERSION));
+			return reportError(Utf8PrintfString("unsupported format version %.*s. Supported versions: 1-%d.", (int)digits.size(), digits.data(), (int)CURRENT_FORMAT_VERSION));
 		requestedVersion = (uint8_t)v;
 	}
 
@@ -1157,7 +1162,7 @@ DbResult PragmaSchemaViewFragment::Read(PragmaManager::RowSet& rowSet, ECDbCR ec
 	// can never occur in one. A malformed or unknown name fails the pragma - no partial fragment.
 	// Duplicate names are de-duplicated rather than rejected.
 	bvector<Utf8String> tokens;
-	BeStringUtilities::Split(nameList.c_str(), ",", tokens);
+	BeStringUtilities::Split(nameList.data(), ",", tokens);
 	std::unordered_set<int64_t> schemaIds;
 	Statement nameStmt;
 	if (BE_SQLITE_OK != nameStmt.Prepare(ecdb, "SELECT Id FROM [main].[ec_Schema] WHERE Name=? COLLATE NOCASE"))
