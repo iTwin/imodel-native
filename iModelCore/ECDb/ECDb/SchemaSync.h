@@ -170,10 +170,6 @@ private:
     //! Return true if @p prop carries a PropertyMap.ColumnName CA (named physical column;
     //! no reservation needed — the column name is deterministic across all briefcases).
     static bool PropertyHasExplicitColumnName(ECN::ECPropertyCR prop);
-    //! Legacy SQL-based primary-table resolver, retained for reference.
-    //! WalkSchemaForColumnReservation no longer calls this; table names are now derived
-    //! purely from schema metadata via FindTphAncestor + DetermineTableName.
-    static Utf8String FindPrimaryTableForClass(ECDbCR localDb, ECN::ECClassCR ecClass);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
