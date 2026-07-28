@@ -9,7 +9,8 @@
 # is a trivial operation that doesn't require this script (the .mke files can just list all the
 # .a/.o files and the linker will merge them).
 # Usage: merge_static_libs.sh <output.a> <input1> <input2> [input3 ...]
-#   Each input may be a static archive (.a) or a raw object file (.o/.obj).
+#   Each input may be a static archive (.a) or a raw object file (.o). This script only runs
+#   on Linux/Android, where object files always use the .o extension, so .obj is not accepted.
 #---------------------------------------------------------------------------------------------
 
 set -e
@@ -27,7 +28,7 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 for LIB in "$@"; do
     case "$LIB" in
-        *.o|*.obj)
+        *.o)
             # Raw object file: stage it directly (into a unique subdirectory to avoid collisions).
             OBJDIR="$TMPDIR/obj_$(basename "$LIB")"
             mkdir -p "$OBJDIR"
