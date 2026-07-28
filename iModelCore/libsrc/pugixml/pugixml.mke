@@ -48,6 +48,7 @@ vcpkgInstallRoot = $(OutputRootDir)vcpkg_installed/pugixml/
 vcpkgInstallRoot = $(OutputRootDir)static/vcpkg_installed/pugixml/
 %endif
 vcpkgTripletDir = $(vcpkgInstallRoot)$(vcpkgTriplet)/
+vcpkgIncludeDir = $(vcpkgTripletDir)include/
 vcpkgLibDir     = $(vcpkgTripletDir)lib/
 vcpkgDbgLibDir  = $(vcpkgTripletDir)debug/lib/
 
@@ -79,7 +80,14 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 BePugiXmlHeaders =              $(srcDir)BePugiXml.h
 
-$(o)BePugiXml$(oext) : $(srcDir)BePugiXml.cpp $(BePugiXmlHeaders) ${MultiCompileDepends}
+# BePugiXml.h includes <pugixml/src/pugixml.hpp>, which now comes from the vcpkg install tree
+# (prewire.mke stages it into VendorAPI). List the vcpkg-installed headers explicitly so a
+# version bump or an overlay-port change to pugiconfig.hpp rebuilds the wrapper object instead
+# of silently leaving a stale one behind.
+PugiXmlHeaders =                $(vcpkgIncludeDir)pugixml.hpp \
+                                $(vcpkgIncludeDir)pugiconfig.hpp
+
+$(o)BePugiXml$(oext) : $(srcDir)BePugiXml.cpp $(BePugiXmlHeaders) $(PugiXmlHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
