@@ -487,7 +487,8 @@ int CScalcGtxFile (struct cs_GtxFile_ *__This,double *geoidHgt,const double wgs8
 
     /* Perform the bi-linear calculation. */
     tt = (lclLng - cellSW [LNG]) / __This->density [LNG];
-    uu = (lclLat - cellSW [LAT]) / __This->density [LAT];
+    // Calculations below are relative the North-West point
+    uu = (cellSW [LAT] + __This->density [LAT] - lclLat) / __This->density [LAT];
 
     /* Again, some defensive stuff. */
     // CSMAP is too strict as floating point error can introduce small variations in lat/long computations
@@ -844,7 +845,10 @@ int CSopnBinaryGtxFile (struct cs_GtxFile_ *__This,long32_t bufrSize)
     __This->density [LNG] = deltaLng;
     __This->density [LAT] = deltaLat;
 
-    __This->headerCount = sizeof (double) * 6;
+    if (__This->fileHasDoubleRowsColumns)
+        __This->headerCount = sizeof (double) * 6;
+    else
+        __This->headerCount = sizeof (double) * 4 + sizeof(long) * 2;
     __This->elementCount = (long32_t)nColumns;
     __This->recordCount = (long32_t)nRows;
     __This->recordSize = __This->elementCount * sizeof (float);
