@@ -23,25 +23,38 @@ if [ -z "$OUTPUT" ] || [ $# -lt 2 ]; then
     exit 1
 fi
 
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+# Deliberately not named TMPDIR: that variable is exported in many environments and is honored
+# by mktemp and other child processes, so shadowing it would redirect their scratch files into
+# our staging tree. The trap removes the directory on every exit path, including errors.
+STAGEDIR=$(mktemp -d)
+trap 'rm -rf "$STAGEDIR"' EXIT
 
+# Stage every input in its own subdirectory named after its position on the command line.
+# Basenames are not unique (two inputs may both be named "same.o" or "libz.a"), so an index is
+# the only collision-free choice.
+INDEX=0
 for LIB in "$@"; do
+    INDEX=$((INDEX + 1))
+    INPUTDIR="$STAGEDIR/input_$INDEX"
+    mkdir -p "$INPUTDIR"
     case "$LIB" in
         *.o)
-            # Raw object file: stage it directly (into a unique subdirectory to avoid collisions).
-            OBJDIR="$TMPDIR/obj_$(basename "$LIB")"
-            mkdir -p "$OBJDIR"
-            cp "$LIB" "$OBJDIR/"
+            # Raw object file: stage it directly.
+            cp "$LIB" "$INPUTDIR/"
             ;;
         *)
-            # Extract each archive into a unique subdirectory to avoid name collisions
-            LIBNAME=$(basename "$LIB" .a)
-            mkdir -p "$TMPDIR/$LIBNAME"
-            (cd "$TMPDIR/$LIBNAME" && ar x "$LIB")
+            # Static archive: extract its members. Resolve to an absolute path first, since
+            # "ar x" runs from inside the staging directory.
+            case "$LIB" in
+                /*) ARCHIVE="$LIB" ;;
+                *)  ARCHIVE="$PWD/$LIB" ;;
+            esac
+            (cd "$INPUTDIR" && ar x "$ARCHIVE")
             ;;
     esac
 done
 
 rm -f "$OUTPUT"
-find "$TMPDIR" -type f -name '*.o' -print0 | xargs -0 ar rcs "$OUTPUT"
+# sort -z keeps member order deterministic: find returns entries in readdir order, which varies
+# between machines and filesystems and would otherwise make the archive byte-differ run to run.
+find "$STAGEDIR" -type f -name '*.o' -print0 | sort -z | xargs -0 ar rcs "$OUTPUT"
