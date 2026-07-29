@@ -128,7 +128,7 @@ BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR
         return ERROR;
 
     auto& columnFactory = ctx.m_classMap.GetColumnFactory();
-    columnFactory.EvaluateIfPropertyGoesToOverflow(diff.MaxColumnRequired(), *ctx.m_importCtx);
+    columnFactory.EvaluateIfPropertyGoesToOverflow(diff.MaxColumnRequired(), property.GetName(), *ctx.m_importCtx);
     bmap<SingleColumnDataPropertyMap const*, DbColumn*>  newColMap;
     auto sourceTable = diff.GetBaselineTable();
     auto targetTable = diff.GetNewPropTable();

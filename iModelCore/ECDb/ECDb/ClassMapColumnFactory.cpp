@@ -444,13 +444,13 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(Utf8StringCR proper
             }
 
     const uint32_t columnsRequired = MaxColumnsRequiredToPersistProperty(*property);
-    EvaluateIfPropertyGoesToOverflow(columnsRequired, ctx);
+    EvaluateIfPropertyGoesToOverflow(columnsRequired, propertyName, ctx);
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
-void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const
+void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, Utf8StringCR propertyName, SchemaImportContext& ctx) const
     {
     if (m_putCurrentPropertyToOverflow)
         {
@@ -511,7 +511,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
     if (requiredRemainingColumns > nSharedColumns)
         { //no need to check, we know there won't be enough columns
         if (ctx.RemapManager().HasFreedColumns())
-            ctx.AddMappingDecision(Utf8PrintfString("%s: property requiring %u columns goes to the overflow table (more columns required than exist in primary/joined table)", m_classMap.GetClass().GetFullName(), columnsRequired));
+            ctx.AddMappingDecision(Utf8PrintfString("%s.%s: property requiring %u columns goes to the overflow table (more columns required than exist in primary/joined table)", m_classMap.GetClass().GetFullName(), propertyName.c_str(), columnsRequired));
         m_putCurrentPropertyToOverflow = true;
         return;
         }
@@ -530,7 +530,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         }
 
     if (hasFreedColumns)
-        ctx.AddMappingDecision(Utf8PrintfString("%s: property requiring %u columns goes to the overflow table (%u columns missing in primary/joined table)", m_classMap.GetClass().GetFullName(), columnsRequired, requiredRemainingColumns));
+        ctx.AddMappingDecision(Utf8PrintfString("%s.%s: property requiring %u columns goes to the overflow table (%u columns missing in primary/joined table)", m_classMap.GetClass().GetFullName(), propertyName.c_str(), columnsRequired, requiredRemainingColumns));
     m_putCurrentPropertyToOverflow = true; // TODO: this flag is mutable and the current method is marked as const. Use return value instead?
     }
 
