@@ -189,6 +189,67 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::CheckInheritedPropertyMapConsistency() const {
+    // A class and any of its base classes must map a given property (identified by its property path)
+    // to the same column, as long as both classes store their data in the same table tree
+    // (the primary/joined/overflow tables of one hierarchy). A violation means the class maps have
+    // diverged: reading the property through one class accesses a different column than reading it
+    // through the other, which surfaces as silent data loss or corruption.
+    // System properties (root property owned by the ECDbSystem schema) are exempt because classes in
+    // a joined table hierarchy legitimately map ECInstanceId/ECClassId to a different column per table.
+    Statement stmt;
+    auto rc = stmt.Prepare(m_schemaImportContext.GetECDb(), R"(
+        WITH RECURSIVE [tableRoot]([id], [rootId]) AS (
+            SELECT [Id], [Id] FROM [ec_Table] WHERE [ParentTableId] IS NULL
+            UNION ALL
+            SELECT [t].[Id], [r].[rootId] FROM [ec_Table] [t] JOIN [tableRoot] [r] ON [t].[ParentTableId] = [r].[id])
+        SELECT DISTINCT [derivedPm].[ClassId], [basePm].[ClassId], [pp].[AccessString],
+                [derivedTable].[Name] || '.' || [derivedCol].[Name],
+                [baseTable].[Name] || '.' || [baseCol].[Name]
+            FROM [ec_PropertyMap] [derivedPm]
+                JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[ClassId] = [derivedPm].[ClassId] AND [ch].[BaseClassId] <> [derivedPm].[ClassId]
+                JOIN [ec_PropertyMap] [basePm] ON [basePm].[ClassId] = [ch].[BaseClassId] AND [basePm].[PropertyPathId] = [derivedPm].[PropertyPathId] AND [basePm].[ColumnId] <> [derivedPm].[ColumnId]
+                JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [derivedPm].[PropertyPathId]
+                JOIN [ec_Property] [rootProp] ON [rootProp].[Id] = [pp].[RootPropertyId]
+                JOIN [ec_Class] [rootClass] ON [rootClass].[Id] = [rootProp].[ClassId]
+                JOIN [ec_Schema] [rootSchema] ON [rootSchema].[Id] = [rootClass].[SchemaId]
+                JOIN [ec_Column] [derivedCol] ON [derivedCol].[Id] = [derivedPm].[ColumnId]
+                JOIN [ec_Column] [baseCol] ON [baseCol].[Id] = [basePm].[ColumnId]
+                JOIN [ec_Table] [derivedTable] ON [derivedTable].[Id] = [derivedCol].[TableId]
+                JOIN [ec_Table] [baseTable] ON [baseTable].[Id] = [baseCol].[TableId]
+                JOIN [tableRoot] [derivedRoot] ON [derivedRoot].[id] = [derivedCol].[TableId]
+                JOIN [tableRoot] [baseRoot] ON [baseRoot].[id] = [baseCol].[TableId] AND [baseRoot].[rootId] = [derivedRoot].[rootId]
+            WHERE [rootSchema].[Name] <> 'ECDbSystem';)");
+
+    if (rc != BE_SQLITE_OK) {
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0744, "Failed to run inherited property map consistency check");
+        return ERROR;
+    }
+
+    int errors = 0;
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        const ECClassId derivedClassId = stmt.GetValueId<ECClassId>(0);
+        const ECClassId baseClassId = stmt.GetValueId<ECClassId>(1);
+        const Utf8String accessString = stmt.GetValueText(2);
+        const Utf8String derivedColumn = stmt.GetValueText(3);
+        const Utf8String baseColumn = stmt.GetValueText(4);
+        ECClassCP derivedClass = GetECDb().Schemas().GetClass(derivedClassId);
+        ECClassCP baseClass = GetECDb().Schemas().GetClass(baseClassId);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+            "Detected inconsistent property mapping: ECClass '%s' maps property '%s' to column '%s', but its base ECClass '%s' maps the same property to column '%s'.",
+            derivedClass != nullptr ? derivedClass->GetFullName() : derivedClassId.ToString().c_str(),
+            accessString.c_str(), derivedColumn.c_str(),
+            baseClass != nullptr ? baseClass->GetFullName() : baseClassId.ToString().c_str(),
+            baseColumn.c_str());
+        ++errors;
+    }
+
+    return errors > 0 ? ERROR : SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::Validate() const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Validate mappings");
@@ -202,6 +263,9 @@ BentleyStatus DbMapValidator::Validate() const
         return ERROR;
 
     if (SUCCESS != CheckDuplicateDataPropertyMap())
+        return ERROR;
+
+    if (SUCCESS != CheckInheritedPropertyMapConsistency())
         return ERROR;
 
     if (SUCCESS != ValidateCustomAttributeTable())

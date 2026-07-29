@@ -243,6 +243,57 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     ASSERT_TRUE(std::regex_match (issueListener.m_issues[1].message.c_str(), std::regex (expectedMsg2Pattern.c_str ())));
     ASSERT_STREQ(expectedMsg3.c_str(), issueListener.m_issues[2].message.c_str());
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_InheritedPropertyMapConsistency) {
+    // In a table-per-hierarchy mapping, a derived class must map an inherited property to the
+    // same column as the base class. This test simulates diverged class maps (as once produced
+    // by a schema remapping bug) by pointing the derived class's property map at a different
+    // column, and expects the next schema import to fail with a validation issue.
+    auto testSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Prop1" typeName="string"/>
+            <ECProperty propertyName="Prop2" typeName="string"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="SubProp" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("inheritedPropertyMapConsistency.ecdb", SchemaItem(testSchemaXml)));
+
+    // *** Simulate diverged class maps: point Sub's map of the inherited Prop1 at Prop2's column ***
+    m_ecdb.ClearECDbCache();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
+        UPDATE ec_PropertyMap SET ColumnId = (SELECT Id FROM ec_Column WHERE Name = 'Prop2')
+            WHERE ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Sub')
+              AND PropertyPathId = (SELECT pp.Id FROM ec_PropertyPath pp
+                    JOIN ec_Property p ON p.Id = pp.RootPropertyId
+                    WHERE pp.AccessString = 'Prop1' AND p.ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Base')))sql"));
+    m_ecdb.SaveChanges();
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    // importing another schema triggers the validation check, which must detect the divergence
+    auto unrelatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(unrelatedSchemaXml)));
+
+    Utf8String expectedMsg("Detected inconsistent property mapping: ECClass 'TestSchema:Sub' maps property 'Prop1' to column 'ts_Base.Prop2', but its base ECClass 'TestSchema:Base' maps the same property to column 'ts_Base.Prop1'.");
+    ASSERT_FALSE(issueListener.IsEmpty());
+    ASSERT_STREQ(expectedMsg.c_str(), issueListener.m_issues[0].message.c_str());
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
