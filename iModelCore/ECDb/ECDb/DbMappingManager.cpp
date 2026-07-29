@@ -111,7 +111,7 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
 // @bsimethod
 //+===============+===============+===============+===============+===============+======
 BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR property, CompoundDataPropertyMapDiff& diff) {
-    LOG.infov("Moving struct property %s to overflow table as it does not fit into current table in which its mapped", property.GetTypeFullName().c_str());
+    LOG.infov("Moving struct property %s to overflow table as it does not fit into current table in which it's mapped", property.GetTypeFullName().c_str());
     // This function is only called if sharedColumn strategy is enabled. So columnType and accessString has no effect.
     if(!Enum::Contains(PropertyMap::Type::Struct, diff.GetPropertyMap().GetType())) {
         LOG.errorv("MoveProperty: expected a struct property, but '%s.%s' is not one.", ctx.m_classMap.GetClass().GetFullName(), property.GetName().c_str());
