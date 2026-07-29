@@ -27,6 +27,23 @@ bool SchemaImportContext::AllowDataTransform() {
 //+---------------+---------------+---------------+---------------+---------------+------
 MainSchemaManager const& SchemaImportContext::GetSchemaManager() const { return m_ecdb.Schemas().Main(); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportContext::ReportMappingFailureDiagnostics() const
+    {
+    Utf8String report("Schema import mapping failure diagnostics. ");
+    report.append(m_remapManager.BuildDiagnosticsSummary());
+    if (!m_mappingDecisions.empty())
+        {
+        report.append(Utf8PrintfString("\nLast %zu column mapping decisions (most recent last):", m_mappingDecisions.size()));
+        for (Utf8StringCR decision : m_mappingDecisions)
+            report.append("\n  ").append(decision);
+        }
+
+    Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0743, report.c_str());
+    }
+
 
 //*********************************************************************************
 // SchemaPolicies

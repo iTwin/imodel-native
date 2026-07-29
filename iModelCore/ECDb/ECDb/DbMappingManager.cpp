@@ -81,6 +81,17 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
         auto tables = GetPropertyTables(propertyMap->GetAs<DataPropertyMap>());
         if (tables.size() > 1) {
             if(!ctx.m_updateStructProperty || !useColumnReservation) {
+                if (ctx.m_importCtx != nullptr)
+                    {
+                    ctx.m_importCtx->Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        ECDbIssueId::ECDb_0742,
+                        "Failed to map ECProperty '%s.%s'. Its values were mapped to columns spanning multiple tables, which is not supported.",
+                        ctx.m_classMap.GetClass().GetFullName(),
+                        property.GetName().c_str());
+                    }
                 BeAssert(false && "Failed to map properties");
                 return nullptr;
             } else {
@@ -103,12 +114,14 @@ BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR
     LOG.infov("Moving struct property %s to overflow table as it does not fit into current table in which its mapped", property.GetTypeFullName().c_str());
     // This function is only called if sharedColumn strategy is enabled. So columnType and accessString has no effect.
     if(!Enum::Contains(PropertyMap::Type::Struct, diff.GetPropertyMap().GetType())) {
-        BeAssert("Expecting struct property");
+        LOG.errorv("MoveProperty: expected a struct property, but '%s.%s' is not one.", ctx.m_classMap.GetClass().GetFullName(), property.GetName().c_str());
+        BeAssert(false && "Expecting struct property");
         return ERROR;
     }
     // Make sure property has overflown into next table.
     if (!diff.IsOverflowed()){
-        BeAssert("Expecting property set mapped to two tables");
+        LOG.errorv("MoveProperty: expected property '%s.%s' to be mapped to two tables, but it is not.", ctx.m_classMap.GetClass().GetFullName(), property.GetName().c_str());
+        BeAssert(false && "Expecting property set mapped to two tables");
         return ERROR;
     }
     if (!ctx.m_importCtx)

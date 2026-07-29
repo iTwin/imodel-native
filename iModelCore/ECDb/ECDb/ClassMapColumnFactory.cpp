@@ -510,6 +510,8 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
     uint32_t requiredRemainingColumns = columnsRequired - sharedColumnThatCanBeCreated;
     if (requiredRemainingColumns > nSharedColumns)
         { //no need to check, we know there won't be enough columns
+        if (ctx.RemapManager().HasFreedColumns())
+            ctx.AddMappingDecision(Utf8PrintfString("%s: property requiring %u columns goes to the overflow table (more columns required than exist in primary/joined table)", m_classMap.GetClass().GetFullName(), columnsRequired));
         m_putCurrentPropertyToOverflow = true;
         return;
         }
@@ -527,6 +529,8 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
             return;
         }
 
+    if (hasFreedColumns)
+        ctx.AddMappingDecision(Utf8PrintfString("%s: property requiring %u columns goes to the overflow table (%u columns missing in primary/joined table)", m_classMap.GetClass().GetFullName(), columnsRequired, requiredRemainingColumns));
     m_putCurrentPropertyToOverflow = true; // TODO: this flag is mutable and the current method is marked as const. Use return value instead?
     }
 
@@ -568,17 +572,40 @@ DbColumn* ClassMapColumnFactory::HandleOverflowColumn(DbColumn* column) const
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
     {
+    // Recording mapping decisions is limited to imports which freed columns (remapping),
+    // because that is where diagnostics are needed and the recording cost is justified.
+    const bool recordDecisions = ctx.RemapManager().HasFreedColumns();
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
             {
             if (!ctx.RemapManager().IsColumnFreed(*column))
-                return HandleOverflowColumn(column);
+                {
+                // If the current property as a whole was decided to go to the overflow table, do
+                // not reuse a registered column from the primary/joined table. Doing so would
+                // split a compound property (e.g. a struct) across two tables, which is invalid.
+                if (!m_putCurrentPropertyToOverflow || column->GetTable().GetType() == DbTable::Type::Overflow)
+                    {
+                    if (recordDecisions)
+                        ctx.AddMappingDecision(Utf8PrintfString("%s.%s: reused registered column %s.%s", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+                    return HandleOverflowColumn(column);
+                    }
+
+                if (recordDecisions)
+                    ctx.AddMappingDecision(Utf8PrintfString("%s.%s: registered column %s.%s not reused because the property goes to the overflow table", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+                }
+            else if (recordDecisions)
+                ctx.AddMappingDecision(Utf8PrintfString("%s.%s: registered column %s.%s was freed in this import and cannot be reused", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
             }
         }
 
     if (m_useSharedColumnStrategy && !forcePhysicalColum)
-        return AllocateSharedColumn(ctx, property, param, accessString);
+        {
+        DbColumn* column = AllocateSharedColumn(ctx, property, param, accessString);
+        if (recordDecisions && column != nullptr)
+            ctx.AddMappingDecision(Utf8PrintfString("%s.%s: allocated shared column %s.%s", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
+        return column;
+        }
 
     return AllocateColumn(ctx, property, type, param, accessString);
     }
