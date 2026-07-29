@@ -13,7 +13,7 @@
 #   on Linux/Android, where object files always use the .o extension, so .obj is not accepted.
 #---------------------------------------------------------------------------------------------
 
-set -e
+set -e -o pipefail
 
 OUTPUT="$1"
 shift
@@ -55,6 +55,22 @@ for LIB in "$@"; do
 done
 
 rm -f "$OUTPUT"
+
+OBJECT_LIST="$STAGEDIR/objects.list"
 # sort -z keeps member order deterministic: find returns entries in readdir order, which varies
 # between machines and filesystems and would otherwise make the archive byte-differ run to run.
-find "$STAGEDIR" -type f -name '*.o' -print0 | sort -z | xargs -0 ar rcs "$OUTPUT"
+find "$STAGEDIR" -type f -name '*.o' -print0 | LC_ALL=C sort -z > "$OBJECT_LIST"
+
+OBJECTS=()
+while IFS= read -r -d '' OBJ; do
+    OBJECTS+=("$OBJ")
+done < "$OBJECT_LIST"
+
+if [ "${#OBJECTS[@]}" -eq 0 ]; then
+    echo "Error: no object files were staged for archive creation"
+    exit 1
+fi
+
+# Build the archive in one invocation: avoids xargs-driven ARG_MAX chunking, which can
+# overwrite same-named members across multiple ar calls. If argv is too large, fail loudly.
+ar rcs "$OUTPUT" "${OBJECTS[@]}"
