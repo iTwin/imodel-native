@@ -353,6 +353,17 @@ public:
     //! @return Empty if changeset generation is allowed.
     ECDB_EXPORT std::vector<Utf8String> const& GetFeaturesBlockingChangesetGeneration() const;
 
+    //! Names of the unknown features found in this file whose compatibility mode forbids this runtime
+    //! from importing schemas. All other writes remain allowed.
+    //! @return Empty if schema import is allowed.
+    ECDB_EXPORT std::vector<Utf8String> const& GetFeaturesBlockingSchemaImport() const;
+
+    //! Re-reads the ec_Feature table and recomputes how this runtime must behave for unknown features.
+    //! @return BE_SQLITE_OK if the file remains fully usable.
+    //!         BE_SQLITE_READONLY if it may now only be read.
+    //!         BE_SQLITE_ERROR if it must not be used by this runtime at all.
+    ECDB_EXPORT DbResult RevalidateFeatures() const;
+
     //! @name EC Changes
     //! @{
 

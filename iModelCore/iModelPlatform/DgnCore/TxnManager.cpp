@@ -1899,6 +1899,11 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     ChangesetStatus status = ChangesetStatus::Success;
     UndoChangeSet indirectChanges;
 
+    // The changes we just applied may have introduced feature rows this runtime has never heard of.
+    // Check now, while the merge can still be backed out below.
+    if (!ValidateFeaturesAfterMerge())
+        status = ChangesetStatus::UnknownFeatureAfterMerge;
+
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
@@ -1927,6 +1932,14 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
         allChanges.FromChangeGroup(changeGroup);
         result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
         BeAssert(result == BE_SQLITE_OK);
+
+        if (status == ChangesetStatus::UnknownFeatureAfterMerge) {
+            if (PullMergeConf::Load(m_dgndb).InProgress())
+                m_dgndb.SaveChanges();
+
+            // The reverse took the ec_Feature rows with it, so drop the restrictions we just computed.
+            m_dgndb.RevalidateFeatures();
+        }
     }
 
     if (TrackChangesetHealthStats())
@@ -2024,6 +2037,9 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset, bool noUpdateLoop)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
     SaveParentChangeset(changeset.GetParentId(), changeset.GetChangesetIndex() - 1);
+
+    // Reversing can remove ec_Feature rows that the changeset had introduced, so refresh the cached restrictions.
+    m_dgndb.RevalidateFeatures();
 
     result = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != result)
@@ -2200,6 +2216,23 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fast
      */
     const bool hasEcOrDdlChanges = containsDDLChanges || changeset.ContainsEcChanges();
     return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges, fastForward, noUpdateLoop);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Re-runs ECDb feature validation after changeset content has been applied but before the merge is
+* committed.
+*
+* @return false if the merged state cannot be honored and must be backed out.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::ValidateFeaturesAfterMerge() {
+    const auto featureStatus = m_dgndb.RevalidateFeatures();
+    if (BE_SQLITE_OK == featureStatus)
+        return true;
+
+    LOG.errorv("Changeset introduced an ec_Feature this runtime cannot honor (%s). The merge will be backed out; upgrade this client to accept this changeset.",
+        BE_SQLITE_READONLY == featureStatus ? "the iModel would become read-only" : "the iModel could not be opened at all");
+    return false;
 }
 
 /*---------------------------------------------------------------------------------**/ /**

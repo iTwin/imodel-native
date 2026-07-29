@@ -221,8 +221,13 @@ DbResult ECDb::Impl::OnDbCreated() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ValidateECFeaturesOnDbOpen() const
+DbResult ECDb::Impl::ValidateECFeatures() const
     {
+    // This may be a re-validation (e.g. after merging a changeset that added ec_Feature rows), so
+    // always recompute from scratch rather than accumulating onto a previous run's results.
+    m_featuresBlockingSchemaImport.clear();
+    m_featuresBlockingChangesetGeneration.clear();
+
     // Either the profile version does not support ec_Feature table or else the ECDb file is not using any features yet.
     if (m_ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 6) || !m_ecdb.TableExists(TABLE_Feature))
         return BE_SQLITE_OK;
@@ -325,7 +330,7 @@ DbResult ECDb::Impl::OnDbOpening() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ValidateECFeaturesOnDbOpen();
+    return ValidateECFeatures();
     }
 
 //--------------------------------------------------------------------------------------

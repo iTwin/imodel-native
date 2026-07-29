@@ -293,6 +293,7 @@ enum class ChangesetStatus : int {
     BadVersionId, // illegal version length
     CorruptedTxn, // Fail to decompress txn
     CannotGenerateChangeset, //! The iModel uses an unknown feature that forbids this runtime from generating changesets.
+    UnknownFeatureAfterMerge, //! The merged changeset introduced an ec_Feature this runtime cannot honor. The merge must be abandoned.
 };
 
 //=======================================================================================

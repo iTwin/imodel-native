@@ -474,4 +474,69 @@ TEST_F(FeatureTests, Feature_FallbackColumn_RejectsUnknownValues)
     EXPECT_NE(BE_SQLITE_OK, InsertRawFeatureRow("f2", "AnyFutureMode", "AnyFutureFallback")) << "Fallback must reject values outside the closed compat set";
     }
 
+//---------------------------------------------------------------------------------------
+// A changeset from a newer runtime can add feature rows to an already-open file.
+// RevalidateFeatures must notice rows that appear after open.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, RevalidatePicksUpFeaturesAddedAfterOpen)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_revalidate_added.ecdb"));
+
+    // Nothing unknown yet.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
+    ASSERT_TRUE(m_ecdb.GetFeaturesBlockingChangesetGeneration().empty());
+
+    // Simulate a pulled changeset introducing a feature this runtime has never heard of.
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("post-open-nocs-feature", "NoChangesetGeneration"));
+
+    // Until we revalidate, the cached state is stale - this is exactly the hole being closed.
+    ASSERT_TRUE(m_ecdb.GetFeaturesBlockingChangesetGeneration().empty()) << "Cached state is only refreshed on demand";
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures()) << "NoChangesetGeneration keeps the file usable";
+    ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingChangesetGeneration().size());
+    EXPECT_STREQ("post-open-nocs-feature", m_ecdb.GetFeaturesBlockingChangesetGeneration().front().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// Revalidation must report the severe modes through its return value so the caller can abandon.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, RevalidateReportsReadOnlyAndRefuse)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_revalidate_severe.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("post-open-readonly-feature", "ReadOnly"));
+    EXPECT_EQ(BE_SQLITE_READONLY, m_ecdb.RevalidateFeatures()) << "A ReadOnly feature appearing on a read-write connection must be reported";
+
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("post-open-refuse-feature", "Refuse"));
+    EXPECT_EQ(BE_SQLITE_ERROR, m_ecdb.RevalidateFeatures()) << "Refuse must outrank ReadOnly";
+    }
+
+//---------------------------------------------------------------------------------------
+// Revalidation recomputes from scratch. It must not accumulate duplicates when called repeatedly,
+// and it must drop features that are no longer present (e.g. after a changeset is reversed).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, RevalidateIsIdempotent)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_revalidate_idempotent.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("nocs-feature", "NoChangesetGeneration"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("nosi-feature", "NoSchemaImport"));
+
+    for (int i = 0; i < 3; ++i)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
+        ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingChangesetGeneration().size()) << "Repeated revalidation must not accumulate duplicates";
+        ASSERT_EQ(1, m_ecdb.GetFeaturesBlockingSchemaImport().size()) << "Repeated revalidation must not accumulate duplicates";
+        }
+
+    // Reversing a changeset can remove feature rows again - the restriction must be lifted.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql("DELETE FROM ec_Feature"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.RevalidateFeatures());
+    EXPECT_TRUE(m_ecdb.GetFeaturesBlockingChangesetGeneration().empty()) << "Stale restrictions must be cleared";
+    EXPECT_TRUE(m_ecdb.GetFeaturesBlockingSchemaImport().empty()) << "Stale restrictions must be cleared";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

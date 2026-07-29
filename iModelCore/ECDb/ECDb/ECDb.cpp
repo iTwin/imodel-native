@@ -257,6 +257,16 @@ std::vector<Utf8String> const& ECDb::GetFeaturesBlockingChangesetGeneration() co
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+std::vector<Utf8String> const& ECDb::GetFeaturesBlockingSchemaImport() const { return m_pimpl->GetFeaturesBlockingSchemaImport(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::RevalidateFeatures() const { return m_pimpl->ValidateECFeatures(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 bool ECDb::IsChangeCacheAttached() const { return m_pimpl->IsChangeCacheAttached(); }
 
 //--------------------------------------------------------------------------------------
