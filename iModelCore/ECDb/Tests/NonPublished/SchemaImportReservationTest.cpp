@@ -93,6 +93,7 @@ static Utf8String BuildClassWithPropsSchema(Utf8CP version = "01.00.00")
                     <ClassMap xmlns="ECDbMap.02.00.00">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00" />
                 </ECCustomAttributes>
                 <ECProperty propertyName="p1" typeName="int" />
                 <ECProperty propertyName="p2" typeName="string" />
@@ -316,6 +317,7 @@ TEST_F(SchemaSyncTestFixture, CrossBriefcaseColumnDeterminism)
                     <ClassMap xmlns="ECDbMap.02.00.00">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00" />
                 </ECCustomAttributes>
                 <ECProperty propertyName="p1" typeName="int" />
                 <ECProperty propertyName="p2" typeName="string" />
