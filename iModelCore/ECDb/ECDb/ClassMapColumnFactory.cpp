@@ -676,7 +676,12 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     {
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
+        // Shared columns never carry NOT NULL/UNIQUE/collation constraints: AllocateSharedColumn drops
+        // requested constraints with a warning. Comparing constraints here would wrongly refuse to reuse
+        // the column the base class mapped the property to (e.g. when the property requests IsNullable=False),
+        // making the derived class allocate a different column and diverge from the base class's mapping.
         if (m_primaryOrJoinedTable->GetType() == DbTable::Type::Existing
+            || avaliableColumn.IsShared()
             || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                 avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                 avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
