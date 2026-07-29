@@ -32,6 +32,11 @@ MainSchemaManager const& SchemaImportContext::GetSchemaManager() const { return 
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportContext::ReportMappingFailureDiagnostics() const
     {
+    // Only report when this import performed remapping work. For all other mapping failures
+    // the summary carries no information and would only add noise to the reported issues.
+    if (!m_remapManager.HasFreedColumns() && m_mappingDecisions.empty())
+        return;
+
     Utf8String report("Schema import mapping failure diagnostics. ");
     report.append(m_remapManager.BuildDiagnosticsSummary());
     if (!m_mappingDecisions.empty())

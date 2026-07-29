@@ -572,9 +572,10 @@ DbColumn* ClassMapColumnFactory::HandleOverflowColumn(DbColumn* column) const
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
     {
+    const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
     // Recording mapping decisions is limited to imports which freed columns (remapping),
     // because that is where diagnostics are needed and the recording cost is justified.
-    const bool recordDecisions = ctx.RemapManager().HasFreedColumns();
+    const bool recordDecisions = hasFreedColumns;
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
@@ -584,7 +585,28 @@ DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPrope
                 // If the current property as a whole was decided to go to the overflow table, do
                 // not reuse a registered column from the primary/joined table. Doing so would
                 // split a compound property (e.g. a struct) across two tables, which is invalid.
-                if (!m_putCurrentPropertyToOverflow || column->GetTable().GetType() == DbTable::Type::Overflow)
+                // This is narrowly scoped to the only situation where such a split can happen:
+                // - the import freed columns (remapping): the stale registrations causing the
+                //   split stem from this class's own pre-remap property maps.
+                // - the access string refers to a member of a compound property: a single-column
+                //   property can never split, so reusing its registered column is always safe.
+                // - the root property is defined locally on the mapped class: inherited
+                //   properties always follow the mapping of their base class, which is registered
+                //   before the derived class is mapped, so their registered column must be reused
+                //   regardless of the overflow decision.
+                bool refuseReuseBecausePropertyGoesToOverflow = false;
+                if (m_putCurrentPropertyToOverflow && hasFreedColumns && column->GetTable().GetType() != DbTable::Type::Overflow)
+                    {
+                    const size_t dotPos = accessString.find('.');
+                    if (dotPos != Utf8String::npos)
+                        {
+                        Utf8String rootPropertyName = accessString.substr(0, dotPos);
+                        ECN::ECPropertyCP rootProperty = m_classMap.GetClass().GetPropertyP(rootPropertyName, /*includeBaseClasses=*/false);
+                        refuseReuseBecausePropertyGoesToOverflow = rootProperty != nullptr;
+                        }
+                    }
+
+                if (!refuseReuseBecausePropertyGoesToOverflow)
                     {
                     if (recordDecisions)
                         ctx.AddMappingDecision(Utf8PrintfString("%s.%s: reused registered column %s.%s", m_classMap.GetClass().GetFullName(), accessString.c_str(), column->GetTable().GetName().c_str(), column->GetName().c_str()));
