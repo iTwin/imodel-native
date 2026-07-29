@@ -52,7 +52,7 @@ The two consequences that drive the whole design:
    symbols still leave `iTwinPugixml`. **No `.def` is involved and none should be added.**
 
 **Deliverable names must not change.** `iTwinPugixml` (shared + import lib), the VendorAPI
-headers under `VendorAPI/pugixml/src/`, and the `pugixml-license.md` notice are the contract
+headers under `VendorAPI/pugixml/src/`, and the `pugixml-license.txt` notice are the contract
 with every consumer; keep them byte-for-byte identical in name and include path.
 
 ---
@@ -67,7 +67,7 @@ with every consumer; keep them byte-for-byte identical in name and include path.
 | Exports | pugixml symbols exported via `__declspec(dllexport)` from the customized [`src/pugiconfig.hpp`](src/pugiconfig.hpp) (`__PUGIXML_BUILD__` → dllexport, else dllimport); wrapper symbols exported via `BEPUGIXML_EXPORT` (same `__PUGIXML_BUILD__` gate in [`src/BePugiXml.h`](src/BePugiXml.h)). No `.def`. |
 | Delivered headers | `VendorAPI/pugixml/src/` ← `pugixml.hpp`, `pugiconfig.hpp` (upstream, one Bentley `#if` block), `BePugiXml.h`, `BePugiXmlHelper.h` (both Bentley) — staged by [`prewire.mke`](prewire.mke) |
 | Delivered lib | `Delivery/$(shlibprefix)iTwinPugixml$(shlibext)` + `Delivery/$(libprefix)iTwinPugixml$(libext)` (import lib) |
-| License | `Delivery/pugixml-license.md` ← [`LICENSE.md`](LICENSE.md) |
+| License | `Delivery/pugixml-license.txt` ← [`LICENSE.md`](LICENSE.md) |
 | Bentley dependency | links `iTwinBentley` (`BentleyDll` SubPart in [`pugixml.PartFile.xml`](pugixml.PartFile.xml); `LINKER_LIBRARIES + …iTwinBentley` in the mke) |
 | Language | built `BUILD_WITH_C20=1` |
 | Consumers | 4 PartFiles SubPart `PugiXml`: [`../../ecobjects/ECObjects.PartFile.xml`](../../ecobjects/ECObjects.PartFile.xml), [`../../ECDb/ECDb.PartFile.xml`](../../ECDb/ECDb.PartFile.xml), [`../../GeoCoord/GeoCoord.PartFile.xml`](../../GeoCoord/GeoCoord.PartFile.xml), [`../../iModelPlatform/iModelPlatform.PartFile.xml`](../../iModelPlatform/iModelPlatform.PartFile.xml). Source consumers include `<pugixml/src/pugixml.hpp>`, `<pugixml/src/BePugiXml.h>`, `<pugixml/src/BePugiXmlHelper.h>` (ecobjects public API `ECSchema.h` / `ECInstance.h` / `ECUnit.h`, ECDb `SchemaViewWriter.cpp`, GeoCoord `basegeocoord.cpp`). Static archive pulled into `imodeljs.node`. |
@@ -341,7 +341,7 @@ skeleton:
   header from Step 2)
 - `VendorAPI/pugixml/src/BePugiXml.h` ← keep sourcing from the checked-in Bentley header
 - `VendorAPI/pugixml/src/BePugiXmlHelper.h` ← keep sourcing from the checked-in Bentley header
-- `Delivery/pugixml-license.md` ← `$(vcpkgTripletDir)share/pugixml/copyright` (verify the vcpkg
+- `Delivery/pugixml-license.txt` ← `$(vcpkgTripletDir)share/pugixml/copyright` (verify the vcpkg
   license path; fall back to the checked-in [`LICENSE.md`](LICENSE.md) if absent)
 
 The prewire must resolve the same `vcpkgInstallRoot` (include `vcpkg.mki`; the prewire runs in
@@ -356,7 +356,7 @@ the static chain context — mirror [`../openssl/BeOpenSSL.prewire.mke`](../open
     <SubPart PartName="vcpkg_install_pugixml" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
     <Bindings>
         <VendorAPI Domain="pugixml"/>
-        <VendorNotices>Delivery/pugixml-license.md</VendorNotices>
+        <VendorNotices>Delivery/pugixml-license.txt</VendorNotices>
     </Bindings>
 </Part>
 
@@ -388,7 +388,7 @@ still SubPart `PugiXml` and see the same bindings.
 
 ---
 
-## Step 8 — ⬜ Verify
+## Step 8 — ✅ Verify
 
 1. Build every target platform: Windows (x64, both dynamic and static contexts), Linux (x64),
    macOS (arm64), iOS (arm64), Android (arm64 and x64). Confirm pugixml resolves at the chosen

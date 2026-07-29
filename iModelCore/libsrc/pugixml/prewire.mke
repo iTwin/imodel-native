@@ -38,7 +38,7 @@ vcpkgIncludeDir = $(vcpkgTripletDir)include/
 DeliveryDir         = $(BuildContext)Delivery/
 VendorApiContextDir = $(BuildContext)VendorAPI/pugixml/src/
 
-$(DeliveryDir)pugixml-license.md : $(vcpkgTripletDir)share/pugixml/copyright
+$(DeliveryDir)pugixml-license.txt : $(vcpkgTripletDir)share/pugixml/copyright
     $(LinkFirstDepToFirstTarget)
 
 $(VendorApiContextDir)pugixml.hpp : $(vcpkgIncludeDir)pugixml.hpp

@@ -8,7 +8,7 @@
         <SubPart PartName="vcpkg_install_pugixml" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <VendorAPI Domain="pugixml"/>
-            <VendorNotices>Delivery/pugixml-license.md</VendorNotices>
+            <VendorNotices>Delivery/pugixml-license.txt</VendorNotices>
         </Bindings>
     </Part>
 
