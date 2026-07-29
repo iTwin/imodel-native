@@ -22626,8 +22626,8 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                 </ECSchema>)xml";
 
             const auto SCHEMA_HASH_ECDB_SCHEMA = "4561b3ffb11d88309497651e299d6f420786093397d93a98dc6ba4ddec9d86f5";
-            const auto SCHEMA_HASH_ECDB_MAP = "84a3a5e11259bae6a8800d8215f48b1e611d5bb77c3bac620da73b23f9e06a92";
-            const auto SCHEMA_HASH_SQLITE_SCHEMA = "2e503df7e76cb940852191fcae5feb0c7aa11bfddd09d3f22056260426db5c5d";
+            const auto SCHEMA_HASH_ECDB_MAP = "202df04d2f9cf71bccb46fac3daabeffc8b785933bd1334c5bff5ceda16700c0";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "389ce0b78f3ca9cf88e1ee0862f627f78b5ca5e9b6de34adbc5b41e9dd553fa5";
             EXPECT_EQ(
                 SchemaImportResult::OK,
                 assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
@@ -22821,8 +22821,10 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                 </ECSchema>)xml";
 
             const auto SCHEMA_HASH_ECDB_SCHEMA = "26d2a2bb445fcff8d12c37d1a2fbfbce86ec4b14379c0eed1d8afc1ec3013eb0";
-            const auto SCHEMA_HASH_ECDB_MAP = "84a3a5e11259bae6a8800d8215f48b1e611d5bb77c3bac620da73b23f9e06a92";
-            const auto SCHEMA_HASH_SQLITE_SCHEMA = "2e503df7e76cb940852191fcae5feb0c7aa11bfddd09d3f22056260426db5c5d";
+            // Hash values changed when a mapping bug was fixed: the derived class used to map the new
+            // property to a different shared column than the base class (see ClassMapColumnFactory::IsCompatible).
+            const auto SCHEMA_HASH_ECDB_MAP = "202df04d2f9cf71bccb46fac3daabeffc8b785933bd1334c5bff5ceda16700c0";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "389ce0b78f3ca9cf88e1ee0862f627f78b5ca5e9b6de34adbc5b41e9dd553fa5";
             EXPECT_EQ(
                 SchemaImportResult::OK,
                 assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
