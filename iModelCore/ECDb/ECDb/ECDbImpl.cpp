@@ -375,6 +375,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaSchemaView::Create());
     GetPragmaManager().Register(PragmaECDbKnownFeatures::Create());
     GetPragmaManager().Register(PragmaECDbUsedFeatures::Create());
+    GetPragmaManager().Register(PragmaSchemaViewFragment::Create());
     }
 
 //--------------------------------------------------------------------------------------
