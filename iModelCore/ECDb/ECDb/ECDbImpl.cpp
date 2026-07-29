@@ -173,6 +173,62 @@ std::unique_ptr<IdFactory> IdFactory::Create(ECDbCR ecdb) {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+void IdFactory::SetKeyedMode(SchemaReservationStore& store) const {
+    m_schemaIdSeq->SetKeyedMode(store.schema.GetKeyMap());
+    m_schemaReferenceIdSeq->SetKeyedMode(store.schemaReference.GetKeyMap());
+    m_classIdSeq->SetKeyedMode(store.ecClass.GetKeyMap());
+    m_classHasBaseClassesIdSeq->SetKeyedMode(store.classHasBaseClasses.GetKeyMap());
+    m_propertyIdSeq->SetKeyedMode(store.property.GetKeyMap());
+    m_enumerationIdSeq->SetKeyedMode(store.enumeration.GetKeyMap());
+    m_kindOfQuantityIdSeq->SetKeyedMode(store.kindOfQuantity.GetKeyMap());
+    m_unitSystemIdSeq->SetKeyedMode(store.unitSystem.GetKeyMap());
+    m_phenomenonIdSeq->SetKeyedMode(store.phenomenon.GetKeyMap());
+    m_unitIdSeq->SetKeyedMode(store.unit.GetKeyMap());
+    m_formatIdSeq->SetKeyedMode(store.format.GetKeyMap());
+    m_formatCompositeUnitIdSeq->SetKeyedMode(store.formatCompositeUnit.GetKeyMap());
+    m_propertyCategoryIdSeq->SetKeyedMode(store.propertyCategory.GetKeyMap());
+    m_relationshipConstraintIdSeq->SetKeyedMode(store.relationshipConstraint.GetKeyMap());
+    m_relationshipConstraintClassIdSeq->SetKeyedMode(store.relationshipConstraintClass.GetKeyMap());
+    m_customAttributeIdSeq->SetKeyedMode(store.customAttribute.GetKeyMap());
+    m_tableIdSeq->SetKeyedMode(store.ecTable.GetKeyMap());
+    m_columnIdSeq->SetKeyedMode(store.column.GetKeyMap());
+    m_propertyMapSeq->SetKeyedMode(store.propertyMap.GetKeyMap());
+    m_propertyPathIdSeq->SetKeyedMode(store.propertyPath.GetKeyMap());
+    m_indexIdSeq->SetKeyedMode(store.ecIndex.GetKeyMap());
+    m_indexColumnIdSeq->SetKeyedMode(store.indexColumn.GetKeyMap());
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+void IdFactory::ClearKeyedMode() const {
+    m_schemaIdSeq->ClearKeyedMode();
+    m_schemaReferenceIdSeq->ClearKeyedMode();
+    m_classIdSeq->ClearKeyedMode();
+    m_classHasBaseClassesIdSeq->ClearKeyedMode();
+    m_propertyIdSeq->ClearKeyedMode();
+    m_enumerationIdSeq->ClearKeyedMode();
+    m_kindOfQuantityIdSeq->ClearKeyedMode();
+    m_unitSystemIdSeq->ClearKeyedMode();
+    m_phenomenonIdSeq->ClearKeyedMode();
+    m_unitIdSeq->ClearKeyedMode();
+    m_formatIdSeq->ClearKeyedMode();
+    m_formatCompositeUnitIdSeq->ClearKeyedMode();
+    m_propertyCategoryIdSeq->ClearKeyedMode();
+    m_relationshipConstraintIdSeq->ClearKeyedMode();
+    m_relationshipConstraintClassIdSeq->ClearKeyedMode();
+    m_customAttributeIdSeq->ClearKeyedMode();
+    m_tableIdSeq->ClearKeyedMode();
+    m_columnIdSeq->ClearKeyedMode();
+    m_propertyMapSeq->ClearKeyedMode();
+    m_propertyPathIdSeq->ClearKeyedMode();
+    m_indexIdSeq->ClearKeyedMode();
+    m_indexColumnIdSeq->ClearKeyedMode();
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 IdFactory& ECDb::Impl::GetIdFactory() const {
     if (m_idFactory == nullptr) {
         m_idFactory = IdFactory::Create(m_ecdb);

@@ -242,19 +242,22 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
 
     stmt->BindText(2, table.GetName(), Statement::MakeCopy::No);
     stmt->BindInt(3, Enum::ToInt(table.GetType()));
-    stmt->BindId(4, m_schemaManager.GetECDb().GetImpl().GetIdFactory().Table().NextId());
     if (table.HasExclusiveRootECClass())
         stmt->BindId(4, table.GetExclusiveRootECClassId());
 
+    Utf8String tableKey = table.GetTableSpace().GetName() + ":" + table.GetName();
+    BeInt64Id newTableId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Table().NextIdForKey(tableKey);
+    if (!newTableId.IsValid())
+        {
+        LOG.errorv("Failed to insert table '%s': no reservation for key '%s'", table.GetName().c_str(), tableKey.c_str());
+        return ERROR;
+        }
+    stmt->BindId(5, newTableId);
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const DbTableId tableId = DbUtilities::GetLastInsertedId<DbTableId>(m_schemaManager.GetECDb());
-    if (!tableId.IsValid())
-        return ERROR;
-
-    const_cast<DbTable&>(table).SetId(tableId);
+    const_cast<DbTable&>(table).SetId(DbTableId(newTableId.GetValue()));
 
     bmap<DbColumn const*, int> primaryKeys;
     if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
@@ -370,15 +373,46 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
         stmt->BindInt(11, primaryKeyOrdinal);
 
     stmt->BindInt(12, Enum::ToInt(column.GetKind()));
-    stmt->BindId(13, m_schemaManager.GetECDb().GetImpl().GetIdFactory().Column().NextId());
+    // Shared columns are pre-assigned a reserved id via AddSharedColumn(DbColumnId); bind it directly.
+    // System columns (ECInstanceId, ECClassId) are keyed as "tableSpace:tableName:colName" in the
+    // reservation store; use NextIdForKey in keyed mode.  All other non-shared columns must have
+    // their id pre-assigned at column-creation time by the mapper (see AllocateColumn,
+    // CreateClassIdColumn, etc.); if they arrive here without HasId() in keyed mode, fall back to
+    // NextId() which will mint a local id — this path should not be reached in a correct import.
+    auto& colSeq = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Column();
+    const bool hasReservedId = column.HasId();
+    BeInt64Id colId;
+    if (hasReservedId) {
+        colId = BeInt64Id(column.GetId().GetValue());
+    } else if (colSeq.IsKeyedMode() &&
+               (column.GetKind() == DbColumn::Kind::ECInstanceId ||
+                column.GetKind() == DbColumn::Kind::ECClassId)) {
+        // System columns: key uses the semantic property name (not the physical column name which
+        // can vary, e.g. "Id" vs "ElementId" for joined tables) to match the reserve-side key.
+        Utf8CP semanticName = (column.GetKind() == DbColumn::Kind::ECInstanceId)
+            ? ECDBSYS_PROP_ECInstanceId : ECDBSYS_PROP_ECClassId;
+        Utf8String sysKey = column.GetTable().GetTableSpace().GetName() + ":" +
+                            column.GetTable().GetName() + ":" + semanticName;
+        colId = colSeq.NextIdForKey(sysKey);
+        if (!colId.IsValid()) {
+            LOG.errorv("InsertColumn: no reservation for system column key '%s'", sysKey.c_str());
+            return ERROR;
+        }
+    } else {
+        colId = colSeq.NextId();
+    }
+    stmt->BindId(13, colId);
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const DbColumnId colId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
-    if (!colId.IsValid())
-        return ERROR;
+    if (!hasReservedId)
+        {
+        const DbColumnId insertedColId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
+        if (!insertedColId.IsValid())
+            return ERROR;
 
-    const_cast<DbColumn&>(column).SetId(colId);
+        const_cast<DbColumn&>(column).SetId(insertedColId);
+        }
     return SUCCESS;
     }
 
@@ -818,7 +852,14 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
     if (stmt == nullptr)
         return ERROR;
 
-    auto maxIndexId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Index().NextId();
+    Utf8String indexKey = index.GetTable().GetName() + ":" + index.GetName();
+    BeInt64Id newIndexId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Index().NextIdForKey(indexKey);
+    if (!newIndexId.IsValid())
+        {
+        m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0221,
+            "Failed to persist definition for index %s on table %s: no reservation for key '%s'", index.GetName().c_str(), index.GetTable().GetName().c_str(), indexKey.c_str());
+        return ERROR;
+        }
     stmt->BindId(1, index.GetTable().GetId());
     stmt->BindText(2, index.GetName(), Statement::MakeCopy::No);
     stmt->BindBoolean(3, index.GetIsUnique());
@@ -829,7 +870,7 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
         stmt->BindId(6, index.GetClassId());
 
     stmt->BindBoolean(7, index.AppliesToSubclassesIfPartial());
-    stmt->BindId(8, maxIndexId);
+    stmt->BindId(8, newIndexId);
 
     if (BE_SQLITE_DONE != stmt->Step())
         {
@@ -846,10 +887,13 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
     int i = 0;
     for (DbColumn const* col : index.GetColumns())
         {
-        if (BE_SQLITE_OK != indexColStmt->BindId(1, maxIndexId) ||
+        Utf8String indexColKey = Utf8PrintfString("%s:%d", indexKey.c_str(), i);
+        BeInt64Id newIndexColId = m_schemaManager.GetECDb().GetImpl().GetIdFactory().IndexColumn().NextIdForKey(indexColKey);
+        if (!newIndexColId.IsValid() ||
+            BE_SQLITE_OK != indexColStmt->BindId(1, newIndexId) ||
             BE_SQLITE_OK != indexColStmt->BindId(2, col->GetId()) ||
             BE_SQLITE_OK != indexColStmt->BindInt(3, i) ||
-            BE_SQLITE_OK != indexColStmt->BindId(4, m_schemaManager.GetECDb().GetImpl().GetIdFactory().IndexColumn().NextId()))
+            BE_SQLITE_OK != indexColStmt->BindId(4, newIndexColId))
             {
             BeAssert(false);
             return ERROR;
@@ -1230,6 +1274,18 @@ DbColumn* DbTable::AddSharedColumn()
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
     return AddColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedData, PersistenceType::Physical);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbColumn* DbTable::AddSharedColumn(DbColumnId reservedId)
+    {
+    BeAssert(reservedId.IsValid() && "Reserved column id must be valid");
+    Utf8String generatedName;
+    m_sharedColumnNameGenerator.Generate(generatedName);
+    BeAssert(FindColumn(generatedName.c_str()) == nullptr);
+    return AddColumn(reservedId, generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedData, PersistenceType::Physical);
     }
 
 //---------------------------------------------------------------------------------------

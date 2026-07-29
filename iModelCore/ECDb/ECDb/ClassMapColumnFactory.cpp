@@ -237,6 +237,60 @@ uint32_t ClassMapColumnFactory::MaxColumnsRequiredToPersistProperty(ECN::ECPrope
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
+//static
+void ClassMapColumnFactory::CollectColumnAccessStrings(ECN::ECPropertyCR ecProperty, Utf8StringCR accessString, bvector<Utf8String>& out)
+    {
+    if (ecProperty.GetIsNavigation())
+        {
+        out.push_back(accessString + "." ECDBSYS_PROP_NavPropId);
+        out.push_back(accessString + "." ECDBSYS_PROP_NavPropRelECClassId);
+        return;
+        }
+
+    if (PrimitiveECPropertyCP primitive = ecProperty.GetAsPrimitiveProperty())
+        {
+        if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point3d)
+            {
+            out.push_back(accessString + "." ECDBSYS_PROP_PointX);
+            out.push_back(accessString + "." ECDBSYS_PROP_PointY);
+            out.push_back(accessString + "." ECDBSYS_PROP_PointZ);
+            return;
+            }
+
+        if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point2d)
+            {
+            out.push_back(accessString + "." ECDBSYS_PROP_PointX);
+            out.push_back(accessString + "." ECDBSYS_PROP_PointY);
+            return;
+            }
+
+        out.push_back(accessString);
+        return;
+        }
+
+    if (ecProperty.GetIsArray())
+        {
+        out.push_back(accessString);
+        return;
+        }
+
+    if (StructECPropertyCP structProperty = ecProperty.GetAsStructProperty())
+        {
+        for (ECN::ECPropertyCP prop : structProperty->GetType().GetProperties(true))
+            {
+            Utf8String childAccess(accessString);
+            childAccess.append(".").append(prop->GetName());
+            CollectColumnAccessStrings(*prop, childAccess, out);
+            }
+        return;
+        }
+
+    BeAssert(false && "Unhandled ECProperty type in ClassMapColumnFactory::CollectColumnAccessStrings");
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod
+//-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     std::function<ECN::ECClassId(ECN::ECPropertyCR, Utf8StringCR)> getPersistenceClassId = [&] (ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString)
@@ -354,6 +408,24 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
     if (newColumn == nullptr)
         return nullptr;
 
+    // Pre-assign reserved ec_Column.Id when SchemaSync keyed mode is active so that InsertColumn
+    // binds the same id on every briefcase (Gap A non-shared data columns, Gap C nav FK leaves).
+    // Key matches the one the reserve walk produces: schema:class:leafAccessString.
+    {
+        auto& colSeq = ctx.GetECDb().GetImpl().GetIdFactory().Column();
+        if (colSeq.IsKeyedMode()) {
+            // Declaring class = class that owns the root property (same as reserve-walk's ownerClass).
+            const size_t dotPos = accessString.find('.');
+            Utf8String topName = (dotPos != Utf8String::npos) ? Utf8String(accessString.substr(0, dotPos)) : accessString;
+            ECN::ECPropertyCP topProp = m_classMap.GetClass().GetPropertyP(topName.c_str());
+            ECN::ECClassCR ownerClass = (topProp != nullptr) ? topProp->GetClass() : m_classMap.GetClass();
+            Utf8String colKey = SchemaWriter::DerivePropertyColumnKey(ownerClass, accessString);
+            BeInt64Id reservedId = colSeq.NextIdForKey(colKey);
+            if (reservedId.IsValid())
+                newColumn->SetId(DbColumnId(reservedId.GetValue()));
+        }
+    }
+
     if (effectiveNotNullConstraint)
         newColumn->GetConstraintsR().SetNotNullConstraint();
 
@@ -364,6 +436,57 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
         newColumn->GetConstraintsR().SetCollation(params.GetCollation());
 
     return RegisterColumnMap(accessString, newColumn);
+    }
+
+//------------------------------------------------------------------------------------------
+// When SchemaSync column reservation is active (keyed mode) the sync-db is the ultimate
+// source of truth for where a shared/overflow column lives. This resolves the reserved
+// placement of the physical column identified by @p accessString (a leaf column access string
+// such as "Geo.X"): whether it was reserved in this class's primary/joined table or its
+// overflow table, and the reserved (columnOrd, columnId) entry. Returns false when no column
+// reservation is active, the property is a navigation property (never reserved), or the column
+// has no reservation entry.
+//@bsimethod
+//-----------------------------------------------------------------------------------------
+bool ClassMapColumnFactory::TryGetReservedColumnPlacement(SchemaImportContext& ctx, ECN::ECPropertyCR prop, Utf8StringCR accessString, bool& reservedInOverflow, SchemaReservationColumnEntry const*& outEntry) const
+    {
+    reservedInOverflow = false;
+    outEntry = nullptr;
+
+    SchemaReservationColumnStore const* colStore = ctx.GetColumnStore();
+    if (colStore == nullptr)
+        return false;
+
+    // Navigation properties are never reserved by the SchemaSync reserve walk.
+    if (prop.GetIsNavigation())
+        return false;
+
+    // The reservation key is the leaf access string qualified by the class that declares the
+    // top-level property (which may be an ancestor of this class map's class). Resolve that
+    // declaring class from the root segment of the access string so the key matches the one the
+    // reserve walk produced (it keys on the walked class).
+    const size_t dotPosition = accessString.find('.');
+    Utf8String topName = (dotPosition != Utf8String::npos) ? Utf8String(accessString.substr(0, dotPosition)) : accessString;
+    ECN::ECPropertyCP topProp = m_classMap.GetClass().GetPropertyP(topName.c_str());
+    ECN::ECClassCR ownerClass = (topProp != nullptr) ? topProp->GetClass() : m_classMap.GetClass();
+
+    const Utf8String columnKey = SchemaWriter::DerivePropertyColumnKey(ownerClass, accessString);
+    Utf8StringCR primaryName = m_primaryOrJoinedTable->GetName();
+
+    // A property's shared column lives in exactly one physical table (the class hierarchy's
+    // primary/joined table or its overflow table). The reserved column key is fully qualified
+    // ("schema:class:accessString") so at most one per-table store contains it.
+    for (auto const& kv : colStore->GetStores())
+        {
+        if (SchemaReservationColumnEntry const* entry = kv.second.Lookup(columnKey))
+            {
+            outEntry = entry;
+            reservedInOverflow = !primaryName.EqualsIAscii(kv.first.c_str());
+            return true;
+            }
+        }
+
+    return false;
     }
 
 //------------------------------------------------------------------------------------------
@@ -411,10 +534,73 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
 
         }
 
+    // When a column reservation store is active (SchemaSync keyed mode) the sync-db is the
+    // ultimate source of truth: place the property in the reserved table (primary or overflow)
+    // using the pre-assigned ec_Column.Id. The briefcase does not evaluate overflow itself and
+    // does not run its own shared-column reuse heuristic for reserved properties. A reservable
+    // column that has no reservation is a fatal disagreement between the sync-db and this
+    // briefcase, so it fails the import rather than silently minting a new column.
+    if (ctx.GetColumnStore() != nullptr)
+        {
+        bool reservedInOverflow = false;
+        SchemaReservationColumnEntry const* entry = nullptr;
+        if (TryGetReservedColumnPlacement(ctx, prop, accessString, reservedInOverflow, entry))
+            {
+            // The reservation dictates the table. Force the overflow table into existence when it
+            // says overflow, even if the briefcase's own column-count logic would not have spilled.
+            DbTable* reservedTable = reservedInOverflow ? GetOrCreateOverflowTable(ctx) : m_primaryOrJoinedTable;
+            if (reservedTable == nullptr)
+                return nullptr;
+
+            // Find-or-create by reserved id: sibling classes may share one reserved shared column,
+            // so the column with this id may already have been created earlier in this import.
+            // Reuse it in that case; otherwise create it with the pre-assigned id so InsertColumn
+            // binds this id directly rather than calling NextId().
+            DbColumn* reservedColumn = nullptr;
+            for (DbColumn const* col : reservedTable->GetColumns())
+                {
+                if (col->IsShared() && col->HasId() && col->GetId().GetValue() == entry->columnId)
+                    {
+                    reservedColumn = const_cast<DbColumn*>(col);
+                    break;
+                    }
+                }
+            if (reservedColumn == nullptr)
+                {
+                reservedColumn = reservedTable->AddSharedColumn(DbColumnId(entry->columnId));
+                if (reservedColumn == nullptr)
+                    return nullptr;
+                }
+
+            // Establish the class-map's overflow-table linkage when the reservation places the
+            // property into the overflow table.
+            HandleOverflowColumn(reservedColumn);
+            return RegisterColumnMap(accessString, reservedColumn);
+            }
+        else if (!prop.GetIsNavigation())
+            {
+            // Reservation is authoritative: every reservable shared column must have been reserved
+            // by the SchemaSync reserve walk. A missing reservation means the sync-db and this
+            // briefcase disagree on the schema, so fail hard instead of silently minting a column.
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::SchemaSync,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0687,
+                "Failed to map ECProperty '%s:%s' (column '%s'). SchemaSync column reservation is active but no shared column was reserved for it. The reservation (sync-db) is the source of truth for shared and overflow columns.",
+                prop.GetClass().GetFullName(),
+                prop.GetName().c_str(),
+                accessString.c_str()
+            );
+            return nullptr;
+            }
+        }
+
+    // Navigation properties (never reserved) and the no-reservation-store case fall back to the
+    // briefcase's own shared-column reuse heuristic.
     auto* column = ReuseOrCreateSharedColumn(ctx);
     return RegisterColumnMap(accessString, column);
     }
-    
 //------------------------------------------------------------------------------------------
 //@bsimethod
 //-----------------------------------------------------------------------------------------
@@ -443,8 +629,64 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(Utf8StringCR proper
             return;
             }
 
+    // When column reservation is active, the sync-db is the ultimate source of truth for whether
+    // this property lands in the primary or overflow table. The briefcase must NOT evaluate the
+    // overflow decision itself in that case - it simply follows what the reservation dictates.
+    // All leaf columns of a property are reserved together in the same table, so consulting the
+    // property's first physical column is sufficient. Navigation properties are not reserved and
+    // therefore fall through to the heuristic below.
+    if (ctx.GetColumnStore() != nullptr && !property->GetIsNavigation())
+        {
+        bvector<Utf8String> leafAccessStrings;
+        CollectColumnAccessStrings(*property, property->GetName(), leafAccessStrings);
+        if (!leafAccessStrings.empty())
+            {
+            bool reservedInOverflow = false;
+            SchemaReservationColumnEntry const* reservedEntry = nullptr;
+            if (TryGetReservedColumnPlacement(ctx, *property, leafAccessStrings.front(), reservedInOverflow, reservedEntry))
+                {
+                m_putCurrentPropertyToOverflow = reservedInOverflow;
+                return;
+                }
+            }
+        }
+
     const uint32_t columnsRequired = MaxColumnsRequiredToPersistProperty(*property);
     EvaluateIfPropertyGoesToOverflow(columnsRequired, ctx);
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod
+//-----------------------------------------------------------------------------------------
+//static
+bool ClassMapColumnFactory::EvaluateOverflowFromBudget(uint32_t columnsRequired, uint32_t availablePhysicalColumns, uint32_t sharedColumnCount, uint32_t reusableSharedColumnCount, Nullable<uint32_t> const& maxSharedColumnsBeforeOverflow)
+    {
+    const uint32_t maxColumnInBaseTable = ClassMapColumnFactory::kMaxPhysicalColumnsPerTable;
+    if (columnsRequired > maxColumnInBaseTable)
+        return true; //in this case we can directly choose overflow
+
+    //Determine how many shared columns can be created
+    uint32_t sharedColumnThatCanBeCreated = 0;
+    if (maxSharedColumnsBeforeOverflow.IsNull())
+        {
+        sharedColumnThatCanBeCreated = availablePhysicalColumns;
+        }
+    else
+        {
+        sharedColumnThatCanBeCreated = (sharedColumnCount < maxSharedColumnsBeforeOverflow.Value()) ? maxSharedColumnsBeforeOverflow.Value() - sharedColumnCount : 0;
+        if (sharedColumnThatCanBeCreated > availablePhysicalColumns)
+            sharedColumnThatCanBeCreated = availablePhysicalColumns; //restrict available shared columns to available physical columns
+        }
+
+    if (sharedColumnThatCanBeCreated >= columnsRequired)
+        return false; //we can just exit here, we definitely never have to go to overflow in this case
+
+    const uint32_t requiredRemainingColumns = columnsRequired - sharedColumnThatCanBeCreated;
+    if (requiredRemainingColumns > sharedColumnCount)
+        return true; //no need to check, we know there won't be enough columns
+
+    //The remainder must be satisfied by reusing existing shared columns.
+    return reusableSharedColumnCount < requiredRemainingColumns;
     }
 
 //------------------------------------------------------------------------------------------
@@ -464,70 +706,29 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         return;
         }
 
-      const uint32_t maxColumnInBaseTable = 63;
-      if(columnsRequired > maxColumnInBaseTable)
-        {
-        m_putCurrentPropertyToOverflow = true; //in this case we can directly choose overflow
-        return;
-        }
+    // Gather the live shared-column budget of the base table, then defer the primary-vs-overflow
+    // arithmetic to EvaluateOverflowFromBudget so the reserve walk can replicate the exact same
+    // decision from the reservation store without duplicating this math.
+    const uint32_t maxColumnInBaseTable = ClassMapColumnFactory::kMaxPhysicalColumnsPerTable;
+    const std::vector<DbColumn const*> physicalColumns = m_primaryOrJoinedTable->FindAll(PersistenceType::Physical);
+    const uint32_t nAvaliablePhysicalColumns = maxColumnInBaseTable - (uint32_t) physicalColumns.size();
 
-      const std::vector<DbColumn const*> physicalColumns = m_primaryOrJoinedTable->FindAll(PersistenceType::Physical);
-      const uint32_t nAvaliablePhysicalColumns = maxColumnInBaseTable - (uint32_t) physicalColumns.size();
-
-      const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
-      
-      uint32_t nSharedColumns;
-      if (!ctx.RemapManager().HasFreedColumns())
-          {
-          nSharedColumns = (uint32_t) sharedColumns.size();
-          }
-      else
-          {
-          nSharedColumns = 0;
-          for (DbColumn const* col : sharedColumns)
-              {
-              if (!ctx.RemapManager().IsColumnFreed(*col))
-                  nSharedColumns++;
-              }
-          }
-
-      //Determine how many shared columns can be created
-      uint32_t sharedColumnThatCanBeCreated = 0;
-      if (m_maxSharedColumnCount.IsNull())
-          {
-          sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns;
-          }
-      else
-          {
-          sharedColumnThatCanBeCreated = (nSharedColumns < m_maxSharedColumnCount.Value()) ? m_maxSharedColumnCount.Value() - nSharedColumns : 0;
-          if (sharedColumnThatCanBeCreated > nAvaliablePhysicalColumns)
-              sharedColumnThatCanBeCreated = nAvaliablePhysicalColumns; //restrict available shared columns to available physical columns
-          }
-
-    if (sharedColumnThatCanBeCreated >= columnsRequired)
-        return; //we can just exit here, we definitely never have to go to overflow in this case
-
-    uint32_t requiredRemainingColumns = columnsRequired - sharedColumnThatCanBeCreated;
-    if (requiredRemainingColumns > nSharedColumns)
-        { //no need to check, we know there won't be enough columns
-        m_putCurrentPropertyToOverflow = true;
-        return;
-        }
-
+    const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
     const bool hasFreedColumns = ctx.RemapManager().HasFreedColumns();
-    for (DbColumn const* sharedColumn : sharedColumns)
+
+    uint32_t nSharedColumns = 0;
+    uint32_t nReusableSharedColumns = 0;
+    for (DbColumn const* col : sharedColumns)
         {
-        if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*sharedColumn))
-            continue;
+        if (hasFreedColumns && ctx.RemapManager().IsColumnFreed(*col))
+            continue; // freed columns are not counted as existing shared columns
 
-        if (!IsColumnInUse(*sharedColumn) && !IsColumnUsedByAnyDerivedClass(*sharedColumn, ctx))
-            requiredRemainingColumns--; //column can be reused
-
-        if(requiredRemainingColumns <= 0)
-            return;
+        nSharedColumns++;
+        if (!IsColumnInUse(*col) && !IsColumnUsedByAnyDerivedClass(*col, ctx))
+            nReusableSharedColumns++; //column can be reused
         }
 
-    m_putCurrentPropertyToOverflow = true; // TODO: this flag is mutable and the current method is marked as const. Use return value instead?
+    m_putCurrentPropertyToOverflow = EvaluateOverflowFromBudget(columnsRequired, nAvaliablePhysicalColumns, nSharedColumns, nReusableSharedColumns, m_maxSharedColumnCount);
     }
 
 //------------------------------------------------------------------------------------------

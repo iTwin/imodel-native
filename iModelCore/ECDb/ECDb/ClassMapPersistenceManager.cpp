@@ -96,14 +96,14 @@ BentleyStatus DbClassMapSaveContext::TryPropertyMapExists(uint64_t& propertyMapI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId)
+BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootPropertyId, Utf8CP accessString, DbColumn const& column)
     {
     PropertyPathId propertyPathId;
     if (m_classMapContext.TryGetPropertyPathId(propertyPathId, rootPropertyId, accessString, true) != SUCCESS)
         return ERROR;
 
     BeAssert(propertyPathId.IsValid());
-    BeAssert(columnId.IsValid());
+    BeAssert(column.GetId().IsValid());
 
     CachedStatementPtr stmt = GetMapSaveContext().GetECDb().GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_PropertyMap(ClassId,PropertyPathId,ColumnId,Id) VALUES(?,?,?,?)");
     if (stmt == nullptr)
@@ -112,10 +112,21 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
         return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindId(1, m_classMap.GetClass().GetId()) ||
+    ECClassCR mappedClass = m_classMap.GetClass();
+    Utf8String key = mappedClass.GetSchema().GetName();
+    key += ":";
+    key += mappedClass.GetName();
+    key += ":";
+    key += accessString;
+    key += ":";
+    key += column.GetTable().GetTableSpace().GetName();
+    key += ":";
+    key += column.GetTable().GetName();
+
+    if (BE_SQLITE_OK != stmt->BindId(1, mappedClass.GetId()) ||
         BE_SQLITE_OK != stmt->BindId(2, propertyPathId) ||
-        BE_SQLITE_OK != stmt->BindId(3, columnId) ||
-        BE_SQLITE_OK != stmt->BindId(4, GetMapSaveContext().GetECDb().GetImpl().GetIdFactory().PropertyMap().NextId()))
+        BE_SQLITE_OK != stmt->BindId(3, column.GetId()) ||
+        BE_SQLITE_OK != stmt->BindId(4, GetMapSaveContext().GetECDb().GetImpl().GetIdFactory().PropertyMap().NextIdForKey(key)))
         {
         BeAssert(false);
         return ERROR;
@@ -227,6 +238,27 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
     if (!addIfDoesNotExist)
         return ERROR;
 
+    // ec_Property is fully written during SchemaWriter::ImportSchemas before MapSchemas calls this.
+    CachedStatementPtr propLookupStmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
+        "SELECT p.Name, c.Name, s.Name FROM main.ec_Property p "
+        "JOIN main.ec_Class c ON c.Id = p.ClassId "
+        "JOIN main.ec_Schema s ON s.Id = c.SchemaId "
+        "WHERE p.Id = ?");
+    if (propLookupStmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    propLookupStmt->BindId(1, rootPropertyId);
+    if (propLookupStmt->Step() != BE_SQLITE_ROW)
+        {
+        BeAssert(false && "Failed to look up root property for ec_PropertyPath key");
+        return ERROR;
+        }
+    Utf8String propPathKey = Utf8String(propLookupStmt->GetValueText(2)) + ":" +
+        propLookupStmt->GetValueText(1) + ":" +
+        propLookupStmt->GetValueText(0) + ":" + accessString;
+
     stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_PropertyPath(RootPropertyId, AccessString, Id) VALUES(?,?,?)");
     if (stmt == nullptr)
         {
@@ -236,7 +268,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 
     stmt->BindId(1, rootPropertyId);
     stmt->BindText(2, accessString, Statement::MakeCopy::No);
-    stmt->BindId(3, m_ecdb.GetImpl().GetIdFactory().PropertyPath().NextId());
+    stmt->BindId(3, m_ecdb.GetImpl().GetIdFactory().PropertyPath().NextIdForKey(propPathKey));
     if (stmt->Step() != BE_SQLITE_DONE)
         {
         BeAssert(false);

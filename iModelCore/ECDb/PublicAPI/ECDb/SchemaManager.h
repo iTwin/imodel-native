@@ -5,8 +5,258 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <Bentley/BeEvent.h>
+#include <Bentley/bset.h>
 #include <functional>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+//! Per-table in-memory store for the content-key → reserved-id mapping used by the
+//! content-key-based SchemaSync reservation system.
+//! Keys compare case-insensitively, matching ECObjects name semantics.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationTableStore final {
+private:
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> m_keyToId; //!< key → reserved id
+    uint64_t m_lastReservedId = 0; //!< monotonic counter seeded from MAX(Id) of the table in the sync db
+
+public:
+    //! Return the reserved id for @p key; allocate a new one (next counter value) if key is absent.
+    uint64_t GetOrAllocate(Utf8StringCR key) {
+        auto it = m_keyToId.find(key);
+        if (it != m_keyToId.end())
+            return it->second;
+        uint64_t id = ++m_lastReservedId;
+        m_keyToId.emplace(key, id);
+        return id;
+    }
+
+    //! Return the reserved id for @p key, or 0 if absent.
+    uint64_t Lookup(Utf8StringCR key) const {
+        auto it = m_keyToId.find(key);
+        return it != m_keyToId.end() ? it->second : 0;
+    }
+
+    //! True if @p key already has a reserved id.
+    bool HasKey(Utf8StringCR key) const { return m_keyToId.find(key) != m_keyToId.end(); }
+
+    //! Read-only access to the full key→id map (e.g. for iteration during serialization).
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToId; }
+    //! Mutable access to the key→id map; required by IdSequence::SetKeyedMode.
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii>& GetKeyMap() { return m_keyToId; }
+
+    //! Return the current last-reserved-id counter.
+    uint64_t GetLastReservedId() const { return m_lastReservedId; }
+    //! Overwrite the last-reserved-id counter (used when loading from the sync-db).
+    void SetLastReservedId(uint64_t id) { m_lastReservedId = id; }
+    //! Set the last-reserved-id counter only if it has not been set yet (i.e. still 0).
+    void SeedLastReservedId(uint64_t id) { if (m_lastReservedId == 0) m_lastReservedId = id; }
+
+    //! Clear the key map and reset the counter; call before populating from the sync-db.
+    void Clear() { m_keyToId.clear(); m_lastReservedId = 0; }
+    //! Insert a single key→id entry (used when loading key-map JSON from the sync-db).
+    void AddEntry(Utf8StringCR key, uint64_t id) { m_keyToId.emplace(key, id); }
+};
+
+//=======================================================================================
+//! Full set of per-table stores for the content-key → reserved-id reservation used by SchemaSync.
+//! Written into the sync-db by ReserveSchemaImport and read back by ImportSchemas in
+//! keyed mode. Covers all 16 metadata tables plus the 6 mapping tables.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationStore final {
+    // Metadata tables (2.1)
+    SchemaReservationTableStore schema;
+    SchemaReservationTableStore schemaReference;
+    SchemaReservationTableStore ecClass;
+    SchemaReservationTableStore classHasBaseClasses;
+    SchemaReservationTableStore property;
+    SchemaReservationTableStore enumeration;
+    SchemaReservationTableStore kindOfQuantity;
+    SchemaReservationTableStore unitSystem;
+    SchemaReservationTableStore phenomenon;
+    SchemaReservationTableStore unit;
+    SchemaReservationTableStore format;
+    SchemaReservationTableStore formatCompositeUnit;
+    SchemaReservationTableStore propertyCategory;
+    SchemaReservationTableStore relationshipConstraint;
+    SchemaReservationTableStore relationshipConstraintClass;
+    SchemaReservationTableStore customAttribute;
+    // Mapping tables (3a)
+    SchemaReservationTableStore ecTable;
+    SchemaReservationTableStore column;
+    SchemaReservationTableStore propertyMap;
+    SchemaReservationTableStore propertyPath;
+    SchemaReservationTableStore ecIndex;
+    SchemaReservationTableStore indexColumn;
+};
+
+//=======================================================================================
+//! Entry in the per-physical-table column reservation store: the reserved column ordinal within the physical
+//! SQLite table and the corresponding reserved ec_Column.Id.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnEntry final {
+    uint64_t columnOrd = 0; //!< reserved ordinal (physical column position) in the SQLite table
+    uint64_t columnId  = 0; //!< reserved ec_Column.Id for this column
+};
+
+//=======================================================================================
+//! A derived view of one reserved shared column: its ordinal, ec_Column.Id, and the set
+//! of owner class keys that occupy it. Recomputed from the persisted key map on demand.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnSlot final {
+    uint64_t columnOrd = 0;
+    uint64_t columnId  = 0;
+    bset<Utf8String, CompareIUtf8Ascii> occupants;
+};
+
+//=======================================================================================
+//! Per-physical-table store for property-key → column assignment. Persisted state is
+//! only the key→(columnOrd,columnId) map; slot view and high-water ordinal are derived on demand.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnTableStore final {
+private:
+    // propertyKey ("schema:class:prop") → reserved (columnOrd, columnId)
+    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> m_keyToEntry;
+    // columnOrd → slot, derived on demand from m_keyToEntry
+    mutable bmap<uint64_t, SchemaReservationColumnSlot> m_slots;
+    mutable bool m_slotsDirty = true;
+    // Declared-only per-class high-water ordinal (schema:class → ordinal), persisted and seeded at Init.
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> m_classHighWater;
+
+    //! property key is "schema:class:prop"; the owner class key is the "schema:class" prefix.
+    Utf8String ClassKeyFromPropertyKey(Utf8StringCR propKey) const {
+        size_t pos = propKey.rfind(':');
+        return pos == Utf8String::npos ? propKey : Utf8String(propKey.substr(0, pos));
+    }
+    void RebuildSlots() const {
+        m_slots.clear();
+        for (auto const& kv : m_keyToEntry) {
+            SchemaReservationColumnSlot& slot = m_slots[kv.second.columnOrd];
+            slot.columnOrd = kv.second.columnOrd;
+            slot.columnId  = kv.second.columnId;
+            slot.occupants.insert(ClassKeyFromPropertyKey(kv.first));
+        }
+        m_slotsDirty = false;
+    }
+
+public:
+    //! Return the reserved entry for @p key, or nullptr if absent.
+    SchemaReservationColumnEntry const* Lookup(Utf8StringCR key) const {
+        auto it = m_keyToEntry.find(key);
+        return it != m_keyToEntry.end() ? &it->second : nullptr;
+    }
+    //! Derived slot view keyed by columnOrd (ascending). Rebuilt from the persisted key map.
+    bmap<uint64_t, SchemaReservationColumnSlot> const& GetSlots() const {
+        if (m_slotsDirty) RebuildSlots();
+        return m_slots;
+    }
+    //! Highest reserved shared-column ordinal in this table, derived from the reserved entries.
+    uint64_t GetHighWaterOrd() const {
+        uint64_t hi = 0;
+        for (auto const& kv : m_keyToEntry)
+            if (kv.second.columnOrd > hi) hi = kv.second.columnOrd;
+        return hi;
+    }
+    //! Highest shared-column ordinal @p classKey ("schema:class") has itself declared into, or 0.
+    //! The reuse scan starts strictly above it (lower columns were already checked by the class).
+    uint64_t GetClassHighWaterOrd(Utf8StringCR classKey) const {
+        auto it = m_classHighWater.find(classKey);
+        return it != m_classHighWater.end() ? it->second : 0;
+    }
+    //! Raise the class high-water ordinal for @p classKey to at least @p ord.
+    void SetClassHighWaterOrd(Utf8StringCR classKey, uint64_t ord) {
+        uint64_t& cur = m_classHighWater[classKey];
+        if (ord > cur) cur = ord;
+    }
+    //! Reserve @p key to (columnOrd, columnId), advancing the declaring class's high-water ordinal.
+    void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) {
+        m_keyToEntry[key] = entry;
+        m_slotsDirty = true;
+        SetClassHighWaterOrd(ClassKeyFromPropertyKey(key), entry.columnOrd);
+    }
+    bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToEntry; }
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> const& GetClassHighWaterMap() const { return m_classHighWater; }
+    void Clear() { m_keyToEntry.clear(); m_slots.clear(); m_slotsDirty = true; m_classHighWater.clear(); }
+};
+
+//=======================================================================================
+//! Column-assignment reservation store keyed by physical table name. Ensures every
+//! briefcase assigns the same column ordinals during ImportSchemas.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationColumnStore final {
+private:
+    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> m_physTableStores;
+public:
+    //! Return (or create) the per-physical-table store for @p physicalTableName.
+    SchemaReservationColumnTableStore& GetOrCreate(Utf8StringCR physicalTableName) {
+        return m_physTableStores[physicalTableName];
+    }
+    //! Return the per-physical-table store for @p physicalTableName, or nullptr if absent.
+    SchemaReservationColumnTableStore const* TryGet(Utf8StringCR physicalTableName) const {
+        auto it = m_physTableStores.find(physicalTableName);
+        return it != m_physTableStores.end() ? &it->second : nullptr;
+    }
+    bmap<Utf8String, SchemaReservationColumnTableStore, CompareIUtf8Ascii> const& GetStores() const { return m_physTableStores; }
+    void Clear() { m_physTableStores.clear(); }
+};
+
+//=======================================================================================
+//! Persisted ancestor/descendant sets for every class seen by the reservation system.
+//! This is the single source of truth for the shared-column slot-reuse test; it replaces
+//! ECClass::Is() so that the reuse decision is stable even when a class was reserved by a
+//! different briefcase and is absent from the current in-memory schema graph.
+//! Stored in sync-db table schema_reservation_class_hierarchy (§3a.1b).
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationClassHierarchyStore final {
+public:
+    struct Entry {
+        bset<Utf8String, CompareIUtf8Ascii> ancestors;
+        bset<Utf8String, CompareIUtf8Ascii> descendants;
+    };
+private:
+    bmap<Utf8String, Entry, CompareIUtf8Ascii> m_entries;
+
+public:
+    //! Returns true iff classKeyB appears in the ancestor OR descendant set of classKeyA,
+    //! i.e. classKeyA and classKeyB share a root-to-leaf path and therefore a slot cannot
+    //! be shared between them.
+    bool IsAncestorOrDescendant(Utf8StringCR classKeyA, Utf8StringCR classKeyB) const {
+        auto it = m_entries.find(classKeyA);
+        if (it == m_entries.end()) return false;
+        return it->second.ancestors.find(classKeyB)   != it->second.ancestors.end()
+            || it->second.descendants.find(classKeyB) != it->second.descendants.end();
+    }
+
+    //! Record @p classKey with the given transitive @p ancestorKeys.
+    //! Also updates the descendants list of each ancestor to include @p classKey.
+    //! Idempotent: re-recording the same class is a no-op for existing entries.
+    void RecordClass(Utf8StringCR classKey,
+                     bset<Utf8String, CompareIUtf8Ascii> const& ancestorKeys) {
+        Entry& entry = m_entries[classKey];
+        for (Utf8StringCR ak : ancestorKeys) {
+            entry.ancestors.insert(ak);
+            m_entries[ak].descendants.insert(classKey);
+        }
+    }
+
+    //! Load a single entry directly (used when deserialising from the sync-db).
+    void AddRawEntry(Utf8StringCR classKey,
+                     bset<Utf8String, CompareIUtf8Ascii>&& ancestors,
+                     bset<Utf8String, CompareIUtf8Ascii>&& descendants) {
+        Entry& e = m_entries[classKey];
+        e.ancestors   = std::move(ancestors);
+        e.descendants = std::move(descendants);
+    }
+
+    bmap<Utf8String, Entry, CompareIUtf8Ascii> const& GetEntries() const { return m_entries; }
+    void Clear() { m_entries.clear(); }
+};
 
 //=======================================================================================
 //! Schema change event type
@@ -19,6 +269,8 @@ enum class SchemaChangeType {
 
 //! Schema change event notify about event that led to schema change.
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
+
+struct IdFactory; // forward declaration for SchemaSync::KeyedModeGuard
 
 //=======================================================================================
 //! @ingroup ECDbGroup
@@ -104,12 +356,33 @@ struct SchemaSync final {
             ECDB_EXPORT static LocalDbInfo From(DbCR);
 };
 
+    //! Clears keyed-mode on the IdFactory on destruction. Call Activate() after entering keyed mode.
+    struct KeyedModeGuard {
+        IdFactory* m_factory;
+        bool m_active;
+        explicit KeyedModeGuard(IdFactory& f);
+        ~KeyedModeGuard();
+        void Activate() { m_active = true; }
+    };
+
+    //! Abandons the pending reservation transaction on destruction unless Commit() was called.
+    struct ReservationTxGuard {
+        SchemaSync& m_sync;
+        bool m_committed;
+        explicit ReservationTxGuard(SchemaSync& s);
+        ~ReservationTxGuard();
+        Status Commit();
+    };
+
 private:
     ECDbR m_conn;
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
     int64_t m_modifiedRowCount;
+    Db m_pendingReservationDb;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
+    //! Seed the reservation stores from the local db baseline into the sync-db.
+    Status SeedReservationStoreInternal(SyncDbUri const&);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
@@ -137,8 +410,18 @@ public:
     ECDB_EXPORT LocalDbInfo GetInfo() const;
     ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri);
     ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
-    ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
+    ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr);
     ECDB_EXPORT Status Push(SyncDbUri const&);
+    //! Reserve ids for @p schemas in the sync-db. Caller must commit or abandon the open transaction.
+    ECDB_EXPORT Status ReserveSchemaImport(bvector<ECN::ECSchemaCP> const& schemas, SyncDbUri const& syncDbUri);
+    //! Commit the pending reservation transaction. No-op if none is pending.
+    Status CommitPendingReservation();
+    //! Roll back the pending reservation transaction. No-op if none is pending.
+    Status AbandonPendingReservation();
+    //! Load the id reservation store from the sync-db.
+    BentleyStatus LoadReservationStore(SyncDbUri const& syncDbUri, SchemaReservationStore& store) const;
+    //! Load the column-assignment reservation store from the sync-db.
+    BentleyStatus LoadColumnStore(SyncDbUri const& syncDbUri, SchemaReservationColumnStore& store) const;
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);

@@ -925,6 +925,7 @@ public:
 public:
     ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the collection
     ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the collection
+    ECOBJECTS_EXPORT bool           empty () const; //!< Returns true if the collection is empty
 
     //! Attempts to look up an ECProperty by its display label
     //! @param[in]      label The label of the ECProperty to find

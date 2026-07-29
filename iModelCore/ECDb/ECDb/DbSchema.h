@@ -507,6 +507,9 @@ public:
     DbColumn* AddColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return AddColumn(id, name, type, -1, kind, persistenceType); }
     DbColumn* AddColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return AddColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* AddSharedColumn();
+    //! Add a new shared column pre-assigned to @p reservedId (column-reservation protocol).
+    //! @p reservedId must be valid; use AddSharedColumn() for the non-reservation path.
+    DbColumn* AddSharedColumn(DbColumnId reservedId);
 
     LinkNode const& GetLinkNode() const { return m_linkNode; }
 
