@@ -43,6 +43,7 @@ struct DbMapValidator final
         BentleyStatus ValidateNavigationPropertyMapUniqueness(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
         BentleyStatus ValidateOverflowPropertyMaps(ClassMap const& classMap) const;
         BentleyStatus CheckDuplicateDataPropertyMap() const;
+        BentleyStatus CheckInheritedPropertyMapConsistency() const;
         ECDbCR GetECDb() const { return m_schemaImportContext.GetECDb(); }
         MainSchemaManager const& GetSchemaManager() const { return m_schemaImportContext.GetSchemaManager(); }
         DbSchema const& GetDbSchema() const { return GetSchemaManager().GetDbSchema(); }
