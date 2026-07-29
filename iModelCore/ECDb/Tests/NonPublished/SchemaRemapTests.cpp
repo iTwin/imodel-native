@@ -4371,8 +4371,8 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
     }*/
 
 //---------------------------------------------------------------------------------------
-// Isolated repro for the Hatch connector failure (CS0726258), distilled from the customer
-// iModel (see DISABLED_ReproHatchPulsationDamperImport above). Mechanism:
+// Isolated repro for a connector failure, distilled from the customer
+// iModel. Mechanism:
 // 1. A schema upgrade adds local overrides to class A for properties it previously
 //    inherited (EC2->EC3 multi-inheritance flattening does this). The remap manager
 //    frees A's old columns. Because columns are freed in both the primary table and its
