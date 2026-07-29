@@ -63,13 +63,14 @@
         <ProductDirectory Name="Libs"                                       RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="Libs"                   LibType="Static"    RelativeTo="Root" Path="lib"/>
         <!--
-            On x64 this product is built Dynamic, but ITwinDaemon-exe drags in a parallel *static*
-            dependency chain (openssl, curl, rustls, proxyres, ...). Those static libraries have the
-            same file names as their dynamic import libraries, so they cannot share "lib". Give them
-            their own sub-directory (same convention as BeStaticLibDir below). On the platforms that
-            build this product entirely Static there is only one chain, so "lib" stays correct there.
+            On x64 this product is the *dynamic* SDK, but ITwinDaemon-exe drags in a parallel static
+            dependency chain (openssl, curl, proxyres, ...). Those libraries are link-time inputs for
+            the daemon executable only - nothing consuming this package links them - and they collide
+            with their dynamic import libraries of the same name in "lib". Don't deliver them.
+            The platforms that build this product entirely Static ship their libraries as the actual
+            deliverable, so they keep the default entry above.
         -->
-        <ProductDirectory Name="Libs"                   LibType="Static"    Platforms="x64" RelativeTo="Libs" Path="static"/>
+        <ProductDirectory Name="Libs"                   LibType="Static"    Platforms="x64" Deliver="false"/>
         <ProductDirectory Name="PublicApi"                                  RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="PublicApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorApi"                                  RelativeTo="Root" Path="include"/>
