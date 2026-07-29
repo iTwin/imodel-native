@@ -274,7 +274,9 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_InheritedPropertyMapConsistenc
     // *** Simulate diverged class maps: point Sub's map of the inherited Prop1 at Prop2's column ***
     m_ecdb.ClearECDbCache();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(R"sql(
-        UPDATE ec_PropertyMap SET ColumnId = (SELECT Id FROM ec_Column WHERE Name = 'Prop2')
+        UPDATE ec_PropertyMap SET ColumnId = (SELECT pm2.ColumnId FROM ec_PropertyMap pm2
+                    JOIN ec_PropertyPath pp2 ON pp2.Id = pm2.PropertyPathId
+                    WHERE pm2.ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Sub') AND pp2.AccessString = 'Prop2')
             WHERE ClassId = (SELECT Id FROM ec_Class WHERE Name = 'Sub')
               AND PropertyPathId = (SELECT pp.Id FROM ec_PropertyPath pp
                     JOIN ec_Property p ON p.Id = pp.RootPropertyId

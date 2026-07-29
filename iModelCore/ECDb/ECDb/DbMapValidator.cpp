@@ -227,7 +227,8 @@ BentleyStatus DbMapValidator::CheckInheritedPropertyMapConsistency() const {
     }
 
     int errors = 0;
-    while (stmt.Step() == BE_SQLITE_ROW) {
+    DbResult stepResult;
+    while ((stepResult = stmt.Step()) == BE_SQLITE_ROW) {
         const ECClassId derivedClassId = stmt.GetValueId<ECClassId>(0);
         const ECClassId baseClassId = stmt.GetValueId<ECClassId>(1);
         const Utf8String accessString = stmt.GetValueText(2);
@@ -242,6 +243,12 @@ BentleyStatus DbMapValidator::CheckInheritedPropertyMapConsistency() const {
             baseClass != nullptr ? baseClass->GetFullName() : baseClassId.ToString().c_str(),
             baseColumn.c_str());
         ++errors;
+    }
+
+    if (stepResult != BE_SQLITE_DONE) {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+            "Failed to run inherited property map consistency check: stepping the query failed with %s.", Db::InterpretDbResult(stepResult));
+        return ERROR;
     }
 
     return errors > 0 ? ERROR : SUCCESS;
