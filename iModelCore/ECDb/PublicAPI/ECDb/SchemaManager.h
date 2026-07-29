@@ -124,8 +124,8 @@ private:
     // columnOrd → slot, derived on demand from m_keyToEntry
     mutable bmap<uint64_t, SchemaReservationColumnSlot> m_slots;
     mutable bool m_slotsDirty = true;
-    // High-water baseline seeded from local db MAX(Ordinal); not persisted
-    uint64_t m_seededHighWater = 0;
+    // Declared-only per-class high-water ordinal (schema:class → ordinal), persisted and seeded at Init.
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> m_classHighWater;
 
     //! property key is "schema:class:prop"; the owner class key is the "schema:class" prefix.
     Utf8String ClassKeyFromPropertyKey(Utf8StringCR propKey) const {
@@ -154,22 +154,33 @@ public:
         if (m_slotsDirty) RebuildSlots();
         return m_slots;
     }
-    //! Highest reserved shared-column ordinal. Zero if none reserved.
+    //! Highest reserved shared-column ordinal in this table, derived from the reserved entries.
     uint64_t GetHighWaterOrd() const {
-        uint64_t hi = m_seededHighWater;
+        uint64_t hi = 0;
         for (auto const& kv : m_keyToEntry)
             if (kv.second.columnOrd > hi) hi = kv.second.columnOrd;
         return hi;
     }
-    //! Raise the in-memory high-water baseline (from the local db MAX(Ordinal)). Not persisted.
-    void SeedHighWaterOrd(uint64_t ord) { if (ord > m_seededHighWater) m_seededHighWater = ord; }
-    //! Reserve @p key to (columnOrd, columnId). Callers enforce idempotency via Lookup.
+    //! Highest shared-column ordinal @p classKey ("schema:class") has itself declared into, or 0.
+    //! The reuse scan starts strictly above it (lower columns were already checked by the class).
+    uint64_t GetClassHighWaterOrd(Utf8StringCR classKey) const {
+        auto it = m_classHighWater.find(classKey);
+        return it != m_classHighWater.end() ? it->second : 0;
+    }
+    //! Raise the class high-water ordinal for @p classKey to at least @p ord.
+    void SetClassHighWaterOrd(Utf8StringCR classKey, uint64_t ord) {
+        uint64_t& cur = m_classHighWater[classKey];
+        if (ord > cur) cur = ord;
+    }
+    //! Reserve @p key to (columnOrd, columnId), advancing the declaring class's high-water ordinal.
     void AddEntry(Utf8StringCR key, SchemaReservationColumnEntry const& entry) {
         m_keyToEntry[key] = entry;
         m_slotsDirty = true;
+        SetClassHighWaterOrd(ClassKeyFromPropertyKey(key), entry.columnOrd);
     }
     bmap<Utf8String, SchemaReservationColumnEntry, CompareIUtf8Ascii> const& GetKeyMap() const { return m_keyToEntry; }
-    void Clear() { m_keyToEntry.clear(); m_slots.clear(); m_slotsDirty = true; m_seededHighWater = 0; }
+    bmap<Utf8String, uint64_t, CompareIUtf8Ascii> const& GetClassHighWaterMap() const { return m_classHighWater; }
+    void Clear() { m_keyToEntry.clear(); m_slots.clear(); m_slotsDirty = true; m_classHighWater.clear(); }
 };
 
 //=======================================================================================

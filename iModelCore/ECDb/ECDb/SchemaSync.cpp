@@ -2200,10 +2200,7 @@ BentleyStatus SchemaReservationHelper::SeedMappingTableKeyMapsFromLocalDb(ECDbCR
 BentleyStatus SchemaReservationHelper::SeedColumnStoreFromLocalDb(ECDbCR localDb,
                                                                    SchemaReservationStore& idStore,
                                                                    SchemaReservationColumnStore& colStore) {
-    // Seed the per-table high-water ordinal baseline (MAX(Ordinal) per physical table).
-    if (SUCCESS != SeedLastUsedColumnOrdsFromLocalDb(localDb, colStore))
-        return ERROR;
-    // Seed the propertyKey → (columnOrd, columnId) key maps.
+    // Per-class high-water ordinals are seeded implicitly by AddEntry; no per-table floor is seeded.
     return SeedColumnKeyMapsFromLocalDb(localDb, idStore, colStore);
 }
 
@@ -2744,7 +2741,7 @@ BentleyStatus SchemaReservationHelper::ReadColumnTableStore(Db& syncDb, Utf8CP p
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(syncDb,
-            "SELECT [KeyMap] FROM [schema_reservation_columns] WHERE [PhysicalTableName]=?"))
+            "SELECT [KeyMap], [ClassHighWater] FROM [schema_reservation_columns] WHERE [PhysicalTableName]=?"))
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindText(1, physicalTableName, Statement::MakeCopy::No))
         return ERROR;
@@ -2753,24 +2750,38 @@ BentleyStatus SchemaReservationHelper::ReadColumnTableStore(Db& syncDb, Utf8CP p
 
     const void* blobData = stmt.GetValueBlob(0);
     int blobSize = stmt.GetColumnBytes(0);
-    if (blobData == nullptr || blobSize <= 0)
-        return SUCCESS;
+    if (blobData != nullptr && blobSize > 0) {
+        auto root = flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(blobData), (size_t) blobSize);
+        if (root.IsMap()) {
+            auto map  = root.AsMap();
+            auto keys = map.Keys();
+            for (size_t i = 0; i < keys.size(); ++i) {
+                Utf8CP key = keys[i].AsKey();
+                if (key == nullptr) continue;
+                auto vec = map[key].AsVector();
+                if (vec.size() < 2) continue;
+                SchemaReservationColumnEntry entry;
+                entry.columnOrd = (uint64_t) vec[0].AsUInt64();
+                entry.columnId  = (uint64_t) vec[1].AsUInt64();
+                store.AddEntry(key, entry);
+            }
+        }
+    }
 
-    auto root = flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(blobData), (size_t) blobSize);
-    if (!root.IsMap())
-        return SUCCESS;
-
-    auto map  = root.AsMap();
-    auto keys = map.Keys();
-    for (size_t i = 0; i < keys.size(); ++i) {
-        Utf8CP key = keys[i].AsKey();
-        if (key == nullptr) continue;
-        auto vec = map[key].AsVector();
-        if (vec.size() < 2) continue;
-        SchemaReservationColumnEntry entry;
-        entry.columnOrd = (uint64_t) vec[0].AsUInt64();
-        entry.columnId  = (uint64_t) vec[1].AsUInt64();
-        store.AddEntry(key, entry);
+    // Restore the persisted per-declaring-class high-water map.
+    const void* hwData = stmt.GetValueBlob(1);
+    int hwSize = stmt.GetColumnBytes(1);
+    if (hwData != nullptr && hwSize > 0) {
+        auto hwRoot = flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(hwData), (size_t) hwSize);
+        if (hwRoot.IsMap()) {
+            auto hwMap  = hwRoot.AsMap();
+            auto hwKeys = hwMap.Keys();
+            for (size_t i = 0; i < hwKeys.size(); ++i) {
+                Utf8CP classKey = hwKeys[i].AsKey();
+                if (classKey == nullptr) continue;
+                store.SetClassHighWaterOrd(classKey, (uint64_t) hwMap[classKey].AsUInt64());
+            }
+        }
     }
     return SUCCESS;
 }
@@ -2791,41 +2802,26 @@ BentleyStatus SchemaReservationHelper::WriteColumnTableStore(Db& syncDb, Utf8CP 
     fbb.Finish();
     auto const& buf = fbb.GetBuffer();
 
+    flexbuffers::Builder hwb;
+    hwb.Map([&]() {
+        for (auto const& kv : store.GetClassHighWaterMap())
+            hwb.UInt(kv.first.c_str(), kv.second);
+    });
+    hwb.Finish();
+    auto const& hwBuf = hwb.GetBuffer();
+
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(syncDb,
             "INSERT OR REPLACE INTO [schema_reservation_columns] "
-            "([PhysicalTableName],[KeyMap]) VALUES(?,?)"))
+            "([PhysicalTableName],[KeyMap],[ClassHighWater]) VALUES(?,?,?)"))
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindText(1, physicalTableName, Statement::MakeCopy::No))
         return ERROR;
     if (BE_SQLITE_OK != stmt.BindBlob(2, buf.data(), (int) buf.size(), Statement::MakeCopy::No))
         return ERROR;
-    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReservationHelper::SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store) {
-    Statement stmt;
-    const Utf8CP sql =
-        "SELECT t.[Name], COALESCE(MAX(c.[Ordinal]), 0) "
-        "FROM [main].[ec_Table] t "
-        "JOIN [main].[ec_Column] c ON c.[TableId] = t.[Id] "
-        "WHERE t.[Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Overflow ") "
-        "  AND c.[ColumnKind] = " SQLVAL_DbColumn_Kind_SharedData " "
-        "GROUP BY t.[Name]";
-    if (BE_SQLITE_OK != stmt.Prepare(localDb, sql))
+    if (BE_SQLITE_OK != stmt.BindBlob(3, hwBuf.data(), (int) hwBuf.size(), Statement::MakeCopy::No))
         return ERROR;
-
-    DbResult rc;
-    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
-        Utf8CP tableName = stmt.GetValueText(0);
-        if (tableName == nullptr || tableName[0] == '\0') continue;
-        uint64_t maxOrd = (uint64_t) stmt.GetValueInt64(1);
-        store.GetOrCreate(tableName).SeedHighWaterOrd(maxOrd);
-    }
-    return rc == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
 }
 
 //---------------------------------------------------------------------------------------
@@ -3250,10 +3246,14 @@ SchemaReservationClassHierarchyStore const& hierarchyStore, bset<Utf8String, Com
                 targetStore = overflowStore;
             }
 
-            // Reuse an available slot or allocate a new one for each leaf.
+            // Reuse an available slot or allocate a new one for each leaf. Skip slots at or below the
+            // class high-water: already checked by this class, so not reusable by it.
             for (Utf8StringCR leafKey : leafKeys) {
+                const uint64_t classHighWater = targetStore->GetClassHighWaterOrd(ecClassKey);
                 bool reusedSlot = false;
                 for (auto const& slotPair : targetStore->GetSlots()) {
+                    if (slotPair.second.columnOrd <= classHighWater)
+                        continue;
                     if (IsSlotReusableByClass(slotPair.second, ecClassKey, hierarchyStore)) {
                         SchemaReservationColumnEntry entry;
                         entry.columnOrd = slotPair.second.columnOrd;

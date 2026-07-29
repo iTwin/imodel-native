@@ -54,10 +54,12 @@ struct SchemaReservationHelper final {
         "[KeyMap] BLOB)";
 
     //! DDL to create the column-assignment reservation table in the sync-db.
+    //! ClassHighWater persists the per-declaring-class high-water ordinal map (schema:class → ordinal).
     static constexpr Utf8CP RESERVATION_COLUMNS_TABLE_DDL =
         "CREATE TABLE IF NOT EXISTS [schema_reservation_columns] "
         "([PhysicalTableName] TEXT NOT NULL PRIMARY KEY, "
-        "[KeyMap] BLOB)";
+        "[KeyMap] BLOB, "
+        "[ClassHighWater] BLOB)";
 
     //! DDL to create the class-hierarchy reservation table in the sync-db (§3a.1b).
     static constexpr Utf8CP RESERVATION_CLASS_HIERARCHY_TABLE_DDL =
@@ -197,7 +199,6 @@ private:
 
     static BentleyStatus ReadColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore& store);
     static BentleyStatus WriteColumnTableStore(Db& syncDb, Utf8CP physicalTableName, SchemaReservationColumnTableStore const& store);
-    static BentleyStatus SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store);
     static BentleyStatus SeedColumnKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                       SchemaReservationColumnStore& colStore);
     //! Seed the key→id maps for the mapping tables (ec_Table, ec_PropertyPath, ec_PropertyMap,
