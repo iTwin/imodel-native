@@ -373,22 +373,45 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
         stmt->BindInt(11, primaryKeyOrdinal);
 
     stmt->BindInt(12, Enum::ToInt(column.GetKind()));
-    // if the column was pre-assigned a reserved id (via AddSharedColumn(DbColumnId)),
-    // bind that id directly so every briefcase inserts the same ec_Column.Id for the
-    // same physical column.  Otherwise fall back to the normal NextId() increment.
+    // Shared columns are pre-assigned a reserved id via AddSharedColumn(DbColumnId); bind it directly.
+    // System columns (ECInstanceId, ECClassId) are keyed as "tableSpace:tableName:colName" in the
+    // reservation store; use NextIdForKey in keyed mode.  All other non-shared columns must have
+    // their id pre-assigned at column-creation time by the mapper (see AllocateColumn,
+    // CreateClassIdColumn, etc.); if they arrive here without HasId() in keyed mode, fall back to
+    // NextId() which will mint a local id — this path should not be reached in a correct import.
+    auto& colSeq = m_schemaManager.GetECDb().GetImpl().GetIdFactory().Column();
     const bool hasReservedId = column.HasId();
-    stmt->BindId(13, hasReservedId ? BeInt64Id(column.GetId().GetValue())
-                                   : m_schemaManager.GetECDb().GetImpl().GetIdFactory().Column().NextId());
+    BeInt64Id colId;
+    if (hasReservedId) {
+        colId = BeInt64Id(column.GetId().GetValue());
+    } else if (colSeq.IsKeyedMode() &&
+               (column.GetKind() == DbColumn::Kind::ECInstanceId ||
+                column.GetKind() == DbColumn::Kind::ECClassId)) {
+        // System columns: key uses the semantic property name (not the physical column name which
+        // can vary, e.g. "Id" vs "ElementId" for joined tables) to match the reserve-side key.
+        Utf8CP semanticName = (column.GetKind() == DbColumn::Kind::ECInstanceId)
+            ? ECDBSYS_PROP_ECInstanceId : ECDBSYS_PROP_ECClassId;
+        Utf8String sysKey = column.GetTable().GetTableSpace().GetName() + ":" +
+                            column.GetTable().GetName() + ":" + semanticName;
+        colId = colSeq.NextIdForKey(sysKey);
+        if (!colId.IsValid()) {
+            LOG.errorv("InsertColumn: no reservation for system column key '%s'", sysKey.c_str());
+            return ERROR;
+        }
+    } else {
+        colId = colSeq.NextId();
+    }
+    stmt->BindId(13, colId);
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
     if (!hasReservedId)
         {
-        const DbColumnId colId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
-        if (!colId.IsValid())
+        const DbColumnId insertedColId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
+        if (!insertedColId.IsValid())
             return ERROR;
 
-        const_cast<DbColumn&>(column).SetId(colId);
+        const_cast<DbColumn&>(column).SetId(insertedColId);
         }
     return SUCCESS;
     }

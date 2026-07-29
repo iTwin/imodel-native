@@ -195,6 +195,59 @@ public:
 };
 
 //=======================================================================================
+//! Persisted ancestor/descendant sets for every class seen by the reservation system.
+//! This is the single source of truth for the shared-column slot-reuse test; it replaces
+//! ECClass::Is() so that the reuse decision is stable even when a class was reserved by a
+//! different briefcase and is absent from the current in-memory schema graph.
+//! Stored in sync-db table schema_reservation_class_hierarchy (§3a.1b).
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaReservationClassHierarchyStore final {
+public:
+    struct Entry {
+        bset<Utf8String, CompareIUtf8Ascii> ancestors;
+        bset<Utf8String, CompareIUtf8Ascii> descendants;
+    };
+private:
+    bmap<Utf8String, Entry, CompareIUtf8Ascii> m_entries;
+
+public:
+    //! Returns true iff classKeyB appears in the ancestor OR descendant set of classKeyA,
+    //! i.e. classKeyA and classKeyB share a root-to-leaf path and therefore a slot cannot
+    //! be shared between them.
+    bool IsAncestorOrDescendant(Utf8StringCR classKeyA, Utf8StringCR classKeyB) const {
+        auto it = m_entries.find(classKeyA);
+        if (it == m_entries.end()) return false;
+        return it->second.ancestors.find(classKeyB)   != it->second.ancestors.end()
+            || it->second.descendants.find(classKeyB) != it->second.descendants.end();
+    }
+
+    //! Record @p classKey with the given transitive @p ancestorKeys.
+    //! Also updates the descendants list of each ancestor to include @p classKey.
+    //! Idempotent: re-recording the same class is a no-op for existing entries.
+    void RecordClass(Utf8StringCR classKey,
+                     bset<Utf8String, CompareIUtf8Ascii> const& ancestorKeys) {
+        Entry& entry = m_entries[classKey];
+        for (Utf8StringCR ak : ancestorKeys) {
+            entry.ancestors.insert(ak);
+            m_entries[ak].descendants.insert(classKey);
+        }
+    }
+
+    //! Load a single entry directly (used when deserialising from the sync-db).
+    void AddRawEntry(Utf8StringCR classKey,
+                     bset<Utf8String, CompareIUtf8Ascii>&& ancestors,
+                     bset<Utf8String, CompareIUtf8Ascii>&& descendants) {
+        Entry& e = m_entries[classKey];
+        e.ancestors   = std::move(ancestors);
+        e.descendants = std::move(descendants);
+    }
+
+    bmap<Utf8String, Entry, CompareIUtf8Ascii> const& GetEntries() const { return m_entries; }
+    void Clear() { m_entries.clear(); }
+};
+
+//=======================================================================================
 //! Schema change event type
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======

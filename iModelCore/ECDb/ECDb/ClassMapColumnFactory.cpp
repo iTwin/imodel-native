@@ -408,6 +408,24 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
     if (newColumn == nullptr)
         return nullptr;
 
+    // Pre-assign reserved ec_Column.Id when SchemaSync keyed mode is active so that InsertColumn
+    // binds the same id on every briefcase (Gap A non-shared data columns, Gap C nav FK leaves).
+    // Key matches the one the reserve walk produces: schema:class:leafAccessString.
+    {
+        auto& colSeq = ctx.GetECDb().GetImpl().GetIdFactory().Column();
+        if (colSeq.IsKeyedMode()) {
+            // Declaring class = class that owns the root property (same as reserve-walk's ownerClass).
+            const size_t dotPos = accessString.find('.');
+            Utf8String topName = (dotPos != Utf8String::npos) ? Utf8String(accessString.substr(0, dotPos)) : accessString;
+            ECN::ECPropertyCP topProp = m_classMap.GetClass().GetPropertyP(topName.c_str());
+            ECN::ECClassCR ownerClass = (topProp != nullptr) ? topProp->GetClass() : m_classMap.GetClass();
+            Utf8String colKey = SchemaWriter::DerivePropertyColumnKey(ownerClass, accessString);
+            BeInt64Id reservedId = colSeq.NextIdForKey(colKey);
+            if (reservedId.IsValid())
+                newColumn->SetId(DbColumnId(reservedId.GetValue()));
+        }
+    }
+
     if (effectiveNotNullConstraint)
         newColumn->GetConstraintsR().SetNotNullConstraint();
 

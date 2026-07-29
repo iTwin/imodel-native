@@ -45,6 +45,7 @@ struct SchemaSyncHelper final {
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaReservationHelper final {
+    friend struct SchemaSync; //!< SchemaSync::ReserveSchemaImport calls private helpers directly.
     //! DDL to create the id-reservation table in the sync-db.
     static constexpr Utf8CP RESERVATION_TABLE_DDL =
         "CREATE TABLE IF NOT EXISTS [schema_reservation_ids] "
@@ -57,6 +58,13 @@ struct SchemaReservationHelper final {
         "CREATE TABLE IF NOT EXISTS [schema_reservation_columns] "
         "([PhysicalTableName] TEXT NOT NULL PRIMARY KEY, "
         "[KeyMap] BLOB)";
+
+    //! DDL to create the class-hierarchy reservation table in the sync-db (§3a.1b).
+    static constexpr Utf8CP RESERVATION_CLASS_HIERARCHY_TABLE_DDL =
+        "CREATE TABLE IF NOT EXISTS [schema_reservation_class_hierarchy] "
+        "([ClassKey] TEXT NOT NULL PRIMARY KEY, "
+        "[Ancestors] BLOB, "
+        "[Descendants] BLOB)";
 
     // Table-name constants for all reserved EC metadata and mapping tables.
     static constexpr Utf8CP RES_TABLE_SCHEMA         = "ec_Schema";
@@ -89,17 +97,35 @@ struct SchemaReservationHelper final {
     static void WalkSchemaForReservation(ECN::ECSchemaCR schema, SchemaReservationStore& store,
                                          bset<Utf8String, CompareIUtf8Ascii>& visited);
 
+    //! Populate the class-hierarchy store for every class in @p schema (and its reference closure).
+    //! Must run AFTER WalkSchemaForReservation (same dependency order) so that ancestor classes from
+    //! referenced schemas are already in the store before derived classes are processed.
+    static void PopulateClassHierarchyStore(ECN::ECSchemaCR schema,
+                                            SchemaReservationClassHierarchyStore& hierarchyStore,
+                                            bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+    //! Load / write the class-hierarchy store from/to the sync-db.
+    static BentleyStatus LoadClassHierarchyStoreFromSyncDb(Db& syncDb,
+                                                           SchemaReservationClassHierarchyStore& store);
+    static BentleyStatus WriteClassHierarchyStoreToSyncDb(Db& syncDb,
+                                                          SchemaReservationClassHierarchyStore const& store);
+    //! Seed the class-hierarchy store from the local db at Init time.
+    //! Derives transitive ancestor/descendant sets from ec_ClassHasBaseClasses.
+    static BentleyStatus SeedClassHierarchyStoreFromLocalDb(ECDbCR localDb,
+                                                            SchemaReservationClassHierarchyStore& store);
+
     //! Seed the column-assignment store and high-water ordinals from the local db. Runs once at Init.
     static BentleyStatus SeedColumnStoreFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                     SchemaReservationColumnStore& colStore);
     static BentleyStatus LoadColumnStoreFromSyncDb(Db& syncDb, SchemaReservationColumnStore& store);
     static BentleyStatus WriteColumnStoreToSyncDb(Db& syncDb, SchemaReservationColumnStore const& store);
     //! Allocate shared-column ordinals for new properties in @p schema. Reuses slots
-    //! when no occupant is the same class, an ancestor, or a descendant of the property owner.
+    //! when no occupant shares a root-to-leaf path with the property owner, using the persisted
+    //! @p hierarchyStore as the single source of truth (replaces ECClass::Is(), §3a.1b).
     static void WalkSchemaForColumnReservation(ECN::ECSchemaCR schema,
                                                SchemaReservationStore& idStore,
                                                SchemaReservationColumnStore& colStore,
-                                               bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex,
+                                               SchemaReservationClassHierarchyStore const& hierarchyStore,
                                                bset<Utf8String, CompareIUtf8Ascii>& visited);
 
     //! Populate @p index with classKey → ECClass for @p schema and its full reference closure.
@@ -117,6 +143,19 @@ struct SchemaReservationHelper final {
                                                 SchemaReservationStore& idStore,
                                                 SchemaReservationColumnStore const& colStore,
                                                 bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+    //! Reserve ec_Table / ec_Column / ec_PropertyPath / ec_PropertyMap ids for every
+    //! link-table relationship class in @p schema (Gap D). Runs after the entity walks.
+    static void WalkSchemaForRelationshipReservation(ECN::ECSchemaCR schema,
+                                                     SchemaReservationStore& idStore,
+                                                     bset<Utf8String, CompareIUtf8Ascii>& visited);
+
+    //! Reserve ec_Index / ec_IndexColumn ids by enumerating every index the import will create
+    //! (ECClassId auto-indexes, nav-FK indexes, link-table indexes, user DbIndex CA indexes).
+    //! Runs after all table/column reservations so referenced ids already exist (Gap F).
+    static void WalkSchemaForIndexReservation(ECN::ECSchemaCR schema,
+                                              SchemaReservationStore& idStore,
+                                              bset<Utf8String, CompareIUtf8Ascii>& visited);
 
 private:
     //! Return true if @p ecClass participates in table mapping (skips relationship, custom-attribute,
@@ -161,13 +200,26 @@ private:
     static BentleyStatus SeedLastUsedColumnOrdsFromLocalDb(ECDbCR localDb, SchemaReservationColumnStore& store);
     static BentleyStatus SeedColumnKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore,
                                                       SchemaReservationColumnStore& colStore);
+    //! Seed the key→id maps for the mapping tables (ec_Table, ec_PropertyPath, ec_PropertyMap,
+    //! ec_Index, ec_IndexColumn) and for column kinds not covered by SeedColumnKeyMapsFromLocalDb
+    //! (system columns ECInstanceId/ECClassId, nav-FK columns, link-table system columns).
+    //! Called from SeedReservationStoreFromLocalDb after the schema-graph walk.
+    static BentleyStatus SeedMappingTableKeyMapsFromLocalDb(ECDbCR localDb, SchemaReservationStore& idStore);
 
-    //! Return true if @p slot has no occupant that is the same, an ancestor, or a descendant of @p ecClass.
-    static bool IsSlotReusableByClass(SchemaReservationColumnSlot const& slot, ECN::ECClassCR ecClass,
-                                      bmap<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> const& classIndex);
+    //! Return true if @p slot has no occupant that is the same, an ancestor, or a descendant of @p classKey.
+    //! Uses the persisted @p hierarchyStore so the test is correct even when occupants were imported by
+    //! a different briefcase and are absent from the current in-memory schema graph (§3a.1b).
+    static bool IsSlotReusableByClass(SchemaReservationColumnSlot const& slot,
+                                      Utf8StringCR classKey,
+                                      SchemaReservationClassHierarchyStore const& hierarchyStore);
 
     //! Return the first ancestor with ClassMap CA MapStrategy=TablePerHierarchy, or nullptr.
     static ECN::ECClassCP FindTphAncestor(ECN::ECClassCR ecClass);
+    //! Return the class that is the root of a joined-table sub-hierarchy for @p ecClass, or nullptr
+    //! if @p ecClass is not in a joined-table sub-hierarchy. A class is a joined-table root when
+    //! one of its DIRECT bases has the JoinedTablePerDirectSubclass CA; subclasses of that root
+    //! also return the root class (they share its table). Mirrors ClassMappingInfo joined-table logic.
+    static ECN::ECClassCP FindJoinedTableRoot(ECN::ECClassCR ecClass);
     //! Return the ShareColumnsMode that @p ecClass propagates to its subclasses.
     //! Mirrors the schema-metadata part of TablePerHierarchyInfo::DetermineSharedColumnsInfo.
     static TablePerHierarchyInfo::ShareColumnsMode ComputePropagatedShareMode(
@@ -177,6 +229,24 @@ private:
     static bool ClassUsesSharedColumns(ECN::ECClassCR ecClass, Nullable<uint32_t>& maxBeforeOverflow);
     //! Return true if @p prop has an explicit ColumnName CA (no reservation needed).
     static bool PropertyHasExplicitColumnName(ECN::ECPropertyCR prop);
+    //! Return true if @p relClass maps as a link table (mirrors TryDetermineRelationshipMappingType
+    //! but works from the in-memory schema graph without a live db query).
+    static bool IsLinkTableRelationship(ECN::ECRelationshipClassCR relClass);
+    //! Reserve ec_Column ids (id-only, no slot) for all non-shared property leaves of @p ecClass.
+    //! Covers named/dedicated data columns (Gap A) and navigation FK leaves (Gap C).
+    static void ReserveNonSharedColumnIds(SchemaReservationStore& idStore, ECN::ECClassCR ecClass);
+    //! Reserve ec_Column ids for system columns (ECInstanceId, ECClassId) of a physical table.
+    static void ReserveSystemColumnIds(SchemaReservationStore& idStore,
+                                       Utf8StringCR tableSpace, Utf8StringCR tableName,
+                                       bool hasClassIdColumn);
+    //! For every "tableSpace:tableName" entry already in @p store.ecTable, reserve
+    //! system column ids (ECInstanceId + ECClassId).  Must be called after entity tables
+    //! are populated but before the relationship walk adds link-table entries.
+    static void ReserveEntityTableSystemColumnIds(SchemaReservationStore& idStore);
+    //! Reserve a single index and its columns. Key: physicalTableName:indexName[:ordinal].
+    static void ReserveIndexAndColumns(SchemaReservationStore& idStore,
+                                       Utf8StringCR physicalTableName, Utf8StringCR indexName,
+                                       int columnCount);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

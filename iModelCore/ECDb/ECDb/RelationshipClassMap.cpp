@@ -1534,8 +1534,20 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
                    GetClass().GetFullName(), table.GetName().c_str());
         return nullptr;
         }
-        
+
     column = table.AddColumn(Utf8String(columnName), DbColumn::Type::Integer, DbColumn::Kind::Default, persType);
+
+    // Pre-assign reserved ec_Column.Id for link-table system columns when in keyed mode (Gap D).
+    // Key matches WalkSchemaForRelationshipReservation: tableSpace:tableName:columnName.
+    if (column != nullptr && persType == PersistenceType::Physical) {
+        auto& colSeq = GetECDb().GetImpl().GetIdFactory().Column();
+        if (colSeq.IsKeyedMode()) {
+            Utf8String sysKey = table.GetTableSpace().GetName() + ":" + table.GetName() + ":" + columnName;
+            BeInt64Id reservedId = colSeq.NextIdForKey(sysKey);
+            if (reservedId.IsValid())
+                column->SetId(DbColumnId(reservedId.GetValue()));
+        }
+    }
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();

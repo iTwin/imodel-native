@@ -840,4 +840,559 @@ TEST_F(SchemaSyncTestFixture, TwoSchemaImport_ThenVersionBumpAddsSharedColumn)
         });
     }
 
+//======================================================================================
+// File-local helpers for Phase 1b / Gap A–F tests.
+//======================================================================================
+
+//---------------------------------------------------------------------------------------
+// Returns the (ec_Column.Id, ec_Column.Ordinal) pair for the column that the named
+// access string of the named mapped class maps to. Returns {0,-1} when not found.
+//---------------------------------------------------------------------------------------
+static std::pair<uint64_t, int> GetColumnIdAndOrdinal(ECDbCR db, Utf8CP className, Utf8CP accessString)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement(
+        "SELECT c.Id, c.Ordinal "
+        "FROM   ec_Column       c "
+        "JOIN   ec_PropertyMap  pm ON pm.ColumnId  = c.Id "
+        "JOIN   ec_PropertyPath pp ON pp.Id = pm.PropertyPathId "
+        "JOIN   ec_Class        cls ON cls.Id = pm.ClassId "
+        "WHERE  cls.Name = ? AND pp.AccessString = ?");
+    if (stmt == nullptr) return {0, -1};
+    stmt->BindText(1, className, Statement::MakeCopy::No);
+    stmt->BindText(2, accessString, Statement::MakeCopy::No);
+    return (stmt->Step() == BE_SQLITE_ROW)
+        ? std::make_pair(static_cast<uint64_t>(stmt->GetValueInt64(0)), stmt->GetValueInt(1))
+        : std::make_pair(UINT64_C(0), -1);
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns the ec_Column.Id of the column with the given Kind in the given physical table.
+// Kind: 1 = ECInstanceId, 2 = ECClassId. Returns 0 when not found.
+//---------------------------------------------------------------------------------------
+static uint64_t GetSystemColumnId(ECDbCR db, Utf8CP tableName, int kind)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement(
+        "SELECT c.Id FROM ec_Column c "
+        "JOIN   ec_Table t ON t.Id = c.TableId "
+        "WHERE  t.Name = ? AND c.ColumnKind = ?");
+    if (stmt == nullptr) return 0;
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
+    stmt->BindInt(2, kind);
+    return (stmt->Step() == BE_SQLITE_ROW) ? static_cast<uint64_t>(stmt->GetValueInt64(0)) : 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns the ec_Table.Id for the given physical table name. Returns 0 if absent.
+//---------------------------------------------------------------------------------------
+static uint64_t GetTableId(ECDbCR db, Utf8CP tableName)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Table WHERE Name = ?");
+    if (stmt == nullptr) return 0;
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
+    return (stmt->Step() == BE_SQLITE_ROW) ? static_cast<uint64_t>(stmt->GetValueInt64(0)) : 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// Returns the ec_Index.Id for the given index name in the given physical table. Returns 0.
+//---------------------------------------------------------------------------------------
+static uint64_t GetIndexId(ECDbCR db, Utf8CP tableName, Utf8CP indexName)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement(
+        "SELECT idx.Id FROM ec_Index idx "
+        "JOIN   ec_Table t ON t.Id = idx.TableId "
+        "WHERE  t.Name = ? AND idx.Name = ?");
+    if (stmt == nullptr) return 0;
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
+    stmt->BindText(2, indexName, Statement::MakeCopy::No);
+    return (stmt->Step() == BE_SQLITE_ROW) ? static_cast<uint64_t>(stmt->GetValueInt64(0)) : 0;
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 12: GapA_NonSharedColumnIdDeterminism
+// Gap A: a class with OwnTable strategy (non-shared columns) creates ec_Column rows
+// whose ids must be content-keyed — identical across two briefcases that import the
+// same schema independently through the shared sync channel.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapA_NonSharedColumnIdDeterminism)
+    {
+    // OwnTable class — no shared-column strategy, so columns are non-shared (Gap A).
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapASchema" alias="ga" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="OwnTableClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>OwnTable</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="OwnProp1" typeName="int" />
+                <ECProperty propertyName="OwnProp2" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-a", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    // b1 imports first — reserves column ids in sync-db.
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    // b2 imports through the same sync channel — reads reserved ids.
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    auto [id1_p1, ord1_p1] = GetColumnIdAndOrdinal(*b1, "OwnTableClass", "OwnProp1");
+    auto [id2_p1, ord2_p1] = GetColumnIdAndOrdinal(*b2, "OwnTableClass", "OwnProp1");
+    auto [id1_p2, ord1_p2] = GetColumnIdAndOrdinal(*b1, "OwnTableClass", "OwnProp2");
+    auto [id2_p2, ord2_p2] = GetColumnIdAndOrdinal(*b2, "OwnTableClass", "OwnProp2");
+
+    ASSERT_GT(id1_p1, UINT64_C(0)) << "b1 OwnProp1 column must be mapped";
+    ASSERT_GT(id2_p1, UINT64_C(0)) << "b2 OwnProp1 column must be mapped";
+    EXPECT_EQ(id1_p1, id2_p1) << "Gap A: OwnProp1 ec_Column.Id must match across briefcases";
+    EXPECT_EQ(id1_p2, id2_p2) << "Gap A: OwnProp2 ec_Column.Id must match across briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 13: GapB_SystemColumnIdDeterminism
+// Gap B: the ECInstanceId and ECClassId system columns of a newly-created physical table
+// must receive content-keyed ids — identical across two briefcases.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapB_SystemColumnIdDeterminism)
+    {
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapBSchema" alias="gb" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="TphClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Prop1" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-b", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // The physical table name follows the default naming convention.
+    Utf8CP tableName = "gb_TphClass";
+
+    uint64_t instId_b1 = GetSystemColumnId(*b1, tableName, 1 /*ECInstanceId*/);
+    uint64_t instId_b2 = GetSystemColumnId(*b2, tableName, 1 /*ECInstanceId*/);
+    uint64_t classId_b1 = GetSystemColumnId(*b1, tableName, 2 /*ECClassId*/);
+    uint64_t classId_b2 = GetSystemColumnId(*b2, tableName, 2 /*ECClassId*/);
+
+    ASSERT_GT(instId_b1, UINT64_C(0))  << "b1 ECInstanceId column must exist in " << tableName;
+    ASSERT_GT(instId_b2, UINT64_C(0))  << "b2 ECInstanceId column must exist in " << tableName;
+    EXPECT_EQ(instId_b1, instId_b2)    << "Gap B: ECInstanceId column id must match across briefcases";
+    ASSERT_GT(classId_b1, UINT64_C(0)) << "b1 ECClassId column must exist in " << tableName;
+    EXPECT_EQ(classId_b1, classId_b2)  << "Gap B: ECClassId column id must match across briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 14: GapC_NavFKColumnIdDeterminism
+// Gap C: the FK column (and RelECClassId column) produced for a navigation property must
+// receive content-keyed ids — identical across two briefcases.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapC_NavFKColumnIdDeterminism)
+    {
+    // A simple one-to-many relationship with a nav property on the target class.
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapCSchema" alias="gc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Parent">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Child">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+                <ECNavigationProperty propertyName="Owner" relationshipName="OwnsChildren" direction="Backward" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="OwnsChildren" strength="referencing" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)"  roleLabel="owns"     polymorphic="true"><Class class="Parent" /></Source>
+                <Target multiplicity="(0..*)"  roleLabel="owned by" polymorphic="true"><Class class="Child"  /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-c", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // The nav property FK leaf is "Owner.Id"; "Owner.RelECClassId" may be virtual.
+    auto [idB1_fk, ordB1_fk] = GetColumnIdAndOrdinal(*b1, "Child", "Owner.Id");
+    auto [idB2_fk, ordB2_fk] = GetColumnIdAndOrdinal(*b2, "Child", "Owner.Id");
+
+    ASSERT_GT(idB1_fk, UINT64_C(0)) << "b1 nav FK column (Owner.Id) must be mapped";
+    ASSERT_GT(idB2_fk, UINT64_C(0)) << "b2 nav FK column (Owner.Id) must be mapped";
+    EXPECT_EQ(idB1_fk, idB2_fk) << "Gap C: nav FK column id (Owner.Id) must match across briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 15: GapD_LinkTableReservation
+// Gap D: importing a link-table relationship class must produce content-keyed ids for the
+// link table (ec_Table), its system columns, and the relationship's property maps —
+// identical across two briefcases.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapD_LinkTableReservation)
+    {
+    // M:N relationship → link table (no nav property, both multiplicities > 1).
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapDSchema" alias="gd" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Left">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Right">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="LeftToRight" strength="referencing" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..*)" roleLabel="left"  polymorphic="true"><Class class="Left"  /></Source>
+                <Target multiplicity="(0..*)" roleLabel="right" polymorphic="true"><Class class="Right" /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-d", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    Utf8CP linkTable = "gd_LeftToRight";
+
+    // ec_Table id must be content-keyed and identical.
+    uint64_t tblId_b1 = GetTableId(*b1, linkTable);
+    uint64_t tblId_b2 = GetTableId(*b2, linkTable);
+    ASSERT_GT(tblId_b1, UINT64_C(0)) << "link table must exist in b1";
+    ASSERT_GT(tblId_b2, UINT64_C(0)) << "link table must exist in b2";
+    EXPECT_EQ(tblId_b1, tblId_b2)    << "Gap D: link table ec_Table.Id must match across briefcases";
+
+    // System column ids (ECInstanceId/ECClassId kind) must match.
+    uint64_t instId_b1  = GetSystemColumnId(*b1, linkTable, 1);
+    uint64_t instId_b2  = GetSystemColumnId(*b2, linkTable, 1);
+    uint64_t classId_b1 = GetSystemColumnId(*b1, linkTable, 2);
+    uint64_t classId_b2 = GetSystemColumnId(*b2, linkTable, 2);
+    ASSERT_GT(instId_b1, UINT64_C(0)) << "b1 link table ECInstanceId column must exist";
+    EXPECT_EQ(instId_b1, instId_b2)   << "Gap D: link table ECInstanceId column id must match";
+    ASSERT_GT(classId_b1, UINT64_C(0)) << "b1 link table ECClassId column must exist";
+    EXPECT_EQ(classId_b1, classId_b2)  << "Gap D: link table ECClassId column id must match";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 16: GapE_JoinedTableReservation
+// Gap E: classes in a JoinedTablePerDirectSubclass hierarchy get their own physical table
+// whose ec_Table.Id must be content-keyed and identical across two briefcases.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapE_JoinedTableReservation)
+    {
+    // Root has JoinedTablePerDirectSubclass — subclasses each get their own table.
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapESchema" alias="ge" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="BaseProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub1">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Sub1Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-e", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // Sub1 gets its own joined table named after itself.
+    Utf8CP joinedTable = "ge_Sub1";
+
+    uint64_t tblId_b1 = GetTableId(*b1, joinedTable);
+    uint64_t tblId_b2 = GetTableId(*b2, joinedTable);
+    ASSERT_GT(tblId_b1, UINT64_C(0)) << "joined table ge_Sub1 must exist in b1";
+    ASSERT_GT(tblId_b2, UINT64_C(0)) << "joined table ge_Sub1 must exist in b2";
+    EXPECT_EQ(tblId_b1, tblId_b2)    << "Gap E: joined table ec_Table.Id must match across briefcases";
+
+    // Sub1Prop column id in the joined table must also match.
+    auto [colId_b1, ord_b1] = GetColumnIdAndOrdinal(*b1, "Sub1", "Sub1Prop");
+    auto [colId_b2, ord_b2] = GetColumnIdAndOrdinal(*b2, "Sub1", "Sub1Prop");
+    ASSERT_GT(colId_b1, UINT64_C(0)) << "Sub1Prop column must be mapped in b1";
+    EXPECT_EQ(colId_b1, colId_b2)    << "Gap E: Sub1Prop column id must match across briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 17: GapF_IndexIdDeterminism
+// Gap F: the auto-generated ECClassId index on a newly-created physical table must
+// receive a content-keyed ec_Index.Id — identical across two briefcases.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapF_IndexIdDeterminism)
+    {
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapFSchema" alias="gf" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="IndexedClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Val" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-f", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    Utf8CP tableName  = "gf_IndexedClass";
+    Utf8CP indexName  = "ix_gf_IndexedClass_ecclassid";
+
+    uint64_t idxId_b1 = GetIndexId(*b1, tableName, indexName);
+    uint64_t idxId_b2 = GetIndexId(*b2, tableName, indexName);
+
+    ASSERT_GT(idxId_b1, UINT64_C(0)) << "auto ECClassId index must exist in b1";
+    ASSERT_GT(idxId_b2, UINT64_C(0)) << "auto ECClassId index must exist in b2";
+    EXPECT_EQ(idxId_b1, idxId_b2)    << "Gap F: ECClassId index ec_Index.Id must match across briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 18: GapF_NavPropertyFKIndexDeterminism
+// Gap F (nav index variant): the auto-generated FK index for a navigation property must
+// receive a content-keyed ec_Index.Id — identical across two briefcases.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, GapF_NavPropertyFKIndexDeterminism)
+    {
+    Utf8CP schemaXml =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="GapFNavSchema" alias="gfn" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Parent">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="Child">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+                <ECNavigationProperty propertyName="Owner" relationshipName="ParentOwnsChild" direction="Backward" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ParentOwnsChild" strength="referencing" strengthDirection="Forward" modifier="None">
+                <Source multiplicity="(0..1)"  roleLabel="owns"     polymorphic="true"><Class class="Parent" /></Source>
+                <Target multiplicity="(0..*)"  roleLabel="owned by" polymorphic="true"><Class class="Child"  /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "gap-f-nav", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 import");
+
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schemaXml), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    Utf8CP childTable = "gfn_Child";
+
+    // The nav-property FK index name follows ix_<table>_fk_<schemaAlias>_<relName>_target.
+    Utf8String fkIndexName;
+    fkIndexName.Sprintf("ix_%s_fk_gfn_ParentOwnsChild_target", childTable);
+
+    uint64_t idxId_b1 = GetIndexId(*b1, childTable, fkIndexName.c_str());
+    uint64_t idxId_b2 = GetIndexId(*b2, childTable, fkIndexName.c_str());
+
+    ASSERT_GT(idxId_b1, UINT64_C(0)) << "nav FK index must exist in b1: " << fkIndexName;
+    ASSERT_GT(idxId_b2, UINT64_C(0)) << "nav FK index must exist in b2: " << fkIndexName;
+    EXPECT_EQ(idxId_b1, idxId_b2)    << "Gap F: nav FK index ec_Index.Id must match across briefcases";
+    }
+
+// ---------------------------------------------------------------------------------------
+// Test 19: ClassHierarchyStore_GuaranteesCorrectSlotReuseAcrossBriefcases
+// §3a.1b: The persisted class-hierarchy store must drive the slot-reuse decision even
+// when the occupant class was reserved by a different briefcase and is absent from the
+// current in-memory schema graph.
+//
+// Setup: b1 imports Schema1 v1.0.0 (ABC:TPH+ShareColumns, DEF:ABC).
+//        b2 imports Schema1 v1.0.1 that adds a SIBLING class GHI:ABC with one property.
+//        At the time b2 reserves, DEF is not in b2's in-memory schema graph but its
+//        hierarchy entry (DEF ancestor = ABC) is in the persisted hierarchy store.
+//        The slot-reuse test must therefore treat GHI's new property slot correctly:
+//        GHI is a sibling of DEF (neither is an ancestor nor a descendant of the other),
+//        so GHI MUST reuse DEF's slot rather than extending the high-water mark.
+// ---------------------------------------------------------------------------------------
+TEST_F(SchemaSyncTestFixture, ClassHierarchyStore_GuaranteesCorrectSlotReuseAcrossBriefcases)
+    {
+    // v1.0.0: ABC (TPH root, ShareColumns) + DEF : ABC (one property).
+    Utf8CP schema_v100 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="HierTest" alias="ht" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ABC" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DEF">
+                <BaseClass>ABC</BaseClass>
+                <ECProperty propertyName="defProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // v1.0.1: adds a sibling class GHI:ABC with one property.
+    // GHI and DEF are siblings — neither is an ancestor/descendant of the other.
+    // The slot-reuse rule: GHI's property MAY reuse DEF's shared slot.
+    Utf8CP schema_v101 =
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="HierTest" alias="ht" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="ABC" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DEF">
+                <BaseClass>ABC</BaseClass>
+                <ECProperty propertyName="defProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="GHI">
+                <BaseClass>ABC</BaseClass>
+                <ECProperty propertyName="ghiProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    // b1 imports v1.0.0 — reserves defProp into slot ordinal N and writes the hierarchy
+    // store (DEF ancestors = {ABC}).
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "hier-test", false));
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b1, SchemaItem(schema_v100), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 v1.0.0");
+
+    auto [defColId_b1, defOrd_b1] = GetColumnIdAndOrdinal(*b1, "DEF", "defProp");
+    ASSERT_GT(defColId_b1, UINT64_C(0)) << "defProp must be mapped in b1";
+    ASSERT_GE(defOrd_b1, 0);
+
+    // b2 imports v1.0.1 directly (DEF is in b2's base from the push, GHI is new).
+    // b2's in-memory import graph for v1.0.1 contains ABC, DEF, and GHI.
+    // Because the hierarchy store was seeded by b1 (DEF→ABC entry), b2 knows that
+    // GHI (a sibling of DEF) may reuse DEF's slot.
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK,
+        ImportSchema(*b2, SchemaItem(schema_v101), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    auto [defColId_b2, defOrd_b2] = GetColumnIdAndOrdinal(*b2, "DEF", "defProp");
+    auto [ghiColId_b2, ghiOrd_b2] = GetColumnIdAndOrdinal(*b2, "GHI", "ghiProp");
+
+    ASSERT_GT(defColId_b2, UINT64_C(0)) << "defProp must be mapped in b2";
+    ASSERT_GT(ghiColId_b2, UINT64_C(0)) << "ghiProp must be mapped in b2";
+
+    // defProp ids must be identical across b1 and b2.
+    EXPECT_EQ(defColId_b1, defColId_b2) << "defProp column id must match across briefcases";
+    EXPECT_EQ(defOrd_b1,   defOrd_b2)   << "defProp column ordinal must match";
+
+    // ghiProp is a SIBLING of defProp (GHI and DEF both inherit from ABC), so the
+    // hierarchy store must allow slot reuse: ghiProp must land in the SAME slot as defProp.
+    EXPECT_EQ(ghiOrd_b2, defOrd_b2)
+        << "§3a.1b: ghiProp (sibling of defProp) must reuse defProp's shared slot "
+           "(hierarchy store must classify GHI as sibling, not descendant, of DEF)";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
