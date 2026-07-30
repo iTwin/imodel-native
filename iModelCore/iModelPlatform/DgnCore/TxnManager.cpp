@@ -1937,8 +1937,8 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
             if (PullMergeConf::Load(m_dgndb).InProgress())
                 m_dgndb.SaveChanges();
 
-            // The reverse took the ec_Feature rows with it, so drop the restrictions we just computed.
-            m_dgndb.RevalidateFeatures();
+            if (const auto revalidateStatus = m_dgndb.RevalidateFeatures(); BE_SQLITE_OK != revalidateStatus)
+                LOG.errorv("MergeDataChanges: after backing out the merge, RevalidateFeatures still reports %s. A feature unrelated to this changeset is restricting this runtime.", BeSQLiteLib::GetErrorName(revalidateStatus));
         }
     }
 
@@ -2037,9 +2037,14 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset, bool noUpdateLoop)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
     SaveParentChangeset(changeset.GetParentId(), changeset.GetChangesetIndex() - 1);
-
-    // Reversing can remove ec_Feature rows that the changeset had introduced, so refresh the cached restrictions.
-    m_dgndb.RevalidateFeatures();
+    
+    const auto featureStatus = m_dgndb.RevalidateFeatures();
+    if (BE_SQLITE_ERROR == featureStatus) {
+        m_dgndb.AbandonChanges();
+        m_dgndb.ThrowException("Reversing this changeset would leave an ec_Feature this runtime cannot honor at all", static_cast<int>(ChangesetStatus::UnknownFeatureAfterMerge));
+    }
+    if (BE_SQLITE_READONLY == featureStatus)
+        LOG.warningv("Reversed changeset [%s] still leaves an unknown feature restricting this runtime to read-only. This connection remains read-write in memory; re-opening this file will be read-only.", changeset.GetChangesetId().c_str());
 
     result = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != result)
@@ -2175,9 +2180,8 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             m_dgndb.ThrowException("failed to save reverted changeset", (int)saveResult);
         }
 
-        // Reverting or replaying a changeset can add or remove ec_Feature rows.
-        // Feature restrictions must be recomputed against what is now in the file.
-        m_dgndb.RevalidateFeatures();
+        if (const auto featureStatus = m_dgndb.RevalidateFeatures(); BE_SQLITE_OK != featureStatus)
+            LOG.errorv("After reverting changeset [%d], RevalidateFeatures reports %s. This connection remains open as-is; re-opening this file may behave differently.", changesetIndex, BeSQLiteLib::GetErrorName(featureStatus));
 
         timer.Stop();
         LOG.infov("RevertTimelineChanges: reverted changeset [%d] in %.3fs, size=%" PRIuPTR,

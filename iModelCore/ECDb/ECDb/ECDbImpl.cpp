@@ -295,7 +295,7 @@ DbResult ECDb::Impl::ValidateECFeatures() const
     if (!m_featuresBlockingSchemaImport.empty())
         {
         m_issueReporter.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+            IssueType::ECDbIssue, ECDbIssueId::ECDb_0746,
             "ECDb file uses unknown features %s. The file will restrict all schema imports. However, it can still be written to.",
             BeStringUtilities::Join(m_featuresBlockingSchemaImport, ", ", true).c_str());
         }
