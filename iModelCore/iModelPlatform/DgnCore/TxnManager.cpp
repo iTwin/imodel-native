@@ -2175,6 +2175,10 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             m_dgndb.ThrowException("failed to save reverted changeset", (int)saveResult);
         }
 
+        // Reverting or replaying a changeset can add or remove ec_Feature rows.
+        // Feature restrictions must be recomputed against what is now in the file.
+        m_dgndb.RevalidateFeatures();
+
         timer.Stop();
         LOG.infov("RevertTimelineChanges: reverted changeset [%d] in %.3fs, size=%" PRIuPTR,
             changesetIndex, timer.GetElapsedSeconds(), changesetProp->GetUncompressedSize());

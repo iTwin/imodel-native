@@ -2783,6 +2783,45 @@ TEST_F(RevisionTestFixture, ReversingChangesetRemovesFeatureRestriction)
     }
 
 //---------------------------------------------------------------------------------------
+// Reverting a changeset that had introduced a feature row must remove the row and lift the
+// restriction.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, RevertTimelineChangesRemovesFeatureRestriction)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"RevertTimelineFeatureRestriction.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    // Introduce a feature locally and capture it as a revertible changeset of its own
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ExecuteSql(
+        "INSERT INTO ec_Feature(Name, Description, Compat, Fallback) "
+        "VALUES ('revert-timeline-nocs-feature','Introduced by a changeset being reverted','NoChangesetGeneration','NoChangesetGeneration')"));
+    m_db->SaveChanges("Declared a new feature");
+
+    ChangesetPropsPtr featureRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(featureRevision.IsValid());
+
+    // The feature is now live and restricting this connection.
+    ASSERT_EQ(BE_SQLITE_OK, m_db->RevalidateFeatures());
+    ASSERT_EQ(1, m_db->GetFeaturesBlockingChangesetGeneration().size());
+    EXPECT_STREQ("revert-timeline-nocs-feature", m_db->GetFeaturesBlockingChangesetGeneration().front().c_str());
+
+    // Revert the changeset that introduced the feature 
+    m_db->Txns().RevertTimelineChanges({ featureRevision }, false);
+
+    ASSERT_FALSE(FeatureRowExists("revert-timeline-nocs-feature")) << "RevertTimelineChanges must remove the feature row";
+    EXPECT_TRUE(m_db->GetFeaturesBlockingChangesetGeneration().empty()) << "RevertTimelineChanges must lift the restriction it introduced";
+
+    // The briefcase must be fully usable again.
+    InsertFloor(1, 1);
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Local change after revert"));
+    EXPECT_TRUE(CreateRevision("-cs3").IsValid()) << "Changeset generation must work again after the restriction is lifted";
+    }
+
+//---------------------------------------------------------------------------------------
 // A pulled changeset carrying only a Warn feature must not restrict anything.
 // @bsimethod
 //---------------------------------------------------------------------------------------
