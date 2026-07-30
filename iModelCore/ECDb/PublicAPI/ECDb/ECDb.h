@@ -364,6 +364,14 @@ public:
     //!         BE_SQLITE_ERROR if it must not be used by this runtime at all.
     ECDB_EXPORT DbResult RevalidateFeatures() const;
 
+    //! Reads the ec_Feature table WITHOUT opening it as an ECDb, and returns the names of the
+    //! features that would cause the file to be refused entirely.
+    //! @param[out] blockingFeatureNames Names of the Refuse-level features found in ec_Feature.
+    //! @param[in] fileName Path to the file.
+    //! @return SUCCESS if the file could be opened read-only as a plain SQLite db and inspected.
+    //!         ERROR if the file could not be opened at all.
+    ECDB_EXPORT static BentleyStatus TryGetBlockingFeatures(std::vector<Utf8String>& blockingFeatureNames, BeFileNameCR fileName);
+
     //! @name EC Changes
     //! @{
 

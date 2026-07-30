@@ -267,6 +267,43 @@ DbResult ECDb::RevalidateFeatures() const { return m_pimpl->ValidateECFeatures()
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECDb::TryGetBlockingFeatures(std::vector<Utf8String>& blockingFeatureNames, BeFileNameCR fileName)
+    {
+    blockingFeatureNames.clear();
+
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::Readonly)))
+        return ERROR;
+
+    if (!db.TableExists(TABLE_Feature))
+        return SUCCESS;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT Name, Compat, Fallback FROM main." TABLE_Feature))
+        return SUCCESS;
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP name = stmt.GetValueText(0);
+        Utf8CP compat = stmt.GetValueText(1);
+        Utf8CP fallback = stmt.GetValueText(2);
+
+        if (Utf8String::IsNullOrEmpty(name) || Utf8String::IsNullOrEmpty(compat) || Utf8String::IsNullOrEmpty(fallback))
+            continue;
+
+        if (FeatureManager::ResolveEffectiveCompat(compat, fallback) != Compat::Refuse)
+            continue;
+
+        blockingFeatureNames.push_back(name);
+        }
+
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 bool ECDb::IsChangeCacheAttached() const { return m_pimpl->IsChangeCacheAttached(); }
 
 //--------------------------------------------------------------------------------------

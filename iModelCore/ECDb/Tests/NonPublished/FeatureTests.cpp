@@ -539,4 +539,90 @@ TEST_F(FeatureTests, RevalidateIsIdempotent)
     EXPECT_TRUE(m_ecdb.GetFeaturesBlockingSchemaImport().empty()) << "Stale restrictions must be cleared";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, TryGetBlockingFeatures_DiagnosesARefusedFile)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_refuse.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_refuse", "Refuse"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    // Confirm the file is indeed unopenable by this runtime
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_FALSE(m_ecdb.IsDbOpen());
+
+    std::vector<Utf8String> blockingFeatureNames;
+    ASSERT_EQ(SUCCESS, ECDb::TryGetBlockingFeatures(blockingFeatureNames, filePath));
+    ASSERT_EQ(1, blockingFeatureNames.size());
+    EXPECT_STREQ("feature_refuse", blockingFeatureNames[0].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, TryGetBlockingFeatures_EmptyForCleanFile)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_clean.ecdb"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    std::vector<Utf8String> blockingFeatureNames;
+    ASSERT_EQ(SUCCESS, ECDb::TryGetBlockingFeatures(blockingFeatureNames, filePath));
+    EXPECT_TRUE(blockingFeatureNames.empty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, TryGetBlockingFeatures_FailsForNonexistentFile)
+    {
+    std::vector<Utf8String> blockingFeatureNames;
+    EXPECT_EQ(ERROR, ECDb::TryGetBlockingFeatures(blockingFeatureNames, BeFileName(L"ThisFileDoesNotExist.ecdb")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, TryGetBlockingFeatures_OnlyReportsRefuseLevelEntries)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_mixed.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_warn", "Warn"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_readonly", "ReadOnly"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_noschemaimport", "NoSchemaImport"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_nochangeset", "NoChangesetGeneration"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_refuse", "Refuse"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    std::vector<Utf8String> blockingFeatureNames;
+    ASSERT_EQ(SUCCESS, ECDb::TryGetBlockingFeatures(blockingFeatureNames, filePath));
+    ASSERT_EQ(1, blockingFeatureNames.size()) << "only the Refuse-level row should be reported";
+    EXPECT_STREQ("feature_refuse", blockingFeatureNames[0].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(FeatureTests, TryGetBlockingFeatures_RecognizedCompatWinsOverRefuseFallback)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("feature_recognized_wins.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, InsertRawFeatureRow("feature_readonly_with_refuse_fallback", "ReadOnly", "Refuse"));
+    m_ecdb.SaveChanges();
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    // The file must still be openable read-only, confirming this is NOT actually a Refuse situation.
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)));
+    m_ecdb.CloseDb();
+
+    std::vector<Utf8String> blockingFeatureNames;
+    ASSERT_EQ(SUCCESS, ECDb::TryGetBlockingFeatures(blockingFeatureNames, filePath));
+    EXPECT_TRUE(blockingFeatureNames.empty()) << "Compat=ReadOnly is recognized and must win over a Fallback of Refuse";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

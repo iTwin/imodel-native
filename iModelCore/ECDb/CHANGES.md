@@ -22,6 +22,8 @@ This document including important changes to syntax or file format.
 * ECSql version change `2.0.3.2` -> `2.0.3.3`.
 * Added `PRAGMA ecdb_known_features` which returns a list of the features supported by the ECDb runtime.
 * Added `PRAGMA ecdb_used_features` which returns a list of features that are being used in the ECDb file.
+* Added the static `ECDb::TryGetBlockingFeatures(blockingFeatureNames, fileName)`, which reads a file's `ec_Feature` rows WITHOUT opening it as an ECDb, returning the names of any `Refuse`-level features. This will
+allow the caller to find out which feature is blocking the iModel from being opened without opening it (which ECDb will block).
 
 ## ## `04/24/2026`: Allow optional ON clause with CROSS JOIN
 * ECSql version change `2.0.3.1` -> `2.0.3.2`.
