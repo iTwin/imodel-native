@@ -643,6 +643,21 @@ public:
         return Napi::Number::New(info.Env(), (int)r);
     }
 
+    static Napi::Value GetBlockingFeatures(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, dbName);
+
+        std::vector<Utf8String> blockingFeatureNames;
+        if (SUCCESS != ECDb::TryGetBlockingFeatures(blockingFeatureNames, BeFileName(dbName.c_str(), true)))
+            return info.Env().Undefined();
+
+        auto retVal = Napi::Array::New(info.Env());
+        auto index = 0U;
+        for (auto const& featureName : blockingFeatureNames)
+            retVal.Set(index++, Napi::String::New(info.Env(), featureName.c_str()));
+
+        return retVal;
+    }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECDb", {
@@ -678,6 +693,7 @@ public:
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             InstanceMethod("clearECDbCache", &NativeECDb::ClearECDbCache),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
+            StaticMethod("getBlockingFeatures", &NativeECDb::GetBlockingFeatures),
         });
 
         exports.Set("ECDb", t);

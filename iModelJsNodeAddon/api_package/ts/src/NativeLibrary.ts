@@ -903,6 +903,7 @@ export declare namespace IModelJsNative {
     public getLastError(): string;
     public getLastInsertRowId(): number;
     public static enableSharedCache(enable: boolean): DbResult;
+    public static getBlockingFeatures(dbName: string): string[] | undefined;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
