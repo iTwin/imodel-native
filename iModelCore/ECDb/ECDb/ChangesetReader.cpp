@@ -230,7 +230,8 @@ Utf8String GetJsMemberName(ECN::ECPropertyCR ecProperty) {
         if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
             memberName = ECN::ECJsonSystemNames::Id();
         else if (extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-            memberName = ECN::ECJsonSystemNames::ClassName();
+            memberName = /* m_options.UseClassFullNameInsteadofClassName() */ true ?  ECN::ECJsonSystemNames::ClassFullName() : ECN::ECJsonSystemNames::ClassName();
+            //memberName = ECN::ECJsonSystemNames::ClassName();
         else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
             memberName = ECN::ECJsonSystemNames::SourceId();
         else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
@@ -347,7 +348,8 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
     ECSqlRowAdaptor adaptor(ecdb);
     adaptor.GetOptions()
         .SetIncludeNulls(true)
-        .SetUseJsNames(true);
+        .SetUseJsNames(true)
+        .SetUseClassFullNameInsteadofClassName(true);
 
     // Helper: build a property-keyed JSON object from a DB column value map using IECSqlValues
     auto buildValuesJson = [&](BeJsValue outJson, std::unordered_map<Utf8String, DbValue> const& dbValues) -> BentleyStatus
