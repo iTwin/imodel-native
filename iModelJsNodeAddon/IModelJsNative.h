@@ -398,6 +398,9 @@ struct JsInterop {
         bool m_schemaLockHeld = true;
         bool m_skipSaveChanges = false;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
+        // orchestration poc
+        Utf8String m_user;
+        int64_t m_schemaSyncReplayOfImportId = 0;
         };
 
     BE_JSON_NAME(accessToken)
@@ -470,6 +473,7 @@ struct JsInterop {
     BE_JSON_NAME(secure)
     BE_JSON_NAME(schemaLockHeld)
     BE_JSON_NAME(schemaSyncDbUri)
+    BE_JSON_NAME(schemaSyncReplayOfImportId)
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)

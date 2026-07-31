@@ -41,6 +41,50 @@ struct SchemaSync final {
         ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH,
         ERROR_UNABLE_TO_ATTACH,
         ERROR_SYNC_SQL_SCHEMA,
+        ERROR_IMPORT_LOG,
+    };
+
+    //! State of a recorded schema import in the sync db. (orchestration poc)
+    enum class ImportState {
+        Pending = 0,  //!< recorded and waiting to be picked up by the other briefcases
+        Rejected = 1, //!< another briefcase overruled it; the briefcase that recorded it must abandon it
+    };
+
+    //=======================================================================================
+    //! One recorded `ImportSchemas(...)` call, as stored in the sync db. (orchestration poc)
+    //! The schemas of the call are stored separately, see SchemaSync::QueryImportSchemaXml.
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct ImportRecord final {
+        int64_t m_id = 0;             //!< monotonic; also defines the replay order
+        Utf8String m_guid;            //!< stable identity of the import across briefcases
+        Utf8String m_user;            //!< who ran the import
+        int64_t m_timestamp = 0;      //!< unix milliseconds, utc
+        ImportState m_state = ImportState::Pending;
+        Utf8String m_description;
+        bvector<Utf8String> m_schemaNames; //!< full schema names, in the order they were imported
+        //! True if any schema of the import carries the DynamicSchema custom attribute. Those may change
+        //! their content without a version bump, so a reviewer needs to see it before accepting the import.
+        bool m_hasDynamicSchema = false;
+        ECDB_EXPORT void To(BeJsValue) const;
+    };
+
+    //=======================================================================================
+    //! Carries the per-call orchestration inputs (who imports, and whether this import is a
+    //! replay of an already recorded one) into MainSchemaManager::ImportSchemas without
+    //! threading them through every layer. (orchestration poc)
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct OrchestrationScope final {
+        private:
+            SchemaSync& m_sync;
+            Utf8String m_prevUser;
+            int64_t m_prevReplayOfImportId;
+            OrchestrationScope(OrchestrationScope const&) = delete;
+            OrchestrationScope& operator=(OrchestrationScope const&) = delete;
+        public:
+            ECDB_EXPORT OrchestrationScope(SchemaSync&, Utf8StringCR user, int64_t replayOfImportId);
+            ECDB_EXPORT ~OrchestrationScope();
     };
     //=======================================================================================
     // @bsiclass
@@ -109,6 +153,9 @@ private:
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
     int64_t m_modifiedRowCount;
+    // orchestration poc
+    Utf8String m_importUser;
+    int64_t m_replayOfImportId = 0;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
@@ -142,6 +189,30 @@ public:
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
+
+    // orchestration poc =====================================================================
+    //! The user recorded on the next import, set through an OrchestrationScope.
+    Utf8StringCR GetImportUser() const { return m_importUser; }
+    //! Non zero while an import that was already recorded in the sync db is being replayed.
+    int64_t GetReplayOfImportId() const { return m_replayOfImportId; }
+    bool IsReplaying() const { return m_replayOfImportId != 0; }
+
+    //! Creates the import log tables in the sync db if they are not there yet.
+    ECDB_EXPORT Status EnsureImportLog(SyncDbUri const&);
+    //! Reads the import records the local briefcase has neither recorded nor applied yet.
+    //! Only records in state Pending are returned, in ascending id order.
+    ECDB_EXPORT Status QueryPendingImports(SyncDbUri const&, bvector<ImportRecord>&) const;
+    //! Reads all import records, in ascending id order. For diagnostics and tests.
+    ECDB_EXPORT Status QueryImports(SyncDbUri const&, bvector<ImportRecord>&) const;
+    //! Reads the schema xml of one import record, in the order the schemas were imported.
+    ECDB_EXPORT Status QueryImportSchemaXml(SyncDbUri const&, int64_t importId, bvector<Utf8String>& schemaXml) const;
+    //! Appends an import record holding the xml of every schema the import changed.
+    ECDB_EXPORT Status RecordImport(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& changedSchemas, Utf8StringCR description, int64_t& importId);
+    //! Moves the given records to state Rejected. The briefcase that recorded them has to abandon them.
+    ECDB_EXPORT Status RejectImports(SyncDbUri const&, bvector<int64_t> const& importIds, Utf8StringCR rejectedBy, Utf8StringCR reason);
+    //! Highest import record id this briefcase has recorded or applied. Stored in be_Local, so it is not part of any changeset.
+    ECDB_EXPORT int64_t GetLastSeenImportId() const;
+    ECDB_EXPORT Status SetLastSeenImportId(int64_t);
 };
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager

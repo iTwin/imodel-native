@@ -636,6 +636,8 @@ Utf8String SchemaSync::GetStatusAsString(Status status) {
             return "ERROR_UNABLE_TO_ATTACH";
         case Status::ERROR_SYNC_SQL_SCHEMA:
             return "ERROR_SYNC_SQL_SCHEMA";
+        case Status::ERROR_IMPORT_LOG:
+            return "ERROR_IMPORT_LOG";
         default:
             return "SCHEMA_SYNC_FAIL";
     }
@@ -1405,5 +1407,469 @@ DbResult SchemaSyncHelper::UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri 
     return BE_SQLITE_OK;
 }
 
+//SchemaSyncImportLog===========================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncImportLog::EnsureTables(DbR syncDb) {
+    if (syncDb.TableExists(TABLE_IMPORT) && syncDb.TableExists(TABLE_IMPORT_SCHEMA))
+        return BE_SQLITE_OK;
+
+    auto rc = syncDb.ExecuteDdl(R"sql(
+        CREATE TABLE IF NOT EXISTS [schema_sync_import](
+            [Id] INTEGER PRIMARY KEY,
+            [Guid] TEXT NOT NULL UNIQUE,
+            [UserName] TEXT,
+            [Timestamp] INTEGER NOT NULL,
+            [State] INTEGER NOT NULL DEFAULT 0,
+            [Description] TEXT,
+            [RejectedBy] TEXT,
+            [RejectReason] TEXT))sql");
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncImportLog::EnsureTables(): Failed to create %s. %s", TABLE_IMPORT, syncDb.GetLastError().c_str());
+        return rc;
+    }
+
+    rc = syncDb.ExecuteDdl(R"sql(
+        CREATE TABLE IF NOT EXISTS [schema_sync_import_schema](
+            [ImportId] INTEGER NOT NULL REFERENCES [schema_sync_import]([Id]) ON DELETE CASCADE,
+            [Ordinal] INTEGER NOT NULL,
+            [Name] TEXT NOT NULL,
+            [VersionRead] INTEGER NOT NULL,
+            [VersionWrite] INTEGER NOT NULL,
+            [VersionMinor] INTEGER NOT NULL,
+            [IsDynamic] INTEGER NOT NULL DEFAULT 0,
+            [XmlSize] INTEGER NOT NULL,
+            [Xml] BLOB NOT NULL,
+            PRIMARY KEY([ImportId],[Ordinal])))sql");
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncImportLog::EnsureTables(): Failed to create %s. %s", TABLE_IMPORT_SCHEMA, syncDb.GetLastError().c_str());
+        return rc;
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaSyncImportLog::Compress(Utf8StringCR xml, ByteStreamR compressed) {
+    SnappyToBlob writer;
+    writer.Init();
+    writer.Write((Byte const*)xml.c_str(), (uint32_t)xml.size());
+    writer.Finish();
+    writer.SaveTo(compressed);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSyncImportLog::Decompress(void const* data, uint32_t size, uint32_t uncompressedSize, Utf8StringR xml) {
+    xml.clear();
+    if (data == nullptr || size == 0 || uncompressedSize == 0)
+        return ERROR;
+
+    ByteStream buffer;
+    buffer.Resize(uncompressedSize);
+
+    SnappyFromMemory reader;
+    reader.Init(const_cast<void*>(data), size);
+    uint32_t actuallyRead = 0;
+    if (ZIP_SUCCESS != reader._Read(buffer.GetDataP(), uncompressedSize, actuallyRead) || actuallyRead != uncompressedSize) {
+        LOG.error("SchemaSyncImportLog::Decompress(): Failed to decompress schema xml.");
+        return ERROR;
+    }
+
+    xml.assign((Utf8CP)buffer.GetData(), uncompressedSize);
+    return SUCCESS;
+}
+
+//SchemaSync (orchestration poc)================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::OrchestrationScope::OrchestrationScope(SchemaSync& sync, Utf8StringCR user, int64_t replayOfImportId)
+    : m_sync(sync), m_prevUser(sync.m_importUser), m_prevReplayOfImportId(sync.m_replayOfImportId) {
+    m_sync.m_importUser = user;
+    m_sync.m_replayOfImportId = replayOfImportId;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::OrchestrationScope::~OrchestrationScope() {
+    m_sync.m_importUser = m_prevUser;
+    m_sync.m_replayOfImportId = m_prevReplayOfImportId;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaSync::ImportRecord::To(BeJsValue val) const {
+    val.SetEmptyObject();
+    val["id"] = (double)m_id;
+    val["guid"] = m_guid;
+    val["user"] = m_user;
+    val["timestamp"] = (double)m_timestamp;
+    val["state"] = m_state == ImportState::Rejected ? "rejected" : "pending";
+    val["description"] = m_description;
+    val["hasDynamicSchema"] = m_hasDynamicSchema;
+    auto schemas = val["schemas"];
+    schemas.toArray();
+    for (auto const& name : m_schemaNames)
+        schemas.appendValue() = name;
+}
+
+//---------------------------------------------------------------------------------------
+// Opens the sync db outside of the briefcase connection. The import log is independent of
+// the ec_ tables, so it does not need the attach/detach dance Pull and Push use.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static DbResult OpenSyncDbForImportLog(Db& syncDb, SchemaSync::SyncDbUri const& syncDbUri, bool writable) {
+    Db::OpenParams openParams(writable ? Db::OpenMode::ReadWrite : Db::OpenMode::Readonly, DefaultTxn::Yes);
+    SchemaSync::ParseQueryParams(openParams, syncDbUri);
+    const auto rc = syncDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+    if (rc != BE_SQLITE_OK)
+        LOG.errorv("SchemaSync: Failed to open sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::EnsureImportLog(SyncDbUri const& syncDbUri) {
+    // Replaying a recorded import writes nothing to the sync db, so do not ask for write access unless
+    // the tables really have to be created. That keeps a read only catch up from needing the container lock.
+    {
+        Db syncDb;
+        if (OpenSyncDbForImportLog(syncDb, syncDbUri, false) != BE_SQLITE_OK)
+            return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+        if (syncDb.TableExists(SchemaSyncImportLog::TABLE_IMPORT) && syncDb.TableExists(SchemaSyncImportLog::TABLE_IMPORT_SCHEMA))
+            return Status::OK;
+    }
+
+    Db syncDb;
+    if (OpenSyncDbForImportLog(syncDb, syncDbUri, true) != BE_SQLITE_OK)
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+    if (SchemaSyncImportLog::EnsureTables(syncDb) != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    if (syncDb.SaveChanges() != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static SchemaSync::Status ReadImportRecords(Db& syncDb, Utf8CP whereClause, bool hasWhereArg, int64_t whereArg, bvector<SchemaSync::ImportRecord>& records) {
+    Statement stmt;
+    const auto sql = Utf8PrintfString(
+        "SELECT [Id],[Guid],[UserName],[Timestamp],[State],[Description] FROM [%s] %s ORDER BY [Id]",
+        SchemaSyncImportLog::TABLE_IMPORT, whereClause);
+    if (stmt.Prepare(syncDb, sql.c_str()) != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync: Failed to prepare import log query. %s", syncDb.GetLastError().c_str());
+        return SchemaSync::Status::ERROR_IMPORT_LOG;
+    }
+    if (hasWhereArg && stmt.BindInt64(1, whereArg) != BE_SQLITE_OK)
+        return SchemaSync::Status::ERROR_IMPORT_LOG;
+
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        SchemaSync::ImportRecord record;
+        record.m_id = stmt.GetValueInt64(0);
+        record.m_guid = stmt.GetValueText(1);
+        record.m_user = stmt.IsColumnNull(2) ? "" : stmt.GetValueText(2);
+        record.m_timestamp = stmt.GetValueInt64(3);
+        record.m_state = (SchemaSync::ImportState)stmt.GetValueInt(4);
+        record.m_description = stmt.IsColumnNull(5) ? "" : stmt.GetValueText(5);
+        records.push_back(record);
+    }
+    stmt.Finalize();
+
+    Statement schemaStmt;
+    const auto schemaSql = Utf8PrintfString(
+        "SELECT [Name],[VersionRead],[VersionWrite],[VersionMinor],[IsDynamic] FROM [%s] WHERE [ImportId]=? ORDER BY [Ordinal]",
+        SchemaSyncImportLog::TABLE_IMPORT_SCHEMA);
+    if (schemaStmt.Prepare(syncDb, schemaSql.c_str()) != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync: Failed to prepare import log schema query. %s", syncDb.GetLastError().c_str());
+        return SchemaSync::Status::ERROR_IMPORT_LOG;
+    }
+    for (auto& record : records) {
+        schemaStmt.Reset();
+        schemaStmt.ClearBindings();
+        schemaStmt.BindInt64(1, record.m_id);
+        while (schemaStmt.Step() == BE_SQLITE_ROW) {
+            record.m_schemaNames.push_back(ECN::SchemaKey(
+                schemaStmt.GetValueText(0),
+                schemaStmt.GetValueInt(1),
+                schemaStmt.GetValueInt(2),
+                schemaStmt.GetValueInt(3)).GetFullSchemaName());
+            if (schemaStmt.GetValueBoolean(4))
+                record.m_hasDynamicSchema = true;
+        }
+    }
+    return SchemaSync::Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::QueryPendingImports(SyncDbUri const& syncDbUri, bvector<ImportRecord>& records) const {
+    records.clear();
+    Db syncDb;
+    if (OpenSyncDbForImportLog(syncDb, syncDbUri, false) != BE_SQLITE_OK)
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+    if (!syncDb.TableExists(SchemaSyncImportLog::TABLE_IMPORT))
+        return Status::OK; // nothing recorded yet
+
+    const auto whereClause = Utf8PrintfString("WHERE [Id]>? AND [State]=%d", (int)ImportState::Pending);
+    const auto lastSeen = GetLastSeenImportId();
+    const auto rc = ReadImportRecords(syncDb, whereClause.c_str(), true, lastSeen, records);
+    LOG.infov("SchemaSync orchestration: %d import(s) pending after %" PRId64 ".", (int)records.size(), lastSeen);
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::QueryImports(SyncDbUri const& syncDbUri, bvector<ImportRecord>& records) const {
+    records.clear();
+    Db syncDb;
+    if (OpenSyncDbForImportLog(syncDb, syncDbUri, false) != BE_SQLITE_OK)
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+    if (!syncDb.TableExists(SchemaSyncImportLog::TABLE_IMPORT))
+        return Status::OK;
+
+    return ReadImportRecords(syncDb, "", false, 0, records);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::QueryImportSchemaXml(SyncDbUri const& syncDbUri, int64_t importId, bvector<Utf8String>& schemaXml) const {
+    schemaXml.clear();
+    Db syncDb;
+    if (OpenSyncDbForImportLog(syncDb, syncDbUri, false) != BE_SQLITE_OK)
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+    if (!syncDb.TableExists(SchemaSyncImportLog::TABLE_IMPORT_SCHEMA))
+        return Status::ERROR_IMPORT_LOG;
+
+    Statement stmt;
+    const auto sql = Utf8PrintfString(
+        "SELECT [XmlSize],[Xml] FROM [%s] WHERE [ImportId]=? ORDER BY [Ordinal]", SchemaSyncImportLog::TABLE_IMPORT_SCHEMA);
+    if (stmt.Prepare(syncDb, sql.c_str()) != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    stmt.BindInt64(1, importId);
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        void const* blob = stmt.GetValueBlob(1);
+        const auto blobSize = stmt.GetColumnBytes(1);
+        Utf8String xml;
+        if (SUCCESS != SchemaSyncImportLog::Decompress(blob, (uint32_t)blobSize, (uint32_t)stmt.GetValueInt64(0), xml)) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0742,
+                "Failed to read the schema xml of import %" PRId64 " from the schema sync db.", importId);
+            return Status::ERROR_IMPORT_LOG;
+        }
+        schemaXml.push_back(xml);
+    }
+
+    if (schemaXml.empty()) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0743,
+            "Import %" PRId64 " does not exist in the schema sync db or holds no schemas.", importId);
+        return Status::ERROR_IMPORT_LOG;
+    }
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::RecordImport(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& changedSchemas, Utf8StringCR description, int64_t& importId) {
+    importId = 0;
+    if (changedSchemas.empty())
+        return Status::OK;
+
+    Db syncDb;
+    if (OpenSyncDbForImportLog(syncDb, syncDbUri, true) != BE_SQLITE_OK)
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+    if (SchemaSyncImportLog::EnsureTables(syncDb) != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    // Serialize first, so a schema we cannot write out does not leave a half written record behind.
+    // Write each schema in the EC xml version it came from: ec_Schema stores OriginalECXmlVersion, and
+    // an import may not decrease it. Serializing everything as Latest would give a replaying briefcase
+    // a different OriginalECXmlVersion than the briefcase that recorded the import. Same reasoning as
+    // ECSchema::ComputeCheckSum.
+    bvector<Utf8String> xmls;
+    for (auto schema : changedSchemas) {
+        ECN::ECVersion xmlVersion;
+        if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateECVersion(xmlVersion, schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor()))
+            xmlVersion = ECN::ECVersion::V3_1;
+
+        Utf8String xml;
+        if (SchemaWriteStatus::Success != schema->WriteToXmlString(xml, xmlVersion)) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+                "Failed to serialize ECSchema '%s' for the schema sync import log.", schema->GetFullSchemaName().c_str());
+            return Status::ERROR_IMPORT_LOG;
+        }
+
+        // A schema with classes that serializes without any of them means we were handed an ECDb backed
+        // object whose content had already been released. Replaying that would quietly produce an empty
+        // schema, which is far worse than refusing the import here.
+        if (schema->GetClassCount() > 0 && xml.find("Class typeName=") == Utf8String::npos) {
+            m_conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0744,
+                "ECSchema '%s' has %d classes but serialized without any of them for the schema sync import log.",
+                schema->GetFullSchemaName().c_str(), (int)schema->GetClassCount());
+            return Status::ERROR_IMPORT_LOG;
+        }
+        xmls.push_back(xml);
+    }
+
+    Statement importStmt;
+    const auto importSql = Utf8PrintfString(
+        "INSERT INTO [%s]([Guid],[UserName],[Timestamp],[State],[Description]) VALUES(?,?,?,?,?)", SchemaSyncImportLog::TABLE_IMPORT);
+    if (importStmt.Prepare(syncDb, importSql.c_str()) != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    const auto guid = BeGuid(true).ToString();
+    importStmt.BindText(1, guid, Statement::MakeCopy::Yes);
+    importStmt.BindText(2, m_importUser, Statement::MakeCopy::Yes);
+    importStmt.BindInt64(3, (int64_t)BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    importStmt.BindInt(4, (int)ImportState::Pending);
+    importStmt.BindText(5, description, Statement::MakeCopy::Yes);
+    if (importStmt.Step() != BE_SQLITE_DONE) {
+        LOG.errorv("SchemaSync::RecordImport(): Failed to insert import record. %s", syncDb.GetLastError().c_str());
+        syncDb.AbandonChanges();
+        return Status::ERROR_IMPORT_LOG;
+    }
+    importStmt.Finalize();
+    importId = syncDb.GetLastInsertRowId();
+
+    Statement schemaStmt;
+    const auto schemaSql = Utf8PrintfString(
+        "INSERT INTO [%s]([ImportId],[Ordinal],[Name],[VersionRead],[VersionWrite],[VersionMinor],[IsDynamic],[XmlSize],[Xml]) VALUES(?,?,?,?,?,?,?,?,?)",
+        SchemaSyncImportLog::TABLE_IMPORT_SCHEMA);
+    if (schemaStmt.Prepare(syncDb, schemaSql.c_str()) != BE_SQLITE_OK) {
+        syncDb.AbandonChanges();
+        return Status::ERROR_IMPORT_LOG;
+    }
+
+    for (size_t i = 0; i < changedSchemas.size(); ++i) {
+        auto schema = changedSchemas[i];
+        ByteStream compressed;
+        SchemaSyncImportLog::Compress(xmls[i], compressed);
+
+        schemaStmt.Reset();
+        schemaStmt.ClearBindings();
+        schemaStmt.BindInt64(1, importId);
+        schemaStmt.BindInt(2, (int)i);
+        schemaStmt.BindText(3, schema->GetName(), Statement::MakeCopy::Yes);
+        schemaStmt.BindInt(4, (int)schema->GetVersionRead());
+        schemaStmt.BindInt(5, (int)schema->GetVersionWrite());
+        schemaStmt.BindInt(6, (int)schema->GetVersionMinor());
+        schemaStmt.BindBoolean(7, schema->IsDynamicSchema());
+        schemaStmt.BindInt64(8, (int64_t)xmls[i].size());
+        schemaStmt.BindBlob(9, compressed.GetData(), (int)compressed.GetSize(), Statement::MakeCopy::Yes);
+        if (schemaStmt.Step() != BE_SQLITE_DONE) {
+            LOG.errorv("SchemaSync::RecordImport(): Failed to insert schema xml. %s", syncDb.GetLastError().c_str());
+            syncDb.AbandonChanges();
+            importId = 0;
+            return Status::ERROR_IMPORT_LOG;
+        }
+
+        LOG.infov("SchemaSync orchestration: import %" PRId64 " schema %d/%d '%s'%s, %d bytes of xml (%d compressed).",
+            importId, (int)i + 1, (int)changedSchemas.size(), schema->GetFullSchemaName().c_str(),
+            schema->IsDynamicSchema() ? " (dynamic)" : "", (int)xmls[i].size(), (int)compressed.GetSize());
+    }
+    schemaStmt.Finalize();
+
+    if (syncDb.SaveChanges() != BE_SQLITE_OK) {
+        importId = 0;
+        return Status::ERROR_IMPORT_LOG;
+    }
+
+    LOG.infov("SchemaSync orchestration: recorded import %" PRId64 " by '%s' with %d schema(s).",
+        importId, m_importUser.c_str(), (int)changedSchemas.size());
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::RejectImports(SyncDbUri const& syncDbUri, bvector<int64_t> const& importIds, Utf8StringCR rejectedBy, Utf8StringCR reason) {
+    if (importIds.empty())
+        return Status::OK;
+
+    Db syncDb;
+    if (OpenSyncDbForImportLog(syncDb, syncDbUri, true) != BE_SQLITE_OK)
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+
+    if (!syncDb.TableExists(SchemaSyncImportLog::TABLE_IMPORT))
+        return Status::ERROR_IMPORT_LOG;
+
+    Statement stmt;
+    const auto sql = Utf8PrintfString(
+        "UPDATE [%s] SET [State]=?,[RejectedBy]=?,[RejectReason]=? WHERE [Id]=? AND [State]=?", SchemaSyncImportLog::TABLE_IMPORT);
+    if (stmt.Prepare(syncDb, sql.c_str()) != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    for (auto id : importIds) {
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindInt(1, (int)ImportState::Rejected);
+        stmt.BindText(2, rejectedBy, Statement::MakeCopy::Yes);
+        stmt.BindText(3, reason, Statement::MakeCopy::Yes);
+        stmt.BindInt64(4, id);
+        stmt.BindInt(5, (int)ImportState::Pending);
+        if (stmt.Step() != BE_SQLITE_DONE) {
+            LOG.errorv("SchemaSync::RejectImports(): Failed to reject import %" PRId64 ". %s", id, syncDb.GetLastError().c_str());
+            syncDb.AbandonChanges();
+            return Status::ERROR_IMPORT_LOG;
+        }
+    }
+    stmt.Finalize();
+
+    if (syncDb.SaveChanges() != BE_SQLITE_OK)
+        return Status::ERROR_IMPORT_LOG;
+
+    LOG.infov("SchemaSync orchestration: '%s' rejected %d import(s). Reason: %s", rejectedBy.c_str(), (int)importIds.size(), reason.c_str());
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t SchemaSync::GetLastSeenImportId() const {
+    uint64_t value = 0;
+    if (BE_SQLITE_ROW != m_conn.QueryBriefcaseLocalValue(value, SchemaSyncImportLog::BLV_LAST_SEEN_IMPORT_ID))
+        return 0;
+    return (int64_t)value;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::SetLastSeenImportId(int64_t importId) {
+    if (importId <= GetLastSeenImportId())
+        return Status::OK;
+
+    // SaveBriefcaseLocalValue steps an insert, so success is BE_SQLITE_DONE.
+    const auto rc = m_conn.SaveBriefcaseLocalValue(SchemaSyncImportLog::BLV_LAST_SEEN_IMPORT_ID, (uint64_t)importId);
+    if (rc != BE_SQLITE_DONE && rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::SetLastSeenImportId(): Failed to save the last seen import id. %s", BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_IMPORT_LOG;
+    }
+    return Status::OK;
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

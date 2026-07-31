@@ -546,6 +546,26 @@ export declare namespace IModelJsNative {
     readonly skipSaveChanges?: boolean;
     readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+    /** Name recorded as the author of this import in the schema sync import log. */
+    readonly user?: string;
+    /** Set when this call replays an import another briefcase already recorded, so it is not recorded again. */
+    readonly schemaSyncReplayOfImportId?: number;
+  }
+
+  /** One recorded `importSchemas` call in the schema sync import log. */
+  interface SchemaSyncImportRecord {
+    readonly id: number;
+    readonly guid: string;
+    readonly user: string;
+    /** unix milliseconds, utc */
+    readonly timestamp: number;
+    readonly state: "pending" | "rejected";
+    readonly description: string;
+    /** True if any schema of this import carries the DynamicSchema custom attribute, so its content may
+     * change without a version bump. Worth flagging to whoever decides whether to accept the import. */
+    readonly hasDynamicSchema: boolean;
+    /** full schema names, in the order they were imported */
+    readonly schemas: string[];
   }
 
   interface SchemaLocalDbInfo {
@@ -732,6 +752,12 @@ export declare namespace IModelJsNative {
     public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
+    /** Import records this briefcase has neither recorded nor applied yet, in ascending id order. */
+    public schemaSyncQueryPendingImports(schemaSyncDbUri: string): SchemaSyncImportRecord[];
+    /** The schema xml of one import record, in the order the schemas were imported. */
+    public schemaSyncQueryImportSchemas(schemaSyncDbUri: string, importId: number): string[];
+    /** Moves the given import records to state "rejected". */
+    public schemaSyncRejectImports(schemaSyncDbUri: string, importIds: number[], rejectedBy?: string, reason?: string): void;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;

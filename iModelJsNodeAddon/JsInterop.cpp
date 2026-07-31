@@ -946,6 +946,10 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemas.size())
         return BE_SQLITE_ERROR;
 
+    // Orchestration poc: tells the schema sync layer who is importing, and whether this call replays
+    // an import another briefcase already recorded (in which case it must not be recorded again).
+    SchemaSync::OrchestrationScope orchestrationScope(dgndb.Schemas().GetSchemaSync(), opts.m_user, opts.m_schemaSyncReplayOfImportId);
+
     SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         {
