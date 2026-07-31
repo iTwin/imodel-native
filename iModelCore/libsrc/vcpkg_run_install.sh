@@ -112,10 +112,18 @@ echo "vcpkg: registries-cache=$X_VCPKG_REGISTRIES_CACHE"
 echo "vcpkg: binary-cache=$VCPKG_DEFAULT_BINARY_CACHE"
 echo "vcpkg: binary-sources=$VCPKG_BINARY_SOURCES"
 
-OVERLAY_ARGS=()
-if [ -d "$OVERLAY_TRIPLETS" ]; then
-    OVERLAY_ARGS+=(--overlay-triplets="$OVERLAY_TRIPLETS")
+# Require a repo-provided overlay triplet for the requested triplet. Every supported build must
+# use one of our custom triplet files: they carry CACHE_BUST markers and build flags that feed
+# vcpkg's ABI hash, so falling back to vcpkg's built-in triplets would silently produce binaries
+# with a different ABI and defeat the cache-busting scheme. Error out instead of using a default.
+OVERLAY_TRIPLET_FILE="$OVERLAY_TRIPLETS/$TRIPLET.cmake"
+if [ ! -f "$OVERLAY_TRIPLET_FILE" ]; then
+    echo "Error: no custom overlay triplet '$TRIPLET' found at $OVERLAY_TRIPLET_FILE"
+    echo "This build requires a repo-provided triplet; vcpkg's built-in triplets must not be used."
+    exit 1
 fi
+
+OVERLAY_ARGS=(--overlay-triplets="$OVERLAY_TRIPLETS")
 
 # Use custom overlay ports from the manifest directory (if present), mirroring
 # vcpkg_run_install.bat. This makes Linux/macOS/Android build from the local
