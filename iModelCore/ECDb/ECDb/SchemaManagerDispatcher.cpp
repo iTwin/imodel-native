@@ -1241,6 +1241,26 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 #endif
 
 //---------------------------------------------------------------------------------------
+// Orchestration poc: collects a schema and everything it references, keyed by name.
+// The import log has to store the schemas the caller handed us, not the ones SchemaWriter hands
+// back: ReloadSchemas replaces those with ECDb backed objects whose content is gone by the time
+// mapping has finished, and serializing one of those yields an empty <ECSchema>.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static void CollectSchemaGraph(bmap<Utf8String, ECSchemaCP, CompareIUtf8Ascii>& out, ECSchemaCR schema)
+    {
+    if (out.find(schema.GetName()) != out.end())
+        return;
+
+    out[schema.GetName()] = &schema;
+    for (auto const& reference : schema.GetReferencedSchemas())
+        {
+        if (reference.second.IsValid())
+            CollectSchemaGraph(out, *reference.second);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
@@ -1321,19 +1341,17 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 return SchemaImportResult::ERROR;
                 }
 
-            if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
+            // Orchestration poc: the import path no longer mirrors the ec_ tables. The sync db only
+            // carries the log of import calls, and the caller decides (before getting here) what to do
+            // with the entries it has not applied yet.
+            if (schemaSync.EnsureImportLog(resolvedSyncDbUri) != SchemaSync::Status::OK)
                 {
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                    "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                    "Failed to import ECSchemas. Unable to prepare the import log in Sync-Id: {%s}, uri: {%s}.",
                     localDbInfo.GetSyncId().c_str(),
                     resolvedSyncDbUri.GetUri().c_str()
                 );
-                return SchemaImportResult::ERROR;
-                }
-            if (!GetECDb().GetImpl().GetIdFactory().Reset())
-                {
-                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
                 return SchemaImportResult::ERROR;
                 }
             }
@@ -1365,6 +1383,15 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     bvector<ECSchemaCP> schemasToMap;
 
+    // Orchestration poc: snapshot the caller's graph before the import mutates anything.
+    bmap<Utf8String, ECSchemaCP, CompareIUtf8Ascii> callerSchemas;
+    const bool recordingImportLog = !isSchemaSyncDisabled && !localDbInfo.IsEmpty();
+    if (recordingImportLog)
+        {
+        for (auto schema : schemas)
+            CollectSchemaGraph(callerSchemas, *schema);
+        }
+
     auto rc = SchemaWriter::ImportSchemas(schemasToMap, ctx, schemas);
     if (SchemaImportResult::OK != rc)
         {
@@ -1373,7 +1400,16 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         }
 
     if (schemasToMap.empty())
+        {
+        // Orchestration poc: replaying an import that turns out to be a no-op here still means we caught up with it.
+        if (recordingImportLog)
+            {
+            LOG.infov("SchemaSync orchestration: nothing changed, no import recorded (replay of %" PRId64 ").", schemaSync.GetReplayOfImportId());
+            if (schemaSync.IsReplaying())
+                schemaSync.SetLastSeenImportId(schemaSync.GetReplayOfImportId());
+            }
         return SchemaImportResult::OK;
+        }
 
     if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb))
         {
@@ -1394,16 +1430,58 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (!isSchemaSyncDisabled && !localDbInfo.IsEmpty() && rc.IsOk())
+    if (recordingImportLog && rc.IsOk())
         {
-        if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
+        // Orchestration poc: record what this import actually changed, so other briefcases can run
+        // the same call. A replay is already in the log, we only note that we caught up with it.
+        if (schemaSync.IsReplaying())
             {
-            m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().c_str(),
-                resolvedSyncDbUri.GetUri().c_str());
-            return SchemaImportResult::ERROR;
+            LOG.infov("SchemaSync orchestration: replayed import %" PRId64 ", %d schema(s) changed locally.",
+                schemaSync.GetReplayOfImportId(), (int)schemasToMap.size());
+            if (schemaSync.SetLastSeenImportId(schemaSync.GetReplayOfImportId()) != SchemaSync::Status::OK)
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+                    "Failed to import ECSchemas. Unable to record that import %" PRId64 " was applied. Sync-Id: {%s}.",
+                    schemaSync.GetReplayOfImportId(), localDbInfo.GetSyncId().c_str());
+                return SchemaImportResult::ERROR;
+                }
+            }
+        else
+            {
+            // Resolve back to the caller's objects; the ones SchemaWriter returned no longer carry content.
+            bvector<ECSchemaCP> schemasToRecord;
+            for (auto schema : schemasToMap)
+                {
+                auto entry = callerSchemas.find(schema->GetName());
+                if (entry == callerSchemas.end())
+                    {
+                    LOG.warningv("SchemaSync orchestration: '%s' changed but is not in the caller's schema graph, recording it as read back from the file.",
+                        schema->GetName().c_str());
+                    schemasToRecord.push_back(schema);
+                    }
+                else
+                    schemasToRecord.push_back(entry->second);
+                }
+
+            int64_t importId = 0;
+            if (schemaSync.RecordImport(resolvedSyncDbUri, schemasToRecord, "", importId) != SchemaSync::Status::OK)
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
+                    "Failed to import ECSchemas. Unable to record the import in Sync-Id: {%s}, uri: {%s}.",
+                    localDbInfo.GetSyncId().c_str(),
+                    resolvedSyncDbUri.GetUri().c_str());
+                return SchemaImportResult::ERROR;
+                }
+            if (schemaSync.SetLastSeenImportId(importId) != SchemaSync::Status::OK)
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+                    "Failed to import ECSchemas. Unable to record that import %" PRId64 " was applied. Sync-Id: {%s}.",
+                    importId, localDbInfo.GetSyncId().c_str());
+                return SchemaImportResult::ERROR;
+                }
             }
         }
 

@@ -2388,6 +2388,63 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
 
+    // orchestration poc ==================================================================
+    Napi::Value SchemaSyncQueryPendingImports(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        bvector<SchemaSync::ImportRecord> records;
+        LastErrorListener lastError(db);
+        const auto rc = db.Schemas().GetSchemaSync().QueryPendingImports(SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str()), records);
+        if (rc != SchemaSync::Status::OK)
+            THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.HasError() ? lastError.GetLastError().c_str() : "fail to read pending schema imports", rc);
+
+        auto array = Napi::Array::New(Env(), records.size());
+        for (uint32_t i = 0; i < (uint32_t)records.size(); ++i) {
+            BeJsNapiObject obj(Env());
+            records[i].To(obj);
+            array.Set(i, (Napi::Object)obj);
+        }
+        return array;
+    }
+
+    Napi::Value SchemaSyncQueryImportSchemas(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_INTEGER(1, importId);
+        bvector<Utf8String> schemaXml;
+        LastErrorListener lastError(db);
+        const auto rc = db.Schemas().GetSchemaSync().QueryImportSchemaXml(SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str()), (int64_t)importId, schemaXml);
+        if (rc != SchemaSync::Status::OK)
+            THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.HasError() ? lastError.GetLastError().c_str() : "fail to read the schemas of a pending schema import", rc);
+
+        auto array = Napi::Array::New(Env(), schemaXml.size());
+        for (uint32_t i = 0; i < (uint32_t)schemaXml.size(); ++i)
+            array.Set(i, Napi::String::New(Env(), schemaXml[i].c_str()));
+        return array;
+    }
+
+    void SchemaSyncRejectImports(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        if (ARGUMENT_IS_NOT_PRESENT(1) || !info[1].IsArray())
+            THROW_JS_TYPE_EXCEPTION("Argument 1 must be an array of import ids")
+        OPTIONAL_ARGUMENT_STRING(2, rejectedBy);
+        OPTIONAL_ARGUMENT_STRING(3, reason);
+
+        bvector<int64_t> importIds;
+        auto jsImportIds = info[1].As<Napi::Array>();
+        for (uint32_t i = 0; i < jsImportIds.Length(); ++i) {
+            Napi::Value entry = jsImportIds[i];
+            if (entry.IsNumber())
+                importIds.push_back(entry.As<Napi::Number>().Int64Value());
+        }
+
+        LastErrorListener lastError(db);
+        const auto rc = db.Schemas().GetSchemaSync().RejectImports(SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str()), importIds, rejectedBy, reason);
+        if (rc != SchemaSync::Status::OK)
+            THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.HasError() ? lastError.GetLastError().c_str() : "fail to reject pending schema imports", rc);
+    }
+
     void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2438,6 +2495,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         db.Models().ClearCache();
         }
 
+    // orchestration poc: reads the schema sync fields that steer the import log.
+    static void ReadOrchestrationOptions(Napi::Object const& jsOpts, JsInterop::SchemaImportOptions& options)
+        {
+        auto jsUser = jsOpts.Get(JsInterop::json_user());
+        if (jsUser.IsString())
+            options.m_user = jsUser.ToString().Utf8Value();
+        auto jsReplayOf = jsOpts.Get(JsInterop::json_schemaSyncReplayOfImportId());
+        if (jsReplayOf.IsNumber())
+            options.m_schemaSyncReplayOfImportId = jsReplayOf.As<Napi::Number>().Int64Value();
+        }
+
     void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2451,6 +2519,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
+        ReadOrchestrationOptions(jsOpts, options);
         if (!maybeEcSchemaContextVal.IsUndefined())
             {
             if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
@@ -2480,6 +2549,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
+        ReadOrchestrationOptions(jsOpts, options);
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
@@ -3429,6 +3499,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
+            InstanceMethod("schemaSyncQueryPendingImports", &NativeDgnDb::SchemaSyncQueryPendingImports),
+            InstanceMethod("schemaSyncQueryImportSchemas", &NativeDgnDb::SchemaSyncQueryImportSchemas),
+            InstanceMethod("schemaSyncRejectImports", &NativeDgnDb::SchemaSyncRejectImports),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("changeElementParent", &NativeDgnDb::ChangeElementParent),
             InstanceMethod("changeElementModel", &NativeDgnDb::ChangeElementModel),

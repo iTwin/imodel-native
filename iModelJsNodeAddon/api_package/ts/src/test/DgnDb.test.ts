@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -223,6 +223,9 @@ describe("basic tests", () => {
   });
 
   it("schema synchronization", () => {
+    // The orchestration poc logs what it records and replays under the ECDb category. Turn it up so a
+    // failure here shows the import log activity instead of just a checksum mismatch.
+    Logger.setLevel("ECDb", LogLevel.Info);
 
     const copyAndOverrideFile = (from: string, to: string) => {
       if (fs.existsSync(to)) {
@@ -310,10 +313,22 @@ describe("basic tests", () => {
             <ECProperty propertyName="p2" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
+    b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri, user: "u0" });
+
+    // Orchestration poc: a briefcase catches up by replaying the import calls it has not seen yet,
+    // in the order they were recorded. There is no ec_ table mirror any more.
+    const applyPendingImports = (db: IModelJsNative.DgnDb, uri: string) => {
+      const applied: number[] = [];
+      for (const record of db.schemaSyncQueryPendingImports(uri)) {
+        const schemaXml = db.schemaSyncQueryImportSchemas(uri, record.id);
+        db.importXmlSchemas(schemaXml, { schemaSyncDbUri: uri, schemaSyncReplayOfImportId: record.id });
+        applied.push(record.id);
+      }
+      return applied;
+    };
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
@@ -323,16 +338,34 @@ describe("basic tests", () => {
           <ECProperty propertyName="p4" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
-    b0.schemaSyncPull(syncDbUri);
+    // b1 sees b0's import as pending, applies it, then imports its own change on top.
+    // The version is bumped because b1 now already has 01.00.00 from the replay, so this is an upgrade.
+    const pendingForB1 = b1.schemaSyncQueryPendingImports(syncDbUri);
+    assert.lengthOf(pendingForB1, 1);
+    assert.equal(pendingForB1[0].user, "u0");
+    assert.equal(pendingForB1[0].state, "pending");
+    assert.deepEqual(pendingForB1[0].schemas, ["TestSchema1.01.00.00"]);
+    assert.deepEqual(applyPendingImports(b1, syncDbUri), [pendingForB1[0].id]);
+
+    b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri, user: "u1" });
+
+    // b0 already recorded the first import, so only b1's is pending for it
+    assert.lengthOf(applyPendingImports(b0, syncDbUri), 1);
 
     // test default URI
     b2.schemaSyncSetDefaultUri(syncDbUri);
     assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
-    b2.schemaSyncPull();
 
-    // b1 = b2 == b0
+    // b2 has seen nothing, so it replays both imports in order
+    assert.lengthOf(applyPendingImports(b2, syncDbUri), 2);
+
+    // nobody has anything left to do
+    assert.isEmpty(b0.schemaSyncQueryPendingImports(syncDbUri));
+    assert.isEmpty(b1.schemaSyncQueryPendingImports(syncDbUri));
+    assert.isEmpty(b2.schemaSyncQueryPendingImports(syncDbUri));
+
+    // replaying the same calls in the same order has to produce the same metadata everywhere
     const b0Hashes = getSchemaHashes(b0);
     const b1Hashes = getSchemaHashes(b1);
     const b2Hashes = getSchemaHashes(b2);
@@ -340,7 +373,7 @@ describe("basic tests", () => {
     assert.deepEqual(b0Hashes, b2Hashes);
 
     const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECEntityClass typeName="Pipe1">
           <BaseClass>bis:GeometricElement2d</BaseClass>
