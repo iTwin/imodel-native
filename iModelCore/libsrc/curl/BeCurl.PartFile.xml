@@ -10,6 +10,9 @@
 
     <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="BeCurl.prewire.mke">
+        <!-- LibType="Static": the chain runs static-only; the prewire stages curl headers from the
+             static vcpkg install root. -->
+        <SubPart PartName="vcpkg_install_curl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <Bindings>
             <VendorAPI Domain="curl" />
             <VendorNotices>Delivery/curl-license.txt</VendorNotices>
@@ -20,8 +23,10 @@
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
     <Part Name="Library" BentleyBuildMakeFile="BeCurl.mke">
         <SubPart PartName="PublicAPI" />
+        <!-- LibType="Static": the chain is static-only; BeCurl.mke reads the vcpkg-built curl (+ c-ares)
+             archives from the static install root for both static and dynamic builds. -->
+        <SubPart PartName="vcpkg_install_curl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
-        <SubPart LibType="Static" PartName="rustls" PartFile="iModelCore\libsrc\rustls-ffi\rustls"/>
         <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinCurl$(libext)</Libs>
