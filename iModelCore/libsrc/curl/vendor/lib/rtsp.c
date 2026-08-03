@@ -126,19 +126,13 @@ static CURLcode rtsp_setup_connection(struct Curl_easy *data,
 /*
  * Function to check on various aspects of a connection.
  */
-static uint32_t rtsp_conncheck(struct Curl_easy *data,
-                               struct connectdata *conn,
-                               uint32_t checks_to_perform)
+static bool rtsp_conn_is_dead(struct Curl_easy *data,
+                              struct connectdata *conn)
 {
-  unsigned int ret_val = CONNRESULT_NONE;
-
-  if(checks_to_perform & CONNCHECK_ISDEAD) {
-    bool input_pending;
-    if(!Curl_conn_is_alive(data, conn, &input_pending))
-      ret_val |= CONNRESULT_DEAD;
-  }
-
-  return ret_val;
+  bool input_pending;
+  /* Contrary to default handling, this protocol allows pending
+   * input on an unused connection. */
+  return !Curl_conn_is_alive(data, conn, &input_pending);
 }
 
 static CURLcode rtsp_connect(struct Curl_easy *data, bool *done)
@@ -166,7 +160,7 @@ static CURLcode rtsp_done(struct Curl_easy *data,
   struct rtsp_conn *rtspc =
     Curl_conn_meta_get(data->conn, CURL_META_RTSP_CONN);
   struct RTSP *rtsp = Curl_meta_get(data, CURL_META_RTSP_EASY);
-  CURLcode httpStatus;
+  CURLcode result;
 
   if(!rtspc || !rtsp)
     return CURLE_FAILED_INIT;
@@ -175,9 +169,9 @@ static CURLcode rtsp_done(struct Curl_easy *data,
   if(data->set.rtspreq == RTSPREQ_RECEIVE)
     premature = TRUE;
 
-  httpStatus = Curl_http_done(data, status, premature);
+  result = Curl_http_done(data, status, premature);
 
-  if(!status && !httpStatus) {
+  if(!status && !result) {
     /* Check the sequence numbers */
     uint32_t CSeq_sent = rtsp->CSeq_sent;
     uint32_t CSeq_recv = rtsp->CSeq_recv;
@@ -197,7 +191,7 @@ static CURLcode rtsp_done(struct Curl_easy *data,
     }
   }
 
-  return httpStatus;
+  return result;
 }
 
 static CURLcode rtsp_setup_body(struct Curl_easy *data,
@@ -240,7 +234,7 @@ static CURLcode rtsp_setup_body(struct Curl_easy *data,
       /* As stated in the http comments, it is probably not wise to
        * actually set a custom Content-Length in the headers */
       if(!Curl_checkheaders(data, STRCONST("Content-Length"))) {
-        result = curlx_dyn_addf(reqp, "Content-Length: %" FMT_OFF_T"\r\n",
+        result = curlx_dyn_addf(reqp, "Content-Length: %" FMT_OFF_T "\r\n",
                                 req_clen);
         if(result)
           return result;
@@ -294,8 +288,8 @@ static CURLcode rtsp_do(struct Curl_easy *data, bool *done)
   const char *p_stream_uri = NULL;
   const char *p_transport = NULL;
   const char *p_uagent = NULL;
-  const char *p_proxyuserpwd = NULL;
-  const char *p_userpwd = NULL;
+  const char *p_hd_proxy_auth = NULL;
+  const char *p_hd_auth = NULL;
 
   *done = TRUE;
   if(!rtsp)
@@ -306,18 +300,6 @@ static CURLcode rtsp_do(struct Curl_easy *data, bool *done)
 
   rtsp->CSeq_sent = data->state.rtsp_next_client_CSeq;
   rtsp->CSeq_recv = 0;
-
-  /* Setup the first_* fields to allow auth details get sent
-     to this origin */
-
-  if(!data->state.first_host) {
-    data->state.first_host = curlx_strdup(conn->host.name);
-    if(!data->state.first_host)
-      return CURLE_OUT_OF_MEMORY;
-
-    data->state.first_remote_port = conn->remote_port;
-    data->state.first_remote_protocol = conn->scheme->protocol;
-  }
 
   /* Setup the 'p_request' pointer to the proper p_request string
    * Since all RTSP requests are included here, there is no need to
@@ -439,13 +421,13 @@ static CURLcode rtsp_do(struct Curl_easy *data, bool *done)
     }
   }
 
-  /* The User-Agent string might have been allocated in url.c already, because
+  /* The User-Agent string might have been allocated already, because
      it might have been used in the proxy connect, but if we have got a header
      with the user-agent string specified, we erase the previously made string
      here. */
   if(Curl_checkheaders(data, STRCONST("User-Agent")) &&
      data->state.aptr.uagent) {
-    Curl_safefree(data->state.aptr.uagent);
+    curlx_safefree(data->state.aptr.uagent);
   }
   else if(!Curl_checkheaders(data, STRCONST("User-Agent")) &&
           data->set.str[STRING_USERAGENT]) {
@@ -454,17 +436,17 @@ static CURLcode rtsp_do(struct Curl_easy *data, bool *done)
 
   /* setup the authentication headers */
   result = Curl_http_output_auth(data, conn, p_request, HTTPREQ_GET,
-                                 p_stream_uri, FALSE);
+                                 p_stream_uri, NULL, FALSE);
   if(result)
     goto out;
 
 #ifndef CURL_DISABLE_PROXY
-  p_proxyuserpwd = data->state.aptr.proxyuserpwd;
+  p_hd_proxy_auth = data->req.hd_proxy_auth;
 #endif
-  p_userpwd = data->state.aptr.userpwd;
+  p_hd_auth = data->req.hd_auth;
 
   /* Referrer */
-  Curl_safefree(data->state.aptr.ref);
+  curlx_safefree(data->state.aptr.ref);
   if(Curl_bufref_ptr(&data->state.referer) &&
      !Curl_checkheaders(data, STRCONST("Referer")))
     data->state.aptr.ref =
@@ -532,8 +514,8 @@ static CURLcode rtsp_do(struct Curl_easy *data, bool *done)
                           "%s" /* range */
                           "%s" /* referrer */
                           "%s" /* user-agent */
-                          "%s" /* proxyuserpwd */
-                          "%s" /* userpwd */
+                          "%s" /* hd_proxy_auth */
+                          "%s" /* hd_auth */
                           ,
                           p_transport ? p_transport : "",
                           p_accept ? p_accept : "",
@@ -541,14 +523,8 @@ static CURLcode rtsp_do(struct Curl_easy *data, bool *done)
                           p_range ? p_range : "",
                           p_referrer ? p_referrer : "",
                           p_uagent ? p_uagent : "",
-                          p_proxyuserpwd ? p_proxyuserpwd : "",
-                          p_userpwd ? p_userpwd : "");
-
-  /*
-   * Free userpwd now --- cannot reuse this for Negotiate and possibly NTLM
-   * with basic and digest, it will be freed anyway by the next request
-   */
-  Curl_safefree(data->state.aptr.userpwd);
+                          p_hd_proxy_auth ? p_hd_proxy_auth : "",
+                          p_hd_auth ? p_hd_auth : "");
 
   if(result)
     goto out;
@@ -682,11 +658,11 @@ static CURLcode rtsp_filter_rtp(struct Curl_easy *data,
       while(blen && buf[0] != '$') {
         if(!in_body && buf[0] == 'R' &&
            data->set.rtspreq != RTSPREQ_RECEIVE) {
-          if(strncmp(buf, "RTSP/", (blen < 5) ? blen : 5) == 0) {
+          if(!strncmp(buf, "RTSP/", (blen < 5) ? blen : 5)) {
             /* This could be the next response, no consume and return */
             if(*pconsumed) {
               DEBUGF(infof(data, "RTP rtsp_filter_rtp[SKIP] RTSP/ prefix, "
-                           "skipping %zd bytes of junk", *pconsumed));
+                           "skipping %zu bytes of junk", *pconsumed));
             }
             rtspc->state = RTP_PARSE_SKIP;
             rtspc->in_header = TRUE;
@@ -905,6 +881,7 @@ static CURLcode rtsp_rtp_write_resp(struct Curl_easy *data,
       result = rtsp_filter_rtp(data, rtspc, buf, blen, &consumed);
       if(result)
         goto out;
+      buf += consumed;
       blen -= consumed;
     }
   }
@@ -916,7 +893,7 @@ static CURLcode rtsp_rtp_write_resp(struct Curl_easy *data,
    * writer deal with it (it will report EXCESS and fail the transfer). */
   DEBUGF(infof(data, "rtsp_rtp_write_resp(len=%zu, in_header=%d, done=%d, "
                "rtspc->state=%d, req.size=%" FMT_OFF_T ")",
-               blen, rtspc->in_header, data->req.done, rtspc->state,
+               blen, rtspc->in_header, data->req.done, (int)rtspc->state,
                data->req.size));
   if(!result && (is_eos || blen)) {
     result = Curl_client_write(data, CLIENTWRITE_BODY |
@@ -1017,7 +994,7 @@ CURLcode Curl_rtsp_parseheader(struct Curl_easy *data, const char *header)
      *
      * Allow any non whitespace content, up to the field separator or end of
      * line. RFC 2326 is not 100% clear on the session ID and for example
-     * gstreamer does url-encoded session ID's not covered by the standard.
+     * gstreamer does URL-encoded session ID's not covered by the standard.
      */
     end = start;
     while((*end > ' ') && (*end != ';'))
@@ -1057,7 +1034,7 @@ CURLcode Curl_rtsp_parseheader(struct Curl_easy *data, const char *header)
 /*
  * RTSP handler interface.
  */
-static const struct Curl_protocol Curl_protocol_rtsp = {
+const struct Curl_protocol Curl_protocol_rtsp = {
   rtsp_setup_connection,                /* setup_connection */
   rtsp_do,                              /* do_it */
   rtsp_done,                            /* done */
@@ -1072,25 +1049,9 @@ static const struct Curl_protocol Curl_protocol_rtsp = {
   ZERO_NULL,                            /* disconnect */
   rtsp_rtp_write_resp,                  /* write_resp */
   rtsp_rtp_write_resp_hd,               /* write_resp_hd */
-  rtsp_conncheck,                       /* connection_check */
+  rtsp_conn_is_dead,                    /* connection_is_dead */
   ZERO_NULL,                            /* attach connection */
   Curl_http_follow,                     /* follow */
 };
 
 #endif /* CURL_DISABLE_RTSP */
-
-/*
- * RTSP handler interface.
- */
-const struct Curl_scheme Curl_scheme_rtsp = {
-  "rtsp",                               /* scheme */
-#ifdef CURL_DISABLE_RTSP
-  ZERO_NULL,
-#else
-  &Curl_protocol_rtsp,
-#endif
-  CURLPROTO_RTSP,                       /* protocol */
-  CURLPROTO_RTSP,                       /* family */
-  PROTOPT_CONN_REUSE,                   /* flags */
-  PORT_RTSP,                            /* defport */
-};

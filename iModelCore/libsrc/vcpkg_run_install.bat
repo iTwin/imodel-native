@@ -148,6 +148,13 @@ if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
 )
 if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
 
+rem Isolate the git registries cache per install-root to prevent a race condition
+rem where parallel vcpkg processes (building different arches) collide on the shared
+rem global cache at %LOCALAPPDATA%\vcpkg\registries. Concurrent git fetch/GC
+rem operations on that bare repo cause transient "port does not exist" failures.
+set "X_VCPKG_REGISTRIES_CACHE=%INSTALL_ROOT%\registries"
+if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%"
+
 rem Use a persistent local binary cache by default to avoid rebuilding heavy ports
 rem (for example, crashpad) across builds. Allow callers to override.
 if "%VCPKG_BINARY_SOURCES%"=="" (
@@ -163,13 +170,30 @@ if "%ANDROID_NDK_HOME%"=="" (
 )
 
 set "OVERLAY_TRIPLETS=%MANIFEST_DIR%\triplets"
-set "OVERLAY_ARG="
-if exist "%OVERLAY_TRIPLETS%" set "OVERLAY_ARG=--overlay-triplets=%OVERLAY_TRIPLETS%"
+set "OVERLAY_TRIPLET_FILE=%OVERLAY_TRIPLETS%\%TRIPLET%.cmake"
+rem Require a repo-provided overlay triplet for the requested triplet. Every supported build must
+rem use one of our custom triplet files: they carry CACHE_BUST markers and build flags that feed
+rem vcpkg's ABI hash, so falling back to vcpkg's built-in triplets would silently produce binaries
+rem with a different ABI and defeat the cache-busting scheme. Error out instead of using a default.
+if not exist "%OVERLAY_TRIPLET_FILE%" (
+    echo Error: no custom overlay triplet "%TRIPLET%" found at "%OVERLAY_TRIPLET_FILE%"
+    echo This build requires a repo-provided triplet; vcpkg's built-in triplets must not be used.
+    exit /b 1
+)
+rem Quote the path value: a manifest/checkout path may contain spaces, and %OVERLAY_ARG%
+rem is expanded unquoted on the vcpkg command line, so cmd would otherwise split it.
+set OVERLAY_ARG=--overlay-triplets="%OVERLAY_TRIPLETS%"
+
+rem Allow a manifest to ship overlay ports (e.g. a locally-patched crashpad that
+rem builds with clang-cl) in a "ports" subdirectory alongside vcpkg.json.
+set "OVERLAY_PORTS=%MANIFEST_DIR%\ports"
+if exist "%OVERLAY_PORTS%" set OVERLAY_ARG=%OVERLAY_ARG% --overlay-ports="%OVERLAY_PORTS%"
 
 echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, install-root=%INSTALL_ROOT%)
 echo vcpkg: exe="%VCPKG_EXE%"
 echo vcpkg: root="%VCPKG_ROOT%"
 echo vcpkg: downloads="%VCPKG_DOWNLOADS%"
+echo vcpkg: registries-cache="%X_VCPKG_REGISTRIES_CACHE%"
 echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
 echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 

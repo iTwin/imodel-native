@@ -99,14 +99,49 @@ OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 DOWNLOADS_ROOT="$INSTALL_ROOT/downloads"
 mkdir -p "$DOWNLOADS_ROOT"
 
+# Isolate the git registries cache per install-root to prevent a race condition
+# where parallel vcpkg processes (building different arches) collide on the shared
+# global cache at ~/.cache/vcpkg/registries. Concurrent git fetch/GC operations on
+# that bare repo cause transient "port does not exist" failures.
+export X_VCPKG_REGISTRIES_CACHE="$INSTALL_ROOT/registries"
+mkdir -p "$X_VCPKG_REGISTRIES_CACHE"
+
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"
 echo "vcpkg: downloads=$DOWNLOADS_ROOT"
+echo "vcpkg: registries-cache=$X_VCPKG_REGISTRIES_CACHE"
 echo "vcpkg: binary-cache=$VCPKG_DEFAULT_BINARY_CACHE"
 echo "vcpkg: binary-sources=$VCPKG_BINARY_SOURCES"
 
-OVERLAY_ARGS=()
-if [ -d "$OVERLAY_TRIPLETS" ]; then
-    OVERLAY_ARGS+=(--overlay-triplets="$OVERLAY_TRIPLETS")
+# Require a repo-provided overlay triplet for the requested triplet. Every supported build must
+# use one of our custom triplet files: they carry CACHE_BUST markers and build flags that feed
+# vcpkg's ABI hash, so falling back to vcpkg's built-in triplets would silently produce binaries
+# with a different ABI and defeat the cache-busting scheme. Error out instead of using a default.
+OVERLAY_TRIPLET_FILE="$OVERLAY_TRIPLETS/$TRIPLET.cmake"
+if [ ! -f "$OVERLAY_TRIPLET_FILE" ]; then
+    echo "Error: no custom overlay triplet '$TRIPLET' found at $OVERLAY_TRIPLET_FILE"
+    echo "This build requires a repo-provided triplet; vcpkg's built-in triplets must not be used."
+    exit 1
+fi
+
+OVERLAY_ARGS=(--overlay-triplets="$OVERLAY_TRIPLETS")
+
+# Use custom overlay ports from the manifest directory (if present), mirroring
+# vcpkg_run_install.bat. This makes Linux/macOS/Android build from the local
+# crashpad fork (ports/crashpad) instead of the upstream registry port, so
+# platform fixes not yet upstream are picked up on every platform.
+OVERLAY_PORTS="$MANIFEST_DIR/ports"
+if [ -d "$OVERLAY_PORTS" ]; then
+    OVERLAY_ARGS+=(--overlay-ports="$OVERLAY_PORTS")
+fi
+
+# vcpkg scrubs the environment for port builds. Forward CRASHPAD_USE_LLD (opt-in
+# to link the crashpad handler with lld; needed on hosts whose GNU ld mis-links
+# it, e.g. binutils 2.46) so the crashpad portfile can see it. Note: toggling the
+# variable does not change the package ABI hash, so a previously cached crashpad
+# binary may be restored; clear it from $VCPKG_DEFAULT_BINARY_CACHE to force a
+# relink.
+if [ -n "${CRASHPAD_USE_LLD:-}" ]; then
+    export VCPKG_KEEP_ENV_VARS="CRASHPAD_USE_LLD${VCPKG_KEEP_ENV_VARS:+;$VCPKG_KEEP_ENV_VARS}"
 fi
 
 "$VCPKG_EXE" install \

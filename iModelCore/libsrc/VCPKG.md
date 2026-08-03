@@ -4,7 +4,7 @@ This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select
 
 A specific version of vcpkg is cloned from its official git URL during `bb pull`. The version used is controlled by the `Guid` setting for the `vcpkg` entry in [bbconfig.json](../../../imodel-native-internal/bbconfig.json). At build time, the vcpkg part runs the appropriate vcpkg install script located in this source tree.
 
-By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. It's possible that in the future this will default to some Bentley shared binary cache, but for now it is always local to the build machine.
+By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. Bentley CI additionally uses an internal, Bentley-only shared binary cache (see [Shared binary cache](#shared-binary-cache) below); it is not needed for local or external builds, which build from source with a local cache. You can also point `VCPKG_BINARY_SOURCES` at your own vcpkg binary cache if you want cross-machine reuse.
 
 > **Note:** On all platforms, use `IMODEL_VCPKG_ROOT` (not `VCPKG_ROOT`) if you need to override the vcpkg location. The build wrappers check `IMODEL_VCPKG_ROOT` first, avoiding conflicts with tooling that may set `VCPKG_ROOT` to an undesired location. Since the build system installs the required version of vcpkg automatically, setting `IMODEL_VCPKG_ROOT` is not recommended.
 
@@ -17,7 +17,7 @@ To add a new library:
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
 3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
-4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml) at the end of the chain, with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
+4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
 5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
 6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
 
@@ -29,9 +29,22 @@ To add a new library:
    %endif
    ```
 
+> **When migrating an existing (previously vendored) library to vcpkg:** the vendored source deletion belongs in the **same** PR as the vcpkg wiring, but do **not** delete it up front. Keep the vendored source in place (the PR will likely be draft/WIP at this stage) until **after** the PR has passed its Copilot review, then delete the vendored code in a separate standalone commit within that same PR. Deleting the vendored source up front produces too many modified files for Copilot to review, and the review may not run at all.
+
+### Windows triplets: clang vs MSVC
+
+On Windows the native build runs under two toolsets — MSVC (`cl.exe`) and clang-cl (`BUILD_TOOLSET == WINDOWS_CLANG`) — and both produce ABI-compatible output. vcpkg's binary-cache ABI hash is derived from the triplet **and** the detected compiler, so if both toolsets used the same triplet *and* the same compiler they would share one cache entry and whichever built first would win. To keep the two builds' cache entries separate, every Windows triplet comes in a matched pair:
+
+- **`x64-windows-static*.cmake`** — the MSVC variant. Its header comment marks it as the Visual Studio / MSVC toolset (the comment also fixes its content, and therefore its ABI hash).
+- **`x64-windows-static*-clang.cmake`** — the clang variant. It sets `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` to the shared [`windows-clang-cl.toolchain.cmake`](windows-clang-cl.toolchain.cmake) (referenced as `${CMAKE_CURRENT_LIST_DIR}/../../windows-clang-cl.toolchain.cmake`), which makes vcpkg build the package with BentleyBuild's own LLVM clang-cl (from `LLVM_DIR`). To avoid losing vcpkg's Windows setup, that toolchain selects clang-cl and then **includes** vcpkg's stock `windows.cmake` (rather than replacing it), so the system name, CRT, and all compile/link flags — plus vcpkg's own clang-cl handling — are preserved; only the compiler changes. (vcpkg's `windows.cmake` still adds `/RTC1` in debug, which clang-cl harmlessly ignores.) The triplet also sets `VCPKG_LOAD_VCVARS_ENV ON`, because setting `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` otherwise **disables** vcpkg's automatic Visual Studio (vcvars) environment setup — without it clang-cl can't find the MSVC SDK headers / CRT libraries and vcpkg's compiler detection fails.
+
+[`vcpkg.mki`](./vcpkg.mki) picks the variant automatically: it computes the base triplet (`x64-windows-static`, `-md`, or `-veracode`) and appends `-clang` when `BUILD_TOOLSET == WINDOWS_CLANG`. So a new Windows library must ship a `-clang` counterpart for **each** base Windows triplet it provides (e.g. if it uses `x64-windows-static-md`, add `x64-windows-static-md-clang`). Non-Windows triplets need no such split — each of those platforms builds with a single toolset.
+
 Versions are pinned per-library: `vcpkg.json` uses an `overrides` entry for the exact version, and `vcpkg-configuration.json` pins the registry baseline commit. Even though all `vcpkg-configuration.json` files should be identical, each manifest directory requires its own copy.
 
 ## Setup
+
+> **Note**: If you do not have a recent enough version of `cmake`, vcpkg will automatically download and install one as part of the build. However, this will happen multiple times due to the way that the build works, and will also be deleted each time you delete your build output or run a TMR build. Consequently, it is *strongly* recommended that you have a new enough version installed on your computer. Presently, that means version 4.3.2 or later, but that could change in the future. If you look in `$OutRoot/<bb platform>/static/vcpkg_installed/compress/downloads/tools/` and see a `cmake-<version>-<vcpkg platform>` directory, that means you don't have the required version and need to install one at least as recent as the one there.
 
 ### macOS
 
@@ -165,8 +178,17 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
-- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
-- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
+- Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
+- **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the vcpkg tree, so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+## Shared binary cache
+
+To avoid recompiling unchanged libraries on every agent (OpenSSL alone is ~1,200 translation units × 6 triplets), **Bentley CI** may restore and publish vcpkg binaries through an **internal, Bentley-only** shared binary cache. That cache lives in a Bentley-owned cloud subscription and requires a Bentley identity to reach, so it is **internal to Bentley** — it is neither accessible to nor needed by external contributors. Its configuration and internal-access workflow are kept in Bentley's private documentation.
+
+External contributors — and any build without cache access — use the fully supported default path with no extra setup: vcpkg builds each library from source and keeps a **local** `files` archive cache under the vcpkg tree, so a second build on the same machine restores instead of recompiling (see [How It Works](#how-it-works)).
+
+If you want cross-machine reuse of your own, you can point `VCPKG_BINARY_SOURCES` at **any** vcpkg-supported binary cache backend (a local directory, your own cloud storage, a NuGet feed, etc.); see vcpkg's [binary caching documentation](https://learn.microsoft.com/en-us/vcpkg/reference/binarycaching).
 
 ## Version Pinning
 

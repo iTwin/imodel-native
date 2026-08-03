@@ -78,7 +78,7 @@ static ParameterError varfunc(char *c, /* content */
                               size_t flen, /* function string length */
                               struct dynbuf *out)
 {
-  bool alloc = FALSE;
+  char *allocptr = NULL;
   ParameterError err = PARAM_OK;
   const char *finput = f;
 
@@ -153,7 +153,7 @@ static ParameterError varfunc(char *c, /* content */
         /* put it in the output */
         if(curlx_dyn_addn(out, enc, elen))
           err = PARAM_NO_MEM;
-        curl_free(enc);
+        curlx_free(enc);
         if(err)
           break;
       }
@@ -173,7 +173,7 @@ static ParameterError varfunc(char *c, /* content */
         else {
           if(curlx_dyn_addn(out, enc, elen))
             err = PARAM_NO_MEM;
-          curl_free(enc);
+          curlx_free(enc);
         }
         if(err)
           break;
@@ -185,19 +185,18 @@ static ParameterError varfunc(char *c, /* content */
       err = PARAM_EXPAND_ERROR;
       break;
     }
-    if(alloc)
-      curlx_free(c);
+    if(allocptr)
+      curlx_free(allocptr);
 
     clen = curlx_dyn_len(out);
-    c = curlx_memdup0(curlx_dyn_ptr(out), clen);
+    allocptr = c = curlx_memdup0(curlx_dyn_ptr(out), clen);
     if(!c) {
       err = PARAM_NO_MEM;
       break;
     }
-    alloc = TRUE;
   }
-  if(alloc)
-    curlx_free(c);
+  if(allocptr)
+    curlx_free(allocptr);
   if(err)
     curlx_dyn_free(out);
   return err;
@@ -213,6 +212,8 @@ ParameterError varexpand(const char *line, struct dynbuf *out, bool *replaced)
   curlx_dyn_init(out, MAX_EXPAND_CONTENT);
   do {
     envp = strstr(line, "{{");
+    if(!envp)
+      break;
     if((envp > line) && envp[-1] == '\\') {
       /* preceding backslash, we want this verbatim */
 
@@ -227,7 +228,7 @@ ParameterError varexpand(const char *line, struct dynbuf *out, bool *replaced)
         return PARAM_NO_MEM;
       line = &envp[2];
     }
-    else if(envp) {
+    else {
       char name[MAX_VAR_LEN];
       size_t nlen;
       size_t i;
@@ -315,13 +316,12 @@ ParameterError varexpand(const char *line, struct dynbuf *out, bool *replaced)
           if(result)
             return PARAM_NO_MEM;
 
-          added = true;
+          added = TRUE;
         }
       }
       line = &clp[2];
     }
-
-  } while(envp);
+  } while(1);
   if(added && *line) {
     /* add the "suffix" as well */
     result = curlx_dyn_add(out, line);
@@ -354,7 +354,7 @@ static ParameterError addvariable(const char *name,
   p = curlx_calloc(1, sizeof(struct tool_var) + nlen);
   if(p) {
     memcpy(p->name, name, nlen);
-    /* the null termination byte is already present from above */
+    /* the null-termination byte is already present from above */
 
     p->content = contalloc ? content : curlx_memdup0(content, clen);
     if(p->content) {
@@ -393,7 +393,7 @@ ParameterError setvariable(const char *input)
     line++;
   nlen = line - name;
   if(!nlen || (nlen >= MAX_VAR_LEN)) {
-    warnf("Bad variable name length (%zd), skipping", nlen);
+    warnf("Bad variable name length (%zu), skipping", nlen);
     return PARAM_OK;
   }
   if(import) {
