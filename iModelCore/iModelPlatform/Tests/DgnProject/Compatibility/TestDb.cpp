@@ -1028,6 +1028,8 @@ TestDb::ExpectedFeatureBehavior TestDb::ComputeExpectedBehavior(std::map<Utf8Str
             }
         else if (compat.EqualsI("NoSchemaImport"))
             behavior.m_schemaImportBlocked = true;
+        else if (compat.EqualsI("NoChangesetGeneration"))
+            behavior.m_changesetGenerationBlocked = true;
         else // Warn only
             behavior.m_expectWarning = true;
         }

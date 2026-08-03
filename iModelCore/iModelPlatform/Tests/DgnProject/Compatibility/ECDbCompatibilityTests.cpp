@@ -37,8 +37,7 @@ TEST_F(ECDbCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
 
             // Feature-aware open: a pulled file may carry ec_Feature rows for features this
             // runtime does not know. Such files must be handled per their Compat level rather
-            // than assumed to open cleanly. This is data-driven (not version-driven) because
-            // new features do not bump the profile version.
+            // than assumed to open cleanly.
             const TestDb::ExpectedFeatureBehavior expected = testDb.GetExpectedFeatureBehavior();
             const bool isReadonlyOpen = testDb.GetOpenParams().IsReadonly();
             const DbResult expectedOpenResult = isReadonlyOpen ? expected.m_readonlyOpen : expected.m_readWriteOpen;
@@ -2482,3 +2481,111 @@ TEST_F(ECDbCompatibilityTestFixture, FeatureTable_StateForAllVersionsOfNonEmptyF
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, FeatureAwareMixedCompatsExpectedOpenBehavior)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_ECFEATURES_MIXED))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+
+            const TestDb::ExpectedFeatureBehavior expected = testDb.GetExpectedFeatureBehavior();
+            const bool isReadonlyOpen = testDb.GetOpenParams().IsReadonly();
+            const DbResult expectedOpenResult = isReadonlyOpen ? expected.m_readonlyOpen : expected.m_readWriteOpen;
+
+            const DbResult actualOpenResult = testDb.Open();
+            ASSERT_EQ(expectedOpenResult, actualOpenResult) << testDb.GetDescription();
+
+            if (BE_SQLITE_OK != actualOpenResult)
+                continue;
+
+            testDb.AssertProfileVersion();
+
+            EXPECT_TRUE(expected.m_schemaImportBlocked) << testDb.GetDescription();
+            EXPECT_TRUE(expected.m_changesetGenerationBlocked) << testDb.GetDescription();
+            if (!isReadonlyOpen)
+                EXPECT_TRUE(expected.m_expectWarning) << testDb.GetDescription();
+
+            // Schema import must actually be blocked, matching the computed expectation.
+            ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+            ctx->AddSchemaLocater(testDb.GetDb().GetSchemaLocater());
+            ECSchemaPtr testSchema;
+            ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(testSchema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName="FeatureAwareTestSchema" alias="fats" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECEntityClass typeName="Foo">
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml", *ctx)) << testDb.GetDescription();
+
+            const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
+            if (expected.m_schemaImportBlocked)
+                EXPECT_EQ(ERROR, schemaImportStat) << "test-feature-noschemaimport must block schema import | " << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, FeatureAware_RefuseCompat_BlocksAllOpensAndIsDiagnosable)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_ECFEATURES_REFUSE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+
+            const TestDb::ExpectedFeatureBehavior expected = testDb.GetExpectedFeatureBehavior();
+            EXPECT_EQ(BE_SQLITE_ERROR, expected.m_readWriteOpen) << testDb.GetDescription();
+            EXPECT_EQ(BE_SQLITE_ERROR, expected.m_readonlyOpen) << testDb.GetDescription();
+
+            const bool isReadonlyOpen = testDb.GetOpenParams().IsReadonly();
+            const DbResult expectedOpenResult = isReadonlyOpen ? expected.m_readonlyOpen : expected.m_readWriteOpen;
+            EXPECT_EQ(expectedOpenResult, testDb.Open()) << "test-feature-refuse must block every open mode | " << testDb.GetDescription();
+
+            // Should be diagnosable
+            std::vector<Utf8String> blockingFeatureNames;
+            ASSERT_EQ(SUCCESS, ECDb::TryGetBlockingFeatures(blockingFeatureNames, testFile.GetSeedPath())) << testDb.GetDescription();
+            ASSERT_EQ(2, blockingFeatureNames.size()) << testDb.GetDescription();
+            EXPECT_STREQ("test-feature-refuse", blockingFeatureNames[0].c_str()) << testDb.GetDescription();
+            EXPECT_STREQ("another-test-feature-refuse", blockingFeatureNames[1].c_str()) << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, FeatureTable_ProfileUpgradePreservesExistingFeatureRows)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_ECFEATURES_MIXED))
+        {
+        if (testFile.GetAge() != ProfileState::Age::Older)
+            continue; // only verify the upgrade path from older files; no-op until a future profile bump adds one
+
+        std::map<Utf8String, Utf8String> preUpgradeFeatures = TestDb::ReadUsedFeaturesRaw(testFile.GetSeedPath());
+        ASSERT_FALSE(preUpgradeFeatures.empty()) << "Older seed file is expected to already carry ec_Feature rows | " << testFile.GetName();
+
+        TestECDb testDb(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
+        ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+        testDb.AssertProfileVersion();
+        EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), testDb.GetECDbProfileVersion()) << testDb.GetDescription();
+
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(testDb.GetDb(), "SELECT count(*) FROM " TABLE_FEATURE)) << testDb.GetDescription();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+        EXPECT_EQ((int)preUpgradeFeatures.size(), stmt.GetValueInt(0))
+            << "Profile upgrade must preserve pre-existing ec_Feature rows, not drop them | " << testDb.GetDescription();
+
+        for (auto const& [name, compat] : preUpgradeFeatures)
+            {
+            EXPECT_TRUE(testDb.HasFeatureRow(name.c_str())) << "Upgrade dropped feature row '" << name << "' | " << testDb.GetDescription();
+            EXPECT_STREQ(compat.c_str(), testDb.GetFeatureCompat(name.c_str()).c_str()) << testDb.GetDescription();
+            }
+        }
+    }
+
