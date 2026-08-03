@@ -22,6 +22,7 @@ set(VCPKG_LOAD_VCVARS_ENV ON)
 # clang-cl via $ENV{LLVM_DIR} in every phase (detect_compiler, compiler-ABI try_compile, build).
 set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
 
-# Force full release builds in vcpkg for this triplet (see x64-windows-static.cmake for the
-# CRT / iterator-debug-level rationale).
+# Build pugixml release-only in vcpkg for this triplet (see x64-windows-static.cmake for the
+# full CRT / iterator-debug-level rationale and the accepted tradeoff that this drops pugixml's
+# internal asserts on Windows DEBUG only).
 set(VCPKG_BUILD_TYPE release)
