@@ -71,3 +71,17 @@ endif()
 
 include("${_bsi_windows_toolchain}")
 
+# The MSVC STL shipped with VS2022 17.14+ (MSVC 14.44) requires Clang 19 or newer and
+# otherwise hard-errors from <yvals_core.h>:
+#     error STL1000: Unexpected compiler version, expected Clang 19.0.0 or newer.
+# CI still ships Clang 18, so allow the mismatch here, matching what the rest of the native
+# Windows clang build does (bsicommon/PublicSDK/winntclangmdl.mki) and what crashpad's
+# portfile does for its GN build. Appended after windows.cmake so it survives the flag
+# initialization there, and guarded so repeated inclusions (compiler detection, try_compile)
+# do not duplicate the define.
+foreach(_bsi_flags_var IN ITEMS CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    if(NOT "${${_bsi_flags_var}}" MATCHES "_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH")
+        string(APPEND ${_bsi_flags_var} " /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH")
+    endif()
+endforeach()
+
