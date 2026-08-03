@@ -180,13 +180,43 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 - `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
 - All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
 - Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
-- **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the vcpkg tree, so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+- **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
+
+### Cache locations and environment overrides
+
+The wrappers keep vcpkg's downloads/tools tree, its registry git cache, and the binary archive cache in a **persistent, per-user** base directory rather than under `VCPKG_ROOT` or `$OutRoot`. This means the caches survive a clean build (tools, source archives, and the shallow registry repo are downloaded once and reused) and do **not** require `VCPKG_ROOT`/`IMODEL_VCPKG_ROOT` to be writable — the resolved root may be a protected Program Files location (the Visual Studio bundled copy) or a shared, read-only checkout.
+
+Default base directory:
+
+| Platform | Base |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%\Bentley\vcpkg` |
+| macOS / Linux | `${XDG_CACHE_HOME:-$HOME/.cache}/Bentley/vcpkg` |
+
+If the base cannot be created (for example on a locked-down agent, or when `LOCALAPPDATA`/`HOME` is unset), the wrapper falls back to `<install_root>/vcpkg-cache` so the build still works.
+
+Under the base, the wrappers derive:
+
+- `<base>/downloads/<platform-key>` — vcpkg downloads/tools tree and source archives (`--downloads-root`). The `<platform-key>` is the first two triplet tokens (e.g. `x64-windows`, `arm64-android`), so different architectures never share a mutable tools tree.
+- `<base>/downloads/<platform-key>/registries` — the vcpkg registry git cache (`X_VCPKG_REGISTRIES_CACHE`), also per-platform.
+- `<base>/archives` — the local binary (`files`) cache (`VCPKG_DEFAULT_BINARY_CACHE`), shared across triplets/configs (vcpkg keeps it concurrency-safe).
+
+Because same-platform builds (e.g. static + dynamic, or two pipelines) share the per-platform downloads tree and registry cache, the wrappers hold a **cross-process lock** — a platform-keyed lock file in the base — around the actual `vcpkg install`, so those runs serialize instead of corrupting shared state. Builds for different architectures use different lock files and still run in parallel.
+
+**Escape hatches.** Each cache location is only derived from the base when its variable is unset; set any of these to override the default:
+
+| Variable | Overrides | Notes |
+| --- | --- | --- |
+| `VCPKG_DOWNLOADS` | downloads/tools tree (`--downloads-root`) | The registry cache is derived from this when `X_VCPKG_REGISTRIES_CACHE` is also unset. |
+| `X_VCPKG_REGISTRIES_CACHE` | registry git cache | Standard vcpkg variable. |
+| `VCPKG_DEFAULT_BINARY_CACHE` | local binary (`files`) archive cache | Used to build the default `VCPKG_BINARY_SOURCES` when that is unset. |
+| `VCPKG_BINARY_SOURCES` | binary cache backend(s) entirely | See [Binary cache resolution](#how-it-works) and [Shared binary cache](#shared-binary-cache). |
 
 ## Shared binary cache
 
 To avoid recompiling unchanged libraries on every agent (OpenSSL alone is ~1,200 translation units × 6 triplets), **Bentley CI** may restore and publish vcpkg binaries through an **internal, Bentley-only** shared binary cache. That cache lives in a Bentley-owned cloud subscription and requires a Bentley identity to reach, so it is **internal to Bentley** — it is neither accessible to nor needed by external contributors. Its configuration and internal-access workflow are kept in Bentley's private documentation.
 
-External contributors — and any build without cache access — use the fully supported default path with no extra setup: vcpkg builds each library from source and keeps a **local** `files` archive cache under the vcpkg tree, so a second build on the same machine restores instead of recompiling (see [How It Works](#how-it-works)).
+External contributors — and any build without cache access — use the fully supported default path with no extra setup: vcpkg builds each library from source and keeps a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling (see [How It Works](#how-it-works)).
 
 If you want cross-machine reuse of your own, you can point `VCPKG_BINARY_SOURCES` at **any** vcpkg-supported binary cache backend (a local directory, your own cloud storage, a NuGet feed, etc.); see vcpkg's [binary caching documentation](https://learn.microsoft.com/en-us/vcpkg/reference/binarycaching).
 
