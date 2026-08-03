@@ -137,22 +137,44 @@ if not exist "%VCPKG_EXE%" (
     exit /b 1
 )
 
-rem Use a per-install-root downloads directory so parallel builds for different
-rem triplets (e.g. AndroidARM64 and AndroidX64) each get their own
-rem downloads\tools\msys2 tree and cannot race on MSYS2 tool extraction.
-rem The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared so compiled
-rem packages are not rebuilt redundantly.
-set "VCPKG_DOWNLOADS=%INSTALL_ROOT%\downloads"
+rem Persistent per-platform downloads directory nested under the vcpkg checkout's downloads/
+rem folder (which vcpkg's own .gitignore ignores, so these caches never show up as untracked
+rem in the vcpkg repo). The binary cache "archives" lives alongside under VCPKG_ROOT. Two goals:
+rem   1. Persistence: it lives under SrcRoot (VCPKG_ROOT), NOT OutRoot, so a full clean build
+rem      does not wipe it. Tools (cmake, msys2, ...) and source archives are downloaded and
+rem      extracted once and reused across clean builds, instead of being re-extracted every
+rem      time. Re-extraction is what repeatedly reopens the Windows Defender rename_or_delete
+rem      "Access is denied" race on a freshly-extracted cmake.exe.
+rem   2. Cross-arch isolation: the platform key is the first two triplet tokens
+rem      (e.g. x64-windows, arm64-android, x64-android), so parallel builds of different arches
+rem      (notably AndroidARM64 vs AndroidX64) get separate downloads\<platform>\tools trees and
+rem      cannot race on tool extraction. Triplet variants of the same platform (static / -md /
+rem      -veracode / -clang) and different configs (debug/release) intentionally share one
+rem      persistent cache; the sequential install chain (vcpkg.PartFile.xml) serializes
+rem      libraries within an arch, and once a tool is extracted no further extraction (hence no
+rem      race) occurs for that platform.
+rem The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared so compiled packages are not
+rem rebuilt redundantly.
+for /f "tokens=1,2 delims=-" %%a in ("%TRIPLET%") do set "VCPKG_PLATFORM_KEY=%%a-%%b"
+set "VCPKG_DOWNLOADS=%VCPKG_ROOT%\downloads\%VCPKG_PLATFORM_KEY%"
+if not exist "%VCPKG_DOWNLOADS%" mkdir "%VCPKG_DOWNLOADS%"
 if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
     set "VCPKG_DEFAULT_BINARY_CACHE=%VCPKG_ROOT%\archives"
 )
 if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
 
-rem Isolate the git registries cache per install-root to prevent a race condition
-rem where parallel vcpkg processes (building different arches) collide on the shared
-rem global cache at %LOCALAPPDATA%\vcpkg\registries. Concurrent git fetch/GC
-rem operations on that bare repo cause transient "port does not exist" failures.
-set "X_VCPKG_REGISTRIES_CACHE=%INSTALL_ROOT%\registries"
+rem Persistent per-platform git registries cache, nested under the same per-platform downloads
+rem directory (so it lives under SrcRoot and survives clean builds, and under vcpkg's gitignored
+rem downloads/ so it never shows as untracked). Two goals, mirroring the downloads cache:
+rem   1. Persistence: because it is not under OutRoot, a clean build does not wipe it, so vcpkg
+rem      reuses the existing shallow registry repo and does a small incremental fetch (or none)
+rem      instead of a full cold fetch from github.com/microsoft/vcpkg every clean build. That
+rem      cold fetch is what intermittently fails with "RPC failed; curl 56 / early EOF".
+rem   2. Cross-arch isolation: the <platform> key keeps parallel arch builds (e.g. AndroidARM64
+rem      vs AndroidX64) on separate registry repos so their concurrent git fetch/GC operations
+rem      cannot collide (the default global cache at %LOCALAPPDATA%\vcpkg\registries is shared
+rem      across arches and would race, causing transient "port does not exist" failures).
+set "X_VCPKG_REGISTRIES_CACHE=%VCPKG_DOWNLOADS%\registries"
 if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%"
 
 rem Use a persistent local binary cache by default to avoid rebuilding heavy ports

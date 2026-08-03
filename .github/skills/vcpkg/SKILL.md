@@ -44,6 +44,13 @@ Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg-configuration.json` — copy from an existing consumer (e.g. `compress/`); update `baseline` if needed
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
+> **Check whether the library needs release-only Windows triplets.** Some libraries fail to
+> link into Windows DEBUG builds unless their vcpkg triplets force `set(VCPKG_BUILD_TYPE
+> release)`; others are fine without it. See the
+> [Windows debug builds link the release CRT](#windows-debug-builds-link-the-release-crt)
+> pitfall below to decide, and for the two-part fix. `crashpad/triplets/` and
+> `pugixml/triplets/` are working examples of libraries that needed it.
+
 ### 2. Create `iModelCore/libsrc/vcpkg_install_<mylib>.mke`
 
 ```makefile
@@ -145,6 +152,27 @@ Libraries that **only** build as static (e.g. compress, crashpad client) can ski
 `%if defined (CREATE_STATIC_LIBRARIES)` conditional and use `$(OutputRootDir)vcpkg_installed/…`
 directly — their `OutputRootDir` is always the static one.
 
+**If this library needs the release-only Windows triplets** (see the pitfall below), also link
+the release archive on Windows. Because those triplets set `VCPKG_BUILD_TYPE release`, no
+`debug/lib/` archive is produced, so a `%if defined (DEBUG)` branch that reaches for
+`$(vcpkgDbgLibDir)` would point at a nonexistent file. Gate the archive selection on the
+platform first:
+
+```makefile
+%if $(TARGET_PLATFORM) == "Windows"
+    # Windows always links the release archive: the Windows triplets force VCPKG_BUILD_TYPE
+    # release because bmake links the release CRT even in DEBUG builds.
+    vcpkgMyLib = $(vcpkgLibDir)$(myLibName)
+%elif defined (DEBUG)
+    vcpkgMyLib = $(vcpkgDbgLibDir)$(myLibName)
+%else
+    vcpkgMyLib = $(vcpkgLibDir)$(myLibName)
+%endif
+```
+
+Libraries that do **not** need the release-only triplets keep the plain
+`%if defined (DEBUG)` → `$(vcpkgDbgLibDir)` selection (e.g. `openssl/BeOpenSSL.mke`).
+
 ### 6. Migrating an existing (previously vendored) library
 
 When the library you are moving to vcpkg was previously vendored (its source checked into
@@ -168,6 +196,41 @@ may not run at all.
    `iModelCore/libsrc/<consumer>/vcpkg-configuration.json`.
 3. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick
    up the new version via the binary cache or a fresh build.
+
+---
+
+## Pitfall: Windows debug builds link the release CRT
+
+<a id="windows-debug-builds-link-the-release-crt"></a>
+
+The bmake link settings in this pipeline use the **release CRT even in Windows DEBUG builds**.
+Bentley wrapper objects (e.g. `BePugiXml`, the crashpad client wrapper) are therefore compiled
+`MD_DynamicRelease` with `_ITERATOR_DEBUG_LEVEL=0`.
+
+**This does not affect every library — only those whose debug artifact actually depends on the
+debug CRT.** A vcpkg debug build is compiled with `_DEBUG` defined. If the library's source
+gates on `_DEBUG` at compile time and then calls debug-CRT-only functionality (or raises
+`_ITERATOR_DEBUG_LEVEL` to 2), that debug artifact references symbols that do not exist in the
+release CRT, so linking it into our release-CRT DEBUG build fails with unresolved-symbol /
+CRT-mismatch / `_ITERATOR_DEBUG_LEVEL` (2 vs 0) errors. Libraries whose debug artifact does not
+touch debug-CRT-only functionality link fine and have deliberately been left on the normal
+debug/release selection (e.g. `openssl`).
+
+**So this is a per-library check, not a blanket rule.** If a new Windows vcpkg library links
+cleanly in a DEBUG build, leave it alone. If its DEBUG link fails with the symptoms above, apply
+the fix — it has two halves, do both:
+
+1. **Force release-only builds in the Windows triplets.** Add `set(VCPKG_BUILD_TYPE release)` to
+   every Windows triplet the library uses (`x64-windows-static.cmake`, the `-clang` variant, and
+   any `-md` / `-veracode` variants). This stops vcpkg from producing a `debug/lib/` archive at
+   all.
+2. **Always link the release archive on Windows in the consumer `.mke`.** Select the archive
+   with a `%if $(TARGET_PLATFORM) == "Windows"` branch that uses `$(vcpkgLibDir)` (release)
+   *before* any `%if defined (DEBUG)` branch (see step 5).
+
+This has bitten two libraries so far — crashpad (first) and pugixml (second). Reference
+implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
+`crashpad/triplets/*.cmake` + `crashpad/client.mke`.
 
 ---
 

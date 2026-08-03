@@ -91,19 +91,36 @@ fi
 # Use custom overlay triplets from the manifest directory (if present) for build flags
 OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 
-# Use a per-install-root downloads directory so parallel builds for different
-# triplets (e.g. arm64-android and x64-android) each get their own
-# downloads/tools tree and cannot race on tool extraction (e.g. MSYS2 on Windows,
-# or any vcpkg_find_acquire_program downloads on macOS/Linux).
+# Persistent per-platform downloads directory nested under the vcpkg checkout's downloads/
+# folder (which vcpkg's own .gitignore ignores, so these caches never show up as untracked in
+# the vcpkg repo). The binary cache "archives" lives alongside under VCPKG_ROOT. Two goals:
+#   1. Persistence: it lives under SrcRoot (VCPKG_ROOT), NOT OutRoot, so a full clean build
+#      does not wipe it. Tools and source archives are downloaded/extracted once and reused
+#      across clean builds instead of being re-extracted every time.
+#   2. Cross-arch isolation: the platform key is the first two triplet tokens
+#      (e.g. arm64-android, x64-android), so parallel builds of different arches (notably
+#      arm64-android vs x64-android) get separate downloads/<platform>/tools trees and cannot
+#      race on tool extraction. Triplet variants of the same platform and different configs
+#      intentionally share one persistent cache; the sequential install chain
+#      (vcpkg.PartFile.xml) serializes libraries within an arch, and once a tool is extracted
+#      no further extraction (hence no race) occurs for that platform.
 # The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared.
-DOWNLOADS_ROOT="$INSTALL_ROOT/downloads"
+VCPKG_PLATFORM_KEY="$(echo "$TRIPLET" | cut -d- -f1,2)"
+DOWNLOADS_ROOT="$VCPKG_ROOT/downloads/$VCPKG_PLATFORM_KEY"
 mkdir -p "$DOWNLOADS_ROOT"
 
-# Isolate the git registries cache per install-root to prevent a race condition
-# where parallel vcpkg processes (building different arches) collide on the shared
-# global cache at ~/.cache/vcpkg/registries. Concurrent git fetch/GC operations on
-# that bare repo cause transient "port does not exist" failures.
-export X_VCPKG_REGISTRIES_CACHE="$INSTALL_ROOT/registries"
+# Persistent per-platform git registries cache, nested under the same per-platform downloads
+# directory (so it lives under SrcRoot and survives clean builds, and under vcpkg's gitignored
+# downloads/ so it never shows as untracked). Two goals, mirroring the downloads cache:
+#   1. Persistence: because it is not under OutRoot, a clean build does not wipe it, so vcpkg
+#      reuses the existing shallow registry repo and does a small incremental fetch (or none)
+#      instead of a full cold fetch from github.com/microsoft/vcpkg every clean build. That
+#      cold fetch is what intermittently fails with "RPC failed; curl 56 / early EOF".
+#   2. Cross-arch isolation: the <platform> key keeps parallel arch builds (e.g. arm64-android
+#      vs x64-android) on separate registry repos so their concurrent git fetch/GC operations
+#      cannot collide (the default global cache at ~/.cache/vcpkg/registries is shared across
+#      arches and would race, causing transient "port does not exist" failures).
+export X_VCPKG_REGISTRIES_CACHE="$DOWNLOADS_ROOT/registries"
 mkdir -p "$X_VCPKG_REGISTRIES_CACHE"
 
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"

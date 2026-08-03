@@ -10,3 +10,10 @@
 set(VCPKG_TARGET_ARCHITECTURE x64)
 set(VCPKG_CRT_LINKAGE dynamic)
 set(VCPKG_LIBRARY_LINKAGE static)
+
+# Force full release builds in vcpkg for this triplet.
+# Reason: bmake link settings in this pipeline use the release CRT even in DEBUG builds, so
+# pugixml must be produced as release artifacts to avoid CRT ('MDd_DynamicDebug' vs
+# 'MD_DynamicRelease') and _ITERATOR_DEBUG_LEVEL (2 vs 0) link mismatches against our
+# BePugiXml wrapper object.
+set(VCPKG_BUILD_TYPE release)
