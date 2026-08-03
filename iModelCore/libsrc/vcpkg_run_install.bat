@@ -137,48 +137,52 @@ if not exist "%VCPKG_EXE%" (
     exit /b 1
 )
 
-rem Persistent per-platform downloads directory nested under the vcpkg checkout's downloads/
-rem folder (which vcpkg's own .gitignore ignores, so these caches never show up as untracked
-rem in the vcpkg repo). The binary cache "archives" lives alongside under VCPKG_ROOT. Two goals:
-rem   1. Persistence: it lives under SrcRoot (VCPKG_ROOT), NOT OutRoot, so a full clean build
-rem      does not wipe it. Tools (cmake, msys2, ...) and source archives are downloaded and
-rem      extracted once and reused across clean builds, instead of being re-extracted every
-rem      time. Re-extraction is what repeatedly reopens the Windows Defender rename_or_delete
-rem      "Access is denied" race on a freshly-extracted cmake.exe.
-rem   2. Cross-arch isolation: the platform key is the first two triplet tokens
-rem      (e.g. x64-windows, arm64-android, x64-android), so parallel builds of different arches
-rem      (notably AndroidARM64 vs AndroidX64) get separate downloads\<platform>\tools trees and
-rem      cannot race on tool extraction. Triplet variants of the same platform (static / -md /
-rem      -veracode / -clang) and different configs (debug/release) intentionally share one
-rem      persistent cache; the sequential install chain (vcpkg.PartFile.xml) serializes
-rem      libraries within an arch, and once a tool is extracted no further extraction (hence no
-rem      race) occurs for that platform.
-rem The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared so compiled packages are not
-rem rebuilt redundantly.
-for /f "tokens=1,2 delims=-" %%a in ("%TRIPLET%") do set "VCPKG_PLATFORM_KEY=%%a-%%b"
-set "VCPKG_DOWNLOADS=%VCPKG_ROOT%\downloads\%VCPKG_PLATFORM_KEY%"
-if not exist "%VCPKG_DOWNLOADS%" mkdir "%VCPKG_DOWNLOADS%"
-if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" (
-    set "VCPKG_DEFAULT_BINARY_CACHE=%VCPKG_ROOT%\archives"
+rem --------------------------------------------------------------------------------------
+rem Persistent per-user vcpkg cache base.
+rem
+rem The downloads/tools tree, the registries git repo, and the binary "archives" cache all live
+rem under this base. It is placed under the user profile (LOCALAPPDATA) rather than under
+rem VCPKG_ROOT for two reasons:
+rem   * Writability: VCPKG_ROOT may resolve to a protected location -- e.g. the Visual Studio
+rem     bundled copy under %VCINSTALLDIR%\vcpkg (Program Files) or a shared, read-only
+rem     IMODEL_VCPKG_ROOT -- which we must not require to be writable.
+rem   * Persistence: LOCALAPPDATA is not under OutRoot, so a clean build does not wipe it. Tools
+rem     (cmake, msys2, ...), source archives, and the shallow registry repo are downloaded and
+rem     extracted once and reused across clean builds instead of being re-extracted every time
+rem     (re-extraction is slow and repeatedly reopens the Windows Defender rename_or_delete
+rem     "Access is denied" race on a freshly-extracted cmake.exe).
+rem If the profile location is unavailable (LOCALAPPDATA unset or not creatable, e.g. a
+rem locked-down agent), fall back to a directory under INSTALL_ROOT so the build still works.
+rem --------------------------------------------------------------------------------------
+set "VCPKG_CACHE_BASE=%LOCALAPPDATA%\Bentley\vcpkg"
+if "%LOCALAPPDATA%"=="" set "VCPKG_CACHE_BASE=%INSTALL_ROOT%\vcpkg-cache"
+if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%" 2>nul
+if not exist "%VCPKG_CACHE_BASE%" (
+    echo vcpkg: persistent cache base "%VCPKG_CACHE_BASE%" unavailable; falling back to INSTALL_ROOT
+    set "VCPKG_CACHE_BASE=%INSTALL_ROOT%\vcpkg-cache"
+    if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%"
 )
-if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
 
-rem Persistent per-platform git registries cache, nested under the same per-platform downloads
-rem directory (so it lives under SrcRoot and survives clean builds, and under vcpkg's gitignored
-rem downloads/ so it never shows as untracked). Two goals, mirroring the downloads cache:
-rem   1. Persistence: because it is not under OutRoot, a clean build does not wipe it, so vcpkg
-rem      reuses the existing shallow registry repo and does a small incremental fetch (or none)
-rem      instead of a full cold fetch from github.com/microsoft/vcpkg every clean build. That
-rem      cold fetch is what intermittently fails with "RPC failed; curl 56 / early EOF".
-rem   2. Cross-arch isolation: the <platform> key keeps parallel arch builds (e.g. AndroidARM64
-rem      vs AndroidX64) on separate registry repos so their concurrent git fetch/GC operations
-rem      cannot collide (the default global cache at %LOCALAPPDATA%\vcpkg\registries is shared
-rem      across arches and would race, causing transient "port does not exist" failures).
-set "X_VCPKG_REGISTRIES_CACHE=%VCPKG_DOWNLOADS%\registries"
-if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%"
+rem Per-platform downloads/tools tree and registries git repo. The platform key is the first two
+rem triplet tokens (e.g. x64-windows, arm64-android, x64-android), so parallel builds of
+rem different arches (notably AndroidARM64 vs AndroidX64) get separate trees and cannot race on
+rem tool extraction or registry git fetch/GC. Triplet variants of the same platform (static /
+rem -md / -veracode / -clang) and configs (debug/release) intentionally share one persistent
+rem cache; the cross-process lock around the install below serializes same-platform runs.
+rem Honor the caller-provided VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE / VCPKG_DEFAULT_BINARY_CACHE
+rem escape hatches when set; otherwise derive them from the cache base.
+for /f "tokens=1,2 delims=-" %%a in ("%TRIPLET%") do set "VCPKG_PLATFORM_KEY=%%a-%%b"
 
-rem Use a persistent local binary cache by default to avoid rebuilding heavy ports
-rem (for example, crashpad) across builds. Allow callers to override.
+if "%VCPKG_DOWNLOADS%"=="" set "VCPKG_DOWNLOADS=%VCPKG_CACHE_BASE%\downloads\%VCPKG_PLATFORM_KEY%"
+if not exist "%VCPKG_DOWNLOADS%" mkdir "%VCPKG_DOWNLOADS%" 2>nul
+
+if "%X_VCPKG_REGISTRIES_CACHE%"=="" set "X_VCPKG_REGISTRIES_CACHE=%VCPKG_DOWNLOADS%\registries"
+if not exist "%X_VCPKG_REGISTRIES_CACHE%" mkdir "%X_VCPKG_REGISTRIES_CACHE%" 2>nul
+
+rem Use a persistent local binary cache by default to avoid rebuilding heavy ports (for example,
+rem crashpad) across builds. Shared across arches/configs (vcpkg keeps it concurrency-safe).
+if "%VCPKG_DEFAULT_BINARY_CACHE%"=="" set "VCPKG_DEFAULT_BINARY_CACHE=%VCPKG_CACHE_BASE%\archives"
+if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%" 2>nul
 if "%VCPKG_BINARY_SOURCES%"=="" (
     set "VCPKG_BINARY_SOURCES=clear;files,%VCPKG_DEFAULT_BINARY_CACHE%,readwrite"
 )
@@ -214,19 +218,48 @@ if exist "%OVERLAY_PORTS%" set OVERLAY_ARG=%OVERLAY_ARG% --overlay-ports="%OVERL
 echo vcpkg: installing packages from "%MANIFEST_DIR%" (triplet=%TRIPLET%, install-root=%INSTALL_ROOT%)
 echo vcpkg: exe="%VCPKG_EXE%"
 echo vcpkg: root="%VCPKG_ROOT%"
+echo vcpkg: cache-base="%VCPKG_CACHE_BASE%"
 echo vcpkg: downloads="%VCPKG_DOWNLOADS%"
 echo vcpkg: registries-cache="%X_VCPKG_REGISTRIES_CACHE%"
 echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
 echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 
-if "%OVERLAY_ARG%"=="" (
-    "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages"
-) else (
-    "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages" %OVERLAY_ARG%
-)
-if errorlevel 1 exit /b %errorlevel%
+rem --------------------------------------------------------------------------------------
+rem Cross-process lock around the install. Same-platform builds share the per-platform
+rem downloads/tools tree and registries git repo above; vcpkg.PartFile.xml only serializes
+rem consumers within a single BentleyBuild graph, so two same-platform builds (static + dynamic,
+rem or two pipelines) can still run concurrently and corrupt that shared state (see PR #1497:
+rem concurrent registry fetch/GC). Serialize them with a platform-keyed lock file: cmd opens the
+rem redirection target (handle 9) without write-sharing, so a second process's open fails while
+rem the first holds it. Different arches use different lock files and still build in parallel.
+rem The OS releases the handle when this process exits, so a crash cannot wedge the lock.
+rem Handle 8 preserves the real stderr so vcpkg's own error output is not swallowed by the 2>nul
+rem that suppresses the expected "file in use" noise from a failed lock acquisition.
+rem --------------------------------------------------------------------------------------
+set "VCPKG_LOCKFILE=%VCPKG_CACHE_BASE%\%VCPKG_PLATFORM_KEY%.install.lock"
 
+:acquire_lock
+set "GOT_LOCK="
+(
+    9>>"%VCPKG_LOCKFILE%" (
+        set "GOT_LOCK=1"
+        call :run_install
+    )
+) 8>&2 2>nul
+if defined GOT_LOCK goto :lock_done
+echo vcpkg: waiting for same-platform install lock "%VCPKG_LOCKFILE%"...
+rem ~5s portable sleep (timeout /t breaks when stdin is redirected in CI).
+ping -n 6 127.0.0.1 >nul
+goto :acquire_lock
+
+:lock_done
+if not "%INSTALL_RC%"=="0" exit /b %INSTALL_RC%
 exit /b 0
+
+:run_install
+"%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages" %OVERLAY_ARG% 2>&8
+set "INSTALL_RC=%errorlevel%"
+goto :eof
 
 :usage
 echo Usage: %~nx0 ^<manifest_dir^> ^<install_root^> ^<triplet^>

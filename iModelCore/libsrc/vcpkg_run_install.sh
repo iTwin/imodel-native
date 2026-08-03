@@ -69,10 +69,31 @@ elif [ -z "$VCPKG_ROOT" ]; then
     VCPKG_ROOT="${SrcRoot}vcpkg"
 fi
 
+# --------------------------------------------------------------------------------------
+# Persistent per-user vcpkg cache base.
+#
+# The downloads/tools tree, the registries git repo, and the binary "archives" cache all live
+# under this base. It is placed under the user cache directory ($XDG_CACHE_HOME or ~/.cache)
+# rather than under VCPKG_ROOT for two reasons:
+#   * Writability: VCPKG_ROOT / IMODEL_VCPKG_ROOT may be a shared, read-only checkout that we
+#     must not require to be writable.
+#   * Persistence: the user cache is not under OutRoot, so a clean build does not wipe it. Tools,
+#     source archives, and the shallow registry repo are downloaded/extracted once and reused
+#     across clean builds instead of being re-extracted every time.
+# If the user cache location cannot be created (e.g. a locked-down agent), fall back to a
+# directory under INSTALL_ROOT so the build still works.
+# --------------------------------------------------------------------------------------
+VCPKG_CACHE_BASE="${XDG_CACHE_HOME:-$HOME/.cache}/Bentley/vcpkg"
+if ! mkdir -p "$VCPKG_CACHE_BASE" 2>/dev/null; then
+    echo "vcpkg: persistent cache base '$VCPKG_CACHE_BASE' unavailable; falling back to INSTALL_ROOT"
+    VCPKG_CACHE_BASE="$INSTALL_ROOT/vcpkg-cache"
+    mkdir -p "$VCPKG_CACHE_BASE"
+fi
+
 # Use a persistent local binary cache by default to avoid rebuilding heavy ports
 # (for example, crashpad) across builds. Allow callers to override.
 if [ -z "${VCPKG_DEFAULT_BINARY_CACHE:-}" ]; then
-    export VCPKG_DEFAULT_BINARY_CACHE="$VCPKG_ROOT/archives"
+    export VCPKG_DEFAULT_BINARY_CACHE="$VCPKG_CACHE_BASE/archives"
 fi
 mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
 
@@ -91,36 +112,19 @@ fi
 # Use custom overlay triplets from the manifest directory (if present) for build flags
 OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 
-# Persistent per-platform downloads directory nested under the vcpkg checkout's downloads/
-# folder (which vcpkg's own .gitignore ignores, so these caches never show up as untracked in
-# the vcpkg repo). The binary cache "archives" lives alongside under VCPKG_ROOT. Two goals:
-#   1. Persistence: it lives under SrcRoot (VCPKG_ROOT), NOT OutRoot, so a full clean build
-#      does not wipe it. Tools and source archives are downloaded/extracted once and reused
-#      across clean builds instead of being re-extracted every time.
-#   2. Cross-arch isolation: the platform key is the first two triplet tokens
-#      (e.g. arm64-android, x64-android), so parallel builds of different arches (notably
-#      arm64-android vs x64-android) get separate downloads/<platform>/tools trees and cannot
-#      race on tool extraction. Triplet variants of the same platform and different configs
-#      intentionally share one persistent cache; the sequential install chain
-#      (vcpkg.PartFile.xml) serializes libraries within an arch, and once a tool is extracted
-#      no further extraction (hence no race) occurs for that platform.
-# The binary cache (VCPKG_DEFAULT_BINARY_CACHE) remains shared.
+# Per-platform downloads/tools tree and registries git repo. The platform key is the first two
+# triplet tokens (e.g. arm64-android, x64-android), so parallel builds of different arches get
+# separate trees and cannot race on tool extraction or registry git fetch/GC. Triplet variants
+# of the same platform and configs (debug/release) intentionally share one persistent cache; the
+# cross-process lock around the install below serializes same-platform runs. Honor the
+# caller-provided VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE escape hatches when set.
 VCPKG_PLATFORM_KEY="$(echo "$TRIPLET" | cut -d- -f1,2)"
-DOWNLOADS_ROOT="$VCPKG_ROOT/downloads/$VCPKG_PLATFORM_KEY"
+DOWNLOADS_ROOT="${VCPKG_DOWNLOADS:-$VCPKG_CACHE_BASE/downloads/$VCPKG_PLATFORM_KEY}"
 mkdir -p "$DOWNLOADS_ROOT"
 
-# Persistent per-platform git registries cache, nested under the same per-platform downloads
-# directory (so it lives under SrcRoot and survives clean builds, and under vcpkg's gitignored
-# downloads/ so it never shows as untracked). Two goals, mirroring the downloads cache:
-#   1. Persistence: because it is not under OutRoot, a clean build does not wipe it, so vcpkg
-#      reuses the existing shallow registry repo and does a small incremental fetch (or none)
-#      instead of a full cold fetch from github.com/microsoft/vcpkg every clean build. That
-#      cold fetch is what intermittently fails with "RPC failed; curl 56 / early EOF".
-#   2. Cross-arch isolation: the <platform> key keeps parallel arch builds (e.g. arm64-android
-#      vs x64-android) on separate registry repos so their concurrent git fetch/GC operations
-#      cannot collide (the default global cache at ~/.cache/vcpkg/registries is shared across
-#      arches and would race, causing transient "port does not exist" failures).
-export X_VCPKG_REGISTRIES_CACHE="$DOWNLOADS_ROOT/registries"
+if [ -z "${X_VCPKG_REGISTRIES_CACHE:-}" ]; then
+    export X_VCPKG_REGISTRIES_CACHE="$DOWNLOADS_ROOT/registries"
+fi
 mkdir -p "$X_VCPKG_REGISTRIES_CACHE"
 
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"
@@ -161,11 +165,40 @@ if [ -n "${CRASHPAD_USE_LLD:-}" ]; then
     export VCPKG_KEEP_ENV_VARS="CRASHPAD_USE_LLD${VCPKG_KEEP_ENV_VARS:+;$VCPKG_KEEP_ENV_VARS}"
 fi
 
-"$VCPKG_EXE" install \
-    --triplet "$TRIPLET" \
-    --downloads-root="$DOWNLOADS_ROOT" \
-    --x-install-root="$INSTALL_ROOT" \
-    --x-manifest-root="$MANIFEST_DIR" \
-    --x-buildtrees-root="$INSTALL_ROOT/buildtrees" \
-    --x-packages-root="$INSTALL_ROOT/packages" \
-    "${OVERLAY_ARGS[@]}"
+# --------------------------------------------------------------------------------------
+# Cross-process lock around the install. Same-platform builds share the per-platform
+# downloads/tools tree and registries git repo above; vcpkg.PartFile.xml only serializes
+# consumers within a single BentleyBuild graph, so two same-platform builds can still run
+# concurrently and corrupt that shared state (see PR #1497: concurrent registry fetch/GC).
+# Serialize them with a platform-keyed lock. Different arches use different lock files and still
+# build in parallel. Prefer flock (the kernel releases it automatically on exit); fall back to an
+# atomic mkdir spinlock on hosts without flock (e.g. stock macOS).
+# --------------------------------------------------------------------------------------
+run_vcpkg_install() {
+    "$VCPKG_EXE" install \
+        --triplet "$TRIPLET" \
+        --downloads-root="$DOWNLOADS_ROOT" \
+        --x-install-root="$INSTALL_ROOT" \
+        --x-manifest-root="$MANIFEST_DIR" \
+        --x-buildtrees-root="$INSTALL_ROOT/buildtrees" \
+        --x-packages-root="$INSTALL_ROOT/packages" \
+        "${OVERLAY_ARGS[@]}"
+}
+
+VCPKG_LOCKFILE="$VCPKG_CACHE_BASE/$VCPKG_PLATFORM_KEY.install.lock"
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$VCPKG_LOCKFILE"
+    if ! flock 9; then
+        echo "Error: failed to acquire vcpkg install lock $VCPKG_LOCKFILE"
+        exit 1
+    fi
+    run_vcpkg_install
+else
+    VCPKG_LOCKDIR="$VCPKG_LOCKFILE.d"
+    while ! mkdir "$VCPKG_LOCKDIR" 2>/dev/null; do
+        echo "vcpkg: waiting for same-platform install lock $VCPKG_LOCKDIR..."
+        sleep 5
+    done
+    trap 'rmdir "$VCPKG_LOCKDIR" 2>/dev/null' EXIT INT TERM
+    run_vcpkg_install
+fi
