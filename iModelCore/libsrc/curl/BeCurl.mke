@@ -65,7 +65,14 @@ always:
 #   macOS and Linux; the other platforms use curl's threaded resolver, so no libcares there.
 #--------------------------------------------------------------------------------------
 %if $(TARGET_PLATFORM) == "Windows"
-    libcurlName = libcurl.lib
+    # curl's CMake build appends a "-d" DEBUG_POSTFIX to the library name on Windows only, so the
+    # debug archive is libcurl-d.lib (release stays libcurl.lib). Other platforms keep libcurl.a
+    # for both configurations.
+    %if defined (DEBUG)
+        libcurlName = libcurl-d.lib
+    %else
+        libcurlName = libcurl.lib
+    %endif
 %else
     libcurlName = libcurl.a
 %endif
