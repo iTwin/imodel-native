@@ -258,7 +258,7 @@ change to match our build. The consumer `.mke` keeps the normal `%if defined (DE
 the library's CMake honors the cache-set `CMAKE_MSVC_RUNTIME_LIBRARY` (CMP0091) — most modern
 ports do — and it is more machinery: apply it to **every** Windows triplet and validate a real
 Windows DEBUG link on **both** the MSVC and clang-cl toolsets. `pugixml/triplets/x64-windows-static.cmake`
-documents this recipe in its header comment (pugixml itself ships Fix A as an accepted tradeoff).
+documents this recipe in its header comment; pugixml itself ships Fix B to preserve debug diagnostics.
 
 This has bitten two libraries so far — crashpad (first) and pugixml (second). Reference
 implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
