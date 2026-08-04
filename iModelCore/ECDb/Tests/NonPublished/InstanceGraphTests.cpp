@@ -1215,4 +1215,571 @@ TEST_F(InstanceGraphTests, VTable_FailsWithoutExperimentalFeature)
             pipe1Key.GetClassId().ToString().c_str())));
     }
 
+//=======================================================================================
+// Regression tests for issues found during code review of the InstanceGraph / relations()
+// feature.
+//=======================================================================================
+
+//! Schema exercising ShareColumns / overflow mappings, where a navigation property FK ends up
+//! in a shared column.
+static constexpr Utf8CP s_sharedColumnSchemaXml =
+    R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="IGShared" alias="igs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+
+        <ECEntityClass typeName="Model">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="Element" modifier="Abstract">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Code" typeName="string" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="Pipe">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="Diameter" typeName="double" />
+            <ECProperty propertyName="Material" typeName="string" />
+            <ECProperty propertyName="Length" typeName="double" />
+            <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElements" direction="Backward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="ModelHasElements" strength="Embedding" modifier="Sealed">
+            <Source multiplicity="(0..1)" polymorphic="False" roleLabel="Model">
+                <Class class="Model" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Element">
+                <Class class="Pipe" />
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml";
+
+//---------------------------------------------------------------------------------------
+//! A navigation property FK stored in a shared column must still be traversable from the
+//! referenced end (Model -> its Elements). This used to silently return zero rows because the
+//! generated SQL filtered the FK holder's own ECClassId against the *other* end's hierarchy.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, SharedColumn_NavPropTraversalFromReferencedEnd)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_SharedCol.ecdb", SchemaItem(s_sharedColumnSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO igs.Model(Name) VALUES('M1')");
+    auto pipeKey = InsertInstance(SqlPrintfString("INSERT INTO igs.Pipe(Code, Diameter, Material, Length, Model.Id) VALUES('P1', 1.0, 'steel', 2.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // Backward: from Model (referenced end) to the Pipe holding the FK.
+    InstanceGraph fromModel(m_ecdb);
+    fromModel.AddSeed(modelKey);
+    ASSERT_EQ(SUCCESS, fromModel.ExpandNode(modelKey, TraversalDirection::Both));
+
+    auto const* fromModelRelated = fromModel.GetRelated(modelKey);
+    ASSERT_NE(nullptr, fromModelRelated);
+    ASSERT_EQ(1u, fromModelRelated->size()) << "Model must find its Pipe even though the FK is in a shared column";
+    EXPECT_EQ(pipeKey.GetInstanceId(), (*fromModelRelated)[0].GetKey().GetInstanceId());
+    EXPECT_EQ(pipeKey.GetClassId(), (*fromModelRelated)[0].GetKey().GetClassId());
+
+    // Forward: from the FK holder back to the Model.
+    InstanceGraph fromPipe(m_ecdb);
+    fromPipe.AddSeed(pipeKey);
+    ASSERT_EQ(SUCCESS, fromPipe.ExpandNode(pipeKey, TraversalDirection::Both));
+
+    auto const* fromPipeRelated = fromPipe.GetRelated(pipeKey);
+    ASSERT_NE(nullptr, fromPipeRelated);
+    ASSERT_EQ(1u, fromPipeRelated->size());
+    EXPECT_EQ(modelKey.GetInstanceId(), (*fromPipeRelated)[0].GetKey().GetInstanceId());
+    EXPECT_EQ(modelKey.GetClassId(), (*fromPipeRelated)[0].GetKey().GetClassId());
+    }
+
+//---------------------------------------------------------------------------------------
+//! A relationship class and its base classes are all applicable to the same seed and all match
+//! the very same persisted row. That must produce exactly one edge, not one per class.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, Inheritance_DerivedRelationshipProducesNoDuplicateEdges)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_InheritRelNoDup.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    auto pipe2Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 200.0)");
+
+    // PipeConnectsToPipe derives from ElementConnectsToElement, both apply to a Pipe seed.
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.PipeConnectsToPipe(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), pipe2Key.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(pipe1Key);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(pipe1Key, TraversalDirection::Forward));
+
+    auto const* related = graph.GetRelated(pipe1Key);
+    ASSERT_NE(nullptr, related);
+    ASSERT_EQ(1u, related->size()) << "The single PipeConnectsToPipe row must yield exactly one edge";
+    EXPECT_EQ(pipe2Key.GetInstanceId(), (*related)[0].GetKey().GetInstanceId());
+    EXPECT_EQ(GetClassId("PipeConnectsToPipe"), (*related)[0].GetRelClassId());
+    }
+
+//---------------------------------------------------------------------------------------
+//! Expanding the same node twice must replace its edges, not append a second copy of each.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, ExpandNode_TwiceDoesNotDuplicateEdges)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_ExpandTwice.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(pipe1Key);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(pipe1Key, TraversalDirection::Forward));
+    size_t const firstCount = graph.GetRelated(pipe1Key)->size();
+    ASSERT_EQ(1u, firstCount);
+
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(pipe1Key, TraversalDirection::Forward));
+    EXPECT_EQ(firstCount, graph.GetRelated(pipe1Key)->size()) << "Re-expanding must not duplicate edges";
+    }
+
+//---------------------------------------------------------------------------------------
+//! ExpandNode on a node that was never added as a seed must still make that node part of the
+//! graph, otherwise Contains()/NodeCount() and all set operations disagree with GetRelated().
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, ExpandNode_WithoutAddSeedAddsNodeToGraph)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_ExpandNoSeed.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(pipe1Key, TraversalDirection::Forward));
+
+    EXPECT_TRUE(graph.Contains(pipe1Key)) << "An expanded node must be part of the graph";
+    EXPECT_TRUE(graph.Contains(catKey));
+    EXPECT_EQ(2u, graph.NodeCount());
+    EXPECT_NE(nullptr, graph.GetRelated(pipe1Key));
+    }
+
+//---------------------------------------------------------------------------------------
+//! ExpandAll must continue from nodes that a previous ExpandNode/ExpandAll call already
+//! expanded, instead of stopping there.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, ExpandNode_ThenExpandAll)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_ExpandNodeThenAll.ecdb", SchemaItem(s_testSchemaXml)));
+
+    // P1 -> P2 -> P3
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto p2 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 2.0)");
+    auto p3 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P3', 3.0)");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p2.GetInstanceId().ToString().c_str(), p3.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(p1, TraversalDirection::Both));
+    ASSERT_EQ(SUCCESS, graph.ExpandAll(5));
+
+    EXPECT_TRUE(graph.Contains(p2));
+    EXPECT_TRUE(graph.Contains(p3)) << "ExpandAll must continue past the already expanded seed";
+
+    // Deepening an existing graph must work as well.
+    InstanceGraph shallow(m_ecdb);
+    shallow.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, shallow.ExpandAll(1));
+    EXPECT_FALSE(shallow.Contains(p3));
+    ASSERT_EQ(SUCCESS, shallow.ExpandAll(5));
+    EXPECT_TRUE(shallow.Contains(p3)) << "A second ExpandAll must deepen the graph";
+    }
+
+//---------------------------------------------------------------------------------------
+//! ExpandAll(0) records the seeds without traversing anything.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, ExpandAll_ZeroDepthIsSeedOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_ExpandZero.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto p2 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 2.0)");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, graph.ExpandAll(0));
+
+    EXPECT_EQ(1u, graph.NodeCount());
+    auto const* related = graph.GetRelated(p1);
+    ASSERT_NE(nullptr, related) << "The seed must have an (empty) adjacency entry";
+    EXPECT_TRUE(related->empty());
+    }
+
+//---------------------------------------------------------------------------------------
+//! Adding the same seed twice must not traverse it twice.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, AddSeed_TwiceIsIdempotent)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_SeedTwice.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto cat = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), cat.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(p1);
+    graph.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, graph.ExpandAll(2));
+
+    ASSERT_NE(nullptr, graph.GetRelated(p1));
+    EXPECT_EQ(1u, graph.GetRelated(p1)->size());
+    }
+
+//---------------------------------------------------------------------------------------
+//! A self loop of a relationship whose source and target constraints overlap is traversable in
+//! both directions and is therefore reported once per direction - never more.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, CycleAvoidance_SelfLoopEdgeContents)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_SelfLoopEdges.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('SelfLoop', 50.0)");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementConnectsToElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), pipe1Key.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph graph(m_ecdb);
+    graph.AddSeed(pipe1Key);
+    ASSERT_EQ(SUCCESS, graph.ExpandNode(pipe1Key, TraversalDirection::Both));
+
+    auto const* related = graph.GetRelated(pipe1Key);
+    ASSERT_NE(nullptr, related);
+    ASSERT_EQ(2u, related->size()) << "A self loop is reported once as Forward and once as Backward";
+
+    bool forward = false, backward = false;
+    for (auto const& rel : *related)
+        {
+        EXPECT_EQ(pipe1Key, rel.GetKey());
+        EXPECT_EQ(GetClassId("ElementConnectsToElement"), rel.GetRelClassId());
+        forward |= (rel.GetDirection() == TraversalDirection::Forward);
+        backward |= (rel.GetDirection() == TraversalDirection::Backward);
+        }
+    EXPECT_TRUE(forward);
+    EXPECT_TRUE(backward);
+
+    // Traversing only one direction reports it exactly once.
+    InstanceGraph fwdOnly(m_ecdb);
+    fwdOnly.AddSeed(pipe1Key);
+    ASSERT_EQ(SUCCESS, fwdOnly.ExpandNode(pipe1Key, TraversalDirection::Forward));
+    ASSERT_NE(nullptr, fwdOnly.GetRelated(pipe1Key));
+    EXPECT_EQ(1u, fwdOnly.GetRelated(pipe1Key)->size());
+    }
+
+//---------------------------------------------------------------------------------------
+//! Union and Intersection must not duplicate the edges the two graphs have in common.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, SetOps_EdgesAreDeduplicated)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_SetOpsDedup.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto cat = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), cat.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph a(m_ecdb);
+    a.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, a.ExpandAll(2));
+
+    InstanceGraph b(m_ecdb);
+    b.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, b.ExpandAll(2));
+
+    auto unionGraph = InstanceGraph::Union(a, b);
+    ASSERT_NE(nullptr, unionGraph);
+    ASSERT_NE(nullptr, unionGraph->GetRelated(p1));
+    EXPECT_EQ(a.GetRelated(p1)->size(), unionGraph->GetRelated(p1)->size()) << "Union must not duplicate common edges";
+
+    auto intersectionGraph = InstanceGraph::Intersection(a, b);
+    ASSERT_NE(nullptr, intersectionGraph);
+    ASSERT_NE(nullptr, intersectionGraph->GetRelated(p1));
+    EXPECT_EQ(a.GetRelated(p1)->size(), intersectionGraph->GetRelated(p1)->size()) << "Intersection must not duplicate common edges";
+    }
+
+//---------------------------------------------------------------------------------------
+//! Instance keys of different files are not comparable, so set operations must refuse graphs
+//! that belong to different ECDbs.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, SetOps_DifferentECDbsAreRejected)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_SetOpsDbA.ecdb", SchemaItem(s_testSchemaXml)));
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    m_ecdb.SaveChanges();
+
+    ECDb other;
+    ASSERT_EQ(BE_SQLITE_OK, other.OpenBeSQLiteDb(m_ecdb.GetDbFileName(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+
+    InstanceGraph a(m_ecdb);
+    a.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, a.ExpandAll(1));
+
+    InstanceGraph b(other);
+    b.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, b.ExpandAll(1));
+
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
+    EXPECT_FALSE(InstanceGraph::Overlaps(a, b));
+    EXPECT_EQ(nullptr, InstanceGraph::Intersection(a, b));
+    EXPECT_EQ(nullptr, InstanceGraph::Union(a, b));
+    }
+
+//---------------------------------------------------------------------------------------
+//! The virtual table arguments must be decoded correctly no matter in which order SQLite hands
+//! the constraints over. SQLite lists explicit WHERE terms before table-valued-function
+//! arguments, so a WHERE clause on a hidden column used to shift every argument.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_WhereClauseConstraintOrdering)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableWhereOrder.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    // The hidden argument columns are only addressable through raw SQLite. This is exactly the
+    // path where SQLite reports the WHERE constraints before the table valued function
+    // arguments, so it is the one that exposes an argv/column order mismatch.
+    uint64_t const instanceId = pipe1Key.GetInstanceId().GetValueUnchecked();
+    uint64_t const classId = pipe1Key.GetClassId().GetValueUnchecked();
+
+    auto collect = [&] (Utf8CP sql, bvector<uint64_t>& relatedIds)
+        {
+        relatedIds.clear();
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, sql)) << sql;
+        DbResult stepStatus;
+        while ((stepStatus = stmt.Step()) == BE_SQLITE_ROW)
+            relatedIds.push_back((uint64_t) stmt.GetValueInt64(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << sql;
+        std::sort(relatedIds.begin(), relatedIds.end());
+        };
+
+    // Reference: arguments supplied positionally.
+    bvector<uint64_t> expectedForward;
+    collect(SqlPrintfString("SELECT RelatedECInstanceId FROM relations(%" PRIu64 ",%" PRIu64 ",'forward')", instanceId, classId), expectedForward);
+    ASSERT_EQ(1u, expectedForward.size()) << "Forward from P1 must find exactly Cat1";
+    EXPECT_EQ(catKey.GetInstanceId().GetValueUnchecked(), expectedForward[0]);
+
+    // The very same query, but the direction arrives through an explicit WHERE clause, which
+    // SQLite lists *before* the two table valued function arguments.
+    bvector<uint64_t> actual;
+    collect(SqlPrintfString("SELECT RelatedECInstanceId FROM relations(%" PRIu64 ",%" PRIu64 ") WHERE TraversalDirection='forward'", instanceId, classId), actual);
+    EXPECT_EQ(expectedForward, actual);
+
+    // All three arguments through the WHERE clause, in an order different from the column order.
+    collect(SqlPrintfString("SELECT RelatedECInstanceId FROM relations WHERE TraversalDirection='forward' AND ECInstanceId=%" PRIu64 " AND ECClassId=%" PRIu64,
+        instanceId, classId), actual);
+    EXPECT_EQ(expectedForward, actual);
+
+    collect(SqlPrintfString("SELECT RelatedECInstanceId FROM relations WHERE ECClassId=%" PRIu64 " AND TraversalDirection='forward' AND ECInstanceId=%" PRIu64,
+        classId, instanceId), actual);
+    EXPECT_EQ(expectedForward, actual);
+
+    // Backward must still be backward when supplied through the WHERE clause.
+    bvector<uint64_t> backward;
+    collect(SqlPrintfString("SELECT RelatedECInstanceId FROM relations(%" PRIu64 ",%" PRIu64 ") WHERE TraversalDirection='backward'", instanceId, classId), backward);
+    ASSERT_EQ(1u, backward.size()) << "Backward from P1 must find exactly its Model";
+    EXPECT_EQ(modelKey.GetInstanceId().GetValueUnchecked(), backward[0]);
+    }
+
+//---------------------------------------------------------------------------------------
+//! An unrecognised TraversalDirection must be reported instead of silently degrading to 'both'.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_InvalidDirectionIsRejected)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableBadDir.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+
+    auto modelKey = InsertInstance("INSERT INTO ig.Model(Name) VALUES('M1')");
+    auto pipe1Key = InsertInstance(SqlPrintfString("INSERT INTO ig.Pipe(Code, Diameter, Model.Id) VALUES('P1', 100.0, %s)",
+        modelKey.GetInstanceId().ToString().c_str()));
+    auto catKey = InsertInstance("INSERT INTO ig.Category(CatName) VALUES('Cat1')");
+    // P1 has a forward edge (to Cat1) and a backward edge (to M1), so every valid direction
+    // produces at least one row.
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig.ElementInCategory(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        pipe1Key.GetInstanceId().ToString().c_str(), catKey.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    Utf8String instanceId = pipe1Key.GetInstanceId().ToString();
+    Utf8String classId = pipe1Key.GetClassId().ToString();
+
+    for (Utf8CP badDirection : {"sideways", "fwd", "", "both "})
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, '%s')",
+                instanceId.c_str(), classId.c_str(), badDirection)));
+        EXPECT_NE(BE_SQLITE_ROW, stmt.Step()) << "Direction '" << badDirection << "' must not be accepted";
+        }
+
+    // 'both' and the case-insensitive spellings are valid.
+    for (Utf8CP goodDirection : {"both", "BOTH", "Forward", "BACKWARD"})
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, '%s')",
+                instanceId.c_str(), classId.c_str(), goodDirection)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Direction '" << goodDirection << "' must be accepted";
+        }
+
+    // A NULL direction means 'both'.
+    ECSqlStatement nullDirStmt;
+    ASSERT_EQ(ECSqlStatus::Success, nullDirStmt.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, %s, NULL)",
+            instanceId.c_str(), classId.c_str())));
+    EXPECT_EQ(BE_SQLITE_ROW, nullDirStmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+//! Relations() without its mandatory arguments must be diagnosed rather than silently
+//! returning an empty result, which is indistinguishable from "no relationships".
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_MissingRequiredArgumentsAreRejected)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableMissingArgs.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    m_ecdb.SaveChanges();
+
+    // BestIndex rejects any plan that does not provide both required arguments, so SQLite
+    // reports an error instead of the vtable silently returning an empty result (which is
+    // indistinguishable from "this instance has no relationships").
+    Statement noArgs;
+    EXPECT_NE(BE_SQLITE_OK, noArgs.TryPrepare(m_ecdb, "SELECT RelatedECInstanceId FROM relations"))
+        << "relations without arguments must be rejected";
+
+    Statement oneArg;
+    EXPECT_NE(BE_SQLITE_OK, oneArg.TryPrepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM relations(%" PRIu64 ")", pipe1Key.GetInstanceId().GetValueUnchecked())))
+        << "relations with a single argument must be rejected";
+
+    Statement instanceIdOnly;
+    EXPECT_NE(BE_SQLITE_OK, instanceIdOnly.TryPrepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM relations WHERE ECInstanceId=%" PRIu64, pipe1Key.GetInstanceId().GetValueUnchecked())))
+        << "relations without an ECClassId must be rejected";
+
+    // Too many arguments is diagnosed by SQLite itself.
+    Statement tooManyArgs;
+    EXPECT_NE(BE_SQLITE_OK, tooManyArgs.TryPrepare(m_ecdb, "SELECT RelatedECInstanceId FROM relations(1,2,'forward',4)"))
+        << "relations with too many arguments must be rejected";
+    }
+
+//---------------------------------------------------------------------------------------
+//! A syntactically valid but non existing seed yields an empty result, not an error.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, VTable_UnknownSeedReturnsEmpty)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_VTableUnknownSeed.ecdb", SchemaItem(s_testSchemaXml)));
+    m_ecdb.GetECSqlConfig().SetExperimentalFeaturesEnabled(true);
+
+    auto pipe1Key = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 100.0)");
+    m_ecdb.SaveChanges();
+
+    // Unknown instance id, valid class id.
+    ECSqlStatement unknownInstance;
+    ASSERT_EQ(ECSqlStatus::Success, unknownInstance.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(999999, %s)", pipe1Key.GetClassId().ToString().c_str())));
+    EXPECT_EQ(BE_SQLITE_DONE, unknownInstance.Step());
+
+    // Unknown class id, valid instance id.
+    ECSqlStatement unknownClass;
+    ASSERT_EQ(ECSqlStatus::Success, unknownClass.Prepare(m_ecdb,
+        SqlPrintfString("SELECT RelatedECInstanceId FROM ECVLib.Relations(%s, 999999)", pipe1Key.GetInstanceId().ToString().c_str())));
+    EXPECT_EQ(BE_SQLITE_DONE, unknownClass.Step());
+
+    // NULL arguments (only expressible through raw SQLite).
+    Statement nullArgs;
+    ASSERT_EQ(BE_SQLITE_OK, nullArgs.Prepare(m_ecdb, "SELECT RelatedECInstanceId FROM relations(NULL,NULL)"));
+    EXPECT_EQ(BE_SQLITE_DONE, nullArgs.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+//! The graph statement cache is keyed on schema derived data and must be dropped when the
+//! schemas change.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceGraphTests, CacheIsInvalidatedOnSchemaImport)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IG_CacheInvalidation.ecdb", SchemaItem(s_testSchemaXml)));
+
+    auto p1 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P1', 1.0)");
+    auto p2 = InsertInstance("INSERT INTO ig.Pipe(Code, Diameter) VALUES('P2', 2.0)");
+    m_ecdb.SaveChanges();
+
+    // Populate the cache while there is no relationship between P1 and P2.
+    InstanceGraph before(m_ecdb);
+    before.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, before.ExpandAll(2));
+    EXPECT_FALSE(before.Contains(p2));
+
+    // Import an additional schema introducing a new relationship, then use it.
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="IGTest2" alias="ig2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="IGTest" version="01.00.00" alias="ig" />
+            <ECRelationshipClass typeName="ElementFeedsElement" strength="Referencing" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="feeds">
+                    <Class class="ig:Element" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="fed by">
+                    <Class class="ig:Element" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    InsertRelInstance(SqlPrintfString("INSERT INTO ig2.ElementFeedsElement(SourceECInstanceId, TargetECInstanceId) VALUES(%s, %s)",
+        p1.GetInstanceId().ToString().c_str(), p2.GetInstanceId().ToString().c_str()));
+    m_ecdb.SaveChanges();
+
+    InstanceGraph after(m_ecdb);
+    after.AddSeed(p1);
+    ASSERT_EQ(SUCCESS, after.ExpandAll(2));
+    EXPECT_TRUE(after.Contains(p2)) << "The relationship added by the schema import must be discovered";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

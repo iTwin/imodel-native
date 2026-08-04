@@ -287,11 +287,9 @@ public:
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
     GraphStatementCache& GetGraphStatementCache() const {
+        BeMutexHolder holder(m_mutex);
         if (m_graphStatementCache == nullptr) {
-            BeMutexHolder holder(m_mutex);
-            if (m_graphStatementCache == nullptr) {
-                m_graphStatementCache = std::make_unique<GraphStatementCache>(m_ecdb);
-            }
+            m_graphStatementCache = std::make_unique<GraphStatementCache>(m_ecdb);
         }
         return *m_graphStatementCache;
     }

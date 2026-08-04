@@ -11,11 +11,60 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//! Helper: get the single DbColumn from a SystemPropertyMap (safe for link-table use where there is exactly one table)
-static DbColumn const& FirstCol(SystemPropertyMap const& map)
+//! Identifies a single edge of the graph. Used to suppress duplicates.
+//! Duplicates arise naturally because a relationship class and its base classes can all be
+//! applicable to the same seed, and each of them matches the very same persisted row.
+struct GraphEdgeKey final
     {
-    BeAssert(!map.GetDataPropertyMaps().empty());
-    return map.GetDataPropertyMaps().front()->GetColumn();
+    ECInstanceKey       m_related;
+    ECN::ECClassId      m_relClassId;
+    TraversalDirection  m_direction;
+
+    GraphEdgeKey(RelatedInstance const& rel) : m_related(rel.GetKey()), m_relClassId(rel.GetRelClassId()), m_direction(rel.GetDirection()) {}
+
+    bool operator<(GraphEdgeKey const& rhs) const
+        {
+        if (m_related != rhs.m_related)
+            return m_related < rhs.m_related;
+        if (m_relClassId != rhs.m_relClassId)
+            return m_relClassId < rhs.m_relClassId;
+        return (uint8_t) m_direction < (uint8_t) rhs.m_direction;
+        }
+    };
+
+//! Appends an edge unless an identical one was already appended.
+static void AppendUniqueEdge(bvector<RelatedInstance>& edges, bset<GraphEdgeKey>& seen, RelatedInstance const& rel)
+    {
+    if (seen.insert(GraphEdgeKey(rel)).second)
+        edges.push_back(rel);
+    }
+
+//! Returns the column of a SystemPropertyMap in the given table, or nullptr if the property map
+//! is not mapped to that table.
+//! @remarks SystemPropertyMap is inherently multi-table. Never blindly take the first entry -
+//! for constraint class id property maps the entries can span several entity tables.
+static DbColumn const* FindColumnInTable(SystemPropertyMap const& map, DbTable const& table)
+    {
+    auto const* perTableMap = map.FindDataPropertyMap(table);
+    return perTableMap == nullptr ? nullptr : &perTableMap->GetColumn();
+    }
+
+//! Returns the class id a virtual (i.e. not persisted) class id column stands for, or an invalid id.
+static ECClassId GetDefaultClassId(SystemPropertyMap::PerTableIdPropertyMap const& perTableMap)
+    {
+    auto const* classIdMap = dynamic_cast<SystemPropertyMap::PerTableClassIdPropertyMap const*>(&perTableMap);
+    return classIdMap == nullptr ? ECClassId() : classIdMap->GetDefaultECClassId();
+    }
+
+//! Determines the single class a table holds instances of. Only meaningful when the table's
+//! ECClassId column is virtual, which by definition means the table is exclusive to one class.
+static ECClassId GetExclusiveClassIdForTable(ECDbCR ecdb, DbTable const& table)
+    {
+    auto const& classIds = ecdb.Schemas().Main().GetLightweightCache().GetClassesForTable(table);
+    if (classIds.size() == 1)
+        return classIds[0];
+
+    return table.HasExclusiveRootECClass() ? table.GetExclusiveRootECClassId() : ECClassId();
     }
 
 // =====================================================================================
@@ -55,7 +104,8 @@ BentleyStatus GraphStatementCache::DiscoverRelationshipsForClass(bvector<Applica
     stmt->BindId(stmt->GetParameterIndex(":endClassId"), entityClassId);
     MainSchemaManager const& schemaManager = m_ecdb.Schemas().Main();
 
-    while (BE_SQLITE_ROW == stmt->Step())
+    DbResult stepStatus;
+    while ((stepStatus = stmt->Step()) == BE_SQLITE_ROW)
         {
         ECClassId relClassId = stmt->GetValueId<ECClassId>(0);
         ECRelationshipEnd thisEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
@@ -83,21 +133,38 @@ BentleyStatus GraphStatementCache::DiscoverRelationshipsForClass(bvector<Applica
         out.push_back(ApplicableRelationship(*relClass, thisEnd, mapType, strategy));
         }
 
+    if (stepStatus != BE_SQLITE_DONE)
+        {
+        LOG.errorv("InstanceGraph: relationship discovery for class %s failed: %s",
+                   entityClassId.ToString().c_str(), BeSQLiteLib::GetErrorName(stepStatus));
+        out.clear();
+        return ERROR;
+        }
+
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ApplicableRelationship> const& GraphStatementCache::GetApplicableRelationships(ECN::ECClassId entityClassId)
+BentleyStatus GraphStatementCache::GetApplicableRelationships(bvector<ApplicableRelationship>& out, ECN::ECClassId entityClassId)
     {
+    BeMutexHolder holder(m_mutex);
+
     auto it = m_relDiscoveryCache.find(entityClassId);
     if (it != m_relDiscoveryCache.end())
-        return it->second;
+        {
+        out = it->second;
+        return SUCCESS;
+        }
 
-    bvector<ApplicableRelationship>& vec = m_relDiscoveryCache[entityClassId];
-    DiscoverRelationshipsForClass(vec, entityClassId);
-    return vec;
+    bvector<ApplicableRelationship> discovered;
+    if (SUCCESS != DiscoverRelationshipsForClass(discovered, entityClassId))
+        return ERROR; // never cache a failure - it would turn a transient error into permanent data loss
+
+    m_relDiscoveryCache[entityClassId] = discovered;
+    out = std::move(discovered);
+    return SUCCESS;
     }
 
 // =====================================================================================
@@ -133,8 +200,15 @@ void GraphStatementCache::AppendClassHierarchyFilter(Utf8StringR sql, Utf8CP col
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GraphStatementCache::BuildLinkTableSql(GraphStatementEntry& entry, RelationshipClassMap const& relMap, TraversalDirection dir)
     {
-    Utf8String sql("SELECT ");
     entry.m_direction = dir;
+    entry.m_relatedInstanceIdColIdx = -1;
+    entry.m_relatedClassIdColIdx = -1;
+    entry.m_relClassIdColIdx = -1;
+    entry.m_staticRelatedClassId = ECClassId();
+    entry.m_staticRelClassId = ECClassId();
+
+    DbTable const& linkTable = relMap.GetPrimaryTable();
+    Utf8CP relClassName = relMap.GetClass().GetFullName();
 
     // Determine which columns to select/filter based on direction
     // Forward: seed is source, find target
@@ -160,125 +234,169 @@ BentleyStatus GraphStatementCache::BuildLinkTableSql(GraphStatementEntry& entry,
         }
 
     if (seedIdPropMap == nullptr || relatedIdPropMap == nullptr)
-        return ERROR;
-
-    DbColumn const& seedIdCol = FirstCol(*seedIdPropMap);
-    DbColumn const& relatedIdCol = FirstCol(*relatedIdPropMap);
-    DbTable const& linkTable = seedIdCol.GetTable();
-
-    // SELECT related instance ID (always physical)
-    int colIdx = 0;
-    entry.m_relatedInstanceIdColIdx = colIdx++;
-    sql += Utf8PrintfString("lt.[%s]", relatedIdCol.GetName().c_str());
-
-    // SELECT related class ID (may be virtual, or may reside in entity table rather than link table)
-    // When foreignEndTableCount==1, ECDb stores the constraint ECClassId column on the entity table
-    // instead of the link table, so we must check which table the column belongs to.
-    bool needRelatedEntityJoin = false;
-    Utf8String relatedEntityJoinSql;
-    if (relatedClassIdPropMap != nullptr)
         {
-        DbColumn const& relatedClassIdCol = FirstCol(*relatedClassIdPropMap);
-        if (relatedClassIdCol.IsVirtual())
+        LOG.errorv("InstanceGraph: relationship '%s' has no constraint ECInstanceId property map.", relClassName);
+        return ERROR;
+        }
+
+    // The constraint ECInstanceId columns of a link table relationship always live in the link table itself.
+    DbColumn const* seedIdCol = FindColumnInTable(*seedIdPropMap, linkTable);
+    DbColumn const* relatedIdCol = FindColumnInTable(*relatedIdPropMap, linkTable);
+    if (seedIdCol == nullptr || relatedIdCol == nullptr)
+        {
+        LOG.errorv("InstanceGraph: relationship '%s' constraint ECInstanceId columns are not mapped to link table '%s'.",
+                   relClassName, linkTable.GetName().c_str());
+        return ERROR;
+        }
+
+    // ------------------------------------------------------------------------------
+    // Resolve the related instance's ECClassId.
+    // The constraint ECClassId column can either live in the link table itself, or - when ECDb
+    // determined the constraint end resolves to entity tables - in one or more entity tables.
+    // In the latter case join each of those tables and coalesce, so that instances stored in
+    // any of them are found (a single INNER JOIN against an arbitrary table would drop rows).
+    // ------------------------------------------------------------------------------
+    if (relatedClassIdPropMap == nullptr)
+        {
+        LOG.errorv("InstanceGraph: relationship '%s' has no constraint ECClassId property map.", relClassName);
+        return ERROR;
+        }
+
+    Utf8String relatedClassIdExpr;
+    Utf8String relatedEntityJoinSql;
+
+    if (auto const* relatedClassIdInLinkTable = relatedClassIdPropMap->FindDataPropertyMap(linkTable))
+        {
+        DbColumn const& col = relatedClassIdInLinkTable->GetColumn();
+        if (col.IsVirtual())
             {
-            entry.m_relatedClassIdColIdx = -1;
-            auto const* perTableMap = dynamic_cast<SystemPropertyMap::PerTableClassIdPropertyMap const*>(relatedClassIdPropMap->GetDataPropertyMaps().front());
-            entry.m_staticRelatedClassId = perTableMap != nullptr ? perTableMap->GetDefaultECClassId() : ECClassId();
-            }
-        else if (&relatedClassIdCol.GetTable() == &linkTable)
-            {
-            entry.m_relatedClassIdColIdx = colIdx++;
-            sql += Utf8PrintfString(",lt.[%s]", relatedClassIdCol.GetName().c_str());
+            entry.m_staticRelatedClassId = GetDefaultClassId(*relatedClassIdInLinkTable);
+            if (!entry.m_staticRelatedClassId.IsValid())
+                {
+                LOG.errorv("InstanceGraph: relationship '%s' has a virtual constraint ECClassId column without a default class id.", relClassName);
+                return ERROR;
+                }
             }
         else
+            relatedClassIdExpr = Utf8PrintfString("lt.[%s]", col.GetName().c_str());
+        }
+    else
+        {
+        bvector<Utf8String> classIdExprs;
+        int joinCount = 0;
+        for (auto const* perTableMap : relatedClassIdPropMap->GetDataPropertyMaps())
             {
-            // Column is in entity table — need JOIN to retrieve it
-            needRelatedEntityJoin = true;
-            DbTable const& entityTable = relatedClassIdCol.GetTable();
+            DbTable const& entityTable = perTableMap->GetColumn().GetTable();
             DbColumn const* entityIdCol = entityTable.FindFirst(DbColumn::Kind::ECInstanceId);
-            if (entityIdCol != nullptr)
+            if (entityIdCol == nullptr)
+                continue;
+
+            Utf8String alias = Utf8PrintfString("_re%d", joinCount++);
+            relatedEntityJoinSql += Utf8PrintfString(" LEFT JOIN [%s] %s ON %s.[%s]=lt.[%s]",
+                entityTable.GetName().c_str(), alias.c_str(), alias.c_str(),
+                entityIdCol->GetName().c_str(), relatedIdCol->GetName().c_str());
+
+            if (perTableMap->GetColumn().IsVirtual())
                 {
-                entry.m_relatedClassIdColIdx = colIdx++;
-                sql += Utf8PrintfString(",_re.[%s]", relatedClassIdCol.GetName().c_str());
-                relatedEntityJoinSql = Utf8PrintfString(" INNER JOIN [%s] _re ON _re.[%s]=lt.[%s]",
-                    entityTable.GetName().c_str(), entityIdCol->GetName().c_str(), relatedIdCol.GetName().c_str());
+                ECClassId defaultClassId = GetDefaultClassId(*perTableMap);
+                if (!defaultClassId.IsValid())
+                    defaultClassId = GetExclusiveClassIdForTable(m_ecdb, entityTable);
+                if (!defaultClassId.IsValid())
+                    continue;
+
+                classIdExprs.push_back(Utf8PrintfString("CASE WHEN %s.[%s] IS NULL THEN NULL ELSE %s END",
+                    alias.c_str(), entityIdCol->GetName().c_str(), defaultClassId.ToString().c_str()));
                 }
             else
-                {
-                entry.m_relatedClassIdColIdx = -1;
-                entry.m_staticRelatedClassId = ECClassId();
-                }
+                classIdExprs.push_back(Utf8PrintfString("%s.[%s]", alias.c_str(), perTableMap->GetColumn().GetName().c_str()));
             }
-        }
-    else
-        {
-        entry.m_relatedClassIdColIdx = -1;
-        entry.m_staticRelatedClassId = ECClassId();
-        }
 
-    // SELECT relationship ECClassId (may be virtual)
-    auto const* ecClassIdPropMap = relMap.GetECClassIdPropertyMap();
-    if (ecClassIdPropMap != nullptr)
-        {
-        DbColumn const& ecClassIdCol = FirstCol(*ecClassIdPropMap);
-        if (ecClassIdCol.IsVirtual())
+        if (classIdExprs.empty())
             {
-            entry.m_relClassIdColIdx = -1;
-            auto const* perTableClassIdMap = dynamic_cast<SystemPropertyMap::PerTableClassIdPropertyMap const*>(ecClassIdPropMap->GetDataPropertyMaps().front());
-            entry.m_staticRelClassId = perTableClassIdMap != nullptr ? perTableClassIdMap->GetDefaultECClassId() : relMap.GetClass().GetId();
+            LOG.errorv("InstanceGraph: cannot resolve the related ECClassId for relationship '%s'.", relClassName);
+            return ERROR;
             }
+
+        if (classIdExprs.size() == 1)
+            relatedClassIdExpr = classIdExprs[0];
         else
             {
-            entry.m_relClassIdColIdx = colIdx++;
-            sql += Utf8PrintfString(",lt.[%s]", ecClassIdCol.GetName().c_str());
+            relatedClassIdExpr = "COALESCE(";
+            for (size_t i = 0; i < classIdExprs.size(); ++i)
+                {
+                if (i > 0)
+                    relatedClassIdExpr.append(",");
+                relatedClassIdExpr.append(classIdExprs[i]);
+                }
+            relatedClassIdExpr.append(")");
             }
+        }
+
+    // ------------------------------------------------------------------------------
+    // SELECT list
+    // ------------------------------------------------------------------------------
+    int colIdx = 0;
+    Utf8String sql("SELECT ");
+    entry.m_relatedInstanceIdColIdx = colIdx++;
+    sql += Utf8PrintfString("lt.[%s]", relatedIdCol->GetName().c_str());
+
+    if (!relatedClassIdExpr.empty())
+        {
+        entry.m_relatedClassIdColIdx = colIdx++;
+        sql += "," + relatedClassIdExpr;
+        }
+
+    // Relationship ECClassId (may be virtual)
+    auto const* ecClassIdPropMap = relMap.GetECClassIdPropertyMap();
+    DbColumn const* relECClassIdCol = ecClassIdPropMap != nullptr ? FindColumnInTable(*ecClassIdPropMap, linkTable) : nullptr;
+    if (relECClassIdCol != nullptr && !relECClassIdCol->IsVirtual())
+        {
+        entry.m_relClassIdColIdx = colIdx++;
+        sql += Utf8PrintfString(",lt.[%s]", relECClassIdCol->GetName().c_str());
         }
     else
         {
-        entry.m_relClassIdColIdx = -1;
         entry.m_staticRelClassId = relMap.GetClass().GetId();
+        if (relECClassIdCol != nullptr)
+            {
+            ECClassId defaultClassId = GetDefaultClassId(*ecClassIdPropMap->FindDataPropertyMap(linkTable));
+            if (defaultClassId.IsValid())
+                entry.m_staticRelClassId = defaultClassId;
+            }
         }
 
-    // FROM
+    // ------------------------------------------------------------------------------
+    // FROM / JOINs / WHERE
+    // ------------------------------------------------------------------------------
     sql += Utf8PrintfString(" FROM [%s] lt", linkTable.GetName().c_str());
+    sql.append(relatedEntityJoinSql);
 
-    // Related entity JOIN (when constraint ECClassId lives on entity table, not link table)
-    if (needRelatedEntityJoin)
-        sql.append(relatedEntityJoinSql);
-
-    // JOIN for seed constraint class filter — only when the column is physically in the link table.
-    // When the column resides in the entity table (foreignEndTableCount==1), the filter is redundant:
-    // the discovery query already ensures the relationship is applicable, and the relationship class
-    // filter (for TPH) handles disambiguation.
-    int joinIdx = 0;
+    // Seed constraint class filter - only when the column is physically in the link table.
+    // When the column resides in an entity table the filter is redundant: the discovery query
+    // already established the relationship is applicable to the seed's class.
     if (seedClassIdPropMap != nullptr)
         {
-        DbColumn const& seedClassIdCol = FirstCol(*seedClassIdPropMap);
-        if (!seedClassIdCol.IsVirtual() && &seedClassIdCol.GetTable() == &linkTable)
+        DbColumn const* seedClassIdCol = FindColumnInTable(*seedClassIdPropMap, linkTable);
+        if (seedClassIdCol != nullptr && !seedClassIdCol->IsVirtual())
             {
-            Utf8String alias("ch_seed");
-            Utf8String colExpr = Utf8PrintfString("lt.[%s]", seedClassIdCol.GetName().c_str());
             ECN::ECRelationshipConstraintCR constraint = (dir == TraversalDirection::Forward)
                 ? relMap.GetRelationshipClass().GetSource()
                 : relMap.GetRelationshipClass().GetTarget();
-            ECClassId constraintBaseClassId = constraint.GetAbstractConstraint() != nullptr
-                ? constraint.GetAbstractConstraint()->GetId()
-                : ECClassId();
-            if (constraintBaseClassId.IsValid())
-                AppendClassHierarchyJoin(sql, alias.c_str(), colExpr.c_str(), constraintBaseClassId, joinIdx);
+            ECClassCP abstractConstraint = constraint.GetAbstractConstraint();
+            if (abstractConstraint != nullptr)
+                {
+                int joinIdx = 0;
+                Utf8String colExpr = Utf8PrintfString("lt.[%s]", seedClassIdCol->GetName().c_str());
+                AppendClassHierarchyJoin(sql, "ch_seed", colExpr.c_str(), abstractConstraint->GetId(), joinIdx);
+                }
             }
         }
 
-    // WHERE seed instance ID = ?
-    sql += Utf8PrintfString(" WHERE lt.[%s]=?", seedIdCol.GetName().c_str());
+    sql += Utf8PrintfString(" WHERE lt.[%s]=?", seedIdCol->GetName().c_str());
 
     // Relationship ECClassId filter for TPH (if physical)
-    if (ecClassIdPropMap != nullptr)
-        {
-        DbColumn const& ecClassIdCol = FirstCol(*ecClassIdPropMap);
-        if (!ecClassIdCol.IsVirtual())
-            AppendClassHierarchyFilter(sql, Utf8PrintfString("lt.[%s]", ecClassIdCol.GetName().c_str()).c_str(), relMap.GetClass().GetId());
-        }
+    if (relECClassIdCol != nullptr && !relECClassIdCol->IsVirtual())
+        AppendClassHierarchyFilter(sql, Utf8PrintfString("lt.[%s]", relECClassIdCol->GetName().c_str()).c_str(), relMap.GetClass().GetId());
 
     entry.m_sql = sql;
     return SUCCESS;
@@ -298,6 +416,12 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     TraversalDirection dir)
     {
     entry.m_direction = dir;
+    entry.m_relatedInstanceIdColIdx = -1;
+    entry.m_relatedClassIdColIdx = -1;
+    entry.m_relClassIdColIdx = -1;
+    entry.m_staticRelatedClassId = ECClassId();
+    entry.m_staticRelClassId = ECClassId();
+    Utf8CP relClassName = relClass.GetFullName();
     ForeignKeyPartitionView::PersistedEnd persistedEnd = fkView.GetPersistedEnd();
 
     // Determine traversal semantics:
@@ -337,39 +461,41 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
 
         // Related class ID: lives on the OTHER table (referenced end) — may need JOIN
         DbTable const* otherEndTable = partition.GetOtherEndTable();
-        if (otherEndTable != nullptr)
+        if (otherEndTable == nullptr)
             {
-            // Need JOIN to get the referenced entity's ECClassId
-            // Check if the other table's ECClassId is physical
-            DbColumn const* otherEndECClassIdCol = nullptr;
-            if (dir == TraversalDirection::Forward)
-                otherEndECClassIdCol = partition.GetTargetECClassIdColumn();
-            else
-                otherEndECClassIdCol = partition.GetSourceECClassIdColumn();
+            LOG.errorv("InstanceGraph: cannot resolve the referenced end table of relationship '%s'.", relClassName);
+            return ERROR;
+            }
 
-            if (otherEndECClassIdCol != nullptr && !otherEndECClassIdCol->IsVirtual())
-                {
-                entry.m_relatedClassIdColIdx = colIdx++;
-                bool isSelfRef = (&fkTable == otherEndTable);
-                Utf8CP refAlias = isSelfRef ? "_ReferencedEnd" : "ref_tbl";
-                sql += Utf8PrintfString(",%s.[%s]", refAlias, otherEndECClassIdCol->GetName().c_str());
-                }
-            else if (otherEndECClassIdCol != nullptr && otherEndECClassIdCol->IsVirtual())
-                {
-                entry.m_relatedClassIdColIdx = -1;
-                auto const& classIds = m_ecdb.Schemas().Main().GetLightweightCache().GetClassesForTable(*otherEndTable);
-                entry.m_staticRelatedClassId = classIds.size() == 1 ? classIds[0] : ECClassId();
-                }
-            else
-                {
-                entry.m_relatedClassIdColIdx = -1;
-                entry.m_staticRelatedClassId = ECClassId();
-                }
+        // Need JOIN to get the referenced entity's ECClassId
+        // Check if the other table's ECClassId is physical
+        DbColumn const* otherEndECClassIdCol = (dir == TraversalDirection::Forward)
+            ? partition.GetTargetECClassIdColumn()
+            : partition.GetSourceECClassIdColumn();
+
+        if (otherEndECClassIdCol == nullptr)
+            {
+            LOG.errorv("InstanceGraph: cannot resolve the referenced end ECClassId column of relationship '%s'.", relClassName);
+            return ERROR;
+            }
+
+        if (!otherEndECClassIdCol->IsVirtual())
+            {
+            entry.m_relatedClassIdColIdx = colIdx++;
+            bool isSelfRef = (&fkTable == otherEndTable);
+            Utf8CP refAlias = isSelfRef ? "_ReferencedEnd" : "ref_tbl";
+            sql += Utf8PrintfString(",%s.[%s]", refAlias, otherEndECClassIdCol->GetName().c_str());
             }
         else
             {
-            entry.m_relatedClassIdColIdx = -1;
-            entry.m_staticRelatedClassId = ECClassId();
+            // A virtual ECClassId column means the table is exclusive to a single class.
+            entry.m_staticRelatedClassId = GetExclusiveClassIdForTable(m_ecdb, *otherEndTable);
+            if (!entry.m_staticRelatedClassId.IsValid())
+                {
+                LOG.errorv("InstanceGraph: cannot resolve the related ECClassId of relationship '%s' (table '%s' is not exclusive to a single class).",
+                           relClassName, otherEndTable->GetName().c_str());
+                return ERROR;
+                }
             }
         }
     else
@@ -387,16 +513,13 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
             }
         else
             {
-            entry.m_relatedClassIdColIdx = -1;
-            if (fkEntityClassIdCol != nullptr)
+            DbTable const& classIdTable = fkEntityClassIdCol != nullptr ? fkEntityClassIdCol->GetTable() : fkTable;
+            entry.m_staticRelatedClassId = GetExclusiveClassIdForTable(m_ecdb, classIdTable);
+            if (!entry.m_staticRelatedClassId.IsValid())
                 {
-                auto const& classIds = m_ecdb.Schemas().Main().GetLightweightCache().GetClassesForTable(fkEntityClassIdCol->GetTable());
-                entry.m_staticRelatedClassId = classIds.size() == 1 ? classIds[0] : ECClassId();
-                }
-            else
-                {
-                auto const& classIds = m_ecdb.Schemas().Main().GetLightweightCache().GetClassesForTable(fkTable);
-                entry.m_staticRelatedClassId = classIds.size() == 1 ? classIds[0] : ECClassId();
+                LOG.errorv("InstanceGraph: cannot resolve the related ECClassId of relationship '%s' (table '%s' is not exclusive to a single class).",
+                           relClassName, classIdTable.GetName().c_str());
+                return ERROR;
                 }
             }
         }
@@ -417,25 +540,27 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     sql += Utf8PrintfString(" FROM [%s] et", fkTable.GetName().c_str());
 
     // Referenced-end JOIN (only when fkHolderIsSeed and referenced end ECClassId is physical)
-    if (fkHolderIsSeed)
+    if (fkHolderIsSeed && entry.m_relatedClassIdColIdx >= 0)
         {
         DbTable const* otherEndTable = partition.GetOtherEndTable();
-        if (otherEndTable != nullptr)
-            {
-            DbColumn const* otherEndECClassIdCol = (dir == TraversalDirection::Forward)
-                ? partition.GetTargetECClassIdColumn()
-                : partition.GetSourceECClassIdColumn();
+        DbColumn const* otherEndECClassIdCol = (dir == TraversalDirection::Forward)
+            ? partition.GetTargetECClassIdColumn()
+            : partition.GetSourceECClassIdColumn();
 
-            if (otherEndECClassIdCol != nullptr && !otherEndECClassIdCol->IsVirtual())
-                {
-                bool isSelfRef = (&fkTable == otherEndTable);
-                Utf8CP refAlias = isSelfRef ? "_ReferencedEnd" : "ref_tbl";
-                DbColumn const* otherEndIdCol = otherEndTable->FindFirst(DbColumn::Kind::ECInstanceId);
-                if (otherEndIdCol != nullptr)
-                    sql += Utf8PrintfString(" INNER JOIN [%s] %s ON %s.[%s]=et.[%s]",
-                        otherEndTable->GetName().c_str(), refAlias, refAlias, otherEndIdCol->GetName().c_str(), navIdCol.GetName().c_str());
-                }
+        BeAssert(otherEndTable != nullptr && otherEndECClassIdCol != nullptr && !otherEndECClassIdCol->IsVirtual());
+        bool isSelfRef = (&fkTable == otherEndTable);
+        Utf8CP refAlias = isSelfRef ? "_ReferencedEnd" : "ref_tbl";
+        DbColumn const* otherEndIdCol = otherEndTable->FindFirst(DbColumn::Kind::ECInstanceId);
+        if (otherEndIdCol == nullptr)
+            {
+            // The SELECT list already references refAlias, so we cannot silently drop the join.
+            LOG.errorv("InstanceGraph: referenced end table '%s' of relationship '%s' has no ECInstanceId column.",
+                       otherEndTable->GetName().c_str(), relClassName);
+            return ERROR;
             }
+
+        sql += Utf8PrintfString(" INNER JOIN [%s] %s ON %s.[%s]=et.[%s]",
+            otherEndTable->GetName().c_str(), refAlias, refAlias, otherEndIdCol->GetName().c_str(), navIdCol.GetName().c_str());
         }
 
     // FK-holder entity class filter (ec_cache_ClassHierarchy JOIN) — uses entity ECClassId, not rel ECClassId
@@ -472,21 +597,12 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
     if (!navRelClassIdCol.IsVirtual())
         AppendClassHierarchyFilter(sql, Utf8PrintfString("et.[%s]", navRelClassIdCol.GetName().c_str()).c_str(), relClass.GetId());
 
-    // Shared column disambiguation
-    if (navIdCol.IsShared() && !fkHolderIsSeed)
-        {
-        // When querying backward through a shared column, add foreign-end class filter
-        ECN::ECRelationshipConstraintCR foreignConstraint = (persistedEnd == ForeignKeyPartitionView::PersistedEnd::SourceTable)
-            ? relClass.GetTarget()
-            : relClass.GetSource();
-        ECClassCP foreignAbstractConstraint = foreignConstraint.GetAbstractConstraint();
-        DbColumn const* foreignClassIdCol = (dir == TraversalDirection::Forward)
-            ? partition.GetTargetECClassIdColumn()
-            : partition.GetSourceECClassIdColumn();
-
-        if (foreignAbstractConstraint != nullptr && foreignClassIdCol != nullptr && !foreignClassIdCol->IsVirtual())
-            AppendClassHierarchyFilter(sql, Utf8PrintfString("et.[%s]", foreignClassIdCol->GetName().c_str()).c_str(), foreignAbstractConstraint->GetId());
-        }
+    // NOTE: No extra filter is needed when the navigation id column is shared. Disambiguation
+    // between the relationships sharing that column is already provided by the relationship
+    // class hierarchy filter above (and, when the relationship class id column is virtual, the
+    // column is not shared with any other relationship in the first place). An earlier version
+    // filtered the FK holder's own ECClassId column against the *other* end's constraint
+    // hierarchy, which are disjoint hierarchies and therefore always matched zero rows.
 
     entry.m_sql = sql;
     return SUCCESS;
@@ -499,12 +615,16 @@ BentleyStatus GraphStatementCache::BuildEndTableSql(GraphStatementEntry& entry,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphStatementEntry const* GraphStatementCache::GetOrBuildEntry(ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx)
+BentleyStatus GraphStatementCache::GetOrBuildEntryUnsafe(GraphStatementEntry const*& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx)
     {
+    out = nullptr;
     GraphStatementKey key{rel.m_relClass->GetId(), rel.m_thisEnd, dir, partitionIdx};
     auto it = m_entries.find(key);
     if (it != m_entries.end())
-        return &it->second;
+        {
+        out = &it->second;
+        return SUCCESS;
+        }
 
     GraphStatementEntry entry;
     BentleyStatus status = ERROR;
@@ -512,12 +632,12 @@ GraphStatementEntry const* GraphStatementCache::GetOrBuildEntry(ApplicableRelati
     if (rel.m_mapType == ClassMap::Type::RelationshipLinkTable)
         {
         ClassMap const* classMap = m_ecdb.Schemas().Main().GetClassMap(*rel.m_relClass);
-        if (classMap == nullptr)
-            return nullptr;
-
-        auto const* relMap = dynamic_cast<RelationshipClassMap const*>(classMap);
+        auto const* relMap = classMap != nullptr ? dynamic_cast<RelationshipClassMap const*>(classMap) : nullptr;
         if (relMap == nullptr)
-            return nullptr;
+            {
+            LOG.errorv("InstanceGraph: no relationship class map for '%s'.", rel.m_relClass->GetFullName());
+            return ERROR;
+            }
 
         status = BuildLinkTableSql(entry, *relMap, dir);
         }
@@ -525,45 +645,85 @@ GraphStatementEntry const* GraphStatementCache::GetOrBuildEntry(ApplicableRelati
         {
         auto fkView = ForeignKeyPartitionView::CreateReadonly(m_ecdb.Schemas().Main(), *rel.m_relClass);
         if (fkView == nullptr)
-            return nullptr;
+            {
+            LOG.errorv("InstanceGraph: no foreign key partition view for '%s'.", rel.m_relClass->GetFullName());
+            return ERROR;
+            }
 
         auto partitions = fkView->GetPartitions(true /*onlyPhysical*/);
         if (partitionIdx >= partitions.size())
-            return nullptr;
+            {
+            LOG.errorv("InstanceGraph: partition %" PRIu64 " out of range for '%s'.", (uint64_t) partitionIdx, rel.m_relClass->GetFullName());
+            return ERROR;
+            }
 
         status = BuildEndTableSql(entry, *partitions[partitionIdx], *fkView, *rel.m_relClass, dir);
         }
+    else
+        {
+        BeAssert(false && "Unexpected relationship map type");
+        return ERROR;
+        }
 
     if (status != SUCCESS)
-        return nullptr;
+        return ERROR;
 
     auto insertResult = m_entries.emplace(key, std::move(entry));
-    return &insertResult.first->second;
+    out = &insertResult.first->second;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<GraphStatementEntry const*> GraphStatementCache::GetEndTableEntries(ApplicableRelationship const& rel, TraversalDirection dir)
+BentleyStatus GraphStatementCache::GetOrBuildEntry(GraphStatementEntry& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx)
     {
-    bvector<GraphStatementEntry const*> result;
+    BeMutexHolder holder(m_mutex);
+
+    GraphStatementEntry const* entry = nullptr;
+    if (SUCCESS != GetOrBuildEntryUnsafe(entry, rel, dir, partitionIdx))
+        return ERROR;
+
+    out = *entry; // copy out: the cache may be cleared while the caller steps the statement
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GraphStatementCache::GetEndTableEntries(bvector<GraphStatementEntry>& out, ApplicableRelationship const& rel, TraversalDirection dir)
+    {
+    out.clear();
 
     if (rel.m_mapType != ClassMap::Type::RelationshipEndTable)
-        return result;
-
-    auto fkView = ForeignKeyPartitionView::CreateReadonly(m_ecdb.Schemas().Main(), *rel.m_relClass);
-    if (fkView == nullptr)
-        return result;
-
-    auto partitions = fkView->GetPartitions(true /*onlyPhysical*/);
-    for (size_t i = 0; i < partitions.size(); ++i)
         {
-        auto const* entry = GetOrBuildEntry(rel, dir, i);
-        if (entry != nullptr)
-            result.push_back(entry);
+        BeAssert(false && "GetEndTableEntries called for a non end-table relationship");
+        return ERROR;
         }
 
-    return result;
+    size_t partitionCount = 0;
+        {
+        auto fkView = ForeignKeyPartitionView::CreateReadonly(m_ecdb.Schemas().Main(), *rel.m_relClass);
+        if (fkView == nullptr)
+            {
+            LOG.errorv("InstanceGraph: no foreign key partition view for '%s'.", rel.m_relClass->GetFullName());
+            return ERROR;
+            }
+
+        partitionCount = fkView->GetPartitions(true /*onlyPhysical*/).size();
+        }
+
+    BeMutexHolder holder(m_mutex);
+    for (size_t i = 0; i < partitionCount; ++i)
+        {
+        GraphStatementEntry const* entry = nullptr;
+        if (SUCCESS != GetOrBuildEntryUnsafe(entry, rel, dir, i))
+            return ERROR;
+
+        out.push_back(*entry);
+        }
+
+    return SUCCESS;
     }
 
 // =====================================================================================
@@ -595,6 +755,13 @@ InstanceGraph::~InstanceGraph() {}
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceGraph::AddSeed(ECInstanceKeyCR seed)
     {
+    // A seed added twice must not be traversed twice.
+    for (auto const& existing : m_seeds)
+        {
+        if (existing == seed)
+            return;
+        }
+
     m_seeds.push_back(seed);
     m_visited.insert(seed);
     }
@@ -612,14 +779,19 @@ BentleyStatus InstanceGraph::ExpandNode(ECInstanceKeyCR key, TraversalDirection 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceGraph::ExpandNodeInternal(ECInstanceKeyCR key, TraversalDirection dir)
     {
+    if (!key.IsValid())
+        return ERROR;
+
     // Get the ECDb-level shared cache (cleared on ClearECDbCache)
     GraphStatementCache& cache = m_ecdb.GetImpl().GetGraphStatementCache();
 
-    // Ensure expanded node has an adjacency entry even if no results are found
-    m_adjacency.emplace(key, bvector<RelatedInstance>());
+    bvector<ApplicableRelationship> rels;
+    if (SUCCESS != cache.GetApplicableRelationships(rels, key.GetClassId()))
+        return ERROR;
 
-    bvector<ApplicableRelationship> const& rels = cache.GetApplicableRelationships(key.GetClassId());
-
+    // Snapshot the SQL entries up front. They are copies, so the ECDb level cache may be
+    // cleared (ECDb::ClearECDbCache) while the statements below are being stepped.
+    bvector<bpair<GraphStatementEntry, TraversalDirection>> plan;
     for (auto const& rel : rels)
         {
         // Determine which directions to traverse based on the seed's position
@@ -639,56 +811,91 @@ BentleyStatus InstanceGraph::ExpandNodeInternal(ECInstanceKeyCR key, TraversalDi
 
         for (TraversalDirection traversalDir : dirs)
             {
-            bvector<GraphStatementEntry const*> entries;
-
             if (rel.m_mapType == ClassMap::Type::RelationshipLinkTable)
                 {
-                auto const* entry = cache.GetOrBuildEntry(rel, traversalDir);
-                if (entry != nullptr)
-                    entries.push_back(entry);
+                GraphStatementEntry entry;
+                if (SUCCESS != cache.GetOrBuildEntry(entry, rel, traversalDir))
+                    return ERROR;
+
+                plan.push_back(make_bpair(std::move(entry), traversalDir));
                 }
             else if (rel.m_mapType == ClassMap::Type::RelationshipEndTable)
                 {
-                entries = cache.GetEndTableEntries(rel, traversalDir);
-                }
-
-            for (auto const* entry : entries)
-                {
-                CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(entry->m_sql.c_str());
-                if (stmt == nullptr)
-                    {
-                    LOG.errorv("InstanceGraph: Failed to prepare SQL for class %" PRIu64 ": %s", key.GetClassId().GetValue(), entry->m_sql.c_str());
+                bvector<GraphStatementEntry> entries;
+                if (SUCCESS != cache.GetEndTableEntries(entries, rel, traversalDir))
                     return ERROR;
-                    }
 
-                stmt->BindId(1, key.GetInstanceId());
-
-                while (BE_SQLITE_ROW == stmt->Step())
-                    {
-                    // Read related instance ID
-                    ECInstanceId relatedId = stmt->GetValueId<ECInstanceId>(entry->m_relatedInstanceIdColIdx);
-                    if (!relatedId.IsValid())
-                        continue;
-
-                    // Read related class ID (physical or virtual/static)
-                    ECClassId relatedClassId;
-                    if (entry->m_relatedClassIdColIdx >= 0)
-                        relatedClassId = stmt->GetValueId<ECClassId>(entry->m_relatedClassIdColIdx);
-                    else
-                        relatedClassId = entry->m_staticRelatedClassId;
-
-                    // Read relationship class ID (physical or virtual/static)
-                    ECClassId relClassId;
-                    if (entry->m_relClassIdColIdx >= 0)
-                        relClassId = stmt->GetValueId<ECClassId>(entry->m_relClassIdColIdx);
-                    else
-                        relClassId = entry->m_staticRelClassId;
-
-                    ECInstanceKey relatedKey(relatedClassId, relatedId);
-                    m_adjacency[key].push_back(RelatedInstance(relatedKey, relClassId, traversalDir));
-                    m_visited.insert(relatedKey);
-                    }
+                for (auto& entry : entries)
+                    plan.push_back(make_bpair(std::move(entry), traversalDir));
                 }
+            }
+        }
+
+    // The node is part of the graph and is now considered expanded, even if it has no edges.
+    // Re-expanding a node replaces its edges rather than appending a second copy of each.
+    m_visited.insert(key);
+    bvector<RelatedInstance>& edges = m_adjacency[key];
+    edges.clear();
+
+    // A relationship class and its base classes can all be applicable to the same seed and all
+    // match the very same persisted row, so identical edges must be suppressed.
+    bset<GraphEdgeKey> seenEdges;
+
+    for (auto const& planEntry : plan)
+        {
+        GraphStatementEntry const& entry = planEntry.first;
+        TraversalDirection traversalDir = planEntry.second;
+
+        CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(entry.m_sql.c_str());
+        if (stmt == nullptr)
+            {
+            LOG.errorv("InstanceGraph: Failed to prepare SQL for class %s: %s", key.GetClassId().ToString().c_str(), entry.m_sql.c_str());
+            return ERROR;
+            }
+
+        stmt->BindId(1, key.GetInstanceId());
+
+        DbResult stepStatus;
+        while ((stepStatus = stmt->Step()) == BE_SQLITE_ROW)
+            {
+            // Read related instance ID
+            ECInstanceId relatedId = stmt->GetValueId<ECInstanceId>(entry.m_relatedInstanceIdColIdx);
+            if (!relatedId.IsValid())
+                continue;
+
+            // Read related class ID (physical or virtual/static)
+            ECClassId relatedClassId;
+            if (entry.m_relatedClassIdColIdx >= 0)
+                relatedClassId = stmt->GetValueId<ECClassId>(entry.m_relatedClassIdColIdx);
+            else
+                relatedClassId = entry.m_staticRelatedClassId;
+
+            // Never insert a node with an unresolved class id: it would create a bogus node that
+            // does not de-duplicate against the same instance found via another path, and that
+            // cannot be expanded further.
+            if (!relatedClassId.IsValid())
+                {
+                LOG.warningv("InstanceGraph: skipping related instance %s because its ECClassId could not be resolved. SQL: %s",
+                             relatedId.ToString().c_str(), entry.m_sql.c_str());
+                continue;
+                }
+
+            // Read relationship class ID (physical or virtual/static)
+            ECClassId relClassId;
+            if (entry.m_relClassIdColIdx >= 0)
+                relClassId = stmt->GetValueId<ECClassId>(entry.m_relClassIdColIdx);
+            else
+                relClassId = entry.m_staticRelClassId;
+
+            ECInstanceKey relatedKey(relatedClassId, relatedId);
+            AppendUniqueEdge(edges, seenEdges, RelatedInstance(relatedKey, relClassId, traversalDir));
+            m_visited.insert(relatedKey);
+            }
+
+        if (stepStatus != BE_SQLITE_DONE)
+            {
+            LOG.errorv("InstanceGraph: traversal failed (%s). SQL: %s", BeSQLiteLib::GetErrorName(stepStatus), entry.m_sql.c_str());
+            return ERROR;
             }
         }
 
@@ -700,35 +907,48 @@ BentleyStatus InstanceGraph::ExpandNodeInternal(ECInstanceKeyCR key, TraversalDi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceGraph::ExpandAll(uint8_t maxDepth)
     {
+    if (maxDepth == 0)
+        {
+        // Seed only: the seeds are part of the graph and have no (known) edges.
+        for (auto const& seed : m_seeds)
+            m_adjacency.emplace(seed, bvector<RelatedInstance>());
+
+        return SUCCESS;
+        }
+
     // BFS expansion
-    bvector<ECInstanceKey> currentLevel;
-    for (auto const& seed : m_seeds)
-        currentLevel.push_back(seed);
+    bvector<ECInstanceKey> currentLevel = m_seeds;
 
     for (uint8_t depth = 0; depth < maxDepth && !currentLevel.empty(); ++depth)
         {
         bvector<ECInstanceKey> nextLevel;
+        bset<ECInstanceKey> queuedForNextLevel;
+
         for (auto const& key : currentLevel)
             {
-            // Skip if already expanded (cycle avoidance)
-            if (m_adjacency.find(key) != m_adjacency.end())
+            // Only expand a node once (cycle avoidance), but always look at its edges: a node
+            // may already have been expanded by an earlier ExpandNode/ExpandAll call, and its
+            // neighbours would otherwise never be visited.
+            if (m_adjacency.find(key) == m_adjacency.end())
+                {
+                if (SUCCESS != ExpandNodeInternal(key, TraversalDirection::Both))
+                    return ERROR;
+                }
+
+            auto const* related = GetRelated(key);
+            if (related == nullptr)
                 continue;
 
-            BentleyStatus status = ExpandNodeInternal(key, TraversalDirection::Both);
-            if (status != SUCCESS)
-                return status;
-
-            // Collect newly discovered nodes for next level
-            auto const* related = GetRelated(key);
-            if (related != nullptr)
+            for (auto const& rel : *related)
                 {
-                for (auto const& rel : *related)
-                    {
-                    if (m_adjacency.find(rel.GetKey()) == m_adjacency.end())
-                        nextLevel.push_back(rel.GetKey());
-                    }
+                if (m_adjacency.find(rel.GetKey()) != m_adjacency.end())
+                    continue; // already expanded
+
+                if (queuedForNextLevel.insert(rel.GetKey()).second)
+                    nextLevel.push_back(rel.GetKey());
                 }
             }
+
         currentLevel = std::move(nextLevel);
         }
 
@@ -744,6 +964,13 @@ BentleyStatus InstanceGraph::ExpandAll(uint8_t maxDepth)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceGraph::Overlaps(InstanceGraph const& a, InstanceGraph const& b)
     {
+    // Instance keys of different files are not comparable.
+    if (&a.m_ecdb != &b.m_ecdb)
+        {
+        BeAssert(false && "InstanceGraph::Overlaps requires both graphs to belong to the same ECDb");
+        return false;
+        }
+
     auto const& smaller = (a.NodeCount() < b.NodeCount()) ? a : b;
     auto const& larger  = (a.NodeCount() < b.NodeCount()) ? b : a;
     for (auto const& key : smaller.m_visited)
@@ -759,6 +986,13 @@ bool InstanceGraph::Overlaps(InstanceGraph const& a, InstanceGraph const& b)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<InstanceGraph> InstanceGraph::Intersection(InstanceGraph const& a, InstanceGraph const& b)
     {
+    // Instance keys of different files are not comparable.
+    if (&a.m_ecdb != &b.m_ecdb)
+        {
+        BeAssert(false && "InstanceGraph::Intersection requires both graphs to belong to the same ECDb");
+        return nullptr;
+        }
+
     bset<ECInstanceKey> visited;
     bmap<ECInstanceKey, bvector<RelatedInstance>> adjacency;
 
@@ -771,25 +1005,23 @@ std::unique_ptr<InstanceGraph> InstanceGraph::Intersection(InstanceGraph const& 
             visited.insert(key);
         }
 
-    // Preserve edges where both endpoints are in the intersection
-    for (auto const& pair : a.m_adjacency)
+    // Preserve edges where both endpoints are in the intersection. The same edge is typically
+    // present in both graphs, so it must only be kept once.
+    bmap<ECInstanceKey, bset<GraphEdgeKey>> seenEdges;
+    for (InstanceGraph const* graph : {&a, &b})
         {
-        if (visited.find(pair.first) == visited.end())
-            continue;
-        for (auto const& rel : pair.second)
+        for (auto const& pair : graph->m_adjacency)
             {
-            if (visited.find(rel.GetKey()) != visited.end())
-                adjacency[pair.first].push_back(rel);
-            }
-        }
-    for (auto const& pair : b.m_adjacency)
-        {
-        if (visited.find(pair.first) == visited.end())
-            continue;
-        for (auto const& rel : pair.second)
-            {
-            if (visited.find(rel.GetKey()) != visited.end())
-                adjacency[pair.first].push_back(rel);
+            if (visited.find(pair.first) == visited.end())
+                continue;
+
+            for (auto const& rel : pair.second)
+                {
+                if (visited.find(rel.GetKey()) == visited.end())
+                    continue;
+
+                AppendUniqueEdge(adjacency[pair.first], seenEdges[pair.first], rel);
+                }
             }
         }
 
@@ -801,15 +1033,28 @@ std::unique_ptr<InstanceGraph> InstanceGraph::Intersection(InstanceGraph const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<InstanceGraph> InstanceGraph::Union(InstanceGraph const& a, InstanceGraph const& b)
     {
+    // Instance keys of different files are not comparable.
+    if (&a.m_ecdb != &b.m_ecdb)
+        {
+        BeAssert(false && "InstanceGraph::Union requires both graphs to belong to the same ECDb");
+        return nullptr;
+        }
+
     bset<ECInstanceKey> visited = a.m_visited;
     visited.insert(b.m_visited.begin(), b.m_visited.end());
 
-    bmap<ECInstanceKey, bvector<RelatedInstance>> adjacency = a.m_adjacency;
-    for (auto const& pair : b.m_adjacency)
+    bmap<ECInstanceKey, bvector<RelatedInstance>> adjacency;
+    bmap<ECInstanceKey, bset<GraphEdgeKey>> seenEdges;
+    for (InstanceGraph const* graph : {&a, &b})
         {
-        auto& vec = adjacency[pair.first];
-        for (auto const& rel : pair.second)
-            vec.push_back(rel);
+        for (auto const& pair : graph->m_adjacency)
+            {
+            // Make sure an expanded node without edges keeps an (empty) adjacency entry.
+            bvector<RelatedInstance>& edges = adjacency[pair.first];
+            bset<GraphEdgeKey>& seen = seenEdges[pair.first];
+            for (auto const& rel : pair.second)
+                AppendUniqueEdge(edges, seen, rel);
+            }
         }
 
     return std::unique_ptr<InstanceGraph>(new InstanceGraph(a.m_ecdb, std::move(visited), std::move(adjacency)));
