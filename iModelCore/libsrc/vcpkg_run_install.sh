@@ -116,8 +116,9 @@ OVERLAY_TRIPLETS="$MANIFEST_DIR/triplets"
 # triplet tokens (e.g. arm64-android, x64-android), so parallel builds of different arches get
 # separate trees and cannot race on tool extraction or registry git fetch/GC. Triplet variants
 # of the same platform and configs (debug/release) intentionally share one persistent cache; the
-# cross-process lock around the install below serializes same-platform runs. Honor the
-# caller-provided VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE escape hatches when set.
+# cross-process lock below is keyed on these directories, so same-platform runs are serialized
+# and a VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE override that points two runs at one shared
+# directory is serialized too. Honor those caller-provided escape hatches when set.
 VCPKG_PLATFORM_KEY="$(echo "$TRIPLET" | cut -d- -f1,2)"
 DOWNLOADS_ROOT="${VCPKG_DOWNLOADS:-$VCPKG_CACHE_BASE/downloads/$VCPKG_PLATFORM_KEY}"
 mkdir -p "$DOWNLOADS_ROOT"
@@ -166,39 +167,88 @@ if [ -n "${CRASHPAD_USE_LLD:-}" ]; then
 fi
 
 # --------------------------------------------------------------------------------------
-# Cross-process lock around the install. Same-platform builds share the per-platform
-# downloads/tools tree and registries git repo above; vcpkg.PartFile.xml only serializes
-# consumers within a single BentleyBuild graph, so two same-platform builds can still run
-# concurrently and corrupt that shared state (see PR #1497: concurrent registry fetch/GC).
-# Serialize them with a platform-keyed lock. Different arches use different lock files and still
-# build in parallel. Prefer flock (the kernel releases it automatically on exit); fall back to an
-# atomic mkdir spinlock on hosts without flock (e.g. stock macOS).
+# Cross-process lock around the install.
+#
+# Two runs corrupt each other only when they share the mutable state vcpkg writes during an
+# install: the downloads/tools tree ($DOWNLOADS_ROOT) and the registries git repo
+# ($X_VCPKG_REGISTRIES_CACHE). vcpkg.PartFile.xml only serializes consumers within a single
+# BentleyBuild graph, so two installs can still overlap (static + dynamic, two pipelines, or two
+# users) and race on that state (see PR #1497: concurrent registry fetch/GC).
+#
+# Lock the actual mutable directories, not a triplet-derived name. Those paths can be redirected
+# independently (VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE) and shared across arches or users, so
+# a triplet+cache-base lock name can both miss real sharing (two arches pointed at one shared
+# downloads tree get different lock files) and falsely serialize unrelated runs. The lock file
+# lives inside each directory, so every run pointing at the same directory contends on the same
+# inode regardless of triplet, user, or how the path was spelled. Acquire the canonical,
+# de-duplicated directories in sorted order so runs with overlapping sets can never deadlock.
+# Use an auto-releasing advisory lock so a crash, SIGKILL, or power loss cannot leave a stale lock
+# behind that wedges every later install: flock(1) on Linux, Perl's flock() on stock macOS (which
+# has no flock(1) but always ships Perl). Fail loudly if neither is available rather than fall back
+# to an unrecoverable directory lock.
 # --------------------------------------------------------------------------------------
-run_vcpkg_install() {
-    "$VCPKG_EXE" install \
-        --triplet "$TRIPLET" \
-        --downloads-root="$DOWNLOADS_ROOT" \
-        --x-install-root="$INSTALL_ROOT" \
-        --x-manifest-root="$MANIFEST_DIR" \
-        --x-buildtrees-root="$INSTALL_ROOT/buildtrees" \
-        --x-packages-root="$INSTALL_ROOT/packages" \
-        "${OVERLAY_ARGS[@]}"
-}
+# Build the install command once so every lock backend wraps the same invocation.
+VCPKG_CMD=("$VCPKG_EXE" install
+    --triplet "$TRIPLET"
+    --downloads-root="$DOWNLOADS_ROOT"
+    --x-install-root="$INSTALL_ROOT"
+    --x-manifest-root="$MANIFEST_DIR"
+    --x-buildtrees-root="$INSTALL_ROOT/buildtrees"
+    --x-packages-root="$INSTALL_ROOT/packages"
+    "${OVERLAY_ARGS[@]}")
 
-VCPKG_LOCKFILE="$VCPKG_CACHE_BASE/$VCPKG_PLATFORM_KEY.install.lock"
+# Canonicalize the directories this install mutates, then sort -u them. De-dup is required: the
+# two paths coincide when the registries cache defaults under (or is overridden onto) the
+# downloads tree, and locking the same file twice from one process would self-deadlock. Sorting
+# gives every process the same global acquire order, preventing AB/BA deadlock between runs whose
+# directory sets overlap.
+_canon_dirs=()
+for _d in "$DOWNLOADS_ROOT" "$X_VCPKG_REGISTRIES_CACHE"; do
+    _canon="$(cd "$_d" 2>/dev/null && pwd -P)" || _canon="$_d"
+    _canon_dirs+=("$_canon")
+done
+_oldifs="$IFS"; IFS=$'\n'
+LOCK_DIRS=($(printf '%s\n' "${_canon_dirs[@]}" | LC_ALL=C sort -u))
+IFS="$_oldifs"
+
+LOCK_FILES=()
+for _d in "${LOCK_DIRS[@]}"; do
+    LOCK_FILES+=("$_d/.vcpkg-install.lock")
+done
+
 if command -v flock >/dev/null 2>&1; then
-    exec 9>"$VCPKG_LOCKFILE"
-    if ! flock 9; then
-        echo "Error: failed to acquire vcpkg install lock $VCPKG_LOCKFILE"
-        exit 1
-    fi
-    run_vcpkg_install
-else
-    VCPKG_LOCKDIR="$VCPKG_LOCKFILE.d"
-    while ! mkdir "$VCPKG_LOCKDIR" 2>/dev/null; do
-        echo "vcpkg: waiting for same-platform install lock $VCPKG_LOCKDIR..."
-        sleep 5
+    # Hold each lock on its own fd for the lifetime of this process; the kernel drops them on exit.
+    _fd=9
+    for _f in "${LOCK_FILES[@]}"; do
+        # Computed fd numbers need eval on bash 3.2 (stock macOS), which lacks the {var}> form.
+        eval "exec $_fd>\"\$_f\""
+        if ! flock "$_fd"; then
+            echo "Error: failed to acquire vcpkg install lock $_f"
+            exit 1
+        fi
+        _fd=$((_fd - 1))
     done
-    trap 'rmdir "$VCPKG_LOCKDIR" 2>/dev/null' EXIT INT TERM
-    run_vcpkg_install
+    "${VCPKG_CMD[@]}"
+elif command -v perl >/dev/null 2>&1; then
+    # Perl's flock() is advisory and released by the kernel when this process dies, so a killed or
+    # crashed build never leaves a stale lock (unlike a directory lock). It opens every lock file,
+    # blocks to acquire them in the given sorted order, runs the install, then exits -- releasing
+    # all locks. The child's wait status is propagated so BentleyBuild still sees failures.
+    perl -e '
+        my @locks;
+        while (@ARGV && $ARGV[0] ne "--") { push @locks, shift @ARGV }
+        shift @ARGV if @ARGV;
+        my @held;
+        for my $f (@locks) {
+            open(my $fh, ">>", $f) or die "vcpkg lock: cannot open $f: $!\n";
+            flock($fh, 2)          or die "vcpkg lock: cannot lock $f: $!\n";
+            push @held, $fh;
+        }
+        my $rc = system(@ARGV);
+        exit($rc == -1 ? 1 : ($rc & 127 ? 128 + ($rc & 127) : $rc >> 8));
+    ' "${LOCK_FILES[@]}" -- "${VCPKG_CMD[@]}"
+else
+    echo "Error: no auto-releasing lock backend available (need 'flock' or 'perl')." >&2
+    echo "Refusing to use an unrecoverable directory lock; install 'flock' or 'perl' and retry." >&2
+    exit 1
 fi

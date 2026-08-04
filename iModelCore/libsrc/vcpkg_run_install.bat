@@ -168,9 +168,10 @@ rem triplet tokens (e.g. x64-windows, arm64-android, x64-android), so parallel b
 rem different arches (notably AndroidARM64 vs AndroidX64) get separate trees and cannot race on
 rem tool extraction or registry git fetch/GC. Triplet variants of the same platform (static /
 rem -md / -veracode / -clang) and configs (debug/release) intentionally share one persistent
-rem cache; the cross-process lock around the install below serializes same-platform runs.
-rem Honor the caller-provided VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE / VCPKG_DEFAULT_BINARY_CACHE
-rem escape hatches when set; otherwise derive them from the cache base.
+rem cache; the cross-process lock below is keyed on these directories, so same-platform runs are
+rem serialized and a VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE override that points two runs at
+rem one shared directory is serialized too. Honor those caller-provided escape hatches (and
+rem VCPKG_DEFAULT_BINARY_CACHE) when set; otherwise derive them from the cache base.
 for /f "tokens=1,2 delims=-" %%a in ("%TRIPLET%") do set "VCPKG_PLATFORM_KEY=%%a-%%b"
 
 if "%VCPKG_DOWNLOADS%"=="" set "VCPKG_DOWNLOADS=%VCPKG_CACHE_BASE%\downloads\%VCPKG_PLATFORM_KEY%"
@@ -225,29 +226,55 @@ echo vcpkg: binary-cache="%VCPKG_DEFAULT_BINARY_CACHE%"
 echo vcpkg: binary-sources="%VCPKG_BINARY_SOURCES%"
 
 rem --------------------------------------------------------------------------------------
-rem Cross-process lock around the install. Same-platform builds share the per-platform
-rem downloads/tools tree and registries git repo above; vcpkg.PartFile.xml only serializes
-rem consumers within a single BentleyBuild graph, so two same-platform builds (static + dynamic,
-rem or two pipelines) can still run concurrently and corrupt that shared state (see PR #1497:
-rem concurrent registry fetch/GC). Serialize them with a platform-keyed lock file: cmd opens the
-rem redirection target (handle 9) without write-sharing, so a second process's open fails while
-rem the first holds it. Different arches use different lock files and still build in parallel.
-rem The OS releases the handle when this process exits, so a crash cannot wedge the lock.
-rem Handle 8 preserves the real stderr so vcpkg's own error output is not swallowed by the 2>nul
-rem that suppresses the expected "file in use" noise from a failed lock acquisition.
+rem Cross-process lock around the install.
+rem
+rem Two runs corrupt each other only when they share the mutable state vcpkg writes during an
+rem install: the downloads/tools tree (VCPKG_DOWNLOADS) and the registries git repo
+rem (X_VCPKG_REGISTRIES_CACHE). vcpkg.PartFile.xml only serializes consumers within a single
+rem BentleyBuild graph, so two installs can still overlap (static + dynamic, two pipelines, or two
+rem users) and race on that state (see PR #1497: concurrent registry fetch/GC).
+rem
+rem Lock the actual mutable directories, not a triplet-derived name: those paths can be redirected
+rem independently and shared across arches or users, so a triplet+cache-base lock name can both
+rem miss real sharing and falsely serialize unrelated runs. The lock file lives inside each
+rem directory, so every run pointing at the same directory contends on the same handle regardless
+rem of triplet, user, or how the path was spelled. cmd opens each redirection target without
+rem write-sharing, so a second process's open fails while the first holds it; the OS releases the
+rem handles on exit, so a crash cannot wedge the lock. A partial acquisition (handle 9 taken but
+rem handle 7 blocked) releases both handles before the retry, so no deterministic ordering is
+rem needed to stay deadlock-free -- but we must de-duplicate: when the registries cache resolves
+rem to the same directory as downloads, opening one file on two handles from this process would
+rem always fail the second open and wedge us in the retry loop. Handle 8 preserves the real stderr
+rem so vcpkg's own errors are not swallowed by the 2>nul that suppresses the expected "file in use"
+rem noise from a failed acquisition.
 rem --------------------------------------------------------------------------------------
-set "VCPKG_LOCKFILE=%VCPKG_CACHE_BASE%\%VCPKG_PLATFORM_KEY%.install.lock"
+for %%I in ("%VCPKG_DOWNLOADS%") do set "LOCK_DIR_1=%%~fI"
+for %%I in ("%X_VCPKG_REGISTRIES_CACHE%") do set "LOCK_DIR_2=%%~fI"
+if /i "%LOCK_DIR_1%"=="%LOCK_DIR_2%" set "LOCK_DIR_2="
+set "LOCK_FILE_1=%LOCK_DIR_1%\.vcpkg-install.lock"
+if defined LOCK_DIR_2 set "LOCK_FILE_2=%LOCK_DIR_2%\.vcpkg-install.lock"
 
 :acquire_lock
 set "GOT_LOCK="
-(
-    9>>"%VCPKG_LOCKFILE%" (
-        set "GOT_LOCK=1"
-        call :run_install
-    )
-) 8>&2 2>nul
+if defined LOCK_DIR_2 (
+    (
+        9>>"%LOCK_FILE_1%" (
+            7>>"%LOCK_FILE_2%" (
+                set "GOT_LOCK=1"
+                call :run_install
+            )
+        )
+    ) 8>&2 2>nul
+) else (
+    (
+        9>>"%LOCK_FILE_1%" (
+            set "GOT_LOCK=1"
+            call :run_install
+        )
+    ) 8>&2 2>nul
+)
 if defined GOT_LOCK goto :lock_done
-echo vcpkg: waiting for same-platform install lock "%VCPKG_LOCKFILE%"...
+echo vcpkg: waiting for vcpkg install lock(s)...
 rem ~5s portable sleep (timeout /t breaks when stdin is redirected in CI).
 ping -n 6 127.0.0.1 >nul
 goto :acquire_lock
