@@ -65,14 +65,14 @@ struct GraphStatementEntry final
     Utf8String      m_sql;
 
     // Column index mapping: -1 means virtual (use static value)
-    int             m_relatedInstanceIdColIdx;
-    int             m_relatedClassIdColIdx;  //!< -1 if virtual
-    ECN::ECClassId  m_staticRelatedClassId;  //!< used when relatedClassIdColIdx == -1
+    int             m_relatedInstanceIdColIdx = -1;
+    int             m_relatedClassIdColIdx = -1;  //!< -1 if virtual
+    ECN::ECClassId  m_staticRelatedClassId;       //!< used when relatedClassIdColIdx == -1
 
-    int             m_relClassIdColIdx;       //!< -1 if virtual
-    ECN::ECClassId  m_staticRelClassId;       //!< used when relClassIdColIdx == -1
+    int             m_relClassIdColIdx = -1;      //!< -1 if virtual
+    ECN::ECClassId  m_staticRelClassId;           //!< used when relClassIdColIdx == -1
 
-    TraversalDirection m_direction;
+    TraversalDirection m_direction = TraversalDirection::Both;
     };
 
 //=======================================================================================
@@ -89,6 +89,8 @@ struct GraphStatementCache final
         ECDbCR m_ecdb;
 
     private:
+        mutable BeMutex m_mutex;
+
         // SQL text + metadata cache (the expensive part to compute: walking property maps)
         std::unordered_map<GraphStatementKey, GraphStatementEntry, GraphStatementKeyHash> m_entries;
 
@@ -109,20 +111,26 @@ struct GraphStatementCache final
 
         BentleyStatus DiscoverRelationshipsForClass(bvector<ApplicableRelationship>& out, ECN::ECClassId entityClassId);
 
+        //! Caller must hold m_mutex.
+        BentleyStatus GetOrBuildEntryUnsafe(GraphStatementEntry const*& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx);
+
     public:
         explicit GraphStatementCache(ECDbCR ecdb) : m_ecdb(ecdb) {}
         ~GraphStatementCache() {}
 
-        void Clear() { m_entries.clear(); m_relDiscoveryCache.clear(); }
+        void Clear() { BeMutexHolder holder(m_mutex); m_entries.clear(); m_relDiscoveryCache.clear(); }
 
-        //! Get or discover applicable relationships for an entity class
-        bvector<ApplicableRelationship> const& GetApplicableRelationships(ECN::ECClassId entityClassId);
+        //! Get or discover applicable relationships for an entity class.
+        //! @remarks The result is copied out so that callers never hold a reference into the cache,
+        //! which may be cleared (ECDb::ClearECDbCache) while a traversal is in progress.
+        //! @return ERROR if discovery failed. Failed discoveries are not cached.
+        BentleyStatus GetApplicableRelationships(bvector<ApplicableRelationship>& out, ECN::ECClassId entityClassId);
 
-        //! Get or build the SQL entry for a relationship traversal
-        GraphStatementEntry const* GetOrBuildEntry(ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx = 0);
+        //! Get or build the SQL entry for a relationship traversal. The entry is copied out.
+        BentleyStatus GetOrBuildEntry(GraphStatementEntry& out, ApplicableRelationship const& rel, TraversalDirection dir, size_t partitionIdx = 0);
 
-        //! Get all partition entries for an end-table relationship
-        bvector<GraphStatementEntry const*> GetEndTableEntries(ApplicableRelationship const& rel, TraversalDirection dir);
+        //! Get all partition entries for an end-table relationship. The entries are copied out.
+        BentleyStatus GetEndTableEntries(bvector<GraphStatementEntry>& out, ApplicableRelationship const& rel, TraversalDirection dir);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

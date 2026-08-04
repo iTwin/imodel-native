@@ -85,14 +85,26 @@ struct InstanceGraph final
         //--- Building the graph ---
 
         //! Add a seed instance. No SQL is executed until Expand is called.
+        //! @remarks Adding the same seed more than once has no additional effect.
         ECDB_EXPORT void AddSeed(ECInstanceKeyCR seed);
 
         //! Expand from a specific node in the given direction(s).
+        //! @remarks The node becomes part of the graph even if it was never added as a seed.
+        //! Re-expanding a node replaces its edges rather than duplicating them.
+        //! @remarks A relationship whose source and target constraints overlap (e.g. an
+        //! Element-to-Element relationship) is traversable in both directions. A self loop
+        //! (source and target are the same instance) is therefore reported twice when
+        //! TraversalDirection::Both is used: once as Forward and once as Backward.
         //! @return SUCCESS or ERROR if a statement fails
         ECDB_EXPORT BentleyStatus ExpandNode(ECInstanceKeyCR key, TraversalDirection dir = TraversalDirection::Both);
 
         //! Expand the full graph via BFS up to maxDepth hops.
-        //! @param[in] maxDepth 0 = seed only, UINT8_MAX = unlimited
+        //! @param[in] maxDepth number of hops to traverse. 0 expands no relationship at all and
+        //! only records the seeds, UINT8_MAX (the maximum) traverses up to 255 hops. Because
+        //! already expanded nodes are never expanded again, traversal always terminates.
+        //! @remarks Can be called repeatedly to deepen a graph. Nodes already expanded by a
+        //! previous ExpandAll/ExpandNode call are not expanded again, but their neighbours are
+        //! still traversed.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus ExpandAll(uint8_t maxDepth = UINT8_MAX);
 
@@ -115,14 +127,19 @@ struct InstanceGraph final
         bset<ECInstanceKey> const& GetVisited() const { return m_visited; }
 
         //--- Set Operations ---
+        //! @remarks All set operations require both graphs to belong to the same ECDb - instance
+        //! keys of different files are not comparable. Passing graphs of different ECDbs asserts
+        //! and returns false/nullptr.
 
         //! Do two graphs share any instance?
         ECDB_EXPORT static bool Overlaps(InstanceGraph const& a, InstanceGraph const& b);
 
-        //! Instances present in both graphs (adjacency edges preserved only if both endpoints survive)
+        //! Instances present in both graphs (adjacency edges preserved only if both endpoints survive, duplicates removed)
+        //! @return nullptr if the graphs belong to different ECDbs
         ECDB_EXPORT static std::unique_ptr<InstanceGraph> Intersection(InstanceGraph const& a, InstanceGraph const& b);
 
         //! Instances present in either graph (adjacency merged, duplicates deduplicated)
+        //! @return nullptr if the graphs belong to different ECDbs
         ECDB_EXPORT static std::unique_ptr<InstanceGraph> Union(InstanceGraph const& a, InstanceGraph const& b);
     };
 

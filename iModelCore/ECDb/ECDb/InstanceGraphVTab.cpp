@@ -36,49 +36,69 @@ DbResult RelationsModule::Connect(DbVirtualTable*& out, Config& conf, int argc, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult RelationsModule::RelationsTable::BestIndex(IndexInfo& indexInfo)
     {
-    int idxNum = 0;
-    int nArg = 0;
+    // SQLite lists the constraints of the explicit WHERE clause *before* the terms it
+    // synthesizes for table-valued-function arguments, so the constraint order does not
+    // match the column order. Record the constraint index per column here and assign the
+    // argv indices in a fixed column order afterwards, so that Filter() can decode argv
+    // deterministically.
+    int instIdIdx = -1;
+    int classIdIdx = -1;
+    int dirIdx = -1;
 
     for (int i = 0; i < indexInfo.GetConstraintCount(); i++)
         {
         auto pConstraint = indexInfo.GetConstraint(i);
+        int col = pConstraint->GetColumn();
+        if (col != (int) RelationsCursor::Columns::ECInstanceId &&
+            col != (int) RelationsCursor::Columns::ECClassId &&
+            col != (int) RelationsCursor::Columns::TraversalDir)
+            continue;
+
         if (!pConstraint->IsUsable() || pConstraint->GetOp() != IndexInfo::Operator::EQ)
             continue;
 
-        int col = pConstraint->GetColumn();
+        // Only the first usable EQ constraint per column is handled. Any further constraint
+        // on the same column is left for SQLite to verify (SetOmit is not called for it).
         if (col == (int) RelationsCursor::Columns::ECInstanceId)
             {
-            idxNum |= 1;
-            indexInfo.GetConstraintUsage(i)->SetArgvIndex(++nArg);
-            indexInfo.GetConstraintUsage(i)->SetOmit(true);
+            if (instIdIdx < 0)
+                instIdIdx = i;
             }
         else if (col == (int) RelationsCursor::Columns::ECClassId)
             {
-            idxNum |= 2;
-            indexInfo.GetConstraintUsage(i)->SetArgvIndex(++nArg);
-            indexInfo.GetConstraintUsage(i)->SetOmit(true);
+            if (classIdIdx < 0)
+                classIdIdx = i;
             }
-        else if (col == (int) RelationsCursor::Columns::TraversalDir)
+        else
             {
-            idxNum |= 4;
-            indexInfo.GetConstraintUsage(i)->SetArgvIndex(++nArg);
-            indexInfo.GetConstraintUsage(i)->SetOmit(true);
+            if (dirIdx < 0)
+                dirIdx = i;
             }
         }
 
-    // Both ECInstanceId and ECClassId are required
-    if ((idxNum & 3) == 3)
+    // ECInstanceId and ECClassId are mandatory. Reject the plan so that SQLite either
+    // reorders the loops or reports an error, rather than silently returning no rows.
+    if (instIdIdx < 0 || classIdIdx < 0)
+        return BE_SQLITE_CONSTRAINT;
+
+    int idxNum = 1 | 2;
+    int nArg = 0;
+
+    indexInfo.GetConstraintUsage(instIdIdx)->SetArgvIndex(++nArg);
+    indexInfo.GetConstraintUsage(instIdIdx)->SetOmit(true);
+
+    indexInfo.GetConstraintUsage(classIdIdx)->SetArgvIndex(++nArg);
+    indexInfo.GetConstraintUsage(classIdIdx)->SetOmit(true);
+
+    if (dirIdx >= 0)
         {
-        indexInfo.SetEstimatedCost(10);
-        indexInfo.SetEstimatedRows(100);
-        }
-    else
-        {
-        // Missing required constraints — discourage planner
-        indexInfo.SetEstimatedCost(1000000);
-        indexInfo.SetEstimatedRows(1000000);
+        idxNum |= 4;
+        indexInfo.GetConstraintUsage(dirIdx)->SetArgvIndex(++nArg);
+        indexInfo.GetConstraintUsage(dirIdx)->SetOmit(true);
         }
 
+    indexInfo.SetEstimatedCost(10);
+    indexInfo.SetEstimatedRows(100);
     indexInfo.SetIdxNum(idxNum);
     return BE_SQLITE_OK;
     }
@@ -95,36 +115,53 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
     m_results.clear();
     m_index = 0;
 
-    if ((idxNum & 3) != 3)
-        return BE_SQLITE_OK; // missing required constraints, return empty
+    // BestIndex rejects any plan without both required arguments, so this is defensive only.
+    if ((idxNum & 3) != 3 || argc < 2)
+        {
+        GetTable().SetError("Relations() requires both an ECInstanceId and an ECClassId argument.");
+        return BE_SQLITE_ERROR;
+        }
 
+    // BestIndex assigns argv indices in a fixed column order: ECInstanceId, ECClassId, TraversalDirection.
     int argIdx = 0;
-    ECInstanceId instanceId;
-    ECClassId classId;
+    ECInstanceId instanceId((uint64_t) argv[argIdx++].GetValueInt64());
+    ECClassId classId((uint64_t) argv[argIdx++].GetValueInt64());
     TraversalDirection dir = TraversalDirection::Both;
 
-    // Extract ECInstanceId (always first due to BestIndex ordering)
-    if (idxNum & 1)
-        instanceId = ECInstanceId((uint64_t) argv[argIdx++].GetValueInt64());
-
-    // Extract ECClassId
-    if (idxNum & 2)
-        classId = ECClassId((uint64_t) argv[argIdx++].GetValueInt64());
-
-    // Extract optional TraversalDirection
-    if (idxNum & 4)
+    if ((idxNum & 4) != 0)
         {
-        Utf8CP dirStr = argv[argIdx++].GetValueText();
-        if (dirStr != nullptr)
+        if (argIdx >= argc)
             {
+            GetTable().SetError("Relations(): missing TraversalDirection argument.");
+            return BE_SQLITE_ERROR;
+            }
+
+        DbValue& dirValue = argv[argIdx++];
+        if (!dirValue.IsNull())
+            {
+            Utf8CP dirStr = dirValue.GetValueText();
+            if (dirStr == nullptr)
+                {
+                GetTable().SetError("Relations(): TraversalDirection must be one of 'forward', 'backward' or 'both'.");
+                return BE_SQLITE_ERROR;
+                }
+
             if (BeStringUtilities::StricmpAscii(dirStr, "forward") == 0)
                 dir = TraversalDirection::Forward;
             else if (BeStringUtilities::StricmpAscii(dirStr, "backward") == 0)
                 dir = TraversalDirection::Backward;
-            // else default Both
+            else if (BeStringUtilities::StricmpAscii(dirStr, "both") == 0)
+                dir = TraversalDirection::Both;
+            else
+                {
+                GetTable().SetError(Utf8PrintfString("Relations(): invalid TraversalDirection '%s'. Expected 'forward', 'backward' or 'both'.", dirStr).c_str());
+                return BE_SQLITE_ERROR;
+                }
             }
         }
 
+    // An invalid (zero/NULL) seed simply has no relationships. This is not an error, so that
+    // Relations() can be joined against columns that are legitimately NULL.
     if (!instanceId.IsValid() || !classId.IsValid())
         return BE_SQLITE_OK;
 
@@ -135,7 +172,10 @@ DbResult RelationsModule::RelationsTable::RelationsCursor::Filter(int idxNum, co
     graph.AddSeed(seedKey);
 
     if (graph.ExpandNode(seedKey, dir) != SUCCESS)
+        {
+        GetTable().SetError("Relations(): failed to traverse relationships for the given seed instance.");
         return BE_SQLITE_ERROR;
+        }
 
     auto const* related = graph.GetRelated(seedKey);
     if (related != nullptr)

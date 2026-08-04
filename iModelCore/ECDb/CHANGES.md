@@ -12,7 +12,8 @@ This document including important changes to syntax or file format.
 * Added `relations()` virtual table for fast relationship traversal from a seed instance.
 * **`relations()` is an experimental feature** and is disabled by default. Enable it with `PRAGMA experimental_features_enabled=true` or per-query with `ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
 * Example: `SELECT * FROM relations WHERE ECInstanceId = 1 AND ECClassId = 0x123`
-* Added `TraversalDirection` filter: `WHERE TraversalDirection = 'forward'` or `'backward'` or `'both'` (default).
+* Added `TraversalDirection` filter: `WHERE TraversalDirection = 'forward'` or `'backward'` or `'both'` (default). Any other value is rejected with an error.
+* `ECInstanceId` and `ECClassId` are mandatory - a query that does not constrain both is rejected rather than silently returning no rows.
 * Added internal `InstanceGraph` C++ API for BFS graph traversal with cycle avoidance and set operations (Overlaps, Intersection, Union).
 * Bypasses ECSql entirely — generates raw SQLite from property maps for 3-10x faster traversal.
 
