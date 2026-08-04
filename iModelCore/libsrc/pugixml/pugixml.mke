@@ -63,13 +63,7 @@ vcpkgDbgLibDir  = $(vcpkgTripletDir)debug/lib/
     pugixmlLibName = libpugixml.a
 %endif
 
-%if $(TARGET_PLATFORM) == "Windows"
-    # Windows always links the release archive: the Windows triplets force VCPKG_BUILD_TYPE
-    # release (no debug/lib is produced) because bmake uses the release CRT even in DEBUG
-    # builds. Picking the debug archive here would reintroduce the CRT / _ITERATOR_DEBUG_LEVEL
-    # link mismatch against our release-compiled BePugiXml wrapper.
-    vcpkgPugixml = $(vcpkgLibDir)$(pugixmlLibName)
-%elif defined (DEBUG)
+%if defined (DEBUG)
     vcpkgPugixml = $(vcpkgDbgLibDir)$(pugixmlLibName)
 %else
     vcpkgPugixml = $(vcpkgLibDir)$(pugixmlLibName)

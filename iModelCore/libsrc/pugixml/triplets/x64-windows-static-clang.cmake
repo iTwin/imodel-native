@@ -22,7 +22,10 @@ set(VCPKG_LOAD_VCVARS_ENV ON)
 # clang-cl via $ENV{LLVM_DIR} in every phase (detect_compiler, compiler-ABI try_compile, build).
 set(VCPKG_ENV_PASSTHROUGH "LLVM_DIR")
 
-# Build pugixml release-only in vcpkg for this triplet (see x64-windows-static.cmake for the
-# full CRT / iterator-debug-level rationale and the accepted tradeoff that this drops pugixml's
-# internal asserts on Windows DEBUG only).
-set(VCPKG_BUILD_TYPE release)
+# Build BOTH configs, forcing the vcpkg Debug config onto the release CRT (see
+# x64-windows-static.cmake for the full CRT / iterator-debug-level rationale). clang-cl accepts
+# -D_ITERATOR_DEBUG_LEVEL=0 and honors a cache-set CMAKE_MSVC_RUNTIME_LIBRARY the same way.
+set(VCPKG_CMAKE_CONFIGURE_OPTIONS_DEBUG
+    "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL")
+set(VCPKG_CXX_FLAGS_DEBUG "${VCPKG_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+set(VCPKG_C_FLAGS_DEBUG   "${VCPKG_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
