@@ -1437,6 +1437,7 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
     }
 
     auto failedToMap = [&]() {
+        ctx.ReportMappingFailureDiagnostics();
         ClearCache();
         return  SchemaImportResult::ERROR;
     };
@@ -1619,7 +1620,7 @@ DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOver
 //---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
-    ECDB_PERF_LOG_SCOPE("Schema import> Persist mappings");
+    ECDB_PERF_LOG_SCOPE("Schema import> Map classes");
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -1695,7 +1696,10 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ECClass
         }
 
     if (SUCCESS != existingClassMap->Update(ctx))
+        {
+        LOG.errorv("Schema import failed to update the class map of ECClass '%s'.", ecClass.GetFullName());
         return ClassMappingStatus::Error;
+        }
 
     return MapDerivedClasses(ctx, ecClass);
     }
