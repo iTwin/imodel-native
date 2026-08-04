@@ -4371,6 +4371,313 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
     }*/
 
 //---------------------------------------------------------------------------------------
+// Isolated repro for a connector failure, distilled from the customer
+// iModel. Mechanism:
+// 1. A schema upgrade adds local overrides to class A for properties it previously
+//    inherited (EC2->EC3 multi-inheritance flattening does this). The remap manager
+//    frees A's old columns. Because columns are freed in both the primary table and its
+//    overflow table, all freed columns get blocked from reuse (circular remap guard).
+// 2. Sibling class B has a struct property SP whose members sit on some of those
+//    now-blocked shared columns (TPH siblings share columns), so B gets force-remapped.
+// 3. EvaluateIfPropertyGoesToOverflow decides SP must go to overflow as a whole (all
+//    non-freed shared columns are occupied by B's other properties). But B's derived
+//    class C still holds cloned property maps for SP on the old columns, and the column
+//    resolution scope (Filter::Full) registers them under the same access strings. The
+//    reuse path in ClassMapColumnFactory::Allocate finds them and ignores the overflow
+//    decision: SP's one member whose old column was NOT freed gets reused in the primary
+//    table, while the other members go to overflow. The struct now spans two tables,
+//    which DbMappingManager::Classes::ProcessProperty treats as a fatal error - without
+//    reporting anything.
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaRemapTestFixture, ForcedStructRemapSplitsAcrossTables)
+    {
+    SchemaItem schema1(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="ST" modifier="None">
+            <ECProperty propertyName="m0" typeName="int" />
+            <ECProperty propertyName="m1" typeName="int" />
+            <ECProperty propertyName="m2" typeName="int" />
+            <ECProperty propertyName="m3" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Mid">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="P1" typeName="int" />
+            <ECProperty propertyName="P2" typeName="int" />
+            <ECProperty propertyName="P3" typeName="int" />
+            <ECProperty propertyName="P4" typeName="int" />
+            <ECProperty propertyName="P5" typeName="int" />
+            <ECProperty propertyName="P6" typeName="int" />
+            <ECProperty propertyName="P7" typeName="int" />
+            <ECProperty propertyName="P8" typeName="int" />
+            <ECProperty propertyName="P9" typeName="int" />
+            <ECProperty propertyName="P10" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>Mid</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>Base</BaseClass>
+            <ECStructProperty propertyName="SP" typeName="ST"/>
+            <ECProperty propertyName="Q1" typeName="int" />
+            <ECProperty propertyName="Q2" typeName="int" />
+            <ECProperty propertyName="Q3" typeName="int" />
+            <ECProperty propertyName="Q4" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ForcedStructRemapSplitsAcrossTables.ecdb", schema1));
+
+    // Expected v1 layout: Mid maps P1..P8 to shared columns ps1..ps8 (max reached),
+    // P9 and P10 land in the overflow table (os1, os2). A clones Mid's maps.
+    // B (mapped after Mid) reuses ps1..ps4 for SP.m0..m3 and ps5..ps8 for Q1..Q4 -
+    // siblings share columns in TPH. All 8 shared columns are now used by B.
+
+    // v2 adds local overrides for P1, P2, P3 and P9 to A:
+    // - Cleanup frees ps1..ps3 (primary) and os1 (overflow) -> freed columns exist in
+    //   both linked tables -> all of them are blocked from reuse.
+    // - B's SP sits on ps1(freed)..ps3(freed) and ps4 (NOT freed) -> force-remapped.
+    // - Evaluation: no shared columns can be reused (ps4..ps8 are in use by B itself),
+    //   so SP as a whole is sent to overflow.
+    // - Allocation however reuses the stale registration SP.m3 -> ps4 in the primary
+    //   table, while m0..m2 go to overflow -> SP spans two tables -> silent failure.
+    SchemaItem schema2(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="ST" modifier="None">
+            <ECProperty propertyName="m0" typeName="int" />
+            <ECProperty propertyName="m1" typeName="int" />
+            <ECProperty propertyName="m2" typeName="int" />
+            <ECProperty propertyName="m3" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Mid">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="P1" typeName="int" />
+            <ECProperty propertyName="P2" typeName="int" />
+            <ECProperty propertyName="P3" typeName="int" />
+            <ECProperty propertyName="P4" typeName="int" />
+            <ECProperty propertyName="P5" typeName="int" />
+            <ECProperty propertyName="P6" typeName="int" />
+            <ECProperty propertyName="P7" typeName="int" />
+            <ECProperty propertyName="P8" typeName="int" />
+            <ECProperty propertyName="P9" typeName="int" />
+            <ECProperty propertyName="P10" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>Mid</BaseClass>
+            <ECProperty propertyName="P1" typeName="int" />
+            <ECProperty propertyName="P2" typeName="int" />
+            <ECProperty propertyName="P3" typeName="int" />
+            <ECProperty propertyName="P9" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>Base</BaseClass>
+            <ECStructProperty propertyName="SP" typeName="ST"/>
+            <ECProperty propertyName="Q1" typeName="int" />
+            <ECProperty propertyName="Q2" typeName="int" />
+            <ECProperty propertyName="Q3" typeName="int" />
+            <ECProperty propertyName="Q4" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
+        | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications
+        | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // All members of B.SP must end up in a single table.
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(
+        SELECT COUNT(DISTINCT col.TableId) FROM ec_PropertyMap pm
+        JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
+        JOIN ec_Column col ON col.Id = pm.ColumnId
+        JOIN ec_Class c ON c.Id = pm.ClassId
+        WHERE c.Name = 'B' AND pp.AccessString LIKE 'SP.%')sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "B.SP members must all be mapped into the same table";
+    stmt.Finalize();
+
+    m_ecdb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies that a failure in the mapping phase of a schema import produces a diagnostics
+// report (remapping summary + recent column mapping decisions) through the issue reporter.
+// Uses the same remap scenario as ForcedStructRemapSplitsAcrossTables, but additionally
+// adds a property with an illegal 'PropertyMap' custom attribute (ColumnName must not be
+// specified for shared columns), which makes the mapping phase fail after the remapping
+// work has been done.
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaRemapTestFixture, MappingFailureDiagnosticsReport)
+    {
+    SchemaItem schema1(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="ST" modifier="None">
+            <ECProperty propertyName="m0" typeName="int" />
+            <ECProperty propertyName="m1" typeName="int" />
+            <ECProperty propertyName="m2" typeName="int" />
+            <ECProperty propertyName="m3" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Mid">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="P1" typeName="int" />
+            <ECProperty propertyName="P2" typeName="int" />
+            <ECProperty propertyName="P3" typeName="int" />
+            <ECProperty propertyName="P4" typeName="int" />
+            <ECProperty propertyName="P5" typeName="int" />
+            <ECProperty propertyName="P6" typeName="int" />
+            <ECProperty propertyName="P7" typeName="int" />
+            <ECProperty propertyName="P8" typeName="int" />
+            <ECProperty propertyName="P9" typeName="int" />
+            <ECProperty propertyName="P10" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>Mid</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>Base</BaseClass>
+            <ECStructProperty propertyName="SP" typeName="ST"/>
+            <ECProperty propertyName="Q1" typeName="int" />
+            <ECProperty propertyName="Q2" typeName="int" />
+            <ECProperty propertyName="Q3" typeName="int" />
+            <ECProperty propertyName="Q4" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MappingFailureDiagnosticsReport.ecdb", schema1));
+
+    SchemaItem schema2(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="02.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="ST" modifier="None">
+            <ECProperty propertyName="m0" typeName="int" />
+            <ECProperty propertyName="m1" typeName="int" />
+            <ECProperty propertyName="m2" typeName="int" />
+            <ECProperty propertyName="m3" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Base">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Mid">
+            <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="P1" typeName="int" />
+            <ECProperty propertyName="P2" typeName="int" />
+            <ECProperty propertyName="P3" typeName="int" />
+            <ECProperty propertyName="P4" typeName="int" />
+            <ECProperty propertyName="P5" typeName="int" />
+            <ECProperty propertyName="P6" typeName="int" />
+            <ECProperty propertyName="P7" typeName="int" />
+            <ECProperty propertyName="P8" typeName="int" />
+            <ECProperty propertyName="P9" typeName="int" />
+            <ECProperty propertyName="P10" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="A">
+            <BaseClass>Mid</BaseClass>
+            <ECProperty propertyName="P1" typeName="int" />
+            <ECProperty propertyName="P2" typeName="int" />
+            <ECProperty propertyName="P3" typeName="int" />
+            <ECProperty propertyName="P9" typeName="int" />
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>Base</BaseClass>
+            <ECStructProperty propertyName="SP" typeName="ST"/>
+            <ECProperty propertyName="Q1" typeName="int" />
+            <ECProperty propertyName="Q2" typeName="int" />
+            <ECProperty propertyName="Q3" typeName="int" />
+            <ECProperty propertyName="Q4" typeName="int" />
+            <ECProperty propertyName="BadColumn" typeName="int">
+              <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00.00">
+                    <ColumnName>badcol</ColumnName>
+                </PropertyMap>
+              </ECCustomAttributes>
+            </ECProperty>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2,
+        SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
+        | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications
+        | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    Utf8String reportMessage;
+    for (auto const& issue : issueListener.m_issues)
+        {
+        if (issue.message.Contains("Schema import mapping failure diagnostics"))
+            {
+            reportMessage = issue.message;
+            break;
+            }
+        }
+
+    ASSERT_FALSE(reportMessage.empty()) << "Expected a mapping failure diagnostics report to be issued";
+    EXPECT_TRUE(reportMessage.Contains("Remapping summary:")) << reportMessage.c_str();
+    EXPECT_TRUE(reportMessage.Contains("freed columns blocked from immediate reuse")) << reportMessage.c_str();
+    EXPECT_TRUE(reportMessage.Contains("column mapping decisions")) << reportMessage.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRemapTestFixture, MixinToBaseClass)
