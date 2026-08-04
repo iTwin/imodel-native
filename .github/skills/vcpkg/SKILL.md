@@ -44,11 +44,13 @@ Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg-configuration.json` — copy from an existing consumer (e.g. `compress/`); update `baseline` if needed
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
-> **Check whether the library needs release-only Windows triplets.** Some libraries fail to
-> link into Windows DEBUG builds unless their vcpkg triplets force `set(VCPKG_BUILD_TYPE
-> release)`; others are fine without it. See the
+> **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
+> link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
+> forcing release-only triplets (`set(VCPKG_BUILD_TYPE release)`) or by fixing up the vcpkg Debug
+> config to link the release CRT while keeping its diagnostics; others are fine without any
+> change. See the
 > [Windows debug builds link the release CRT](#windows-debug-builds-link-the-release-crt)
-> pitfall below to decide, and for the two-part fix. `crashpad/triplets/` and
+> pitfall below to decide, and for both fixes. `crashpad/triplets/` and
 > `pugixml/triplets/` are working examples of libraries that needed it.
 
 ### 2. Create `iModelCore/libsrc/vcpkg_install_<mylib>.mke`
@@ -217,8 +219,12 @@ touch debug-CRT-only functionality link fine and have deliberately been left on 
 debug/release selection (e.g. `openssl`).
 
 **So this is a per-library check, not a blanket rule.** If a new Windows vcpkg library links
-cleanly in a DEBUG build, leave it alone. If its DEBUG link fails with the symptoms above, apply
-the fix — it has two halves, do both:
+cleanly in a DEBUG build, leave it alone. If its DEBUG link fails with the symptoms above, you
+have two ways to fix it.
+
+### Fix A (simplest): make the library release-only on Windows
+
+Produce only a release artifact and link it everywhere. Two halves, do both:
 
 1. **Force release-only builds in the Windows triplets.** Add `set(VCPKG_BUILD_TYPE release)` to
    every Windows triplet the library uses (`x64-windows-static.cmake`, the `-clang` variant, and
@@ -227,6 +233,32 @@ the fix — it has two halves, do both:
 2. **Always link the release archive on Windows in the consumer `.mke`.** Select the archive
    with a `%if $(TARGET_PLATFORM) == "Windows"` branch that uses `$(vcpkgLibDir)` (release)
    *before* any `%if defined (DEBUG)` branch (see step 5).
+
+The tradeoff: the Release config also defines `NDEBUG` (stripping the library's internal
+`assert()`s) and optimizes, so you lose the library's debug diagnostics on Windows DEBUG only
+(other platforms keep their debug archive). For most libraries that is an acceptable price for a
+one-line fix.
+
+### Fix B (preserves debug diagnostics): keep the debug archive, force it onto the release CRT
+
+If you want to keep the Windows DEBUG archive (asserts, unoptimized code) and only the CRT is the
+problem, fix up the vcpkg **Debug** config to use the release CRT instead of dropping it. Leave
+both configs building and, in each Windows triplet, pin the Debug runtime library and iterator
+level:
+
+```cmake
+set(VCPKG_CMAKE_CONFIGURE_OPTIONS_DEBUG "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL")
+set(VCPKG_CXX_FLAGS_DEBUG "${VCPKG_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+set(VCPKG_C_FLAGS_DEBUG   "${VCPKG_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+```
+
+The Debug config keeps `NDEBUG` undefined, so `assert()`s survive; only the CRT/iterator level
+change to match our build. The consumer `.mke` keeps the normal `%if defined (DEBUG)` →
+`$(vcpkgDbgLibDir)` selection, since a `debug/lib/` archive is still produced. This works only if
+the library's CMake honors the cache-set `CMAKE_MSVC_RUNTIME_LIBRARY` (CMP0091) — most modern
+ports do — and it is more machinery: apply it to **every** Windows triplet and validate a real
+Windows DEBUG link on **both** the MSVC and clang-cl toolsets. `pugixml/triplets/x64-windows-static.cmake`
+documents this recipe in its header comment (pugixml itself ships Fix A as an accepted tradeoff).
 
 This has bitten two libraries so far — crashpad (first) and pugixml (second). Reference
 implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
