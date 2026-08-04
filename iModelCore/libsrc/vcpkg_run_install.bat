@@ -254,15 +254,16 @@ rem vcpkg's own errors are not swallowed by the 2>nul that suppresses the expect
 rem noise from a failed acquisition.
 rem
 rem Resolve the two directories to their FINAL on-disk identities and acquire them in one global
-rem order. %~fI only makes a path absolute; it leaves junction/symlink aliases, 8.3 short names and
-rem case differences intact, so two spellings of one directory would slip past the de-dup and make
-rem a run self-deadlock (open one file on two handles -- the second open always fails and wedges
-rem the retry loop). vcpkg_resolve_lock_dirs.ps1 uses GetFinalPathNameByHandle to collapse those
-rem aliases; Sort-Object -Unique then de-duplicates case-insensitively and imposes a single deterministic
-rem order. Ordering matters even when the two dirs are distinct: two runs whose override paths list
-rem the same pair in opposite order would otherwise each grab their first handle, fail the second,
-rem release, sleep the same interval, and livelock forever. With one global order both runs contend
-rem on the same first handle, so one strictly wins. This mirrors the shell wrapper's sort -u.
+rem order. cmd's ~fI operator only makes a path absolute; it leaves junction/symlink aliases, 8.3
+rem short names and case differences intact, so two spellings of one directory would slip past the
+rem de-dup and make a run self-deadlock (open one file on two handles -- the second open always
+rem fails and wedges the retry loop). vcpkg_resolve_lock_dirs.ps1 uses GetFinalPathNameByHandle to
+rem collapse those aliases; Sort-Object -Unique then de-duplicates case-insensitively and imposes a
+rem single deterministic order. Ordering matters even when the two dirs are distinct: two runs whose
+rem override paths list the same pair in opposite order would otherwise each grab their first handle,
+rem fail the second, release, sleep the same interval, and livelock forever. With one global order
+rem both runs contend on the same first handle, so one strictly wins. This mirrors the shell
+rem wrapper's sort -u.
 rem --------------------------------------------------------------------------------------
 set "LOCK_LIST=%VCPKG_CACHE_BASE%\.lockdirs-%RANDOM%%RANDOM%.txt"
 del "%LOCK_LIST%" 2>nul
