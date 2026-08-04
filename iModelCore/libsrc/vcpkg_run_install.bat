@@ -163,9 +163,10 @@ if not exist "%VCPKG_CACHE_BASE%" (
 )
 rem Create/verify the fallback base OUTSIDE the block above. Inside a parenthesized block
 rem %VCPKG_CACHE_BASE% is expanded at parse time, so a mkdir there would retry the already-failed
-rem profile path instead of the just-assigned INSTALL_ROOT fallback. Verifying it exists (and is
-rem thus writable) here also prevents the lock-open loop below from spinning forever on a missing
-rem base when the cache path variables are overridden.
+rem profile path instead of the just-assigned INSTALL_ROOT fallback. Confirming the base exists
+rem here also keeps the lock-open loop below from spinning forever on a missing base when the cache
+rem path variables are overridden. (Existence alone does not prove the lock dirs are writable; the
+rem probe_writable preflight before the retry loop checks that.)
 if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%" 2>nul
 if not exist "%VCPKG_CACHE_BASE%" (
     echo Error: vcpkg cache base "%VCPKG_CACHE_BASE%" could not be created or is not writable.
@@ -317,6 +318,19 @@ if defined LOCK_DIR_2 if not exist "%LOCK_DIR_2%" (
     exit /b 1
 )
 
+rem Existence does not prove writability. A pre-existing cache dir (notably a VCPKG_DOWNLOADS /
+rem X_VCPKG_REGISTRIES_CACHE override, or a locked-down agent's profile) whose ACLs deny creating
+rem the lock file makes the redirection open below fail exactly like genuine contention, burning
+rem the full ~1h retry budget. Preflight each dir with a uniquely named probe file: a sharing
+rem violation is name-specific and transient, but an ACL denial fails for every name, so a probe
+rem that cannot be created after several distinct names is a permission problem -- report it now.
+call :probe_writable "%LOCK_DIR_1%"
+if errorlevel 1 exit /b 1
+if defined LOCK_DIR_2 (
+    call :probe_writable "%LOCK_DIR_2%"
+    if errorlevel 1 exit /b 1
+)
+
 rem Bound the acquisition retries as a safety net so an unexpected persistent open failure reports
 rem an error instead of looping forever. ~5s per attempt; 720 attempts tolerates ~1h of genuine
 rem contention from a concurrent heavy install (e.g. crashpad) before giving up.
@@ -363,6 +377,25 @@ exit /b 0
 "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages" %OVERLAY_ARG% 2>&8
 set "INSTALL_RC=%errorlevel%"
 goto :eof
+
+:probe_writable
+rem %~1 = lock directory. Returns 0 if a lock file can be created there, 1 if not. Retries with
+rem distinct random names so a rare probe-name collision (transient) is not mistaken for an ACL
+rem denial (which fails for every name).
+set "PROBE_TRIES=0"
+:probe_retry
+set "PROBE_FILE=%~1\.vcpkg-lock-probe-%RANDOM%%RANDOM%.tmp"
+if exist "%PROBE_FILE%" goto :probe_next
+( type nul > "%PROBE_FILE%" ) 2>nul
+if exist "%PROBE_FILE%" (
+    del "%PROBE_FILE%" 2>nul
+    exit /b 0
+)
+:probe_next
+set /a PROBE_TRIES+=1
+if %PROBE_TRIES% LSS 5 goto :probe_retry
+echo Error: vcpkg lock directory "%~1" is not writable ^(cannot create lock file; check ACLs/permissions^).
+exit /b 1
 
 :usage
 echo Usage: %~nx0 ^<manifest_dir^> ^<install_root^> ^<triplet^>
