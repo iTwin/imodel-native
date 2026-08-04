@@ -160,7 +160,16 @@ if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%" 2>nul
 if not exist "%VCPKG_CACHE_BASE%" (
     echo vcpkg: persistent cache base "%VCPKG_CACHE_BASE%" unavailable; falling back to INSTALL_ROOT
     set "VCPKG_CACHE_BASE=%INSTALL_ROOT%\vcpkg-cache"
-    if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%"
+)
+rem Create/verify the fallback base OUTSIDE the block above. Inside a parenthesized block
+rem %VCPKG_CACHE_BASE% is expanded at parse time, so a mkdir there would retry the already-failed
+rem profile path instead of the just-assigned INSTALL_ROOT fallback. Verifying it exists (and is
+rem thus writable) here also prevents the lock-open loop below from spinning forever on a missing
+rem base when the cache path variables are overridden.
+if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%" 2>nul
+if not exist "%VCPKG_CACHE_BASE%" (
+    echo Error: vcpkg cache base "%VCPKG_CACHE_BASE%" could not be created or is not writable.
+    exit /b 1
 )
 
 rem Per-platform downloads/tools tree and registries git repo. The platform key is the first two
@@ -254,6 +263,24 @@ if /i "%LOCK_DIR_1%"=="%LOCK_DIR_2%" set "LOCK_DIR_2="
 set "LOCK_FILE_1=%LOCK_DIR_1%\.vcpkg-install.lock"
 if defined LOCK_DIR_2 set "LOCK_FILE_2=%LOCK_DIR_2%\.vcpkg-install.lock"
 
+rem A missing lock directory is not contention: the redirection open would fail every iteration
+rem and wedge the retry loop forever. Fail fast instead so an absent/overridden cache path is
+rem reported rather than silently hanging.
+if not exist "%LOCK_DIR_1%" (
+    echo Error: vcpkg lock directory "%LOCK_DIR_1%" does not exist; cannot acquire install lock.
+    exit /b 1
+)
+if defined LOCK_DIR_2 if not exist "%LOCK_DIR_2%" (
+    echo Error: vcpkg lock directory "%LOCK_DIR_2%" does not exist; cannot acquire install lock.
+    exit /b 1
+)
+
+rem Bound the acquisition retries as a safety net so an unexpected persistent open failure reports
+rem an error instead of looping forever. ~5s per attempt; 720 attempts tolerates ~1h of genuine
+rem contention from a concurrent heavy install (e.g. crashpad) before giving up.
+set "LOCK_ATTEMPTS=0"
+set "LOCK_MAX_ATTEMPTS=720"
+
 :acquire_lock
 set "GOT_LOCK="
 if defined LOCK_DIR_2 (
@@ -274,7 +301,14 @@ if defined LOCK_DIR_2 (
     ) 8>&2 2>nul
 )
 if defined GOT_LOCK goto :lock_done
-echo vcpkg: waiting for vcpkg install lock(s)...
+set /a LOCK_ATTEMPTS+=1
+if %LOCK_ATTEMPTS% GEQ %LOCK_MAX_ATTEMPTS% (
+    echo Error: could not acquire vcpkg install lock after %LOCK_ATTEMPTS% attempts.
+    echo   lock file 1: "%LOCK_FILE_1%"
+    if defined LOCK_FILE_2 echo   lock file 2: "%LOCK_FILE_2%"
+    exit /b 1
+)
+echo vcpkg: waiting for vcpkg install lock(s)... (attempt %LOCK_ATTEMPTS% of %LOCK_MAX_ATTEMPTS%)
 rem ~5s portable sleep (timeout /t breaks when stdin is redirected in CI).
 ping -n 6 127.0.0.1 >nul
 goto :acquire_lock
