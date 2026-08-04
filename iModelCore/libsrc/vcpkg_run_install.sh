@@ -207,9 +207,12 @@ for _d in "$DOWNLOADS_ROOT" "$X_VCPKG_REGISTRIES_CACHE"; do
     _canon="$(cd "$_d" 2>/dev/null && pwd -P)" || _canon="$_d"
     _canon_dirs+=("$_canon")
 done
-_oldifs="$IFS"; IFS=$'\n'
-LOCK_DIRS=($(printf '%s\n' "${_canon_dirs[@]}" | LC_ALL=C sort -u))
-IFS="$_oldifs"
+# Read the sorted/unique list with a quoted read loop; an unquoted $(...) array assignment would
+# glob-expand entries, so a path containing *, ?, or [...] could match sibling files.
+LOCK_DIRS=()
+while IFS= read -r _dir; do
+    LOCK_DIRS+=("$_dir")
+done < <(printf '%s\n' "${_canon_dirs[@]}" | LC_ALL=C sort -u)
 
 LOCK_FILES=()
 for _d in "${LOCK_DIRS[@]}"; do
