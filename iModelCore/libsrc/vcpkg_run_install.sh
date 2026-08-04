@@ -230,11 +230,15 @@ if command -v flock >/dev/null 2>&1; then
     done
     "${VCPKG_CMD[@]}"
 elif command -v perl >/dev/null 2>&1; then
-    # Perl's flock() is advisory and released by the kernel when this process dies, so a killed or
-    # crashed build never leaves a stale lock (unlike a directory lock). It opens every lock file,
-    # blocks to acquire them in the given sorted order, runs the install, then exits -- releasing
-    # all locks. The child's wait status is propagated so BentleyBuild still sees failures.
+    # Perl's flock() is advisory and released by the kernel when the holding process dies, so a
+    # killed or crashed build never leaves a stale lock (unlike a directory lock). It locks every
+    # file in the given sorted order, then EXECs the install in place -- after clearing
+    # close-on-exec on the lock fds so the install inherits them -- making the install itself the
+    # lock holder. That closes the gap where a separate wrapper could be killed while the install
+    # kept mutating the caches: the lock is now held for exactly the install's lifetime, and the
+    # install's exit status becomes this script's exit status.
     perl -e '
+        use Fcntl qw(F_GETFD F_SETFD FD_CLOEXEC);
         my @locks;
         while (@ARGV && $ARGV[0] ne "--") { push @locks, shift @ARGV }
         shift @ARGV if @ARGV;
@@ -242,10 +246,13 @@ elif command -v perl >/dev/null 2>&1; then
         for my $f (@locks) {
             open(my $fh, ">>", $f) or die "vcpkg lock: cannot open $f: $!\n";
             flock($fh, 2)          or die "vcpkg lock: cannot lock $f: $!\n";
+            my $fl = fcntl($fh, F_GETFD, 0);
+            defined($fl)                             or die "vcpkg lock: F_GETFD $f: $!\n";
+            fcntl($fh, F_SETFD, $fl & ~FD_CLOEXEC)   or die "vcpkg lock: clear cloexec $f: $!\n";
             push @held, $fh;
         }
-        my $rc = system(@ARGV);
-        exit($rc == -1 ? 1 : ($rc & 127 ? 128 + ($rc & 127) : $rc >> 8));
+        exec { $ARGV[0] } @ARGV;
+        die "vcpkg lock: cannot exec $ARGV[0]: $!\n";
     ' "${LOCK_FILES[@]}" -- "${VCPKG_CMD[@]}"
 else
     echo "Error: no auto-releasing lock backend available (need 'flock' or 'perl')." >&2
