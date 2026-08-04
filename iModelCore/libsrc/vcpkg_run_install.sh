@@ -197,27 +197,42 @@ VCPKG_CMD=("$VCPKG_EXE" install
     --x-packages-root="$INSTALL_ROOT/packages"
     "${OVERLAY_ARGS[@]}")
 
-# Canonicalize the directories this install mutates, then sort -u them. De-dup is required: the
-# two paths coincide when the registries cache defaults under (or is overridden onto) the
-# downloads tree, and locking the same file twice from one process would self-deadlock. Sorting
-# gives every process the same global acquire order, preventing AB/BA deadlock between runs whose
-# directory sets overlap.
+# Canonicalize the directories this install mutates, then identify their lock files by device and
+# inode. De-dup is required: the two paths can name the same directory (including through aliases
+# that differ only by case on macOS), and locking the same file twice from one process would
+# self-deadlock. Sorting by filesystem identity instead of path spelling gives every process the
+# same global acquire order, preventing AB/BA deadlock between runs whose directory sets overlap.
 _canon_dirs=()
 for _d in "$DOWNLOADS_ROOT" "$X_VCPKG_REGISTRIES_CACHE"; do
     _canon="$(cd "$_d" 2>/dev/null && pwd -P)" || _canon="$_d"
     _canon_dirs+=("$_canon")
 done
-# Read the sorted/unique list with a quoted read loop; an unquoted $(...) array assignment would
-# glob-expand entries, so a path containing *, ?, or [...] could match sibling files.
-LOCK_DIRS=()
-while IFS= read -r _dir; do
-    LOCK_DIRS+=("$_dir")
-done < <(printf '%s\n' "${_canon_dirs[@]}" | LC_ALL=C sort -u)
 
 LOCK_FILES=()
-for _d in "${LOCK_DIRS[@]}"; do
-    LOCK_FILES+=("$_d/.vcpkg-install.lock")
+_lock_keys=()
+for _d in "${_canon_dirs[@]}"; do
+    _f="$_d/.vcpkg-install.lock"
+    : >> "$_f"
+    if _key="$(stat -Lc '%d:%i' "$_f" 2>/dev/null)"; then
+        : # GNU stat (Linux)
+    elif _key="$(stat -Lf '%d:%i' "$_f" 2>/dev/null)"; then
+        : # BSD stat (macOS)
+    else
+        echo "Error: failed to identify vcpkg install lock $_f" >&2
+        exit 1
+    fi
+    if [ "${_lock_keys[0]:-}" != "$_key" ]; then
+        _lock_keys+=("$_key")
+        LOCK_FILES+=("$_f")
+    fi
 done
+
+# There are at most two lock files. Put them in a path-independent global order using their
+# device/inode keys so aliases cannot cause different processes to acquire the same pair backward.
+if [ "${#LOCK_FILES[@]}" -eq 2 ] &&
+   [ "$(printf '%s\n%s\n' "${_lock_keys[0]}" "${_lock_keys[1]}" | LC_ALL=C sort | head -n 1)" = "${_lock_keys[1]}" ]; then
+    _tmp="${LOCK_FILES[0]}"; LOCK_FILES[0]="${LOCK_FILES[1]}"; LOCK_FILES[1]="$_tmp"
+fi
 
 if command -v flock >/dev/null 2>&1; then
     # Hold each lock on its own fd for the lifetime of this process; the kernel drops them on exit.
