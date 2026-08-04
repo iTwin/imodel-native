@@ -249,17 +249,40 @@ rem miss real sharing and falsely serialize unrelated runs. The lock file lives 
 rem directory, so every run pointing at the same directory contends on the same handle regardless
 rem of triplet, user, or how the path was spelled. cmd opens each redirection target without
 rem write-sharing, so a second process's open fails while the first holds it; the OS releases the
-rem handles on exit, so a crash cannot wedge the lock. A partial acquisition (handle 9 taken but
-rem handle 7 blocked) releases both handles before the retry, so no deterministic ordering is
-rem needed to stay deadlock-free -- but we must de-duplicate: when the registries cache resolves
-rem to the same directory as downloads, opening one file on two handles from this process would
-rem always fail the second open and wedge us in the retry loop. Handle 8 preserves the real stderr
-rem so vcpkg's own errors are not swallowed by the 2>nul that suppresses the expected "file in use"
+rem handles on exit, so a crash cannot wedge the lock. Handle 8 preserves the real stderr so
+rem vcpkg's own errors are not swallowed by the 2>nul that suppresses the expected "file in use"
 rem noise from a failed acquisition.
+rem
+rem Resolve the two directories to their FINAL on-disk identities and acquire them in one global
+rem order. %~fI only makes a path absolute; it leaves junction/symlink aliases, 8.3 short names and
+rem case differences intact, so two spellings of one directory would slip past the de-dup and make
+rem a run self-deadlock (open one file on two handles -- the second open always fails and wedges
+rem the retry loop). vcpkg_resolve_lock_dirs.ps1 uses GetFinalPathNameByHandle to collapse those
+rem aliases; Sort-Object -Unique then de-duplicates case-insensitively and imposes a single deterministic
+rem order. Ordering matters even when the two dirs are distinct: two runs whose override paths list
+rem the same pair in opposite order would otherwise each grab their first handle, fail the second,
+rem release, sleep the same interval, and livelock forever. With one global order both runs contend
+rem on the same first handle, so one strictly wins. This mirrors the shell wrapper's sort -u.
 rem --------------------------------------------------------------------------------------
-for %%I in ("%VCPKG_DOWNLOADS%") do set "LOCK_DIR_1=%%~fI"
-for %%I in ("%X_VCPKG_REGISTRIES_CACHE%") do set "LOCK_DIR_2=%%~fI"
-if /i "%LOCK_DIR_1%"=="%LOCK_DIR_2%" set "LOCK_DIR_2="
+set "LOCK_LIST=%VCPKG_CACHE_BASE%\.lockdirs-%RANDOM%%RANDOM%.txt"
+del "%LOCK_LIST%" 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0vcpkg_resolve_lock_dirs.ps1" > "%LOCK_LIST%"
+
+set "LOCK_DIR_1="
+set "LOCK_DIR_2="
+for /f "usebackq delims=" %%I in ("%LOCK_LIST%") do (
+    if not defined LOCK_DIR_1 (
+        set "LOCK_DIR_1=%%I"
+    ) else if not defined LOCK_DIR_2 (
+        set "LOCK_DIR_2=%%I"
+    )
+)
+del "%LOCK_LIST%" 2>nul
+
+if not defined LOCK_DIR_1 (
+    echo Error: could not resolve vcpkg lock directories ^(PowerShell canonicalization failed^).
+    exit /b 1
+)
 set "LOCK_FILE_1=%LOCK_DIR_1%\.vcpkg-install.lock"
 if defined LOCK_DIR_2 set "LOCK_FILE_2=%LOCK_DIR_2%\.vcpkg-install.lock"
 
