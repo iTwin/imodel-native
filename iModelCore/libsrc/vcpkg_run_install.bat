@@ -258,30 +258,48 @@ rem order. cmd's ~fI operator only makes a path absolute; it leaves junction/sym
 rem short names and case differences intact, so two spellings of one directory would slip past the
 rem de-dup and make a run self-deadlock (open one file on two handles -- the second open always
 rem fails and wedges the retry loop). vcpkg_resolve_lock_dirs.ps1 uses GetFinalPathNameByHandle to
-rem collapse those aliases; Sort-Object -Unique then de-duplicates case-insensitively and imposes a
-rem single deterministic order. Ordering matters even when the two dirs are distinct: two runs whose
+rem collapse those aliases; an OrdinalIgnoreCase sort then de-duplicates case-insensitively and
+rem imposes a single locale-independent order. Ordering matters even when the two dirs are distinct: two runs whose
 rem override paths list the same pair in opposite order would otherwise each grab their first handle,
 rem fail the second, release, sleep the same interval, and livelock forever. With one global order
 rem both runs contend on the same first handle, so one strictly wins. This mirrors the shell
-rem wrapper's sort -u.
+rem wrapper's LC_ALL=C sort -u. The helper fails closed (nonzero exit) if any path cannot be canonicalized
+rem -- e.g. a restricted share that denies final-name normalization -- and we abort here rather
+rem than lock an unresolved alias; the completion-sentinel check below enforces that.
 rem --------------------------------------------------------------------------------------
-set "LOCK_LIST=%VCPKG_CACHE_BASE%\.lockdirs-%RANDOM%%RANDOM%.txt"
-del "%LOCK_LIST%" 2>nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0vcpkg_resolve_lock_dirs.ps1" > "%LOCK_LIST%"
-
+rem Consume the resolver's stdout directly rather than via a shared temp file: two concurrent
+rem wrappers could otherwise pick the same %RANDOM% name and truncate/read each other's output,
+rem and a lone surviving line would look like a valid one-directory result while the second
+rem directory silently went unlocked. The resolver prints each canonical lock dir followed by a
+rem completion sentinel; we accept the result only when that sentinel arrives, which proves the
+rem resolver ran to the end (its stderr passes through to the console on failure).
 set "LOCK_DIR_1="
 set "LOCK_DIR_2="
-for /f "usebackq delims=" %%I in ("%LOCK_LIST%") do (
-    if not defined LOCK_DIR_1 (
-        set "LOCK_DIR_1=%%I"
-    ) else if not defined LOCK_DIR_2 (
-        set "LOCK_DIR_2=%%I"
+set "LOCK_OK="
+set "LOCK_COUNT=0"
+for /f "usebackq delims=" %%I in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0vcpkg_resolve_lock_dirs.ps1"`) do (
+    if "%%I"=="__VCPKG_LOCK_OK__" (
+        set "LOCK_OK=1"
+    ) else (
+        set /a LOCK_COUNT+=1
+        if not defined LOCK_DIR_1 (
+            set "LOCK_DIR_1=%%I"
+        ) else if not defined LOCK_DIR_2 (
+            set "LOCK_DIR_2=%%I"
+        )
     )
 )
-del "%LOCK_LIST%" 2>nul
 
-if not defined LOCK_DIR_1 (
-    echo Error: could not resolve vcpkg lock directories ^(PowerShell canonicalization failed^).
+if not defined LOCK_OK (
+    echo Error: vcpkg lock resolver did not complete ^(missing completion sentinel; see error above^).
+    exit /b 1
+)
+if %LOCK_COUNT% LSS 1 (
+    echo Error: vcpkg lock resolver produced no lock directories.
+    exit /b 1
+)
+if %LOCK_COUNT% GTR 2 (
+    echo Error: vcpkg lock resolver produced %LOCK_COUNT% lock directories ^(expected 1 or 2^).
     exit /b 1
 )
 set "LOCK_FILE_1=%LOCK_DIR_1%\.vcpkg-install.lock"
