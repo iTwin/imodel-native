@@ -31,6 +31,8 @@
 
 static NativeLogging::CategoryLogger LOG("BeSQLite");
 static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
+#define COLLATION_ASCII "ASCII"
+#define COLLATION_LATIN1 "Latin1"
 
 #define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 using namespace re2;
@@ -2714,10 +2716,24 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
                                params.m_encoding == Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
                                params.m_startDefaultTxn == DefaultTxn::Exclusive ? "EXCLUSIVE" : "NORMAL"));
 
+    // set Latin1 as default collation for the database
+    rc = SetNoCaseCollation(NoCaseCollation::Latin1);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("Failed to set default nocase collation to Latin1: (%s)", GetLastError(nullptr).c_str());
+        return rc;
+    }
+
     if (!params.m_rawSQLite) {
         rc = m_dbFile->CreatePropertyTable(BEDB_TABLE_Property, PROPERTY_TABLE_DDL);
         if (BE_SQLITE_OK != rc)
             return rc;
+
+        // save the no case collation setting and will be applied when opening db
+        rc = SavePropertyString(Properties::NoCaseCollation(), GetNoCaseCollation() == NoCaseCollation::Latin1 ? COLLATION_LATIN1: COLLATION_ASCII);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("Failed to save default nocase collation: (%s)", GetLastError(nullptr).c_str());
+            return rc;
+        }
 
         // NOTE: this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
         // local to the briefcase and never in a changeset.
@@ -3633,6 +3649,21 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
+
+    Utf8String noCaseCollation;
+    if (BE_SQLITE_ROW == QueryProperty(noCaseCollation, Properties::NoCaseCollation())) {
+        if (noCaseCollation.EqualsIAscii(COLLATION_LATIN1)){
+            rc = SetNoCaseCollation(NoCaseCollation::Latin1);
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("Loaded nocase collation from setting but failed to set it. (%s)",  GetLastError(nullptr).c_str());
+                return rc;
+            }
+        } else if (noCaseCollation.EqualsIAscii(COLLATION_ASCII)) {
+            // This is default.
+        } else {
+            BeAssert(false && "unknown noCaseCollation property value");
+        }
+    }
 
     // for writeable databases in WAL mode with DEFERRED defaultTxn mode, promote it to IMMEDIATE mode so there can only
     // be one writer. Without WAL mode we can't do that because the (single) writer would block readers.
