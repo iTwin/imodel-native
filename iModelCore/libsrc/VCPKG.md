@@ -4,7 +4,7 @@ This directory uses [vcpkg](https://github.com/microsoft/vcpkg) to manage select
 
 A specific version of vcpkg is cloned from its official git URL during `bb pull`. The version used is controlled by the `Guid` setting for the `vcpkg` entry in [bbconfig.json](../../../imodel-native-internal/bbconfig.json). At build time, the vcpkg part runs the appropriate vcpkg install script located in this source tree.
 
-By default, vcpkg-based builds will be cached locally in the `vcpkg` source tree. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. Bentley CI additionally uses an internal, Bentley-only shared binary cache (see [Shared binary cache](#shared-binary-cache) below); it is not needed for local or external builds, which build from source with a local cache. You can also point `VCPKG_BINARY_SOURCES` at your own vcpkg binary cache if you want cross-machine reuse.
+By default, vcpkg-based builds use a persistent, per-user local cache. You can set the `VCPKG_BINARY_SOURCES` environment variable to `clear` if you want to force it to build every time, although this is not recommended. Bentley CI additionally uses an internal, Bentley-only shared binary cache (see [Shared binary cache](#shared-binary-cache) below); it is not needed for local or external builds, which build from source with a local cache. You can also point `VCPKG_BINARY_SOURCES` at your own vcpkg binary cache if you want cross-machine reuse.
 
 > **Note:** On all platforms, use `IMODEL_VCPKG_ROOT` (not `VCPKG_ROOT`) if you need to override the vcpkg location. The build wrappers check `IMODEL_VCPKG_ROOT` first, avoiding conflicts with tooling that may set `VCPKG_ROOT` to an undesired location. Since the build system installs the required version of vcpkg automatically, setting `IMODEL_VCPKG_ROOT` is not recommended.
 
@@ -16,7 +16,7 @@ To add a new library:
 
 1. Update `iModelCore/libsrc/README.md` — add a row to the library table with the directory, library name, initial version, and `Yes` in the vcpkg column.
 2. Create a subdirectory (e.g. `mylib/`) containing `vcpkg.json`, `vcpkg-configuration.json`, and any custom triplet files under `mylib/triplets/`. See `./compress/` for examples.
-3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.bat`/`vcpkg_run_install.sh` for that manifest directory.
+3. Add a new `vcpkg_install_mylib.mke` in `libsrc/` (next to the other `vcpkg_install_*.mke` files) that calls `vcpkg_run_install.ps1`/`vcpkg_run_install.sh` for that manifest directory.
 4. Add a `vcpkg_install_mylib` part to [vcpkg.PartFile.xml](vcpkg.PartFile.xml), with `<SubPart PartName="vcpkg_install_<previous>" LibType="Static"/>` to preserve sequential ordering. Appending at the end of the chain is the simplest choice, but the only requirement is that the chain stays **linear** — position does not affect correctness, since each consumer depends on its own named part. A more basic/foundational library (e.g. a compression or image codec that other libraries build on) may read more naturally inserted earlier in the chain; if you insert mid-chain, re-parent the following link onto the new part and update the sibling `.mke` "Runs after vcpkg_install_<prev>…" comment on every link whose predecessor changed. The `LibType="Static"` is required — the chain runs static-only, so without it a dynamic build pass could run this chain part concurrently with the static one and collide on `vcpkg-running.lock`.
 5. In your library's PartFile, depend on `vcpkg_install_mylib` (from `iModelCore/libsrc/vcpkg`) instead of the bare `vcpkg` part.
 6. In your library's `.mke`, include [`vcpkg.mki`](./vcpkg.mki) to get the `vcpkgTriplet` variable, then consume the already-installed outputs from `$(OutputRootDir)vcpkg_installed/mylib/`. Do **not** call `vcpkg_run_install` from the `.mke` — the install was already performed by step 3. This path is only correct for **static** builds; for libraries with both static and dynamic deliverables, gate the path with `CREATE_STATIC_LIBRARIES` so dynamic builds read from the static chain's output:
@@ -156,11 +156,11 @@ Install the following prerequisites **before running vcpkg**:
 
 #### Windows vcpkg selection order used by the wrapper
 
-`vcpkg_run_install.bat` resolves roots in this order:
+`vcpkg_run_install.ps1` resolves roots in this order:
 
-1. `IMODEL_VCPKG_ROOT` (if set and contains `vcpkg.exe`)
-2. `<imodel-native>\iModelCore\libsrc\vcpkg`
-3. `VCPKG_ROOT` (if set, valid, not the Visual Studio bundled root, and something causes the one above to fail to install)
+1. `IMODEL_VCPKG_ROOT` when set; otherwise `${SrcRoot}vcpkg`
+2. `VCPKG_ROOT` (if set, valid, and not the Visual Studio bundled root)
+3. `D:\src\vcpkg`
 4. `%USERPROFILE%\src\vcpkg`
 5. Visual Studio bundled vcpkg (`%VCINSTALLDIR%\vcpkg`)
 
@@ -172,19 +172,19 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 
 1. `IMODEL_VCPKG_ROOT` (if set, not recommended)
 2. `VCPKG_ROOT` (if already set in the environment, very not recommended)
-3. `<imodel-native>/iModelCore/libsrc/vcpkg` (default)
+3. `${SrcRoot}vcpkg` (default)
 
 ## How It Works
 
 - Each subdirectory with a `vcpkg.json` manifest declares its vcpkg dependencies and version pins.
-- `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.bat` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
+- `vcpkg_run_install.sh` (macOS/Linux) and `vcpkg_run_install.ps1` (Windows) wrap `vcpkg install`, directing output to `$OutRoot/vcpkg_installed/<consumer>/`.
 - All `vcpkg install` calls are driven by a sequential chain of parts in [vcpkg.PartFile.xml](vcpkg.PartFile.xml) (`vcpkg_install_compress` → `vcpkg_install_png` → `vcpkg_install_pugixml` → `vcpkg_install_openssl` → `vcpkg_install_crashpad`), each blocked on the previous one completing. This prevents concurrent `vcpkg` processes from colliding on shared state.
 - Consumer `.mke` files (e.g. `Zlib.mke`, `BeOpenSSL.mke`, `png.mke`, `pugixml.mke`) depend on their corresponding chain part and only consume the already-installed outputs — they do not call `vcpkg_run_install` themselves.
 - **Binary cache resolution.** The install wrappers honor the `VCPKG_BINARY_SOURCES` environment variable. When it is **unset** (the default), vcpkg falls back to a **local** `files` archive cache under the per-user cache directory (see [Cache locations and environment overrides](#cache-locations-and-environment-overrides)), so a second build on the same machine restores instead of recompiling. When it is **set**, that value takes over completely — e.g. Bentley CI points it at an internal shared binary cache to publish/restore binaries across agents, and you can point it at your own vcpkg-supported backend. Setting it to `clear` disables all caching.
 
 ### Cache locations and environment overrides
 
-The wrappers keep vcpkg's downloads/tools tree, its registry git cache, and the binary archive cache in a **persistent, per-user** base directory rather than under `VCPKG_ROOT` or `$OutRoot`. This means the caches survive a clean build (tools, source archives, and the shallow registry repo are downloaded once and reused) and do **not** require `VCPKG_ROOT`/`IMODEL_VCPKG_ROOT` to be writable — the resolved root may be a protected Program Files location (the Visual Studio bundled copy) or a shared, read-only checkout.
+The wrappers keep vcpkg's downloads/tools tree, registry git cache, and default binary archive cache in a **persistent, per-user** base directory rather than under `VCPKG_ROOT` or `$OutRoot`. This means the default caches survive a clean build (tools, source archives, and the shallow registry repo are downloaded once and reused) and do **not** require `VCPKG_ROOT`/`IMODEL_VCPKG_ROOT` to be writable — the resolved root may be a protected Program Files location (the Visual Studio bundled copy) or a shared, read-only checkout.
 
 Default base directory:
 
@@ -199,18 +199,18 @@ Under the base, the wrappers derive:
 
 - `<base>/downloads/<platform-key>` — vcpkg downloads/tools tree and source archives (`--downloads-root`). The `<platform-key>` is the first two triplet tokens (e.g. `x64-windows`, `arm64-android`), so different architectures never share a mutable tools tree.
 - `<base>/downloads/<platform-key>/registries` — the vcpkg registry git cache (`X_VCPKG_REGISTRIES_CACHE`), also per-platform.
-- `<base>/archives` — the local binary (`files`) cache (`VCPKG_DEFAULT_BINARY_CACHE`), shared across triplets/configs (vcpkg keeps it concurrency-safe).
+- `<base>/archives` — the default local binary (`files`) cache (`VCPKG_DEFAULT_BINARY_CACHE`), shared across triplets/configs (vcpkg keeps it concurrency-safe).
 
 Because same-platform builds (e.g. static + dynamic, or two pipelines) share the per-platform downloads tree and registry cache, the wrappers hold a **cross-process lock** around the actual `vcpkg install`, so those runs serialize instead of corrupting shared state. The lock is an **auto-releasing advisory lock placed on the mutable directories themselves** — a lock file inside each downloads/registry directory (`flock` on Linux, Perl `flock()` on macOS, an OS file-handle lock on Windows) — so a crash or kill cannot wedge later builds. Because the lock follows the actual directory, runs that share it serialize even across architectures or users, or via a `VCPKG_DOWNLOADS` / `X_VCPKG_REGISTRIES_CACHE` override; runs with disjoint directories still run in parallel.
 
-**Escape hatches.** Each cache location is only derived from the base when its variable is unset; set any of these to override the default:
+**Escape hatches.** Each cache location is derived from the base only when its variable is unset. The wrappers honor an existing `VCPKG_DEFAULT_BINARY_CACHE` or derive `<base>/archives` and create it, independently of `VCPKG_BINARY_SOURCES`. They never parse a custom `VCPKG_BINARY_SOURCES` expression to infer or back-fill the default cache path. When `VCPKG_BINARY_SOURCES` is unset, the wrappers construct the default `files` source from `VCPKG_DEFAULT_BINARY_CACHE`; otherwise, they use the custom expression as supplied.
 
 | Variable | Overrides | Notes |
 | --- | --- | --- |
 | `VCPKG_DOWNLOADS` | downloads/tools tree (`--downloads-root`) | The registry cache is derived from this when `X_VCPKG_REGISTRIES_CACHE` is also unset. |
 | `X_VCPKG_REGISTRIES_CACHE` | registry git cache | Standard vcpkg variable. |
-| `VCPKG_DEFAULT_BINARY_CACHE` | local binary (`files`) archive cache | Used to build the default `VCPKG_BINARY_SOURCES` when that is unset. |
-| `VCPKG_BINARY_SOURCES` | binary cache backend(s) entirely | See [Binary cache resolution](#how-it-works) and [Shared binary cache](#shared-binary-cache). |
+| `VCPKG_DEFAULT_BINARY_CACHE` | local binary (`files`) archive cache | Initialized independently of `VCPKG_BINARY_SOURCES` and used to build its default value when that is unset. |
+| `VCPKG_BINARY_SOURCES` | binary cache backend(s) entirely | Custom expressions are used as supplied and are never parsed to infer `VCPKG_DEFAULT_BINARY_CACHE`. See [Binary cache resolution](#how-it-works) and [Shared binary cache](#shared-binary-cache). |
 
 ## Shared binary cache
 

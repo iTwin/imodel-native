@@ -8,8 +8,8 @@
 
 %include mdl.mki
 
-opensslDir  = $(_MakeFilePath)openssl/
-installRoot = $(OutputRootDir)vcpkg_installed/openssl/
+opensslDir  = $(_MakeFilePath)openssl
+installRoot = $(OutputRootDir)vcpkg_installed/openssl
 
 # OpenSSL on Windows uses the dynamic-CRT static triplet (x64-windows-static-md) to match
 # the Bentley build's /MD runtime. Mirror the override from BeOpenSSL.mke and prewire.mke.
@@ -20,7 +20,7 @@ installRoot = $(OutputRootDir)vcpkg_installed/openssl/
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(opensslDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(opensslDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(opensslDir) $(installRoot) $(vcpkgTriplet)
 %endif

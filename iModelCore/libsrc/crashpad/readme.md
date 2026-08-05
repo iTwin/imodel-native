@@ -22,7 +22,7 @@ when updating:
 
 - **Windows** (all triplets — both MSVC and clang): built from the **local vcpkg overlay
   port** at `iModelCore/libsrc/crashpad/ports/crashpad/`. The overlay is wired in by the
-  `--overlay-ports` handling in `iModelCore/libsrc/vcpkg_run_install.bat`, which passes any
+  `--overlay-ports` handling in `iModelCore/libsrc/vcpkg_run_install.ps1`, which passes any
   `ports/` subdirectory next to `vcpkg.json` to vcpkg. On Windows the overlay port — **not**
   the top-level `iModelCore/libsrc/crashpad/vcpkg.json` version constraint — determines the
   source that is pulled and built. (The overlay exists mainly to make crashpad build with

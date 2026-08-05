@@ -1,5 +1,5 @@
 # Local vcpkg overlay port for crashpad, used on ALL platforms: both
-# vcpkg_run_install.bat (Windows) and vcpkg_run_install.sh (Linux/macOS/Android) pass
+# vcpkg_run_install.ps1 (Windows) and vcpkg_run_install.sh (Linux/macOS/Android) pass
 # --overlay-ports for this directory, so crashpad always builds from this fork instead of
 # the upstream vcpkg registry port.
 #

@@ -24,7 +24,7 @@ vcpkg (bootstrap)
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
-`vcpkg_run_install.bat` / `vcpkg_run_install.sh`.  Chaining ensures no two `vcpkg`
+`vcpkg_run_install.ps1` / `vcpkg_run_install.sh`.  Chaining ensures no two `vcpkg`
 processes ever run concurrently — concurrent runs against the same install root collide
 on `vcpkg-running.lock` and corrupt the build.
 
@@ -58,8 +58,8 @@ Under `iModelCore/libsrc/<mylib>/`:
 ```makefile
 %include mdl.mki
 
-mylibDir    = $(_MakeFilePath)<mylib>/
-installRoot = $(OutputRootDir)vcpkg_installed/<mylib>/
+mylibDir    = $(_MakeFilePath)<mylib>
+installRoot = $(OutputRootDir)vcpkg_installed/<mylib>
 
 # Add vcpkgWindowsMDCRT = 1 here if the library must link /MD on Windows (like openssl).
 # Add vcpkgUseVeracodeTriplet = 1 here ONLY if this library's base triplet sets explicit
@@ -70,14 +70,14 @@ installRoot = $(OutputRootDir)vcpkg_installed/<mylib>/
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(mylibDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(mylibDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(mylibDir) $(installRoot) $(vcpkgTriplet)
 %endif
 ```
 
 `$(_MakeFilePath)` resolves to `libsrc/` because the file lives there, so the paths to
-`<mylib>/`, `vcpkg_run_install.bat/sh`, and `vcpkg.mki` are all correct.
+`<mylib>/`, `vcpkg_run_install.ps1`/`.sh`, and `vcpkg.mki` are all correct.
 
 ### 3. Extend the chain in `iModelCore/libsrc/vcpkg.PartFile.xml`
 
@@ -289,5 +289,5 @@ implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
 | `iModelCore/libsrc/vcpkg.PartFile.xml` | Sequential chain — edit to add new install parts |
 | `iModelCore/libsrc/vcpkg_install_*.mke` | One file per consumer; calls `vcpkg_run_install` |
 | `iModelCore/libsrc/vcpkg.mki` | Triplet selection; include from any install or consumer mke |
-| `iModelCore/libsrc/vcpkg_run_install.bat` / `.sh` | Wrapper that invokes the `vcpkg` executable |
+| `iModelCore/libsrc/vcpkg_run_install.ps1` / `.sh` | Wrapper that invokes the `vcpkg` executable |
 | `iModelCore/libsrc/VCPKG.md` | Human-facing documentation; keep in sync when changing patterns |

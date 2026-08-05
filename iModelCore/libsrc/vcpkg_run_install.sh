@@ -148,7 +148,7 @@ fi
 OVERLAY_ARGS=(--overlay-triplets="$OVERLAY_TRIPLETS")
 
 # Use custom overlay ports from the manifest directory (if present), mirroring
-# vcpkg_run_install.bat. This makes Linux/macOS/Android build from the local
+# vcpkg_run_install.ps1. This makes Linux/macOS/Android build from the local
 # crashpad fork (ports/crashpad) instead of the upstream registry port, so
 # platform fixes not yet upstream are picked up on every platform.
 OVERLAY_PORTS="$MANIFEST_DIR/ports"
