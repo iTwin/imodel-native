@@ -785,6 +785,16 @@ static void bcvfsCloseFile(sqlite3_file *pFile){
   }
 }
 
+/*
+** Free a string buffer returned by bcvfsLocalPath().
+*/
+static void bcvfsFreeLocalPath(char *zLocal){
+  if( zLocal ){
+    char *pFree = &zLocal[-4];
+    sqlite3_free(pFree);
+  }
+}
+
 static int bcvfsClose(sqlite3_file *pFd){
   BcvfsFile *pFile = (BcvfsFile*)pFd;
   sqlite3_bcvfs *pFs = pFile->pFs;
@@ -819,7 +829,7 @@ static int bcvfsClose(sqlite3_file *pFd){
   bcvfsProxyCloseTransactionIf(pFile);
   bcvCloseLocal(pFile->pCacheFile);
   bcvfsCloseFile(pFile->pFile);
-  sqlite3_free(pFile->zLocalPath);
+  bcvfsFreeLocalPath(pFile->zLocalPath);
   sqlite3_free(pFile->pPath);
   sqlite3_free(pFile->zClientId);
   return SQLITE_OK;
@@ -2339,8 +2349,13 @@ static void bcvBufferAppendEscaped(int *pRc, BcvBuffer *pBuf, const char *zStr){
 
 /*
 ** Return the full local path to the database or wal file identified by
-** pPath. The caller is responsible for ensuring that the returned buffer
-** is eventually freed using sqlite3_free().
+** pPath. 
+**
+** The caller is responsible for ensuring that the returned buffer is
+** eventually freed using bcvfsFreeLocalPath(). This must be used instead
+** of sqlite3_free() to ensure that there are 4 0x00 bytes preceding the
+** returned string, making it safe to pass to an sqlite3_vfs.xOpen() 
+** method.
 */
 static char *bcvfsLocalPath(
   int *pRc, 
@@ -2349,6 +2364,7 @@ static char *bcvfsLocalPath(
   int bReadonlyShm
 ){
   BcvBuffer b = {0,0,0};
+  bcvBufferAppendRc(pRc, &b, "\0\0\0\0", 4);
   bcvBufferAppendString(pRc, &b, pFs->c.zDir);
   bcvBufferAppendString(pRc, &b, BCV_PATH_SEPARATOR);
   bcvBufferAppendEscaped(pRc, &b, pPath->zContainer);
@@ -2362,7 +2378,7 @@ static char *bcvfsLocalPath(
   }
   bcvBufferAppendRc(pRc, &b, "\0\0", 2);
   assert( *pRc==SQLITE_OK || b.aData==0 );
-  return (char*)b.aData;
+  return (b.aData ? (char*)&b.aData[4] : 0);
 }
 
 /*
@@ -3375,7 +3391,7 @@ static int bcvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
     char *zLocal = bcvfsLocalPath(&rc, pFs, pPath, 0);
     if( rc==SQLITE_OK ){
       rc = pFs->c.pVfs->xDelete(pFs->c.pVfs, zLocal, dirSync);
-      sqlite3_free(zLocal);
+      bcvfsFreeLocalPath(zLocal);
     }
   }
   sqlite3_free(pPath);
