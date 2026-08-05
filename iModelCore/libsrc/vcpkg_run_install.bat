@@ -166,7 +166,7 @@ rem %VCPKG_CACHE_BASE% is expanded at parse time, so a mkdir there would retry t
 rem profile path instead of the just-assigned INSTALL_ROOT fallback. Confirming the base exists
 rem here also keeps the lock-open loop below from spinning forever on a missing base when the cache
 rem path variables are overridden. (Existence alone does not prove the lock dirs are writable; the
-rem probe_writable preflight before the retry loop checks that.)
+rem resolver's per-lock-file append preflight checks that.)
 if not exist "%VCPKG_CACHE_BASE%" mkdir "%VCPKG_CACHE_BASE%" 2>nul
 if not exist "%VCPKG_CACHE_BASE%" (
     echo Error: vcpkg cache base "%VCPKG_CACHE_BASE%" could not be created or is not writable.
@@ -278,7 +278,23 @@ set "LOCK_DIR_1="
 set "LOCK_DIR_2="
 set "LOCK_OK="
 set "LOCK_COUNT=0"
-for /f "usebackq delims=" %%I in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0vcpkg_resolve_lock_dirs.ps1"`) do (
+
+rem Switch the console to UTF-8 (code page 65001) around the resolver call so canonical paths with
+rem characters outside the active OEM code page survive the PowerShell -> for /f pipe. for /f decodes
+rem the child's stdout using the console code page; the resolver emits UTF-8, so without a matched
+rem code page a non-OEM path would arrive as '?' replacement characters while the ASCII completion
+rem sentinel still parsed, silently corrupting a lock directory. The previous code page is captured
+rem and restored immediately after so the rest of the build is unaffected.
+set "PREV_CODEPAGE="
+for /f "tokens=2 delims=:" %%C in ('chcp') do for /f "tokens=1" %%D in ("%%C") do set "PREV_CODEPAGE=%%D"
+chcp 65001 >nul
+
+rem Invoke the resolver by its bare relative name from its own directory (pushd) rather than
+rem embedding the %~dp0 script path in the nested for /f command. A checkout path can legally
+rem contain '%', and cmd performs a second percent-expansion pass on a nested command, which would
+rem corrupt such a path; the bare script name has no '%', so it is immune.
+pushd "%~dp0"
+for /f "usebackq delims=" %%I in (`powershell -NoProfile -ExecutionPolicy Bypass -File vcpkg_resolve_lock_dirs.ps1`) do (
     if "%%I"=="__VCPKG_LOCK_OK__" (
         set "LOCK_OK=1"
     ) else (
@@ -290,6 +306,8 @@ for /f "usebackq delims=" %%I in (`powershell -NoProfile -ExecutionPolicy Bypass
         )
     )
 )
+popd
+if defined PREV_CODEPAGE chcp %PREV_CODEPAGE% >nul
 
 if not defined LOCK_OK (
     echo Error: vcpkg lock resolver did not complete ^(missing completion sentinel; see error above^).
@@ -318,18 +336,11 @@ if defined LOCK_DIR_2 if not exist "%LOCK_DIR_2%" (
     exit /b 1
 )
 
-rem Existence does not prove writability. A pre-existing cache dir (notably a VCPKG_DOWNLOADS /
-rem X_VCPKG_REGISTRIES_CACHE override, or a locked-down agent's profile) whose ACLs deny creating
-rem the lock file makes the redirection open below fail exactly like genuine contention, burning
-rem the full ~1h retry budget. Preflight each dir with a uniquely named probe file: a sharing
-rem violation is name-specific and transient, but an ACL denial fails for every name, so a probe
-rem that cannot be created after several distinct names is a permission problem -- report it now.
-call :probe_writable "%LOCK_DIR_1%"
-if errorlevel 1 exit /b 1
-if defined LOCK_DIR_2 (
-    call :probe_writable "%LOCK_DIR_2%"
-    if errorlevel 1 exit /b 1
-)
+rem Existence does not prove writability, but the resolver already preflighted each canonical lock
+rem file for append access -- retrying only transient sharing/lock violations and failing fast on
+rem access-denied/read-only/path errors -- so an unwritable cache dir (a VCPKG_DOWNLOADS /
+rem X_VCPKG_REGISTRIES_CACHE override or a locked-down agent's profile) was already reported via the
+rem missing sentinel above. No separate probe is needed here.
 
 rem Bound the acquisition retries as a safety net so an unexpected persistent open failure reports
 rem an error instead of looping forever. ~5s per attempt; 720 attempts tolerates ~1h of genuine
@@ -377,25 +388,6 @@ exit /b 0
 "%VCPKG_EXE%" install --vcpkg-root "%VCPKG_ROOT%" --downloads-root "%VCPKG_DOWNLOADS%" --triplet "%TRIPLET%" --x-install-root "%INSTALL_ROOT%" --x-manifest-root "%MANIFEST_DIR%" --x-buildtrees-root "%INSTALL_ROOT%\buildtrees" --x-packages-root "%INSTALL_ROOT%\packages" %OVERLAY_ARG% 2>&8
 set "INSTALL_RC=%errorlevel%"
 goto :eof
-
-:probe_writable
-rem %~1 = lock directory. Returns 0 if a lock file can be created there, 1 if not. Retries with
-rem distinct random names so a rare probe-name collision (transient) is not mistaken for an ACL
-rem denial (which fails for every name).
-set "PROBE_TRIES=0"
-:probe_retry
-set "PROBE_FILE=%~1\.vcpkg-lock-probe-%RANDOM%%RANDOM%.tmp"
-if exist "%PROBE_FILE%" goto :probe_next
-( type nul > "%PROBE_FILE%" ) 2>nul
-if exist "%PROBE_FILE%" (
-    del "%PROBE_FILE%" 2>nul
-    exit /b 0
-)
-:probe_next
-set /a PROBE_TRIES+=1
-if %PROBE_TRIES% LSS 5 goto :probe_retry
-echo Error: vcpkg lock directory "%~1" is not writable ^(cannot create lock file; check ACLs/permissions^).
-exit /b 1
 
 :usage
 echo Usage: %~nx0 ^<manifest_dir^> ^<install_root^> ^<triplet^>

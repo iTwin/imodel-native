@@ -6,7 +6,11 @@
 # (VCPKG_DOWNLOADS) and the registries git repo (X_VCPKG_REGISTRIES_CACHE) -- to their FINAL
 # on-disk identities, de-duplicate them case-insensitively, and sort them into one deterministic
 # order. Reads the two paths from those environment variables and writes the resulting lock
-# directories to stdout, one per line (zero, one, or two lines).
+# directories to stdout, one per line (zero, one, or two lines), followed by a completion sentinel.
+# Before emitting, each canonical lock file is preflighted for append access so an unwritable cache
+# dir is reported here rather than silently burning the caller's lock-acquisition retry budget.
+# Output is written as UTF-8 so paths with characters outside the console's OEM code page survive
+# the pipe to the batch consumer (which switches its console to code page 65001 to match).
 #
 # GetFinalPathNameByHandle collapses junction/symlink aliases, 8.3 short names and case
 # differences that a plain absolute-path normalization (e.g. cmd's %~fI) leaves intact, so two
@@ -15,6 +19,14 @@
 # livelock between runs whose override paths list the same pair in opposite order.
 #---------------------------------------------------------------------------------------------
 $ErrorActionPreference = 'Stop'
+
+# Emit stdout as UTF-8 (no BOM) so canonical paths with characters outside the console's OEM code
+# page survive the pipe to the batch consumer, which switches its console to code page 65001 to
+# match. Without this a non-OEM path would arrive as '?' replacement characters while the ASCII
+# completion sentinel still parsed, silently corrupting a lock directory. Guard the assignment: a
+# rare host without a valid console handle would throw here, and losing UTF-8 fidelity is better
+# than failing outright.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch { }
 
 Add-Type -Namespace VcpkgLock -Name Native -MemberDefinition @'
 [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -63,6 +75,41 @@ function Resolve-Final([string] $path) {
     }
 }
 
+function Test-LockAppendable([string] $dir) {
+    # Preflight the ACTUAL lock file (not a throwaway probe): open '<dir>\.vcpkg-install.lock' for
+    # append with shared read/write. Creating a random probe file only proves the directory accepts
+    # new files; it does not prove this specific, possibly pre-existing, lock file can be opened for
+    # append -- in a shared cache it may be read-only or carry another user's ACL. Classify the
+    # failure: a sharing/lock violation means another run legitimately holds the lock right now, so
+    # the path and ACL are fine (retry briefly, then treat as appendable); anything else (access
+    # denied, read-only, path error) is permanent and must fail immediately rather than be
+    # misclassified as contention and burn the caller's ~1h retry budget.
+    $lock = [System.IO.Path]::Combine($dir, '.vcpkg-install.lock')
+    $ERROR_SHARING_VIOLATION = 32
+    $ERROR_LOCK_VIOLATION = 33
+    for ($attempt = 0; $attempt -lt 10; $attempt++) {
+        try {
+            $fs = [System.IO.File]::Open($lock, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+            $fs.Dispose()
+            return
+        }
+        catch [System.IO.IOException] {
+            # Subclasses (FileNotFound/DirectoryNotFound) also land here; only genuine sharing/lock
+            # violations are transient, everything else is permanent and rethrown to the outer catch.
+            $code = $_.Exception.HResult -band 0xFFFF
+            if ($code -eq $ERROR_SHARING_VIOLATION -or $code -eq $ERROR_LOCK_VIOLATION) {
+                Start-Sleep -Milliseconds 200
+                continue
+            }
+            throw "vcpkg lock file '$lock' is not appendable: $($_.Exception.Message)"
+        }
+        # UnauthorizedAccessException (access denied / read-only) is intentionally NOT caught here so
+        # it propagates to the outer catch and fails the resolver immediately.
+    }
+    # Retries exhausted on sharing/lock violation only: another run is holding the lock, which proves
+    # the path is writable, so treat it as appendable.
+}
+
 try {
     # Buffer the full result before emitting anything: if any path fails to canonicalize we must
     # abort with no stdout so the caller never locks a half-resolved set. Windows PowerShell's
@@ -78,6 +125,9 @@ try {
         $resolved = Resolve-Final $p
         if ($resolved) { [void]$locks.Add($resolved) }
     }
+    # Preflight append access to every canonical lock file BEFORE emitting anything, so a permanent
+    # permission/path failure aborts with no stdout and the caller never locks a half-validated set.
+    foreach ($d in $locks) { Test-LockAppendable $d }
     $locks | ForEach-Object { $_ }
     # Completion sentinel, printed only after every lock dir resolved. The caller treats its
     # absence as failure, so a resolver that dies partway can never be mistaken for a short but
