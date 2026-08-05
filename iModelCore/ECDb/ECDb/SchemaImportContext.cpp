@@ -27,6 +27,28 @@ bool SchemaImportContext::AllowDataTransform() {
 //+---------------+---------------+---------------+---------------+---------------+------
 MainSchemaManager const& SchemaImportContext::GetSchemaManager() const { return m_ecdb.Schemas().Main(); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportContext::ReportMappingFailureDiagnostics() const
+    {
+    // Only report when this import performed remapping work. For all other mapping failures
+    // the summary carries no information and would only add noise to the reported issues.
+    if (!m_remapManager.HasFreedColumns() && m_mappingDecisions.empty())
+        return;
+
+    Utf8String report("Schema import mapping failure diagnostics. ");
+    report.append(m_remapManager.BuildDiagnosticsSummary());
+    if (!m_mappingDecisions.empty())
+        {
+        report.append(Utf8PrintfString("\nLast %zu column mapping decisions (most recent last):", m_mappingDecisions.size()));
+        for (Utf8StringCR decision : m_mappingDecisions)
+            report.append("\n  ").append(decision);
+        }
+
+    Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0743, report.c_str());
+    }
+
 
 //*********************************************************************************
 // SchemaPolicies
