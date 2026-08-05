@@ -848,7 +848,7 @@ int CSopnBinaryGtxFile (struct cs_GtxFile_ *__This,long32_t bufrSize)
     if (__This->fileHasDoubleRowsColumns)
         __This->headerCount = sizeof (double) * 6;
     else
-        __This->headerCount = sizeof (double) * 4 + sizeof(long) * 2;
+        __This->headerCount = sizeof (double) * 4 + sizeof(nColumns) + sizeof(nRows);
     __This->elementCount = (long32_t)nColumns;
     __This->recordCount = (long32_t)nRows;
     __This->recordSize = __This->elementCount * sizeof (float);

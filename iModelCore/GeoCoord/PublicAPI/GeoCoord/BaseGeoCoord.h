@@ -6099,7 +6099,7 @@ private:
     VerticalDatumInfoPtr            m_verticalDatumInfo;                // contains the dictionary info for this vertical datum
     DatumCP                         m_datum;                            // only used for ELLIPSOID based datums, GEOID datums use Transforms defined in the Vertical Datum dictionary and don't require this
     Utf8String                      m_initializedTransformsTargetName;
-    bvector<VerticalTransformPtr>   m_initializedTransforms;
+    mutable bvector<std::pair<VerticalTransformPtr, DatumConverterP>>  m_initializedTransforms;
 
     VerticalDatum();
     ~VerticalDatum();
@@ -6219,6 +6219,7 @@ protected:
 
     Utf8String                      m_name;
     Utf8String                      m_target;
+    Utf8String                      m_requiredHorizontalCRSBase;
     TransformType                   m_transformType;
 
     VerticalTransform(TransformType m_transformType) :
@@ -6272,14 +6273,21 @@ const Utf8String& GetTarget() const;
 void SetTarget(const Utf8String& target);
 
 /*---------------------------------------------------------------------------------**//**
+* Returns the name of the base HorizontalCRS for the elevation transformation. This
+* horizontal is a latitude/longitude CRS to which latitude and longitude must be converted
+* prior to applying the transformation using GetElevation()
+* @return   The name of the base horizontal CRS or an empty string if none is required.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String GetRequiredHorizontalCRSBase() const {return m_requiredHorizontalCRSBase;}
+
+/*---------------------------------------------------------------------------------**//**
 * Must be defined by all subclasses of VerticalTransform, initialize this VerticalTransform
 * in preparation for a following GetElevation() call. 
-* The targetGCS is used to prepare to transform the provided latitude/longitude from the
-* given coordinate to the geodetic datum of the transform (usually WGS84 or coincident)
 * @return   SUCCESS, ERROR or GEOCOORDERR_***, will be defined by the subclass.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt InitializeTransform(BaseGCSCR targetGCS) = 0;
+virtual StatusInt InitializeTransform() = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * Must be defined by all subclasses of VerticalTransform, release any memory used by

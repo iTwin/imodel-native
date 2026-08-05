@@ -226,7 +226,7 @@ bool doubleSame(double val1, double val2) {
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
-* Compares two distances. The tolerance applied is automatically 0.001 which is the
+* Compares two distances. The tolerance applied is 0.001 which is the
 * cartographic accuracy and round off values for most distances.
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool distanceSame(double val1, double val2) {
@@ -235,7 +235,7 @@ bool distanceSame(double val1, double val2) {
 
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
- * Compares two angles expressed in arc seconds. The tolerance applied is automatically 0.0000001
+ * Compares two angles expressed in arc seconds. The tolerance applied is 0.0000001
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool arcSecondsSame(double val1, double val2) {
     return (fabs(val1 - val2) <= 0.0000001);
@@ -243,7 +243,7 @@ bool arcSecondsSame(double val1, double val2) {
 
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
- * Compares two scales expressed as PPMs. The tolerance applied is automatically 0.00000001
+ * Compares two scales expressed as PPMs. The tolerance applied is 0.00000001
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool scalePPMSame(double val1, double val2) {
     return (fabs(val1 - val2) <= 0.00000001);
@@ -290,7 +290,12 @@ VertDatumCode   NetVerticalDatumFromGCS (BaseGCSCR gcs)
 /*---------------------------------------------------------------------------------**//**
 * Returns the net vertical datum code from the given key. If the key is invalid
 * then vdcFromDatum is returned.
+*
+* @param verticalKey The vertical datum key. One of "NGVD29", "NAVD88", "GEOID", 
+*   "ELLIPSOID", or "LOCAL_ELLIPSOID".
+*
 * @returns the explicit datum code or vdcFromDatum if the key is invalid.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 VertDatumCode   VerticalDatumCodeFromKey (Utf8CP verticalKey)
@@ -311,8 +316,12 @@ VertDatumCode   VerticalDatumCodeFromKey (Utf8CP verticalKey)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Returns the vertical datum key from code.
+* Returns the vertical datum key from code. One of "NGVD29", "NAVD88", "GEOID", 
+*   "ELLIPSOID", or "LOCAL_ELLIPSOID". from given code. If the code is invalid then 
+*   an empty string is returned.
+*
 * @returns the explicit datum code. This value cannot be vdcFromDatum
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String   VerticalDatumKeyFromCode (VertDatumCode vdc)
@@ -332,8 +341,15 @@ Utf8String   VerticalDatumKeyFromCode (VertDatumCode vdc)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This method solves the ambiguity of the vdcFromDatum value and generated a string key.
-* @returns the explicit datum code. This value cannot be vdcFromDatum
+* This method solves the ambiguity of the vdcFromDatum value and returns the vertical datum key.
+* One of "NGVD29", "NAVD88", "GEOID", "ELLIPSOID", or "LOCAL_ELLIPSOID".
+*
+* @param gcs The GCS to get the vertical datum key from. If the internal legacy code is 
+*       vdcFromDatum then it will be resolved into the proper explicit vertical datum code
+*       based on the geodetic datum used.
+*
+* @returns the vertical datum code.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String   VerticalDatumKeyFromGCS (BaseGCSCR gcs)
@@ -342,8 +358,16 @@ Utf8String   VerticalDatumKeyFromGCS (BaseGCSCR gcs)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This method solves the ambiguity of the vdcFromDatum value.
+* This method solves the ambiguity of the vdcFromDatum value based on the original
+* vertical datum code and the geodetic datum used.
+*
+* @param datum The geodetic datum to use to resolve the ambiguity of vdcFromDatum.
+* @param vdc The vertical datum code to resolve. If this value is vdcFromDatum then it 
+*       will be resolved into the proper explicit vertical datum code
+*       based on the geodetic datum used.
+*
 * @returns the explicit datum code. This value cannot be vdcFromDatum
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 VertDatumCode   NetVerticalDatumFromDatum (DatumCR datum, VertDatumCode vdc)
@@ -367,10 +391,16 @@ VertDatumCode   NetVerticalDatumFromDatum (DatumCR datum, VertDatumCode vdc)
 
 /*---------------------------------------------------------------------------------**//**
 * Validate the given unit key. Here unit key means one of the three linear unit keys that can be used
-* in a JSON fragment for either Horizontal or Vertical CRS
+* in a JSON fragment for either Horizontal or Vertical CRS. The validation is case insensitive.
+* To be valid, the value must be one of "Meter", "USSurveyFoot", or "InternationalFoot".
+*
+* @param [in] unitKey The unit key to validate. .
+*
+* @returns true if the unit key is valid, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ValidUnitKey(Utf8String unitKey)
+bool ValidUnitKey(Utf8StringCR unitKey)
     {
     return ((0 == BeStringUtilities::Stricmp(unitKey.c_str(), "Meter")) ||
             (0 == BeStringUtilities::Stricmp(unitKey.c_str(), "USSurveyFoot"))||
@@ -380,12 +410,18 @@ bool ValidUnitKey(Utf8String unitKey)
 /*---------------------------------------------------------------------------------**//**
 * Returns the ratio between a unit and a meter for one of the three linear unit keys
 * in a JSON fragment for either Horizontal or Vertical CRS or the corresponding CSMAP key for these
-* three units.
-*   @bsimethod
+* three units. 
+*
+* @param [in] unitsOfMeasure The unit key to get the ratio for. This is case insensitive.
+*
+* @returns the ratio between the given unit and a meter. If the unit is not one of the 
+*       three valid units, 0.0 is returned.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 double GetUnitToMeter(const Utf8String& unitsOfMeasure)
     {
-    if (0 == BeStringUtilities::Stricmp(unitsOfMeasure.c_str(), "meter"))
+    if (0 == BeStringUtilities::Stricmp(unitsOfMeasure.c_str(), "meter") || (0 == BeStringUtilities::Stricmp(unitsOfMeasure.c_str(), "metre")))
         return 1.0;
     else if ((0 == BeStringUtilities::Stricmp(unitsOfMeasure.c_str(), "FOOT")) || (0 == BeStringUtilities::Stricmp(unitsOfMeasure.c_str(), "USSurveyFoot")))
         return 1200.0 / 3937.0; // US Survey foot
@@ -397,7 +433,12 @@ double GetUnitToMeter(const Utf8String& unitsOfMeasure)
 
 /*---------------------------------------------------------------------------------**//**
 * Returns true if the keyname corresponds to a known variation of
-* NAD27 (excluding canadian variations)
+* NAD27 (excluding Canadian variations)
+*
+* @param [in] datumKeyname The datum keyname to check.
+*
+* @return true if the keyname corresponds to a known variation of NAD27, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   IsNAD27Keyname(const char * datumKeyname)
@@ -417,7 +458,12 @@ bool   IsNAD27Keyname(const char * datumKeyname)
 
 /*---------------------------------------------------------------------------------**//**
 * Returns true if the keyname corresponds to a known variation of
-* NAD83 (excluding canadian variations)
+* NAD83 (excluding Canadian variations)
+*
+* @param [in] datumKeyname The datum keyname to check.
+*
+* @return true if the keyname corresponds to a known variation of NAD83, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   IsNAD83Keyname(const char * datumKeyname)
@@ -527,6 +573,12 @@ char WGS84CoincidentKeynameMap[][24] =
 /*---------------------------------------------------------------------------------**//**
 * Returns true if the datum transformnation code corresponds to one of the grid file
 * or multiple regression based transformations.
+*
+* @param datumConvertCode The datum transformation code to check.
+*
+* @return true if the datum transformation code corresponds to one of the grid file
+*       or multiple regression based transformations, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   IsGridBasedDatumConvertCode(WGS84ConvertCode datumConvertCode)
@@ -548,8 +600,14 @@ bool   IsGridBasedDatumConvertCode(WGS84ConvertCode datumConvertCode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Returns true if the keyname corresponds to a known variation of
-* NAD83 (excluding canadian variations)
+* Returns true if the keyname corresponds to a known variation of a geodetic datum
+* considered coincident with WGS84.
+*
+* @param datumKeyname The datum keyname to check.
+*
+* @return true if the keyname corresponds to a known variation of a geodetic datum
+*       considered coincident with WGS84, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   IsWGS84CoincidentKeyname(const char * datumKeyname)
@@ -572,8 +630,13 @@ bool   IsWGS84CoincidentKeyname(const char * datumKeyname)
 
 /*---------------------------------------------------------------------------------**//**
 * This utilitary function extracts the group name without modifying the Datum
-* class signature. BIM02 Implementation is different.
-*   @bsimethod
+* class signature.
+*
+* @param datum The datum to get the group name from.
+*
+* @returns the datum group name or an empty string if the datum is not found in the system dictionary.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GetDatumGroupName(DatumCR datum)
     {
@@ -590,9 +653,13 @@ Utf8String GetDatumGroupName(DatumCR datum)
 
 /*---------------------------------------------------------------------------------**//**
 * local function
-* returns the ellipsoid index based on the ellipsoid keyname provided.
-* This searches only the system dictionary. It does not deal with user-defined
-* dictionaries.
+* Returns the ellipsoid index based on the ellipsoid keyname provided
+* from the system dictionary. This index is required to set the ellipsoid of a BaseGCS.
+*
+* @param ellipsoidName The ellipsoid keyname to search for.
+*
+* @returns the ellipsoid index or -1 if not found.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int     FindEllipsoidIndex (Utf8CP ellipsoidName)
@@ -611,9 +678,13 @@ int     FindEllipsoidIndex (Utf8CP ellipsoidName)
 
 /*---------------------------------------------------------------------------------**//**
 * local function
-* returns the datum index based on the ellipsoid keyname provided.
-* This searches only the system dictionary. It does not deal with user-defined
-* dictionaries.
+* Returns the datum index based on the geodetic datum keyname provided
+* from the system dictionary. This index is required to set the datum of a BaseGCS.
+*
+* @param datumName The geodetic datum keyname to search for.
+*
+* @return the datum index or -1 if not found.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int     FindDatumIndex (Utf8CP datumName)
@@ -632,7 +703,15 @@ int     FindDatumIndex (Utf8CP datumName)
 
 /*---------------------------------------------------------------------------------**//**
 * local function
-* returns the name of the GCS for this EPSG code.
+* Returns the name of the GCS for this EPSG code. This function will search the system
+* dictionary for the EPSG code and return the corresponding GCS name. A cache is built
+* to speed up subsequent searches.
+*
+* @param [out] outName The output GCS name corresponding to the EPSG code.
+* @param [in] epsgCode The EPSG code to search for.
+*
+* @returns SUCCESS if the GCS name was found, ERROR otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     FindGCSNameFromEPSGCode(Utf8String& outName, uint16_t epsgCode)
@@ -723,6 +802,11 @@ StatusInt     FindGCSNameFromEPSGCode(Utf8String& outName, uint16_t epsgCode)
 /*---------------------------------------------------------------------------------**//**
 * local function
 * Converts the Danish System 34 region CSMAP code to a name compatible to the Json format.
+*
+* @param [in] code The Danish System region code to convert. It must be one of 1, 2, or 3.
+*
+* @returns the corresponding region name or "UNKNOWN" if the code is invalid.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GetDanishSys34RegionStringFromCode(int code)
@@ -744,11 +828,11 @@ Utf8String GetDanishSys34RegionStringFromCode(int code)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int GetDanishSys34RegionCodeFromString(Utf8StringCR region)
     {
-    if (region == "Jylland")
+    if (0 == BeStringUtilities::Stricmp(region.c_str(), "Jylland"))
         return 1;
-    if (region == "Sjaelland")
+    if (0 == BeStringUtilities::Stricmp(region.c_str(), "Sjaelland"))
         return 2;
-    if (region == "Bornholm")
+    if (0 == BeStringUtilities::Stricmp(region.c_str(), "Bornholm"))
         return 3;
 
     return 0;
@@ -763,8 +847,8 @@ static bool     DatumEquivalent(CSDatum&    datum1,  CSDatum&    datum2,  bool t
 * when not needed anymore.
 * All geodetic transforms returned will use the direct direction and thus inverse transforms
 * will be reversed if needed and possible.
-* @param listOftransforms OUT The list to add transfroms to.
-* @param datumConverter IN the datum conveter to extract geodetic transforms of.
+* @param [out] listOftransforms The list to add transforms to.
+* @param [in] datumConverter the datum conveter to extract geodetic transforms of.
 * @return SUCCESS if sucessful and ERROR if one of the geodetic transforms
 *           could not be reversed to add to list. The list is then cleared in that case.
 * @bsimethod
@@ -776,22 +860,29 @@ StatusInt FillListOfTransformsFromCSDatumConvert(bvector<GeodeticTransformP>& li
 * To be a Null transform either all component geodetic transform must be null transforms
 * or two non-null transforms must be the inverse of the other (resulting in a null transform
 * once combined).
+*
+* @param [in] listOfTransforms The list of geodetic transforms to checks.
+*
+* @return true if the list of geodetic transforms represents a null transformation, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool RepresentsNullTransform(bvector<GeodeticTransformP> const& listOfTransforms);
 
 /*---------------------------------------------------------------------------------**//**
 * Returns true if given list of geodetic transforms are equivalent or false otherwise.
-* @param listOfTransforms1 IN the list of geodetic transform forming the first sequence.
-* @param listOfTransforms2 IN the list of geodetic transform forming the second sequence.
-* @param    looselyCompare IN If false then the method checks if the
+* @param [in] listOfTransforms1 the list of geodetic transform forming the first sequence.
+* @param [in] listOfTransforms2 the list of geodetic transform forming the second sequence.
+* @param [in] looselyCompare If false then the method checks if the
 *              geodetic transform is the same including the method used and the accuracy
 *              expected; the test is more strict.
-*              If true then the method will verify if the two geodetic transform would
+*              If true then the method will verify if the two geodetic transforms would
 *              yield the same result.
 *              For example a 7 parameter definition having no rotation and no scale would be
 *              considered equivalent to a 3 parameter transform given the delta values
 *              were the same.
+*
+* @return true if the two list of geodetic transforms are equivalent, false otherwise.
 *
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -801,10 +892,6 @@ static bool     GeodeticTransformPathAreEquivalent(bvector<GeodeticTransformP> c
 *
 * General Parser abstract class. Provides methods, parameter, datum and ellipsoid
 * definition and resolution services common to all parsers.
-*
-* NOTE: Error processing is still minimal. The functions will return the generic error ERROR
-* most if not all of the times. Error processing will be completed later on in the
-* development process
 *
 +===============+===============+===============+===============+===============+======*/
 class SRSGeneralParser
@@ -820,7 +907,17 @@ GeoCoordParseStatus InitCleanGCS(BaseGCSR baseGCS) const
 
     return GeoCoordParse_Success;
     }
+
 /*---------------------------------------------------------------------------------**//**
+*   Traverses the list of pre-defined ellipsoids for one that matches the 
+*   given equatorial and polar radii. If a match is found, the name of the ellipsoid is returned.
+*
+*   @param[out] finalEllipsoidName The name of the matching ellipsoid, if found.
+*   @param[in] equatorialRadius The equatorial radius of the ellipsoid to match.
+*   @param[in] polarRadius The polar radius of the ellipsoid to match.
+*
+*   @return GeoCoordParse_Success if a matching ellipsoid is found, otherwise GeoCoordParse_UnknownEllipsoid.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus FindEllipsoidFromParams(Utf8StringR finalEllipsoidName, double equatorialRadius, double polarRadius) const
@@ -852,6 +949,19 @@ GeoCoordParseStatus FindEllipsoidFromParams(Utf8StringR finalEllipsoidName, doub
     }
 
 /*---------------------------------------------------------------------------------**//**
+*
+*   Searches through the list of known ellipsoids and their aliases to find 
+*   a match for the provided name or authority ID. If a match is found, the final ellipsoid name
+*   is returned.
+*
+*   @param[out] finalEllipsoidName The name of the matching ellipsoid, if found.
+*   @param[in] name The original name of the ellipsoid to search for.
+*   @param[in] authorityID The authority ID of the ellipsoid to search for. Typically authority ids 
+*                          have the form of "EPSG:XXXX" where XXXX is a number. This parameter can be 
+*                          empty if not available.
+*
+*   @return GeoCoordParse_Success if a matching ellipsoid is found, otherwise GeoCoordParse_UnknownEllipsoid.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetEllipsoidNameFromNameOrAlias(Utf8StringR finalEllipsoidName, Utf8StringCR name, Utf8StringCR authorityID) const
@@ -927,6 +1037,23 @@ GeoCoordParseStatus GetEllipsoidNameFromNameOrAlias(Utf8StringR finalEllipsoidNa
     }
 
 /*---------------------------------------------------------------------------------**//**
+*
+*   This method returns the geodetic datum transformation method type and grid file format
+*   based on the provided method ID. It also indicates whether the rotation
+*   should be inverted for certain transformation methods.
+*
+*   @param[out] convertCode The geodetic datum transformation method type.
+*   @param[out] fileFormat The grid file format associated with the transformation method if applicable.
+*   @param[out] invertRotation A boolean indicating whether the rotation should be inverted 
+*                   for certain transformation methods.
+*   @param[in] methodId The method ID string to be evaluated. This is a string that identifies 
+*                   the transformation method, such as "NADCON", "SEVEN PARAMETER TRANSFORMATION", etc.
+*                   that can be specified in various text representation format for CRS.
+*
+*   @return GeoCoordParse_Success if the method ID is recognized and the corresponding transformation
+*           method type and grid file format are set. Otherwise, returns GeoCoordParse_UnknownTransformMethod
+*           if the method ID is not recognized.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetTransformMethodFromId(GenConvertCode& convertCode, GridFileFormat& fileFormat, bool& invertRotation, Utf8StringCR methodId) const
@@ -1007,6 +1134,14 @@ GeoCoordParseStatus GetTransformMethodFromId(GenConvertCode& convertCode, GridFi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Searches in the list of ellipsoid aliases for a match to the given name. 
+* If a match is found, the alternate name is returned.
+*
+* @param[in] name The name of the ellipsoid to search for.
+* @param[out] alternateName The alternate name of the ellipsoid if found.
+*
+* @return true if a match is found, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    WKTEllipsoidLookup (Utf8CP name, Utf8StringR alternateName) const
@@ -1025,6 +1160,14 @@ bool    WKTEllipsoidLookup (Utf8CP name, Utf8StringR alternateName) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Searches in the list of geodetic datum aliases for a match to the given name. 
+* If a match is found, the alternate name is returned.
+*
+* @param[in] name The name of the geodetic datum to search for.
+* @param[out] alternateName The alternate name of the geodetic name if found.
+*
+* @return true if a match is found, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WKTDatumLookup (Utf8CP name, Utf8StringR alternateName) const
@@ -1126,6 +1269,26 @@ class TransformParams
     };
 
 /*---------------------------------------------------------------------------------**//**
+* This method searches through the predefined list of geodetic datum to find
+* one that has an equivalent transformation to the one defined by the given 
+* parameters. If a match is found, the name of the datum is returned. The rotation
+* convention must be of the positional vector(EPSG:9606) type (i.e. the rotation signs are 
+* reversed from the coordinate frame rotation(EPSG:9607) convention used by CSMAP).
+* During the process of searching for a match a cache of known trasnformation 
+* parameters is built to speed up future searches.
+*
+* @param[out] paramDatumName The name of the matching datum, if found.
+* @param[in] ellipsoidName The name of the ellipsoid associated with the datum.
+* @param[in] deltaX The X translation parameter of the transformation.
+* @param[in] deltaY The Y translation parameter of the transformation.
+* @param[in] deltaZ The Z translation parameter of the transformation.
+* @param[in] rotX The X rotation parameter of the transformation in arcseconds.
+* @param[in] rotY The Y rotation parameter of the transformation in arcseconds.
+* @param[in] rotZ The Z rotation parameter of the transformation in arcseconds.
+* @param[in] scalePPM The scale parameter of the transformation in parts per million.
+*
+* @return true if a matching datum is found, false otherwise.
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FindDatumFromTransformationParams(Utf8String& paramDatumName, const Utf8String& ellipsoidName, double deltaX, double deltaY, double deltaZ, double rotX, double rotY, double rotZ, double scalePPM) const
@@ -1251,13 +1414,14 @@ bool FindDatumFromTransformationParams(Utf8String& paramDatumName, const Utf8Str
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method converts the projection method name as
-*   extracted from the WKT to the CSMAP projection code. Some projection code have
-*   no WKT equivalent and some WKT projection names have no equivalent projection code.
+*   This private method converts the projection method name as
+*   extracted from the WKT or other text format parsed to the CSMAP projection code. 
+*   Some projection code have no WKT equivalent and some WKT projection names have
+*   no equivalent projection code.
 *
-*   @param name IN The projection name as extracted from the WKT.
+*   @param [in] name The projection name as extracted from the WKT.
 *
-*   @return The projection code or a negative value if projection is not supported.
+*   @return The projection code or BaseGCS::pcvInvalid if projection is not supported.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1636,11 +1800,11 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method converts the projection Oracle code
-*   to the CSMAP projection code. Not all projections are supported here but those that are
+*   This method converts the projection Oracle code to the CSMAP projection code. 
+*   Not all projections are supported here but those that are
 *   represent the vast majority of coordinate systems supported.
 *
-*   @param OracleEPSGID The EPSG ID as obtained from Oracle styles WKT
+*    @param [out] OracleEPSGID The EPSG ID as obtained from Oracle style WKT
 *
 *   @return The projection code or BaseGCS::pcvInvalid if projection is not supported.
 *
@@ -1681,20 +1845,20 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromOracleEPSGID(Utf8StringR Oracl
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method sets the projection code of the GCS.
+*   This method sets the projection code of the CRS.
 *   Specifically for the Lambert Conformal Conic projection since the actual
 *   variant may depend on the list of provided parameters the most supporting version
 *   is selected (Michigan variation which supports an additional scaling just like
 *   other popular software) if the promoteLCC parameter is true. After all parameters
-*   have been set if is possible to simplify the projection if desired according to set
-*   parameters.
+*   have been set if is possible to simplify the projection according to set
+*   parameters will be done.
 *
-*   @param projectionCode IN The projection code. If Lambert2SP is requested it will
+*   @param [in] projectionCode The projection code. If Lambert2SP is requested it will
      be promoted to the Michigan variation if the promoteLCC parameter is true.
 *
-*   @param promoteLCC IN If true a Lambert 2SP will be promoted to the Michigan variation.
+*   @param [in] promoteLCC If true a Lambert 2SP will be promoted to the Michigan variation.
 *
-*   @param coordinateSystem IN/OUT The coordinate system to set the projection code.
+*   @param [in,out] coordinateSystem The coordinate system to set the projection code.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1713,21 +1877,19 @@ void SetProjectionCode(BaseGCS::ProjectionCodeValue projectionCode, bool promote
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method sets the parameter value based on the
-*   parameter name and projection code used by the coordinate system.
+*   This method sets the parameter value based on the parameter name and projection
+*   code used by the coordinate reference system.
 *
-*   @param parameterName IN The parameter name as extracted from WKT.
-*
-*   @param parameterStringValue IN The parameter string value as in the WKT. This value
+*   @param [in] parameterName The parameter name as extracted from WKT or other parsed text format.
+*   @param [in] parameterStringValue The parameter string value as in the text format. This value
 *   can be used when parameter calls for a string value instead of a numeric value (rarely)
-*
-*   @param parameterValue IN The value of the parameter.
-*
-*   @param IN/OUT The coordinate system to set the parameter value of. The ProjectionCode
+*   @param [in] parameterValue The value of the parameter.
+*   @param [in] conversionToDegree The conversion factor to convert the parameter value to degrees if needed.
+*   @param [in,out] coordinateSystem The coordinate system to set the parameter value of. The ProjectionCode
 *   must already have been properly set as it is used in the interpretation of the
 *   parameter.
 *
-*   @return GeoCoordParse_Success if successful and any other value in case of error.
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2149,6 +2311,8 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   See GetDatumNameFromNameAliasOrTransform() for details.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetDatumNameFromNameOrAlias(Utf8StringR finalDatumName, Utf8StringCR name, Utf8StringCR authorityID) const
@@ -2158,6 +2322,26 @@ GeoCoordParseStatus GetDatumNameFromNameOrAlias(Utf8StringR finalDatumName, Utf8
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   This method attempts to find a datum name from the provided name or alias.
+*   If the datum name is not found and transformation parameters are provided it will attempt
+*   to find a datum name from the transformation parameters.
+*
+*   @param [out] finalDatumName The final datum name found or empty if not found.
+*   @param [in] name The datum name or alias to search for.
+*   @param [in] authorityID The authority ID to search for if the name is not found.
+*   @param [in] ellipsoidKnownAndPresent True if the ellipsoid is known and present in the coordinate system.
+*   @param [in,out] ellipsoidName The ellipsoid name if known or empty if not known.
+*   @param [in] transfoParamPresent True if transformation parameters are present.
+*   @param [in] deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM The 7 parameter transformation 
+*              parameter values that can be used to located a known horizontal datum.
+*              the deltas are in meters, the rotation in arcseconds and the scale
+*              in the difference from 1.0 in part per million. The rotation
+*              convention must be of the positional vector(EPSG:9606) type (i.e. the rotation signs are 
+*              reversed from the coordinate frame rotation(EPSG:9607) convention used by CSMAP).See EPSG operation
+*              EPSG:9606 for details.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetDatumNameFromNameAliasOrTransform(Utf8StringR finalDatumName, Utf8StringCR name, Utf8StringCR authorityID, bool ellipsoidKnownAndPresent, Utf8String& ellipsoidName, bool transfoParamPresent, double deltaX, double deltaY, double deltaZ, double rotX, double rotY, double rotZ, double scalePPM) const
@@ -2487,11 +2671,8 @@ GeoCoordParseStatus GetDatumNameFromNameAliasOrTransform(Utf8StringR finalDatumN
 
 /*=================================================================================**//**
 *
-* OSGEO XML Parser class. Parses the XML to a valid BaseGCS.
-*
-* NOTE: Error processing is still minimal. The functions will return the generic error ERROR
-* most if not all of the times. Error processing will be completed later on in the
-* development process
+* OSGEO XML Parser class. Parses the XML to a valid BaseGCS. The parser parses OSGEO
+* style XML used by some Autodesk products. 
 *
 +===============+===============+===============+===============+===============+======*/
 class OSGEOXMLParser: public SRSGeneralParser
@@ -2516,6 +2697,13 @@ virtual ~OSGEOXMLParser()
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   This method extracts the CRS definition from the provided XML.
+*
+*   @param [out] baseGCS The BaseGCS to populate with the parsed information.
+*   @param [in] source The XML source to parse.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP source) const
@@ -2529,7 +2717,7 @@ GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP source) const
 
     // The version of CreateAndReadFromString() taking Utf8 is flawed on LINUX. If we use the Utf8CP version it works.
     Utf8String tempXML(source);
-    // Verify that the XML file header is stripped
+
     tempXML.Trim();
     if (tempXML.substr(0,2) == "<?")
         {
@@ -2598,6 +2786,16 @@ GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP source) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Extracts the alias from an alias XML node. The alias is returned in the 
+*   form of "namespace:id" or "EPSG:id" if the namespace is EPSG Code.
+*
+*   @param [out] alias The alias string in the form of "namespace:id" or "EPSG:id" if the namespace is EPSG Code.
+*   @param [out] type The type of the alias (Ellipsoid, Datum, CoordinateSystem).
+*   @param [out] referenced The referenced object ID of the alias.
+*   @param [in] aliasNode The alias XML node to extract the alias from.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetAlias(Utf8String& alias, Utf8String& type, Utf8String& referenced, BePugiXmlNode aliasNode) const
@@ -2629,10 +2827,13 @@ GeoCoordParseStatus GetAlias(Utf8String& alias, Utf8String& type, Utf8String& re
 
 /*---------------------------------------------------------------------------------**//**
 *   Returns the first subnode of given name of parent node. If there are no subnode of
-*   of this name then nullptr is returned.
-*   @param parent parent node to obtain a child from.
-*   @param nodeName the name of the first child of parent to obtain.
+*   this name then nullptr is returned.
+*
+*   @param [in] parent parent node to obtain a child from.
+*   @param [in] nodeName the name of the first child of parent to obtain.
+*
 *   @return the child or nullptr if not subnode of provided name is found.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BePugiXmlNode GetNode(BePugiXmlNode parent, Utf8CP nodeName) const
@@ -2650,9 +2851,11 @@ BePugiXmlNode GetNode(BePugiXmlNode parent, Utf8CP nodeName) const
 
 /*---------------------------------------------------------------------------------**//**
 *   Returns the content of the first child of parent node.
-*   @param content OUT the Utf8String that received the content of the node.
-*   @param parent IN the parent node to extract the content of the child from.
-*   @param nodeName IN The name of the child node to obtain the content of.
+*
+*   @param [out] content the Utf8String that received the content of the node.
+*   @param [in] parent the parent node to extract the content of the child from.
+*   @param [in] nodeName The name of the child node to obtain the content of.
+*
 *   @return GeoCoordParse_Success if obtention of the content of the child was successful an error
 *           otherwise.
 *   @bsimethod
@@ -2671,6 +2874,13 @@ GeoCoordParseStatus GetNodeContent(Utf8String& content, BePugiXmlNode parent, Ut
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Sets the projection method based on the CRS XML node.
+*
+*   @param [in,out] baseGCS The BaseGCS to set the projection method on.
+*   @param [in] gcsNode The CRS XML node to extract the projection method from.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*  
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetProjectionMethod(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
@@ -2691,7 +2901,7 @@ GeoCoordParseStatus GetProjectionMethod(BaseGCSR baseGCS, BePugiXmlNode gcsNode)
     if (GeoCoordParse_Success != GetNodeContent(projectionMethodId, projectionNode, "OperationMethodId"))
         return GeoCoordParse_BadProjectionMethod;
 
-    BaseGCS::ProjectionCodeValue projectionCode = GetProjectionCodeFromParseName (projectionMethodId);
+    BaseGCS::ProjectionCodeValue projectionCode = GetProjectionCodeFromParseName(projectionMethodId);
 
     // We tried everything but could not determine the projection method.
     if (BaseGCS::pcvInvalid == projectionCode)
@@ -2703,6 +2913,15 @@ GeoCoordParseStatus GetProjectionMethod(BaseGCSR baseGCS, BePugiXmlNode gcsNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Obtains from the parameter XML node the parameter name and value. 
+*   The value is returned as a double and as a string.
+*
+*   @param [in] parameterValueNode The parameter XML node to extract the parameter name and value from.
+*   @param [out] parameterName The parameter name extracted from the XML node.
+*   @param [out] numValue The parameter value extracted from the XML node as a double.
+*   @param [out] stringValue The parameter value extracted from the XML node as a string.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetParameter(BePugiXmlNode parameterValueNode, Utf8String& parameterName, double& numValue, Utf8String& stringValue) const
@@ -2728,6 +2947,13 @@ GeoCoordParseStatus GetParameter(BePugiXmlNode parameterValueNode, Utf8String& p
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Obtains all projection parameters from the CRS XML node and sets them on the BaseGCS.
+*
+*   @param [in,out] baseGCS The BaseGCS to set the projection parameters on.
+*   @param [in] gcsNode The CRS XML node to extract the projection parameters from.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetAllParameters(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
@@ -2773,6 +2999,14 @@ GeoCoordParseStatus GetAllParameters(BaseGCSR baseGCS, BePugiXmlNode gcsNode) co
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Obtains the projection method and all parameters from the CRS XML node
+*   and sets it on the BaseGCS.
+*
+*   @param [in,out] baseGCS The BaseGCS to set the projection method on.
+*   @param [in] gcsNode The CRS XML node to extract the projection method from.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetProjection(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
@@ -2792,6 +3026,13 @@ GeoCoordParseStatus GetProjection(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Obtains the quadrant information from the CRS XML node and sets it on the BaseGCS.
+*
+*   @param [in,out] baseGCS The BaseGCS to set the quadrant information on.
+*   @param [in] gcsNode The CRS XML node to extract the quadrant information from.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetQuadrant(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
@@ -2833,6 +3074,14 @@ GeoCoordParseStatus GetQuadrant(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+*   Obtains the domain of validity (geographic bounding box) from the 
+*   CRS XML node and sets it on the BaseGCS.
+*
+*   @param [in,out] baseGCS The BaseGCS to set the domain of validity on.
+*   @param [in] gcsNode The CRS XML node to extract the domain of validity from.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BePugiXmlNode gcsNode) const
@@ -2911,13 +3160,28 @@ GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BePugiXmlNode gcsNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* gcsNode can contain the datum transformations for custom datums.
+*   Parses the ellipsoid information from the XML node and tries to locate
+*   the corresponding ellipsoid in the list of predefined ellipsoids. The match is 
+*   attempted first by name and then by parameters. If no match is found then a custom
+*   ellipsoid is created and returned.
+*
+*   @param [out] customEllipsoid Reference to a pointer to ellipsoid that will receive 
+*     the custom ellipsoid created if no match is found otherwise. It will be set to nullptr 
+*     if a match is found.
+*   @param [out] ellipsoidName The name of the ellipsoid found or created.
+*   @param [in] ellipsoidNode The XML node containing the ellipsoid information.
+*   @param [in] ellipsoidAlias The alias of the ellipsoid, if any.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& ellipsoidName, BePugiXmlNode ellipsoidNode, Utf8String ellipsoidAlias) const
     {
     if (nullptr == ellipsoidNode)
         return GeoCoordParse_NoEllipsoid;
+
+    customEllipsoid = nullptr;
 
     Utf8String initEllipsoidName;
     if (GeoCoordParse_Success != GetNodeContent(initEllipsoidName, ellipsoidNode, "Name"))
@@ -2978,29 +3242,12 @@ GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& elli
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetTransformParameter(Utf8String&nodeName, Utf8String& nodeValue, Utf8String& additionalValue, BePugiXmlNode searchNode) const
-    {
-    if (nullptr == searchNode)
-        return GeoCoordParse_Error;
-
-    if (GeoCoordParse_Success != GetNodeContent(nodeName, searchNode, "OperationParameterId"))
-        return GeoCoordParse_BadTransformParam;
-
-    BePugiXmlNode valueNode;
-    if (nullptr == (valueNode = GetNode(searchNode, "Value")))
-        return GeoCoordParse_BadTransformParam;
-
-    if (BEPUGIXML_Success != valueNode->GetContent(nodeValue))
-        return GeoCoordParse_BadTransformParam;
-
-    valueNode->GetAttributeStringValue(additionalValue, "uom");
-
-    return GeoCoordParse_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
+*   Converts a linear parameter value to meters based on the provided units of measure.
+*
+*   @param [in] parameterValue The linear parameter value to convert.
+*   @param [in] unitsOfMeasure The units of measure of the parameter value (e.g., "meter", "foot").
+*   @return The parameter value converted to meters.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 double GetLinearAsMeter(double parameterValue, const Utf8String& unitsOfMeasure) const
@@ -3009,7 +3256,15 @@ double GetLinearAsMeter(double parameterValue, const Utf8String& unitsOfMeasure)
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod
+* Converts an angular parameter value to arc seconds based on the provided units of measure.
+*
+* @param [in] parameterValue The angular parameter value to convert.
+* @param [in] unitsOfMeasure The units of measure of the parameter value. We only 
+*       support degree for this method.
+*
+* @return The parameter value converted to arc seconds. If the units of measure are not supported, returns 0.0.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 double GetAngularAsArcSecond(double parameterValue, const Utf8String& unitsOfMeasure) const
     {
@@ -3020,12 +3275,29 @@ double GetAngularAsArcSecond(double parameterValue, const Utf8String& unitsOfMea
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Extracts and returns the geodetic transform parameters (translation, rotation, scale, 
+* and translation point) from the provided XML node.
+*
+* @param [out] delta The translation vector (X, Y, Z) in meters.
+* @param [out] rotation The rotation vector in arcseconds.
+* @param [out] scale The scale difference in parts per million (PPM).
+* @param [out] translation The translation point where the transformation is applied in meters. 
+*       This is only used for Molodenski-Badekas transformations.
+* @param [in] transformNode The XML node containing the geodetic transform parameters.
+*
+* @return GeoCoordParse_Success if successful, or an error code if the extraction fails.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetGeocentricTransformParameters(DPoint3d& delta, DPoint3d& rotation, double& scale, DPoint3d& translation, BePugiXmlNode transformNode) const
     {
     if (nullptr == transformNode)
         return GeoCoordParse_Error;
+
+    delta = {0.0, 0.0, 0.0};
+    rotation = {0.0, 0.0, 0.0};
+    scale = 0.0;
+    translation = {0.0, 0.0, 0.0};
 
     BePugiXmlNode searchNode;
     if (nullptr == (searchNode = transformNode->GetFirstChild()))
@@ -3079,6 +3351,15 @@ GeoCoordParseStatus GetGeocentricTransformParameters(DPoint3d& delta, DPoint3d& 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Adds the grid files associated with the specified geodetic transform in the customTransform
+* provided.
+*
+*   @param [in,out] customTransform The geodetic transform to which the grid files will be added.
+*   @param [in] format The grid file format.
+*   @param [in] methodNode The XML node containing the grid file definitions.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFormat format, BePugiXmlNode methodNode) const
@@ -3110,23 +3391,23 @@ GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFo
                 valueNode->GetAttributeStringValue(direction, "direction");
 
                 GridFileDirection gridDirection = GridFileDirection::DIRECTION_NONE;
-                if (direction == "" || direction == "forward")
+                if (direction == "" || 0 == BeStringUtilities::Stricmp(direction.c_str(), "forward"))
                     gridDirection = GridFileDirection::DIRECTION_DIRECT;
-                else if (direction == "inverse")
+                else if (0 == BeStringUtilities::Stricmp(direction.c_str(), "inverse"))
                     gridDirection = GridFileDirection::DIRECTION_INVERSE;
 
-                if (paramName == "Latitude and longitude difference file")
+                if (0 == BeStringUtilities::Stricmp(paramName.c_str(), "Latitude and longitude difference file"))
                     {
                     GridFileDefinition gridFileDef(parameterValue.c_str(), format, gridDirection);
                     customTransform->AddGridFileDefinition(gridFileDef);
                     }
-                else if (format == GridFileFormat::FORMAT_NADCON && paramName == "Latitude difference file") // For NADCON we only process latitude diff file
+                else if (format == GridFileFormat::FORMAT_NADCON && 0 == BeStringUtilities::Stricmp(paramName.c_str(), "Latitude difference file")) // For NADCON we only process latitude diff file
                     {
                     parameterValue.replace(parameterValue.find(".las"), 4, ".l*s");
                     GridFileDefinition gridFileDef(parameterValue.c_str(), format, gridDirection);
                     customTransform->AddGridFileDefinition(gridFileDef);
                     }
-                else if (format == GridFileFormat::FORMAT_FRENCH && paramName == "Geocentric translation file")
+                else if (format == GridFileFormat::FORMAT_FRENCH && 0 == BeStringUtilities::Stricmp(paramName.c_str(), "Geocentric translation file"))
                     {
                     GridFileDefinition gridFileDef(parameterValue.c_str(), format, gridDirection);
                     customTransform->AddGridFileDefinition(gridFileDef);
@@ -3142,7 +3423,16 @@ GeoCoordParseStatus GetGridFiles(GeodeticTransformP& customTransform, GridFileFo
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod
+* Extracts the geodetic transform information from the provided XML node and creates 
+* a GeodeticTransform object. The object must be destroyed or associated to another
+* object that will manage its lifetime.
+*
+* @param [out] customTransform The GeodeticTransform object created based on the XML node.
+* @param [in] transformNode The XML node containing the geodetic transform information.
+*
+* @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetTransform(GeodeticTransformP& customTransform, BePugiXmlNode transformNode) const
     {
@@ -3244,7 +3534,17 @@ GeoCoordParseStatus GetTransform(GeodeticTransformP& customTransform, BePugiXmlN
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod
+* Locates the named geodetic transformation and returns the associated GeodeticTransform 
+* object. The object must be destroyed or associated to another
+* object that will manage its lifetime.
+*
+* @param [out] customTransform The GeodeticTransform object created based on the XML node.
+* @param [in] gcsNode The XML node containing the geodetic transform information.
+* @param [in] transformName The name of the geodetic transformation to locate.
+*
+* @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetTransformByName(GeodeticTransformP& customTransform, BePugiXmlNode gcsNode, Utf8String& transformName) const
     {
@@ -3274,7 +3574,16 @@ GeoCoordParseStatus GetTransformByName(GeodeticTransformP& customTransform, BePu
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod
+* Parses the geodetic transformation path and returns the associated GeodeticTransformPath object.
+* The object must be destroyed or associated to another object that will manage its lifetime.
+*
+* @param [out] customPath The GeodeticTransformPath object created based on the XML node.
+* @param [in] rootNode The XML node containing the geodetic transformation path information.
+* @param [in] datumName The name of the geodetic datum associated with the transformation path.
+*
+* @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BePugiXmlNode rootNode, Utf8StringCR datumName) const
     {
@@ -3370,12 +3679,34 @@ GeoCoordParseStatus ParseGeodeticPath(GeodeticTransformPathP& customPath, BePugi
     }
 
 /*---------------------------------------------------------------------------------**//**
-* gcsNode can contain the datum transformations for custom datums.
+*   Parses the geodetic datum and associated ellipsoid information from the XML node and tries to locate
+*   the corresponding datum in the list of predefined datums. The match is 
+*   attempted first by name. If no match is found then a custom geodetic datum is created and returned. 
+*   The ellipsoid information is also parsed and the corresponding ellipsoid is located 
+*   in the list of predefined ellipsoids. If no match is found then a custom ellipsoid is created and 
+*   associated to the newly created custom geodetic datum.
+*   To perform the operation the root node and the CRS node must also be provided.
+*
+*   @param [out] customDatum Reference to a pointer to geodetic datum that will receive 
+*     the custom geodetic datum created if no match is found otherwise. It will be set to nullptr 
+*     if a match is found.
+*   @param [out] datumName The name of the geodetic datum found or created.
+*   @param [in] datumAlias The alias of the geodetic datum, if any.
+*   @param [in] datumNode The XML node containing the geodetic datum information.
+*   @param [in] ellipsoidNode The XML node containing the ellipsoid information.
+*   @param [in] ellipsoidAlias The alias of the ellipsoid, if any.
+*   @param [in] gcsNode The XML node containing the GCS information.
+*   @param [in] rootNode The XML node containing the root information.
+*
+*   @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8StringCR datumAlias, BePugiXmlNode datumNode, BePugiXmlNode ellipsoidNode, Utf8StringCR ellipsoidAlias, BePugiXmlNode gcsNode, BePugiXmlNode rootNode) const
     {
     GeoCoordParseStatus status = GeoCoordParse_Success;
+
+    customDatum = nullptr;
 
     EllipsoidP customEllipsoid = nullptr;
 
@@ -3476,7 +3807,23 @@ GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8S
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod
+* Sets the CRS from the information located in the provided XML nodes. 
+* The CRS is set in the provided BaseGCSR object. To perform the operation the root node,
+* datum node, ellipsoid node, and the CRS node must be provided.
+*
+* @param [in,out] baseGCS The BaseGCSR object that will receive the CRS.
+* @param [in] gcsNode The XML node containing the GCS information.
+* @param [in] gcsGeographic True if the GCS is geographic, false if it is projected.
+* @param [in] gcsAlias The alias of the GCS, if any.
+* @param [in] datumNode The XML node containing the geodetic datum information.
+* @param [in] datumAlias The alias of the geodetic datum, if any.
+* @param [in] ellipsoidNode The XML node containing the ellipsoid information.
+* @param [in] ellipsoidAlias The alias of the ellipsoid, if any.
+* @param [in] rootNode The XML node containing the root information.
+*
+* @return GeoCoordParse_Success if successful or and any other value in case of error.
+*
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BePugiXmlNode gcsNode, bool gcsGeographic, Utf8StringCR gcsAlias, BePugiXmlNode datumNode, Utf8StringCR datumAlias, BePugiXmlNode ellipsoidNode, Utf8StringCR ellipsoidAlias, BePugiXmlNode rootNode) const
     {
@@ -3696,11 +4043,7 @@ static const Utf8String RIGHTDELIMITER = "]";
 
 /*=================================================================================**//**
 *
-* SRS WKT Parser class: Can be used as an alternate WKT parser to CSMAP.
-*
-* NOTE: Error processing is still minimal. The functions will return the generic error ERROR
-* most if not all of the times. Error processing will be completed later on in the
-* development process
+* Base class implementing all functionality common to WKT and WKT2 parsers.
 *
 +===============+===============+===============+===============+===============+======*/
 class SRSGeneralWKTParser: public SRSGeneralParser
@@ -3722,27 +4065,30 @@ public:
 protected:
 
 /*---------------------------------------------------------------------------------**//**
-*   @description This indicates if the string starts with the indicated keyword (case insensitive).
+*   This indicates if the string starts with the indicated keyword (case insensitive).
 *
-*   @param wkt IN The WKT to check if the next non-whitespace starts with given keyword.
+*   @param [in] wkt The WKT to check if the next non-whitespace starts with given keyword.
 *
-*   @return true if the sring starts with given keyword.
+*   @return true if the string starts with given keyword.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StartsWithKeyword(const Utf8String& wkt, const Utf8String& keyword) const
     {
-    Utf8String temp(wkt);
-    temp.Trim();
+    size_t pos = wkt.find_first_not_of(" \f\n\r\t\v");
+    if (pos != Utf8String::npos)
+        {
+        return ((wkt.length() - pos >= keyword.length()) && (0 == BeStringUtilities::Strnicmp(wkt.substr(pos, keyword.length()).c_str(), keyword.c_str(), keyword.length())));
+        }
 
-    return ((temp.length() >= keyword.length()) && (0 == BeStringUtilities::Strnicmp(temp.substr(0, keyword.length()).c_str(), keyword.c_str(), keyword.size())));
+    return false;
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method removes the keyword indcated from the start of given string.
-*                All white characters before or after keyword are removed.
+*   This method removes the keyword indcated from the start of given string.
+*   All white characters before or after keyword are removed.
 *
-*   @param wkt IN The WKT portion that contains the keyword to remove.
+*   @param [in,out] wkt The WKT portion that contains the keyword to remove.
 *
 *   @return true if the keyword indicated was present and sucessfully removed.
 *
@@ -3761,12 +4107,12 @@ bool StripKeyword(Utf8String& wkt, const Utf8String& keyword) const
     }    
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method extracts from the provided stream the double
+*   This method extracts from the provided stream the double
 *   The first non white character must be the number to extract.
 *
-*   @param wkt IN The WKT portion that contains the number to extract.
+*   @param [in,out] wkt The WKT portion that contains the number to extract aqnd remove.
 *
-*   @return The number
+*   @return The number.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3803,10 +4149,10 @@ double GetDouble (Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description This method extracts from the provided stream the integer
+*   This method extracts from the provided stream the integer
 *   The first non white character must be the number to extract.
 *
-*   @param wkt IN The WKT portion that contains the number to extract.
+*   @param [in,out] wkt The WKT portion that contains the number to extract and remove.
 *
 *   @return The number
 *
@@ -3845,16 +4191,15 @@ long GetInteger (Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description This method extracts from the provided stream the double
-*   The first non white character must be the number ot extract.
+*   This method extracts from the provided stream the double
+*   The first non white character must be the number to extract.
 *
-*   @param wkt IN The WKT portion that contains the number to extract.
+*   @param [in,out] wkt The WKT portion that contains the number to extract and remove.
+*   @param [out] stringValue A reference to a string that will receive the string value
+*       prior to conversion to a floating-point value. In rare dialects the parameter
+*       value is in text form for obscure parameter types such as Zone or Hemisphere.
 *
-*   @param stringValue OUT A reference to a string that will receive the string value
-*   prior to conversion to a floating-point value. In rare dialects the parameter
-*   value is in text form for obscure parameter types such as Zone or Hemisphere.
-*
-*   @return The number
+*   @return The number or 0.0 if the number could not be located. The stringValue will be empty in this case.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3862,7 +4207,6 @@ double GetDoubleAndString (Utf8StringR wkt, Utf8StringR stringValue) const
     {
     wkt.Trim();
 
-    // Obtain the next double quote location
     size_t index1 = wkt.find_first_of (",");
     size_t index2 = wkt.find_first_of ("]");
 
@@ -3892,13 +4236,13 @@ double GetDoubleAndString (Utf8StringR wkt, Utf8StringR stringValue) const
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method extracts from the provided stream the name
+*   This method extracts from the provided stream the name
 *   which must be enclosed within double-quotes. The first non white character must be
 *   the opening double quote. The stream is returned with name component removed
 *
-*   @param wkt IN The WKT portion that contains the name to extract.
+*   @param [in,out] wkt The WKT portion that contains the name to extract and remove.
 *
-*   @return The name
+*   @return The name or an empty string if the name could not be located.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3928,14 +4272,13 @@ Utf8String     GetName (Utf8StringR wkt) const
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method extracts from the provided stream the authority ID
+*   This method extracts from the provided stream the authority ID
 *   The complete WKT authority section must be provided including the AUTHORITY[ ] or ID[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the AUTHORITY|ID section
-*   removed.
+*   The wkt text stream is returned with the AUTHORITY|ID section removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the authority to extract.
+*   @param [in,out] wkt The WKT portion that contains the authority to extract and remove.
 *
-*   @return The authority identifier
+*   @return The authority identifier or an empty string if the authority could not be located.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4000,19 +4343,15 @@ Utf8String GetAuthority (Utf8StringR wkt) const
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method extracts from the provided stream the parameter
+*   This method extracts from the provided stream the parameter.
 *   The complete WKT parameter section must be provided including the PARAMETER[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the PARAMETER section
-*   removed.
+*   The wkt text stream is returned with the PARAMETER section removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the parameter to extract.
-*
-*   @param parameterName OUT reference to a string that receives the parameter name.
-*
-*   @param parameterValue OUT Pointer to double that receives the floating point value of
-*   parameter.
-*
-*   @param parameterStringValue OUT Reference to a string that receives the string value
+*   @param [in,out] wkt The WKT portion that contains the parameter to extract and remove.
+*   @param [out] parameterName reference to a string that receives the parameter name.
+*   @param [out] parameterValue Pointer to double that receives the floating point value of
+*       parameter.
+*   @param [out] parameterStringValue Reference to a string that receives the string value
 *       of the parameter. Usually the parameter value is always numeric but some
 *       dialect use strings values to specify Hemisphere or Zones.
 *
@@ -4074,27 +4413,21 @@ GeoCoordParseStatus GetParameter (Utf8StringR wkt, Utf8StringR parameterName, do
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method performs the final step of loading the
-*                definition of a projected CRS. This post-step is identical across multiple
-*                parsers.
+*   This method performs the final step of loading the definition of a projected CRS.
+*   This post-step is identical across multiple parsers.
 *
-*   @param baseGCS IN|OUT The BaseGCS to which the projected finalisation step is performed.
-*
-*   @param name IN The name that will be assigned as keyname to the BaseGCS
-*
-*   @param authorityID IN the authority ID if there is one or an pempty string. This authority
+*   @param [in,out] baseGCS The BaseGCS to which the projected finalisation step is performed.
+*   @param [in] name The name that will be assigned as keyname to the BaseGCS
+*   @param [in] authorityID the authority ID if there is one or an empty string. This authority
 *                      is used in some special cases to initialize according to
 *                      know EPSG codes.
-*
-*   @param geocsPresent IN indicates if the parsed object contained a Geocs definition. If not then
+*   @param [in] geocsPresent indicates if the parsed object contained a Geocs definition. If not then
 *                       we must entirely rely on the name or authorityID to finalize the definition
-*                       since the definition is incomplate.
-*
-*   @param geocsValid IN geocsPresent is true then if this parameter is false if a geocs definition was given 
+*                       since the definition is incomplete.
+*   @param [in] geocsValid Given geocsPresent is true then if this parameter is false if a geocs definition was given 
 *                        but is considered invalid. If it is not valid then we must entirely rely on the name
-*                        or authorityID to finalize the definition since the definition is incomplate.
-*
-*   @param parserName IN name of the parser to set the source of the BaseGCS.
+*                        or authorityID to finalize the definition since the definition is incomplete.
+*   @param [in] parserName Name of the parser to set the source of the BaseGCS.
 *
 *   @return GeoCoordParse_Success or error value
 *
@@ -4134,7 +4467,7 @@ GeoCoordParseStatus PostGetProjected(BaseGCSR baseGCS, Utf8StringCR name, Utf8St
             if (epsgNumber > 0)
                 {
                 if (SUCCESS != baseGCS.InitFromEPSGCode(NULL, NULL, epsgNumber))
-                    return GeoCoordParse_InvalidDefinition;
+                    return GeoCoordParse_UnknownDatum;
 
                 // We invalidate absence of geocs(if it was invalid) since we obtained it from EPSG code.
                 geocsPresent = true; 
@@ -4171,18 +4504,14 @@ GeoCoordParseStatus PostGetProjected(BaseGCSR baseGCS, Utf8StringCR name, Utf8St
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description This method performs the Post step after the Geographic
-*                 definition portion of a non-projected CRS has been imported.
+*   This method performs the final step after the Geographic definition portion of a
+*   non-projected CRS has been imported.
 *
-*   @param geographicName IN The name of the Geographic CRS. It will also be assigned to the description property.
-*
-*   @param geographicAuthorityID IN if non-empty this identifier can be used to obtain an alternate naming
+*   @param [in] geographicName The name of the Geographic CRS. It will also be assigned to the description property.
+*   @param [in] geographicAuthorityID if non-empty this identifier can be used to obtain an alternate naming
 *                   such as EPSG number to set the final geographic CRS to a predefined entry.
-*
-*   @param conversionToDegree IN the conversion to degree factor if units are not degrees.
-*
-*
-*   @param coordinateSystem IN|OUT The coordinate system that gets filled with data.
+*   @param [in] conversionToDegree the conversion to degree factor if units are not degrees.
+*   @param [in,out] coordinateSystem The coordinate system that gets filled with data.
 *
 *   @return GeoCoordParse_Success if successful or another value otherwise.
 *
@@ -4228,38 +4557,34 @@ GeoCoordParseStatus PostStepGeographicToCoordSys(Utf8String geographicName, Utf8
     }    
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method determines the horizontal datum and sets it in the provided 
-*                coordinate system.
+*   This method determines the horizontal datum and sets it in the provided 
+*   coordinate system according to the information provided. The
+*   horizontal datum is determined based on the name, authorityID, ellipsoid and 
+*   transformation parameters.
 *
-*   @param name IN The name of the horizontal datum as extracted.
-*
-*   @param authorityID IN The optional quthority ID if there is one or an empty string.
-*
-*   @param ellipsoidPresentAndKnown IN Is true if the ellipsoid definition was present and an equivalent was found in
+*   @param [in] name The name of the horizontal datum as extracted.
+*   @param [in] authorityID The optional authority ID if there is one or an empty string.
+*   @param [in] ellipsoidPresentAndKnown Is true if the ellipsoid definition was present and an equivalent was found in
 *                                      the list of predefined ellipsoids. In that case the ellipsoid
 *                                      will have been set in the provided coordinateSystem and can be
 *                                      extracted to help locating a known horizontal datum based on the other 
 *                                      information provided. 
-*
-*   @param ellipsoidPresent IN Is true if the ellipsoid definition was present. It does not indicate that 
+*   @param [in] ellipsoidPresent Is true if the ellipsoid definition was present. It does not indicate that 
 *                           an equivalent ellipsoid was found in the list of known ellipsoids.
-*
-*   @param transformPresent IN Indicates that the datum transformation to WGS84 was present and 
+*   @param [in] transformPresent Indicates that the datum transformation to WGS84 was present and 
 *                           extracted. The following 7 parameters are ignored if false. If true
 *                           then a match in the known horizaontal datum with similar parameters 
 *                           will be located if possible.
-*
-*   @param deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM The 7 parameter transformation 
-*                          parameter values that can be used to located an known horizontal datum.
+*   @param [in] deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM The 7 parameter transformation 
+*                          parameter values that can be used to located a known horizontal datum.
 *                          the deltas are in meters, the rotation in arcseconds and the scale
 *                          in the difference from 1.0 in part per million. See EPSG operation
 *                          EPSG:9606 for details.
-*
-*   @param coordinateSystem IN | OUT The coordinate system to determine the horizontal datum from. At this
+*   @param [in,out] coordinateSystem The coordinate system to determine the horizontal datum from. At this
 *                           stage it is assumed that the projection portion is unset. If
 *                           ellipsoidPresentAndKnown is true then the coordinate system should have the ellipsoid set
 *                           appropriately and the information relative to this ellipsoid can be
-*                           extracted toi help determine the horizontal datum.
+*                           extracted to help determine the geodetic datum.
 *
 *
 *   IMPORTANT NOTE: At the moment we only support datums for which the definition
@@ -4334,17 +4659,16 @@ GeoCoordParseStatus PostStepHorizontalDatumToCoordSysWithTransform(Utf8String na
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method creates the vertical datum from information provided.
+*   This method creates the vertical datum from information provided.
 *
-*   @param csName IN The extracted name of the vertical crs.
+*   @param [in] csName The extracted name of the vertical crs.
+*   @param [in] datumName the name of the vertical datum
+*   @param [in] WKTDatumCode The WKT code associated with csName.
+*   @param [out] vertDatumLegacyCode Returns the legacy vertical datum code.
 *
-*   @param datumName IN the name of the vertical datum
-*
-*   @param WKTDatumCode  IN The WKT code associated with csName.
-*
-*   @param vertDatumLegacyCode OUT Returns the legacy vertical datum code.
-*
-*   @return The vertical datum.
+*   @return The vertical datum or nullptr if it could not be created. Note that even if
+*          nullptr is returned the content of vertDatumLegacyCode can be used to set the 
+*          vertical datum code in the BaseGCS using legacy codes.
 *
 *   @bsimethod 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4390,15 +4714,14 @@ VerticalDatumPtr PostStepVerticalDatum(Utf8String csName, Utf8String datumName, 
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This method prepares the vertical cs and sets the BaseGCS.
+*   This method prepares the vertical cs and sets it in the CRS.
 *
-*   @param verticalDatum IN The extracted vertical datum.
-*
-*   @param authorityID  IN authority ID of vertical CS.
-*
-*   @param vertDatumLegacyCode IN The legacy vertical datum code.
-*
-*   @param baseGCS IN|OUT The base GCS to set the vertical datum and code of.
+*   @param [in] verticalDatum The vertical datum to set. If nullptr then the vertical
+*       datum will be set using the legacy code.
+*   @param [in] authorityID authority ID of vertical CS. Specific authority IDs are 
+*       used to resolve the legacy vertical datum code in case the vertical datum is not provided.
+*   @param [in] vertDatumLegacyCode The legacy vertical datum code.
+*   @param [in,out] baseGCS The base GCS to set the vertical datum and code of.
 *
 *   @return GeoCoordParse_Success or a parse error.
 *
@@ -4442,13 +4765,11 @@ GeoCoordParseStatus PostStepVerticalCSToCoordSys(VerticalDatumPtr verticalDatum,
     }
     
 /*---------------------------------------------------------------------------------**//**
-*   @description This private method removes the WKT or KWT2 section content starting with either keywords
+*   This private method removes the WKT or KWT2 section content starting with either keywords
 *
-*   @param wkt IN/OUT The WKT portion that contains the section to remove.
-*
-*   @param sectionKeyword IN The keyward starting the section to remove.
-*
-*   @param alternateKeyword IN In case the section can start with another keyword it can be provided.
+*   @param [in,out] wkt The WKT portion that contains the section to remove.
+*   @param [in] sectionKeyword The keyword starting the section to remove.
+*   @param [in] alternateKeyword In case the section can start with another keyword it can be provided.
 *                              An empty string indicates there are no other keyword.
 *
 *   @return GeoCoordParse_Success if successful or an error code otherwise.
@@ -4484,7 +4805,7 @@ GeoCoordParseStatus GetRidOfSection(Utf8StringR wkt, Utf8String sectionKeyword, 
         
         if ((std::string::npos == endPosLeft) || (endPosRight < endPosLeft))
             {
-            wkt = wkt.substr(endPosRight);
+            wkt = wkt.substr(endPosRight + 1);
             if (depth > 0)
                 depth--;
             else
@@ -4492,7 +4813,7 @@ GeoCoordParseStatus GetRidOfSection(Utf8StringR wkt, Utf8String sectionKeyword, 
             }
         else
             {
-            wkt = wkt.substr(endPosLeft);
+            wkt = wkt.substr(endPosLeft + 1);
             depth++;
             }
 
@@ -4507,7 +4828,7 @@ GeoCoordParseStatus GetRidOfSection(Utf8StringR wkt, Utf8String sectionKeyword, 
 };
 
 /*---------------------------------------------------------------------------------**//**
-*   @description This class implements the WKT parser.
+*   This class implements the WKT parser.
 *
 *   @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4516,20 +4837,20 @@ class SRSWKTParser: public SRSGeneralWKTParser
 public:
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod                                                  Alain Robert 2004/03
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SRSWKTParser()
     {
     }
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod                                                  Alain Robert 2004/03
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual ~SRSWKTParser()
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @bsimethod                                                  Alain Robert 2004/08
+*   @bsimethod                                                  
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP wktChar) const
     {
@@ -4556,16 +4877,16 @@ GeoCoordParseStatus Process (BaseGCSR baseGCS, Utf8CP wktChar) const
 private:
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts a projection coordinate reference
+*   This private method extracts a projection coordinate reference
 *   system from provided WKT stream.
 *
-*   @param baseGCS OUT The BaseGCS to fill definition of
+*   @param [out] baseGCS The BaseGCS to fill definition of
 *
-*   @param wkt IN The WKT stream to obtain projected CRS from.
+*   @param [in] wkt The WKT stream to obtain projected CRS from.
 *
 *   @return GeoCoordParse_Success or error value
 *
-*   @bsimethod                                                  Alain Robert 2004/09
+*   @bsimethod 
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
     {
@@ -4664,7 +4985,7 @@ GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
             wkt.Trim();
 
             // The second AXIS Clause is required accordinag to specs.
-            if ((wkt.length() < 4) || (wkt.substr (0, 4) != ("AXIS")))
+            if (!StartsWithKeyword(wkt, "AXIS"))
                 return GeoCoordParse_BadAxis;
 
             AxisDirection verticalAxis = GetAxis(wkt);
@@ -4705,11 +5026,11 @@ GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts a projection coordinate reference
+*   This private method extracts a projection coordinate reference
 *   system from provided WKT stream.
 *
-*   @param baseGCS OUT The BaseGCS to fill definition of
-*   @param wkt IN The WKT stream to obtain projected CRS from.
+*   @param [out] baseGCS The BaseGCS to fill definition of
+*   @param [in] wkt The WKT stream to obtain projected CRS from.
 *   @return GeoCoordParse_Success or error value
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4770,20 +5091,20 @@ GeoCoordParseStatus GetCompound (BaseGCSR baseGCS, Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts a vertical datum
-*   from provided WKT stream.
+*   This private method extracts a vertical datum from provided WKT stream.
 *
-*   @param wkt IN The WKT stream to obtain vertical datum from. The WKT should start with the
-*                 VERT_DATUM clause and contain the whole definition. Additional characters
-*                 after the end of the clause are ignored and returned in the wkt
-*                 stripped out of the whole VERT_DATUM clause.
+*   @param [in] csName The name of the vertical coordinate reference system.
+*   @param [in,out] wkt The WKT stream to obtain vertical datum from. The WKT should start with the
+*                 VERT_DATUM clause and contain the whole definition. The whole VERT_DATUM section is removed.
+*   @param [out] vertDatumLegacyCode Returns the legacy vertical datum code.
 *
-*   @return the VertDatumCode or vdcFromDatum if datum could not be determined.
+*   @return A pointer to a newly allocated vertical datum or nullptr if none could be created.
+*           Even if nullptr is returned the content of vertDatumLegacyCode will be valid.
 *           Note here that the explicit datum code is always returned and never vdcFromDatum
 *           unless the nature of the vertical datum could not be determined. This value of vdcFromDatum
 *           should not be interpreted returning from this method as the default value.
 *
-*   @bsimethod                                                  Alain Robert 2015/07
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumPtr GetVerticalDatum (const Utf8String& csName, Utf8StringR wkt, VertDatumCode& vertDatumLegacyCode) const
     {
@@ -4850,23 +5171,20 @@ VerticalDatumPtr GetVerticalDatum (const Utf8String& csName, Utf8StringR wkt, Ve
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts a vertical coordinate reference
-*   system from provided WKT stream.
+*   This private method extracts a vertical coordinate reference system from provided
+*   WKT stream.
 *
-*   @param baseGCS IN/OUT The BaseGCS to fill definition of vertical CS. The remainder
+*   @param [in,out] baseGCS The BaseGCS to fill definition of vertical CS. The remainder
 *                         of the BaseGCS is left untouched and should already contain
 *                         the non-vertical portion of the GCS since some vertical
 *                         coordinate systems have limitations related to the nature of the
 *                         datum used by the GCS.
-*
-*   @param wkt IN The WKT stream to obtain vertical cs from. The WKT should start with the
-*                 VERT_CS clause and contain the whole definition. Additional characters
-*                 after the end of the clause are ignored and returned in the wkt
-*                 stripped out of the whole VERT_CS clause.
+*   @param [in,out] wkt The WKT stream to obtain vertical cs from. The WKT should start with the
+*                 VERT_CS clause and contain the whole definition. The whole VERT_CS section is removed.
 *
 *   @return GeoCoordParse_Success or error value
 *
-*   @bsimethod                                                  Alain Robert 2015/07
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetVerticalCS (BaseGCSR baseGCS, Utf8StringR wkt) const
     {
@@ -4933,16 +5251,15 @@ GeoCoordParseStatus GetVerticalCS (BaseGCSR baseGCS, Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts a geographic coordinate reference
+*   This private method extracts a geographic coordinate reference
 *   system from provided WKT stream.
 *
-*   @param baseGCS OUT The BaseGCS to fill definition of
-*
-*   @param wkt IN The WKT stream to obtain projected CRS from.
+*   @param [out] baseGCS The BaseGCS to fill definition of
+*   @param [in,out] wkt The WKT stream to obtain projected CRS from. The GEOGCS section is removed.
 *
 *   @return GeoCoordParse_Success or error value
 *
-*   @bsimethod                                                  Alain Robert 2004/04
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetGeographic (BaseGCSR baseGCS, Utf8StringR wkt) const
     {
@@ -4963,16 +5280,15 @@ GeoCoordParseStatus GetGeographic (BaseGCSR baseGCS, Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts a local coordinate reference
-*   system from provided WKT stream.
+*   This private method extracts a local coordinate reference
+*   system from provided WKT stream. The whole LOCAL_CS section is removed from the WKT stream.
 *
-*   @param baseGCS OUT The BaseGCS to fill definition of
-*
-*   @param wkt IN The WKT stream to obtain projected CRS from.
+*   @param [out] baseGCS The BaseGCS to fill definition of with the LOCAL_CS clause removed.
+*   @param [in,out] wkt The WKT stream to obtain projected CRS from.
 *
 *   @return GeoCoordParse_Success or error value
 *
-*   @bsimethod                                                  Alain Robert 2004/09
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetLocal (BaseGCSR baseGCS, Utf8StringR wkt) const
     {
@@ -5057,18 +5373,16 @@ GeoCoordParseStatus GetLocal (BaseGCSR baseGCS, Utf8StringR wkt) const
 
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts the datum, spheroid and meridian
+*   This private method extracts the datum, spheroid and meridian
 *   definition and sets the appropriate fields in the given coordinate system.
 *
-*   @param wkt IN The WKT containing the geographic coordinate reference system to extract.
-*
-*   @param conversionToDegree OUT Receives the angular unit definition factor for interpretation
-*   of angular parameters.
-*
-*   @param coordinateSystem IN|OUT The coordinate system to set datum, spheroid and prime
+*   @param [in,out] wkt The WKT containing the geographic coordinate reference system to extract and remove.
+*   @param [out] conversionToDegree Receives the angular unit definition factor for interpretation
+*       of angular parameters.
+*   @param [in,out] coordinateSystem The coordinate system to set datum, spheroid and prime
 *           meridian of.
 *
-*   @bsimethod                                                  Alain Robert 2004/04
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetGeographicToProjected (Utf8StringR wkt, double* conversionToDegree, BaseGCSR coordinateSystem) const
     {
@@ -5080,32 +5394,27 @@ GeoCoordParseStatus GetGeographicToProjected (Utf8StringR wkt, double* conversio
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts the datum, spheroid and meridian
+*   This private method extracts the datum, spheroid and meridian
 *   definition and sets the appropriate fields in the given coordinate system.
 *   The GEOGCS AuthorityID and name are returned in separate field for the caller
 *   to use as sees fit.
 *
-*   @param wkt IN The WKT containing the geographic coordinate reference system to extract.
-*
-*   @param geographicName OUT Reference to a string that will receive the name of the GEOGCS.
-*
-*   @param geographicAuthorityID OUT Reference to a string that will receive the Authority ID
+*   @param [in,out] wkt The WKT containing the geographic coordinate reference system to extract and remove.
+*   @param [out] geographicName Reference to a string that will receive the name of the GEOGCS.
+*   @param [out] geographicAuthorityID Reference to a string that will receive the Authority ID
 *           if present
-*
-*   @param conversionToDegree OUT Receives the angular unit definition factor for interpretation
-*   of angular parameters.
-*
-*   @param coordinateSystem IN|OUT The coordinate system to set datum, spheroid and prime
+*   @param [out] conversionToDegree Receives the angular unit definition factor for interpretation
+*           of angular parameters.
+*   @param [in,out] coordinateSystem The coordinate system to set datum, ellipsoid and prime
 *           meridian of.
-*
-*   @param allowGreenwich IN indicates if a non-Greenwich prime meridian should result in
+*   @param [in] allowGreenwich indicates if a non-Greenwich prime meridian should result in
 *          an error or not. In CSMAP the latitude/longitude GCS can have prime meridians
 *          other than Greenwich while other projected GCS can only use Greenwich.
 *          Since the present method is called for both case, the flag indicates appropriate behavior.
 *
 *   @return GeoCoordParse_Success if operation sucessful or another value otherwise.
 *
-*   @bsimethod                                                  Alain Robert 2004/04
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geographicName, Utf8StringR geographicAuthorityID, double* conversionToDegree, BaseGCSR coordinateSystem, bool allowNonGreenwich, bool doNotChangeProjection) const
     {
@@ -5240,25 +5549,22 @@ GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geogra
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the datum
+*   This private method extracts from the provided stream the geodetic datum
 *   and sets it in the given coordinate system.
 *   The complete WKT datum section must be provided including the DATUM[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the DATUM section
-*   removed.
+*   The DATUM section will be removed.
 *
 *   IMPORTANT NOTE: At the moment we only support datums for which the definition
 *   is already known in the dictionary. Although we do have the ability to parse
 *   custom datum definition parameters (TOWGS84) or Oracle strange datum transformation
 *   parameter format, custom datum will fail and result in an error.
 *
-*   @param wkt IN/OUT The WKT portion that contains the DATUM to extract.
-*
-*   @param coordinateSystem IN|OUT The coordinate system that gets filled with projection
-*       code and parameter values.
+*   @param [in,out] wkt The WKT portion that contains the DATUM to extract and remove.
+*   @param [in,out] coordinateSystem The coordinate system that is set with the geodetic datum.
 *
 *   @return GeoCoordParse_Success if successful or another value otherwise.
 *
-*   @bsimethod                                                  Alain Robert 2004/09
+*   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus GetHorizontalDatumToCoordSys (Utf8StringR wkt, BaseGCSR coordinateSystem) const
     {
@@ -5353,13 +5659,14 @@ GeoCoordParseStatus GetHorizontalDatumToCoordSys (Utf8StringR wkt, BaseGCSR coor
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the ellipsoid
+*   This private method extracts from the provided stream the ellipsoid
 *   and sets it in the provided coordinate system.
 *   The complete WKT ellipsoid section must be provided including the SPHEROID[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the SPHEROID section
-*   removed.
+*   The SPHEROID section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the ellipsoid to extract.
+*   @param [in,out] wkt The WKT portion that contains the ellipsoid to extract and remove.
+*   @param [in,out] coordinateSystem The coordinate system to set the ellipsoid in.
+*   @param [out] ellipsoidPresentAndKnown Receives true if the ellipsoid was present and known, false otherwise.
 *
 *   @return GeoCoordParse_Success or an error value.
 *
@@ -5443,14 +5750,12 @@ GeoCoordParseStatus GetEllipsoidToCoordSys (Utf8StringR wkt, BaseGCSR coordinate
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the prime meridian
+*   This private method extracts from the provided stream the prime meridian
 *   The complete WKT prime meridian section must be provided including the PRIMEM[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the PRIMEM section
-*   removed.
+*   The PRIMEM section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the prime meridian to extract.
-*
-*   @param allowGreenwich IN indicates if a non-Greenwich prime meridian should result in
+*   @param [in,out] wkt The WKT portion that contains the prime meridian to extract.
+*   @param [in] allowGreenwich indicates if a non-Greenwich prime meridian should result in
 *          an error or not. In CSMAP the latitude/longitude GCS can have prime meridians
 *          other than Greenwich while other projected GCS can only use Greenwich.
 *          Since the present method is called for both case, the flag indicates appropriate behavior.
@@ -5518,26 +5823,22 @@ GeoCoordParseStatus GetPrimeMeridianToCoordSys (Utf8StringR wkt, BaseGCSR coordi
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the projection
+*   This method extracts from the provided stream the projection
 *   The complete WKT projection and related parameters section must be provided including the
 *   PROJECTION[ ] and PARAMETER[] keywords.
-*   The wkt text stream may contain additional text that is returned with the PROJECTION
-*   and PARAMETER sections removed.
+*   The PROJECTION and PARAMETER sections will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the projection to extract.
-*
-*   @param conversionToDegree IN The conversion factor to degree for angular parameters.
-*
-*   @param coordinateSystem IN|OUT The coordinate system that gets filled with projection
+*   @param [in,out] wkt The WKT portion that contains the projection and parameter to extract and remove.
+*   @param [in] conversionToDegree The conversion factor to degree for angular parameters.
+*   @param [in,out] coordinateSystem The coordinate system that gets filled with projection
 *       code and parameter values.
 *
 *   @return GeoCoordParse_Success if successful or another value in case of error.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordParseStatus GetProjectionToCoordSys (Utf8StringR wkt,double conversionToDegree, BaseGCSR coordinateSystem) const
+GeoCoordParseStatus GetProjectionToCoordSys (Utf8StringR wkt, double conversionToDegree, BaseGCSR coordinateSystem) const
     {
-
     GeoCoordParseStatus status = GeoCoordParse_Success;
     bool projectionFromOracleStyle = false;
     bool parameterPresent = false;
@@ -5743,16 +6044,13 @@ GeoCoordParseStatus GetProjectionToCoordSys (Utf8StringR wkt,double conversionTo
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the unit
+*   This private method extracts from the provided stream the unit
 *   The complete WKT unit section must be provided including the UNIT[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the UNIT section
-*   removed.
+*   The UNIT section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the unit to extract.
-*
-*   @param unitName OUT Reference to a string that receives the unit name.
-*
-*   @param unitFactor OUT The unit factor as set in the unit clause.
+*   @param [in,out] wkt The WKT portion that contains the unit to extract and remove.
+*   @param [out] unitName Reference to a string that receives the unit name.
+*   @param [out] unitFactor The unit factor as set in the unit clause.
 *
 *   @return GeoCoordParse_Success if succesful or another value otherwise.
 *
@@ -5811,16 +6109,13 @@ GeoCoordParseStatus GetUnit (Utf8StringR wkt, Utf8StringR unitName, double* unit
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the extension
+*   This private method extracts from the provided stream the extension
 *   The complete WKT extension section must be provided including the EXTENSION[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the EXTENSION section
-*   removed.
+*   The EXTENSION section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the extension to extract.
-*
-*   @param extensionName OUT Reference to a string that receives the extension name.
-*
-*   @param extentionText OUT The text associated with extension
+*   @param [in,out] wkt The WKT portion that contains the extension to extract and remove.
+*   @param [out] extensionName Reference to a string that receives the extension name.
+*   @param [out] extentionText The text associated with extension
 *
 *   @return GeoCoordParse_Success if succesful or another value otherwise.
 *
@@ -5864,12 +6159,11 @@ GeoCoordParseStatus GetExtension (Utf8StringR wkt, Utf8StringR extensionName, Ut
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the linear unit
+*   This private method extracts from the provided stream the linear unit
 *   and sets it in the provided coordinate system.
 *
-*   @param wkt IN/OUT The WKT portion that contains the unit to extract.
-*
-*   @param coordinateSystem IN/OUT The coordinate system to set the units of.
+*   @param [in,out] wkt The WKT portion that contains the unit to extract and remove.
+*   @param [in,out] coordinateSystem The coordinate system to set the units of.
 *
 *   @return GeoCoordParse_Success if successful or another value in case of error.
 *
@@ -5913,15 +6207,13 @@ GeoCoordParseStatus GetLinearUnitToCoordSys (Utf8StringR wkt, BaseGCSR coordinat
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the angle unit
+*   This private method extracts from the provided stream the angle unit
 *   and returns the conversion factor to meter.
 *   The complete WKT unit section must be provided including the UNIT[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the UNIT section
-*   removed.
+*   The UNIT section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the unit to extract.
-*
-*   @param conversionToDegree OUT The conversation factor to degree.
+*   @param [in,out] wkt The WKT portion that contains the unit to extract and remove.
+*   @param [out] conversionToDegree The conversation factor to degree.
 *
 *   @return GeoCoordParse_Success or an error value.
 *
@@ -5939,8 +6231,11 @@ GeoCoordParseStatus GetAngleUnit (Utf8StringR wkt, double* conversionToDegree) c
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method validates the name so it is a valid CSMAP 
-*                        keyname replacing invalid characters if needed.
+*   This private method validates the name so it is a valid CSMAP keyname replacing 
+*   invalid characters if needed.
+*
+*   @param [in,out] name The name to validate and modify if needed.
+*
 *   @return The name
 *
 *   @bsimethod
@@ -5964,10 +6259,10 @@ void ValidateKeyname (Utf8StringR name) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the keyword
+*   This private method extracts from the provided stream the keyword
 *   which must start at the first non blank character and end with a section end or a comma.
 *
-*   @param wkt IN The WKT portion that contains the keyword to extract.
+*   @param [in] wkt The WKT portion that contains the keyword to extract and remove.
 *
 *   @return The keyword
 *
@@ -6006,14 +6301,13 @@ Utf8String     GetKeyword (Utf8StringR& wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the area
+*   This private method extracts from the provided stream the area
 *   The complete WKT area section must be provided including the AREA[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the AREA section
-*   removed.
+*   The area section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the authority to extract.
+*   @param [in,out] wkt The WKT portion that contains the area to extract and remove.
 *
-*   @return The authority identifier
+*   @return The area name.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6058,12 +6352,11 @@ Utf8String GetArea (Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the axis definition
+*   This private method extracts from the provided stream the axis definition
 *   The complete WKT authority section must be provided including the AXIS[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the AXIS section
-*   removed.
+*   The axis section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the axis to extract.
+*   @param [in,out] wkt The WKT portion that contains the axis to extract and remove.
 *
 *   @return The axis identifier
 *
@@ -6120,12 +6413,12 @@ AxisDirection GetAxis (Utf8StringR wkt) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the local datum
+*   This private method extracts from the provided stream the local datum
 *   The complete WKT authority section must be provided including the LOCAL_DATUM[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the LOCAL_DATUM section
-*   removed.
+*   The LOCAL_DATUM section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the local datum to extract.
+*   @param [in,out] wkt The WKT portion that contains the local datum to extract and remove.
+*   @param [in,out] coordinateSystem The coordinate system to set the local datum in.
 *
 *   @return GeoCoordParse_Success if successful or another value in case of error.
 *
@@ -6179,20 +6472,17 @@ GeoCoordParseStatus GetLocalDatumToCoordSys (Utf8StringR wkt, BaseGCSR coordinat
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the TOWGS84
+*   This method extracts from the provided stream the TOWGS84
 *   horizontal datum transformation.
-*   The complete WKT authority section must be provided including the TOWGS84[ ] keyword.
-*   The wkt text stream may contain additional text that is returned with the TOWGS84 section
-*   removed.
+*   The complete WKT section must be provided including the TOWGS84[ ] keyword, and it will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the horizontal datum transformation to extract.
-*   @param deltaX - The delta X in meters
-*   @param deltaY - The delta Y in meters
-*   @param deltaZ - The delta Z in meters
-*   @param rotationX - [OUT] X Rotation in arcseconds
-*   @param rotationY - [OUT] Y rotation in arcseconds
-*   @param rotationZ - [OUT] Z rotation in arcseconds
-*   @param scalePPM - [OUT] Scale in parts per million
+*   @param [in,out] wkt The WKT portion that contains the horizontal datum transformation 
+*       to extract and remove.
+*   @param deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM The 7 parameter transformation 
+*                          parameter values that can be used to located a known horizontal datum.
+*                          the deltas are in meters, the rotation in arcseconds and the scale
+*                          in the difference from 1.0 in part per million. See EPSG operation
+*                          EPSG:9606 for details.
 *
 *   @return GeoCoordParse_Success if 7 params were extracted and false otherwise
 *
@@ -6231,20 +6521,18 @@ GeoCoordParseStatus GetTOWGS84 (Utf8StringR wkt, double& deltaX, double& deltaY,
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts from the provided stream the 7 parameters
+*   This private method extracts from the provided stream the 7 parameters
 *   horizontal datum transformation.
-*   The complete 7 double WKT authority section must be provided.
-*   The wkt text stream may contain additional text that is returned with the 7 parameters section
-*   removed.
+*   The complete 7 double WKT section must be provided.
+*   The 7 parameters section will be removed.
 *
-*   @param wkt IN/OUT The WKT portion that contains the horizontal datum transformation to extract.
-*   @param deltaX - The delta X in meters
-*   @param deltaY - The delta Y in meters
-*   @param deltaZ - The delta Z in meters
-*   @param rotationX - [OUT] X Rotation in arcseconds
-*   @param rotationY - [OUT] Y rotation in arcseconds
-*   @param rotationZ - [OUT] Z rotation in arcseconds
-*   @param scalePPM - [OUT] Scale in parts per million
+*   @param [in,out] wkt The WKT portion that contains the horizontal datum transformation 
+*           to extract and remove.
+*   @param deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM The 7 parameter transformation 
+*                          parameter values that can be used to located a known horizontal datum.
+*                          the deltas are in meters, the rotation in arcseconds and the scale
+*                          in the difference from 1.0 in part per million. See EPSG operation
+*                          EPSG:9606 for details.
 *
 *   @return GeoCoordParse_Success or an error value.
 *
@@ -6299,13 +6587,13 @@ GeoCoordParseStatus Get7ParamsDatumTransformation (Utf8StringR wkt, double& delt
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   @description PRIVATE This private method extracts, strips and returns the Oracle style
-*   authority ID from the datum, spehroid, prime meridian, or operation name. At one
+*   This method extracts, strips and returns the Oracle style
+*   authority ID from the datum, spheroid, prime meridian, or operation name. At one
 *   point Oracle used to append to the object name an authority ID in between parenthesis
 *   of the form "Anguilla 1957 (EPSG ID 6600)". This function will extract this authroity ID
 *   and return it in the form "EPSG:6600" and remove the part from the name.
 *
-*   @param name IN/OUT The name as extracted from WKT. On output it will contain the stripped name
+*   @param [in,out] name The name as extracted from WKT. On output it will contain the stripped name
 *               if applicable
 *
 *   @return The authority ID or an empty string if none can be found
@@ -6552,7 +6840,7 @@ StatusInt       Process
 (
 BaseGCSR                outGCS,
 StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
-Utf8StringP                warningOrErrorMsg,  // Error message.
+Utf8StringP             warningOrErrorMsg,  // Error message.
 IGeoTiffKeysList const& geoTiffKeys,        // The GeoTiff key list
 bool                    allowUnitsOverride   // Indicates if the presence of a unit can override GCS units.
 )
@@ -8786,7 +9074,7 @@ public:
         // nothing to do
         return SUCCESS;
     }
-    StatusInt InitializeTransform(BaseGCSCR targetGCS) override
+    StatusInt InitializeTransform() override
     {
         // nothing to do
         return SUCCESS;
@@ -8809,7 +9097,6 @@ class VerticalGeoidSeparationGridTransform : public VerticalTransform
 protected:
     bvector<WString>         m_gridFiles;
     Utf8String               m_format;
-    mutable DatumConverterP  m_datumConverter; // If non null then the datum converter from the initialized target geodetic datum to the grid geodetic datum (usually WGS84 or coincident)
     VerticalDatumGridFormat  m_csmapFormat;
     GridFileDirection        m_direction;
 
@@ -8820,7 +9107,7 @@ protected:
         m_csGeoidHeight(nullptr)
     {
         m_csmapFormat = verticalDatumGridFormatUnknown;
-        m_datumConverter = nullptr;
+        m_requiredHorizontalCRSBase = "LL84"; // Default for grid files. All grid files till now use this base or equivalent.
     }
 
 public:
@@ -8969,7 +9256,7 @@ public:
         return GEOCOORDERR_InvalidTransform;
     }
 
-    StatusInt InitializeTransform(BaseGCSCR targetGCS) override
+    StatusInt InitializeTransform() override
     {
         if (nullptr != m_csGeoidHeight)
             return SUCCESS; // already initialized
@@ -8978,26 +9265,6 @@ public:
         csDatumCatalog_* catalog = (struct csDatumCatalog_*)CS_malc(sizeof (struct csDatumCatalog_));
         if (nullptr == catalog)
             return ERROR;
-
-        // This datum converter is provided to change latitude/longitude from a datum which isnon coincident
-        // to WGS84 to WGS84 to access the grid files that are based on WGS84 coincident datums.
-        BaseGCSPtr ll84 = BaseGCS::CreateGCS("LL84");
-
-        if (m_direction == GridFileDirection::DIRECTION_INVERSE)
-            m_datumConverter = DatumConverter::Create(targetGCS, *ll84);
-        else
-            m_datumConverter = DatumConverter::Create(*ll84, targetGCS);
-
-        if (m_datumConverter != nullptr)
-        {
-            // We remove a null transform to accelerate things.
-            m_datumConverter->SetReprojectElevation(false);
-            if (m_datumConverter->IsNullTransform())
-            {
-                m_datumConverter->Destroy();
-                m_datumConverter = nullptr;
-            }
-        }
 
         // copied from CSMap
         catalog->fileFolder [0] = '\0';
@@ -9048,12 +9315,6 @@ public:
             CSdeleteGeoidHeight(m_csGeoidHeight);
             m_csGeoidHeight = nullptr;
         }
-
-        if (nullptr != m_datumConverter)
-        {
-            m_datumConverter->Destroy();
-            m_datumConverter = NULL;
-        }
     }
 
     StatusInt GetElevation(double& elevationOffset, ElevationType& elevationType, GeoPointCR ptIn) override
@@ -9068,11 +9329,7 @@ public:
 
         elevationType = ElevationType::Offset;
 
-        GeoPoint effectivePointIn = ptIn;
-        if (m_datumConverter != nullptr)
-            m_datumConverter->ConvertLatLong3D (effectivePointIn, ptIn);
-
-        const double pointLL[2] = { effectivePointIn.longitude, effectivePointIn.latitude };
+        const double pointLL[2] = { ptIn.longitude, ptIn.latitude };
         if (0 == CScalcGeoidHeight (m_csGeoidHeight, &elevationOffset, pointLL))
         {
             if (m_direction == GridFileDirection::DIRECTION_INVERSE)
@@ -9216,7 +9473,7 @@ public:
         return GEOCOORDERR_InvalidTransform;
     }
 
-    StatusInt InitializeTransform(BaseGCSCR targetGCS) override
+    StatusInt InitializeTransform() override
     {
         if (nullptr != m_vertconUS)
             return SUCCESS;
@@ -9392,7 +9649,7 @@ public:
         return GEOCOORDERR_InvalidTransform;
     }
 
-    StatusInt InitializeTransform(BaseGCSCR targetGCS) override
+    StatusInt InitializeTransform() override
     {
         // nothing to do here
         return SUCCESS;
@@ -9484,7 +9741,7 @@ public:
         return GEOCOORDERR_InvalidTransform;
     }
 
-    StatusInt InitializeTransform(BaseGCSCR targetGCS) override
+    StatusInt InitializeTransform() override
     {
         // SK TODO: initialize geodetic transform
         return GEOCOORDERR_NotImplemented;
@@ -14340,7 +14597,7 @@ ReprojectStatus  BaseGCS::ReprojectRange2D(DRange2dR outRange, DRange2dCR inRang
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Alain Robert  01/2024
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReprojectStatus  BaseGCS::ReprojectEcefFromLLRange(DRange3dR outRange, DRange3dCR inLLRange, size_t numPointsPerSide)
     {
@@ -14412,7 +14669,7 @@ ReprojectStatus  BaseGCS::ReprojectEcefFromLLRange(DRange3dR outRange, DRange3dC
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Alain Robert  01/2024
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReprojectStatus  BaseGCS::ReprojectLLRange(DRange3dR outRange, DRange3dCR inLLRange, size_t numPointsPerSide)
     {
@@ -18951,9 +19208,6 @@ VerticalDatumPtr BaseGCS::CreateVerticalDatumFromName(Utf8CP verticalDatumName, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt BaseGCS::SetVerticalDatum(VerticalDatumPtr verticalDatum)
 {
-    if (m_verticalDatum.IsValid())
-        m_verticalDatum = nullptr;
-
     // If new vertical datum is null we do not validate
     if (!verticalDatum.IsValid())
         {
@@ -23813,7 +24067,7 @@ StatusInt    Ellipsoid::SetGroup (Utf8StringCR groupName)
         return GEOCOORDERR_InvalidEllipsoid;
 
     // Check size (5 chars max for ellipsoid groups)
-    if (groupName.size() >= DIM(m_ellipsoidDef->group))
+    if (groupName.length() >= DIM(m_ellipsoidDef->group))
         return GEOCOORDERR_BadArg;
 
     CSMap::CS_stncp (m_ellipsoidDef->group, groupName.c_str(), DIM(m_ellipsoidDef->group));
@@ -25567,7 +25821,7 @@ StatusInt              Datum::GetGridFile (GridFileDefinition& gridFileDef, bool
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Alain.Robert                   07/08
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Datum::GetGridFileNames (Utf8String& gridFileNames, bool cumulAllTransforms) const
     {
@@ -25623,7 +25877,7 @@ StatusInt Datum::GetGridFileNames (Utf8String& gridFileNames, bool cumulAllTrans
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Alain.Robert                   07/08
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetGridFile (const GridFileDefinition& gridFileDef)
     {
@@ -26188,7 +26442,7 @@ StatusInt    Datum::SetGroup (Utf8StringCR groupName)
         return GEOCOORDERR_InvalidDatum;
 
     // Check size (23 chars max for ellipsoid groups)
-    if (groupName.size() >= DIM(m_datumDef->group))
+    if (groupName.length() >= DIM(m_datumDef->group))
         return GEOCOORDERR_BadArg;
 
     CSMap::CS_stncp (m_datumDef->group, groupName.c_str(), DIM(m_datumDef->group));
@@ -26319,15 +26573,42 @@ StatusInt VerticalDatum::InitializeTransforms(const Utf8String& target, const Ge
     // get list of transforms from source to target from Dictionary
     Utf8String name;
     m_verticalDatumInfo->GetCRSName(name);
-    StatusInt status = VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(m_initializedTransforms, name, thisTarget, latLong);
+    bvector<VerticalTransformPtr> listOfTransforms;
+    StatusInt status = VerticalDatumDictionary::Get()->GetVerticalDatumTransforms(listOfTransforms, name, thisTarget, latLong);
 
     if (SUCCESS == status)
     {
-        for (const auto& transform : m_initializedTransforms)
+        for (const auto& transform : listOfTransforms)
         {
-            status = transform->InitializeTransform(*targetGCS);
+            status = transform->InitializeTransform();
             if (status != SUCCESS)
                 break;
+
+            DatumConverterP datumConverter = nullptr;
+
+            // Check if a datum transform is required for this vertical transform
+            Utf8String requireHorizontalCRS = transform->GetRequiredHorizontalCRSBase();
+
+            if (requireHorizontalCRS.length() > 0)
+                {
+                BaseGCSPtr transformHorizontalCRSBase = BaseGCS::CreateGCS(requireHorizontalCRS.c_str());
+
+                if (transformHorizontalCRSBase.IsValid())
+                    datumConverter = DatumConverter::Create(*targetGCS, *transformHorizontalCRSBase);
+
+                if (datumConverter != nullptr)
+                    {
+                    // We remove a null transform to accelerate things.
+                    datumConverter->SetReprojectElevation(false);
+                    if (datumConverter->IsNullTransform())
+                        {
+                        datumConverter->Destroy();
+                        datumConverter = nullptr;
+                        }
+                    }
+                }
+
+            m_initializedTransforms.push_back(std::make_pair(transform, datumConverter));
         }
     }
 
@@ -26338,6 +26619,16 @@ StatusInt VerticalDatum::InitializeTransforms(const Utf8String& target, const Ge
     else
     {
         m_initializedTransformsTargetName = "";
+        for (auto& transform : m_initializedTransforms)
+        {
+            transform.first->ReleaseTransform();
+            if (nullptr != transform.second)
+            {
+            transform.second->Destroy();
+            transform.second = nullptr;
+            }
+        }
+
         m_initializedTransforms.clear();
     }
 
@@ -26348,7 +26639,14 @@ void VerticalDatum::ReleaseTransforms()
 {
     m_initializedTransformsTargetName = "";
     for (auto& transform : m_initializedTransforms)
-        transform->ReleaseTransform();
+        {
+        transform.first->ReleaseTransform();
+        if (nullptr != transform.second)
+            {
+            transform.second->Destroy();
+            transform.second = nullptr;
+            }
+        }
     m_initializedTransforms.clear();
 }
 
@@ -26367,6 +26665,7 @@ StatusInt VerticalDatum::GetElevation(double& elevationOut, GeoPointCR inLatLong
     Utf8String targetName;
     if (targetGCS.IsValid())
         targetGCS->GetFullVerticalDatumName(targetName);
+
     if ((0 == targetName.length()) || (0 == targetName.CompareToI("ELLIPSOID")))
         targetName = "WGS84";
 
@@ -26392,7 +26691,17 @@ StatusInt VerticalDatum::GetElevation(double& elevationOut, GeoPointCR inLatLong
         {
             elevation = 0.0;
             elevationType = VerticalTransform::ElevationType::Offset;
-            status = transform->GetElevation(elevation, elevationType, inLatLong);
+            if (transform.second != nullptr)
+            {
+                GeoPoint transformedLatLong;
+                status = transform.second->ConvertLatLong3D(transformedLatLong, inLatLong);
+                if (SUCCESS != status)
+                    break;
+
+                status = transform.first->GetElevation(elevation, elevationType, transformedLatLong);
+            }
+            else
+                status = transform.first->GetElevation(elevation, elevationType, inLatLong);
 
             if (SUCCESS == status)
             {
@@ -26456,7 +26765,7 @@ bool VerticalDatum::IsEquivalentTo(const Utf8String& equivalentName) const
         && (0 == m_initializedTransformsTargetName.CompareToI(equivalentName))
         && (1 == m_initializedTransforms.size()))
     {
-        return (VerticalTransform::TransformType::Null == m_initializedTransforms[0]->GetTransformType());
+        return (VerticalTransform::TransformType::Null == m_initializedTransforms[0].first->GetTransformType());
     }
 
     return false;
@@ -26804,7 +27113,7 @@ GeodeticTransform::GeodeticTransform (Utf8CP keyName)
     if (nullptr != m_geodeticTransformDef && m_geodeticTransformDef->methodCode == (short)GenConvertCode::GenConvertType_GFILE)
         {
         // Check for presence of a fallback
-        if (Utf8String(m_geodeticTransformDef->parameters.fileParameters.fallback).size() > 0)
+        if (Utf8String(m_geodeticTransformDef->parameters.fileParameters.fallback).length() > 0)
             {
             m_fallback = GeodeticTransform::CreateGeodeticTransform(m_geodeticTransformDef->parameters.fileParameters.fallback);
 
@@ -26970,7 +27279,7 @@ GeodeticTransform::GeodeticTransform(CSGeodeticTransform const& geodeticTransfor
     if (nullptr == m_fallback && nullptr != m_geodeticTransformDef && m_geodeticTransformDef->methodCode == (short)GenConvertCode::GenConvertType_GFILE)
         {
         // Check for presence of a fallback
-        if (Utf8String(m_geodeticTransformDef->parameters.fileParameters.fallback).size() > 0)
+        if (Utf8String(m_geodeticTransformDef->parameters.fileParameters.fallback).length() > 0)
             {
             m_fallback = GeodeticTransform::CreateGeodeticTransform(m_geodeticTransformDef->parameters.fileParameters.fallback);
 
@@ -27077,7 +27386,7 @@ GeodeticTransform::GeodeticTransform (
     if (nullptr == m_fallback && nullptr != m_geodeticTransformDef && m_geodeticTransformDef->methodCode == (short)GenConvertCode::GenConvertType_GFILE)
         {
         // Check for presence of a fallback
-        if (Utf8String(m_geodeticTransformDef->parameters.fileParameters.fallback).size() > 0)
+        if (Utf8String(m_geodeticTransformDef->parameters.fileParameters.fallback).length() > 0)
             {
             m_fallback = GeodeticTransform::CreateGeodeticTransform(m_geodeticTransformDef->parameters.fileParameters.fallback);
 
@@ -27160,7 +27469,7 @@ StatusInt    GeodeticTransform::SetGroup (Utf8StringCR groupName)
         return GEOCOORDERR_InvalidGeodeticTransform;
 
     // Check size (23 chars max for ellipsoid groups)
-    if (groupName.size() >= DIM(m_geodeticTransformDef->group))
+    if (groupName.length() >= DIM(m_geodeticTransformDef->group))
         return GEOCOORDERR_BadArg;
 
     CSMap::CS_stncp (m_geodeticTransformDef->group, groupName.c_str(), DIM(m_geodeticTransformDef->group));
