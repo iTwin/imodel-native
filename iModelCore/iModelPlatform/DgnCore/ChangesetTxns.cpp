@@ -29,19 +29,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
-namespace {
-
-struct ConflictRow : public IECSqlRow {
-    private:
-    std::vector<std::unique_ptr<IECSqlValue>> const& m_values;
-    public:
-    ConflictRow(std::vector<std::unique_ptr<IECSqlValue>> const& values) : m_values(values) {}
-    virtual int GetColumnCount() const override { return (int)m_values.size(); }
-    virtual IECSqlValue const& GetValue(int columnIndex) const override { return *m_values[columnIndex]; }
-};
-
-} // namespace
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

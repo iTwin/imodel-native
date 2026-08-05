@@ -262,7 +262,16 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
     return jsAccessString;
 }
 
-}
+struct ConflictRow : public IECSqlRow {
+    private:
+    std::vector<std::unique_ptr<IECSqlValue>> const& m_values;
+    public:
+    ConflictRow(std::vector<std::unique_ptr<IECSqlValue>> const& values) : m_values(values) {}
+    virtual int GetColumnCount() const override { return (int)m_values.size(); }
+    virtual IECSqlValue const& GetValue(int columnIndex) const override { return *m_values[columnIndex]; }
+};
+
+} // namespace
 
 /*static*/ BentleyStatus ChangesetReader::GetConflictReportJson(
         ECDbCR ecdb,
@@ -293,6 +302,7 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
     std::unordered_map<Utf8String, DbValue> theirDbValues;
     std::unordered_map<Utf8String, DbValue> ourDbValues;
     std::unordered_set<Utf8String> dataConflictColumns;
+    std::vector<Utf8String> pkColumns;
     for(int i = 0; i < static_cast<int>(columns.size()); ++i)
         {
         DbValue originalValue = originalValueAvailable ? conflict.GetOldValue(i) : DbValue(nullptr);
@@ -308,6 +318,7 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
         // For INSERT, it will only be in the New slot.
         if (conflict.IsPrimaryKeyColumn(i))
             {
+            pkColumns.push_back(columns[i]);
             DbValue pkValue = originalValueAvailable ? originalValue : ourValue;
             if (ourValueAvailable && !ourValue.IsValid())
                 ourValue = pkValue;
@@ -357,18 +368,7 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
         std::vector<std::unique_ptr<IECSqlValue>> fields;
         if (ChangesetValueFactory::Create(ecdb, *dbTable, dbValues, classId, isClassIdFromChangeset, fields, ChangesetReader::PropertyFilter::All, nullptr) != SUCCESS)
             return BentleyStatus::ERROR;
-        outJson.toObject();
-        for (auto const& field : fields)
-            {
-            if (!field) continue;
-            Utf8String accessStr = field->GetColumnInfo().GetPropertyPath().ToString();
-            if (accessStr.empty()) continue;
-
-            const auto memberProp = field->GetColumnInfo().GetProperty();
-            Utf8String memberName = GetJsMemberName(*memberProp);
-            adaptor.RenderValue(outJson[memberName], *field);
-            }
-        return BentleyStatus::SUCCESS;
+        return adaptor.RenderRowAsObject(outJson, ConflictRow(fields));
         };
 
     if (originalValueAvailable && !originalDbValues.empty())
@@ -417,6 +417,57 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
     violationsJson.toArray();
     if (cause == ChangeSet::ConflictCause::Constraint && !ourDbValues.empty())
         {
+        // UPDATE changesets omit columns that didn't change, even if they're part of a unique
+        // index that IS violated by this change. Backfill those from the row's current value
+        // (via its PK) so composite indexes can still be evaluated against the effective new row.
+        std::unordered_map<Utf8String, DbValue> effectiveOurValues = ourDbValues;
+        std::vector<DbDupValue> ownedBackfillValues;
+        if (opcode == DbOpcode::Update && !pkColumns.empty())
+            {
+            std::vector<Utf8String> missingCols;
+            for (Utf8StringCR col : columns)
+                {
+                if (ourDbValues.find(col) == ourDbValues.end())
+                    missingCols.push_back(col);
+                }
+
+            if (!missingCols.empty())
+                {
+                Utf8String selectPart;
+                for (Utf8StringCR col : missingCols)
+                    {
+                    if (!selectPart.empty()) selectPart.append(", ");
+                    selectPart.append("[").append(col).append("]");
+                    }
+                Utf8String wherePart;
+                for (Utf8StringCR col : pkColumns)
+                    {
+                    if (!wherePart.empty()) wherePart.append(" AND ");
+                    wherePart.append("[").append(col).append("]=?");
+                    }
+                Utf8String sql = Utf8PrintfString("SELECT %s FROM [%s] WHERE %s LIMIT 1",
+                    selectPart.c_str(), conflict.GetTableName().c_str(), wherePart.c_str());
+
+                Statement backfillStmt;
+                if (BE_SQLITE_OK == backfillStmt.Prepare(ecdb, sql.c_str()))
+                    {
+                    int bindIdx = 1;
+                    for (Utf8StringCR col : pkColumns)
+                        backfillStmt.BindDbValue(bindIdx++, ourDbValues.at(col));
+
+                    if (BE_SQLITE_ROW == backfillStmt.Step())
+                        {
+                        ownedBackfillValues.reserve(missingCols.size());
+                        for (size_t i = 0; i < missingCols.size(); ++i)
+                            {
+                            ownedBackfillValues.push_back(backfillStmt.GetDbValue((int)i));
+                            effectiveOurValues.emplace(missingCols[i], static_cast<DbValue const&>(ownedBackfillValues.back()));
+                            }
+                        }
+                    }
+                }
+            }
+
         Statement indexListStmt;
         if (BE_SQLITE_OK == indexListStmt.Prepare(ecdb,
                 Utf8PrintfString("PRAGMA [main].[index_list]([%s])", conflict.GetTableName().c_str()).c_str()))
@@ -452,13 +503,13 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
                 if (idxCols.empty())
                     continue;
 
-                // Skip this index if any of its columns is absent or null in our new row.
+                // Skip this index if any of its columns is absent or null in our effective new row.
                 // (NULL values never violate a UNIQUE constraint.)
                 bool allPresent = true;
                 for (Utf8StringCR col : idxCols)
                     {
-                    auto it = ourDbValues.find(col);
-                    if (it == ourDbValues.end() || !it->second.IsValid() || it->second.IsNull())
+                    auto it = effectiveOurValues.find(col);
+                    if (it == effectiveOurValues.end() || !it->second.IsValid() || it->second.IsNull())
                         {
                         allPresent = false;
                         break;
@@ -468,22 +519,24 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
                 if (!allPresent)
                     continue;
 
-                // SELECT all table columns WHERE the indexed columns match our new values.
-                // A returned row confirms the violation and gives us the full conflicting row data.
-                Utf8String selectPart;
-                for (size_t i = 0; i < columns.size(); ++i)
-                    {
-                    if (!selectPart.empty()) selectPart.append(", ");
-                    selectPart.append("[").append(columns[i]).append("]");
-                    }
+                // SELECT the row's ECInstanceId WHERE the indexed columns match our new values.
+                // A returned row confirms the violation; the InstanceReader then fetches the full conflicting instance.
+                DbColumn const* idColumn = dbTable->FindFirst(DbColumn::Kind::ECInstanceId);
+                if (!idColumn)
+                    continue;
+
                 Utf8String wherePart;
                 for (Utf8StringCR col : idxCols)
                     {
                     if (!wherePart.empty()) wherePart.append(" AND ");
                     wherePart.append("[").append(col).append("]=?");
                     }
-                Utf8String sql = Utf8PrintfString("SELECT %s FROM [%s] WHERE %s LIMIT 1",
-                    selectPart.c_str(), conflict.GetTableName().c_str(), wherePart.c_str());
+                // Exclude the row itself, since its own (possibly backfilled) values otherwise match trivially.
+                for (Utf8StringCR col : pkColumns)
+                    wherePart.append(" AND [").append(col).append("] IS NOT ?");
+
+                Utf8String sql = Utf8PrintfString("SELECT [%s] FROM [%s] WHERE %s LIMIT 1",
+                    idColumn->GetName().c_str(), conflict.GetTableName().c_str(), wherePart.c_str());
 
                 Statement theirStmt;
                 if (BE_SQLITE_OK != theirStmt.Prepare(ecdb, sql.c_str()))
@@ -491,12 +544,16 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
 
                 int bindIdx = 1;
                 for (Utf8StringCR col : idxCols)
-                    theirStmt.BindDbValue(bindIdx++, ourDbValues.at(col));
+                    theirStmt.BindDbValue(bindIdx++, effectiveOurValues.at(col));
+                for (Utf8StringCR col : pkColumns)
+                    theirStmt.BindDbValue(bindIdx++, effectiveOurValues.at(col));
 
                 if (BE_SQLITE_ROW != theirStmt.Step())
                     continue;
 
-                // Found a violation — build the JSON entry while the statement is still active
+                ECInstanceId conflictingInstanceId = theirStmt.GetValueId<ECInstanceId>(0);
+
+                // Found a violation — build the JSON entry
                 BeJsValue violationJson = violationsJson.appendValue();
                 violationJson.toObject();
 
@@ -523,18 +580,11 @@ Utf8String GetJsAccessString(PropertyMap const& propMap) {
                     }
                 }
 
-                // conflictingRow: the existing row that causes this unique constraint violation
-                {
-                std::unordered_map<Utf8String, DbValue> conflictingRowValues;
-                std::vector<DbDupValue> ownedValues;
-                ownedValues.reserve(columns.size());
-                for (size_t i = 0; i < columns.size(); ++i)
-                    {
-                    ownedValues.push_back(theirStmt.GetDbValue((int)i));
-                    conflictingRowValues.emplace(columns[i], static_cast<DbValue const&>(ownedValues.back()));
-                    }
-                buildValuesJson(violationJson["conflictingRow"], conflictingRowValues);
-                }
+                // conflictingRow: read the full existing instance that causes this unique constraint violation
+                ecdb.GetInstanceReader().Seek(InstanceReader::Position(conflictingInstanceId, classId),
+                    [&](InstanceReader::IRowContext const& row, PropertyReader::Finder) {
+                        adaptor.RenderRowAsObject(violationJson["conflictingRow"], row);
+                    });
                 }
             }
         }
