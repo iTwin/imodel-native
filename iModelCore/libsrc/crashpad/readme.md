@@ -15,9 +15,52 @@ At this time:
 - Strip symbols before packaging / publishing: `objcopy --strip-debug --strip-unneeded BINARY_PATH`
 
 ---
-# Notes on pulling it now (2026)
+# Updating crashpad (2026)
 
-To update crashpad, update the version in both locations in `iModelCore/libsrc/crashpad/vcpkg.json`. You may also have to update the `baseline` commit ID in `iModelCore/libsrc/crashpad/vcpkg-configuration.json`.
+There are **two** sources of crashpad depending on platform, and both must be kept in sync
+when updating:
+
+- **Windows** (all triplets — both MSVC and clang): built from the **local vcpkg overlay
+  port** at `iModelCore/libsrc/crashpad/ports/crashpad/`. The overlay is wired in by the
+  `--overlay-ports` handling in `iModelCore/libsrc/vcpkg_run_install.bat`, which passes any
+  `ports/` subdirectory next to `vcpkg.json` to vcpkg. On Windows the overlay port — **not**
+  the top-level `iModelCore/libsrc/crashpad/vcpkg.json` version constraint — determines the
+  source that is pulled and built. (The overlay exists mainly to make crashpad build with
+  clang-cl; `portfile.cmake` branches internally on `CRASHPAD_USE_CLANG` and also handles
+  the MSVC case.)
+- **Linux, macOS, Android**: built from the **upstream vcpkg registry** port.
+  `iModelCore/libsrc/vcpkg_run_install.sh` does **not** pass `--overlay-ports`, so the
+  overlay is ignored. Here the version is governed by `version>=`/`overrides` in the
+  top-level `iModelCore/libsrc/crashpad/vcpkg.json` and the `baseline` commit ID in
+  `iModelCore/libsrc/crashpad/vcpkg-configuration.json`.
+
+**Overlay provenance:** the overlay port was forked from the upstream vcpkg registry
+`crashpad` port at version `2024-04-11#13`, then modified locally (extra patches plus the
+clang-cl / MSBuild-header handling in `portfile.cmake`). When re-syncing against a newer
+upstream vcpkg port, diff against that upstream version to see which local changes still
+need to be carried forward.
+
+To change the crashpad version:
+
+1. **Update the top-level manifest for the non-Windows platforms:** bump `version>=` and
+   `overrides` in `iModelCore/libsrc/crashpad/vcpkg.json`, and (if needed) the `baseline`
+   commit ID in `iModelCore/libsrc/crashpad/vcpkg-configuration.json`.
+2. **Update the Windows overlay to match.** In `ports/crashpad/portfile.cmake` the version
+   is pinned by three separate `REF` commit hashes, which typically move together:
+   - `crashpad` (`URL .../crashpad/crashpad`)
+   - `mini_chromium` (`URL .../chromium/mini_chromium`) — toolchains and build config
+   - `lss` / linux-syscall-support (Android/Linux code path only)
+3. **Regenerate the overlay patches** in `ports/crashpad/` against the new revisions. Some
+   are Bentley-local (e.g. the `output_name` / library-name-conflict patches) and some
+   mirror upstream vcpkg patches (e.g. `crashpad-memset-errors-5758170.diff`, whose source
+   URL is noted inline). A patch that no longer applies must be rebased or dropped.
+4. **Bump the overlay's own `ports/crashpad/vcpkg.json`** (`version-date` and/or
+   `port-version`) and keep it `>=` the `version>=`/`overrides` values in the top-level
+   `iModelCore/libsrc/crashpad/vcpkg.json`, otherwise vcpkg will not select the overlay on
+   Windows.
+
+Keep the Windows overlay and the non-Windows upstream version pointing at the **same**
+crashpad revision so all platforms build the same code.
 
 ---
 # Old WIP Notes on pulling it now (2023)

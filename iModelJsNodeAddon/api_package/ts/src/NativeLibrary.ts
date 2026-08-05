@@ -1056,11 +1056,30 @@ export declare namespace IModelJsNative {
     constructor();
     public readonly cloudContainer?: CloudContainer;
     public abandonChanges(): void;
+    /**
+     * Apply a raw sqlite changeset file - the plain, uncompressed byte stream produced by the sqlite
+     * session extension - to this SQLiteDb. This is *not* the same on-disk format used for iModel
+     * changesets. Unlike DgnDb.applyChangeset, this does *not* validate any changeset header
+     * (parentId/changesetId) against the current state of the db, and it does *not* support DDL/schema
+     * changes (raw sqlite changesets cannot represent them) - it simply applies the row-level changes.
+     * Any conflict encountered while applying causes the entire apply to fail and throw.
+     */
+    public applyChangeset(changesetFile: LocalFileName): void;
     public closeDb(): void;
+    /**
+     * Write out the changes captured since startChangeTracking() was called, to a changeset file holding
+     * the raw sqlite changeset (the plain, uncompressed byte stream produced by the sqlite session
+     * extension) - this is *not* the same on-disk format used for iModel changesets. Raw sqlite changesets
+     * cannot represent DDL/schema changes, so this throws if any DDL was captured since
+     * startChangeTracking() was called. Used only for testing.
+     */
+    public createChangeset(changesetFile: LocalFileName): void;
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
     public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
+    /** Execute a DDL statement so it will be captured by change tracking, if active. */
+    public executeDdl(ddl: string): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;
@@ -1076,6 +1095,8 @@ export declare namespace IModelJsNative {
     public restartDefaultTxn(): void;
     public saveChanges(): void;
     public saveFileProperty(props: FilePropertyProps, strValue: string | undefined, blobVal?: Uint8Array): void;
+    /** Begin capturing DDL/data changes made to this SQLiteDb. Used only to produce test changeset files. */
+    public startChangeTracking(): void;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
     public analyze(): void;
     public enableWalMode(yesNo?: boolean): void;
