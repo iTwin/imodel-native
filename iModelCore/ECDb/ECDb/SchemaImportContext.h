@@ -239,6 +239,8 @@ struct MainSchemaManager;
 struct SchemaImportContext final
     {
     private:
+        static constexpr size_t MAX_MAPPING_DECISIONS = 100;
+
         bset<ECN::ECClassId> m_classMapsToSave;
         bset<Utf8CP, CompareIUtf8Ascii> m_builtinSchemaNames;
         ClassMapLoadContext m_loadContext;
@@ -248,6 +250,7 @@ struct SchemaImportContext final
         SchemaPolicies m_schemaPolicies;
         TransformData m_transformData;
         RemapManager m_remapManager;
+        bvector<Utf8String> m_mappingDecisions;
         bool m_semanticRebasing;
 
     public:
@@ -272,6 +275,17 @@ struct SchemaImportContext final
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
         TransformData& GetDataTransform() {return m_transformData; }
         void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
+
+        //! Records a column mapping decision for failure diagnostics. Only the most recent MAX_MAPPING_DECISIONS entries are kept.
+        void AddMappingDecision(Utf8String&& decision)
+            {
+            if (m_mappingDecisions.size() >= MAX_MAPPING_DECISIONS)
+                m_mappingDecisions.erase(m_mappingDecisions.begin());
+            m_mappingDecisions.push_back(std::move(decision));
+            }
+        //! Reports an aggregate summary of the remapping work plus the most recent column mapping decisions through Issues().
+        //! Called when the mapping phase of a schema import fails, to aid diagnosing failures from logs alone.
+        void ReportMappingFailureDiagnostics() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
