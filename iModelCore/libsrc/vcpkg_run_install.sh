@@ -128,6 +128,13 @@ if [ -z "${X_VCPKG_REGISTRIES_CACHE:-}" ]; then
 fi
 mkdir -p "$X_VCPKG_REGISTRIES_CACHE"
 
+# Resolve both mutable cache directories to canonical, symlink-free paths and hand those to vcpkg.
+# The locks below are keyed on the same canonical paths, so retargeting a symlink after this point
+# cannot send vcpkg into a directory other than the one this run locked.
+DOWNLOADS_ROOT="$(cd "$DOWNLOADS_ROOT" && pwd -P)"
+X_VCPKG_REGISTRIES_CACHE="$(cd "$X_VCPKG_REGISTRIES_CACHE" && pwd -P)"
+export X_VCPKG_REGISTRIES_CACHE
+
 echo "vcpkg: installing packages from $MANIFEST_DIR (triplet=$TRIPLET, install-root=$INSTALL_ROOT)"
 echo "vcpkg: downloads=$DOWNLOADS_ROOT"
 echo "vcpkg: registries-cache=$X_VCPKG_REGISTRIES_CACHE"
@@ -175,18 +182,23 @@ fi
 # BentleyBuild graph, so two installs can still overlap (static + dynamic, two pipelines, or two
 # users) and race on that state (see PR #1497: concurrent registry fetch/GC).
 #
-# Lock the actual mutable directories, not a file inside them or a triplet-derived name. Those
-# paths can be redirected
+# Lock the actual mutable directories, not a triplet-derived name: those paths can be redirected
 # independently (VCPKG_DOWNLOADS / X_VCPKG_REGISTRIES_CACHE) and shared across arches or users, so
 # a triplet+cache-base lock name can both miss real sharing (two arches pointed at one shared
-# downloads tree get different locks) and falsely serialize unrelated runs. Locking an open
-# directory descriptor means a cache cleanup cannot split the lock domain by replacing a lock-file
-# directory entry. Acquire the canonical, de-duplicated directories in sorted order so runs with
-# overlapping sets can never deadlock.
+# downloads tree get different locks) and falsely serialize unrelated runs.
+# The lock objects themselves are regular files in a stable namespace ($VCPKG_CACHE_BASE/locks),
+# outside the directories they guard, named from the canonical path of the guarded directory.
+# vcpkg is given that same canonical path, so the lock domain and the install domain cannot be
+# split by a cache cleanup, a symlink retarget, or a directory rename: whatever happens to the
+# original alias, both the lock and vcpkg refer to the resolved directory.
+# The lock files are opened read-write because Linux emulates flock on NFS with POSIX locks, which
+# require a writable descriptor and cannot be taken on a directory at all -- an enterprise
+# $HOME/.cache or a cache override on NFS would otherwise fail to lock.
+# Acquire the de-duplicated locks in sorted order so runs with overlapping sets can never deadlock.
 # Use an auto-releasing advisory lock so a crash, SIGKILL, or power loss cannot leave a stale lock
 # behind that wedges every later install: flock(1) on Linux, Perl's flock() on stock macOS (which
 # has no flock(1) but always ships Perl). Fail loudly if neither is available rather than fall back
-# to an unrecoverable directory lock.
+# to an unrecoverable lock.
 # --------------------------------------------------------------------------------------
 # Build the install command once so every lock backend wraps the same invocation.
 VCPKG_CMD=("$VCPKG_EXE" install
@@ -198,75 +210,71 @@ VCPKG_CMD=("$VCPKG_EXE" install
     --x-packages-root="$INSTALL_ROOT/packages"
     "${OVERLAY_ARGS[@]}")
 
-# Canonicalize the directories this install mutates, then open them once and identify those open
-# descriptors by device and inode. De-dup is required: the two paths can name the same directory
-# (including through aliases that differ only by case on macOS), and locking the same descriptor
-# twice from one process would self-deadlock. Sorting by filesystem identity instead of path
-# spelling gives every process the same global acquire order, preventing AB/BA deadlock between
-# runs whose directory sets overlap. Keeping these descriptors open avoids a stat/reopen race.
-_canon_dirs=()
+# Print "device:inode" for an open descriptor. GNU stat follows /dev/fd to fstat the open file
+# (Linux); BSD stat describes the /dev/fd entry itself, so fall back to Perl's fstat (macOS).
+_fd_identity() {
+    stat -Lc '%d:%i' "/dev/fd/$1" 2>/dev/null && return 0
+    command -v perl >/dev/null 2>&1 || return 1
+    perl -e 'open(my $fh, "<&=$ARGV[0]") or exit 1; my @st = stat($fh) or exit 1; print "$st[0]:$st[1]";' "$1"
+}
+
+# Print "device:inode" for a path.
+_path_identity() {
+    stat -Lc '%d:%i' "$1" 2>/dev/null || stat -Lf '%d:%i' "$1" 2>/dev/null
+}
+
+VCPKG_LOCK_DIR="$VCPKG_CACHE_BASE/locks"
+mkdir -p "$VCPKG_LOCK_DIR"
+
+# De-dup because the two cache paths can name the same directory, and locking one file twice from
+# a single process would self-deadlock. Sorting the canonical paths gives every process the same
+# global acquire order, preventing AB/BA deadlock between runs whose directory sets overlap.
+_lock_paths=()
 for _d in "$DOWNLOADS_ROOT" "$X_VCPKG_REGISTRIES_CACHE"; do
-    _canon="$(cd "$_d" 2>/dev/null && pwd -P)" || _canon="$_d"
-    _canon_dirs+=("$_canon")
+    if [ "${_lock_paths[0]:-}" != "$_d" ]; then
+        _lock_paths+=("$_d")
+    fi
 done
+if [ "${#_lock_paths[@]}" -eq 2 ] &&
+   [ "$(printf '%s\n%s\n' "${_lock_paths[0]}" "${_lock_paths[1]}" | LC_ALL=C sort | head -n 1)" = "${_lock_paths[1]}" ]; then
+    _tmp="${_lock_paths[0]}"; _lock_paths[0]="${_lock_paths[1]}"; _lock_paths[1]="$_tmp"
+fi
 
 LOCK_DIRS=()
+LOCK_FILES=()
 LOCK_FDS=()
 _lock_keys=()
 _fd=9
-for _d in "${_canon_dirs[@]}"; do
+for _d in "${_lock_paths[@]}"; do
+    # Derive the lock name from a checksum of the canonical path: filesystem-safe and bounded in
+    # length however deep the cache lives. A checksum collision can only over-serialize.
+    _lock_file="$VCPKG_LOCK_DIR/$(printf '%s' "$_d" | cksum | tr -cd '0-9').lock"
+    # <> is O_RDWR|O_CREAT, which both creates the lock file and keeps flock usable over NFS.
     # Computed fd numbers need eval on bash 3.2 (stock macOS), which lacks the {var}> form.
-    eval "exec $_fd<\"\$_d\""
-    if _key="$(stat -Lc '%d:%i' "/dev/fd/$_fd" 2>/dev/null)"; then
-        : # GNU stat follows /dev/fd to fstat the open directory (Linux).
-    elif command -v perl >/dev/null 2>&1 &&
-         _key="$(perl -e '
-            open(my $fh, "<&=$ARGV[0]") or exit 1;
-            my @st = stat($fh) or exit 1;
-            print "$st[0]:$st[1]";
-         ' "$_fd")"; then
-        : # BSD stat identifies the /dev/fd entry itself; Perl fstats the handle (macOS).
-    else
-        echo "Error: failed to identify vcpkg install lock directory $_d" >&2
+    eval "exec $_fd<>\"\$_lock_file\""
+    # Keeping this descriptor open avoids a stat/reopen race; record its identity so the backends
+    # can detect a lock file that was replaced between the open and the successful lock.
+    if ! _key="$(_fd_identity "$_fd")"; then
+        echo "Error: failed to identify vcpkg install lock file $_lock_file" >&2
         exit 1
     fi
-    if [ "${_lock_keys[0]:-}" != "$_key" ]; then
-        _lock_keys+=("$_key")
-        LOCK_DIRS+=("$_d")
-        LOCK_FDS+=("$_fd")
-        _fd=$((_fd - 1))
-    else
-        eval "exec $_fd>&-"
-    fi
+    LOCK_DIRS+=("$_d")
+    LOCK_FILES+=("$_lock_file")
+    LOCK_FDS+=("$_fd")
+    _lock_keys+=("$_key")
+    _fd=$((_fd - 1))
 done
 
-# There are at most two lock directories. Put them in a path-independent global order using their
-# device/inode keys so aliases cannot cause different processes to acquire the same pair backward.
-if [ "${#LOCK_DIRS[@]}" -eq 2 ] &&
-   [ "$(printf '%s\n%s\n' "${_lock_keys[0]}" "${_lock_keys[1]}" | LC_ALL=C sort | head -n 1)" = "${_lock_keys[1]}" ]; then
-    _tmp="${LOCK_DIRS[0]}"; LOCK_DIRS[0]="${LOCK_DIRS[1]}"; LOCK_DIRS[1]="$_tmp"
-    _tmp="${LOCK_FDS[0]}"; LOCK_FDS[0]="${LOCK_FDS[1]}"; LOCK_FDS[1]="$_tmp"
-    _tmp="${_lock_keys[0]}"; _lock_keys[0]="${_lock_keys[1]}"; _lock_keys[1]="$_tmp"
-fi
-
 if command -v flock >/dev/null 2>&1; then
-    # Lock the descriptors opened above; the kernel drops them on exit.
-    for _i in "${!LOCK_DIRS[@]}"; do
-        _d="${LOCK_DIRS[$_i]}"
-        _fd="${LOCK_FDS[$_i]}"
-        if ! flock "$_fd"; then
-            echo "Error: failed to acquire vcpkg install lock on $_d"
+    # Lock the descriptors opened above; the kernel drops them on exit. vcpkg inherits them, so a
+    # killed wrapper still leaves the locks held for as long as the install is mutating the caches.
+    for _i in "${!LOCK_FDS[@]}"; do
+        if ! flock "${LOCK_FDS[$_i]}"; then
+            echo "Error: failed to acquire vcpkg install lock ${LOCK_FILES[$_i]} for ${LOCK_DIRS[$_i]}" >&2
             exit 1
         fi
-        if _path_key="$(stat -Lc '%d:%i' "$_d" 2>/dev/null)"; then
-            : # GNU stat (Linux)
-        elif _path_key="$(stat -Lf '%d:%i' "$_d" 2>/dev/null)"; then
-            : # BSD stat (macOS)
-        else
-            _path_key=""
-        fi
-        if [ "$_path_key" != "${_lock_keys[$_i]}" ]; then
-            echo "Error: vcpkg install lock directory was replaced while acquiring it: $_d" >&2
+        if [ "$(_path_identity "${LOCK_FILES[$_i]}")" != "${_lock_keys[$_i]}" ]; then
+            echo "Error: vcpkg install lock file was replaced while acquiring it: ${LOCK_FILES[$_i]}" >&2
             exit 1
         fi
     done
@@ -280,8 +288,8 @@ elif command -v perl >/dev/null 2>&1; then
     # kept mutating the caches: the lock is now held for exactly the install's lifetime, and the
     # install's exit status becomes this script's exit status.
     PERL_LOCK_ARGS=()
-    for _i in "${!LOCK_DIRS[@]}"; do
-        PERL_LOCK_ARGS+=("${LOCK_FDS[$_i]}" "${LOCK_DIRS[$_i]}" "${_lock_keys[$_i]}")
+    for _i in "${!LOCK_FDS[@]}"; do
+        PERL_LOCK_ARGS+=("${LOCK_FDS[$_i]}" "${LOCK_FILES[$_i]}" "${_lock_keys[$_i]}")
     done
     perl -e '
         use Fcntl qw(F_GETFD F_SETFD FD_CLOEXEC);
@@ -292,15 +300,15 @@ elif command -v perl >/dev/null 2>&1; then
         shift @ARGV if @ARGV;
         my @held;
         for my $lock (@locks) {
-            my ($fd, $dir, $key) = @$lock;
-            open(my $fh, "<&=$fd") or die "vcpkg lock: cannot use fd $fd for $dir: $!\n";
-            flock($fh, 2)          or die "vcpkg lock: cannot lock $dir: $!\n";
-            my @st = stat($dir);
+            my ($fd, $file, $key) = @$lock;
+            open(my $fh, "+<&=$fd") or die "vcpkg lock: cannot use fd $fd for $file: $!\n";
+            flock($fh, 2)           or die "vcpkg lock: cannot lock $file: $!\n";
+            my @st = stat($file);
             @st && "$st[0]:$st[1]" eq $key
-                or die "vcpkg lock: lock directory was replaced while acquiring it: $dir\n";
+                or die "vcpkg lock: lock file was replaced while acquiring it: $file\n";
             my $fl = fcntl($fh, F_GETFD, 0);
-            defined($fl)                             or die "vcpkg lock: F_GETFD $dir: $!\n";
-            fcntl($fh, F_SETFD, $fl & ~FD_CLOEXEC)   or die "vcpkg lock: clear cloexec $dir: $!\n";
+            defined($fl)                             or die "vcpkg lock: F_GETFD $file: $!\n";
+            fcntl($fh, F_SETFD, $fl & ~FD_CLOEXEC)   or die "vcpkg lock: clear cloexec $file: $!\n";
             push @held, $fh;
         }
         exec { $ARGV[0] } @ARGV;
@@ -308,6 +316,6 @@ elif command -v perl >/dev/null 2>&1; then
     ' "${PERL_LOCK_ARGS[@]}" -- "${VCPKG_CMD[@]}"
 else
     echo "Error: no auto-releasing lock backend available (need 'flock' or 'perl')." >&2
-    echo "Refusing to use an unrecoverable directory lock; install 'flock' or 'perl' and retry." >&2
+    echo "Refusing to use an unrecoverable lock-file lock; install 'flock' or 'perl' and retry." >&2
     exit 1
 fi
