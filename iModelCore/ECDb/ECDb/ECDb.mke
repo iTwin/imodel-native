@@ -34,6 +34,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)InstanceReader.h \
                 $(publicApiDir)ECDbVirtualTab.h \
                 $(publicApiDir)InstanceWriter.h \
+                $(publicApiDir)BulkInstanceWriter.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h \
                 $(publicApiDir)InstanceRepository.h \
                 $(publicApiDir)ChangesetReader.h
@@ -141,6 +142,7 @@ ECDbAllHeaders = \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
+                $(baseDir)BulkInstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
                 $(baseDir)ClassViews.h \
                 $(baseDir)ChangesetValue.h \
@@ -423,6 +425,8 @@ $(o)BuiltInVTabs$(oext):                                      $(baseDir)BuiltInV
 $(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceWriterImpl$(oext):                                $(baseDir)InstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)BulkInstanceWriterImpl$(oext):                            $(baseDir)BulkInstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceRepository$(oext):                                $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
