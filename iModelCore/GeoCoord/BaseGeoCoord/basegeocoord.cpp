@@ -849,7 +849,7 @@ static bool     DatumEquivalent(CSDatum&    datum1,  CSDatum&    datum2,  bool t
 * will be reversed if needed and possible.
 * @param [out] listOftransforms The list to add transforms to.
 * @param [in] datumConverter the datum conveter to extract geodetic transforms of.
-* @return SUCCESS if sucessful and ERROR if one of the geodetic transforms
+* @return SUCCESS if successful and ERROR if one of the geodetic transforms
 *           could not be reversed to add to list. The list is then cleared in that case.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1259,7 +1259,7 @@ class TransformParams
       // Arbitrary order so map use can this class.
       bool operator<(const TransformParams& other) const
             {
-            // We check if equal because equal operator applies fuzzyness that must not be reflected in the map order.
+            // We check if equal because equal operator applies fuzziness that must not be reflected in the map order.
             if (*this == other)
                 return false;
 
@@ -2015,7 +2015,7 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
         // Promote to Polar Stereo with latitude if required
         if (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode())
             {
-            // A value at the pole is ignored as it is superflous for a polar stereo without latitude
+            // A value at the pole is ignored as it is superfluous for a polar stereo without latitude
             if (!doubleSame(parameterValue, 90) && !doubleSame(parameterValue, -90))
                 coordinateSystem.SetProjectionCode(BaseGCS::pcvPolarStereographicStandardLatitude);
             else
@@ -2049,7 +2049,7 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
             }
         else if (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode())
             {
-            // A value at the pole is ignored as it is superflous for a polar stereo without latitude
+            // A value at the pole is ignored as it is superfluous for a polar stereo without latitude
             if (!doubleSame(parameterValue, 90) && !doubleSame(parameterValue, -90))
                 {
                 coordinateSystem.SetProjectionCode(BaseGCS::pcvPolarStereographicStandardLatitude); //Promote to polar stereo with latitude.
@@ -2075,7 +2075,7 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
         {
         if (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode())
             {
-            // A value at the pole is ignored as it is superflous for a polar stereo without latitude
+            // A value at the pole is ignored as it is superfluous for a polar stereo without latitude
             if (!doubleSame(parameterValue, 90) && !doubleSame(parameterValue, -90))
                 {
                 coordinateSystem.SetProjectionCode(BaseGCS::pcvPolarStereographicStandardLatitude); //Promote to polar stereo with latitude.
@@ -2092,7 +2092,7 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
         else if ((BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertConformalConicOneParallel == coordinateSystem.GetProjectionCode()))
             {
-            if (SUCCESS != coordinateSystem.SetOriginLatitude(parameterValue * conversionToDegree)) // Weird occurence !
+            if (SUCCESS != coordinateSystem.SetOriginLatitude(parameterValue * conversionToDegree)) // Weird occurrence!
                 return GeoCoordParse_InvalidParamForMethod;
             }
         else
@@ -2400,7 +2400,7 @@ GeoCoordParseStatus GetDatumNameFromNameAliasOrTransform(Utf8StringR finalDatumN
             namedDatum = nullptr;
             }
 
-        // Sometimes GDAL/OGR adds an additiona D_ before a perfectly valid name
+        // Sometimes GDAL/OGR adds an additional D_ before a perfectly valid name
         if ((finalDatumName.length() == 0) && (name.substr(0, 2) == "D_") && (name.length() >= 3))
             {
             Utf8String tempName = name.substr(2);
@@ -2617,7 +2617,7 @@ GeoCoordParseStatus GetDatumNameFromNameAliasOrTransform(Utf8StringR finalDatumN
                             {
                             // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
                             // In this case we simply check and go on
-                            // It can also occur when the seleted datum is deprecated in which case we take the newly found one.
+                            // It can also occur when the selected datum is deprecated in which case we take the newly found one.
                             if (finalNameDeprecated)
                                 {
                                 // If the previously selected datum was deprecated and the TOWGS84 are different then we keep the one we have found.
@@ -3145,7 +3145,7 @@ GeoCoordParseStatus GetDomainOfValidity(BaseGCSR baseGCS, BePugiXmlNode gcsNode)
         }
 
     // We want coherent extent bounds. Note that even if technically east can be smaller than west
-    // and vice versa when crossing the 180/-180 degree line since CMSAP has sometimes issues with
+    // and vice versa when crossing the 180/-180 degree line since CSMAP has sometimes issues with
     // that and minimum and maximum are mostly informational we prefer not to set something CSMAP would reject.
     if (westPresent && eastPresent && northPresent && southPresent && east > west && north > south)
         {
@@ -3223,7 +3223,7 @@ GeoCoordParseStatus ParseEllipsoid(EllipsoidP& customEllipsoid, Utf8String& elli
         return GeoCoordParse_Success;
         }
 
-    // If we get here then we trully have a custom ellipsoid so we make one.
+    // If we get here then we truly have a custom ellipsoid so we make one.
     customEllipsoid = Ellipsoid::CreateEllipsoid();
 
     Utf8String content;
@@ -3728,7 +3728,7 @@ GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8S
 
     if (GeoCoordParse_Success != GetEllipsoidNameFromNameOrAlias(ellipsoidName, initialEllipsoidName, ellipsoidAlias) || ellipsoidName.length() == 0)
         {
-        // Unknown ellipoid ... we parse it out
+        // Unknown ellipsoid ... we parse it out
         if (GeoCoordParse_Success != (status = ParseEllipsoid(customEllipsoid, ellipsoidName, ellipsoidNode, ellipsoidAlias)))
             return status;
         }
@@ -3772,7 +3772,7 @@ GeoCoordParseStatus ParseDatum(DatumP& customDatum, Utf8String& datumName, Utf8S
             }
         }
 
-    // If we get here then we trully have a custom datum so we make one.
+    // If we get here then we truly have a custom datum so we make one.
     customDatum = Datum::CreateDatum();
 
     Utf8String content;
@@ -3837,7 +3837,7 @@ GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BePugiXmlNode gcsNode, bool gcsG
     if (GeoCoordParse_Success != GetNodeContent(gcsName, gcsNode, "Name"))
         return GeoCoordParse_BadGCS;
 
-    // If we were sucessful then we do not we validate the definition is similar.
+    // If we were successful then we do not we validate the definition is similar.
     if (SUCCESS == baseGCS.SetFromCSName(gcsName.c_str()))
         return GeoCoordParse_Success;
 
@@ -4090,7 +4090,7 @@ bool StartsWithKeyword(const Utf8String& wkt, const Utf8String& keyword) const
 *
 *   @param [in,out] wkt The WKT portion that contains the keyword to remove.
 *
-*   @return true if the keyword indicated was present and sucessfully removed.
+*   @return true if the keyword indicated was present and successfully removed.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4110,7 +4110,7 @@ bool StripKeyword(Utf8String& wkt, const Utf8String& keyword) const
 *   This method extracts from the provided stream the double
 *   The first non white character must be the number to extract.
 *
-*   @param [in,out] wkt The WKT portion that contains the number to extract aqnd remove.
+*   @param [in,out] wkt The WKT portion that contains the number to extract and remove.
 *
 *   @return The number.
 *
@@ -4746,13 +4746,13 @@ GeoCoordParseStatus PostStepVerticalCSToCoordSys(VerticalDatumPtr verticalDatum,
     if ((vdcNAVD88 == vertDatumLegacyCode) && !(baseGCS.IsNAD27() || baseGCS.IsNAD83()) && (BeStringUtilities::Stricmp(baseGCS.GetDatumName(), "WGS84") == 0))
         vertDatumLegacyCode = vdcGeoid;
 
-    // NOTE: We only rely on the authority ID because the name is unthrustworty but if some
+    // NOTE: We only rely on the authority ID because the name is untrustworthy but if some
     // standard emerges we will be happy to check the vertical cs names to resolve.
 
     StatusInt status = baseGCS.SetVerticalDatumCode (vertDatumLegacyCode);
     if (SUCCESS != status)
         {
-        // Something went wrong. Sometimes it is because NAVD88 is specified and the datum is not explicitely NAD83 ... we morph to GEOID (which is the same and retry)
+        // Something went wrong. Sometimes it is because NAVD88 is specified and the datum is not explicitly NAD83 ... we morph to GEOID (which is the same and retry)
         if (vdcNAVD88 == vertDatumLegacyCode)
             status = baseGCS.SetVerticalDatumCode (vdcGeoid);
         }
@@ -4972,7 +4972,7 @@ GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
         // Optional
         if (StartsWithKeyword(wkt, "AXIS"))
             {
-            // For a projcs clause two axises must be specified one after the other
+            // For a PROJCS clause two axes must be specified one after the other
             AxisDirection horizontalAxis = GetAxis(wkt);
 
             // Trim of whites
@@ -4984,7 +4984,7 @@ GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
             // Trim of whites
             wkt.Trim();
 
-            // The second AXIS Clause is required accordinag to specs.
+            // The second AXIS Clause is required according to specs.
             if (!StartsWithKeyword(wkt, "AXIS"))
                 return GeoCoordParse_BadAxis;
 
@@ -5373,7 +5373,7 @@ GeoCoordParseStatus GetLocal (BaseGCSR baseGCS, Utf8StringR wkt) const
 
 
 /*---------------------------------------------------------------------------------**//**
-*   This private method extracts the datum, spheroid and meridian
+*   This private method extracts the datum, ellipsoid and meridian
 *   definition and sets the appropriate fields in the given coordinate system.
 *
 *   @param [in,out] wkt The WKT containing the geographic coordinate reference system to extract and remove.
@@ -5412,7 +5412,7 @@ GeoCoordParseStatus GetGeographicToProjected (Utf8StringR wkt, double* conversio
 *          other than Greenwich while other projected GCS can only use Greenwich.
 *          Since the present method is called for both case, the flag indicates appropriate behavior.
 *
-*   @return GeoCoordParse_Success if operation sucessful or another value otherwise.
+*   @return GeoCoordParse_Success if operation successful or another value otherwise.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5476,7 +5476,7 @@ GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geogra
                 return status;
 
             // Conversion error may make it that a degree is slightly higher than 1.0 within 1E-11
-            // This may lead to values minuscully greater than 90 degrees for latitudes
+            // This may lead to values slightly greater than 90 degrees for latitudes
             // Clamping to 1.0 insures exact value.
             if (*conversionToDegree > 1.0 && doubleSame(*conversionToDegree, 1.0))
                 *conversionToDegree = 1.0;
@@ -5492,7 +5492,7 @@ GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geogra
         // Optional
         if (StartsWithKeyword(wkt, "AXIS"))
             {
-            // For a projcs clause two axises must be specified one after the other
+            // For a projcs clause two axes must be specified one after the other
             AxisDirection horizontalAxis = GetAxis(wkt);
 
             // Trim of whites
@@ -5501,7 +5501,7 @@ GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geogra
             if (StartsWithKeyword(wkt, COMMA))
                 StripKeyword(wkt, COMMA);
 
-            // The second AXIS Clause is required accordinag to specs.
+            // The second AXIS Clause is required according to specs.
             if (!StartsWithKeyword(wkt, "AXIS"))
                 return GeoCoordParse_BadAxis;
 
@@ -5807,8 +5807,8 @@ GeoCoordParseStatus GetPrimeMeridianToCoordSys (Utf8StringR wkt, BaseGCSR coordi
 
     StripKeyword(wkt, RIGHTDELIMITER);
 
-    // CSMAP only supports prime meridian values other than Greenwish for
-    // lat/long GCS all other projections must use Greenwish.
+    // CSMAP only supports prime meridian values other than Greenwich for
+    // lat/long GCS all other projections must use Greenwich.
     if (BaseGCS::pcvUnity == coordinateSystem.GetProjectionCode() &&
         (allowNonGreenwich ||
          (name == "Ferro" && doubleSame(longitude, -17.666666666666)) ||
@@ -6052,7 +6052,7 @@ GeoCoordParseStatus GetProjectionToCoordSys (Utf8StringR wkt, double conversionT
 *   @param [out] unitName Reference to a string that receives the unit name.
 *   @param [out] unitFactor The unit factor as set in the unit clause.
 *
-*   @return GeoCoordParse_Success if succesful or another value otherwise.
+*   @return GeoCoordParse_Success if successful or another value otherwise.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6115,9 +6115,9 @@ GeoCoordParseStatus GetUnit (Utf8StringR wkt, Utf8StringR unitName, double* unit
 *
 *   @param [in,out] wkt The WKT portion that contains the extension to extract and remove.
 *   @param [out] extensionName Reference to a string that receives the extension name.
-*   @param [out] extentionText The text associated with extension
+*   @param [out] extensionText The text associated with extension
 *
-*   @return GeoCoordParse_Success if succesful or another value otherwise.
+*   @return GeoCoordParse_Success if successful or another value otherwise.
 *
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6590,7 +6590,7 @@ GeoCoordParseStatus Get7ParamsDatumTransformation (Utf8StringR wkt, double& delt
 *   This method extracts, strips and returns the Oracle style
 *   authority ID from the datum, spheroid, prime meridian, or operation name. At one
 *   point Oracle used to append to the object name an authority ID in between parenthesis
-*   of the form "Anguilla 1957 (EPSG ID 6600)". This function will extract this authroity ID
+*   of the form "Anguilla 1957 (EPSG ID 6600)". This function will extract this authority ID
 *   and return it in the form "EPSG:6600" and remove the part from the name.
 *
 *   @param [in,out] name The name as extracted from WKT. On output it will contain the stripped name
@@ -6761,9 +6761,9 @@ enum VerticalCSCode
     {
     // All entries from 5000 to 5099 refer to non-Orthometric (ellipsoid) vertical datums
     // A set of geotiff keys can define a vertical CS even if no Geographic CS is defined.
-    // Since a BaseGCS requires the definition of aqn horizontal Geographic Coordinate System and
+    // Since a BaseGCS requires the definition of an horizontal Geographic Coordinate System and
     // allowing the vertical CS to refer to a different geodetic datum and ellipsoid would not make sense at all
-    // For this reason we will interpret all values non-orthometric as plain ellipsoidal (refering to the geodetic datum)
+    // For this reason we will interpret all values non-orthometric as plain ellipsoidal (referring to the geodetic datum)
     // regardless the ellipsoid fit or not.
     VertCS_Newlyn =  5101,
     VertCS_North_American_Vertical_Datum_1929 =  5102,
@@ -6839,7 +6839,7 @@ GeoTiffKeyInterpreter()    {
 StatusInt       Process
 (
 BaseGCSR                outGCS,
-StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning described in ERRMSG and warning, passed back.
 Utf8StringP             warningOrErrorMsg,  // Error message.
 IGeoTiffKeysList const& geoTiffKeys,        // The GeoTiff key list
 bool                    allowUnitsOverride   // Indicates if the presence of a unit can override GCS units.
@@ -7043,7 +7043,7 @@ bool                    allowUnitsOverride   // Indicates if the presence of a u
 
             // The three following are simply ignored.
             case VerticalCitationGeoKey: // This is informative only
-            case VerticalDatumGeoKey:    // missdefinition of standard ... may conflict with VerticalCSType
+            case VerticalDatumGeoKey:    // misdefinition of standard ... may conflict with VerticalCSType
             case VerticalUnitsGeoKey:    // BaseGCS cannot have vertical units different than horizontal units (meters imposed for lat/long)
                 break;
             }
@@ -7569,7 +7569,7 @@ StatusInt       ProcessEllipsoidKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool projectedCS, bool allowUnitsOverride)
     {
-    // Even though the allowUnitsOverride is false and the GCS user defined we will store the linear unit definiton
+    // Even though the allowUnitsOverride is false and the GCS user defined we will store the linear unit definition
     // for the interpretation of the ellipsoid dimension yet we will not change the current CS definition unless it is
     // not a predefined GCS. (user defined GCS will have units applied)
 
@@ -7629,7 +7629,7 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessLinearUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool projectedCS, bool allowUnitsOverride)
     {
-    // Even though the allowUnitsOverride is false and the GCS user defined we will store the linear unit definiton
+    // Even though the allowUnitsOverride is false and the GCS user defined we will store the linear unit definition
     // for the interpretation of the ellipsoid dimension yet we will not change the current CS definition unless it is
     // not a predefined GCS. (user defined GCS will have units applied)
 
@@ -8198,7 +8198,7 @@ StatusInt       ProcessOriginOrCenterLLKey (IGeoTiffKeysList::GeoKeyItem& geoKey
     BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
     BeAssert (ModelTypeProjected == m_modelType);
 
-    // if a previous key specifed the origin longitude or latitude, simply ignore a repeated attempt to set it.
+    // if a previous key specified the origin longitude or latitude, simply ignore a repeated attempt to set it.
     if (isLongitude && m_haveUserOriginLongitude)
         return GEOCOORDERR_CoordParamRedundant;
     else if (!isLongitude && m_haveUserOriginLatitude)
@@ -8627,7 +8627,7 @@ StatusInt       SaveGeographicUserDefinition
         // Prime Meridian stored before Ellipsoid code
         SavePrimeMeridian ();
 
-        // I don'think this is any different than storing the Datum code that refers only to the Ellipsoid in the Datum case above.
+        // I don't think this is any different than storing the Datum code that refers only to the Ellipsoid in the Datum case above.
         m_geoTiffKeys.AddKey (GeoTiffKeyInterpreter::GeogEllipsoidGeoKey, (uint32_t) epsgEllipsoidCode);
         }
     else
@@ -8716,7 +8716,7 @@ StatusInt       SaveProjectedUserDefinition
         {
         case cs_PRJCOD_TRMER:
         case cs_PRJCOD_TRMERBF: // We save the BF variation as plain TRMER as it is a problem of application in computation ... the projection principle of the
-                                // method is preserved. In any case this projection method is unknown by GeoTIFF so instead of discaring it we
+                                // method is preserved. In any case this projection method is unknown by GeoTIFF so instead of discarding it we
                                 // simplify it
             {
             m_geoTiffKeys.AddKey (GeoTiffKeyInterpreter::ProjCoordTransGeoKey, (uint32_t)GeoTiffKeyInterpreter::CT_TransverseMercator);
@@ -9051,7 +9051,7 @@ public:
             return false;
 
         const VerticalNullTransform* compareP = reinterpret_cast<const VerticalNullTransform*>(&compare);
-        if (nullptr == compareP) // if the cast fails we are comparing againt a different type of transform than VerticalNullTransform
+        if (nullptr == compareP) // if the cast fails we are comparing against a different type of transform than VerticalNullTransform
             return false;
 
         return true;
@@ -9261,7 +9261,7 @@ public:
         if (nullptr != m_csGeoidHeight)
             return SUCCESS; // already initialized
 
-        // create csGeoidHeight_ object containing a list of all the files needed for the transfom
+        // create csGeoidHeight_ object containing a list of all the files needed for the transform
         csDatumCatalog_* catalog = (struct csDatumCatalog_*)CS_malc(sizeof (struct csDatumCatalog_));
         if (nullptr == catalog)
             return ERROR;
@@ -9481,7 +9481,7 @@ public:
         if (0 != CSvrtconInit())
             return REPROJECT_CSMAPERR_VerticalDatumConversionError;
 
-        // create csGeoidHeight_ object containing a list of all the files needed for the transfom
+        // create csGeoidHeight_ object containing a list of all the files needed for the transform
         csDatumCatalog_* catalog = (struct csDatumCatalog_*)CS_malc(sizeof (struct csDatumCatalog_));
         if (nullptr == catalog)
             return ERROR;
@@ -9799,7 +9799,7 @@ VerticalTransformPtr VerticalTransform::CreateFromJson(BeJsConst jsonTransform, 
 
 VerticalTransformPtr VerticalTransform::CreateReverseCopy()
 {
-    // reverse copy must be implemented for all tranforms
+    // reverse copy must be implemented for all transforms
     BeAssert(false);
     return nullptr;
 }
@@ -10634,7 +10634,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
         bvector<Utf8String> path;
         if (SUCCESS == info->GetTransformPath(path, to) && (path.size() > 1))
         {
-            // for each step in the path, find the tranform
+            // for each step in the path, find the transform
             for (int i = 0; i < path.size()-1; i++)
             {
                 directTransform = GetDirectVerticalDatumTransform(path[i], path[i+1]);
@@ -10659,7 +10659,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
             bvector<Utf8String> path;
             if (SUCCESS == info->GetTransformPath(path, from) && (path.size() > 1))
             {
-                // for each step in the path, find the tranform (reverse as we are going from "to" to "from")
+                // for each step in the path, find the transform (reverse as we are going from "to" to "from")
                 for (int i = (int)path.size()-1; i > 0; i--)
                 {
                     directTransform = GetDirectVerticalDatumTransform(path[i], path[i-1]);
@@ -11195,7 +11195,7 @@ GeoPointCR  inLatLong
     // using CSMAP prior to application of the vertical datum.
     // All other vertical datums supported are Geoid based (orthometric)
     // Here is a map of sequence to be applied
-    // Note that vdcFromDatum has been converted to the proper interprtation at this time.
+    // Note that vdcFromDatum has been converted to the proper interpretation at this time.
     //      VERT1             VERT2
     //   vdcLocalEllipsoid    vdcEllipsoid      - Case 0A - CSMAP should take care of vertical elevation changes.
     //   vdcLocalEllipsoid    vdcLocalEllipsoid - Case 0B - CSMAP should take care of vertical elevation changes.
@@ -11286,7 +11286,7 @@ GeoPointCR  inLatLong
             return GEOCOORDERR_VerticalDatumConversion;
             }
         else
-            return GEOCOORDERR_VerticalDatumConversion; // From datum unknow ... not implemented.
+            return GEOCOORDERR_VerticalDatumConversion; // From datum unknown ... not implemented.
         }
 
 
@@ -11377,7 +11377,7 @@ GeoPointCR  inLatLong
         BeAssert ((vdcLocalEllipsoid == m_toVDC && ((vdcNAVD88 == m_fromVDC) || (vdcGeoid == m_fromVDC))) ||
                   (vdcLocalEllipsoid == m_fromVDC && ((vdcNAVD88 == m_toVDC) || (vdcGeoid == m_toVDC))));
 
-        // The ellipsoidal height diff is already applied but additions and substraction are commutative so we do not care
+        // The ellipsoidal height diff is already applied but additions and subtraction are commutative so we do not care
         // about the order of application given we use the proper lat/long combination.
         // In every case the output point should already have a meaningful elevation to correct.
         if (m_fromVDC == vdcGeoid || m_fromVDC == vdcNAVD88)
@@ -11417,7 +11417,7 @@ bool   IsNullTransform () const
     // Cases 1, 8, 9, 10 and all other case where vertical datums are equal ...
     // If both datums are still and local ellipsoid (Case 0B) the elevation change has already been taken into account and the
     // elevation datum converter is NULL. This does not imply that there is no elevation change. Just that those are included in the
-    // normal datum convertion process and it is for this part to declare null or not.
+    // normal datum conversion process and it is for this part to declare null or not.
     if (m_fromVDC == m_toVDC)
         return true;
 
@@ -12723,10 +12723,10 @@ StatusInt BaseGCS::FromHorizontalJson(BeJsConst jsonValue, Utf8StringR errorMess
     //     m_label = jsonValue["name"].asString();
 
     // We first try using the keyname
-    // If we were sucessful then we do not we validate the definition is similar.
+    // If we were successful then we do not we validate the definition is similar.
     if (!jsonValue["id"].isNull() && (SUCCESS == SetFromCSName(jsonValue["id"].asString().c_str())))
         {
-        // Even if we are all set with the keyname the description may have been overriden (PP behavior)
+        // Even if we are all set with the keyname the description may have been overridden (PP behavior)
         if (!jsonValue["description"].isNull())
             SetDescription(jsonValue["description"].asString().c_str());
 
@@ -13505,7 +13505,7 @@ StatusInt BaseGCS::FromHorizontalJson(BeJsConst jsonValue, Utf8StringR errorMess
         {
         // GCS Can be set uniquely using the EPSG code
         // We initialize using the EPSG code. Note that there may be multiple variants and
-        // This will result in an unpredictible definition if there are many.
+        // This will result in an unpredictable definition if there are many.
         // For this reason after setting using the code we will continue parsing to correct data if it is provided.
         if (0 < epsgCode && 32767 > epsgCode)
             {
@@ -14870,7 +14870,7 @@ ReprojectStatus       BaseGCS::GetLinearTransform
         {
         ReprojectStatus currentStatus = CartesianFromCartesian(transformedPoints[i], points[i], targetGCS);
 
-        if (REPROJECT_Success == status) // No warning previously occured ...
+        if (REPROJECT_Success == status) // No warning previously occurred ...
             status = currentStatus;
         else if ((REPROJECT_Success != currentStatus) && (status != REPROJECT_CSMAPERR_VerticalDatumConversionError))
             status = currentStatus; // We keep vertical datum error which is a little 'harder' than out of user domain
@@ -14978,7 +14978,7 @@ ReprojectStatus       BaseGCS::GetLinearTransformECEF
 
     // Extent must be large enough so we can effectively compute coordinate differences
     // since the geocoord engine will stop calculations when 0.001 per iteration is reached.
-    if (extentECEF.XLength() < linearTolerance || extentECEF.YLength() < linearTolerance || extentECEF.ZLength() < linearTolerance) // Z allways uses linear tolerance
+    if (extentECEF.XLength() < linearTolerance || extentECEF.YLength() < linearTolerance || extentECEF.ZLength() < linearTolerance) // Z always uses linear tolerance
         return REPROJECT_BadArgument;
 
     Transform   frameA, frameB, frameAInverse;
@@ -15003,7 +15003,7 @@ ReprojectStatus       BaseGCS::GetLinearTransformECEF
         {
         ReprojectStatus currentStatus = CartesianFromECEF(transformedPoints[i], points[i], targetGCS);
 
-        if (REPROJECT_Success == status) // No warning previously occured ...
+        if (REPROJECT_Success == status) // No warning previously occurred ...
             status = currentStatus;
         else if ((REPROJECT_Success != currentStatus) && (status != REPROJECT_CSMAPERR_VerticalDatumConversionError))
             status = currentStatus; // We keep vertical datum error which is a little 'harder' than out of user domain
@@ -15141,7 +15141,7 @@ ReprojectStatus       BaseGCS::GetLinearTransformToECEF
         {
         ReprojectStatus currentStatus = ECEFFromCartesian(transformedPoints[i], points[i]);
 
-        if (REPROJECT_Success == status) // No warning previously occured ...
+        if (REPROJECT_Success == status) // No warning previously occurred ...
             status = currentStatus;
         else if ((REPROJECT_Success != currentStatus) && (status != REPROJECT_CSMAPERR_VerticalDatumConversionError))
             status = currentStatus; // We keep vertical datum error which is a little 'harder' than out of user domain
@@ -15223,7 +15223,7 @@ ReprojectStatus       BaseGCS::GetLinearTransformToECEF
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BaseGCS::InitFromWellKnownText
 (
-StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning described in ERRMSG and warning, passed back.
 Utf8StringP             warningOrErrorMsg,  // Error message.
 WktFlavor               wktFlavor,          // The WKT Flavor.
 Utf8CP                  wellKnownText       // The Well Known Text specifying the coordinate system.
@@ -15254,7 +15254,7 @@ Utf8CP                  wellKnownText       // The Well Known Text specifying th
 
     if ((GeoCoordParse_Success == parseStatus) && (IsValid()))
         {
-        // Clear error in case it occured before
+        // Clear error in case it occurred before
         m_csError = 0;
         if (warningOrErrorMsg)
             warningOrErrorMsg->clear();
@@ -15312,7 +15312,7 @@ Utf8CP                  wellKnownText       // The Well Known Text specifying th
                 }
             else
                 {
-                // Clear error in case it occured before
+                // Clear error in case it occurred before
                 status = SUCCESS;
                 m_csError = 0;
                 if (warningOrErrorMsg)
@@ -15350,7 +15350,7 @@ Utf8CP                  wellKnownText       // The Well Known Text specifying th
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordParseStatus       BaseGCS::InitFromWellKnownText
 (
-    StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+    StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning described in ERRMSG and warning, passed back.
     Utf8StringP             warningOrErrorMsg,  // Error message.
     Utf8CP                  wellKnownText       // The Well Known Text specifying the coordinate system.
 )
@@ -15376,7 +15376,7 @@ GeoCoordParseStatus       BaseGCS::InitFromWellKnownText
 
     if ((GeoCoordParse_Success == status) && (IsValid()))
         {
-        // Clear error in case it occured before
+        // Clear error in case it occurred before
         m_csError = 0;
         if (warningOrErrorMsg)
             warningOrErrorMsg->clear();
@@ -15439,7 +15439,7 @@ GeoCoordParseStatus       BaseGCS::InitFromWellKnownText
                 }
             else
                 {
-                // Clear error in case it occured before
+                // Clear error in case it occurred before
                 status = GeoCoordParse_Success;
                 m_csError = 0;
                 if (warningOrErrorMsg)
@@ -15510,7 +15510,7 @@ GeoCoordParseStatus       BaseGCS::InitFromOSGEOXML
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BaseGCS::InitFromEPSGCode
 (
-StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning described in ERRMSG and warning, passed back.
 Utf8StringP             warningOrErrorMsg,  // Error message.
 int                     epsgCode
 )
@@ -15839,7 +15839,7 @@ WKTOptionsFlags     flags
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BaseGCS::InitFromGeoTiffKeys
 (
-StatusInt*              warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+StatusInt*              warning,            // Warning. Function returns SUCCESS, but some warning described in ERRMSG and warning, passed back.
 Utf8StringP             warningOrErrorMsg,  // Error message.
 IGeoTiffKeysList const* geoTiffKeys,         // The GeoTiff key list
 bool                    allowUnitsOverride   // Indicates if the presence of a unit can override GCS units.
@@ -16078,7 +16078,7 @@ bool                 anyWord
     // the number of mixed case should always equal or exceed the number of uppercase. Exceed happens when you enter something such that strupr(string).Equals(string).
     BeAssert (numMixedCase >= numUpperCase);
 
-    // Use a string object to avoid static security analysis error about potentiall unterminated strings.
+    // Use a string object to avoid static security analysis error about potentially unterminated strings.
     Utf8String concatString(m_csParameters->csdef.key_nm);
     concatString.append(m_csParameters->csdef.dat_knm);
     concatString.append(m_csParameters->csdef.elp_knm);
@@ -19099,7 +19099,7 @@ void BaseGCS::AlignVerticalDatumLegacyCodeWithCurrentVerticalDatum()
         // Unfortunately we cannot drop the legacy code even when we have a full vertical datum because any items that
         // do not use a full vertical datum (for example a 3SM with "Generic Geoid" as vertical datum) will cause a fallback
         // to using the legacy converter when converting elevation, not aligning the code with the full vertical datum
-        // can cause unprectible results... yes this is horrible but we must support the legacy codes.
+        // can cause unpredictable results... yes this is horrible but we must support the legacy codes.
         if (0 == name.CompareToI("WGS84"))
             m_verticalDatumLegacyCode = vdcEllipsoid;
         else if (0 == name.CompareToI("NGVD29 height"))
@@ -19552,7 +19552,7 @@ GeoPointR       centerPoint
         centerPoint.Init (0.0, 0.0, 0.0);
         return m_csError;
         }
-    // In examiming it, I discovered that CS_fillIn seems to always set csdef.org_lng and csdef.org_lat.
+    // In examining it, I discovered that CS_fillIn seems to always set csdef.org_lng and csdef.org_lat.
     // Thus I use it rather than try to figure out how to use the cs_prjprm function. It seemed to me that
     // we needed access to their cs_prjTab structure, but that they did not give access through the API.
     CSDefinition tempCS = m_csParameters->csdef;
@@ -19847,7 +19847,7 @@ bool shallowCompare
     if (!distanceSame(datum1.p_rad, datum2.p_rad))
         return false;
 
-    // Although the geocentric parameters may be set we want to distanciate from the concept of
+    // Although the geocentric parameters may be set we want to distantiate from the concept of
     // fallback for grid files. Even if those were originally set we want to consider the grid files to be always reachable.
     // and thus different geocentric parameter values are then considered irrelevant.
     bool transform1IsGeocentric = (datum1.to84_via == cs_DTCTYP_MOLO ||
@@ -20040,7 +20040,7 @@ bool shallowCompare
     CSMap::CS_free(wgs84);
 
     // If no datum converter can be created we cannot judge the equivalence.
-    // We will consider the datums equal since in all likelyhood they effectively are.
+    // We will consider the datums equal since in all likelihood they effectively are.
     if (NULL == theDatumConverter1 && NULL == theDatumConverter2)
         return true;
 
@@ -20065,7 +20065,7 @@ bool shallowCompare
     if (theDatumConverter1->xfrmCount != theDatumConverter2->xfrmCount)
         datumsEquivalent = false;
 
-    // For every individual transformation part of the convertion path ...
+    // For every individual transformation part of the conversion path ...
     for (int idxXForms=0 ; datumsEquivalent && (idxXForms < theDatumConverter1->xfrmCount); idxXForms++)
         {
 #if (0) // TODO Something wrong here ... will be fixed
@@ -20111,7 +20111,7 @@ bool shallowCompare
         // as part of its structure. As the names may be different this would result into those being
         // considered different. Since csmap has not activated Abridged Molodenski yet an we do not intend to use it we will
         // simply live with these eventual false-negatives.
-        // For grid shift files since the pointers to file names will be different even if refering to the same file we must be
+        // For grid shift files since the pointers to file names will be different even if referring to the same file we must be
         // more precise.
         if (datumsEquivalent)
             {
@@ -20222,7 +20222,7 @@ bool shallowCompare
         {
         CSDatumConvert* theDatumConverterDirect = CSMap::CSdtcsu(&datum1, &datum2);
         // If datum converter can be created we cannot judge the equivalence.
-        // We will consider the datums equal since in all likelyhood they effectively are.
+        // We will consider the datums equal since in all likelihood they effectively are.
         if (NULL == theDatumConverterDirect)
             return true;
 
@@ -20242,7 +20242,7 @@ bool shallowCompare
 
             if (!tentativeDatumEquivalent)
                 {
-                // One or more transformation is not null ... check if two oposite identical xforms
+                // One or more transformation is not null ... check if two opposite identical xforms
                 if (2 == theDatumConverterDirect->xfrmCount)
                     {
                     if (tolerateEquivalentDifferencesWhenDeprecated && 
@@ -20805,20 +20805,20 @@ bvector<GeoPoint>&    shape
 		return (StatusInt)GEOCOORDERR_InvalidCoordSys;
 
     // Some explanation about the values specified below and their intent.
-    // First it must be inderstood that the current implementation is in progress.
+    // First it must be understood that the current implementation is in progress.
     // The present implementation fixes some reported issues related to the
     // display and management of rasters when reprojection is involved.
     // The principle attempts to define the geo domain of a specific projection using
     // extent defined as min and max longitude and latitude. Such definition is adequate
-    // for many projections but not all. For example Lamber Comformal Conic domain is
+    // for many projections but not all. For example Lambert Conformal Conic domain is
     // correctly defined using such definition. For transverse mercator and derivatives
     // the domain can likewise be defined using this method. Others like Oblique Mercator
-    // or stereographic projections cannot as their area definition is not alligned
+    // or stereographic projections cannot as their area definition is not aligned
     // to latitude and longitudes. We assume that a smaller area can be defined using
     // plain geo extent but we are not sure. When the North and South pole are included we
     // have not yet defined a way to indicate this representation other than by specifying
-    // exact min or max to either North or Sout pole latitude but the actual
-    // case never occured so the implementation has currently been postponed
+    // exact min or max to either North or South pole latitude but the actual
+    // case never occurred so the implementation has currently been postponed
     // till more adequate research can be done.
     //
     // Concerning the definition of Transverse Mercators and derivative the mathematical domain
@@ -20847,7 +20847,7 @@ bvector<GeoPoint>&    shape
         if ((minLongitude != maxLongitude) && (minLatitude != maxLatitude))
             {
             // The user-defined are as defined in the dictionary but CSMAP requires a tiny difference from absolute
-            // position specified (for example Transverse Mercator is technically valid up to 90 latitude but CSMAP requires a few centimeters appart
+            // position specified (for example Transverse Mercator is technically valid up to 90 latitude but CSMAP requires a few centimeters apart
             // just in case. For this reason we minimise slightly the extent
             minLongitude += 0.0000028;
             maxLongitude -= 0.0000028;
@@ -22045,7 +22045,7 @@ GeoPointCR      inLatLong           // => latitude longitude
 
     status = (ReprojectStatus) CSMap::CS_ll3cs (m_csParameters, &internalCartesian, &inLatLong);
 
-    // In case a hard error occured ... we zero out all values
+    // In case a hard error occurred ... we zero out all values
     if ((REPROJECT_Success != status) && (REPROJECT_CSMAPERR_OutOfUsefulRange != status) && (REPROJECT_CSMAPERR_VerticalDatumConversionError != status) )
         outCartesian.x = outCartesian.y = outCartesian.z = 0.0;
     else
@@ -22082,7 +22082,7 @@ ReprojectStatus BaseGCS::ECEFCartesianFromLatLong
     if (geographic)
         m_csParameters->prj_flags = originalCode;
 
-    // In case a hard error occured ... we zero out all values
+    // In case a hard error occurred ... we zero out all values
     if ((REPROJECT_Success != status) && (REPROJECT_CSMAPERR_OutOfUsefulRange != status) && (REPROJECT_CSMAPERR_VerticalDatumConversionError != status) )
         outCartesian.x = outCartesian.y = outCartesian.z = 0.0;
     else
@@ -22110,7 +22110,7 @@ GeoPoint2dCR    inLatLong           // => latitude longitude
     DPoint3d    internalCartesian3d;
     status = CSMap::CS_ll2cs (m_csParameters, &internalCartesian3d, &inLatLong3d);
 
-    // In case a hard error occured ... we zero out all values
+    // In case a hard error occurred ... we zero out all values
     if ((SUCCESS != status) && (cs_CNVRT_USFL != status))
         outCartesian.x = outCartesian.y = 0.0;
     else
@@ -22420,7 +22420,7 @@ BaseGCSCR       targetGCS           // => target coordinate system
         }
 
     // This stupid patch result from incoherent grid files (Network Rail mostly) that
-    // implement invalid grid file cells oustide their validity polygon.
+    // implement invalid grid file cells outside their validity polygon.
     // Any grid file shift over one half degree (which is immense) are reverted.
     double deltaLat = fabs(outLatLong.latitude - inLatLong.latitude);
     double deltaLong = fabs(outLatLong.longitude - inLatLong.longitude);
@@ -22472,7 +22472,7 @@ BaseGCSCR       targetGCS           // => target coordinate system
         }
 
     // This stupid patch results from incoherent grid files (Network Rail mostly) that
-    // implement invalid grid file cells oustide their validity polygon.
+    // implement invalid grid file cells outside their validity polygon.
     // Any grid file shift over one half degree (which is immense) are reverted.
     double deltaLat = fabs(outLatLong.latitude - inLatLong.latitude);
     double deltaLong = fabs(outLatLong.longitude - inLatLong.longitude);
@@ -23952,7 +23952,7 @@ StatusInt Ellipsoid::FromJson(BeJsConst jsonValue, Utf8StringR errorMessage) {
     //    m_label = jsonValue["name"].asString();
 
     // We first try using the keyname
-    // If we were sucessful then we do not validate the definition is similar.
+    // If we were successful then we do not validate the definition is similar.
     if (!jsonValue["id"].isNull()) {
         // The identifier is present ... we will try to locate it in the system dictionary
         CSEllipsoidDef* newEllipsoidDef;
@@ -25116,7 +25116,7 @@ bvector<GeodeticTransformPathCP> const & Datum::GetAdditionalGeodeticTransformPa
                 }
             }
 
-        // Build a list of fully created paths. We remove all paths leading the WGS84 or strickly equivalent (ETRF89)
+        // Build a list of fully created paths. We remove all paths leading the WGS84 or strictly equivalent (ETRF89)
         bvector<GeodeticTransformPath const *> listOfPossibleAdditionalPaths;
         for (auto currentDatumName : listOfTargets)
             {
@@ -27126,7 +27126,7 @@ GeodeticTransform::GeodeticTransform (Utf8CP keyName)
                     convertCode != GenConvertCode::GenConvertType_6PARM && convertCode != GenConvertCode::GenConvertType_BURS &&
                     convertCode != GenConvertCode::GenConvertType_7PARM)
                     {
-                    // invalid convertion method
+                    // invalid conversion method
                     m_fallback->Destroy();
                     m_fallback = nullptr;
                     }
@@ -27194,7 +27194,7 @@ GeodeticTransform::GeodeticTransform(CSGeodeticTransform const& geodeticTransfor
     if (geodeticTransform.methodCode == cs_DTCMTH_GFILE && (nullptr != geodeticTransform.xforms.gridi.fallback))
         fallbackXtrfDef = &(geodeticTransform.xforms.gridi.fallback->gxDef);
 
-    // If custom ellispoids convert from xform
+    // If custom ellipsoids convert from xform
     Ellipsoid* srcEllipsoid = nullptr;
     DatumCP tempDatum = nullptr;
     tempDatum = Datum::CreateDatum(geodeticTransform.srcDatum.key_nm);
@@ -27262,7 +27262,7 @@ GeodeticTransform::GeodeticTransform(CSGeodeticTransform const& geodeticTransfor
             convertCode != GenConvertCode::GenConvertType_6PARM && convertCode != GenConvertCode::GenConvertType_BURS &&
             convertCode != GenConvertCode::GenConvertType_7PARM)
             {
-            // invalid convertion method
+            // invalid conversion method
             m_fallback->Destroy();
             m_fallback = nullptr;
             }
@@ -27292,7 +27292,7 @@ GeodeticTransform::GeodeticTransform(CSGeodeticTransform const& geodeticTransfor
                     convertCode != GenConvertCode::GenConvertType_6PARM && convertCode != GenConvertCode::GenConvertType_BURS &&
                     convertCode != GenConvertCode::GenConvertType_7PARM)
                     {
-                    // invalid convertion method
+                    // invalid conversion method
                     m_fallback->Destroy();
                     m_fallback = nullptr;
                     }
@@ -27369,7 +27369,7 @@ GeodeticTransform::GeodeticTransform (
             convertCode != GenConvertCode::GenConvertType_6PARM && convertCode != GenConvertCode::GenConvertType_BURS &&
             convertCode != GenConvertCode::GenConvertType_7PARM)
             {
-            // invalid convertion method
+            // invalid conversion method
             m_fallback->Destroy();
             m_fallback = nullptr;
             }
@@ -27399,7 +27399,7 @@ GeodeticTransform::GeodeticTransform (
                     convertCode != GenConvertCode::GenConvertType_6PARM && convertCode != GenConvertCode::GenConvertType_BURS &&
                     convertCode != GenConvertCode::GenConvertType_7PARM)
                     {
-                    // invalid convertion method
+                    // invalid conversion method
                     m_fallback->Destroy();
                     m_fallback = nullptr;
                     }
@@ -28960,7 +28960,7 @@ StatusInt GeodeticTransform::FromJson(BeJsConst jsonValue, Utf8StringR errorMess
         }
     } else if (methodString == "MultipleRegression") {
         SetConvertMethodCode(GenConvertCode::GenConvertType_MREG);
-        // We cannot store multiple regression parameters so we leave them unitialized.
+        // We cannot store multiple regression parameters so we leave them uninitialized.
     } else
         return BadProperty("method");
 
