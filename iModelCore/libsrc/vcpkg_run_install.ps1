@@ -61,6 +61,108 @@ function Resolve-Final([string] $path) {
     }
 }
 
+function Quote-WindowsCommandLineArg([string] $value) {
+    if ($null -eq $value) {
+        return '""'
+    }
+    if ($value.Length -eq 0) {
+        return '""'
+    }
+    if ($value -notmatch '[\s"]') {
+        return $value
+    }
+
+    $builder = New-Object System.Text.StringBuilder
+    [void]$builder.Append('"')
+    $backslashCount = 0
+    foreach ($c in $value.ToCharArray()) {
+        if ($c -eq '\\') {
+            $backslashCount++
+            continue
+        }
+
+        if ($c -eq '"') {
+            if ($backslashCount -gt 0) {
+                [void]$builder.Append((New-Object string('\\', $backslashCount * 2)))
+            }
+            [void]$builder.Append('\\"')
+            $backslashCount = 0
+            continue
+        }
+
+        if ($backslashCount -gt 0) {
+            [void]$builder.Append((New-Object string('\\', $backslashCount)))
+            $backslashCount = 0
+        }
+        [void]$builder.Append($c)
+    }
+
+    if ($backslashCount -gt 0) {
+        [void]$builder.Append((New-Object string('\\', $backslashCount * 2)))
+    }
+    [void]$builder.Append('"')
+    return $builder.ToString()
+}
+
+function Invoke-NativeProcessInKillOnCloseJob([string] $exePath, [string[]] $arguments) {
+    $job = [VcpkgLock.Native]::CreateJobObjectW([System.IntPtr]::Zero, $null)
+    if ($job -eq [System.IntPtr]::Zero) {
+        $errorCode = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "CreateJobObjectW failed with Win32 error $errorCode"
+    }
+
+    $process = $null
+    try {
+        $limits = New-Object VcpkgLock.JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+        $limits.BasicLimitInformation.LimitFlags = [VcpkgLock.Native]::JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+
+        $limitsSize = [System.Runtime.InteropServices.Marshal]::SizeOf([type] [VcpkgLock.JOBOBJECT_EXTENDED_LIMIT_INFORMATION])
+        $limitsPtr = [System.Runtime.InteropServices.Marshal]::AllocHGlobal($limitsSize)
+        try {
+            [System.Runtime.InteropServices.Marshal]::StructureToPtr($limits, $limitsPtr, $false)
+            if (-not [VcpkgLock.Native]::SetInformationJobObject($job, [VcpkgLock.Native]::JobObjectExtendedLimitInformation, $limitsPtr, [uint32] $limitsSize)) {
+                $errorCode = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+                throw "SetInformationJobObject failed with Win32 error $errorCode"
+            }
+        }
+        finally {
+            [System.Runtime.InteropServices.Marshal]::FreeHGlobal($limitsPtr)
+        }
+
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $exePath
+        $startInfo.UseShellExecute = $false
+        $quotedArgs = @($arguments | ForEach-Object { Quote-WindowsCommandLineArg $_ })
+        $startInfo.Arguments = [string]::Join(' ', $quotedArgs)
+        $process = [System.Diagnostics.Process]::Start($startInfo)
+        if ($null -eq $process) {
+            throw "failed to start process '$exePath'"
+        }
+
+        if (-not [VcpkgLock.Native]::AssignProcessToJobObject($job, $process.Handle)) {
+            $errorCode = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+            try {
+                if (-not $process.HasExited) {
+                    $process.Kill()
+                }
+            }
+            catch {
+                # best effort cleanup before surfacing assignment failure
+            }
+            throw "AssignProcessToJobObject failed with Win32 error $errorCode"
+        }
+
+        $process.WaitForExit()
+        return $process.ExitCode
+    }
+    finally {
+        if ($process) {
+            $process.Dispose()
+        }
+        [void][VcpkgLock.Native]::CloseHandle($job)
+    }
+}
+
 try {
     if (-not $ManifestDir -or -not $InstallRoot -or -not $Triplet) {
         throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet>'
@@ -147,9 +249,6 @@ try {
     if (-not (Ensure-Directory $env:VCPKG_DEFAULT_BINARY_CACHE)) {
         throw "vcpkg binary cache '$($env:VCPKG_DEFAULT_BINARY_CACHE)' could not be created"
     }
-    if (-not $env:VCPKG_BINARY_SOURCES) {
-        $env:VCPKG_BINARY_SOURCES = "clear;files,$($env:VCPKG_DEFAULT_BINARY_CACHE),readwrite"
-    }
 
     if (-not $env:ANDROID_NDK_HOME -and $env:ANDROID_NDK_ROOT) {
         $env:ANDROID_NDK_HOME = $env:ANDROID_NDK_ROOT
@@ -169,17 +268,75 @@ try {
     Write-Output "vcpkg: downloads='$($env:VCPKG_DOWNLOADS)'"
     Write-Output "vcpkg: registries-cache='$($env:X_VCPKG_REGISTRIES_CACHE)'"
     Write-Output "vcpkg: binary-cache='$($env:VCPKG_DEFAULT_BINARY_CACHE)'"
-    Write-Output "vcpkg: binary-sources='$($env:VCPKG_BINARY_SOURCES)'"
+    if ($env:VCPKG_BINARY_SOURCES) {
+        Write-Output "vcpkg: binary-sources='$($env:VCPKG_BINARY_SOURCES)'"
+    }
+    else {
+        Write-Output "vcpkg: binary-sources='<unset>' (using vcpkg default provider)"
+    }
 
-    Add-Type -Namespace VcpkgLock -Name Native -MemberDefinition @'
-[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-public static extern System.IntPtr CreateFileW(string name, uint access, uint share, System.IntPtr sa, uint disposition, uint flags, System.IntPtr template);
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
 
-[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-public static extern int GetFinalPathNameByHandleW(System.IntPtr handle, System.Text.StringBuilder path, int cch, int flags);
+namespace VcpkgLock {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
+        public long PerProcessUserTimeLimit;
+        public long PerJobUserTimeLimit;
+        public uint LimitFlags;
+        public UIntPtr MinimumWorkingSetSize;
+        public UIntPtr MaximumWorkingSetSize;
+        public uint ActiveProcessLimit;
+        public IntPtr Affinity;
+        public uint PriorityClass;
+        public uint SchedulingClass;
+    }
 
-[DllImport("kernel32.dll", SetLastError = true)]
-public static extern bool CloseHandle(System.IntPtr handle);
+    [StructLayout(LayoutKind.Sequential)]
+    public struct IO_COUNTERS {
+        public ulong ReadOperationCount;
+        public ulong WriteOperationCount;
+        public ulong OtherOperationCount;
+        public ulong ReadTransferCount;
+        public ulong WriteTransferCount;
+        public ulong OtherTransferCount;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+        public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+        public IO_COUNTERS IoInfo;
+        public UIntPtr ProcessMemoryLimit;
+        public UIntPtr JobMemoryLimit;
+        public UIntPtr PeakProcessMemoryUsed;
+        public UIntPtr PeakJobMemoryUsed;
+    }
+
+    public static class Native {
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr CreateFileW(string name, uint access, uint share, IntPtr sa, uint disposition, uint flags, IntPtr template);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern int GetFinalPathNameByHandleW(IntPtr handle, StringBuilder path, int cch, int flags);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(IntPtr handle);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr CreateJobObjectW(IntPtr jobAttributes, string name);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetInformationJobObject(IntPtr job, int infoClass, IntPtr jobObjectInfo, uint jobObjectInfoLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+
+        public const int JobObjectExtendedLimitInformation = 9;
+        public const uint JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000;
+    }
+}
 '@
 
     $lockDirs = New-Object 'System.Collections.Generic.SortedSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
@@ -227,8 +384,7 @@ public static extern bool CloseHandle(System.IntPtr handle);
                     $arguments += "--overlay-ports=$overlayPorts"
                 }
 
-                & $vcpkgExe @arguments
-                exit $LASTEXITCODE
+                exit (Invoke-NativeProcessInKillOnCloseJob $vcpkgExe $arguments)
             }
         }
         finally {
