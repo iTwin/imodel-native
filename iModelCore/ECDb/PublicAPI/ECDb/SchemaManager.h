@@ -41,6 +41,12 @@ struct SchemaSync final {
         ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH,
         ERROR_UNABLE_TO_ATTACH,
         ERROR_SYNC_SQL_SCHEMA,
+        //! The import cannot be done additively because it would have to move data between columns.
+        //! Callers route this to the upgrade path, which takes the exclusive schema lock.
+        ERROR_DATA_TRANSFORM_REQUIRED,
+        //! The sync db was written to while an import was running in it, which can only happen if
+        //! somebody wrote without holding the container write lock.
+        ERROR_SYNC_DB_CHANGED,
     };
     //=======================================================================================
     // @bsiclass
@@ -112,6 +118,7 @@ private:
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
+    Status ImportIntoSyncDb(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
     Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
@@ -152,6 +159,27 @@ public:
     //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
     //! @note Additive only: rows that exist locally but no longer exist in the sync db are left alone.
     ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames);
+    //! Import schemas the "upstream" way (SchemaSync v2): decide once in the sync db, then adopt.
+    //!
+    //! The two steps this performs are:
+    //!   1. Import @p schemaXmlFiles into the sync db. That import is the ordinary one, unmodified,
+    //!      and it is what decides ids, shared columns, overflow and table layout.
+    //!   2. Adopt those schemas and their reference closure into this briefcase, which therefore
+    //!      decides nothing itself. Other briefcases learn about the change from the changeset.
+    //!
+    //! Schemas are given as file paths rather than as ECSchema objects on purpose: they have to be
+    //! deserialized against the sync db, so that references resolve to the versions the sync db
+    //! holds. Those can be newer than this briefcase's - somebody else's import that has not been
+    //! pushed yet - and mapping against the stale ones would produce the wrong answer.
+    //!
+    //! @param[in] schemaXmlFiles ECSchema XML files to import. References they resolve from the sync
+    //!            db or from each other need not be listed.
+    //! @return ERROR_DATA_TRANSFORM_REQUIRED if the change would have to move data - that belongs on
+    //!         the upgrade path, not here.
+    //! @note The caller must hold the sync db's container write lock for the duration of this call,
+    //!       as it does for v1's import. Additive only, and this does not push the resulting
+    //!       changeset; that is the caller's job.
+    ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);

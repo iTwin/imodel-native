@@ -202,6 +202,24 @@ Utf8String ColumnOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP access
     return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
 }
 
+// ...and in which physical table does that column live?
+Utf8String TableOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP accessString) {
+    Statement stmt;
+    if (stmt.Prepare(db, R"sql(
+        SELECT t.Name FROM main.ec_PropertyMap pm
+        JOIN main.ec_Column col ON col.Id = pm.ColumnId
+        JOIN main.ec_Table t ON t.Id = col.TableId
+        JOIN main.ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
+        JOIN main.ec_Class c ON c.Id = pm.ClassId
+        JOIN main.ec_Schema s ON s.Id = c.SchemaId
+        WHERE s.Name=? AND c.Name=? AND pp.AccessString=?)sql") != BE_SQLITE_OK)
+        return "";
+    stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt.BindText(2, className, Statement::MakeCopy::No);
+    stmt.BindText(3, accessString, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
+}
+
 // Compact per-stage state dump. Used to localise where rows appear or vanish across a multi-step
 // scenario, so one test run can say which step lost them rather than only that the end state is wrong.
 void DumpFingerprint(ECDbR db, Utf8CP label) {
@@ -215,6 +233,67 @@ void DumpFingerprint(ECDbR db, Utf8CP label) {
         line.append(SqlPrintfString(" %s=%d", table, stmt.GetValueInt(0)).GetUtf8CP());
     }
     printf("[upstream] %-40s%s\n", label, line.c_str());
+}
+
+// The orchestration entry point takes file paths, not schema objects, so tests have to put their xml
+// on disk. The standard <name>.<version>.ecschema.xml naming is used so that a reference could in
+// principle also be satisfied from the search path, not only from the sync db.
+BeFileName WriteSchemaFile(Utf8CP fileStem, SchemaItem const& item) {
+    const auto path = SchemaSyncTestFixture::BuildECDbPath(Utf8PrintfString("%s.ecschema.xml", fileStem).c_str());
+    BeFile file;
+    if (BeFileStatus::Success != file.Create(path, true))
+        return BeFileName();
+
+    Utf8StringCR xml = item.GetXmlString();
+    if (BeFileStatus::Success != file.Write(nullptr, xml.c_str(), (uint32_t)xml.size()))
+        return BeFileName();
+
+    file.Close();
+    return path;
+}
+
+// Which version of a schema does this file hold?
+Utf8String VersionOf(ECDbR db, Utf8CP schemaName) {
+    Statement stmt;
+    if (stmt.Prepare(db, "SELECT VersionDigit1, VersionDigit2, VersionDigit3 FROM main.ec_Schema WHERE Name=?") != BE_SQLITE_OK)
+        return "";
+    stmt.BindText(1, schemaName, Statement::MakeCopy::No);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return "";
+    return Utf8PrintfString("%d.%d.%d", stmt.GetValueInt(0), stmt.GetValueInt(1), stmt.GetValueInt(2));
+}
+
+// The setup every entry-point test starts from: one briefcase initialises schema sync and pushes, a
+// second one is created afterwards so it picks that up from the timeline.
+void SetupSyncedPair(ECDbHub& hub, SchemaSyncDb& syncDb, std::unique_ptr<TrackedECDb>& b1, std::unique_ptr<TrackedECDb>& b2) {
+    b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("init schema sync");
+    b2 = hub.CreateBriefcase();
+}
+
+// Foreign keys are deferred while rows are being copied, so a violation surfaces at SaveChanges with
+// nothing to say about its cause. This names the offending row before the commit swallows it.
+void ExpectNoForeignKeyViolations(ECDbR db, Utf8CP context) {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA main.foreign_key_check"));
+    int violations = 0;
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        ++violations;
+        printf("[upstream] FK violation (%s): table=%s rowid=%lld parent=%s fkid=%d\n",
+            context, stmt.GetValueText(0), stmt.GetValueInt64(1), stmt.GetValueText(2), stmt.GetValueInt(3));
+    }
+    EXPECT_EQ(0, violations) << context << ": rows were copied whose parents are missing";
+}
+
+// Does the physical table exist, as opposed to merely being described by ec_Table?
+bool HasPhysicalTable(ECDbR db, Utf8CP tableName) {
+    Statement stmt;
+    if (stmt.Prepare(db, "SELECT 1 FROM main.sqlite_master WHERE type='table' AND name=?") != BE_SQLITE_OK)
+        return false;
+    stmt.BindText(1, tableName, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW;
 }
 
 } // namespace
@@ -875,6 +954,328 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesImportNeedingDataTransform)
         // Record which flavour of refusal we get - it decides what the front door has to catch.
         printf("[upstream] data-transform import returned %d (DataTransformRequired=%d)\n",
                (int)result, (int)SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED);
+    });
+    }
+
+//=======================================================================================
+// The orchestration entry point.
+//
+// Everything above drives the two steps by hand. SchemaSync::ImportSchemas is the single call that
+// does both: run the import in the sync db, then adopt the result here. The caller holds the
+// container write lock around the whole call, exactly as it does for a v1 import. These tests are
+// about that call - the steps themselves are already covered.
+//=======================================================================================
+
+// ---------------------------------------------------------------------------------------
+// One call, both steps: the sync db ends up holding the import, and so does the briefcase.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasDoesBothSteps)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-entrypoint");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto schemaFile = WriteSchemaFile("UpstreamTest.01.00.00", SharedColumnSchema());
+    ASSERT_FALSE(schemaFile.IsEmpty()) << "could not write the schema file";
+
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), { schemaFile }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_TRUE(HasSchema(*b2, "UpstreamTest")) << "the briefcase did not adopt what it imported";
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasSchema(sync, "UpstreamTest")) << "the sync db did not receive the import";
+        ExpectEcTablesIdentical(*b2, sync, "after a single ImportSchemas call");
+    });
+
+    // And the result has to be a working file, not merely a consistent-looking one.
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO ut.Derived(baseProp,p1,p8) VALUES('hello',42,99)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    }
+
+// ---------------------------------------------------------------------------------------
+// Why the entry point takes file paths rather than ECSchema objects.
+//
+// The sync db is ahead of the briefcase - somebody else imported Machinery 1.0.1 and has not pushed
+// it. The briefcase now imports DemoB, which references Machinery. Deserializing DemoB against the
+// BRIEFCASE would resolve that reference to 1.0.0 and compute mappings against the wrong version;
+// deserializing it against the sync db resolves to 1.0.1, which is the one that actually decides
+// layout. The briefcase therefore ends up on 1.0.1 as well, without having asked for it - the
+// reference auto-update that was agreed on the thread.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasResolvesReferencesAgainstSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-entrypoint-refs");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    // Both briefcases reach Machinery 1.0.0 through the timeline.
+    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
+    b1->PullMergePush("add Machinery 1.0.0");
+    b2->PullMergePush("pick up Machinery 1.0.0");
+    MaterializeAfterMerge(*b2);
+    ASSERT_STREQ("1.0.0", VersionOf(*b2, "Machinery").c_str());
+
+    // b1 moves the sync db to 1.0.1 and keeps it to itself - no push.
+    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
+
+    // b2 imports a schema that references Machinery, still believing it is at 1.0.0.
+    const auto tankFile = WriteSchemaFile("DemoB.01.00.00", TankSchema());
+    ASSERT_FALSE(tankFile.IsEmpty());
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), { tankFile }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_TRUE(HasSchema(*b2, "DemoB"));
+    EXPECT_STREQ("1.0.1", VersionOf(*b2, "Machinery").c_str())
+        << "the referenced schema was not updated to the version the sync db decided against";
+
+    // The proof that this matters: rating (1.0.1, b1's) and volume (DemoB, b2's) compete for the same
+    // shared-column pool. If b2 had mapped against 1.0.0 it would not have known rating existed.
+    const auto ratingColumn = ColumnOf(*b2, "Machinery", "Machine", "rating");
+    const auto volumeColumn = ColumnOf(*b2, "DemoB", "Tank", "volume");
+    EXPECT_FALSE(ratingColumn.empty()) << "rating did not come along with the reference update";
+    EXPECT_STRNE(ratingColumn.c_str(), volumeColumn.c_str())
+        << "rating and volume were placed in the same shared column";
+    }
+
+// ---------------------------------------------------------------------------------------
+// A data-moving change is refused, and refused cleanly.
+//
+// The additive path disallows data transforms, so this has to come back as a distinct status the
+// caller can route to the upgrade front door - and, just as important, both the sync db and the
+// briefcase must be exactly as they were.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasRefusesDataTransform)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-entrypoint-transform");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    // Same scenario as SyncDbRefusesImportNeedingDataTransform: two siblings whose same-named
+    // property sits in different shared columns, then hoisted onto their common base.
+    auto initial = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RemapTest" alias="rmp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="baseProp" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LeafA">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="filler" typeName="string" />
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LeafB">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    auto hoisted = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RemapTest" alias="rmp" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="baseProp" typeName="string" />
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LeafA">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="filler" typeName="string" />
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LeafB">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    const auto initialFile = WriteSchemaFile("RemapTest.01.00.00", initial);
+    const auto hoistedFile = WriteSchemaFile("RemapTest.01.00.01", hoisted);
+    ASSERT_FALSE(initialFile.IsEmpty());
+    ASSERT_FALSE(hoistedFile.IsEmpty());
+
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), { initialFile }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_STREQ("1.0.0", VersionOf(*b2, "RemapTest").c_str());
+
+    EXPECT_EQ(SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED,
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), { hoistedFile }))
+        << "a data-moving change was accepted on the additive path";
+
+    EXPECT_STREQ("1.0.0", VersionOf(*b2, "RemapTest").c_str()) << "the briefcase was changed by a refused import";
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.0", VersionOf(sync, "RemapTest").c_str()) << "the sync db was changed by a refused import";
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Instances that already existed when a class grew into an overflow table.
+//
+// A normal import ends by giving every existing instance a matching row in any overflow table it
+// just created - otherwise a write to a property that landed there has nowhere to go. Under v2 that
+// step runs in the sync db, which holds no data, so it does nothing; and adopt only materialises
+// tables and indexes. The importing briefcase's own instances therefore have to be caught up here,
+// or they silently drop writes to every property that spilled over.
+//
+// Only pre-existing instances can reach this. One inserted after the widening gets its overflow row
+// from the insert itself, which is why the earlier adopt tests do not see it.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasCatchesUpInstancesThatSpillIntoOverflow)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-entrypoint-overflow");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    // Two properties fit inside the shared-column budget; eight do not.
+    const auto narrow = WriteSchemaFile("OverflowCatchUp.01.00.00", SharedColumnSchema("01.00.00", 2));
+    const auto wide = WriteSchemaFile("OverflowCatchUp.01.00.01", SharedColumnSchema("01.00.01", 8));
+    ASSERT_FALSE(narrow.IsEmpty());
+    ASSERT_FALSE(wide.IsEmpty());
+
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), { narrow }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_TRUE(TableOf(*b2, "UpstreamTest", "Derived", "p1").length() > 0);
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO ut.Derived(baseProp,p1) VALUES('before',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // Widening the class pushes the later properties into an overflow table.
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), { wide }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    const auto primaryTable = TableOf(*b2, "UpstreamTest", "Derived", "p1");
+    const auto overflowTable = TableOf(*b2, "UpstreamTest", "Derived", "p8");
+    printf("[upstream] p1 -> %s, p8 -> %s\n", primaryTable.c_str(), overflowTable.c_str());
+    ASSERT_FALSE(overflowTable.empty()) << "p8 was not mapped at all";
+    ASSERT_STRNE(primaryTable.c_str(), overflowTable.c_str())
+        << "nothing spilled into an overflow table, so this scenario no longer tests what it claims to";
+
+    // The precise thing that has to have happened: the instance that predates the widening now has
+    // a row in the overflow table.
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*b2, SqlPrintfString("SELECT COUNT(*) FROM main.[%s] WHERE Id=?", overflowTable.c_str()).GetUtf8CP()));
+    stmt.BindId(1, key.GetInstanceId());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(1, stmt.GetValueInt(0)) << "the pre-existing instance was never given an overflow row";
+    }
+
+    // ...and the consequence of it not having one: the write goes nowhere.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "UPDATE ut.Derived SET p8=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 77));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    ECSqlStatement select;
+    ASSERT_EQ(ECSqlStatus::Success, select.Prepare(*b2, "SELECT baseProp,p1,p8 FROM ut.Derived WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, select.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, select.Step());
+    EXPECT_STREQ("before", select.GetValueText(0)) << "the widening lost the instance's original data";
+    EXPECT_EQ(1, select.GetValueInt(1));
+    EXPECT_EQ(77, select.GetValueInt(2)) << "the write to the overflow property did not persist";
+    }
+
+// ---------------------------------------------------------------------------------------
+// The corruption case again, this time all the way through the real entry point.
+//
+// ConcurrentImportsDoNotShareAColumn establishes the property with the two steps driven by hand.
+// This repeats it through SchemaSync::ImportSchemas, so what is measured is the thing that will
+// actually ship.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-entrypoint-converge");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto machinery100 = WriteSchemaFile("Machinery.01.00.00", MachinerySchema("01.00.00", false));
+    const auto machinery101 = WriteSchemaFile("Machinery.01.00.01", MachinerySchema("01.00.01", true));
+    const auto demoB = WriteSchemaFile("DemoB.01.00.00", TankSchema());
+    ASSERT_FALSE(machinery100.IsEmpty());
+    ASSERT_FALSE(machinery101.IsEmpty());
+    ASSERT_FALSE(demoB.IsEmpty());
+
+    auto& sync1 = b1->Schemas().GetSchemaSync();
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), { machinery100 }));
+    ExpectNoForeignKeyViolations(*b1, "b1 after adopting Machinery 1.0.0");
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    // The import ran in the sync db, so its DDL landed there. The sync db holds no data, but its
+    // physical tables still have to keep up with its ec_ rows: the next import runs in this same
+    // file and the mapper reads both.
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasPhysicalTable(sync, "mch_Machine"))
+            << "the sync db describes a table it does not have, so it contradicts itself";
+    });
+
+    b1->PullMergePush("add Machinery");
+    b2->PullMergePush("pick up Machinery");
+    MaterializeAfterMerge(*b2);
+
+    // Neither briefcase has seen the other's change; both are additive; both go through the sync db.
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), { machinery101 }));
+    ExpectNoForeignKeyViolations(*b1, "b1 after adopting Machinery 1.0.1");
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), { demoB }));
+    ExpectNoForeignKeyViolations(*b2, "b2 after adopting DemoB");
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // The corruption case: one physical cell holding both rating and volume.
+    EXPECT_STRNE(ColumnOf(*b2, "Machinery", "Machine", "rating").c_str(),
+                 ColumnOf(*b2, "DemoB", "Tank", "volume").c_str())
+        << "two concurrent additive imports were given the same shared column";
+
+    b1->PullMergePush("b1 pushes rating");
+    b2->PullMergePush("b2 merges rating, pushes tank");
+    MaterializeAfterMerge(*b2);
+    b1->PullMergePush("b1 merges tank");
+    MaterializeAfterMerge(*b1);
+
+    ExpectEcTablesIdentical(*b2, *b1, "after both briefcases exchanged changesets");
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        ExpectEcTablesIdentical(*b1, sync, "briefcase vs sync db after convergence");
     });
     }
 

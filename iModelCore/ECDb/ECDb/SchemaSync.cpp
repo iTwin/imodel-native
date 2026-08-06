@@ -636,6 +636,10 @@ Utf8String SchemaSync::GetStatusAsString(Status status) {
             return "ERROR_UNABLE_TO_ATTACH";
         case Status::ERROR_SYNC_SQL_SCHEMA:
             return "ERROR_SYNC_SQL_SCHEMA";
+        case Status::ERROR_DATA_TRANSFORM_REQUIRED:
+            return "ERROR_DATA_TRANSFORM_REQUIRED";
+        case Status::ERROR_SYNC_DB_CHANGED:
+            return "ERROR_SYNC_DB_CHANGED";
         default:
             return "SCHEMA_SYNC_FAIL";
     }
@@ -1296,7 +1300,7 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
         { "ec_ClassMap",                  Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
         { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()} },
         { "ec_Index",                     Utf8String{SqlPrintfString("TableId IN %s AND (ClassId IS NULL OR ClassId IN %s)", inTables.c_str(), inClasses.c_str()).GetUtf8CP()} },
-        { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND IndexId IN (SELECT Id FROM [%s].ec_Index WHERE TableId IN %s)", inColumns.c_str(), syncAlias, inTables.c_str()).GetUtf8CP()} },
+        { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND IndexId IN (SELECT Id FROM [%s].ec_Index WHERE TableId IN %s AND (ClassId IS NULL OR ClassId IN %s))", inColumns.c_str(), syncAlias, inTables.c_str(), inClasses.c_str()).GetUtf8CP()} },
     };
 
     for (auto const& entry : plan) {
@@ -1390,8 +1394,140 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
         return updateRc;
     }
 
+    // Adopting can push a class that already holds data into an overflow table. An ordinary import
+    // ends by giving every existing instance its matching overflow row; here that import ran in the
+    // sync db, which holds no data, so it had nothing to do - and UpdateDbSchema only creates tables
+    // and indexes. Without this, instances that predate the widening have no overflow row and every
+    // write to a property that landed there is silently lost.
+    if (BE_SQLITE_OK != m_conn.Schemas().Main().UpgradeECInstances()) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to give existing instances their overflow rows.");
+        return Status::ERROR;
+    }
+
     mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::AdoptSchemas");
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector<BeFileName> const& schemaXmlFiles) {
+    ECDB_PERF_LOG_SCOPE("Importing schemas through the schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::ImportSchemas");
+
+    if (schemaXmlFiles.empty()) {
+        LOG.error("SchemaSync::ImportSchemas(): No schema files given.");
+        return Status::ERROR;
+    }
+
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, true, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    const auto dataVerBeforeImport = SyncDbInfo::From(effectiveSyncDbUri).GetDataVersion();
+
+    // Step 1. The import runs in the sync db, which is where ids and physical layout get decided.
+    bvector<Utf8String> importedSchemaNames;
+    auto status = ImportIntoSyncDb(effectiveSyncDbUri, schemaXmlFiles, importedSchemaNames, dataVerBeforeImport);
+    if (status != Status::OK)
+        return status;
+
+    status = UpdateDataVersion(effectiveSyncDbUri);
+    if (status != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to update the data version.");
+        return status;
+    }
+
+    // Step 2. Everything the sync db decided is now taken over verbatim; nothing is decided here.
+    status = AdoptSchemas(effectiveSyncDbUri, importedSchemaNames);
+    if (status != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to adopt the imported schemas.");
+        return status;
+    }
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::ImportSchemas");
+    return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// Step 1 of SchemaSync::ImportSchemas, split out so the sync db connection is closed before the
+// briefcase attaches the same file to adopt from it.
+//
+// The import here is the ordinary one, unmodified. It writes its ec_ rows and creates its physical
+// tables in the sync db, exactly as it would in a briefcase - which is what keeps the sync db a
+// self-consistent ECDb that the next import can be run against.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvector<BeFileName> const& schemaXmlFiles, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport) {
+    ECDb syncConn;
+    Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
+    ParseQueryParams(openParams, syncDbUri);
+    auto rc = syncConn.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::ImportSchemas(): Failed to open sync db '%s'. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
+    }
+
+    // Init strips the sync db's local info exactly so that it is not itself a schema sync client.
+    // If that ever stopped holding, the import below would try to sync to a sync db of its own.
+    if (syncConn.Schemas().GetSchemaSync().IsEnabled()) {
+        LOG.error("SchemaSync::ImportSchemas(): The sync db is itself set up to use schema sync, which is not valid.");
+        return Status::ERROR_INVALID_SCHEMA_SYNC_DB;
+    }
+
+    // The whole point of taking file paths: the schemas are deserialized against the SYNC DB, so
+    // their references resolve to the versions it holds rather than to this briefcase's, which may
+    // be older.
+    auto readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(syncConn.GetSchemaLocater());
+
+    bvector<ECSchemaPtr> ownedSchemas;
+    bvector<ECSchemaCP> schemas;
+    for (auto const& schemaXmlFile : schemaXmlFiles) {
+        ECSchemaPtr schema;
+        if (ECSchema::ReadFromXmlFile(schema, schemaXmlFile.GetName(), *readContext) != SchemaReadStatus::Success || !schema.IsValid()) {
+            LOG.errorv("SchemaSync::ImportSchemas(): Failed to read schema file '%s'.", schemaXmlFile.GetNameUtf8().c_str());
+            return Status::ERROR;
+        }
+        ownedSchemas.push_back(schema);
+        schemas.push_back(schema.get());
+        importedSchemaNames.push_back(schema->GetName());
+    }
+
+    const auto importRc = syncConn.Schemas().ImportSchemas(schemas, SchemaManager::SchemaImportOptions::None);
+    if (importRc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED) {
+        LOG.info("SchemaSync::ImportSchemas(): The import would have to move data, which the additive path does not do.");
+        syncConn.AbandonChanges();
+        return Status::ERROR_DATA_TRANSFORM_REQUIRED;
+    }
+
+    if (!importRc.IsOk()) {
+        LOG.error("SchemaSync::ImportSchemas(): The import into the sync db failed.");
+        syncConn.AbandonChanges();
+        return Status::ERROR;
+    }
+
+    // The caller holds the container write lock for this whole call, so the data version cannot have
+    // moved. Checking it anyway is v1's backstop against somebody writing without the lock.
+    if (SyncDbInfo::From(syncConn).GetDataVersion() != dataVerBeforeImport) {
+        LOG.error("SchemaSync::ImportSchemas(): The sync db was written to during the import, which means it was written to without the lock.");
+        syncConn.AbandonChanges();
+        return Status::ERROR_SYNC_DB_CHANGED;
+    }
+
+    rc = syncConn.SaveChanges();
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSync::ImportSchemas(): Failed to save the sync db. %s", BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR;
+    }
+
+    syncConn.CloseDb();
     return Status::OK;
 }
 

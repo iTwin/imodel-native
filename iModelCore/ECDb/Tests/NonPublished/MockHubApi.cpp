@@ -816,15 +816,16 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
     BeAssert(result == BE_SQLITE_OK);
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
-        if (0 == ::strncmp(tableName, "ec_", 3)) {
+        if (0 == ::strncmp(tableName, "ec_", 3) && m_ecdb != nullptr && m_ecdb->Schemas().GetSchemaSync().IsEnabled()) {
             // Replace would DELETE the existing row before re-inserting it, and almost every ec_
             // foreign key is ON DELETE CASCADE - so the delete takes the row's children with it and
-            // the re-insert restores only the parent. Rows arriving here are normally the ones this
-            // briefcase already holds (schema metadata is shared, and ids are assigned centrally),
-            // so skipping keeps what is already correct instead of destroying dependents.
+            // the re-insert restores only the parent. Under schema sync the rows arriving here are
+            // normally ones this briefcase already holds, because every briefcase gets its ids from
+            // the same authority, so skipping keeps what is already correct instead of destroying
+            // dependents.
             // Note this does not distinguish an identical row from a genuinely differing one; a
-            // differing row is a real conflict and needs a real decision, which belongs in the
-            // production apply path rather than in this test double.
+            // differing row is a real conflict and needs a real decision. Mirrors the rule in
+            // ChangesetFileReader::_OnConflict.
             return ChangeSet::ConflictResolution::Skip;
         }
         return ChangeSet::ConflictResolution::Replace;
