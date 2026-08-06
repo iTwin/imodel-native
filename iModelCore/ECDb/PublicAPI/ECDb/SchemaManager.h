@@ -139,6 +139,19 @@ public:
     ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
     ECDB_EXPORT Status Push(SyncDbUri const&);
+    //! Adopt the given schemas, and everything they transitively reference, from the sync db.
+    //!
+    //! This is step 2 of the "upstream" flow (SchemaSync v2): the import has already run in the sync
+    //! db, which decided ids and physical layout, and this connection now takes that answer over
+    //! instead of computing its own. Unlike Pull, which mirrors the sync db wholesale, this copies
+    //! only the rows belonging to @p schemaNames and their reference closure - so schemas another
+    //! briefcase imported but has not yet pushed do not leak in.
+    //!
+    //! Physical tables and columns are then materialised locally from the adopted rows, exactly as
+    //! Pull does, so no DDL has to travel between the two files.
+    //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
+    //! @note Additive only: rows that exist locally but no longer exist in the sync db are left alone.
+    ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);

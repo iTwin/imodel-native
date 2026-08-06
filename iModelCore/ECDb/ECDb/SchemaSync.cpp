@@ -1022,6 +1022,379 @@ SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
     return rc;
 }
 
+//SchemaSyncUpstreamHelper======================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::DropClosure(ECDbR conn) {
+    for (auto tempTable : { TEMP_SCHEMA_IDS, TEMP_CLASS_IDS, TEMP_TABLE_IDS, TEMP_COLUMN_IDS, TEMP_SEED_IDS }) {
+        const auto rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS %s", tempTable).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::DropClosure(): Failed to drop %s. %s", tempTable, BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t SchemaSyncUpstreamHelper::CountClosureRows(ECDbR conn, Utf8CP tempTableName) {
+    Statement stmt;
+    if (stmt.Prepare(conn, SqlPrintfString("SELECT COUNT(*) FROM %s", tempTableName).GetUtf8CP()) != BE_SQLITE_OK)
+        return -1;
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return -1;
+    return stmt.GetValueInt64(0);
+}
+
+//---------------------------------------------------------------------------------------
+// Builds the id sets that define what "belongs to" the requested schemas.
+//
+// The order below matters, because each set is derived from the previous one:
+//   schemas -> classes -> columns (from property maps) -> tables -> remaining structural columns
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::BuildClosure(ECDbR conn, Utf8CP syncAlias, StringList const& schemaNames) {
+    auto rc = DropClosure(conn);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    for (auto tempTable : { TEMP_SCHEMA_IDS, TEMP_CLASS_IDS, TEMP_TABLE_IDS, TEMP_COLUMN_IDS, TEMP_SEED_IDS }) {
+        rc = conn.ExecuteSql(SqlPrintfString("CREATE TABLE %s(Id INTEGER PRIMARY KEY)", tempTable).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to create %s. %s", tempTable, BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+    }
+
+    // Seed: the schemas the caller named. A name that does not exist in the sync db is an error
+    // rather than an empty result - silently adopting nothing would look like success.
+    {
+        Statement stmt;
+        rc = stmt.Prepare(conn, SqlPrintfString("INSERT OR IGNORE INTO %s(Id) SELECT Id FROM [%s].ec_Schema WHERE Name=?", TEMP_SEED_IDS, syncAlias).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to prepare schema seed statement. %s", BeSQLiteLib::GetErrorString(rc));
+            return rc;
+        }
+        for (auto const& name : schemaNames) {
+            stmt.Reset();
+            stmt.ClearBindings();
+            if ((rc = stmt.BindText(1, name.c_str(), Statement::MakeCopy::No)) != BE_SQLITE_OK)
+                return rc;
+            if ((rc = stmt.Step()) != BE_SQLITE_DONE) {
+                LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to seed schema '%s'. %s", name.c_str(), BeSQLiteLib::GetErrorString(rc));
+                return rc;
+            }
+            if (conn.GetModifiedRowCount() == 0) {
+                // Either the schema is missing from the sync db, or a previously named schema already
+                // pulled it in. Only the former is a problem.
+                Statement exists;
+                if (exists.Prepare(conn, SqlPrintfString("SELECT 1 FROM [%s].ec_Schema WHERE Name=?", syncAlias).GetUtf8CP()) != BE_SQLITE_OK)
+                    return BE_SQLITE_ERROR;
+                exists.BindText(1, name.c_str(), Statement::MakeCopy::No);
+                if (exists.Step() != BE_SQLITE_ROW) {
+                    LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Schema '%s' does not exist in the sync db.", name.c_str());
+                    return BE_SQLITE_NOTFOUND;
+                }
+            }
+        }
+    }
+
+    // Expand over references. A schema's classes may derive from, or refer to, anything in a schema
+    // it references, so the referenced schemas have to come along - at the sync db's version, which
+    // is the point of doing this at all.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) "
+        "WITH RECURSIVE closure(Id) AS ("
+        "  SELECT Id FROM %s"
+        "  UNION"
+        "  SELECT r.ReferencedSchemaId FROM [%s].ec_SchemaReference r JOIN closure c ON r.SchemaId = c.Id"
+        "    WHERE r.ReferencedSchemaId IS NOT NULL"
+        ") SELECT Id FROM closure",
+        TEMP_SCHEMA_IDS, TEMP_SEED_IDS, syncAlias).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to expand schema references. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT Id FROM [%s].ec_Class WHERE SchemaId IN (SELECT Id FROM %s)",
+        TEMP_CLASS_IDS, syncAlias, TEMP_SCHEMA_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect class ids. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    // Columns the closure's classes actually map to. This is the precise notion of "a column that
+    // belongs to us": a shared column allocated by somebody else's un-pushed import is not in here,
+    // and that is exactly the clutter we are keeping out.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT DISTINCT pm.ColumnId FROM [%s].ec_PropertyMap pm WHERE pm.ClassId IN (SELECT Id FROM %s)",
+        TEMP_COLUMN_IDS, syncAlias, TEMP_CLASS_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect mapped column ids. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    // Tables reached through those columns, plus tables the closure owns outright. Collected into
+    // the seed set first, because the parent walk below has to read from a different table than it
+    // writes to.
+    rc = conn.ExecuteSql(SqlPrintfString("DELETE FROM %s", TEMP_SEED_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT DISTINCT c.TableId FROM [%s].ec_Column c WHERE c.Id IN (SELECT Id FROM %s)",
+        TEMP_SEED_IDS, syncAlias, TEMP_COLUMN_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT t.Id FROM [%s].ec_Table t WHERE t.ExclusiveRootClassId IN (SELECT Id FROM %s)",
+        TEMP_SEED_IDS, syncAlias, TEMP_CLASS_IDS).GetUtf8CP());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    // Overflow and joined tables point at their parent, and the parent has to exist locally before
+    // the child can be described.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) "
+        "WITH RECURSIVE parents(Id) AS ("
+        "  SELECT Id FROM %s"
+        "  UNION"
+        "  SELECT t.ParentTableId FROM [%s].ec_Table t JOIN parents p ON t.Id = p.Id WHERE t.ParentTableId IS NOT NULL"
+        ") SELECT Id FROM parents",
+        TEMP_TABLE_IDS, TEMP_SEED_IDS, syncAlias).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect parent tables. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    // Structural columns of those tables that no property maps to at all - anything ECDb needs to
+    // describe the table itself. Shared columns are deliberately excluded here: an unallocated slot
+    // in the pool is not ours until something in the closure maps to it.
+    rc = conn.ExecuteSql(SqlPrintfString(
+        "INSERT OR IGNORE INTO %s(Id) SELECT c.Id FROM [%s].ec_Column c "
+        "WHERE c.TableId IN (SELECT Id FROM %s) AND c.ColumnKind <> %d "
+        "  AND NOT EXISTS (SELECT 1 FROM [%s].ec_PropertyMap pm WHERE pm.ColumnId = c.Id)",
+        TEMP_COLUMN_IDS, syncAlias, TEMP_TABLE_IDS, (int)DbColumn::Kind::SharedData, syncAlias).GetUtf8CP());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::BuildClosure(): Failed to collect structural column ids. %s", BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::UpsertFiltered(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP whereClause) {
+    SchemaSyncHelper::StringList cols;
+    auto rc = SchemaSyncHelper::GetColumnNames(conn, sourceAlias, tableName, cols);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Failed to get column names for %s. %s", tableName, BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+
+    SchemaSyncHelper::StringList targetCols;
+    rc = SchemaSyncHelper::GetColumnNames(conn, targetAlias, tableName, targetCols);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    if (cols.size() != targetCols.size()) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Column count mismatch for table %s.", tableName);
+        return BE_SQLITE_SCHEMA;
+    }
+
+    SchemaSyncHelper::StringList setClauseExprs;
+    for (auto const& col : cols)
+        setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
+
+    const auto colsSql = SchemaSyncHelper::Join(cols);
+    const auto sql = Utf8String{SqlPrintfString(
+        "INSERT INTO [%s].[%s](%s) SELECT %s FROM [%s].[%s] WHERE %s ON CONFLICT DO UPDATE SET %s",
+        targetAlias, tableName, colsSql.c_str(),
+        colsSql.c_str(), sourceAlias, tableName,
+        whereClause,
+        SchemaSyncHelper::Join(setClauseExprs).c_str()).GetUtf8CP()};
+
+    Statement stmt;
+    rc = stmt.Prepare(conn, sql.c_str());
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Failed to prepare copy for %s. %s (sql: %s)", tableName, BeSQLiteLib::GetErrorString(rc), sql.c_str());
+        return rc;
+    }
+    rc = stmt.Step();
+    if (rc != BE_SQLITE_DONE) {
+        LOG.errorv("SchemaSyncUpstreamHelper::UpsertFiltered(): Failed to copy %s. %s", tableName, BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// Copies the closure, table by table.
+//
+// Two things are deliberately absent:
+//   - Deletes. Scope for now is additive (new classes, new properties), so a row that exists here
+//     but not in the sync db is left alone rather than assumed removed.
+//   - ec_cache_*. Those are derived, and SchemaSync::UpdateDbSchema rebuilds them afterwards.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf8CP targetAlias) {
+    auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSyncUpstreamHelper::CopyClosure(): Failed to set defer_foreign_keys=1");
+        return rc;
+    }
+
+    const auto inSchemas = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_SCHEMA_IDS).GetUtf8CP()};
+    const auto inClasses = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_CLASS_IDS).GetUtf8CP()};
+    const auto inTables = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_TABLE_IDS).GetUtf8CP()};
+    const auto inColumns = Utf8String{SqlPrintfString("(SELECT Id FROM %s)", TEMP_COLUMN_IDS).GetUtf8CP()};
+
+    // Custom attributes hang off a polymorphic container, so the predicate has to branch on
+    // ContainerType. Note the container of a relationship-constraint CA is the constraint row, not
+    // the relationship class.
+    const auto caFilter = Utf8String{SqlPrintfString(
+        "(ContainerType = %d AND ContainerId IN %s) OR "
+        "(ContainerType = %d AND ContainerId IN %s) OR "
+        "(ContainerType = %d AND ContainerId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)) OR "
+        "(ContainerType IN (%d,%d) AND ContainerId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s))",
+        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, inSchemas.c_str(),
+        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, inClasses.c_str(),
+        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property, syncAlias, inClasses.c_str(),
+        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint,
+        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint,
+        syncAlias, inClasses.c_str()).GetUtf8CP()};
+
+    // Ordered so that a row's parents land before it does. Foreign keys are deferred anyway, but
+    // keeping the order honest makes failures easier to read.
+    const bvector<bpair<Utf8String, Utf8String>> plan {
+        { "ec_Schema",                    Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_SchemaReference",           Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_Class",                     Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_ClassHasBaseClasses",       Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
+        { "ec_Enumeration",               Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_UnitSystem",                Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_Phenomenon",                Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_Unit",                      Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_Format",                    Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_FormatCompositeUnit",       Utf8String{SqlPrintfString("FormatId IN (SELECT Id FROM [%s].ec_Format WHERE SchemaId IN %s)", syncAlias, inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_KindOfQuantity",            Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_PropertyCategory",          Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_Property",                  Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
+        { "ec_PropertyPath",              Utf8String{SqlPrintfString("RootPropertyId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)", syncAlias, inClasses.c_str()).GetUtf8CP()} },
+        { "ec_RelationshipConstraint",    Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
+        { "ec_RelationshipConstraintClass", Utf8String{SqlPrintfString("ConstraintId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s)", syncAlias, inClasses.c_str()).GetUtf8CP()} },
+        { "ec_CustomAttribute",           caFilter },
+        { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()} },
+        { "ec_Column",                    Utf8String{SqlPrintfString("Id IN %s", inColumns.c_str()).GetUtf8CP()} },
+        { "ec_ClassMap",                  Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
+        { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()} },
+        { "ec_Index",                     Utf8String{SqlPrintfString("TableId IN %s AND (ClassId IS NULL OR ClassId IN %s)", inTables.c_str(), inClasses.c_str()).GetUtf8CP()} },
+        { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND IndexId IN (SELECT Id FROM [%s].ec_Index WHERE TableId IN %s)", inColumns.c_str(), syncAlias, inTables.c_str()).GetUtf8CP()} },
+    };
+
+    for (auto const& entry : plan) {
+        rc = UpsertFiltered(conn, entry.first.c_str(), syncAlias, targetAlias, entry.second.c_str());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::CopyClosure(): Failed on table %s.", entry.first.c_str());
+            return rc;
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<Utf8String> const& schemaNames) {
+    ECDB_PERF_LOG_SCOPE("Adopting schemas from schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::AdoptSchemas");
+
+    if (schemaNames.empty()) {
+        LOG.error("SchemaSync::AdoptSchemas(): No schema names given.");
+        return Status::ERROR;
+    }
+
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, true, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to verify alias.");
+        return Status::ERROR;
+    }
+
+    auto& mainDisp = m_conn.Schemas().Main();
+    mainDisp.OnBeforeSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
+    m_conn.ClearECDbCache();
+
+    // Bring the profile tables themselves into line first - the copy below assumes both files have
+    // the same ec_ table shapes.
+    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, effectiveSyncDbUri, false);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to sync profile tables schema.");
+        m_conn.AbandonChanges();
+        return Status::ERROR_SYNC_SQL_SCHEMA;
+    }
+
+    rc = m_conn.AttachDb(effectiveSyncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    if (rc != BE_SQLITE_OK) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
+            "Unable to attach sync db '%s' as '%s' to primary connection: %s",
+            effectiveSyncDbUri.GetUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB, m_conn.GetLastError().c_str());
+        return Status::ERROR_UNABLE_TO_ATTACH;
+    }
+
+    const auto cleanup = [&](Status status) {
+        SchemaSyncUpstreamHelper::DropClosure(m_conn);
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return status;
+    };
+
+    BeginModifiedRowCount();
+    rc = SchemaSyncUpstreamHelper::BuildClosure(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB, schemaNames);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to build schema closure.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
+    rc = SchemaSyncUpstreamHelper::CopyClosure(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB, SchemaSyncHelper::ALIAS_MAIN_DB);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to copy schema closure.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+    EndModifiedRowCount();
+
+    const auto detachRc = cleanup(Status::OK);
+    UNUSED_VARIABLE(detachRc);
+
+    // Materialise the physical tables and indexes the adopted rows imply. This is the same step the
+    // v1 pull ends with, and it is why no DDL has to travel between the two files.
+    const auto updateRc = UpdateDbSchema();
+    if (updateRc != Status::OK) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to update db schema.");
+        return updateRc;
+    }
+
+    mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::AdoptSchemas");
+    return Status::OK;
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
