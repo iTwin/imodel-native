@@ -5,10 +5,10 @@
 #
 # Forked from the upstream vcpkg registry `crashpad` port at version 2024-04-11#13, then
 # modified locally (extra patches plus the clang-cl / MSBuild-header handling below). See
-# ../../readme.md ("Updating crashpad") for the full version-update procedure. On Windows the
-# version built is pinned by the three REF commit hashes below (crashpad, mini_chromium,
-# lss), not by the top-level iModelCore/libsrc/crashpad/vcpkg.json constraint; keep them in
-# sync with the upstream version used by the other platforms.
+# ../../readme.md ("Updating crashpad") for the full version-update procedure. The version
+# built is pinned by the three REF commit hashes below (crashpad, mini_chromium, lss), not by
+# the top-level iModelCore/libsrc/crashpad/vcpkg.json constraint; keep the version-date and
+# port-version in this port's vcpkg.json consistent with that constraint.
 
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 
