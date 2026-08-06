@@ -190,6 +190,25 @@ public:
         {
         return m_allFreedColumnIdentifiers.count(RemapManager::GetFullColumnIdentifier(column.GetTable().GetName(), column.GetName())) > 0;
         }
+
+    // Returns a short aggregate description of the remapping work in this import. Used for failure diagnostics.
+    Utf8String BuildDiagnosticsSummary() const
+        {
+        size_t addedPropertyCount = 0;
+        size_t addedBaseClassCount = 0;
+        for (auto const& [classId, remapInfo] : m_remapInfos)
+            {
+            addedPropertyCount += remapInfo.m_addedProperties.size();
+            addedBaseClassCount += remapInfo.m_addedBaseClasses.size();
+            }
+
+        size_t cleanedMappingCount = 0;
+        for (auto const& [classId, cleanedInfos] : m_cleanedMappingInfo)
+            cleanedMappingCount += cleanedInfos.size();
+
+        return Utf8PrintfString("Remapping summary: %zu modified classes (%zu added properties, %zu added base classes), %zu cleaned property mappings across %zu classes, %zu freed columns blocked from immediate reuse.",
+            m_remapInfos.size(), addedPropertyCount, addedBaseClassCount, cleanedMappingCount, m_cleanedMappingInfo.size(), m_allFreedColumnIdentifiers.size());
+        }
     };
 
 
