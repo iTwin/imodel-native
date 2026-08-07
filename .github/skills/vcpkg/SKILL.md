@@ -24,7 +24,7 @@ vcpkg (bootstrap)
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
-`vcpkg_run_install.bat` / `vcpkg_run_install.sh`.  Chaining ensures no two `vcpkg`
+`vcpkg_run_install.ps1` / `vcpkg_run_install.sh`.  Chaining ensures no two `vcpkg`
 processes ever run concurrently — concurrent runs against the same install root collide
 on `vcpkg-running.lock` and corrupt the build.
 
@@ -44,13 +44,22 @@ Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg-configuration.json` — copy from an existing consumer (e.g. `compress/`); update `baseline` if needed
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
+> **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
+> link into Windows DEBUG unless their debug artifact is made release-CRT-compatible — either by
+> forcing release-only triplets (`set(VCPKG_BUILD_TYPE release)`) or by fixing up the vcpkg Debug
+> config to link the release CRT while keeping its diagnostics; others are fine without any
+> change. See the
+> [Windows debug builds link the release CRT](#windows-debug-builds-link-the-release-crt)
+> pitfall below to decide, and for both fixes. `crashpad/triplets/` and
+> `pugixml/triplets/` are working examples of libraries that needed it.
+
 ### 2. Create `iModelCore/libsrc/vcpkg_install_<mylib>.mke`
 
 ```makefile
 %include mdl.mki
 
-mylibDir    = $(_MakeFilePath)<mylib>/
-installRoot = $(OutputRootDir)vcpkg_installed/<mylib>/
+mylibDir    = $(_MakeFilePath)<mylib>
+installRoot = $(OutputRootDir)vcpkg_installed/<mylib>
 
 # Add vcpkgWindowsMDCRT = 1 here if the library must link /MD on Windows (like openssl).
 # Add vcpkgUseVeracodeTriplet = 1 here ONLY if this library's base triplet sets explicit
@@ -61,14 +70,14 @@ installRoot = $(OutputRootDir)vcpkg_installed/<mylib>/
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(mylibDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(mylibDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(mylibDir) $(installRoot) $(vcpkgTriplet)
 %endif
 ```
 
 `$(_MakeFilePath)` resolves to `libsrc/` because the file lives there, so the paths to
-`<mylib>/`, `vcpkg_run_install.bat/sh`, and `vcpkg.mki` are all correct.
+`<mylib>/`, `vcpkg_run_install.ps1`/`.sh`, and `vcpkg.mki` are all correct.
 
 ### 3. Extend the chain in `iModelCore/libsrc/vcpkg.PartFile.xml`
 
@@ -145,6 +154,27 @@ Libraries that **only** build as static (e.g. compress, crashpad client) can ski
 `%if defined (CREATE_STATIC_LIBRARIES)` conditional and use `$(OutputRootDir)vcpkg_installed/…`
 directly — their `OutputRootDir` is always the static one.
 
+**If this library needs the release-only Windows triplets** (see the pitfall below), also link
+the release archive on Windows. Because those triplets set `VCPKG_BUILD_TYPE release`, no
+`debug/lib/` archive is produced, so a `%if defined (DEBUG)` branch that reaches for
+`$(vcpkgDbgLibDir)` would point at a nonexistent file. Gate the archive selection on the
+platform first:
+
+```makefile
+%if $(TARGET_PLATFORM) == "Windows"
+    # Windows always links the release archive: the Windows triplets force VCPKG_BUILD_TYPE
+    # release because bmake links the release CRT even in DEBUG builds.
+    vcpkgMyLib = $(vcpkgLibDir)$(myLibName)
+%elif defined (DEBUG)
+    vcpkgMyLib = $(vcpkgDbgLibDir)$(myLibName)
+%else
+    vcpkgMyLib = $(vcpkgLibDir)$(myLibName)
+%endif
+```
+
+Libraries that do **not** need the release-only triplets keep the plain
+`%if defined (DEBUG)` → `$(vcpkgDbgLibDir)` selection (e.g. `openssl/BeOpenSSL.mke`).
+
 ### 6. Migrating an existing (previously vendored) library
 
 When the library you are moving to vcpkg was previously vendored (its source checked into
@@ -171,6 +201,71 @@ may not run at all.
 
 ---
 
+## Pitfall: Windows debug builds link the release CRT
+
+<a id="windows-debug-builds-link-the-release-crt"></a>
+
+The bmake link settings in this pipeline use the **release CRT even in Windows DEBUG builds**.
+Bentley wrapper objects (e.g. `BePugiXml`, the crashpad client wrapper) are therefore compiled
+`MD_DynamicRelease` with `_ITERATOR_DEBUG_LEVEL=0`.
+
+**This does not affect every library — only those whose debug artifact actually depends on the
+debug CRT.** A vcpkg debug build is compiled with `_DEBUG` defined. If the library's source
+gates on `_DEBUG` at compile time and then calls debug-CRT-only functionality (or raises
+`_ITERATOR_DEBUG_LEVEL` to 2), that debug artifact references symbols that do not exist in the
+release CRT, so linking it into our release-CRT DEBUG build fails with unresolved-symbol /
+CRT-mismatch / `_ITERATOR_DEBUG_LEVEL` (2 vs 0) errors. Libraries whose debug artifact does not
+touch debug-CRT-only functionality link fine and have deliberately been left on the normal
+debug/release selection (e.g. `openssl`).
+
+**So this is a per-library check, not a blanket rule.** If a new Windows vcpkg library links
+cleanly in a DEBUG build, leave it alone. If its DEBUG link fails with the symptoms above, you
+have two ways to fix it.
+
+### Fix A (simplest): make the library release-only on Windows
+
+Produce only a release artifact and link it everywhere. Two halves, do both:
+
+1. **Force release-only builds in the Windows triplets.** Add `set(VCPKG_BUILD_TYPE release)` to
+   every Windows triplet the library uses (`x64-windows-static.cmake`, the `-clang` variant, and
+   any `-md` / `-veracode` variants). This stops vcpkg from producing a `debug/lib/` archive at
+   all.
+2. **Always link the release archive on Windows in the consumer `.mke`.** Select the archive
+   with a `%if $(TARGET_PLATFORM) == "Windows"` branch that uses `$(vcpkgLibDir)` (release)
+   *before* any `%if defined (DEBUG)` branch (see step 5).
+
+The tradeoff: the Release config also defines `NDEBUG` (stripping the library's internal
+`assert()`s) and optimizes, so you lose the library's debug diagnostics on Windows DEBUG only
+(other platforms keep their debug archive). For most libraries that is an acceptable price for a
+one-line fix.
+
+### Fix B (preserves debug diagnostics): keep the debug archive, force it onto the release CRT
+
+If you want to keep the Windows DEBUG archive (asserts, unoptimized code) and only the CRT is the
+problem, fix up the vcpkg **Debug** config to use the release CRT instead of dropping it. Leave
+both configs building and, in each Windows triplet, pin the Debug runtime library and iterator
+level:
+
+```cmake
+set(VCPKG_CMAKE_CONFIGURE_OPTIONS_DEBUG "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL")
+set(VCPKG_CXX_FLAGS_DEBUG "${VCPKG_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+set(VCPKG_C_FLAGS_DEBUG   "${VCPKG_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+```
+
+The Debug config keeps `NDEBUG` undefined, so `assert()`s survive; only the CRT/iterator level
+change to match our build. The consumer `.mke` keeps the normal `%if defined (DEBUG)` →
+`$(vcpkgDbgLibDir)` selection, since a `debug/lib/` archive is still produced. This works only if
+the library's CMake honors the cache-set `CMAKE_MSVC_RUNTIME_LIBRARY` (CMP0091) — most modern
+ports do — and it is more machinery: apply it to **every** Windows triplet and validate a real
+Windows DEBUG link on **both** the MSVC and clang-cl toolsets. `pugixml/triplets/x64-windows-static.cmake`
+documents this recipe in its header comment; pugixml itself ships Fix B to preserve debug diagnostics.
+
+This has bitten two libraries so far — crashpad (first) and pugixml (second). Reference
+implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
+`crashpad/triplets/*.cmake` + `crashpad/client.mke`.
+
+---
+
 ## Triplet Selection (`vcpkg.mki`)
 
 `iModelCore/libsrc/vcpkg.mki` maps `TARGET_PROCESSOR_ARCHITECTURE` to `vcpkgTriplet`:
@@ -194,5 +289,5 @@ may not run at all.
 | `iModelCore/libsrc/vcpkg.PartFile.xml` | Sequential chain — edit to add new install parts |
 | `iModelCore/libsrc/vcpkg_install_*.mke` | One file per consumer; calls `vcpkg_run_install` |
 | `iModelCore/libsrc/vcpkg.mki` | Triplet selection; include from any install or consumer mke |
-| `iModelCore/libsrc/vcpkg_run_install.bat` / `.sh` | Wrapper that invokes the `vcpkg` executable |
+| `iModelCore/libsrc/vcpkg_run_install.ps1` / `.sh` | Wrapper that invokes the `vcpkg` executable |
 | `iModelCore/libsrc/VCPKG.md` | Human-facing documentation; keep in sync when changing patterns |
