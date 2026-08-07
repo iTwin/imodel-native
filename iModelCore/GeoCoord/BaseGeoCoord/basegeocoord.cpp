@@ -59,7 +59,6 @@ BEGIN_EXTERN_C
  extern struct cs_Ostn02_ *cs_Ostn02Ptr;
  extern struct cs_Ostn15_ *cs_Ostn15Ptr;
 
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -94,7 +93,6 @@ extern bool CS_wktProjectionMethodEPSGLookUp(int projectionCode, int* projection
 #define DIM(a) (sizeof(a)/sizeof(a[0]))
 
 #define CSMAP_FREE_AND_CLEAR(ptr) {if (NULL != ptr){CSMap::CS_free (ptr) ; ptr=NULL;}}
-
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -571,7 +569,7 @@ char WGS84CoincidentKeynameMap[][24] =
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Returns true if the datum transformnation code corresponds to one of the grid file
+* Returns true if the datum transformation code corresponds to one of the grid file
 * or multiple regression based transformations.
 *
 * @param datumConvertCode The datum transformation code to check.
@@ -629,7 +627,7 @@ bool   IsWGS84CoincidentKeyname(const char * datumKeyname)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This utilitary function extracts the group name without modifying the Datum
+* This utility function extracts the group name without modifying the Datum
 * class signature.
 *
 * @param datum The datum to get the group name from.
@@ -1454,20 +1452,27 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
              (upperMethodName == "LCC") ||
              (upperMethodName == "LAMBERT CONIC CONFORMAL (2SP)"))
         ID = BaseGCS::pcvLambertConformalConicTwoParallel;
+    else if ((upperMethodName == "LAMBERT CONIC CONFORMAL (2SP MICHIGAN)") ||
+             (upperMethodName == "LAMBERT_CONIC_CONFORMAL_(2SP_MICHIGAN)"))
+        ID = BaseGCS::pcvLambertMichigan;
     else if ((upperMethodName == "LAMBERT_CONFORMAL_CONIC_1SP") || // Name from OGR
              (upperMethodName == "CT_LAMBERTCONFCONIC_1SP") ||
              (upperMethodName == "LAMBERT_CONIC_CONFORMAL_1SP") ||
              (upperMethodName == "LAMBERT CONIC CONFORMAL (1SP)") ||
+             (upperMethodName == "LAMBERT CONIC CONFORMAL (WEST ORIENTED)") ||
+             (upperMethodName == "LAMBERT CONIC CONFORMAL (WEST ORIENTATED)") || 
              (upperMethodName == "LAMBERT CONFORMAL CONIC, SINGLE STANDARD PARALLEL") )
         ID = BaseGCS::pcvLambertConformalConicOneParallel;
     else if ((upperMethodName == "MERCATOR") ||
              (upperMethodName == "MERCATOR_2SP") ||
              (upperMethodName == "MERCATOR (2SP)") ||
+             (upperMethodName == "MERCATOR (VARIANT B)") ||
              (upperMethodName == "MERCATOR CYLINDRICAL WITH STANDARD PARALLEL") ||
              (upperMethodName == "CT_MERCATOR"))
         ID = BaseGCS::pcvMercator;
     else if ((upperMethodName == "MERCATOR_1SP") ||
              (upperMethodName == "MERCATOR (1SP)") ||
+             (upperMethodName == "MERCATOR (VARIANT A)") ||
              (upperMethodName == "MERCATOR CYLINDRICAL PROJECTION WITH SCALE REDUCTION") ||
              (upperMethodName == "MERCATOR CYLINDRICAL WITH SCALE REDUCTION"))
         ID = BaseGCS::pcvMercatorScaleReduction;
@@ -1572,12 +1577,16 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
 // Users should simply select the appropriate projection in dictionary for the moment
     else if ((upperMethodName == "KROVAK") ||
              (upperMethodName == "KROVAKEN") ||
+             (upperMethodName == "KROVAK (NORTH ORIENTED)") ||
+             (upperMethodName == "KROVAK (NORTH ORIENTATED)") ||
              (upperMethodName == "KROVAK OBLIQUE CONFORMAL CONIC") ||
              (upperMethodName == "KROVAK OBLIQUE CONIC CONFORMAL") ||
              (upperMethodName == "KROVAK_OBLIQUE_CONIC_CONFORMAL"))
         ID = BaseGCS::pcvCzechKrovak; // ?? cs_PRJCOD_KRVK95
     else if ((upperMethodName == "KROVAK MODIFIED") ||
              (upperMethodName == "KROVAK OBLIQUE CONFORMAL CONIC MODIFIED") ||
+             (upperMethodName == "KROVAK MODIFIED (NORTH ORIENTED)") ||
+             (upperMethodName == "KROVAK MODIFIED (NORTH ORIENTATED)") ||
              (upperMethodName == "KROVAKMOD") ||
              (upperMethodName == "KROVAK OBLIQUE CONIC CONFORMAL MODIFIED") ||
              (upperMethodName == "KROVAK_OBLIQUE_CONIC_CONFORMAL_MODIFIED"))
@@ -1644,6 +1653,9 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
              (upperMethodName == "CT_NEWZEALANDMAPGRID"))
         ID = BaseGCS::pcvNewZealandNationalGrid;
     else if ((upperMethodName == "CYLINDRICAL_EQUAL_AREA") ||
+             (upperMethodName == "LAMBERT_CYLINDRICAL_EQUAL_AREA") ||
+             (upperMethodName == "LAMBERT CYLINDRICAL EQUAL AREA") ||
+             (upperMethodName == "CYLINDRICAL EQUAL AREA") ||
              (upperMethodName == "NORMAL ASPECT, EQUAL AREA CYLINDRICAL") ||
              (upperMethodName == "NORMAL ASPECT, EQUAL AREA CYLINDRICAL PROJECTION") ||
              (upperMethodName == "CYLINDRICAL EQUAL AREA"))
@@ -1668,6 +1680,7 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
     else if ((upperMethodName == "CASSINI") ||
              (upperMethodName == "CASSINI_SOLDNER") ||
              (upperMethodName == "CT_CASSINISOLDNER") ||
+             (upperMethodName == "HYPERBOLIC CASSINI-SOLDNER") ||
              (upperMethodName == "CASSINI-SOLDNER"))
         ID = BaseGCS::pcvCassini;
     else if ((upperMethodName == "WINKEL_TRIPEL") ||
@@ -1777,8 +1790,7 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromParseName (Utf8StringR name) c
 // "Tunisia_Mining_Grid"
 // "Vertical_Near_Side_Perspective" OR "General Vertical Near-Side Perspective"
 
-
-// The following CSMAP projections do not appear to have equivalent WKT entries.
+// The following CSMAP projections do not appear to have equivalent WKT entries
 // cs_PRJCOD_LMTAN
 // cs_PRJCOD_TACYL
 // cs_PRJCOD_HOM2XY
@@ -1901,12 +1913,24 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
 
     if ((upperParameterName == "FALSE_EASTING") ||
         (upperParameterName == "FALSEEASTING") ||
-        (upperParameterName == "FALSE EASTING"))
+        (upperParameterName == "FALSE EASTING") ||
+        (upperParameterName == "EASTING AT PROJECTION CENTRE") ||
+        (upperParameterName == "EASTING_AT_PROJECTION_CENTRE") ||
+        (upperParameterName == "EASTING AT PROJECTION CENTER") ||
+        (upperParameterName == "EASTING_AT_PROJECTION_CENTER") ||
+        (upperParameterName == "EASTING AT FALSE ORIGIN") ||
+        (upperParameterName == "EASTING_AT_FALSE_ORIGIN"))
         coordinateSystem.SetFalseEasting(parameterValue);
     else if ((upperParameterName == "FALSE_NORTHING") ||
             (upperParameterName == "FALSENORTHING") ||
-            (upperParameterName == "FALSE NORTHING"))
-            coordinateSystem.SetFalseNorthing(parameterValue);
+            (upperParameterName == "FALSE NORTHING") ||
+            (upperParameterName == "NORTHING AT PROJECTION CENTRE") ||
+            (upperParameterName == "NORTHING_AT_PROJECTION_CENTRE") ||
+            (upperParameterName == "NORTHING AT PROJECTION CENTER") ||
+            (upperParameterName == "NORTHING_AT_PROJECTION_CENTER") ||
+            (upperParameterName == "NORTHING AT FALSE ORIGIN") ||
+            (upperParameterName == "NORTHING_AT_FALSE_ORIGIN"))
+        coordinateSystem.SetFalseNorthing(parameterValue);
     else if ((upperParameterName == "LATITUDE_OF_ORIGIN") ||
             (upperParameterName == "LATITUDE_OF_CENTER") ||
             (upperParameterName == "CENTRAL_PARALLEL") ||
@@ -1987,6 +2011,11 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
     else if ((upperParameterName == "SCALE_FACTOR") ||
             (upperParameterName == "SCALEATNATORIGIN") ||
             (upperParameterName == "SCALE FACTOR AT NATURAL ORIGIN") ||
+            (upperParameterName == "SCALE FACTOR AT PROJECTION CENTRE") ||
+            (upperParameterName == "SCALE FACTOR AT PROJECTION CENTER") ||
+            (upperParameterName == "SCALE_FACTOR_AT_PROJECTION_CENTRE") ||
+            (upperParameterName == "SCALE_FACTOR_AT_PROJECTION_CENTER") ||
+            (upperParameterName == "SCALE FACTOR AT NATURAL ORIGIN") ||
             (upperParameterName == "SCALE REDUCTION") ||
             (upperParameterName == "SCALING FACTOR FOR COORD DIFFERENCES"))
         {
@@ -2007,6 +2036,12 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
             if (SUCCESS != coordinateSystem.SetEllipsoidScaleFactor(parameterValue))
                 return GeoCoordParse_InvalidParamForMethod;
             }
+        }
+    else if ((upperParameterName == "SCALE_FACTOR_ON_PSEUDO_STANDARD_PARALLEL") ||
+             (upperParameterName == "SCALE FACTOR ON PSEUDO STANDARD PARALLEL"))
+        {
+        if (SUCCESS != coordinateSystem.SetScaleReduction(parameterValue))
+            return GeoCoordParse_InvalidParamForMethod;
         }
     else if ((upperParameterName == "STANDARD CIRCLE LATITUDE") ||
              (upperParameterName == "LATITUDE_TRUE_SCALE") ||
@@ -2124,6 +2159,11 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
     else if ((upperParameterName == "AZIMUTH") ||
             (upperParameterName == "AZIMUTHANGLE") ||
             (upperParameterName == "GEODESIC AZIMUTH AT PROJECTION CENTER") ||
+            (upperParameterName == "GEODESIC AZIMUTH AT PROJECTION CENTRE") ||
+            (upperParameterName == "AZIMUTH AT PROJECTION CENTER") ||
+            (upperParameterName == "AZIMUTH_AT_PROJECTION_CENTER") ||
+            (upperParameterName == "AZIMUTH AT PROJECTION CENTRE") ||
+            (upperParameterName == "AZIMUTH_AT_PROJECTION_CENTRE") ||
             (upperParameterName == "AZIMUTH OF INITIAL LINE") ||
             (upperParameterName == "RECTIFIED_GRID_ANGLE") ||
             (upperParameterName == "RECTIFIEDGRIDANGLE") ||
@@ -2173,18 +2213,25 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
     else if ((upperParameterName == "LONGITUDE_OF_ORIGIN") ||
             (upperParameterName == "LONGITUDE_OF_CENTER") ||
             (upperParameterName == "NATORIGINLONG") ||
+            (upperParameterName == "LONGITUDE OF ORIGIN") ||
             (upperParameterName == "LONGITUDE OF NATURAL ORIGIN") ||
+            (upperParameterName == "LONGITUDE_OF_NATURAL_ORIGIN") ||
             (upperParameterName == "CENTRAL POINT LONGITUDE") ||
+            (upperParameterName == "CENTRAL_POINT_LONGITUDE") ||
             (upperParameterName == "CENTERLONG") ||
             (upperParameterName == "LONGITUDE OF PROJECTION CENTRE") ||
             (upperParameterName == "LONGITUDE OF PROJECTION CENTER") ||
+            (upperParameterName == "LONGITUDE_OF_PROJECTION_CENTRE") ||
+            (upperParameterName == "LONGITUDE_OF_PROJECTION_CENTER") ||
             (upperParameterName == "LONGITUDE OF FALSE ORIGIN") ||
+            (upperParameterName == "LONGITUDE_OF_FALSE_ORIGIN") ||
             (upperParameterName == "ORIGIN LONGITUDE"))
         {
         switch (coordinateSystem.GetProjectionCode())
             {
             case BaseGCS::pcvGaussKrugerTranverseMercator:
             case BaseGCS::pcvTransverseMercator:
+            case BaseGCS::pcvTransverseMercatorKruger:
             case BaseGCS::pcvTransverseMercatorAffinePostProcess:
             case BaseGCS::pcvTotalTransverseMercatorBF:
             case BaseGCS::pcvCassini:
@@ -2206,6 +2253,10 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
                 if (SUCCESS != coordinateSystem.SetCentralPointLongitude(parameterValue * conversionToDegree))
                     return GeoCoordParse_InvalidParamForMethod;
                 break;
+            case BaseGCS::pcvCzechKrovak:
+            case BaseGCS::pcvCzechKrovakModified:
+                if (SUCCESS != coordinateSystem.SetPoint1Longitude(parameterValue * conversionToDegree))
+                    return GeoCoordParse_InvalidParamForMethod;
             default:
                 if (SUCCESS != coordinateSystem.SetOriginLongitude(parameterValue * conversionToDegree))
                     return GeoCoordParse_InvalidParamForMethod;
@@ -2287,6 +2338,17 @@ GeoCoordParseStatus SetParameterToCoordSys(Utf8StringR parameterName, Utf8String
             (upperParameterName == "AFFINE TRANSFORMATION B2 COEFFICIENT"))
         {
         if (SUCCESS != coordinateSystem.SetAffineB2(parameterValue))
+            return GeoCoordParse_InvalidParamForMethod;
+        }
+    else if (upperParameterName == "CO-LATITUDE OF CONE AXIS")
+        {
+        // Parameter is ignored for Krovak but an error for any other method.
+        if (coordinateSystem.GetProjectionCode() != BaseGCS::pcvCzechKrovak && coordinateSystem.GetProjectionCode() != BaseGCS::pcvCzechKrovakModified)
+                return GeoCoordParse_InvalidParamForMethod;
+        }
+    else if (upperParameterName == "ELLIPSOID SCALING FACTOR")
+        {
+        if (SUCCESS != coordinateSystem.SetEllipsoidScaleFactor(parameterValue))
             return GeoCoordParse_InvalidParamForMethod;
         }
     else if ((upperParameterName == "ZONE WIDTH") ||
@@ -3859,7 +3921,6 @@ GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BePugiXmlNode gcsNode, bool gcsG
     if (gcsGeographic)
         baseGCS.SetProjectionCode(BaseGCS::pcvUnity);
 
-
     // If alias is EPSG number extract and try with EPSG specific function
     int epsgNumber = 0;
     bool epsgSuccess = false;
@@ -3875,6 +3936,15 @@ GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BePugiXmlNode gcsNode, bool gcsG
                     return GeoCoordParse_Success;
                 }
             }
+        }
+
+    // The baseGCS may have been invalidated by a failed InitFromEPSGCode()
+    if (!baseGCS.IsValid())
+        {
+        InitCleanGCS(baseGCS);
+
+        if (gcsGeographic)
+            baseGCS.SetProjectionCode(BaseGCS::pcvUnity);
         }
 
     // We do not have a direct match ... proceed
@@ -4035,11 +4105,9 @@ GeoCoordParseStatus ParseGCS (BaseGCSR baseGCS, BePugiXmlNode gcsNode, bool gcsG
     }
 }; //class
 
-
 static const Utf8String LEFTDELIMITER = "[";
 static const Utf8String COMMA = ",";
 static const Utf8String RIGHTDELIMITER = "]";
-
 
 /*=================================================================================**//**
 *
@@ -4298,7 +4366,6 @@ Utf8String GetAuthority (Utf8StringR wkt) const
     // Trim again
     wkt.Trim();
 
-    // Make sure that remainder starts with [
     if (!StartsWithKeyword(wkt, LEFTDELIMITER))
         return "";
 
@@ -4408,6 +4475,9 @@ GeoCoordParseStatus GetParameter (Utf8StringR wkt, Utf8StringR parameterName, do
         if (wkt.length() == previousLength)
             return GeoCoordParse_ParseError;
         }
+
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
 
     return GeoCoordParse_Success;
     }
@@ -4521,6 +4591,32 @@ GeoCoordParseStatus PostStepGeographicToCoordSys(Utf8String geographicName, Utf8
     {
     if (!doubleSame(conversionToDegree, 1.0))
         {
+        GeoCoordinates::UnitEnumerator* unitEnumerator = new GeoCoordinates::UnitEnumerator();
+        GeoCoordinates::UnitCP currentUnit;
+        int currentUnitCode = 0;
+        int foundUnitCode = -1;
+        while ((foundUnitCode < 0) && (unitEnumerator->MoveNext()))
+            {
+            currentUnit = unitEnumerator->GetCurrent();
+
+            if (currentUnit->GetBase() == GeoUnitBase::Degree)
+                {
+                double dictConversionFactor = currentUnit->GetConversionFactor();
+                if ((conversionToDegree < dictConversionFactor + 0.00000001) && (conversionToDegree > dictConversionFactor - 0.00000001))
+                    foundUnitCode = currentUnitCode;
+                }
+            currentUnitCode++;
+
+            currentUnit->Destroy();
+            }
+
+        unitEnumerator->Destroy();
+
+        if (foundUnitCode < 0)
+            return GeoCoordParse_UnknownUnit;
+
+        baseGCS.SetUnitCode(foundUnitCode);
+
         // Angular units are not degree. We support that only for longitude/latitude based GCS (which is the case)
         // This only means adjusting the prime meridian of the GCS.
         baseGCS.SetOriginLongitude(baseGCS.GetOriginLongitude() * conversionToDegree);
@@ -4823,6 +4919,9 @@ GeoCoordParseStatus GetRidOfSection(Utf8StringR wkt, Utf8String sectionKeyword, 
         
     wkt.Trim();
 
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
+
     return GeoCoordParse_Success;
     }       
 };
@@ -5022,7 +5121,10 @@ GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
             return GeoCoordParse_ParseError;
         }
 
-    return PostGetProjected(baseGCS, name, authorityID, geocsPresent, geocsValid, "WKT2");
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
+
+    return PostGetProjected(baseGCS, name, authorityID, geocsPresent, geocsValid, "WKT");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5167,6 +5269,9 @@ VerticalDatumPtr GetVerticalDatum (const Utf8String& csName, Utf8StringR wkt, Ve
             return nullptr;
         }
 
+    if (!sectionCompleted)
+        return nullptr;
+
     return PostStepVerticalDatum(csName, name, authorityID, WKTDatumCode, vertDatumLegacyCode);
     }
 
@@ -5247,6 +5352,9 @@ GeoCoordParseStatus GetVerticalCS (BaseGCSR baseGCS, Utf8StringR wkt) const
             return GeoCoordParse_ParseError;
         }
 
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
+
     return PostStepVerticalCSToCoordSys(verticalDatum, authorityID, vertDatumLegacyCode, baseGCS);
     }
 
@@ -5311,7 +5419,6 @@ GeoCoordParseStatus GetLocal (BaseGCSR baseGCS, Utf8StringR wkt) const
     Utf8String name = GetName (wkt);
     Utf8String authorityID = GetAuthorityIdFromNameOracleStyle(name);
 
-
     baseGCS.SetProjectionCode (BaseGCS::pcvNonEarth);
     baseGCS.SetDatumCode (Datum::NO_DATUM_CODE);
 
@@ -5355,6 +5462,9 @@ GeoCoordParseStatus GetLocal (BaseGCSR baseGCS, Utf8StringR wkt) const
             return GeoCoordParse_ParseError;
         }
 
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
+
 #ifdef NOT_YET
 
     if (authorityID.length() > 0)
@@ -5370,7 +5480,6 @@ GeoCoordParseStatus GetLocal (BaseGCSR baseGCS, Utf8StringR wkt) const
 
     return (SUCCESS == baseGCS.DefinitionComplete() ? GeoCoordParse_Success : GeoCoordParse_InvalidDefinition);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 *   This private method extracts the datum, ellipsoid and meridian
@@ -5394,7 +5503,7 @@ GeoCoordParseStatus GetGeographicToProjected (Utf8StringR wkt, double* conversio
     }
 
 /*---------------------------------------------------------------------------------**//**
-*   This private method extracts the datum, spheroid and meridian
+*   This private method extracts the datum, ellipsoid and meridian
 *   definition and sets the appropriate fields in the given coordinate system.
 *   The GEOGCS AuthorityID and name are returned in separate field for the caller
 *   to use as sees fit.
@@ -5482,7 +5591,6 @@ GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geogra
                 *conversionToDegree = 1.0;
             }
 
-
         if (StartsWithKeyword(wkt, "METADATA")) // Unknown origin but occurs
             {
             if (GeoCoordParse_Success != GetRidOfSection (wkt, "METADATA", ""))
@@ -5539,6 +5647,9 @@ GeoCoordParseStatus GetGeographicToCoordSys (Utf8StringR wkt, Utf8StringR geogra
         if (wkt.length() == previousLength)
             return GeoCoordParse_ParseError;
         }
+
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
 
     if (datumValid && datumPresent)
         return GeoCoordParse_Success;
@@ -5654,6 +5765,9 @@ GeoCoordParseStatus GetHorizontalDatumToCoordSys (Utf8StringR wkt, BaseGCSR coor
             sectionCompleted = true;
             }
         }
+
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
 
     return PostStepHorizontalDatumToCoordSysWithTransform(name, authorityID, ellipsoidPresentAndKnown, ellipsoidPresent, transfoParamPresent, deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM, coordinateSystem);
     }
@@ -5814,6 +5928,10 @@ GeoCoordParseStatus GetPrimeMeridianToCoordSys (Utf8StringR wkt, BaseGCSR coordi
          (name == "Ferro" && doubleSame(longitude, -17.666666666666)) ||
          (name == "FerroPrecise" && doubleSame(longitude, -17.6665931666667))))
         {
+        // Correcting an ancestral CSMAP typo error that uses 74.08175 instead of 74.08091666666667 as should be
+        if (longitude > -74.090 && longitude < -74.08)
+            longitude = -74.08091666666667;
+
         coordinateSystem.SetOriginLongitude (longitude);
         }
     else if ((longitude > (0.00000001)) || (longitude < (-0.00000001))) // Check longitude is zero for any other projections
@@ -5995,6 +6113,9 @@ GeoCoordParseStatus GetProjectionToCoordSys (Utf8StringR wkt, double conversionT
             return GeoCoordParse_ParseError;
         }
 
+    if (!sectionCompleted)
+        return GeoCoordParse_ParseError;
+
     // If we had an Oracle style projection but no parameters then we fail (flavor assumes we load parameters from table)
     if (projectionFromOracleStyle && !parameterPresent)
         return GeoCoordParse_BadProjection;
@@ -6131,7 +6252,6 @@ GeoCoordParseStatus GetExtension (Utf8StringR wkt, Utf8StringR extensionName, Ut
 
     StripKeyword(wkt, "EXTENSION");
 
-
     // Make sure that remainder starts with [
     if (!StartsWithKeyword(wkt, LEFTDELIMITER))
         return GeoCoordParse_ParseError;
@@ -6225,7 +6345,9 @@ GeoCoordParseStatus GetAngleUnit (Utf8StringR wkt, double* conversionToDegree) c
     Utf8String     unitName;
     double      conversionToRadians = 1.0;
     status = GetUnit (wkt, unitName, &conversionToRadians);
-    *conversionToDegree = conversionToRadians * 180.0 / PI;
+
+    if (GeoCoordParse_Success == status)
+        *conversionToDegree = conversionToRadians * 180.0 / PI;
 
     return status;
     }
@@ -7118,7 +7240,6 @@ bool                IsFatalGeoTiffError (StatusInt  status)
     return true;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -7539,7 +7660,6 @@ StatusInt       ProcessEllipsoidKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     int     geoCode = geoKey.KeyValue.LongVal;
     BeAssert ( ((geoCode >= 7000) && (geoCode < 8000)) || (geoCode == UserDefinedKeyValue) );
 
-
     if (geoCode != UserDefinedKeyValue)
         {
         // look up the ellipsoid. Name will be "EPSG:%d".
@@ -7817,7 +7937,6 @@ StatusInt       ProcessProjectedCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     BeAssert (ModelTypeProjected == m_modelType);
 
     int     geoCode = geoKey.KeyValue.LongVal;
-
 
     // Code 0 is a GeoTIFF code for undefined yet the CSMAP lookup process uses code 0 for deprecated entries
     // using code 0 will simply return the first EPSG deprecated entry (which is usually PulkovoGK/CM-15E)
@@ -8519,7 +8638,6 @@ IGeoTiffKeysList&       geoTiffKeys         // The GeoTiff key list
     {
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -9099,6 +9217,7 @@ protected:
     Utf8String               m_format;
     VerticalDatumGridFormat  m_csmapFormat;
     GridFileDirection        m_direction;
+    Utf8String               m_requiredHorizontalCRSBase;
 
     CSGeoidHeight*           m_csGeoidHeight;
 
@@ -9317,6 +9436,8 @@ public:
         }
     }
 
+    Utf8String GetRequiredHorizontalCRSBase() const override {return m_requiredHorizontalCRSBase;}
+
     StatusInt GetElevation(double& elevationOffset, ElevationType& elevationType, GeoPointCR ptIn) override
     {
         elevationOffset = 0.0;
@@ -9347,7 +9468,7 @@ class VerticalOffsetGridTransform : public VerticalTransform
     friend class VerticalTransform;
 
 protected:
-    bvector<WString>     m_gridFiles;
+    bvector<WString>        m_gridFiles;
     Utf8String              m_format;
     VerticalDatumGridFormat m_csmapFormat;
     GridFileDirection       m_direction;
@@ -9536,6 +9657,8 @@ public:
             m_vertconUS = nullptr;
         }
     }
+
+    Utf8String GetRequiredHorizontalCRSBase() const override { return (0 == m_format.CompareToI("VERTCON")) ? "LL83" : "LL84"; }
 
     StatusInt GetElevation(double& elevationOffset, ElevationType& elevationType, GeoPointCR ptIn) override
     {
@@ -10720,7 +10843,6 @@ StatusInt VerticalDatumDictionary::QueryVerticalDatumsAvailableAtPoint(bvector<U
         else if (extent.Contains(latLong.longitude, latLong.latitude))
             inRange = true;
 
-
         if (inRange)
         {
             Utf8String name;
@@ -10782,7 +10904,6 @@ StatusInt VerticalDatumDictionary::QueryVerticalDatumsAvailableForRange(bvector<
         }
         else if (range.IsContained(verticalDatumExtent) || (includeIntersecting && range.IntersectsWith(verticalDatumExtent)))
             inRange = true;
-
 
         if (inRange)
         {
@@ -11289,7 +11410,6 @@ GeoPointCR  inLatLong
             return GEOCOORDERR_VerticalDatumConversion; // From datum unknown ... not implemented.
         }
 
-
     // If we have NGVD29 conversion (Case 0E-inverse, 3B, 5B and 7B)
     if (m_fromVDC == vdcNGVD29)
         {
@@ -11339,7 +11459,6 @@ GeoPointCR  inLatLong
         else
             return GEOCOORDERR_VerticalDatumConversion; // To datum unknown ... not implemented.
         }
-
 
     // Case 2 and 4
     if (vdcEllipsoid == m_toVDC || vdcEllipsoid == m_fromVDC)
@@ -11402,7 +11521,6 @@ GeoPointCR  inLatLong
     // If we get here then there is a vertical datum code we do not know about.
     return GEOCOORDERR_VerticalDatumConversion;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -11717,7 +11835,6 @@ bool VerticalDatumConverter::NeedsDatumElevationChange() const
 -------------------------------- End Vertical Datums -------------------------------- 
 +---------------+---------------+---------------+---------------+---------------+------*/
 
-
 /*=================================================================================**//**
 *
 * The static variable and these 3 static functions are uniquely intended for use
@@ -11980,7 +12097,6 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
     ::CS_gpfnm("GeodeticPath.dty");
     ::CS_altdr(s_assetsDirPrefix.c_str());
     s_assetsDir = dataDirectory;
-
 
     // Initialize vertical datum dictionary
     if (!VerticalDatumDictionary::Get().IsValid())
@@ -12410,7 +12526,6 @@ BaseGCSPtr BaseGCS::CreateGCS (BaseGCSCR baseGcs)
     return new BaseGCS(baseGcs);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -12808,7 +12923,6 @@ StatusInt BaseGCS::FromHorizontalJson(BeJsConst jsonValue, Utf8StringR errorMess
             {
             ellipsoidCode = FindEllipsoidIndex(jsonValue["ellipsoidId"].asString().c_str());
             }
-
 
         if ((ellipsoidCode < 0) && !jsonValue["ellipsoid"].isNull())
             {
@@ -14263,7 +14377,6 @@ ReprojectStatus BaseGCS::CartesianFromCartesian(DPoint3dR outCartesian, DPoint3d
 	if (!targetGCS.IsValid())
 		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
-
     ReprojectStatus   stat1;
     ReprojectStatus   stat2;
     ReprojectStatus   stat3;
@@ -14324,7 +14437,6 @@ ReprojectStatus BaseGCS::CartesianFromCartesian2D(DPoint2dR outCartesian, DPoint
 	if (!targetGCS.IsValid())
 		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
-
     ReprojectStatus   stat1;
     ReprojectStatus   stat2;
     ReprojectStatus   stat3;
@@ -14383,7 +14495,6 @@ ReprojectStatus BaseGCS::CartesianFromECEF(DPoint3dR outCartesian, DPoint3dCR in
 
     if (!targetGCS.IsValid())
         return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
-
 
     ReprojectStatus   stat1;
     ReprojectStatus   stat2;
@@ -14849,7 +14960,6 @@ ReprojectStatus       BaseGCS::GetLinearTransform
 
     Transform   frameA, frameB, frameAInverse;
     DPoint3d    points[4];
-
 
     DPoint3d elementOrigin;
 
@@ -16408,7 +16518,6 @@ BaseGCS::ProjectionCodeValue  value
 
     // Now determine what to do with the parameters in the 'new' projection.
 
-
     // look at the flags to determine what "standard" parameters aren't used, and zero those out.
     // no false origin if cs_PRJFLG_ORGFLS is set.
     if (0 != (projection->flags & cs_PRJFLG_ORGFLS))
@@ -16428,7 +16537,6 @@ BaseGCS::ProjectionCodeValue  value
     // no origin longitude if cs_PRJFLG_ORGLNF is set.
     if (0 != (projection->flags & cs_PRJFLG_ORGLNG))
         m_csParameters->csdef.org_lng = 0.0;
-
 
     // find the old an new cs_PrjprmMap_ structure
     struct cs_PrjprmMap_ *oldParamMap = NULL;
@@ -18220,7 +18328,6 @@ void BaseGCS::GetAffineParameters (double* A0, double* A1, double* A2, double* B
                 *B2 = m_csParameters->csdef.prj_prm7;
             return;
 
-
         case cs_PRJCOD_LMBRTAF:
             if (NULL != A0)
                 *A0 = m_csParameters->csdef.prj_prm3;
@@ -19589,7 +19696,6 @@ GeoPointR       centerPoint
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -19858,7 +19964,6 @@ bool shallowCompare
                                    datum1.to84_via == cs_DTCTYP_6PARM ||
                                    datum1.to84_via == cs_DTCTYP_BURS);
 
-
     bool transform2IsGeocentric = (datum2.to84_via == cs_DTCTYP_MOLO ||
                                    datum2.to84_via == cs_DTCTYP_GEOCTR ||
                                    datum2.to84_via == cs_DTCTYP_3PARM ||
@@ -20057,7 +20162,6 @@ bool shallowCompare
         return false;
         }
 
-
     // Now we must analyse the datum converter to determine if the transformation is equivalent.
     // Notice that there is no function provided by CSMAP for the purpose yet.
     bool datumsEquivalent = true;
@@ -20096,7 +20200,6 @@ bool shallowCompare
                     if (!doubleSame(theDatumConverter2->xforms[idxXForms]->
                     // Check that scale PPM is zero
                     }
-
 
                 }
 #else
@@ -20299,7 +20402,6 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
 
     bool isUTM = (m_csParameters->prj_code == cs_PRJCOD_UTM || m_csParameters->prj_code == cs_PRJCOD_UTMZNBF);
     bool isCompareUTM = (compareTo.m_csParameters->prj_code == cs_PRJCOD_UTM || compareTo.m_csParameters->prj_code == cs_PRJCOD_UTMZNBF);
-
 
     // Identify different projection codes that are similar and may lead to equivalent coordinate systems
     if ((isUTM && isCompareTransverseMercator) ||
@@ -21189,7 +21291,6 @@ bvector<GeoPoint>&    shape
             // extent based on the latitude and longitude of origin.
             return BaseGCSUtilGetRangeAboutMeridianAndParallel(shape, GetOriginLongitude(), 6.0, GetOriginLatitude(), 6.0);
 
-
         // Other local projections
         case pcvHotineObliqueMercator :
         case pcvMollweide :
@@ -21933,7 +22034,6 @@ bool            HelmertLocalTransformer::IsEquivalent (LocalTransformerCP other)
     return ( doubleSame(m_a, otherHelmert->m_a) && doubleSame(m_b, otherHelmert->m_b) && doubleSame(m_c, otherHelmert->m_c) && doubleSame(m_d, otherHelmert->m_d) && doubleSame(m_e, otherHelmert->m_e));
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -22643,7 +22743,6 @@ GeoPointCR      inLatLong
 
     return REPROJECT_Success;
     }
-
 
 #if defined (TRAVERSE_UNITS)
 typdef void (*UnitCallback)(void* callbackArg, CharCP unitName, CharCP pluralName, int system, double factor, int32_t epsgCode, int index);
@@ -24202,7 +24301,6 @@ CSEllipsoidDef*                Ellipsoid::GetCSEllipsoidDef () const
     return m_ellipsoidDef;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24492,7 +24590,6 @@ Datum::Datum(CSDatumDef const& datumDef, CSGeodeticTransformDef const* geodeticT
         memcpy (m_datumDef, &datumDef, sizeof(CSDatumDef));
         m_csError                    = 0;
         }
-
 
     m_csDatum                    = NULL;
     m_ellipsoid                  = NULL;
@@ -24897,7 +24994,6 @@ StatusInt         Datum::ToJson(BeJsValue jsonValue, bool expandEllipsoid, bool 
             }
         }
     transformPath->Destroy();
-
 
     // If there were no transform we add a NONE to indicate conversion is null (same as WGS84)
     // An empty list of transform is interpreted as transform undefined (which is different than no transform)
@@ -26590,23 +26686,27 @@ StatusInt VerticalDatum::InitializeTransforms(const Utf8String& target, const Ge
             Utf8String requireHorizontalCRS = transform->GetRequiredHorizontalCRSBase();
 
             if (requireHorizontalCRS.length() > 0)
-                {
+            {
                 BaseGCSPtr transformHorizontalCRSBase = BaseGCS::CreateGCS(requireHorizontalCRS.c_str());
 
                 if (transformHorizontalCRSBase.IsValid())
                     datumConverter = DatumConverter::Create(*targetGCS, *transformHorizontalCRSBase);
 
-                if (datumConverter != nullptr)
-                    {
-                    // We remove a null transform to accelerate things.
-                    datumConverter->SetReprojectElevation(false);
-                    if (datumConverter->IsNullTransform())
-                        {
-                        datumConverter->Destroy();
-                        datumConverter = nullptr;
-                        }
-                    }
+                if (nullptr == datumConverter)
+                {
+                    status = GEOCOORDERR_InvalidGeodeticTransform;
+                    break;
                 }
+
+                // We remove a null transform to accelerate things.
+                datumConverter->SetReprojectElevation(false);
+                if (datumConverter->IsNullTransform())
+                {
+                    // No datum conversion needed.
+                    datumConverter->Destroy();
+                    datumConverter = nullptr;
+                }
+            }
 
             m_initializedTransforms.push_back(std::make_pair(transform, datumConverter));
         }
@@ -26618,14 +26718,15 @@ StatusInt VerticalDatum::InitializeTransforms(const Utf8String& target, const Ge
     }
     else
     {
+        // Release all previously allocated transforms in case of error.
         m_initializedTransformsTargetName = "";
         for (auto& transform : m_initializedTransforms)
         {
             transform.first->ReleaseTransform();
             if (nullptr != transform.second)
             {
-            transform.second->Destroy();
-            transform.second = nullptr;
+                transform.second->Destroy();
+                transform.second = nullptr;
             }
         }
 
@@ -28135,7 +28236,6 @@ StatusInt           GeodeticTransform::SetTargetDatumName (Utf8CP value)
         return GEOCOORDERR_StringTooLong;
 
     CS_stncp (m_geodeticTransformDef->trgDatum, mbDescription.c_str(), _countof (m_geodeticTransformDef->trgDatum));
-
 
     if (nullptr != m_fallback)
         m_fallback->SetTargetDatumName(value);
@@ -29685,7 +29785,6 @@ bool              GeodeticTransformPath::HasMissingGridFiles(bvector<Utf8String>
             return false; // If target is deprecated we bypass.
         }
 
-
     bool missing = false;
 
     for (auto transform: m_listOfGeodeticTransforms)
@@ -30153,7 +30252,6 @@ void            CSMap::CS_llhToXyz (DPoint3dP xyz,const GeoPointCP llh, double e
 int             CSMap::CS_xyzToLlh (GeoPointP llh,const DPoint3dCP xyz, double e_rad, double e_sq) {return ::CS_xyzToLlh((double*)llh, (const double*)xyz, e_rad, e_sq);}
 double          CSMap::CSmrcatPhiFromK (double e_sq,double scl_red) {return ::CSmrcatPhiFromK(e_sq, scl_red);}
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -30358,8 +30456,6 @@ END_BENTLEY_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 BEGIN_EXTERN_C
 
-
-
 //=======================================================================================
 // fopen-based GCS data file. Used only when a requested file cannot be found in a workspace, but is present in the assets dir.
 // @bsiclass
@@ -30450,7 +30546,6 @@ cs_Time_ CS_fileModTime(Utf8CP filePath) {
     auto st = _stat(name.c_str(), &statBufr);
     return (st == 0) ? (cs_Time_)statBufr.st_mtime : 0;
 }
-
 
 _csFile* CS_fopen(Utf8CP filename, Utf8CP mode) {
     if (0 == strncmp(mode, "r", 1)) {

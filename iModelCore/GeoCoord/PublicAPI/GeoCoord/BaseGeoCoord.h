@@ -160,7 +160,6 @@ enum class GenConvertCode
     GenConvertType_MREG      =   0x5001, // cs_DTCMTH_MULRG,
     };
 
-
 /*---------------------------------------------------------------------------------**//**
 * Consolidation of boolean arguments used in
 * GetCompoundCSWellKnownText(Utf8StringR, WktFlavor, bool, bool bool)
@@ -351,7 +350,6 @@ Geodetic Transforms are highly complex and require numerous checks and validatio
 definition to the process ready. This notably include use of external grid shift files that may
 be absent, thus the difference between definition and process ready classes.
 
-
 The process ready class CSParameters contains all defining parameters for both Datum and ellipsoid but not
 any geodetic transform external to the datum geocentric transform definition.
 
@@ -385,7 +383,6 @@ This is the reason these geodetic transforms are stored directly in the datum ob
 The same applies to self-contained non stored datum definition that can then have multiple
 geodetic transform steps chained together.
 */
-
 
 #if defined (_MANAGED)
 #define MPUBLIC public
@@ -1149,7 +1146,6 @@ BASEGEOCOORD_EXPORTED ReprojectStatus  ECEFFromCartesian(DPoint3dR outECEF, DPoi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         SetFromCSName (Utf8CP coordinateSystemKeyName);
 
-
 /*---------------------------------------------------------------------------------**//**
 * Sets the BaseGCS from the provided Json given.
 * This Json may contain all three components of the GCS definition (horizontal, vertical and
@@ -1367,7 +1363,6 @@ BASEGEOCOORD_EXPORTED static Utf8CP    GetErrorMessage (Utf8StringR errorMsg, St
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED int               Matches (char const * const * matchStrings, int numMixedCase, int numUpperCase, bool anyWord) const;
 
-
 /*---------------------------------------------------------------------------------**//**
 * Tests the coordinate system definition for validity.
 * @return   True if the Coordinate System parameters are valid, false if not.
@@ -1539,7 +1534,6 @@ BASEGEOCOORD_EXPORTED StatusInt         SetGroup (Utf8CP source);
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED Utf8CP           GetLocation (Utf8StringR location) const;
 
-
 /*---------------------------------------------------------------------------------**//**
 * Gets the source of the Coordinate System.
 * @return   The source of the Coordinate System.
@@ -1604,7 +1598,7 @@ BASEGEOCOORD_EXPORTED StatusInt         SetUnitCode (int code);
 /*---------------------------------------------------------------------------------**//**
 * Sets the Units to those indicated by the unit keyname. The unit key name must be an exact
 * match to one of the csmap dictionary names (case insensitive). Typically the units in
-* use are 'METER', 'IFOOT' for internatial foot and 'FOOT' for US Survey foot.
+* use are 'METER', 'IFOOT' for international foot and 'FOOT' for US Survey foot.
 * The only possible unit for a latitude/longitude GCS is 'DEGREE'.
 * @return   SUCCESS or an error code.
 * @bsimethod
@@ -1962,7 +1956,6 @@ BASEGEOCOORD_EXPORTED StatusInt SetVerticalDatumFromName(Utf8CP verticalDatumNam
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt SetVerticalDatumFromEPSGCode(int epsgCode);
-
 
 void AlignVerticalDatumLegacyCodeWithCurrentVerticalDatum();
 
@@ -2639,7 +2632,6 @@ BASEGEOCOORD_EXPORTED bool              GetCanEdit () const;
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED void              SetCanEdit (bool value);
 
-
 /*---------------------------------------------------------------------------------**//**
 * Gets the available Linear Units.
 * @return   vector of strings of unit names.
@@ -2994,7 +2986,6 @@ BASEGEOCOORD_EXPORTED bool              IsProjected
 (
 ) const;
 
-
 // These Methods are related to the ability to have a local coordinate system that is
 // related to the Cartesian coordinate system by the LocalTransformerP
 
@@ -3064,7 +3055,6 @@ BASEGEOCOORD_EXPORTED void              CartesianFromInternalCartesian2D
 DPoint2dR       outCartesian,
 DPoint2dCR      inInternalCartesian
 ) const;
-
 
 /*---------------------------------------------------------------------------------**//**
 * Calculates the cartesian coordinates of the input Longitude/Latitude/Elevation point.
@@ -3196,7 +3186,7 @@ BASEGEOCOORD_EXPORTED bool              GetReprojectElevation () const;
 * regardless of the source or target GCS linear units.
 * @param    outLatLong      OUT     The calculated longitude,latitude,elevation in the datum of targetGCS.
 * @param    inLatLong       IN      The longitude,latitude,elevation in the datum of this GCS.
-* @param    targetGCS         IN      The Coordinate System corresponding to outLatLong.
+* @param    targetGCS       IN      The Coordinate System corresponding to outLatLong.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED ReprojectStatus   LatLongFromLatLong
@@ -3340,7 +3330,6 @@ typedef struct cs_Prjprm_            CSParamInfo;
 typedef struct cs_Unittab_           CSUnitInfo;
 typedef struct cs_Mgrs_              CSMilitaryGrid;
 typedef struct cs_GeodeticPath_      CSGeodeticPath;
-
 
 // NOTE: The values in this enum are copied from cs_map.h. I don't want to users of this .h file to have to include CS_map.h, so I have to copy from it. Check it.
 enum CSMapErrors
@@ -3667,7 +3656,6 @@ mutable Utf8StringP            m_descriptionString;
 mutable Utf8StringP            m_sourceString;
 mutable Utf8StringP            m_sourceDatumString;
 mutable Utf8StringP            m_destDatumString;
-
 
 /*---------------------------------------------------------------------------------**//**
 * Initializes a new uninitialized instance of the GeodeticTransform class.
@@ -4757,7 +4745,6 @@ HelmertLocalTransformer  (double a, double b, double c, double d, double e);
 +---------------+---------------+---------------+---------------+---------------+------*/
 HelmertLocalTransformer ();
 
-
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -5055,7 +5042,6 @@ BASEGEOCOORD_EXPORTED static EllipsoidP    CreateEllipsoid();
 static EllipsoidCP CreateEllipsoid (EllipsoidCR source);
 BASEGEOCOORD_EXPORTED static EllipsoidCP CreateEllipsoid (CSEllipsoidDef const& ellipsoidDef);
 
-
 public:
 /*---------------------------------------------------------------------------------**//**
 * Initializes a new instance of the Ellipsoid class
@@ -5288,7 +5274,6 @@ BASEGEOCOORD_EXPORTED StatusInt         SetEquatorialRadius (double value);
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED static bool       CalculateParameters (double& flattening, double& eccentricity, double equatorialRadius, double polarRadius);
 
-
 /*---------------------------------------------------------------------------------**//**
 * Free this Group.
 * @bsimethod
@@ -5325,7 +5310,6 @@ EllipsoidEnumerator ();
 +---------------+---------------+---------------+---------------+---------------+------*/
 ~EllipsoidEnumerator ();
 
-
 public:
 /*---------------------------------------------------------------------------------**//**
 * Moves to the next Ellipsoid
@@ -5350,7 +5334,6 @@ BASEGEOCOORD_EXPORTED void              Destroy() const;
 };
 
 typedef class DatumEnumerator*    DatumEnumeratorP;
-
 
 /*=================================================================================**//**
 Position and orientation relative to a WGS84 Datum
@@ -5395,7 +5378,6 @@ GeodeticTransformPath*           m_listOfSetTransforms;  // List of transforms e
 mutable bvector<GeodeticTransformPath const *> m_listOfAdditionalPaths; // List of paths to other datum explicitely defned not passing through WGS84
 mutable bool m_listOfAdditionalPathsBuilt;
 
-
 /*---------------------------------------------------------------------------------**//**
 * Creates  a new empty invalid instance of the Datum class.
 * @bsimethod
@@ -5426,7 +5408,6 @@ Datum (CSDatumDef const& datum, CSGeodeticTransformDef const* geodeticTransform 
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Datum (CSDatum const& datum, CSGeodeticTransformDef const* geodeticTransform);
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -6002,7 +5983,6 @@ BASEGEOCOORD_EXPORTED Utf8CP           GetGroup (Utf8StringR group) const;
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         SetGroup (Utf8StringCR group);
 
-
 };
 
 /*=================================================================================**//**
@@ -6219,7 +6199,6 @@ protected:
 
     Utf8String                      m_name;
     Utf8String                      m_target;
-    Utf8String                      m_requiredHorizontalCRSBase;
     TransformType                   m_transformType;
 
     VerticalTransform(TransformType m_transformType) :
@@ -6279,7 +6258,7 @@ void SetTarget(const Utf8String& target);
 * @return   The name of the base horizontal CRS or an empty string if none is required.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String GetRequiredHorizontalCRSBase() const {return m_requiredHorizontalCRSBase;}
+virtual Utf8String GetRequiredHorizontalCRSBase() const {return "";}
 
 /*---------------------------------------------------------------------------------**//**
 * Must be defined by all subclasses of VerticalTransform, initialize this VerticalTransform
@@ -6300,7 +6279,6 @@ virtual StatusInt GetElevation(double& elevationOffset, ElevationType& elevation
 
 virtual bool IsEqualTo(const VerticalTransform& transform);
 }; 
-
 
 class VerticalTransformPathInfo;
 typedef RefCountedPtr<VerticalTransformPathInfo>    VerticalTransformPathInfoPtr;
@@ -6676,7 +6654,6 @@ BASEGEOCOORD_EXPORTED StatusInt   LatLongFromMilitaryGrid (GeoPoint2dR latLong, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt   MilitaryGridFromLatLong (Utf8String& mgString, GeoPoint2dCR latLong, int precision);
 };
-
 
 } // End namespace GeoCoordinates
 
