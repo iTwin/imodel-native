@@ -1,0 +1,27 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# vcpkg_install_curl.mke - Run vcpkg install for the curl manifest.
+# Runs after vcpkg_install_openssl as part of the sequential chain in vcpkg.PartFile.xml.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+curlDir     = $(_MakeFilePath)curl
+installRoot = $(OutputRootDir)vcpkg_installed/curl
+
+# curl is re-linked into iTwinCurl.dll and links iTwinOpenSSL.dll on Windows (dynamic /MD CRT),
+# so it uses the dynamic-CRT static triplet (x64-windows-static-md). Mirror the override from
+# BeCurl.mke and vcpkg_install_openssl.mke.
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    vcpkgWindowsMDCRT = 1
+%endif
+%include $(_MakeFilePath)vcpkg.mki
+
+always:
+%if defined (winNT)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(curlDir)" "$(installRoot)" "$(vcpkgTriplet)"
+%else
+    $(_MakeFilePath)vcpkg_run_install.sh $(curlDir) $(installRoot) $(vcpkgTriplet)
+%endif
