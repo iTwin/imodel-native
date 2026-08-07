@@ -1238,6 +1238,102 @@ TEST_F(BeSQLiteDbTests, ClosesDbAfterErrorWhenCommitingTransactionFromSavepointD
     db2.CloseDb();
     }
 
+#if !defined (NDEBUG)
+// checkNoActiveStatements is a debug-only diagnostic defined in bentley-sqlite.c.
+extern "C" int checkNoActiveStatements(SqlDbP db);
+
+// SQLITE_CONFIG_LOG is one of the few sqlite3_config() options SQLite permits at runtime.
+// BeSQLite hides sqlite3.h, so we declare just what we need. The opcode is a stable public-ABI
+// constant (sqlite3.h: #define SQLITE_CONFIG_LOG 16).
+extern "C" int sqlite3_config(int, ...);
+
+//=======================================================================================
+//! Installs a temporary SQLite error-log callback that records every message emitted via
+//! sqlite3_log() while in scope, then disables logging again on destruction. In the test
+//! runner the global log callback is otherwise unset, so restoring to none is the default.
+// @bsiclass
+//=======================================================================================
+struct SqliteLogCapture
+    {
+    static const int CONFIG_LOG = 16; // SQLITE_CONFIG_LOG
+    static bvector<Utf8String>* s_messages;
+    bvector<Utf8String> m_messages;
+
+    SqliteLogCapture() { s_messages = &m_messages; sqlite3_config(CONFIG_LOG, &OnLog, nullptr); }
+    ~SqliteLogCapture() { sqlite3_config(CONFIG_LOG, nullptr, nullptr); s_messages = nullptr; }
+
+    static void OnLog(void*, int, Utf8CP msg) { if (nullptr != s_messages) s_messages->push_back(msg); }
+
+    void Clear() { m_messages.clear(); }
+    bool Contains(Utf8CP substr) const
+        {
+        for (auto const& msg : m_messages)
+            if (msg.Contains(substr))
+                return true;
+        return false;
+        }
+    };
+bvector<Utf8String>* SqliteLogCapture::s_messages = nullptr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, CheckNoActiveStatementsReportsLockHoldingStatements)
+    {
+    SetupDb(L"checkstmt.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE T(Col)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO T(Col) VALUES(1),(2),(3)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.SaveChanges());
+
+    SqlDbP sqlDb = m_db.GetSqlDb();
+    SqliteLogCapture log;
+
+    // No statement has been stepped, so nothing is holding a lock and nothing is logged. Cached
+    // prepared statements (in READY state) must not be reported, otherwise this would fail spuriously.
+    EXPECT_EQ(BE_SQLITE_OK, checkNoActiveStatements(sqlDb));
+    EXPECT_TRUE(log.m_messages.empty());
+
+    // A statement stepped partway through (more rows to go) holds a lock and is logged with its SQL.
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, "SELECT Col FROM T"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        log.Clear();
+        EXPECT_EQ(BE_SQLITE_ERROR, checkNoActiveStatements(sqlDb));
+        EXPECT_TRUE(log.Contains("stepped, more rows to go"));
+        EXPECT_TRUE(log.Contains("SELECT Col FROM T"));
+        stmt.Finalize();
+        log.Clear();
+        EXPECT_EQ(BE_SQLITE_OK, checkNoActiveStatements(sqlDb));
+        EXPECT_TRUE(log.m_messages.empty());
+        }
+
+    // The common offender: a statement stepped to the end but not finalized still holds a lock.
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, "SELECT Col FROM T"));
+        while (BE_SQLITE_ROW == stmt.Step())
+            ;
+        log.Clear();
+        EXPECT_EQ(BE_SQLITE_ERROR, checkNoActiveStatements(sqlDb));
+        EXPECT_TRUE(log.Contains("stepped to end, not finalized"));
+        stmt.Finalize();
+        log.Clear();
+        EXPECT_EQ(BE_SQLITE_OK, checkNoActiveStatements(sqlDb));
+        EXPECT_TRUE(log.m_messages.empty());
+        }
+
+    // A prepared-but-not-stepped statement holds no lock and must not be reported.
+        {
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, "SELECT Col FROM T"));
+        log.Clear();
+        EXPECT_EQ(BE_SQLITE_OK, checkNoActiveStatements(sqlDb));
+        EXPECT_TRUE(log.m_messages.empty());
+        }
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * Setting ProjectGuid
 * @bsimethod
