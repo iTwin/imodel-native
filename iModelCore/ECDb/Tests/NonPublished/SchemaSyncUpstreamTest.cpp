@@ -87,6 +87,64 @@ SchemaItem ReferencingSchema(Utf8CP version = "01.00.00") {
     return SchemaItem(xml);
 }
 
+// Reads one table as one quoted text line per row, keyed by rowid. quote() keeps NULLs and types
+// visible, which matters because two values that print the same can still hash differently.
+bmap<int64_t, Utf8String> ReadTableRows(ECDbR db, Utf8CP table) {
+    bvector<Utf8String> columns;
+    {
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("pragma main.table_info(%s)", table).GetUtf8CP()) != BE_SQLITE_OK)
+        return {};
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1));
+    }
+
+    Utf8String exprs;
+    for (auto const& column : columns) {
+        if (!exprs.empty())
+            exprs.append(" || ' | ' || ");
+        exprs.append(SqlPrintfString("'%s='||quote([%s])", column.c_str(), column.c_str()).GetUtf8CP());
+    }
+
+    bmap<int64_t, Utf8String> rows;
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("SELECT ROWID, %s FROM main.[%s]", exprs.c_str(), table).GetUtf8CP()) != BE_SQLITE_OK)
+        return {};
+    while (stmt.Step() == BE_SQLITE_ROW)
+        rows[stmt.GetValueInt64(0)] = stmt.GetValueText(1);
+    return rows;
+}
+
+// Names the rows that differ, rather than only reporting that a hash did not match. Without this a
+// content mismatch says nothing about which column is wrong, and the interesting ones - a foreign
+// key nulled by a cascade, a type that changed - are invisible in a checksum.
+void ReportRowDifferences(ECDbR actual, ECDbR expected, Utf8CP table, Utf8CP context) {
+    const auto actualRows = ReadTableRows(actual, table);
+    const auto expectedRows = ReadTableRows(expected, table);
+
+    int reported = 0;
+    constexpr int maxReported = 10;
+    for (auto const& entry : expectedRows) {
+        const auto found = actualRows.find(entry.first);
+        if (found == actualRows.end()) {
+            printf("[upstream] %s: %s rowid=%lld only in expected: %s\n", context, table, (long long)entry.first, entry.second.c_str());
+            ++reported;
+        } else if (!entry.second.Equals(found->second)) {
+            printf("[upstream] %s: %s rowid=%lld\n    expected: %s\n      actual: %s\n", context, table, (long long)entry.first, entry.second.c_str(), found->second.c_str());
+            ++reported;
+        }
+        if (reported >= maxReported)
+            return;
+    }
+    for (auto const& entry : actualRows) {
+        if (expectedRows.find(entry.first) != expectedRows.end())
+            continue;
+        printf("[upstream] %s: %s rowid=%lld only in actual: %s\n", context, table, (long long)entry.first, entry.second.c_str());
+        if (++reported >= maxReported)
+            return;
+    }
+}
+
 // Compares every ec_ table between two files and reports, per table, where they differ. The point is
 // diagnostic: a single failing run should say WHICH filter rule is wrong, not merely that some hash
 // did not match. ec_cache_* is skipped - it is derived and rebuilt locally.
@@ -115,9 +173,14 @@ void ExpectEcTablesIdentical(ECDbR actual, ECDbR expected, Utf8CP context) {
         const auto actualCount = rowCount(actual, table.c_str());
         const auto expectedCount = rowCount(expected, table.c_str());
         EXPECT_EQ(expectedCount, actualCount) << context << ": row count differs in " << table.c_str();
-        if (actualCount == expectedCount)
-            EXPECT_STREQ(contentHash(expected, table.c_str()).c_str(), contentHash(actual, table.c_str()).c_str())
-                << context << ": row CONTENT differs in " << table.c_str() << " (same count, different values)";
+        if (actualCount != expectedCount) {
+            ReportRowDifferences(actual, expected, table.c_str(), context);
+            continue;
+        }
+        if (!contentHash(expected, table.c_str()).Equals(contentHash(actual, table.c_str()))) {
+            ADD_FAILURE() << context << ": row CONTENT differs in " << table.c_str() << " (same count, different values)";
+            ReportRowDifferences(actual, expected, table.c_str(), context);
+        }
     }
 }
 
@@ -294,6 +357,51 @@ bool HasPhysicalTable(ECDbR db, Utf8CP tableName) {
         return false;
     stmt.BindText(1, tableName, Statement::MakeCopy::No);
     return stmt.Step() == BE_SQLITE_ROW;
+}
+
+// Two siblings whose same-named property sits in DIFFERENT shared columns; hoisting it onto their
+// common base forces those two columns to consolidate into one, which moves data. Shared columns are
+// what makes this a remap at all - RemapManager only ever considers ColumnKind = 4.
+SchemaItem RemapSchema(Utf8CP version, bool hoisted) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RemapTest" alias="rmp" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="baseProp" typeName="string" />
+                %s
+            </ECEntityClass>
+            <ECEntityClass typeName="LeafA">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="filler" typeName="string" />
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="LeafB">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="movingProp" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", version, hoisted ? R"xml(<ECProperty propertyName="movingProp" typeName="string" />)xml" : "");
+    return SchemaItem(xml);
+}
+
+// Reads a single string property back through ECSql, which is the only way that proves the physical
+// layout and the metadata still agree after data has been moved between columns.
+Utf8String ReadStringProperty(ECDbR db, Utf8CP ecsql) {
+    ECSqlStatement stmt;
+    if (stmt.Prepare(db, ecsql) != ECSqlStatus::Success)
+        return "<prepare failed>";
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return "<no row>";
+    return Utf8String(stmt.GetValueText(0));
 }
 
 } // namespace
@@ -1276,6 +1384,146 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge
     ExpectEcTablesIdentical(*b2, *b1, "after both briefcases exchanged changesets");
     syncDb.WithReadOnly([&](ECDbR sync) {
         ExpectEcTablesIdentical(*b1, sync, "briefcase vs sync db after convergence");
+    });
+    }
+
+//=======================================================================================
+// The upgrade path.
+//
+// A change that moves data is refused by ImportSchemas, and comes here instead. The direction is
+// inverted a second time: the import runs on the BRIEFCASE, with transforms allowed, and the sync db
+// is then overwritten from the result. That is only legal while the exclusive schema lock is held -
+// which is also what makes the overwrite's deletes safe, since the lock cannot be acquired while
+// anybody else holds one, so nobody can be holding local changes.
+//=======================================================================================
+
+// ---------------------------------------------------------------------------------------
+// The change ImportSchemas refuses goes through here, and the data it moves survives.
+//
+// This is the property the whole upgrade path exists for: after hoisting a property that lived in
+// two different shared columns, both instances must still read back what was written to them.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-upgrade");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto initialFile = WriteSchemaFile("RemapUpgrade.01.00.00", RemapSchema("01.00.00", false));
+    const auto hoistedFile = WriteSchemaFile("RemapUpgrade.01.00.01", RemapSchema("01.00.01", true));
+    ASSERT_FALSE(initialFile.IsEmpty());
+    ASSERT_FALSE(hoistedFile.IsEmpty());
+
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), { initialFile }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // Data that predates the move, in both of the columns that are about to be consolidated.
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO rmp.LeafA(baseProp,filler,movingProp) VALUES('a','f','from A')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b2, "INSERT INTO rmp.LeafB(baseProp,movingProp) VALUES('b','from B')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    // Confirm the two really are in different columns, or the upgrade moves nothing and the test
+    // proves nothing.
+    ASSERT_STRNE(ColumnOf(*b2, "RemapTest", "LeafA", "movingProp").c_str(),
+                 ColumnOf(*b2, "RemapTest", "LeafB", "movingProp").c_str())
+        << "the siblings already share a column, so hoisting cannot force a move";
+
+    // The additive path must refuse it before the upgrade path is entitled to run.
+    ASSERT_EQ(SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED,
+              sync2.ImportSchemas(syncDb.GetSyncDbUri(), { hoistedFile }));
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.UpgradeSchemas(syncDb.GetSyncDbUri(), { hoistedFile }));
+    ExpectNoForeignKeyViolations(*b2, "b2 after upgrading");
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_STREQ("1.0.1", VersionOf(*b2, "RemapTest").c_str());
+    EXPECT_STREQ("from A", ReadStringProperty(*b2, "SELECT movingProp FROM rmp.LeafA").c_str())
+        << "data was lost when the column it lived in was consolidated";
+    EXPECT_STREQ("from B", ReadStringProperty(*b2, "SELECT movingProp FROM rmp.LeafB").c_str())
+        << "data was lost when the column it lived in was consolidated";
+
+    // The sync db was written from the briefcase, so the two must now say exactly the same thing.
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.1", VersionOf(sync, "RemapTest").c_str()) << "the sync db did not receive the upgrade";
+        ExpectEcTablesIdentical(*b2, sync, "briefcase vs sync db after an upgrade");
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
+// The overwrite deletes what nobody kept - which is the point, not a side effect.
+//
+// b1 imports a schema through the sync db and never pushes it, so the sync db holds rows no
+// changeset carries. b2 then upgrades. Because the upgrade holds the exclusive schema lock, b1
+// cannot have been holding local changes, so those rows can only be work that was abandoned - and
+// the overwrite is what reclaims them, ids and shared column ordinals included.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-upgrade-cleanup");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    const auto initialFile = WriteSchemaFile("RemapCleanup.01.00.00", RemapSchema("01.00.00", false));
+    const auto hoistedFile = WriteSchemaFile("RemapCleanup.01.00.01", RemapSchema("01.00.01", true));
+    const auto abandonedFile = WriteSchemaFile("UnrelatedTest.01.00.00", UnrelatedSchema());
+    ASSERT_FALSE(initialFile.IsEmpty());
+    ASSERT_FALSE(hoistedFile.IsEmpty());
+    ASSERT_FALSE(abandonedFile.IsEmpty());
+
+    auto& sync1 = b1->Schemas().GetSchemaSync();
+    auto& sync2 = b2->Schemas().GetSchemaSync();
+
+    // Everyone reaches RemapTest 1.0.0 through the timeline.
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), { initialFile }));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("add RemapTest 1.0.0");
+    b2->PullMergePush("pick up RemapTest 1.0.0");
+    MaterializeAfterMerge(*b2);
+
+    // b1 imports something else and never pushes it. From the timeline's point of view this never
+    // happened; from the sync db's point of view it did.
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), { abandonedFile }));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        ASSERT_TRUE(HasSchema(sync, "UnrelatedTest")) << "the scenario did not set itself up";
+    });
+    ASSERT_FALSE(HasSchema(*b2, "UnrelatedTest")) << "b2 was not supposed to learn about it";
+
+    // b2 upgrades. It holds the exclusive schema lock, so b1 cannot be holding anything.
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.UpgradeSchemas(syncDb.GetSyncDbUri(), { hoistedFile }));
+    ExpectNoForeignKeyViolations(*b2, "b2 after upgrading over abandoned state");
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_FALSE(HasSchema(sync, "UnrelatedTest"))
+            << "abandoned rows survived the overwrite, so the sync db still describes a schema nobody has";
+        EXPECT_STREQ("1.0.1", VersionOf(sync, "RemapTest").c_str());
+        ExpectEcTablesIdentical(*b2, sync, "briefcase vs sync db after the overwrite");
+    });
+
+    // And the sync db is still usable as the authority afterwards: the next additive import runs
+    // against it and lands in both places.
+    const auto unrelatedAgain = WriteSchemaFile("UnrelatedTest.01.00.00", UnrelatedSchema());
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), { unrelatedAgain }));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_TRUE(HasSchema(*b2, "UnrelatedTest"));
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        ExpectEcTablesIdentical(*b2, sync, "briefcase vs sync db after re-importing over reclaimed state");
     });
     }
 

@@ -81,6 +81,17 @@ struct SchemaSyncUpstreamHelper final {
     //! Upserts one table, restricted to source rows matching whereClause. Mirrors
     //! SchemaSyncHelper::SyncData's insert half, minus the delete half.
     static DbResult UpsertFiltered(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP whereClause);
+    //! Makes the target's copy of each table equal the source's, writing only the rows that differ.
+    //! Used by the upgrade path, where the briefcase is the authority and the sync db is brought in
+    //! line with it, deletions included.
+    //!
+    //! Deliberately not SchemaSyncHelper::SyncData, which upserts. After an upgrade the same logical
+    //! row can carry a different id, so an incoming row can collide with a surviving one on a unique
+    //! index rather than on the primary key - and ON CONFLICT DO UPDATE then rewrites that surviving
+    //! row instead of inserting, which silently loses rows. Equally deliberately not a wholesale
+    //! empty-and-refill: the sync db's CloudSqlite blocks are 64 KiB, so rewriting rows that did not
+    //! change would make every other client re-download the whole file.
+    static DbResult MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias);
     //! Number of rows currently in one of the temp id-set tables. For diagnostics and tests.
     static int64_t CountClosureRows(ECDbR conn, Utf8CP tempTableName);
 };

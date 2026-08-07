@@ -119,6 +119,7 @@ private:
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status ImportIntoSyncDb(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
+    Status OverwriteSyncDb(SyncDbUri const&);
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
     Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
@@ -180,6 +181,23 @@ public:
     //!       as it does for v1's import. Additive only, and this does not push the resulting
     //!       changeset; that is the caller's job.
     ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles);
+    //! Upgrade schemas whose import has to move data, which ImportSchemas refuses to do.
+    //!
+    //! The direction is the opposite of ImportSchemas: the import runs on this briefcase, with data
+    //! transforms allowed, and the sync db is then **overwritten** from the result. The briefcase is
+    //! the authority here, not the sync db.
+    //!
+    //! That overwrite deletes rows the sync db has and this briefcase does not. Under the exclusive
+    //! schema lock that is the intent, not a hazard: the lock cannot be acquired while anyone else
+    //! holds one, so nobody can be holding local changes, so such rows can only be work somebody
+    //! abandoned. It also frees shared column ordinals that nothing else in this design ever frees.
+    //!
+    //! @param[in] schemaXmlFiles ECSchema XML files to import. Deserialized against this briefcase.
+    //! @note The caller must hold both the sync db's container write lock and the **exclusive** schema
+    //!       lock, must be at the tip of the timeline, and must push the resulting changeset and
+    //!       upload the sync db before releasing either. If the changeset is dropped after the sync
+    //!       db was uploaded, the two disagree with no way back.
+    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
