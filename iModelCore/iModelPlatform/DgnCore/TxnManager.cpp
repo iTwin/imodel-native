@@ -1899,6 +1899,11 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     ChangesetStatus status = ChangesetStatus::Success;
     UndoChangeSet indirectChanges;
 
+    // The changes we just applied may have introduced feature rows this runtime has never heard of.
+    // Check now, while the merge can still be backed out below.
+    if (!ValidateFeaturesAfterMerge())
+        status = ChangesetStatus::UnknownFeatureAfterMerge;
+
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
@@ -1927,6 +1932,14 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
         allChanges.FromChangeGroup(changeGroup);
         result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
         BeAssert(result == BE_SQLITE_OK);
+
+        if (status == ChangesetStatus::UnknownFeatureAfterMerge) {
+            if (PullMergeConf::Load(m_dgndb).InProgress())
+                m_dgndb.SaveChanges();
+
+            if (const auto revalidateStatus = m_dgndb.RevalidateFeatures(); BE_SQLITE_OK != revalidateStatus)
+                LOG.errorv("MergeDataChanges: after backing out the merge, RevalidateFeatures still reports %s. A feature unrelated to this changeset is restricting this runtime.", BeSQLiteLib::GetErrorName(revalidateStatus));
+        }
     }
 
     if (TrackChangesetHealthStats())
@@ -2024,6 +2037,14 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset, bool noUpdateLoop)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
     SaveParentChangeset(changeset.GetParentId(), changeset.GetChangesetIndex() - 1);
+    
+    const auto featureStatus = m_dgndb.RevalidateFeatures();
+    if (BE_SQLITE_ERROR == featureStatus) {
+        m_dgndb.AbandonChanges();
+        m_dgndb.ThrowException("Reversing this changeset would leave an ec_Feature this runtime cannot honor at all", static_cast<int>(ChangesetStatus::UnknownFeatureAfterMerge));
+    }
+    if (BE_SQLITE_READONLY == featureStatus)
+        LOG.warningv("Reversed changeset [%s] still leaves an unknown feature restricting this runtime to read-only. This connection remains read-write in memory; re-opening this file will be read-only.", changeset.GetChangesetId().c_str());
 
     result = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != result)
@@ -2159,6 +2180,9 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             m_dgndb.ThrowException("failed to save reverted changeset", (int)saveResult);
         }
 
+        if (const auto featureStatus = m_dgndb.RevalidateFeatures(); BE_SQLITE_OK != featureStatus)
+            LOG.errorv("After reverting changeset [%d], RevalidateFeatures reports %s. This connection remains open as-is; re-opening this file may behave differently.", changesetIndex, BeSQLiteLib::GetErrorName(featureStatus));
+
         timer.Stop();
         LOG.infov("RevertTimelineChanges: reverted changeset [%d] in %.3fs, size=%" PRIuPTR,
             changesetIndex, timer.GetElapsedSeconds(), changesetProp->GetUncompressedSize());
@@ -2200,6 +2224,23 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fast
      */
     const bool hasEcOrDdlChanges = containsDDLChanges || changeset.ContainsEcChanges();
     return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges, fastForward, noUpdateLoop);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Re-runs ECDb feature validation after changeset content has been applied but before the merge is
+* committed.
+*
+* @return false if the merged state cannot be honored and must be backed out.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::ValidateFeaturesAfterMerge() {
+    const auto featureStatus = m_dgndb.RevalidateFeatures();
+    if (BE_SQLITE_OK == featureStatus)
+        return true;
+
+    LOG.errorv("Changeset introduced an ec_Feature this runtime cannot honor (%s). The merge will be backed out; upgrade this client to accept this changeset.",
+        BE_SQLITE_READONLY == featureStatus ? "the iModel would become read-only" : "the iModel could not be opened at all");
+    return false;
 }
 
 /*---------------------------------------------------------------------------------**/ /**

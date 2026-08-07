@@ -8,6 +8,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <unordered_map>
+#include <vector>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
@@ -323,10 +324,10 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 3, 2); }
+    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 3, 3); }
 
     //! Gets the current version of the ECDb profile
-    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
+    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 6); }
     //! Gets the minimum version of the ECDb profile for which in-situ upgrades are possible.
     //! Files with an older version cannot be upgraded in-situ.
     static ProfileVersion MinimumUpgradableECDbProfileVersion() { return ProfileVersion(4, 0, 0, 0); }
@@ -346,6 +347,30 @@ public:
     //! Gets the ECClass locator for ECClasses whose schemas are stored in this ECDb file.
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
+
+    //! Names of the unknown features found in this file whose compatibility mode forbids this runtime
+    //! from generating a changeset.
+    //! @return Empty if changeset generation is allowed.
+    ECDB_EXPORT std::vector<Utf8String> const& GetFeaturesBlockingChangesetGeneration() const;
+
+    //! Names of the unknown features found in this file whose compatibility mode forbids this runtime
+    //! from importing schemas. All other writes remain allowed.
+    //! @return Empty if schema import is allowed.
+    ECDB_EXPORT std::vector<Utf8String> const& GetFeaturesBlockingSchemaImport() const;
+
+    //! Re-reads the ec_Feature table and recomputes how this runtime must behave for unknown features.
+    //! @return BE_SQLITE_OK if the file remains fully usable.
+    //!         BE_SQLITE_READONLY if it may now only be read.
+    //!         BE_SQLITE_ERROR if it must not be used by this runtime at all.
+    ECDB_EXPORT DbResult RevalidateFeatures() const;
+
+    //! Reads the ec_Feature table WITHOUT opening it as an ECDb, and returns the names of the
+    //! features that would cause the file to be refused entirely.
+    //! @param[out] blockingFeatureNames Names of the Refuse-level features found in ec_Feature.
+    //! @param[in] fileName Path to the file.
+    //! @return SUCCESS if the file could be opened read-only as a plain SQLite db and inspected.
+    //!         ERROR if the file could not be opened at all.
+    ECDB_EXPORT static BentleyStatus TryGetBlockingFeatures(std::vector<Utf8String>& blockingFeatureNames, BeFileNameCR fileName);
 
     //! @name EC Changes
     //! @{

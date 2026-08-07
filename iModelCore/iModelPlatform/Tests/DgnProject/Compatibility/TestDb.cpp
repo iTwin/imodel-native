@@ -23,6 +23,8 @@ bool TestDb::VersionSupportsFeature(ProfileVersion const& ecdbVersion, ECDbFeatu
 			return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
 		case ECDbFeature::SystemPropertiesHaveIdExtendedType:
 			return true; // ExtendedType is not persisted and added on the fly
+        case ECDbFeature::FeatureTable:
+            return ecdbVersion >= ProfileVersion(4, 0, 0, 6);
 
         default:
             BeAssert(false && "Unhandled ECDbFeature enum value");
@@ -893,6 +895,167 @@ Utf8String TestDb::GetDescription() const
         }
 
     return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr.c_str(), ageStr, GetTestFile().ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestDb::FeatureTableExistsInDb() const
+    {
+    return GetDb().TableExists(TABLE_FEATURE);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+int TestDb::GetFeatureRowCount() const
+    {
+    Statement stmt;
+    if (const auto status = stmt.Prepare(GetDb(), "SELECT COUNT(*) FROM ec_Feature"); status != BE_SQLITE_OK)
+        return 0;
+
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return 0;
+
+    return stmt.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestDb::HasFeatureRow(Utf8CP featureName) const
+    {
+    Statement stmt;
+    if (const auto status = stmt.Prepare(GetDb(), "SELECT COUNT(*) FROM ec_Feature WHERE Name = ?"); status != BE_SQLITE_OK)
+        return false;
+
+    stmt.BindText(1, featureName, Statement::MakeCopy::Yes);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return false;
+
+    return stmt.GetValueInt(0) > 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestDb::GetFeatureCompat(Utf8CP featureName) const
+    {
+    Statement stmt;
+    if (const auto status = stmt.Prepare(GetDb(), "SELECT Compat FROM ec_Feature WHERE Name = ?"); status != BE_SQLITE_OK)
+        return "";
+
+    stmt.BindText(1, featureName, Statement::MakeCopy::Yes);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return "";
+
+    return stmt.GetValueText(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// Reads ec_Feature via a plain SQLite open. Specifically for Refuse Compat features.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::map<Utf8String, Utf8String> TestDb::ReadUsedFeaturesRaw(BeFileNameCR filePath)
+    {
+    std::map<Utf8String, Utf8String> usedFeatures;
+
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)))
+        return usedFeatures;
+
+    if (!db.TableExists(TABLE_FEATURE))
+        return usedFeatures;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(db, "SELECT Name, Compat FROM " TABLE_FEATURE))
+        return usedFeatures;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP name = stmt.GetValueText(0);
+        if (!Utf8String::IsNullOrEmpty(name))
+            usedFeatures[name] = stmt.GetValueText(1);
+        }
+
+    return usedFeatures;
+    }
+
+//---------------------------------------------------------------------------------------
+// Queries the runtime for the features it knows via PRAGMA ecdb_known_features.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::set<Utf8String> TestDb::GetRuntimeKnownFeatures() const
+    {
+    std::set<Utf8String> knownFeatures;
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(GetDb(), "PRAGMA ecdb_known_features"))
+        return knownFeatures;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP name = stmt.GetValueText(0);
+        if (!Utf8String::IsNullOrEmpty(name))
+            knownFeatures.insert(name);
+        }
+
+    return knownFeatures;
+    }
+
+//---------------------------------------------------------------------------------------
+// Mirrors the decision logic in ECDb::Impl::ValidateECFeaturesOnDbOpen.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestDb::ExpectedFeatureBehavior TestDb::ComputeExpectedBehavior(std::map<Utf8String, Utf8String> const& unknownUsedFeatures)
+    {
+    ExpectedFeatureBehavior behavior;
+    for (auto const& [name, compat] : unknownUsedFeatures)
+        {
+        if (compat.EqualsI("Refuse"))
+            {
+            // Refuse is the most severe: blocks both read-write and read-only opens.
+            behavior.m_readWriteOpen = BE_SQLITE_ERROR;
+            behavior.m_readonlyOpen = BE_SQLITE_ERROR;
+            }
+        else if (compat.EqualsI("ReadOnly"))
+            {
+            // ReadOnly blocks a read-write open only (unless a Refuse already forced ERROR).
+            if (behavior.m_readWriteOpen == BE_SQLITE_OK)
+                behavior.m_readWriteOpen = BE_SQLITE_READONLY;
+            }
+        else if (compat.EqualsI("NoSchemaImport"))
+            behavior.m_schemaImportBlocked = true;
+        else if (compat.EqualsI("NoChangesetGeneration"))
+            behavior.m_changesetGenerationBlocked = true;
+        else // Warn only
+            behavior.m_expectWarning = true;
+        }
+
+    return behavior;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TestDb::ExpectedFeatureBehavior TestDb::GetExpectedFeatureBehavior() const
+    {
+    std::map<Utf8String, Utf8String> usedFeatures = ReadUsedFeaturesRaw(GetTestFile().GetSeedPath());
+
+    // Drop the features this runtime knows: only unknown features drive the open outcome.
+    std::set<Utf8String> knownFeatures = GetRuntimeKnownFeatures();
+
+    for (auto it = usedFeatures.begin(); it != usedFeatures.end();)
+        {
+        if (knownFeatures.find(it->first) != knownFeatures.end())
+            it = usedFeatures.erase(it);
+        else
+            ++it;
+        }
+
+    return ComputeExpectedBehavior(usedFeatures);
     }
 
 //***************************** TestECDb ********************************************

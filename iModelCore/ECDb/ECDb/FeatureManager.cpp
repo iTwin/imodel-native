@@ -16,6 +16,8 @@ bool FeatureManager::SchemaRequiresProfileUpgrade(ECDbCR ecdb, ECN::ECSchemaCR e
     return ecSchema.OriginalECXmlVersionAtLeast(ECN::ECVersion::V3_2) ? !IsEC32Available(ecdb) : false;
     }
 
+#define KNOWN_FEATURES {}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -51,5 +53,183 @@ bool FeatureManager::IsAvailable(ProfileVersion const& actualVersion, Feature fe
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
 std::map<Feature, ProfileVersion> const* FeatureManager::s_featureMinimumVersions = new std::map<Feature, ProfileVersion>(FEATURE_MINIMUMVERSIONS);
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+std::map<Utf8String, FeatureInfo> const* FeatureManager::s_knownFeatures = new std::map<Utf8String, FeatureInfo>(KNOWN_FEATURES);
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+FeatureInfo const* FeatureManager::FindKnownFeature(Utf8StringCR featureName)
+    {
+    if (auto it = s_knownFeatures->find(featureName); it != s_knownFeatures->end())
+        return &it->second;
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool FeatureManager::IsFeatureKnown(Utf8StringCR featureName)
+    {
+    return s_knownFeatures->find(featureName) != s_knownFeatures->end();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+std::vector<FeatureInfo const*> FeatureManager::GetAllKnownFeatures()
+    {
+    std::vector<FeatureInfo const*> features;
+    for (auto const& [featureName, featureInfo] : *s_knownFeatures)
+        features.push_back(&featureInfo);
+    return features;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+Utf8CP FeatureManager::FeatureCompatToString(Compat compat)
+    {
+    switch (compat)
+        {
+        case Compat::Warn:     return "Warn";
+        case Compat::ReadOnly: return "ReadOnly";
+        case Compat::NoSchemaImport: return "NoSchemaImport";
+        case Compat::NoChangesetGeneration: return "NoChangesetGeneration";
+        case Compat::Refuse:   return "Refuse";
+        default:
+            BeAssert(false && "Unhandled Compat value");
+            return "Warn";
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+bool FeatureManager::TryParseCompat(Utf8StringCR compatString, Compat& compat)
+    {
+    if (compatString.EqualsI("Warn"))
+        {
+        compat = Compat::Warn;
+        return true;
+        }
+    if (compatString.EqualsI("ReadOnly"))
+        {
+        compat = Compat::ReadOnly;
+        return true;
+        }
+    if (compatString.EqualsI("NoSchemaImport"))
+        {
+        compat = Compat::NoSchemaImport;
+        return true;
+        }
+    if (compatString.EqualsI("NoChangesetGeneration"))
+        {
+        compat = Compat::NoChangesetGeneration;
+        return true;
+        }
+    if (compatString.EqualsI("Refuse"))
+        {
+        compat = Compat::Refuse;
+        return true;
+        }
+
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+Compat FeatureManager::ResolveEffectiveCompat(Utf8StringCR compatString, Utf8StringCR fallbackString)
+    {
+    Compat compat;
+    // The precise mode, if this runtime understands it.
+    if (TryParseCompat(compatString, compat))
+        return compat;
+
+    // Otherwise the writer told us how to degrade.
+    if (TryParseCompat(fallbackString, compat))
+        return compat;
+
+    return Compat::Refuse;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus FeatureManager::InsertFeature(ECDbCR ecdb, Utf8StringCR featureName)
+    {
+    const FeatureInfo* info = FindKnownFeature(featureName);
+    if (info == nullptr)
+        {
+        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0745,
+            "Feature '%s' is not a known feature and cannot be inserted into the database.", featureName.c_str());
+        return BentleyStatus::ERROR;
+        }
+
+    // Insert the row into the ECDb file
+    Statement stmt;
+    if (stmt.Prepare(ecdb, "INSERT OR IGNORE INTO " TABLE_Feature " (Name, Description, Compat, Fallback) VALUES (?,?,?,?)") != BE_SQLITE_OK)
+        return BentleyStatus::ERROR;
+
+    stmt.BindText(1, info->name, Statement::MakeCopy::No);
+    stmt.BindText(2, info->description, Statement::MakeCopy::No);
+    stmt.BindText(3, FeatureCompatToString(info->compat), Statement::MakeCopy::No);
+    stmt.BindText(4, FeatureCompatToString(info->fallback), Statement::MakeCopy::No);
+
+    if (stmt.Step() == BE_SQLITE_DONE)
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus FeatureManager::DeleteFeature(ECDbCR ecdb, Utf8StringCR featureName)
+    {
+    Statement stmt;
+    if (stmt.Prepare(ecdb, "DELETE FROM " TABLE_Feature " WHERE Name=?") != BE_SQLITE_OK)
+        return BentleyStatus::ERROR;
+
+    stmt.BindText(1, featureName.c_str(), Statement::MakeCopy::No);
+    if (stmt.Step() == BE_SQLITE_DONE)
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus FeatureManager::ReconcileSchemaFeatures(ECDbCR ecdb)
+    {
+    if (!ecdb.TableExists(TABLE_Feature))
+        return BentleyStatus::SUCCESS;
+
+    for (auto const& [name, info] : *s_knownFeatures)
+        {
+        if (info.featureDetector == nullptr)
+            continue;
+
+        const auto status = info.featureDetector(ecdb) ? InsertFeature(ecdb, name) : DeleteFeature(ecdb, name);
+        if (status != BentleyStatus::SUCCESS)
+            return status;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
