@@ -4981,7 +4981,7 @@ private:
 *
 *   @param [out] baseGCS The BaseGCS to fill definition of
 *
-*   @param [in] wkt The WKT stream to obtain projected CRS from.
+*   @param [in,out] wkt The WKT stream to obtain projected CRS from and remove the PROJCS clause.
 *
 *   @return GeoCoordParse_Success or error value
 *
@@ -5132,7 +5132,7 @@ GeoCoordParseStatus GetProjected (BaseGCSR baseGCS, Utf8StringR wkt) const
 *   system from provided WKT stream.
 *
 *   @param [out] baseGCS The BaseGCS to fill definition of
-*   @param [in] wkt The WKT stream to obtain projected CRS from.
+*   @param [in,out] wkt The WKT stream to obtain projected CRS from and remove the COMP_CS clause.
 *   @return GeoCoordParse_Success or error value
 *   @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6384,7 +6384,7 @@ void ValidateKeyname (Utf8StringR name) const
 *   This private method extracts from the provided stream the keyword
 *   which must start at the first non blank character and end with a section end or a comma.
 *
-*   @param [in] wkt The WKT portion that contains the keyword to extract and remove.
+*   @param [in,out] wkt The WKT portion that contains the keyword to extract and remove.
 *
 *   @return The keyword
 *
