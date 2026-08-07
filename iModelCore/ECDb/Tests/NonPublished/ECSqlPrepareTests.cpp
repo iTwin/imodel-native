@@ -1719,8 +1719,20 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL OR b = NULL"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS 123"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS TRUE"));
+    // a parenthesized qualified property reference '(alias.prop)' is a value expression (null-safe
+    // comparison), not the '(ClassName)' type predicate, when the name does not resolve to a class.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS (P.I)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS (p.I)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS NOT (p.I)"));
+    // a parenthesized qualified name that resolves to neither a class nor an existing property is an
+    // error: it is not a class (so it is not a type predicate) and it falls through
+    // TryParseParenthesizedNameAsValueExp to a PropertyNameExp that then fails property resolution -
+    // it is not silently accepted.
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS (P.NonExistentProp)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P p WHERE p.I IS NOT (p.NonExistentProp)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 8 % 3 = 2"));
@@ -1781,8 +1793,8 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
@@ -1794,8 +1806,8 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE S IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS NOT ?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS ?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS NOT ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ? = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ? <> NULL"));
@@ -2929,7 +2941,8 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS 123"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
@@ -2989,8 +3002,8 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B <> NULL"));  // <> NULL always returns NULL
@@ -3002,8 +3015,8 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE S IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS NOT ?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS ?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS NOT ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ? = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ? <> NULL"));
@@ -3052,7 +3065,8 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE I IS 123"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
@@ -3072,7 +3086,7 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.P SET I=10 WHERE NULL IS 123"));
     //Structs
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSA SET I=? WHERE PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ALL ecsql.PSA SET I=? WHERE PStructProp IS NOT NULL"));
@@ -3420,7 +3434,8 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS 123"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
@@ -3480,8 +3495,8 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
@@ -3493,8 +3508,8 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE S IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS NOT ?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS ?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS NOT ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ? = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ? <> NULL"));
@@ -3540,7 +3555,8 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE Glob('*amp*',S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NOT Glob('*amp*',S)"));
     //case insensitive tests
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE I IS 123"));
+    // 'IS' / 'IS NOT' accept any value expression on either side (null-safe comparison), not just NULL.
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
@@ -3568,8 +3584,8 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL)
     //NULL tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ALL ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
