@@ -17,6 +17,7 @@
 #include "presentation/ECPresentationUtils.h"
 #include "presentation/UpdateRecordsHandler.h"
 #include <BeSQLite/Profiler.h>
+#include <BeSQLite/AppModelDb.h>
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
@@ -30,6 +31,9 @@ static BeMutex s_assertionMutex;
 static Utf8String s_mobileResourcesDir;
 static Utf8String s_mobileTempDir;
 static JsLogger s_jsLogger;
+
+// Alias for the native AppModel namespace so it doesn't collide with the IModelJsNative::AppModelDb peer.
+namespace AppModelNS = BeSQLite::AppModel;
 
 // DON'T change this flag directly. It is managed by BeObjectWrap only.
 bool s_BeObjectWrap_inDestructor = false;
@@ -944,6 +948,235 @@ public:
         });
 
         exports.Set("SQLiteDb", t);
+        SET_CONSTRUCTOR(t)
+    }
+};
+
+//=======================================================================================
+// Projects the BeSQLite::AppModel::AppModelDb class into JS.
+//
+// An AppModelDb is a SQLiteDb that carries the "AppModel" profile. Unlike the generic SQLiteDb,
+// it stamps a profile on create, creates the appmodel_txns table, and automatically records local
+// changes into that table on each saveChanges (when open read-write). Those recorded txns can be
+// combined into a self-describing AppModel *changeset* file (with a SHA1 id chained onto the db's
+// parent changeset) and merged into other AppModelDbs with full validation. This deliberately
+// bypasses the iModel changeset pipeline (TxnManager) and operates entirely within BeSQLite.
+//! @bsiclass
+//=======================================================================================
+struct AppModelDb : Napi::ObjectWrap<AppModelDb>, SQLiteOps<AppModelNS::AppModelDb> {
+private:
+    DEFINE_CONSTRUCTOR
+    AppModelNS::AppModelDb m_db;
+    AppModelNS::AppModelDb* _GetMyDb() override { return &m_db; }
+
+public:
+    AppModelDb(NapiInfoCR info) : Napi::ObjectWrap<AppModelDb>(info) {}
+    ~AppModelDb() { CloseDbIfOpen(true); }
+    AppModelNS::AppModelDb& GetDb() { return m_db; }
+
+    static bool InstanceOf(Napi::Value val) {
+        if (!val.IsObject())
+            return false;
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+    }
+
+    void useOpenParams(Db::OpenParams& params, BeJsValue args) {
+        if (args[JSON_NAME(openMode)].isNumeric())
+            params.m_openMode = (Db::OpenMode)args[JSON_NAME(openMode)].asInt();
+        params.m_skipFileCheck = args["skipFileCheck"].asBool();
+        if (args["immutable"].asBool())
+            params.SetImmutable();
+        if (args[JSON_NAME(defaultTxn)].isNumeric())
+            params.m_startDefaultTxn = (DefaultTxn)args[JSON_NAME(defaultTxn)].asInt();
+        if (args[JSON_NAME(queryParam)].isString())
+            params.AddQueryParam(args[JSON_NAME(queryParam)].asCString());
+    }
+
+    void CreateDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, dbName);
+        Db::CreateParams params;
+        addContainerParams(Value(), dbName, params, info[1]);
+
+        if (info[2].IsObject()) {
+            auto args = BeJsValue(info[2]);
+            useOpenParams(params, args);
+            if (args[JSON_NAME(pageSize)].isNumeric())
+                params.m_pagesize = (Db::PageSize) args[JSON_NAME(pageSize)].asInt();
+        }
+
+        auto stat = m_db.CreateNewDb(dbName.c_str(), params);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("cannot create AppModel database", dbName.c_str(), stat);
+    }
+
+    void OpenDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, dbName);
+        Db::OpenParams params(Db::OpenMode::Readonly);
+        if (info[1].IsObject()) {
+            useOpenParams(params, info[1]);
+        } else {
+            REQUIRE_ARGUMENT_INTEGER(1, openMode);
+            params.m_openMode = (Db::OpenMode) openMode;
+        }
+
+        addContainerParams(Value(), dbName, params, info[2]);
+
+        auto stat = m_db.OpenBeSQLiteDb(dbName.c_str(), params);
+        if (stat != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("cannot open AppModel database", dbName.c_str(), stat);
+    }
+
+    void CloseDbIfOpen(bool fromDestructor) {
+        if (m_db.IsDbOpen()) {
+            m_db.AbandonChanges();
+            m_db.CloseDb();
+            if (!fromDestructor)
+                Value().Set(JSON_NAME(cloudContainer), Env().Undefined());
+        }
+    }
+
+    void CloseDb(NapiInfoCR info) { CloseDbIfOpen(false); }
+    void Dispose(NapiInfoCR info) { CloseDbIfOpen(false); }
+
+    // saveChanges([description]). The optional description is stored as the txn's description in the
+    // appmodel_txns table (see AppModel::Txns::_OnCommit).
+    void SaveChanges(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        OPTIONAL_ARGUMENT_STRING(0, description);
+        DbResult status = db.SaveChanges(description.empty() ? nullptr : description.c_str());
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error in saveChanges", db.GetDbFileName(), status);
+    }
+
+    void AbandonChanges(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        DbResult status = db.AbandonChanges();
+        if (status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error in abandonChanges", db.GetDbFileName(), status);
+    }
+
+    // Build a JS object describing an AppModel changeset from its native ChangesetProps.
+    Napi::Object toChangesetPropsObject(AppModelNS::ChangesetProps const& props) {
+        auto ret = Napi::Object::New(Env());
+        ret.Set("id", Napi::String::New(Env(), props.GetChangesetId().c_str()));
+        ret.Set("parentId", Napi::String::New(Env(), props.GetParentId().c_str()));
+        ret.Set("dbGuid", Napi::String::New(Env(), props.GetDbGuid().c_str()));
+        ret.Set("changesetType", Napi::Number::New(Env(), (int) props.GetChangesetType()));
+        ret.Set("fileName", Napi::String::New(Env(), props.GetFileName().GetNameUtf8().c_str()));
+        return ret;
+    }
+
+    // beginCreateChangeset(changesetFileName) -> AppModelChangesetProps
+    // Combine all recorded txns into a single changeset file and return its properties. Does not yet delete the
+    // captured txns or advance the changeset id; call endCreateChangeset once the file is safely persisted.
+    Napi::Value BeginCreateChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, changesetFileName);
+
+        BeFileName fileName(changesetFileName.c_str(), true);
+        AppModelNS::ChangesetProps props;
+        DbResult stat = db.GetTxns().BeginCreateChangeset(props, fileName);
+        if (BE_SQLITE_OK != stat)
+            JsInterop::throwSqlResult("error creating AppModel changeset", changesetFileName.c_str(), stat);
+
+        return toChangesetPropsObject(props);
+    }
+
+    // endCreateChangeset() - finalize the changeset started by beginCreateChangeset: delete the captured txns and
+    // advance this db's current changeset id.
+    void EndCreateChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        DbResult stat = db.GetTxns().EndCreateChangeset();
+        if (BE_SQLITE_OK != stat)
+            JsInterop::throwSqlResult("error finalizing AppModel changeset", db.GetDbFileName(), stat);
+    }
+
+    // applyChangeset(props) - validate (db guid, parent chain, SHA1 id) then merge the changeset into
+    // this db, advancing this db's parent changeset id. Any conflict aborts and rolls back.
+    void ApplyChangeset(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, propsObj);
+        BeJsValue props(propsObj);
+        if (!props["fileName"].isString())
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "changeset props must include a fileName", IModelJsNativeErrorKey::BadArg);
+
+        BeFileName fileName(props["fileName"].asCString(), true);
+        AppModelNS::ChangesetType changesetType = props["changesetType"].isNumeric() ?
+            (AppModelNS::ChangesetType) props["changesetType"].asInt() : AppModelNS::ChangesetType::Regular;
+        AppModelNS::ChangesetProps changesetProps(
+            props["id"].asString(), props["parentId"].asString(), props["dbGuid"].asString(), fileName, changesetType);
+
+        DbResult stat = db.GetTxns().MergeChangeset(changesetProps);
+        switch (stat) {
+            case BE_SQLITE_OK:
+                return;
+            case BE_SQLITE_MISMATCH:
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "AppModel changeset did not originate from this db or does not chain onto its current changeset", IModelJsNativeErrorKey::ChangesetError);
+            case BE_SQLITE_ERROR_InvalidChangeSetVersion:
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "AppModel changeset has an incorrect id for its contents", IModelJsNativeErrorKey::ChangesetError);
+            default:
+                JsInterop::throwSqlResult("error applying AppModel changeset", fileName.GetNameUtf8().c_str(), stat);
+        }
+    }
+
+    // getParentChangesetId() -> string ("" if no changeset has been created/merged yet).
+    Napi::Value GetParentChangesetId(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return Napi::String::New(Env(), db.GetTxns().GetParentChangesetId().c_str());
+    }
+
+    // hasPendingTxns() -> boolean. True when local changes have been recorded but not yet serialized.
+    Napi::Value HasPendingTxns(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return Napi::Boolean::New(Env(), db.GetTxns().HasPendingTxns());
+    }
+
+    // setTxnProps(propsJson) - stage a JSON properties string to store on the next committed txn.
+    void SetTxnProps(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        OPTIONAL_ARGUMENT_STRING(0, propsJson);
+        db.GetTxns().SetTxnProps(propsJson.empty() ? nullptr : propsJson.c_str());
+    }
+
+    static void Init(Napi::Env env, Napi::Object exports) {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "AppModelDb", {
+            InstanceMethod("abandonChanges", &AppModelDb::AbandonChanges),
+            InstanceMethod("applyChangeset", &AppModelDb::ApplyChangeset),
+            InstanceMethod("beginCreateChangeset", &AppModelDb::BeginCreateChangeset),
+            InstanceMethod("closeDb", &AppModelDb::CloseDb),
+            InstanceMethod("createDb", &AppModelDb::CreateDb),
+            InstanceMethod("dispose", &AppModelDb::Dispose),
+            InstanceMethod("embedFile", &AppModelDb::EmbedFile),
+            InstanceMethod("embedFontFile", &AppModelDb::EmbedFontFile),
+            InstanceMethod("endCreateChangeset", &AppModelDb::EndCreateChangeset),
+            InstanceMethod("extractEmbeddedFile", &AppModelDb::ExtractEmbeddedFile),
+            InstanceMethod("getFilePath", &AppModelDb::GetFilePath),
+            InstanceMethod("getLastInsertRowId", &AppModelDb::GetLastInsertRowId),
+            InstanceMethod("getLastError", &AppModelDb::GetLastError),
+            InstanceMethod("getParentChangesetId", &AppModelDb::GetParentChangesetId),
+            InstanceMethod("hasPendingTxns", &AppModelDb::HasPendingTxns),
+            InstanceMethod("isOpen", &AppModelDb::IsOpen),
+            InstanceMethod("isReadonly", &AppModelDb::IsReadonly),
+            InstanceMethod("openDb", &AppModelDb::OpenDb),
+            InstanceMethod("queryEmbeddedFile", &AppModelDb::QueryEmbeddedFile),
+            InstanceMethod("queryFileProperty", &AppModelDb::QueryFileProperty),
+            InstanceMethod("queryNextAvailableFileProperty", &AppModelDb::QueryNextAvailableFileProperty),
+            InstanceMethod("removeEmbeddedFile", &AppModelDb::RemoveEmbeddedFile),
+            InstanceMethod("replaceEmbeddedFile", &AppModelDb::ReplaceEmbeddedFile),
+            InstanceMethod("restartDefaultTxn", &AppModelDb::RestartDefaultTxn),
+            InstanceMethod("saveChanges", &AppModelDb::SaveChanges),
+            InstanceMethod("saveFileProperty", &AppModelDb::SaveFileProperty),
+            InstanceMethod("setTxnProps", &AppModelDb::SetTxnProps),
+            InstanceMethod("vacuum", &AppModelDb::Vacuum),
+            InstanceMethod("analyze", &AppModelDb::Analyze),
+            InstanceMethod("enableWalMode", &AppModelDb::EnableWalMode),
+            InstanceMethod("performCheckpoint", &AppModelDb::PerformCheckpoint),
+            InstanceMethod("setAutoCheckpointThreshold", &AppModelDb::SetAutoCheckpointThreshold),
+        });
+
+        exports.Set("AppModelDb", t);
         SET_CONSTRUCTOR(t)
     }
 };
@@ -5878,6 +6111,8 @@ public:
             db = &NativeECDb::Unwrap(dbObj)->GetECDb();
         } else if (SQLiteDb::InstanceOf(dbObj)) {
             db = &SQLiteDb::Unwrap(dbObj)->GetDb();
+        } else if (AppModelDb::InstanceOf(dbObj)) {
+            db = &AppModelDb::Unwrap(dbObj)->GetDb();
         } else {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "requires an open database", DgnDbStatus::NotOpen);
         }
@@ -6008,6 +6243,9 @@ public:
         } else if (SQLiteDb::InstanceOf(dbObj)) {
             if (auto sqliteDb = SQLiteDb::Unwrap(dbObj); sqliteDb)
                 db = &sqliteDb->GetDb();
+        } else if (AppModelDb::InstanceOf(dbObj)) {
+            if (auto appModelDb = AppModelDb::Unwrap(dbObj); appModelDb)
+                db = &appModelDb->GetDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
             if (auto ecdb = NativeECDb::Unwrap(dbObj); ecdb)
                 db = &ecdb->GetECDb();
@@ -7941,6 +8179,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     JsInterop::Initialize(addondir, env, tempdir);
 
     SQLiteDb::Init(env, exports);
+    AppModelDb::Init(env, exports);
     NativeBlobIo::Init(env, exports);
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);

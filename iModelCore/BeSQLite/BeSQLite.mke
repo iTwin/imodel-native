@@ -74,6 +74,8 @@ $(o)ChangesetFile$(oext) : $(baseDir)ChangesetFile.cpp $(baseDir)/PublicAPI/BeSQ
 
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
+$(o)AppModelDb$(oext) : $(baseDir)AppModelDb.cpp $(baseDir)/PublicAPI/BeSQLite/AppModelDb.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h  $(baseDir)/PublicAPI/BeSQLite/ChangesetFile.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
 $(o)Profiler$(oext) : $(baseDir)Profiler.cpp $(baseDir)/PublicAPI/BeSQLite/Profiler.h ${MultiCompileDepends}
 
 $(o)VirtualTab$(oext) : $(baseDir)VirtualTab.cpp $(baseDir)/PublicAPI/BeSQLite/VirtualTab.h ${MultiCompileDepends}

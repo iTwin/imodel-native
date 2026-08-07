@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
 #include "BeSQLite/ChangeSet.h"
+#include "BeSQLite/ChangesetFile.h"
 #include <map>
 #include <vector>
 //---------------------------------------------------------------------------------------
@@ -2109,6 +2110,128 @@ TEST_F(BeSQLiteDbTests, ApplyTable_Filter) {
 
     anotherDb.SaveChanges();
     m_db.SaveChanges();
+}
+
+//---------------------------------------------------------------------------------------
+// Round-trips an AppModel changeset: create it from tracked changes on one db, apply it to
+// another, and verify that the "AppModelChangeset" header is rejected by an iModel-kind
+// reader and that re-applying (a conflict) aborts.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, AppModelChangeset_CreateApplyAndKindIsolation) {
+    const auto kMainFile = "appmodel.db";
+    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
+        ASSERT_EQ(BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(kMainFile, name);
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(from.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
+
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE test1 (id INTEGER PRIMARY KEY, val TEXT)"));
+    m_db.SaveChanges();
+
+    Db targetDb;
+    cloneDb(m_db, targetDb, "appmodel_target.db");
+
+    // Track a couple of inserts on the source db.
+    MyChangeTracker tracker(m_db);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO test1(id,val) VALUES(1,'one')"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO test1(id,val) VALUES(2,'two')"));
+    tracker.EnableTracking(false);
+
+    // Write them to an AppModel changeset file.
+    BeFileName csFile(m_db.GetDbFileName(), true);
+    csFile.ReplaceAll(L"appmodel.db", L"appmodel.changeset");
+    DdlChanges noDdl;
+    {
+        ChangesetFileWriter writer(csFile, false, noDdl, &m_db, LzmaEncoder::LzmaParams(), ChangesetKind::AppModel);
+        ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+        ASSERT_EQ(BE_SQLITE_OK, writer.FromChangeTrack(tracker));
+    }
+    m_db.SaveChanges();
+    ASSERT_TRUE(csFile.DoesPathExist());
+
+    auto getRowCount = [](DbR db, Utf8CP table) -> int {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM %s", table)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+    };
+
+    // An iModel-kind reader must reject an AppModel changeset (wrong header marker).
+    {
+        ChangesetFileReaderBase imodelReader({csFile}, &targetDb, ChangesetKind::iModel);
+        bool hasSchema = false;
+        DdlChanges ddl;
+        EXPECT_EQ(BE_SQLITE_ERROR_InvalidChangeSetVersion, imodelReader.MakeReader()->GetSchemaChanges(hasSchema, ddl));
+    }
+
+    // Apply the AppModel changeset onto the target and verify the rows arrived.
+    ASSERT_EQ(0, getRowCount(targetDb, "test1"));
+    {
+        ChangesetFileReaderBase reader({csFile}, &targetDb, ChangesetKind::AppModel);
+        ASSERT_EQ(BE_SQLITE_OK, reader.ApplyChanges(targetDb, ApplyChangesArgs::Default().SetAbortOnAnyConflict(true)));
+    }
+    EXPECT_EQ(2, getRowCount(targetDb, "test1"));
+
+    // Re-applying the same changeset conflicts (rows already exist) and must not succeed.
+    {
+        ChangesetFileReaderBase reader({csFile}, &targetDb, ChangesetKind::AppModel);
+        EXPECT_NE(BE_SQLITE_OK, reader.ApplyChanges(targetDb, ApplyChangesArgs::Default().SetAbortOnAnyConflict(true)));
+    }
+    targetDb.AbandonChanges();
+
+    m_db.SaveChanges();
+    m_db.CloseDb();
+    targetDb.SaveChanges();
+    targetDb.CloseDb();
+}
+
+//---------------------------------------------------------------------------------------
+// Verifies iModel changesets remain byte-compatible: an iModel-kind changeset is still
+// readable by an iModel-kind reader and is rejected by an AppModel-kind reader.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, AppModelChangeset_iModelBackwardsCompatible) {
+    const auto kMainFile = "imodelcs.db";
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t (id INTEGER PRIMARY KEY)"));
+    m_db.SaveChanges();
+
+    MyChangeTracker tracker(m_db);
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t(id) VALUES(1)"));
+    tracker.EnableTracking(false);
+
+    BeFileName csFile(m_db.GetDbFileName(), true);
+    csFile.ReplaceAll(L"imodelcs.db", L"imodelcs.changeset");
+    DdlChanges noDdl;
+    {
+        // No ChangesetKind argument -> defaults to iModel (the pre-existing format).
+        ChangesetFileWriter writer(csFile, false, noDdl, &m_db);
+        ASSERT_EQ(BE_SQLITE_OK, writer.Initialize());
+        ASSERT_EQ(BE_SQLITE_OK, writer.FromChangeTrack(tracker));
+    }
+    m_db.SaveChanges();
+
+    // An iModel-kind reader accepts it.
+    {
+        ChangesetFileReaderBase reader({csFile}, &m_db, ChangesetKind::iModel);
+        bool hasSchema = false;
+        DdlChanges ddl;
+        EXPECT_EQ(BE_SQLITE_OK, reader.MakeReader()->GetSchemaChanges(hasSchema, ddl));
+    }
+    // An AppModel-kind reader rejects an iModel changeset.
+    {
+        ChangesetFileReaderBase reader({csFile}, &m_db, ChangesetKind::AppModel);
+        bool hasSchema = false;
+        DdlChanges ddl;
+        EXPECT_EQ(BE_SQLITE_ERROR_InvalidChangeSetVersion, reader.MakeReader()->GetSchemaChanges(hasSchema, ddl));
+    }
+    m_db.CloseDb();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
