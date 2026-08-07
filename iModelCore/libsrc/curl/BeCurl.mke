@@ -64,17 +64,18 @@ always:
 #   Resolve the vcpkg-produced static libraries. c-ares is only built (and only linked) on
 #   macOS and Linux; the other platforms use curl's threaded resolver, so no libcares there.
 #--------------------------------------------------------------------------------------
-%if $(TARGET_PLATFORM) == "Windows"
-    # curl's CMake build appends a "-d" DEBUG_POSTFIX to the library name on Windows only, so the
-    # debug archive is libcurl-d.lib (release stays libcurl.lib). Other platforms keep libcurl.a
-    # for both configurations.
-    %if defined (DEBUG)
-        libcurlName = libcurl-d.lib
-    %else
-        libcurlName = libcurl.lib
-    %endif
+# curl's CMakeLists.txt defaults CMAKE_DEBUG_POSTFIX to "-d" on every platform, so the debug
+# archive is libcurl-d (release stays libcurl). c-ares sets no postfix, so libcares is unchanged.
+%if defined (DEBUG)
+    libcurlStem = libcurl-d
 %else
-    libcurlName = libcurl.a
+    libcurlStem = libcurl
+%endif
+
+%if $(TARGET_PLATFORM) == "Windows"
+    libcurlName = $(libcurlStem).lib
+%else
+    libcurlName = $(libcurlStem).a
 %endif
 libcaresName = libcares.a
 

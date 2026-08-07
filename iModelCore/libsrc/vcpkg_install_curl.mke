@@ -8,8 +8,8 @@
 
 %include mdl.mki
 
-curlDir     = $(_MakeFilePath)curl/
-installRoot = $(OutputRootDir)vcpkg_installed/curl/
+curlDir     = $(_MakeFilePath)curl
+installRoot = $(OutputRootDir)vcpkg_installed/curl
 
 # curl is re-linked into iTwinCurl.dll and links iTwinOpenSSL.dll on Windows (dynamic /MD CRT),
 # so it uses the dynamic-CRT static triplet (x64-windows-static-md). Mirror the override from
@@ -21,7 +21,7 @@ installRoot = $(OutputRootDir)vcpkg_installed/curl/
 
 always:
 %if defined (winNT)
-    $(_MakeFilePath)vcpkg_run_install.bat $(curlDir) $(installRoot) $(vcpkgTriplet)
+    powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(_MakeFilePath)vcpkg_run_install.ps1" "$(curlDir)" "$(installRoot)" "$(vcpkgTriplet)"
 %else
     $(_MakeFilePath)vcpkg_run_install.sh $(curlDir) $(installRoot) $(vcpkgTriplet)
 %endif
