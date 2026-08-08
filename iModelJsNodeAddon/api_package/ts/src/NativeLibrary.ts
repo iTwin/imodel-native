@@ -621,6 +621,8 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri?: string): void;
     public schemaSyncPush(syncDbUri?: string): void;
+    /** Materialize the tables and indexes the ec_ rows describe. Needed after merging a schema changeset, which carries no DDL. */
+    public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
@@ -886,6 +888,8 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri: string | undefined): void;
     public schemaSyncPush(syncDbUri: string | undefined): void;
+    /** Materialize the tables and indexes the ec_ rows describe. Needed after merging a schema changeset, which carries no DDL. */
+    public schemaSyncUpdateDbSchema(): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;

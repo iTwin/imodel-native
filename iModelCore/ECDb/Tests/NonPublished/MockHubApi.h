@@ -205,6 +205,22 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
 
     static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
     static void Test(Utf8CP name, std::function<void()> test);
+
+    //! The sync db holds ec_ tables and the handful of profile tables Init leaves behind. Anything
+    //! else means a data table leaked into it.
+    static void VerifySyncDbHoldsOnlyMetadata(ECDbR syncDb, Utf8CP context);
+    //! Every ec_ row the briefcase holds has to exist in the sync db with the same values. The sync
+    //! db may hold more - it is the record, the briefcase is a filtered view of it.
+    //! Attaches the sync db, which commits, so this belongs at the end of a test.
+    static void VerifyBriefcaseRowsExistInSyncDb(ECDbR briefcase, SchemaSyncDb& syncDb, Utf8CP context);
+    //! PRAGMA integrity_check + foreign_key_check, to catch corruption a targeted assertion misses.
+    static void VerifyFileIsSound(ECDbCR db, Utf8CP context);
+    //! All of the above. SchemaSyncTestFixture::TearDown runs it for m_briefcase; tests driving
+    //! their own briefcases call it themselves.
+    static void VerifySchemaSyncRules(SchemaSyncDb& syncDb, std::vector<ECDb*> const& briefcases, Utf8CP context);
+
+    void TearDown() override;
+
     SchemaSync::SyncDbUri GetSyncDbUri()
         {
         return m_schemaChannel != nullptr ? m_schemaChannel->GetSyncDbUri() : SchemaSync::SyncDbUri();

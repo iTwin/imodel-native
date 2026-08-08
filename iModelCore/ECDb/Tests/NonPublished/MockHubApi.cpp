@@ -19,6 +19,217 @@ void SchemaSyncTestFixture::Test(Utf8CP name, std::function<void()> test){
     test();
 }
 
+//=======================================================================================
+// These are guardrails for things the schema sync design relies on everywhere, so a change that
+// quietly breaks one is caught by whichever test happens to run next instead of by the one test
+// that thought to look.
+//
+// All of them are non-fatal, so a violation names itself without hiding what the test was actually
+// asserting.
+//=======================================================================================
+namespace {
+
+constexpr Utf8CP CHECK_SYNC_ALIAS = "check_sync_db";
+
+// gtest's failure state is not declared in the non-gtest BeTest configuration, where the checks
+// simply always run.
+bool CurrentTestHasFailed() {
+#if defined (USE_GTEST)
+    return ::testing::Test::HasFailure();
+#else
+    return false;
+#endif
+}
+
+// Everything a schema sync db is allowed to contain besides its ec_ tables. The two ecdbf_ tables
+// are the only data tables SchemaSync::Init leaves behind, so they are named rather than
+// prefix-matched: a third one appearing is exactly the kind of leak this check exists to find.
+bool IsAllowedInSyncDb(Utf8StringCR tableName) {
+    return tableName.StartsWithIAscii("ec_")
+        || tableName.StartsWithIAscii("be_")
+        || tableName.StartsWithIAscii("sqlite_")
+        || tableName.EqualsIAscii("ecdbf_ExternalFileInfo")
+        || tableName.EqualsIAscii("ecdbf_FileInfoOwnership");
+}
+
+// Read straight from pragma table_info, so the test helper carries no dependency on ECDb's internal
+// schema sync helpers.
+bool ReadColumns(DbCR db, Utf8CP alias, Utf8StringCR table, bvector<Utf8String>& all, bvector<Utf8String>& pk) {
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("pragma [%s].table_info([%s])", alias, table.c_str()).GetUtf8CP()) != BE_SQLITE_OK)
+        return false;
+
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        Utf8String name(stmt.GetValueText(1));
+        if (stmt.GetValueInt(5) > 0)
+            pk.push_back(name);
+
+        all.push_back(name);
+    }
+    return !all.empty();
+}
+
+bvector<Utf8String> ReadECTableNames(DbCR db) {
+    bvector<Utf8String> tables;
+    Statement stmt;
+    if (stmt.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table' AND name LIKE 'ec\\_%' ESCAPE '\\' ORDER BY name") != BE_SQLITE_OK)
+        return tables;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        tables.push_back(stmt.GetValueText(0));
+
+    return tables;
+}
+
+Utf8String JoinExprs(bvector<Utf8String> const& exprs, Utf8CP separator) {
+    Utf8String joined;
+    for (auto const& expr : exprs) {
+        if (!joined.empty())
+            joined.append(separator);
+
+        joined.append(expr);
+    }
+    return joined;
+}
+
+} // namespace
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::VerifySyncDbHoldsOnlyMetadata(ECDbR syncDb, Utf8CP context) {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(syncDb, "SELECT name FROM main.sqlite_master WHERE type='table' ORDER BY name"));
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        Utf8String name(stmt.GetValueText(0));
+        EXPECT_TRUE(IsAllowedInSyncDb(name)) << context << ": the sync db holds '" << name.c_str() << "', which is not metadata. File: " << syncDb.GetDbFileName();
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::VerifyBriefcaseRowsExistInSyncDb(ECDbR briefcase, SchemaSyncDb& syncDb, Utf8CP context) {
+    if (!syncDb.GetFileName().DoesPathExist())
+        return;
+
+    if (BE_SQLITE_OK != briefcase.AttachDb(syncDb.GetFileName().GetNameUtf8().c_str(), CHECK_SYNC_ALIAS)) {
+        ADD_FAILURE() << context << ": could not attach the sync db to check row containment. File: " << briefcase.GetDbFileName();
+        return;
+    }
+
+    for (auto const& table : ReadECTableNames(briefcase)) {
+        bvector<Utf8String> localCols, localPk, syncCols, syncPk;
+        if (!ReadColumns(briefcase, "main", table, localCols, localPk)) {
+            ADD_FAILURE() << context << ": could not read the columns of " << table.c_str();
+            continue;
+        }
+        if (!ReadColumns(briefcase, CHECK_SYNC_ALIAS, table, syncCols, syncPk)) {
+            ADD_FAILURE() << context << ": the sync db has no " << table.c_str() << ", so the two files are not on the same profile";
+            continue;
+        }
+        if (localCols.size() != syncCols.size()) {
+            ADD_FAILURE() << context << ": " << table.c_str() << " has a different shape in the two files";
+            continue;
+        }
+
+        // ec_cache_* is derived locally, so its Id is assigned in whatever order the local rows were
+        // rebuilt and carries no meaning across files. The rest of the row still has to agree.
+        const bool isCache = table.StartsWithIAscii("ec_cache_");
+
+        bvector<Utf8String> matchExprs;
+        for (auto const& col : localCols) {
+            if (isCache && col.EqualsIAscii("Id"))
+                continue;
+
+            // = on the primary key so the lookup uses its index; IS elsewhere so two NULLs match.
+            const bool isKey = !isCache && std::find(localPk.begin(), localPk.end(), col) != localPk.end();
+            matchExprs.push_back(SqlPrintfString("[s].[%s] %s [t].[%s]", col.c_str(), isKey ? "=" : "IS", col.c_str()).GetUtf8CP());
+        }
+        if (matchExprs.empty())
+            continue;
+
+        const auto missing = Utf8String{SqlPrintfString(
+            "FROM main.[%s] AS [t] WHERE NOT EXISTS (SELECT 1 FROM [%s].[%s] AS [s] WHERE %s)",
+            table.c_str(), CHECK_SYNC_ALIAS, table.c_str(), JoinExprs(matchExprs, " AND ").c_str()).GetUtf8CP()};
+
+        Statement countStmt;
+        if (countStmt.Prepare(briefcase, SqlPrintfString("SELECT COUNT(*) %s", missing.c_str()).GetUtf8CP()) != BE_SQLITE_OK) {
+            ADD_FAILURE() << context << ": could not check containment for " << table.c_str();
+            continue;
+        }
+        if (countStmt.Step() != BE_SQLITE_ROW || countStmt.GetValueInt64(0) == 0)
+            continue;
+
+        ADD_FAILURE() << context << ": " << countStmt.GetValueInt64(0) << " row(s) in " << table.c_str()
+                      << " do not exist in the sync db. File: " << briefcase.GetDbFileName();
+
+        bvector<Utf8String> quoted;
+        for (auto const& col : localCols)
+            quoted.push_back(SqlPrintfString("'%s='||quote([t].[%s])", col.c_str(), col.c_str()).GetUtf8CP());
+
+        Statement rowStmt;
+        if (rowStmt.Prepare(briefcase, SqlPrintfString("SELECT %s %s LIMIT 5", JoinExprs(quoted, "||' | '||").c_str(), missing.c_str()).GetUtf8CP()) != BE_SQLITE_OK)
+            continue;
+
+        while (rowStmt.Step() == BE_SQLITE_ROW)
+            printf("[schemasync-check] %s: %s not in sync db: %s\n", context, table.c_str(), rowStmt.GetValueText(0));
+    }
+
+    briefcase.DetachDb(CHECK_SYNC_ALIAS);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::VerifyFileIsSound(ECDbCR db, Utf8CP context) {
+    Statement stmt;
+    if (stmt.Prepare(db, "PRAGMA integrity_check") == BE_SQLITE_OK) {
+        while (stmt.Step() == BE_SQLITE_ROW) {
+            Utf8CP result = stmt.GetValueText(0);
+            EXPECT_STREQ("ok", result) << context << ": integrity_check failed. File: " << db.GetDbFileName();
+        }
+    }
+
+    EXPECT_TRUE(ForeignkeyCheck(db)) << context << ": foreign key violations. File: " << db.GetDbFileName();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::VerifySchemaSyncRules(SchemaSyncDb& syncDb, std::vector<ECDb*> const& briefcases, Utf8CP context) {
+    if (!syncDb.GetFileName().DoesPathExist())
+        return;
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        VerifySyncDbHoldsOnlyMetadata(sync, context);
+        VerifyFileIsSound(sync, context);
+    });
+
+    for (auto* briefcase : briefcases) {
+        if (briefcase == nullptr || !briefcase->IsDbOpen())
+            continue;
+
+        VerifyFileIsSound(*briefcase, context);
+
+        // A file that never enabled schema sync owes the sync db nothing.
+        if (briefcase->Schemas().GetSchemaSync().IsEnabled())
+            VerifyBriefcaseRowsExistInSyncDb(*briefcase, syncDb, context);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::TearDown() {
+    // Only on a test that got where it meant to - a failed one has arbitrary state and would report
+    // violations that say nothing.
+    if (!CurrentTestHasFailed() && m_schemaChannel != nullptr && m_briefcase != nullptr)
+        VerifySchemaSyncRules(*m_schemaChannel, { m_briefcase.get() }, "teardown");
+
+    ECDbTestFixture::TearDown();
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -816,6 +1027,18 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
     BeAssert(result == BE_SQLITE_OK);
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
+        if (0 == ::strncmp(tableName, "ec_", 3) && m_ecdb != nullptr && m_ecdb->Schemas().GetSchemaSync().IsEnabled()) {
+            // Replace would DELETE the existing row before re-inserting it, and almost every ec_
+            // foreign key is ON DELETE CASCADE - so the delete takes the row's children with it and
+            // the re-insert restores only the parent. Under schema sync the rows arriving here are
+            // normally ones this briefcase already holds, because every briefcase gets its ids from
+            // the same authority, so skipping keeps what is already correct instead of destroying
+            // dependents.
+            // Note this does not distinguish an identical row from a genuinely differing one; a
+            // differing row is a real conflict and needs a real decision. Mirrors the rule in
+            // ChangesetFileReader::_OnConflict.
+            return ChangeSet::ConflictResolution::Skip;
+        }
         return ChangeSet::ConflictResolution::Replace;
     }
     if (cause == ChangeSet::ConflictCause::ForeignKey) {

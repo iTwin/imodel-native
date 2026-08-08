@@ -637,6 +637,18 @@ public:
             }
         }
     }
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
+            }
+        }
+    }
+
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
@@ -666,6 +678,7 @@ public:
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
             InstanceMethod("schemaSyncPush", &NativeECDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeECDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
@@ -2388,9 +2401,24 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
 
-    void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
-        {
+    // Materialise the physical tables and indexes the ec_ rows imply. A schema-sync-enabled
+    // briefcase that merged somebody else's schema changeset holds the rows but not the columns,
+    // because neither the changeset nor the adopt step carries DDL.
+    void SchemaSyncUpdateDbSchema(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().UpdateDbSchema();
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), "fail to update the db schema from the ec_ tables", rc);
+            }
+        }
+    }
+
+    void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
+        {        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
 
@@ -3425,6 +3453,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
             InstanceMethod("schemaSyncPush", &NativeDgnDb::SchemaSyncPush),
+            InstanceMethod("schemaSyncUpdateDbSchema", &NativeDgnDb::SchemaSyncUpdateDbSchema),
             InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
             InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
