@@ -565,6 +565,15 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+// TEMPORARILY DISABLED - candidate for deletion, decide during PR review.
+// This method appears to have no callers. It was introduced by the original schema sync
+// commit and, as far as the history shows, never called from anywhere. Disabling it rather
+// than deleting it so the build tells us whether that is actually true.
+// If it stays disabled: delete it, together with its declaration in DbSchema.h.
+// Note it only works for a table that already exists in the file, since it reads
+// pragma foreign_key_list. It cannot recover the foreign keys of a table ECDb is about to
+// create - which is the case SchemaSync v2 needs.
+#if 0
 BentleyStatus DbSchema::LoadTableForeignKeyListFromSqliteSchema(DbTable& table) const {
     /*
         CREATE TABLE [foo]( [id], [c1], [c2], [c3], [c4]);
@@ -639,6 +648,7 @@ BentleyStatus DbSchema::LoadTableForeignKeyListFromSqliteSchema(DbTable& table) 
     }
     return rc == BE_SQLITE_DONE ? SUCCESS : ERROR;
 }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

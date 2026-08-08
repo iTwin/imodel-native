@@ -19,6 +19,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SCHEMA_SYNC_UPSTREAM_TRACE 1
 #if SCHEMA_SYNC_UPSTREAM_TRACE
     #define SS_TRACE(...) do { printf("[schemasync] "); printf(__VA_ARGS__); printf("\n"); fflush(stdout); } while (false)
+
+//=======================================================================================
+// TEMPORARY - goes with the block above. An import into the sync db reports its reason through the
+// issue reporter and returns a bare BE_SQLITE_ERROR, so without this a failure says nothing at all.
+//+===============+===============+===============+===============+===============+======
+struct SchemaSyncTraceIssueListener final : ECN::IIssueListener {
+    void _OnIssueReported(ECN::IssueSeverity, ECN::IssueCategory, ECN::IssueType, ECN::IssueId, Utf8CP message) const override {
+        SS_TRACE("  issue: %s", message);
+    }
+};
 #else
     #define SS_TRACE(...) do { } while (false)
 #endif
@@ -655,9 +665,40 @@ Utf8String SchemaSync::GetStatusAsString(Status status) {
             return "ERROR_DATA_TRANSFORM_REQUIRED";
         case Status::ERROR_SYNC_DB_CHANGED:
             return "ERROR_SYNC_DB_CHANGED";
+        case Status::ERROR_PROFILE_VERSION_MISMATCH:
+            return "ERROR_PROFILE_VERSION_MISMATCH";
         default:
             return "SCHEMA_SYNC_FAIL";
     }
+}
+
+//---------------------------------------------------------------------------------------
+// v1 tolerates profile skew in one direction, depending on whether it is pulling or pushing. v2
+// cannot: the import runs in one file and its result is adopted by the other, so a difference in
+// profile version means the two could map the same schema differently. Nothing may move until they
+// are aligned, which is a maintenance-mode job.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::VerifyProfileVersionsMatch(SyncDbUri const& syncDbUri) const {
+    const auto syncDbVersion = SchemaSyncHelper::QueryProfileVersion(syncDbUri, SchemaSyncHelper::ProfileKind::EC);
+    const auto localVersion = SchemaSyncHelper::QueryProfileVersion(m_conn, SchemaSyncHelper::ProfileKind::EC);
+
+    if (syncDbVersion.IsEmpty() || localVersion.IsEmpty()) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0681,
+            "Failed to read the EC profile version of the sync db (%s) or of this briefcase.", syncDbUri.GetUri().c_str());
+        return Status::ERROR;
+    }
+
+    if (syncDbVersion != localVersion) {
+        m_conn.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0683,
+            "Schema sync requires the sync db (%s) and this briefcase (%s) to be on the same EC profile version.",
+            syncDbVersion.ToString().c_str(), localVersion.ToString().c_str());
+        return Status::ERROR_PROFILE_VERSION_MISMATCH;
+    }
+
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1054,6 +1095,76 @@ DbResult SchemaSyncUpstreamHelper::DropClosure(ECDbR conn) {
         }
     }
     return BE_SQLITE_OK;
+}
+
+//=======================================================================================
+// Serves an explicit set of schemas by key. Sits ahead of the sync db's locater while schemas are
+// being re-pointed, so that a schema referencing one of its siblings picks up that sibling's copy -
+// which already points at the sync db - rather than the original, which still points at the
+// briefcase.
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaSetLocater final : ECN::IECSchemaLocater {
+    private:
+        bvector<ECSchemaPtr> m_schemas;
+
+        ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR) override {
+            for (auto const& schema : m_schemas) {
+                if (schema->GetSchemaKey().Matches(key, matchType))
+                    return schema;
+            }
+            return nullptr;
+        }
+
+    public:
+        void Add(ECSchemaPtr schema) { m_schemas.push_back(schema); }
+        Utf8String GetDescription() const override { return Utf8PrintfString("SchemaSetLocater holding %d schema(s)", (int)m_schemas.size()); }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaSyncUpstreamHelper::ReloadAgainstSyncDb(bvector<ECN::ECSchemaPtr>& reloaded, bvector<ECN::ECSchemaCP> const& schemas, ECDbR syncConn) {
+    bvector<ECSchemaCP> inDependencyOrder(schemas);
+    ECSchema::SortSchemasInDependencyOrder(inDependencyOrder);
+
+    SchemaSetLocater copies;
+    auto readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(copies);
+    readContext->AddSchemaLocater(syncConn.GetSchemaLocater());
+
+    for (auto schema : inDependencyOrder) {
+        // CopySchema reports a missing reference as a bare SchemaNotFound, so resolve them here
+        // first - otherwise a failure cannot say which reference of which schema was the problem.
+        for (auto const& reference : schema->GetReferencedSchemas()) {
+            SchemaKey key(reference.first);
+            if (readContext->LocateSchema(key, SchemaMatchType::Latest).IsNull()) {
+                syncConn.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                    "Cannot import '%s' through the schema sync db: it references '%s', which the sync db does not have.",
+                    schema->GetFullSchemaName().c_str(), key.GetFullSchemaName().c_str());
+                return ERROR;
+            }
+        }
+
+        ECSchemaPtr copy;
+        const auto status = schema->CopySchema(copy, readContext.get());
+        if (status != ECObjectsStatus::Success || copy.IsNull()) {
+            syncConn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                "Failed to re-point '%s' at the schema sync db (ECObjectsStatus %d). Context: %s",
+                schema->GetFullSchemaName().c_str(), (int)status, readContext->GetDescription().c_str());
+            return ERROR;
+        }
+
+        // CopySchema deliberately does not carry this over, and SchemaWriter refuses to decrease it.
+        copy->SetOriginalECXmlVersion(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+
+        copies.Add(copy);
+        reloaded.push_back(copy);
+    }
+
+    return SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1569,12 +1680,12 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector<BeFileName> const& schemaXmlFiles) {
+SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas) {
     ECDB_PERF_LOG_SCOPE("Importing schemas through the schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::ImportSchemas");
 
-    if (schemaXmlFiles.empty()) {
-        LOG.error("SchemaSync::ImportSchemas(): No schema files given.");
+    if (schemas.empty()) {
+        LOG.error("SchemaSync::ImportSchemas(): No schemas given.");
         return Status::ERROR;
     }
 
@@ -1587,12 +1698,16 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
         return vrc;
     }
 
+    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
+    if (prc != Status::OK)
+        return prc;
+
     const auto dataVerBeforeImport = SyncDbInfo::From(effectiveSyncDbUri).GetDataVersion();
-    SS_TRACE("import: %d schema file(s), sync db dataVer %lld", (int)schemaXmlFiles.size(), (long long)dataVerBeforeImport);
+    SS_TRACE("import: %d schema(s), sync db dataVer %lld", (int)schemas.size(), (long long)dataVerBeforeImport);
 
     // Step 1. The import runs in the sync db, which is where ids and physical layout get decided.
     bvector<Utf8String> importedSchemaNames;
-    auto status = ImportIntoSyncDb(effectiveSyncDbUri, schemaXmlFiles, importedSchemaNames, dataVerBeforeImport);
+    auto status = ImportIntoSyncDb(effectiveSyncDbUri, schemas, importedSchemaNames, dataVerBeforeImport);
     if (status != Status::OK)
         return status;
 
@@ -1617,12 +1732,12 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
 // Step 1 of SchemaSync::ImportSchemas, split out so the sync db connection is closed before the
 // briefcase attaches the same file to adopt from it.
 //
-// The import here is the ordinary one, unmodified. It writes its ec_ rows and creates its physical
-// tables in the sync db, exactly as it would in a briefcase - which is what keeps the sync db a
-// self-consistent ECDb that the next import can be run against.
+// The import is the ordinary one, run with DoNotCreateOrUpdateDataTables so it writes ec_ rows and
+// nothing else. The sync db is the record of what was decided; building the tables that decision
+// implies is the adopting briefcase's job.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvector<BeFileName> const& schemaXmlFiles, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport) {
+SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport) {
     ECDb syncConn;
     Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
     ParseQueryParams(openParams, syncDbUri);
@@ -1639,26 +1754,24 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
         return Status::ERROR_INVALID_SCHEMA_SYNC_DB;
     }
 
-    // The whole point of taking file paths: the schemas are deserialized against the SYNC DB, so
-    // their references resolve to the versions it holds rather than to this briefcase's, which may
-    // be older.
-    auto readContext = ECSchemaReadContext::CreateContext();
-    readContext->AddSchemaLocater(syncConn.GetSchemaLocater());
+#if SCHEMA_SYNC_UPSTREAM_TRACE
+    SchemaSyncTraceIssueListener traceIssues;
+    syncConn.AddIssueListener(traceIssues);
+#endif
 
-    bvector<ECSchemaPtr> ownedSchemas;
-    bvector<ECSchemaCP> schemas;
-    for (auto const& schemaXmlFile : schemaXmlFiles) {
-        ECSchemaPtr schema;
-        if (ECSchema::ReadFromXmlFile(schema, schemaXmlFile.GetName(), *readContext) != SchemaReadStatus::Success || !schema.IsValid()) {
-            LOG.errorv("SchemaSync::ImportSchemas(): Failed to read schema file '%s'.", schemaXmlFile.GetNameUtf8().c_str());
-            return Status::ERROR;
-        }
-        ownedSchemas.push_back(schema);
-        schemas.push_back(schema.get());
+    bvector<ECSchemaPtr> reloaded;
+    if (SUCCESS != SchemaSyncUpstreamHelper::ReloadAgainstSyncDb(reloaded, schemas, syncConn)) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to re-point the schemas at the sync db.");
+        return Status::ERROR;
+    }
+
+    bvector<ECSchemaCP> schemasToImport;
+    for (auto const& schema : reloaded) {
+        schemasToImport.push_back(schema.get());
         importedSchemaNames.push_back(schema->GetName());
     }
 
-    const auto importRc = syncConn.Schemas().ImportSchemas(schemas, SchemaManager::SchemaImportOptions::None);
+    const auto importRc = syncConn.Schemas().ImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
     SS_TRACE("import into sync db: %s -> %d", SchemaSyncHelper::Join(importedSchemaNames, ",").c_str(), (int)(SchemaImportResult::Status)importRc);
     if (importRc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED) {
         LOG.info("SchemaSync::ImportSchemas(): The import would have to move data, which the additive path does not do.");
@@ -1667,7 +1780,8 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
     }
 
     if (!importRc.IsOk()) {
-        LOG.error("SchemaSync::ImportSchemas(): The import into the sync db failed.");
+        LOG.errorv("SchemaSync::ImportSchemas(): The import into the sync db failed. %s", syncConn.GetLastError().c_str());
+        SS_TRACE("  sqlite says: %s", syncConn.GetLastError().c_str());
         syncConn.AbandonChanges();
         return Status::ERROR;
     }
@@ -1693,12 +1807,12 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<BeFileName> const& schemaXmlFiles) {
+SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas) {
     ECDB_PERF_LOG_SCOPE("Upgrading schemas and overwriting the schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::UpgradeSchemas");
 
-    if (schemaXmlFiles.empty()) {
-        LOG.error("SchemaSync::UpgradeSchemas(): No schema files given.");
+    if (schemas.empty()) {
+        LOG.error("SchemaSync::UpgradeSchemas(): No schemas given.");
         return Status::ERROR;
     }
 
@@ -1711,24 +1825,14 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
         return vrc;
     }
 
-    // Deserialized against this briefcase, not against the sync db - the opposite of ImportSchemas.
-    // The briefcase is what decides here, and whatever the sync db holds beyond it is about to be
-    // thrown away anyway.
-    auto readContext = ECSchemaReadContext::CreateContext();
-    readContext->AddSchemaLocater(m_conn.GetSchemaLocater());
+    const auto prc = VerifyProfileVersionsMatch(effectiveSyncDbUri);
+    if (prc != Status::OK)
+        return prc;
 
-    bvector<ECSchemaPtr> ownedSchemas;
-    bvector<ECSchemaCP> schemas;
-    for (auto const& schemaXmlFile : schemaXmlFiles) {
-        ECSchemaPtr schema;
-        if (ECSchema::ReadFromXmlFile(schema, schemaXmlFile.GetName(), *readContext) != SchemaReadStatus::Success || !schema.IsValid()) {
-            LOG.errorv("SchemaSync::UpgradeSchemas(): Failed to read schema file '%s'.", schemaXmlFile.GetNameUtf8().c_str());
-            return Status::ERROR;
-        }
-        ownedSchemas.push_back(schema);
-        schemas.push_back(schema.get());
-    }
-
+    // No re-pointing here, which is the opposite of ImportSchemas: the schemas arrive resolved
+    // against this briefcase and the briefcase is what decides. Whatever the sync db holds beyond it
+    // is about to be thrown away anyway.
+    //
     // The ordinary upgrade, run locally and unmodified. Schema sync is switched off for it so that
     // v1's pull/push hooks stay out of the way: a pull would drag in exactly the abandoned rows we
     // are about to delete, and a push would refuse on the data version.
@@ -1739,7 +1843,7 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
         ReEnableSchemaSync();
         }
 
-    SS_TRACE("upgrade: local import of %d schema file(s) with transforms allowed -> %d", (int)schemaXmlFiles.size(), (int)(SchemaImportResult::Status)importRc);
+    SS_TRACE("upgrade: local import of %d schema(s) with transforms allowed -> %d", (int)schemas.size(), (int)(SchemaImportResult::Status)importRc);
 
     if (!importRc.IsOk()) {
         LOG.error("SchemaSync::UpgradeSchemas(): The local import failed.");
@@ -1772,9 +1876,6 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
 // This is v1's push without its "am I level with the sync db" precondition, which is the whole
 // point: the sync db may hold rows from an import that was never pushed, and those are what we
 // want gone. The copy itself is a differential mirror rather than an upsert - see MirrorTables.
-//
-// The sync db's physical tables are then brought back in line with the rows it just received, so
-// that the next import run against it does not meet a table its metadata no longer describes.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
@@ -1783,14 +1884,7 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
         return Status::ERROR;
     }
 
-    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, true);
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to sync profile tables schema.");
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
@@ -1809,52 +1903,37 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
         return Status::ERROR;
     }
 
-    // Which data tables the sync db has now. After the rebuild, any of these its metadata no longer
-    // describes is left over from a schema that just went away, and the next import run in the sync
-    // db would collide with it when it tried to create that table again.
-    TableList dataTablesBefore;
-    {
-    Statement stmt;
-    const auto dataTableSql = Utf8String{SqlPrintfString(
-        "SELECT [Name] FROM [%s].[ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow
-        R"x() AND [Name] NOT LIKE 'ecdbf\_%%' ESCAPE '\')x", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP()};
-    rc = stmt.Prepare(m_conn, dataTableSql.c_str());
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to read the sync db's data tables.");
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-    while (stmt.Step() == BE_SQLITE_ROW)
-        dataTablesBefore.push_back(stmt.GetValueText(0));
+    // ec_cache_ is derived, holds nothing of its own, and every import regenerates it. Copying it
+    // would also be the dominant cost, since its ids are handed out fresh on each rebuild and the
+    // two files therefore disagree on nearly every row even when the class hierarchy is untouched.
+    TableList tablesToMirror;
+    for (auto const& table : tables) {
+        if (!table.StartsWithIAscii("ec_cache_"))
+            tablesToMirror.push_back(table);
     }
 
-    rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
+    rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tablesToMirror, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::OverwriteSyncDb(): Failed to bring the sync db's ec_ tables in line with this briefcase.");
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
-    for (auto const& table : dataTablesBefore) {
-        Statement stmt;
-        const auto lookupSql = Utf8String{SqlPrintfString("SELECT 1 FROM [%s].[ec_Table] WHERE [Name]=?", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP()};
-        if (stmt.Prepare(m_conn, lookupSql.c_str()) != BE_SQLITE_OK) {
-            m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-            return Status::ERROR;
+#if SCHEMA_SYNC_UPSTREAM_TRACE
+    {
+    Statement fkStmt;
+    if (fkStmt.Prepare(m_conn, SqlPrintfString("PRAGMA [%s].foreign_key_check", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP()) == BE_SQLITE_OK) {
+        int violations = 0;
+        while (fkStmt.Step() == BE_SQLITE_ROW) {
+            ++violations;
+            SS_TRACE("  sync db FK violation: table=%s rowid=%lld parent=%s fkid=%d",
+                fkStmt.GetValueText(0), (long long)fkStmt.GetValueInt64(1), fkStmt.GetValueText(2), fkStmt.GetValueInt(3));
         }
-        stmt.BindText(1, table, Statement::MakeCopy::No);
-        if (stmt.Step() == BE_SQLITE_ROW)
-            continue;
-
-        stmt.Finalize();
-        SS_TRACE("overwrite: dropping table %s from the sync db, nothing describes it any more", table.c_str());
-        rc = m_conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [%s].[%s]", SchemaSyncHelper::ALIAS_SYNC_DB, table.c_str()).GetUtf8CP());
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSync::OverwriteSyncDb(): Failed to drop orphaned table %s from the sync db. %s", table.c_str(), BeSQLiteLib::GetErrorString(rc));
-            m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-            return Status::ERROR;
-        }
+        if (violations == 0)
+            SS_TRACE("overwrite: sync db has no dangling references");
     }
+    }
+#endif
 
     rc = m_conn.SaveChanges();
     if (rc != BE_SQLITE_OK) {

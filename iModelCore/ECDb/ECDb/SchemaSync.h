@@ -92,6 +92,18 @@ struct SchemaSyncUpstreamHelper final {
     //! empty-and-refill: the sync db's CloudSqlite blocks are 64 KiB, so rewriting rows that did not
     //! change would make every other client re-download the whole file.
     static DbResult MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias);
+    //! Re-point a set of schemas at the sync db.
+    //!
+    //! The schemas arrive resolved against the briefcase - that is what the ordinary import path
+    //! produces, and its loading and sanitizing is worth keeping. But the sync db can hold newer
+    //! versions of the schemas they reference, and those are the versions that decide the mapping,
+    //! so importing them as they stand would make SchemaWriter diff against the wrong thing.
+    //!
+    //! Each schema is copied through a read context backed by the sync db, which re-locates every
+    //! reference rather than carrying the briefcase's over. Copies are made in dependency order and
+    //! serve each other, so a schema referencing another schema in @p schemas picks up its copy.
+    //! @param[out] reloaded the copies, in dependency order. Import these, not @p schemas.
+    static BentleyStatus ReloadAgainstSyncDb(bvector<ECN::ECSchemaPtr>& reloaded, bvector<ECN::ECSchemaCP> const& schemas, ECDbR syncConn);
     //! Number of rows currently in one of the temp id-set tables. For diagnostics and tests.
     static int64_t CountClosureRows(ECDbR conn, Utf8CP tempTableName);
 };

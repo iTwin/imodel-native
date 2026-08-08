@@ -47,6 +47,9 @@ struct SchemaSync final {
         //! The sync db was written to while an import was running in it, which can only happen if
         //! somebody wrote without holding the container write lock.
         ERROR_SYNC_DB_CHANGED,
+        //! The briefcase and the sync db are on different EC profile versions. Either could then map
+        //! the same schema differently, so nothing may be imported until they are aligned.
+        ERROR_PROFILE_VERSION_MISMATCH,
     };
     //=======================================================================================
     // @bsiclass
@@ -118,8 +121,9 @@ private:
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
-    Status ImportIntoSyncDb(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
+    Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
     Status OverwriteSyncDb(SyncDbUri const&);
+    Status VerifyProfileVersionsMatch(SyncDbUri const&) const;
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
     Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
@@ -168,19 +172,19 @@ public:
     //!   2. Adopt those schemas and their reference closure into this briefcase, which therefore
     //!      decides nothing itself. Other briefcases learn about the change from the changeset.
     //!
-    //! Schemas are given as file paths rather than as ECSchema objects on purpose: they have to be
-    //! deserialized against the sync db, so that references resolve to the versions the sync db
-    //! holds. Those can be newer than this briefcase's - somebody else's import that has not been
-    //! pushed yet - and mapping against the stale ones would produce the wrong answer.
+    //! Schemas arrive resolved against this briefcase, which is what the ordinary import path
+    //! produces. They are re-pointed at the sync db before step 1, so that their references resolve
+    //! to the versions the sync db holds - those can be newer than this briefcase's, and they are
+    //! the ones that decide the mapping.
     //!
-    //! @param[in] schemaXmlFiles ECSchema XML files to import. References they resolve from the sync
-    //!            db or from each other need not be listed.
+    //! @param[in] schemas ECSchemas to import. References they resolve from the sync db or from each
+    //!            other need not be listed.
     //! @return ERROR_DATA_TRANSFORM_REQUIRED if the change would have to move data - that belongs on
     //!         the upgrade path, not here.
     //! @note The caller must hold the sync db's container write lock for the duration of this call,
     //!       as it does for v1's import. Additive only, and this does not push the resulting
     //!       changeset; that is the caller's job.
-    ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles);
+    ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas);
     //! Upgrade schemas whose import has to move data, which ImportSchemas refuses to do.
     //!
     //! The direction is the opposite of ImportSchemas: the import runs on this briefcase, with data
@@ -192,12 +196,12 @@ public:
     //! holds one, so nobody can be holding local changes, so such rows can only be work somebody
     //! abandoned. It also frees shared column ordinals that nothing else in this design ever frees.
     //!
-    //! @param[in] schemaXmlFiles ECSchema XML files to import. Deserialized against this briefcase.
+    //! @param[in] schemas ECSchemas to import. Used as they are - resolved against this briefcase.
     //! @note The caller must hold both the sync db's container write lock and the **exclusive** schema
     //!       lock, must be at the tip of the timeline, and must push the resulting changeset and
     //!       upload the sync db before releasing either. If the changeset is dropped after the sync
     //!       db was uploaded, the two disagree with no way back.
-    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<BeFileName> const& schemaXmlFiles);
+    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
@@ -469,6 +473,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
             AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
+            DoNotCreateOrUpdateDataTables               = 1 << 6,   //! Maintain only the ec_ tables. For a file that holds metadata and no data, such as the schema sync db.
             };
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;

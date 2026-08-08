@@ -263,6 +263,7 @@ struct SchemaImportContext final
         bool AllowDataTransform();
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
         bool IsSemanticRebasing() const { return m_semanticRebasing; }
+        bool MaintainsDataTables() const { return !Enum::Contains(m_options, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables); }
         bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         ECDbCR GetECDb() const { return m_ecdb; }
