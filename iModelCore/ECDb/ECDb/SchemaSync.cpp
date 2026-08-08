@@ -1602,16 +1602,10 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     mainDisp.OnBeforeSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
     m_conn.ClearECDbCache();
 
-    // Bring the profile tables themselves into line first - the copy below assumes both files have
-    // the same ec_ table shapes.
-    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, effectiveSyncDbUri, false);
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::AdoptSchemas(): Failed to sync profile tables schema.");
-        m_conn.AbandonChanges();
-        return Status::ERROR_SYNC_SQL_SCHEMA;
-    }
-
-    rc = m_conn.AttachDb(effectiveSyncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    // Attaching and detaching both commit, so everything this call does has to happen between the
+    // two - otherwise a failure in the second half leaves committed ec_ rows describing tables that
+    // were never built, and AbandonChanges cannot reach them.
+    auto rc = m_conn.AttachDb(effectiveSyncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
@@ -1649,15 +1643,13 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     }
     EndModifiedRowCount();
 
-    const auto detachRc = cleanup(Status::OK);
-    UNUSED_VARIABLE(detachRc);
-
     // Materialise the physical tables and indexes the adopted rows imply. This is the same step the
     // v1 pull ends with, and it is why no DDL has to travel between the two files.
     const auto updateRc = UpdateDbSchema();
     if (updateRc != Status::OK) {
         LOG.error("SchemaSync::AdoptSchemas(): Failed to update db schema.");
-        return updateRc;
+        m_conn.AbandonChanges();
+        return cleanup(updateRc);
     }
 
     // Adopting can push a class that already holds data into an overflow table. An ordinary import
@@ -1667,8 +1659,12 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     // write to a property that landed there is silently lost.
     if (BE_SQLITE_OK != m_conn.Schemas().Main().UpgradeECInstances()) {
         LOG.error("SchemaSync::AdoptSchemas(): Failed to give existing instances their overflow rows.");
-        return Status::ERROR;
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
     }
+
+    const auto detachRc = cleanup(Status::OK);
+    UNUSED_VARIABLE(detachRc);
 
     SS_TRACE("adopt done: tables and indexes materialised, overflow rows caught up");
 

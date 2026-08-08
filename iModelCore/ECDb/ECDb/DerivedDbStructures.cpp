@@ -84,7 +84,8 @@ BentleyStatus DerivedDbStructures::AddRelationshipForeignKeys(MainSchemaManager 
                 "INNER JOIN [%s]." TABLE_Class " C ON C.Id=CM.ClassId "
                 "WHERE C.Type=" SQLVAL_ECClassType_Relationship " AND CM.MapStrategy IN ("
                 SQLVAL_MapStrategy_OwnTable "," SQLVAL_MapStrategy_TablePerHierarchy ","
-                SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")",
+                SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ") "
+                "ORDER BY C.Name,C.Id", // two foreign keys on one column come out in the order the mapper wrote them, and the DDL text is compared across briefcases
                 tableSpace, tableSpace);
 
     // Collect first, then act - the loop below loads class maps, which writes to the statement cache.
@@ -270,11 +271,8 @@ BentleyStatus DerivedDbStructures::AddNavigationPropertyForeignKeys(MainSchemaMa
         DbColumn const& fkColumn = partition->GetFromECInstanceIdColumn();
         DbTable& fkTable = const_cast<DbTable&>(fkColumn.GetTable());
 
-        // A child table cannot carry the constraint - the mapper refuses that combination outright,
-        // so a mapping that reached this file never has it.
-        if (fkTable.GetLinkNode().IsChildTable())
-            continue;
-
+        // A child table does carry the constraint; only a cascading one is refused, and the mapper
+        // does that refusing, so a mapping that reached this file never has one.
         if (fkTable.GetType() == DbTable::Type::Existing || fkTable.GetType() == DbTable::Type::Virtual || fkColumn.IsShared())
             continue;
 
@@ -337,6 +335,8 @@ BentleyStatus DerivedDbStructures::AddCurrentTimeStampTriggers(MainSchemaManager
 //static
 BentleyStatus DerivedDbStructures::EnsureForeignKey(DbTable& table, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDelete, ForeignKeyDbConstraint::ActionType onUpdate)
     {
+    // Two relationships can put differently-acting foreign keys on the same column, so the actions
+    // are part of the identity - matching ForeignKeyDbConstraint::Equals.
     for (DbConstraint const* constraint : table.GetConstraints())
         {
         if (constraint->GetType() != DbConstraint::Type::ForeignKey)
@@ -344,7 +344,8 @@ BentleyStatus DerivedDbStructures::EnsureForeignKey(DbTable& table, DbColumn con
 
         ForeignKeyDbConstraint const* fk = static_cast<ForeignKeyDbConstraint const*>(constraint);
         if (fk->GetFkColumns().size() == 1 && fk->GetFkColumns().front() == &fkColumn &&
-            fk->GetReferencedTableColumns().size() == 1 && fk->GetReferencedTableColumns().front() == &referencedColumn)
+            fk->GetReferencedTableColumns().size() == 1 && fk->GetReferencedTableColumns().front() == &referencedColumn &&
+            fk->GetOnDeleteAction() == onDelete && fk->GetOnUpdateAction() == onUpdate)
             return SUCCESS;
         }
 
