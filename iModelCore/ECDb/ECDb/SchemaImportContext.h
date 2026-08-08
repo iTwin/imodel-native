@@ -264,6 +264,9 @@ struct SchemaImportContext final
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
         bool IsSemanticRebasing() const { return m_semanticRebasing; }
         bool MaintainsDataTables() const { return !Enum::Contains(m_options, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables); }
+        //! An import that owns no data tables cannot delete instances, so schema changes that destroy
+        //! data are refused and the caller has to take the upgrade path. An opt-out flag would go here.
+        bool AllowsDataDestroyingChanges() const { return MaintainsDataTables(); }
         bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         ECDbCR GetECDb() const { return m_ecdb; }

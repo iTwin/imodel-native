@@ -73,14 +73,17 @@ struct SchemaSyncUpstreamHelper final {
     //! the class, physical-table and column id sets that follow from them.
     //! @return BE_SQLITE_NOTFOUND if any requested schema does not exist in the sync db.
     static DbResult BuildClosure(ECDbR conn, Utf8CP syncAlias, StringList const& schemaNames);
-    //! Copies exactly the closure's rows from syncAlias into targetAlias. Additive: rows that exist
-    //! locally but not in the sync db are left alone (see the note on deletes in the .cpp).
+    //! Copies exactly the closure's rows from syncAlias into targetAlias, and removes rows inside the
+    //! closure that the sync db no longer has.
     static DbResult CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf8CP targetAlias);
     //! Drops the temp id-set tables. Safe to call when they do not exist.
     static DbResult DropClosure(ECDbR conn);
     //! Upserts one table, restricted to source rows matching whereClause. Mirrors
     //! SchemaSyncHelper::SyncData's insert half, minus the delete half.
     static DbResult UpsertFiltered(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP whereClause);
+    //! Deletes target rows matching scopeClause whose primary key is absent from the source.
+    //! scopeClause is evaluated against the target, so it must not reach into the source.
+    static DbResult DeleteMissing(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP scopeClause);
     //! Makes the target's copy of each table equal the source's, writing only the rows that differ.
     //! Used by the upgrade path, where the briefcase is the authority and the sync db is brought in
     //! line with it, deletions included.

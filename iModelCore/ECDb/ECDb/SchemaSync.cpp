@@ -1366,6 +1366,38 @@ DbResult SchemaSyncUpstreamHelper::UpsertFiltered(ECDbR conn, Utf8CP tableName, 
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncUpstreamHelper::DeleteMissing(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP scopeClause) {
+    SchemaSyncHelper::StringList pkCols;
+    auto rc = SchemaSyncHelper::GetPrimaryKeyColumnNames(conn, targetAlias, tableName, pkCols);
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SchemaSyncUpstreamHelper::DeleteMissing(): Failed to get primary key columns for %s. %s", tableName, BeSQLiteLib::GetErrorString(rc));
+        return rc;
+    }
+    if (pkCols.empty()) {
+        LOG.errorv("SchemaSyncUpstreamHelper::DeleteMissing(): %s has no primary key, so rows cannot be matched up.", tableName);
+        return BE_SQLITE_SCHEMA;
+    }
+
+    SchemaSyncHelper::StringList keyMatchExprs;
+    for (auto const& col : pkCols)
+        keyMatchExprs.push_back(SqlPrintfString("[S].[%s] IS [T].[%s]", col.c_str(), col.c_str()).GetUtf8CP());
+
+    const auto sql = Utf8String{SqlPrintfString(
+        "DELETE FROM [%s].[%s] AS [T] WHERE (%s) AND NOT EXISTS (SELECT 1 FROM [%s].[%s] [S] WHERE %s)",
+        targetAlias, tableName, scopeClause,
+        sourceAlias, tableName,
+        SchemaSyncHelper::Join(keyMatchExprs, " AND ").c_str()).GetUtf8CP()};
+
+    rc = conn.ExecuteSql(sql.c_str());
+    if (rc != BE_SQLITE_OK)
+        LOG.errorv("SchemaSyncUpstreamHelper::DeleteMissing(): Failed to delete stale rows from %s. %s (sql: %s)", tableName, BeSQLiteLib::GetErrorString(rc), sql.c_str());
+
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
 // Make the target's copy of each table equal the source's, touching as few rows as possible.
 //
 // Two properties are in tension here and both matter.
@@ -1490,12 +1522,18 @@ DbResult SchemaSyncUpstreamHelper::MirrorTables(ECDbR conn, StringList const& ta
 }
 
 //---------------------------------------------------------------------------------------
-// Copies the closure, table by table.
+// Brings the closure's rows into line with the sync db, table by table.
 //
-// Two things are deliberately absent:
-//   - Deletes. Scope for now is additive (new classes, new properties), so a row that exists here
-//     but not in the sync db is left alone rather than assumed removed.
-//   - ec_cache_*. Those are derived, and SchemaSync::UpdateDbSchema rebuilds them afterwards.
+// Two passes, children first then parents, the same shape MirrorTables uses in the other direction:
+// remove rows the sync db no longer has, then upsert everything it does.
+//
+// The delete pass rests on the sync db being a superset of the briefcase within the closure - every
+// ec_ row a sync-enabled file holds came from there - so a row inside the closure that the sync db
+// lacks was deleted there rather than created here. Its scope clause is evaluated against the
+// briefcase, which is why the predicates that reach through another table need a second version.
+//
+// ec_cache_* is left out of both passes. Those are derived, and SchemaSync::UpdateDbSchema rebuilds
+// them afterwards.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf8CP targetAlias) {
@@ -1513,61 +1551,105 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
     // Custom attributes hang off a polymorphic container, so the predicate has to branch on
     // ContainerType. Note the container of a relationship-constraint CA is the constraint row, not
     // the relationship class.
-    const auto caFilter = Utf8String{SqlPrintfString(
-        "(ContainerType = %d AND ContainerId IN %s) OR "
-        "(ContainerType = %d AND ContainerId IN %s) OR "
-        "(ContainerType = %d AND ContainerId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)) OR "
-        "(ContainerType IN (%d,%d) AND ContainerId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s))",
-        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, inSchemas.c_str(),
-        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, inClasses.c_str(),
-        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property, syncAlias, inClasses.c_str(),
-        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint,
-        (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint,
-        syncAlias, inClasses.c_str()).GetUtf8CP()};
+    const auto caFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString(
+            "(ContainerType = %d AND ContainerId IN %s) OR "
+            "(ContainerType = %d AND ContainerId IN %s) OR "
+            "(ContainerType = %d AND ContainerId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)) OR "
+            "(ContainerType IN (%d,%d) AND ContainerId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s))",
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, inSchemas.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, inClasses.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property, alias, inClasses.c_str(),
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint,
+            (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint,
+            alias, inClasses.c_str()).GetUtf8CP()};
+    };
+    const auto compositeUnitFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("FormatId IN (SELECT Id FROM [%s].ec_Format WHERE SchemaId IN %s)", alias, inSchemas.c_str()).GetUtf8CP()};
+    };
+    const auto propertyPathFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("RootPropertyId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)", alias, inClasses.c_str()).GetUtf8CP()};
+    };
+    const auto constraintClassFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("ConstraintId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s)", alias, inClasses.c_str()).GetUtf8CP()};
+    };
+    const auto ownedIndexes = Utf8String{SqlPrintfString("TableId IN %s AND (ClassId IS NULL OR ClassId IN %s)", inTables.c_str(), inClasses.c_str()).GetUtf8CP()};
+    const auto indexColumnFilter = [&](Utf8CP alias) {
+        return Utf8String{SqlPrintfString("IndexId IN (SELECT Id FROM [%s].ec_Index WHERE %s)", alias, ownedIndexes.c_str()).GetUtf8CP()};
+    };
+
+    const auto bySchema = Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()};
+    const auto byClass = Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()};
 
     // Ordered so that a row's parents land before it does. Foreign keys are deferred anyway, but
-    // keeping the order honest makes failures easier to read.
-    const bvector<bpair<Utf8String, Utf8String>> plan {
-        { "ec_Schema",                    Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_SchemaReference",           Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_Class",                     Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_ClassHasBaseClasses",       Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
-        { "ec_Enumeration",               Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_UnitSystem",                Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_Phenomenon",                Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_Unit",                      Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_Format",                    Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_FormatCompositeUnit",       Utf8String{SqlPrintfString("FormatId IN (SELECT Id FROM [%s].ec_Format WHERE SchemaId IN %s)", syncAlias, inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_KindOfQuantity",            Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_PropertyCategory",          Utf8String{SqlPrintfString("SchemaId IN %s", inSchemas.c_str()).GetUtf8CP()} },
-        { "ec_Property",                  Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
-        { "ec_PropertyPath",              Utf8String{SqlPrintfString("RootPropertyId IN (SELECT Id FROM [%s].ec_Property WHERE ClassId IN %s)", syncAlias, inClasses.c_str()).GetUtf8CP()} },
-        { "ec_RelationshipConstraint",    Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
-        { "ec_RelationshipConstraintClass", Utf8String{SqlPrintfString("ConstraintId IN (SELECT Id FROM [%s].ec_RelationshipConstraint WHERE RelationshipClassId IN %s)", syncAlias, inClasses.c_str()).GetUtf8CP()} },
-        { "ec_CustomAttribute",           caFilter },
-        { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()} },
-        { "ec_Column",                    Utf8String{SqlPrintfString("Id IN %s", inColumns.c_str()).GetUtf8CP()} },
-        { "ec_ClassMap",                  Utf8String{SqlPrintfString("ClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
-        { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()} },
-        { "ec_Index",                     Utf8String{SqlPrintfString("TableId IN %s AND (ClassId IS NULL OR ClassId IN %s)", inTables.c_str(), inClasses.c_str()).GetUtf8CP()} },
-        { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND IndexId IN (SELECT Id FROM [%s].ec_Index WHERE TableId IN %s AND (ClassId IS NULL OR ClassId IN %s))", inColumns.c_str(), syncAlias, inTables.c_str(), inClasses.c_str()).GetUtf8CP()} },
+    // keeping the order honest makes failures easier to read; the delete pass walks it backwards.
+    // An empty delete scope means the table cannot lose rows on this path.
+    struct TablePlan { Utf8CP table; Utf8String copyWhere; Utf8String deleteScope; };
+    const bvector<TablePlan> plan {
+        { "ec_Schema",                    Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("Id IN %s", inSchemas.c_str()).GetUtf8CP()} },
+        { "ec_SchemaReference",           bySchema, bySchema },
+        { "ec_Class",                     bySchema, bySchema },
+        { "ec_ClassHasBaseClasses",       byClass, byClass },
+        { "ec_Enumeration",               bySchema, bySchema },
+        { "ec_UnitSystem",                bySchema, bySchema },
+        { "ec_Phenomenon",                bySchema, bySchema },
+        { "ec_Unit",                      bySchema, bySchema },
+        { "ec_Format",                    bySchema, bySchema },
+        { "ec_FormatCompositeUnit",       compositeUnitFilter(syncAlias), compositeUnitFilter(targetAlias) },
+        { "ec_KindOfQuantity",            bySchema, bySchema },
+        { "ec_PropertyCategory",          bySchema, bySchema },
+        { "ec_Property",                  byClass, byClass },
+        { "ec_PropertyPath",              propertyPathFilter(syncAlias), propertyPathFilter(targetAlias) },
+        { "ec_RelationshipConstraint",    Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("RelationshipClassId IN %s", inClasses.c_str()).GetUtf8CP()} },
+        { "ec_RelationshipConstraintClass", constraintClassFilter(syncAlias), constraintClassFilter(targetAlias) },
+        { "ec_CustomAttribute",           caFilter(syncAlias), caFilter(targetAlias) },
+        // A table only disappears when the class that owned it does, which the update path refuses,
+        // and a table the sync db dropped is not in the closure to begin with.
+        { "ec_Table",                     Utf8String{SqlPrintfString("Id IN %s", inTables.c_str()).GetUtf8CP()}, Utf8String{} },
+        // Scoped by table rather than by the closure's column ids, because a column the sync db
+        // deleted is not among them.
+        { "ec_Column",                    Utf8String{SqlPrintfString("Id IN %s", inColumns.c_str()).GetUtf8CP()}, Utf8String{SqlPrintfString("TableId IN %s", inTables.c_str()).GetUtf8CP()} },
+        { "ec_ClassMap",                  byClass, byClass },
+        { "ec_PropertyMap",               Utf8String{SqlPrintfString("ClassId IN %s AND ColumnId IN %s", inClasses.c_str(), inColumns.c_str()).GetUtf8CP()}, byClass },
+        { "ec_Index",                     ownedIndexes, ownedIndexes },
+        { "ec_IndexColumn",               Utf8String{SqlPrintfString("ColumnId IN %s AND %s", inColumns.c_str(), indexColumnFilter(syncAlias).c_str()).GetUtf8CP()}, indexColumnFilter(targetAlias) },
     };
+
+    int64_t deleted = 0;
+    Utf8String deletedDetail;
+    for (auto entry = plan.rbegin(); entry != plan.rend(); ++entry) {
+        if (entry->deleteScope.empty())
+            continue;
+
+        rc = DeleteMissing(conn, entry->table, syncAlias, targetAlias, entry->deleteScope.c_str());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SchemaSyncUpstreamHelper::CopyClosure(): Failed to delete stale rows from %s.", entry->table);
+            return rc;
+        }
+        const auto affected = conn.GetModifiedRowCount();
+        if (affected > 0) {
+            deleted += affected;
+            deletedDetail.append(SqlPrintfString(" %s=%d", entry->table, affected).GetUtf8CP());
+        }
+    }
 
     int64_t copied = 0;
     Utf8String detail;
     for (auto const& entry : plan) {
-        rc = UpsertFiltered(conn, entry.first.c_str(), syncAlias, targetAlias, entry.second.c_str());
+        rc = UpsertFiltered(conn, entry.table, syncAlias, targetAlias, entry.copyWhere.c_str());
         if (rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncUpstreamHelper::CopyClosure(): Failed on table %s.", entry.first.c_str());
+            LOG.errorv("SchemaSyncUpstreamHelper::CopyClosure(): Failed on table %s.", entry.table);
             return rc;
         }
         const auto affected = conn.GetModifiedRowCount();
         if (affected > 0) {
             copied += affected;
-            detail.append(SqlPrintfString(" %s=%d", entry.first.c_str(), affected).GetUtf8CP());
+            detail.append(SqlPrintfString(" %s=%d", entry.table, affected).GetUtf8CP());
         }
     }
 
+    if (deleted > 0)
+        SS_TRACE("adopt deleted %lld stale rows:%s", (long long)deleted, deletedDetail.c_str());
     SS_TRACE("adopt copied %lld rows from the sync db:%s", (long long)copied, detail.c_str());
     return BE_SQLITE_OK;
 }
@@ -1619,6 +1701,14 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return status;
     };
+
+    // The ordinary import path drops these too - they render the old mapping and are never
+    // recreated automatically.
+    if (SUCCESS != ViewGenerator::DropECClassViews(m_conn)) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to drop ECClass views.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
 
     BeginModifiedRowCount();
     rc = SchemaSyncUpstreamHelper::BuildClosure(m_conn, SchemaSyncHelper::ALIAS_SYNC_DB, schemaNames);
