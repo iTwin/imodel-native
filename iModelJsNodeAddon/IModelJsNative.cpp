@@ -2401,7 +2401,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
 
-    // Materialise the physical tables and indexes the ec_ rows imply. Under SchemaSync v2 a
+    // Materialise the physical tables and indexes the ec_ rows imply. A schema-sync-enabled
     // briefcase that merged somebody else's schema changeset holds the rows but not the columns,
     // because neither the changeset nor the adopt step carries DDL.
     void SchemaSyncUpdateDbSchema(NapiInfoCR info) {

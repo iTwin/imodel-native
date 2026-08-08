@@ -11,9 +11,10 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 /**
- * SchemaSync "upstream" (v2) spike tests.
+ * SchemaSync "upstream" spike tests.
  *
- * The v2 design inverts v1's direction: a schema import runs in the sync db FIRST, which decides ids
+ * The upstream flow inverts the direction of pull and push: a schema import runs in the sync db
+ * FIRST, which decides ids
  * and physical layout exactly once, and the briefcase then adopts that answer instead of computing
  * its own. These tests establish whether the two premises that design rests on actually hold:
  *
@@ -148,7 +149,7 @@ void ReportRowDifferences(ECDbR actual, ECDbR expected, Utf8CP table, Utf8CP con
 // Compares every ec_ table between two files and reports, per table, where they differ. The point is
 // diagnostic: a single failing run should say WHICH filter rule is wrong, not merely that some hash
 // did not match. ec_cache_* is skipped - it is derived and rebuilt locally.
-void ExpectEcTablesIdentical(ECDbR actual, ECDbR expected, Utf8CP context) {
+void ExpectECTablesIdentical(ECDbR actual, ECDbR expected, Utf8CP context) {
     bvector<Utf8String> tables;
     Statement tableStmt;
     ASSERT_EQ(BE_SQLITE_OK, tableStmt.Prepare(expected, "SELECT name FROM main.sqlite_master WHERE type='table' AND name LIKE 'ec\\_%' ESCAPE '\\' AND name NOT LIKE 'ec\\_cache\\_%' ESCAPE '\\' ORDER BY name"));
@@ -229,8 +230,8 @@ SchemaItem TankSchema() {
         </ECSchema>)xml");
 }
 
-// Runs one import through the sync db and adopts the result - the two steps of the v2 flow, which
-// the real front door will eventually perform under a single container lock.
+// Runs one import through the sync db and adopts the result - the two steps of the upstream flow,
+// which the real front door will eventually perform under a single container lock.
 void ImportUpstream(TrackedECDb& briefcase, SchemaSyncDb& syncDb, std::vector<SchemaItem> const& schemas, bvector<Utf8String> const& adopt) {
     syncDb.WithReadWrite([&](ECDbR sync) {
         ASSERT_EQ(SchemaImportResult::OK, SchemaSyncTestFixture::ImportSchemas(sync, schemas, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables));
@@ -241,7 +242,7 @@ void ImportUpstream(TrackedECDb& briefcase, SchemaSyncDb& syncDb, std::vector<Sc
 }
 
 // After merging someone else's schema changeset, a briefcase holds the ec_ rows but not the physical
-// columns: adopt deliberately does not track DDL, exactly as v1's pull does not, so every briefcase
+// columns: adopt deliberately does not track DDL, exactly as a pull does not, so every briefcase
 // derives its own. This stands in for the post-merge hook the backend runs in the real system.
 void MaterializeAfterMerge(TrackedECDb& db) {
     ASSERT_EQ(SchemaSync::Status::OK, db.Schemas().GetSchemaSync().UpdateDbSchema());
@@ -441,7 +442,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportRunsInsideSyncDb)
 
         // The import that the whole design depends on.
         ASSERT_EQ(SchemaImportResult::OK, ImportSchema(sync, SharedColumnSchema(), SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables))
-            << "importing into the sync db failed - the v2 design does not survive this";
+            << "importing into the sync db failed - the design does not survive this";
         ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
 
         // The schema is really there, as metadata.
@@ -465,7 +466,8 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportRunsInsideSyncDb)
 // ---------------------------------------------------------------------------------------
 // N1 spike, part 2: does the sync db's mapper reach the same answer as a briefcase's?
 //
-// This is the load-bearing assumption of v2. Both files start from the same ec_* state (Init pushed
+// This is the load-bearing assumption of the whole approach. Both files start from the same ec_*
+// state (Init pushed
 // the briefcase's rows into the sync db), so if the mapper is a pure function of that state plus the
 // incoming schema, both must produce identical ec_* content. The ecdb_schema checksum covers the
 // logical rows; ecdb_map covers ids, tables, columns and property maps - the decisions we intend to
@@ -638,12 +640,12 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptMakesBriefcaseMatchSyncDb)
     ASSERT_TRUE(HasSchema(*b2, "UpstreamTest"));
 
     syncDb.WithReadOnly([&](ECDbR sync) {
-        ExpectEcTablesIdentical(*b2, sync, "after adopting the only new schema");
+        ExpectECTablesIdentical(*b2, sync, "after adopting the only new schema");
     });
     }
 
 // ---------------------------------------------------------------------------------------
-// The filtering oracle, and the reason v2 filters at all.
+// The filtering oracle, and the reason adopt filters at all.
 //
 // Two schemas land in the sync db; the briefcase asks for one. The other must not appear - it stands
 // for a schema some other briefcase imported and has not pushed yet, which has no business showing
@@ -718,7 +720,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptPullsReferencedSchemas)
     EXPECT_TRUE(ForeignkeyCheck(*b2));
 
     syncDb.WithReadOnly([&](ECDbR sync) {
-        ExpectEcTablesIdentical(*b2, sync, "after adopting a schema plus its reference");
+        ExpectECTablesIdentical(*b2, sync, "after adopting a schema plus its reference");
     });
     }
 
@@ -771,7 +773,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptedSchemaAcceptsData)
     }
 
 //=======================================================================================
-// Does v2 actually fix the failures that killed the earlier designs?
+// Does the upstream flow actually fix the failures that killed the earlier designs?
 //
 // The reservation design failed on three concurrent-import cases (issue 2192). These tests take the
 // two that a mapping authority is supposed to fix and check that it does. They use no new production
@@ -840,8 +842,8 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
 
     // b2 holds both changes already - its own DemoB and, through the closure, b1's still-unpushed
     // Machinery 1.0.1 - so the allocation can be judged here, before any changeset traffic. That
-    // matters: the allocation is the thing v2 changes, and it is settled the moment the sync db
-    // decides it.
+    // matters: where the allocation is made is the thing that changed, and it is settled the moment
+    // the sync db decides it.
     for (auto* db : { b2.get() }) {
         const auto ratingCol = ColumnOf(*db, "Machinery", "Machine", "rating");
         const auto volumeCol = ColumnOf(*db, "DemoB", "Tank", "volume");
@@ -849,7 +851,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
         EXPECT_FALSE(volumeCol.empty()) << "volume is not mapped";
         EXPECT_STRNE(ratingCol.c_str(), volumeCol.c_str())
             << "rating and volume were double-booked into the same shared column - this is the "
-               "silent corruption v2 exists to prevent";
+               "silent corruption the sync db exists to prevent";
     }
 
     // And the data has to behave: writing one property must not be readable as the other.
@@ -881,8 +883,8 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
 // ec_Column -1 (volume), while ec_Schema and ec_Class stayed level because those rows were deleted
 // and immediately re-created.
 //
-// Under v1 that was an edge case, because each briefcase allocated its own ids and rarely held rows
-// byte-identical to someone else's. Under v2 every briefcase gets its rows from the same authority,
+// When each briefcase allocated its own ids that was an edge case, because two of them rarely held
+// byte-identical rows. Now that every briefcase gets its rows from the same authority,
 // so receiving a changeset full of rows you already hold is the ordinary path - which is what makes
 // the conflict policy a correctness concern rather than a tuning detail.
 // @bsitest
@@ -913,9 +915,9 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsConvergeAfterExchange)
     b1->PullMergePush("b1 merges tank");
     MaterializeAfterMerge(*b1);
 
-    ExpectEcTablesIdentical(*b2, *b1, "after both briefcases exchanged changesets");
+    ExpectECTablesIdentical(*b2, *b1, "after both briefcases exchanged changesets");
     syncDb.WithReadOnly([&](ECDbR sync) {
-        ExpectEcTablesIdentical(*b1, sync, "briefcase vs sync db after convergence");
+        ExpectECTablesIdentical(*b1, sync, "briefcase vs sync db after convergence");
     });
     }
 
@@ -970,7 +972,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesConflictingPropertyType)
     }
 
 // ---------------------------------------------------------------------------------------
-// The remap gate, which v2 relies on to keep the update path additive.
+// The remap gate, which keeps the update path additive.
 //
 // Step 1 runs with data transforms disallowed, so anything that would move existing data has to be
 // refused here and routed to the upgrade front door instead. If this ever silently succeeded, the
@@ -1078,7 +1080,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesImportNeedingDataTransform)
 //
 // Everything above drives the two steps by hand. SchemaSync::ImportSchemas is the single call that
 // does both: run the import in the sync db, then adopt the result here. The caller holds the
-// container write lock around the whole call, exactly as it does for a v1 import. These tests are
+// container write lock around the whole call, exactly as it does for an ordinary import. These tests are
 // about that call - the steps themselves are already covered.
 //=======================================================================================
 
@@ -1102,7 +1104,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasDoesBothSteps)
     EXPECT_TRUE(HasSchema(*b2, "UpstreamTest")) << "the briefcase did not adopt what it imported";
     syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_TRUE(HasSchema(sync, "UpstreamTest")) << "the sync db did not receive the import";
-        ExpectEcTablesIdentical(*b2, sync, "after a single ImportSchemas call");
+        ExpectECTablesIdentical(*b2, sync, "after a single ImportSchemas call");
     });
 
     // And the result has to be a working file, not merely a consistent-looking one.
@@ -1120,8 +1122,8 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasDoesBothSteps)
 //
 // Every other test here starts from an empty briefcase, so its sync db describes no tables it does
 // not have. A real iModel is the opposite: Init mirrors the whole ec_ mirror into the sync db and
-// then drops the data tables, which under v1 was harmless because nothing ever imported there.
-// Under v2 the import runs in the sync db, and DbMapValidator refuses one outright the moment it
+// then drops the data tables, which was harmless while nothing ever imported there.
+// Now that the import runs in the sync db, DbMapValidator refuses one outright the moment it
 // loads a table describing a non-virtual column the file lacks - which CreateOrUpdateIndexesInDb
 // does for every table that has an index, after the point where the columns would have been added.
 //
@@ -1144,7 +1146,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasWorksOnASyncDbInitialisedFrom
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     b1->PullMergePush("init schema sync");
 
-    // The sync db now describes ut_Base and, if Init left it as v1 does, does not have it.
+    // The sync db now describes ut_Base and, as Init leaves it, does not have it.
     const auto schemas = LoadSchemas(*b1, { UnrelatedSchema() });
     ASSERT_TRUE(schemas.IsValid());
 
@@ -1294,8 +1296,8 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasRefusesDataTransform)
 // Instances that already existed when a class grew into an overflow table.
 //
 // A normal import ends by giving every existing instance a matching row in any overflow table it
-// just created - otherwise a write to a property that landed there has nowhere to go. Under v2 that
-// step runs in the sync db, which holds no data, so it does nothing; and adopt only materialises
+// just created - otherwise a write to a property that landed there has nowhere to go. That step now
+// runs in the sync db, which holds no data, so it does nothing; and adopt only materialises
 // tables and indexes. The importing briefcase's own instances therefore have to be caught up here,
 // or they silently drop writes to every property that spilled over.
 //
@@ -1422,9 +1424,9 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge
     b1->PullMergePush("b1 merges tank");
     MaterializeAfterMerge(*b1);
 
-    ExpectEcTablesIdentical(*b2, *b1, "after both briefcases exchanged changesets");
+    ExpectECTablesIdentical(*b2, *b1, "after both briefcases exchanged changesets");
     syncDb.WithReadOnly([&](ECDbR sync) {
-        ExpectEcTablesIdentical(*b1, sync, "briefcase vs sync db after convergence");
+        ExpectECTablesIdentical(*b1, sync, "briefcase vs sync db after convergence");
     });
     }
 
@@ -1497,7 +1499,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb
     // The sync db was written from the briefcase, so the two must now say exactly the same thing.
     syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_STREQ("1.0.1", VersionOf(sync, "RemapTest").c_str()) << "the sync db did not receive the upgrade";
-        ExpectEcTablesIdentical(*b2, sync, "briefcase vs sync db after an upgrade");
+        ExpectECTablesIdentical(*b2, sync, "briefcase vs sync db after an upgrade");
     });
     }
 
@@ -1549,7 +1551,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
         EXPECT_FALSE(HasSchema(sync, "UnrelatedTest"))
             << "abandoned rows survived the overwrite, so the sync db still describes a schema nobody has";
         EXPECT_STREQ("1.0.1", VersionOf(sync, "RemapTest").c_str());
-        ExpectEcTablesIdentical(*b2, sync, "briefcase vs sync db after the overwrite");
+        ExpectECTablesIdentical(*b2, sync, "briefcase vs sync db after the overwrite");
     });
 
     // And the sync db is still usable as the authority afterwards: the next additive import runs
@@ -1560,7 +1562,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
     EXPECT_TRUE(HasSchema(*b2, "UnrelatedTest"));
     syncDb.WithReadOnly([&](ECDbR sync) {
-        ExpectEcTablesIdentical(*b2, sync, "briefcase vs sync db after re-importing over reclaimed state");
+        ExpectECTablesIdentical(*b2, sync, "briefcase vs sync db after re-importing over reclaimed state");
     });
     }
 
@@ -1571,11 +1573,11 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
 // ---------------------------------------------------------------------------------------
 // Neither entry point runs while the two files are on different EC profile versions.
 //
-// v1 tolerates skew in one direction depending on whether it is pulling or pushing. v2 cannot: one
-// file decides the mapping and the other adopts it, so a version difference means they could map
+// Pull and push each tolerate skew in one direction. Deciding the mapping in one file and adopting
+// it in the other cannot: a version difference means they could map
 // the same schema differently. Aligning them is a maintenance-mode job.
 //
-// The two cases use opposite skew directions on purpose. v1's VerifySyncDb already refuses the
+// The two cases use opposite skew directions on purpose. VerifySyncDb already refuses the
 // other direction for each call, with a less specific error, so this is where the new guard is the
 // one doing the work.
 // @bsitest
@@ -1591,7 +1593,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
         });
     };
 
-    // ImportSchemas adopts from the sync db, so v1 lets the sync db be ahead. The guard does not.
+    // ImportSchemas adopts from the sync db, so VerifySyncDb lets the sync db be ahead. The guard does not.
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-profile-skew-import");
@@ -1606,7 +1608,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
     EXPECT_FALSE(HasSchema(*b2, "UpstreamTest")) << "the import was refused but still changed the briefcase";
     }
 
-    // UpgradeSchemas writes to the sync db, so v1 lets the sync db be behind. The guard does not.
+    // UpgradeSchemas writes to the sync db, so VerifySyncDb lets the sync db be behind. The guard does not.
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-profile-skew-upgrade");
@@ -1625,7 +1627,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
 // ---------------------------------------------------------------------------------------
 // The old import path refuses a data-moving change on a file that uses schema sync.
 //
-// v1 did not refuse it, which is not the same as supporting it: the data moves in the local
+// It used not to be refused, which is not the same as being supported: the data moves in the local
 // briefcase and only the resulting ec_ rows reach the sync db, so every other briefcase adopts the
 // new layout with its data still in the old columns. That is what the upgrade path exists to fix.
 // @bsitest
@@ -1645,7 +1647,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, PlainImportRoutesByTransformOption)
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
     syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_TRUE(HasSchema(sync, "RemapTest")) << "the additive path did not go through the sync db";
-        ExpectEcTablesIdentical(*b2, sync, "after an additive import through the ordinary path");
+        ExpectECTablesIdentical(*b2, sync, "after an additive import through the ordinary path");
     });
 
     // Still no option, but the change moves data: refused, and the caller is told why so it can
@@ -1661,7 +1663,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, PlainImportRoutesByTransformOption)
     EXPECT_STREQ("1.0.1", VersionOf(*b2, "RemapTest").c_str());
     syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_STREQ("1.0.1", VersionOf(sync, "RemapTest").c_str()) << "the sync db was not rebuilt from the upgraded briefcase";
-        ExpectEcTablesIdentical(*b2, sync, "after an upgrade through the ordinary path");
+        ExpectECTablesIdentical(*b2, sync, "after an upgrade through the ordinary path");
     });
     }
 
@@ -1672,7 +1674,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, PlainImportRoutesByTransformOption)
 // gets the new layout from the changeset and the data movement with it, so the question is whether
 // rows written *before* the upgrade, in a briefcase that did not perform it, still read back. This
 // is the cross-briefcase half of the upgrade path, and the reason data transforms were never safe
-// under v1.
+// while every briefcase decided its own layout.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncUpstreamTestFixture, RemapInOneBriefcaseSurvivesInTheOther)
@@ -1720,9 +1722,9 @@ TEST_F(SchemaSyncUpstreamTestFixture, RemapInOneBriefcaseSurvivesInTheOther)
     EXPECT_STREQ("before the move", ReadStringProperty(*b2, "SELECT movingProp FROM rmp.LeafB").c_str())
         << "a briefcase that only pulled the remap cannot read data written before it";
 
-    ExpectEcTablesIdentical(*b2, *b1, "after the remap reached the second briefcase");
+    ExpectECTablesIdentical(*b2, *b1, "after the remap reached the second briefcase");
     syncDb.WithReadOnly([&](ECDbR sync) {
-        ExpectEcTablesIdentical(*b1, sync, "briefcase vs sync db after a remap");
+        ExpectECTablesIdentical(*b1, sync, "briefcase vs sync db after a remap");
     });
 
     // And the file still works afterwards, in both.

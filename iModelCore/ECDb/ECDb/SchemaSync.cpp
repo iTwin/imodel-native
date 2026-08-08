@@ -9,10 +9,10 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-// TEMPORARY - schema sync "upstream" (v2) tracing, to be deleted before this ships.
+// TEMPORARY - tracing for the "upstream" schema sync flow, to be deleted before this ships.
 //
-// Prints one line per phase, never per row, so a whole test run stays readable. Everything it
-// covers is new v2 code; nothing in v1 traces. To remove: set the switch to 0 to silence it, or
+// Prints one line per phase, never per row, so a whole test run stays readable. Only the upstream
+// flow traces; the pull/push path does not. To remove: set the switch to 0 to silence it, or
 // delete this block and every SS_TRACE( line in the file - they are all one-liners with no other
 // side effects, so nothing else has to change.
 //+===============+===============+===============+===============+===============+======
@@ -673,10 +673,9 @@ Utf8String SchemaSync::GetStatusAsString(Status status) {
 }
 
 //---------------------------------------------------------------------------------------
-// v1 tolerates profile skew in one direction, depending on whether it is pulling or pushing. v2
-// cannot: the import runs in one file and its result is adopted by the other, so a difference in
-// profile version means the two could map the same schema differently. Nothing may move until they
-// are aligned, which is a maintenance-mode job.
+// Pull and push each tolerate profile skew in one direction. Deciding the mapping in one file and
+// adopting it in the other cannot: a difference in profile version means the two could map the same
+// schema differently. Nothing may move until they are aligned, which is a maintenance-mode job.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::VerifyProfileVersionsMatch(SyncDbUri const& syncDbUri) const {
@@ -1406,8 +1405,8 @@ DbResult SchemaSyncUpstreamHelper::DeleteMissing(ECDbR conn, Utf8CP tableName, U
 // conflict target. An upgrade can give the same logical row a different id, so an incoming row can
 // collide with a surviving target row on one of the ec_ tables' unique indexes rather than on the
 // primary key - ec_PropertyMap has UNIQUE(ClassId, PropertyPathId, ColumnId) - and the update then
-// rewrites that surviving row instead of inserting a new one. v1 never meets this because both
-// sides evolve in lockstep.
+// rewrites that surviving row instead of inserting a new one. Pull and push never meet this because
+// both sides evolve in lockstep.
 //
 // Efficiency rules out the blunt fix of emptying every table and refilling it. The sync db lives in
 // a CloudSqlite container with 64 KiB blocks, and every other client caches those blocks; rewriting
@@ -1733,8 +1732,8 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     }
     EndModifiedRowCount();
 
-    // Materialise the physical tables and indexes the adopted rows imply. This is the same step the
-    // v1 pull ends with, and it is why no DDL has to travel between the two files.
+    // Materialise the physical tables and indexes the adopted rows imply. This is the same step a
+    // pull ends with, and it is why no DDL has to travel between the two files.
     const auto updateRc = UpdateDbSchema();
     if (updateRc != Status::OK) {
         LOG.error("SchemaSync::AdoptSchemas(): Failed to update db schema.");
@@ -1873,7 +1872,7 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
     }
 
     // The caller holds the container write lock for this whole call, so the data version cannot have
-    // moved. Checking it anyway is v1's backstop against somebody writing without the lock.
+    // moved. Checking it anyway backstops against somebody writing without the lock.
     if (SyncDbInfo::From(syncConn).GetDataVersion() != dataVerBeforeImport) {
         LOG.error("SchemaSync::ImportSchemas(): The sync db was written to during the import, which means it was written to without the lock.");
         syncConn.AbandonChanges();
@@ -1920,7 +1919,7 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
     // is about to be thrown away anyway.
     //
     // The ordinary upgrade, run locally and unmodified. Schema sync is switched off for it so that
-    // v1's pull/push hooks stay out of the way: a pull would drag in exactly the abandoned rows we
+    // the pull/push hooks stay out of the way: a pull would drag in exactly the abandoned rows we
     // are about to delete, and a push would refuse on the data version.
     SchemaImportResult importRc = SchemaImportResult::ERROR;
         {
@@ -1959,7 +1958,7 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
 //---------------------------------------------------------------------------------------
 // Replace the sync db's ec_ rows with this briefcase's.
 //
-// This is v1's push without its "am I level with the sync db" precondition, which is the whole
+// This is a push without its "am I level with the sync db" precondition, which is the whole
 // point: the sync db may hold rows from an import that was never pushed, and those are what we
 // want gone. The copy itself is a differential mirror rather than an upsert - see MirrorTables.
 // @bsimethod

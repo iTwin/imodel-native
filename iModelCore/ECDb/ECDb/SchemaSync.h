@@ -42,10 +42,11 @@ struct SchemaSyncHelper final {
 };
 
 //=======================================================================================
-//! Helpers for the "upstream" schema sync flow (SchemaSync v2).
+//! Helpers for the "upstream" schema sync flow.
 //!
-//! v1 is symmetric: the briefcase decides ids and physical layout, then mirrors every ec_ table
-//! into the sync db, and every other briefcase mirrors the whole thing back. v2 inverts that. The
+//! Pull and push are symmetric: the briefcase decides ids and physical layout, then mirrors every
+//! ec_ table into the sync db, and every other briefcase mirrors the whole thing back. The upstream
+//! flow inverts that. The
 //! import runs in the sync db, which decides ids and layout exactly once, and a briefcase then
 //! adopts only the rows belonging to the schemas it asked for plus their transitive reference
 //! closure. Everything else in the sync db - typically schemas another briefcase imported but has

@@ -572,7 +572,7 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
 // If it stays disabled: delete it, together with its declaration in DbSchema.h.
 // Note it only works for a table that already exists in the file, since it reads
 // pragma foreign_key_list. It cannot recover the foreign keys of a table ECDb is about to
-// create - which is the case SchemaSync v2 needs.
+// create - which is the case a briefcase adopting rows from the sync db needs.
 #if 0
 BentleyStatus DbSchema::LoadTableForeignKeyListFromSqliteSchema(DbTable& table) const {
     /*

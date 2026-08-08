@@ -153,7 +153,7 @@ public:
     ECDB_EXPORT Status Push(SyncDbUri const&);
     //! Adopt the given schemas, and everything they transitively reference, from the sync db.
     //!
-    //! This is step 2 of the "upstream" flow (SchemaSync v2): the import has already run in the sync
+    //! This is step 2 of the "upstream" flow: the import has already run in the sync
     //! db, which decided ids and physical layout, and this connection now takes that answer over
     //! instead of computing its own. Unlike Pull, which mirrors the sync db wholesale, this copies
     //! only the rows belonging to @p schemaNames and their reference closure - so schemas another
@@ -164,7 +164,7 @@ public:
     //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
     //! @note Additive only: rows that exist locally but no longer exist in the sync db are left alone.
     ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames);
-    //! Import schemas the "upstream" way (SchemaSync v2): decide once in the sync db, then adopt.
+    //! Import schemas the "upstream" way: decide once in the sync db, then adopt.
     //!
     //! The two steps this performs are:
     //!   1. Import @p schemaXmlFiles into the sync db. That import is the ordinary one, unmodified,
@@ -182,7 +182,7 @@ public:
     //! @return ERROR_DATA_TRANSFORM_REQUIRED if the change would have to move data - that belongs on
     //!         the upgrade path, not here.
     //! @note The caller must hold the sync db's container write lock for the duration of this call,
-    //!       as it does for v1's import. Additive only, and this does not push the resulting
+    //!       as it does for an ordinary import. Additive only, and this does not push the resulting
     //!       changeset; that is the caller's job.
     ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas);
     //! Upgrade schemas whose import has to move data, which ImportSchemas refuses to do.
