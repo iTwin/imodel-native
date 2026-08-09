@@ -3,7 +3,14 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "iModelConsole.h"
+
+#include <fstream>
+#include <random>
+#include <sstream>
+#include <ctime>
+
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeThread.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -165,19 +172,22 @@ bool SessionFile::IsAttached(Utf8StringCR tableSpaceName) const
 //---------------------------------------------------------------------------------------
 //static
 IModelConsole* IModelConsole::s_singleton = new IModelConsole();
+std::mutex IModelConsole::s_consoleMutex;
+
+WString GenerateUniqueTempDir() {
+    std::wostringstream woss;
+    woss << L"imodel_fuzzing_temp_" << std::time(nullptr) << L"_" << std::rand();
+    return WString(woss.str().c_str());
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void IModelConsole::Setup()
     {
-    WriteLine(" --------------------------------------------------------------------------- ");
-    WriteLine(" iModelConsole v1.0");
-    WriteLine(" Copyright (c) Bentley Systems. All rights reserved. www.Bentley.com.");
-    WriteLine(" ----------------------------------------------------------------------------");
-    WriteLine();
-    WriteLine("    .help for help, .exit to exit program");
-    WriteLine();
+    // WriteLine(" --------------------------------------------------------------------------- ");
+    // WriteLine(" iModelConsole Harness For Fuzzer v1.0");
+    // WriteLine(" ----------------------------------------------------------------------------");
     auto helpCommand = std::make_shared<HelpCommand>(m_commands);
     AddCommand(helpCommand);
     AddCommand(".h", helpCommand); //add same command with alternative command name
@@ -244,6 +254,120 @@ int IModelConsole::Run(int argc, WCharCP argv[])
         }
 
     return WaitForUserInput();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BeFileName IModelConsole::CreateTempDirectory()
+    {
+    BeFileName tempDir;
+    Desktop::FileSystem::BeGetTempPath(tempDir);
+
+    // Generate a unique directory name
+    WString uniqueDirName = GenerateUniqueTempDir();
+    BeFileName tempFuzzDir = tempDir;
+    tempFuzzDir.AppendToPath(uniqueDirName.c_str());
+
+    // WriteLine("Starting fuzzing session with temporary directory: %s", tempFuzzDir.GetNameUtf8().c_str());
+
+    // Remove the directory if it already exists
+    if (tempFuzzDir.DoesPathExist())
+        {
+        // WriteLine("Removing existing temp directory: %s", tempFuzzDir.GetNameUtf8().c_str());
+        BeFileName::EmptyAndRemoveDirectory(tempFuzzDir.GetName());
+        }
+
+    // Create the directory
+    BeFileName::CreateNewDirectory(tempFuzzDir.GetName());
+    return tempFuzzDir;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void IModelConsole::CleanupTempDirectory(const BeFileName& tempDir)
+    {
+    if (tempDir.DoesPathExist())
+        {
+        // WriteLine("Cleaning up temporary directory: %s", tempDir.GetNameUtf8().c_str());
+        BeFileName::EmptyAndRemoveDirectory(tempDir.GetName());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool IModelConsole::CopyBimFile(const BeFileName& source, const BeFileName& destination)
+    {
+    if (destination.DoesPathExist())
+        {
+        // WriteLine("Deleting existing temp file: %s", destination.GetNameUtf8().c_str());
+        BeFileName::BeDeleteFile(destination.GetName());
+        }
+
+    BeFileNameStatus copyStatus = BeFileName::BeCopyFile(source, destination, false);
+    if (copyStatus != BeFileNameStatus::Success)
+        {
+        WriteErrorLine("Error: Failed to copy BIM file to temp location");
+        return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void IModelConsole::ExecuteCommands(const std::string& tempBimPath, const char* sampleBytes)
+    {
+    auto runCommand = [this](const char* commandName, const char* args) {
+        // WriteLine("Executing: %s", commandName);
+        Command const* command = GetCommand(commandName);
+        BeAssert(command != nullptr);
+        command->Run(m_session, args);
+    };
+
+    // Open the temp BIM file
+    runCommand(".open", tempBimPath.c_str());
+
+    // Run the sample command
+    runCommand(".parse", sampleBytes);
+
+    // Close the temp BIM file
+    runCommand(".close", "");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+int IModelConsole::ExecuteSampleQuery(char* bimFilePath, char* sampleBytes)
+    {
+    //Initialize iModelConsole and print out banner
+    Setup();
+
+    // Create a temporary directory
+    BeFileName tempDir = CreateTempDirectory();
+
+    // Create paths for the temp BIM file
+    BeFileName tempBimFile = tempDir;
+    tempBimFile.AppendToPath(L"temp_fuzzing.bim");
+
+    // Copy the input BIM file to the temp location
+    BeFileName sourceBimFile(bimFilePath);
+    if (!CopyBimFile(sourceBimFile, tempBimFile))
+        {
+        CleanupTempDirectory(tempDir);
+        return 1;
+        }
+
+    // Execute commands
+    ExecuteCommands(tempBimFile.GetNameUtf8(), sampleBytes);
+
+    // Clean up the temporary directory
+    CleanupTempDirectory(tempDir);
+
+    return 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -506,4 +630,8 @@ void IModelConsole::WriteErrorLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args) { vfprintf(stream, format, args); }
+void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args)
+    {
+    std::lock_guard<std::mutex> lock(s_consoleMutex); // Automatically locks and unlocks
+    vfprintf(stream, format, args);
+    }
