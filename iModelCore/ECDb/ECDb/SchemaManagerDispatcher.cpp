@@ -1147,7 +1147,7 @@ DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
             ECDbIssueId::ECDb_0280,
-            "Failed to drop ECSchemas. Cannot drop schemas from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
+            "Failed to drop ECSchemas. Cannot drop schemas from a file which was created with a higher version of this software. The current software version is %s. The file's version, however, is %s.",
             ECDb::CurrentECDbProfileVersion().ToString().c_str(),
             m_ecdb.GetECDbProfileVersion().ToString().c_str());
         return DropSchemaResult(DropSchemaResult::Status::Error);
@@ -1296,6 +1296,29 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return SchemaImportResult::ERROR;
         }
 
+    for (auto schema: schemas) {
+        if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
+            m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
+            return SchemaImportResult::ERROR;
+        }
+    }
+    // Import into new files is not supported unless it only differs in version sub2. Import into older files is only supported
+    // if the schemas to import are EC3.1 schemas. This will be checked downstream.
+    const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
+    if (majorMinorSub1Comp > 0)
+        {
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0284,
+            "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this software. The current software version is %s. The file's version, however, is %s.",
+            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
+            m_ecdb.GetECDbProfileVersion().ToString().c_str()
+        );
+        return SchemaImportResult::ERROR;
+        }
+
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
     const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
@@ -1332,8 +1355,8 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             // caller says it holds the exclusive schema lock, which is the one case where the
             // briefcase decides instead and the sync db is rebuilt from it.
             const auto syncStatus = Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)
-                ? schemaSync.UpgradeSchemas(resolvedSyncDbUri, schemas)
-                : schemaSync.ImportSchemas(resolvedSyncDbUri, schemas);
+                ? schemaSync.UpgradeSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions())
+                : schemaSync.ImportSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions());
 
             if (syncStatus == SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED)
                 return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
@@ -1352,28 +1375,6 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
 
             return SchemaImportResult::OK;
             }
-        }
-    for (auto schema: schemas) {
-        if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
-            m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
-            return SchemaImportResult::ERROR;
-        }
-    }
-    // Import into new files is not supported unless it only differs in version sub2. Import into older files is only supported
-    // if the schemas to import are EC3.1 schemas. This will be checked downstream.
-    const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
-    if (majorMinorSub1Comp > 0)
-        {
-        m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue,
-            ECDbIssueId::ECDb_0284,
-            "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
-            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
-            m_ecdb.GetECDbProfileVersion().ToString().c_str()
-        );
-        return SchemaImportResult::ERROR;
         }
 
     BeMutexHolder lock(m_mutex);
@@ -2316,11 +2317,12 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
             }
         }
 
+    // The ec_Table rows are already gone; a file with no data tables has nothing left to drop.
+    if (!ctx.MaintainsDataTables())
+        return SUCCESS;
+
     for (Utf8StringCR name : tablesToDrop)
         {
-        if (!ctx.MaintainsDataTables())
-            break;
-
         if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
             {
             BeAssert(false && "failed to drop a table");

@@ -210,7 +210,8 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     //! else means a data table leaked into it.
     static void VerifySyncDbHoldsOnlyMetadata(ECDbR syncDb, Utf8CP context);
     //! Every ec_ row the briefcase holds has to exist in the sync db with the same values. The sync
-    //! db may hold more - it is the record, the briefcase is a filtered view of it.
+    //! db may hold more - it is the record, the briefcase is a filtered view of it. Only valid
+    //! while the briefcase is level with the sync db; VerifySchemaSyncRules checks that first.
     //! Attaches the sync db, which commits, so this belongs at the end of a test.
     static void VerifyBriefcaseRowsExistInSyncDb(ECDbR briefcase, SchemaSyncDb& syncDb, Utf8CP context);
     //! PRAGMA integrity_check + foreign_key_check, to catch corruption a targeted assertion misses.

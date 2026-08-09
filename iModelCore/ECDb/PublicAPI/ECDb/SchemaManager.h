@@ -21,6 +21,24 @@ enum class SchemaChangeType {
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
 //=======================================================================================
+//! Schema import options. Not needed by regular callers. They are specific to certain
+//! exceptional workflows and therefore only used by them.
+//! Reachable as SchemaManager::SchemaImportOptions; it lives out here because SchemaSync, which
+//! is declared first, takes it.
+//! @ingroup ECDbGroup
+//+===============+===============+===============+===============+===============+======
+enum class SchemaImportOptions
+    {
+    None                                        = 0,        //! binary 0000
+    DoNotFailSchemaValidationForLegacyIssues    = 1 << 0,   //! Not needed by regular caller
+    DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
+    DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
+    AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
+    AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
+    DoNotCreateOrUpdateDataTables               = 1 << 6,   //! Maintain only the ec_ tables. For a file that holds metadata and no data, such as the schema sync db.
+    };
+
+//=======================================================================================
 //! @ingroup ECDbGroup
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -121,7 +139,7 @@ private:
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
-    Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
+    Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
     Status OverwriteSyncDb(SyncDbUri const&);
     Status VerifyProfileVersionsMatch(SyncDbUri const&) const;
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
@@ -162,12 +180,13 @@ public:
     //! Physical tables and columns are then materialised locally from the adopted rows, exactly as
     //! Pull does, so no DDL has to travel between the two files.
     //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
-    //! @note Additive only: rows that exist locally but no longer exist in the sync db are left alone.
+    //! @note Rows inside the closure that the sync db no longer has are deleted locally, since the
+    //!       sync db is the record of what those schemas look like.
     ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames);
     //! Import schemas the "upstream" way: decide once in the sync db, then adopt.
     //!
     //! The two steps this performs are:
-    //!   1. Import @p schemaXmlFiles into the sync db. That import is the ordinary one, unmodified,
+    //!   1. Import @p schemas into the sync db. That import is the ordinary one, unmodified,
     //!      and it is what decides ids, shared columns, overflow and table layout.
     //!   2. Adopt those schemas and their reference closure into this briefcase, which therefore
     //!      decides nothing itself. Other briefcases learn about the change from the changeset.
@@ -184,7 +203,7 @@ public:
     //! @note The caller must hold the sync db's container write lock for the duration of this call,
     //!       as it does for an ordinary import. Additive only, and this does not push the resulting
     //!       changeset; that is the caller's job.
-    ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas);
+    ECDB_EXPORT Status ImportSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options);
     //! Upgrade schemas whose import has to move data, which ImportSchemas refuses to do.
     //!
     //! The direction is the opposite of ImportSchemas: the import runs on this briefcase, with data
@@ -201,7 +220,7 @@ public:
     //!       lock, must be at the tip of the timeline, and must push the resulting changeset and
     //!       upload the sync db before releasing either. If the changeset is dropped after the sync
     //!       db was uploaded, the two disagree with no way back.
-    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas);
+    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
@@ -463,18 +482,7 @@ struct DropSchemaResult {
 struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
     {
     public:
-        //! Schema import options. Not needed by regular callers. They are specific to certain
-        //! exceptional workflows and therefore only used by them.
-        enum class SchemaImportOptions
-            {
-            None                                        = 0,        //! binary 0000
-            DoNotFailSchemaValidationForLegacyIssues    = 1 << 0,   //! Not needed by regular caller
-            DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
-            DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
-            AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
-            AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
-            DoNotCreateOrUpdateDataTables               = 1 << 6,   //! Maintain only the ec_ tables. For a file that holds metadata and no data, such as the schema sync db.
-            };
+        using SchemaImportOptions = BeSQLite::EC::SchemaImportOptions;
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif

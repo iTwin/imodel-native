@@ -42,19 +42,15 @@ struct SchemaSyncHelper final {
 };
 
 //=======================================================================================
-//! Helpers for the "upstream" schema sync flow.
-//!
-//! Pull and push are symmetric: the briefcase decides ids and physical layout, then mirrors every
-//! ec_ table into the sync db, and every other briefcase mirrors the whole thing back. The upstream
-//! flow inverts that. The
-//! import runs in the sync db, which decides ids and layout exactly once, and a briefcase then
-//! adopts only the rows belonging to the schemas it asked for plus their transitive reference
-//! closure. Everything else in the sync db - typically schemas another briefcase imported but has
-//! not pushed yet - stays out of the briefcase.
+//! Helpers for the "upstream" schema sync flow, which inverts pull/push: the import runs in the
+//! sync db, which decides ids and physical layout exactly once, and a briefcase then adopts only
+//! the rows belonging to the schemas it asked for plus their transitive reference closure.
+//! Everything else in the sync db - typically schemas another briefcase imported but has not pushed
+//! yet - stays out of the briefcase.
 //!
 //! The closure is computed as id sets in temp tables, and every ec_ table is then copied with a
-//! WHERE clause expressed against those sets. Doing it in two phases keeps each table's rule to a
-//! single readable predicate instead of one deeply nested query.
+//! WHERE clause expressed against those sets. Two phases so each table's rule stays a single
+//! readable predicate instead of one deeply nested query.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaSyncUpstreamHelper final {
@@ -87,14 +83,8 @@ struct SchemaSyncUpstreamHelper final {
     static DbResult DeleteMissing(ECDbR conn, Utf8CP tableName, Utf8CP sourceAlias, Utf8CP targetAlias, Utf8CP scopeClause);
     //! Makes the target's copy of each table equal the source's, writing only the rows that differ.
     //! Used by the upgrade path, where the briefcase is the authority and the sync db is brought in
-    //! line with it, deletions included.
-    //!
-    //! Deliberately not SchemaSyncHelper::SyncData, which upserts. After an upgrade the same logical
-    //! row can carry a different id, so an incoming row can collide with a surviving one on a unique
-    //! index rather than on the primary key - and ON CONFLICT DO UPDATE then rewrites that surviving
-    //! row instead of inserting, which silently loses rows. Equally deliberately not a wholesale
-    //! empty-and-refill: the sync db's CloudSqlite blocks are 64 KiB, so rewriting rows that did not
-    //! change would make every other client re-download the whole file.
+    //! line with it, deletions included. Deliberately neither SchemaSyncHelper::SyncData nor a
+    //! wholesale refill - see the definition for why.
     static DbResult MirrorTables(ECDbR conn, StringList const& tables, Utf8CP sourceAlias, Utf8CP targetAlias);
     //! Re-point a set of schemas at the sync db.
     //!

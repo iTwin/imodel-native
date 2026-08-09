@@ -944,9 +944,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-    // The foreign keys from the link table to the source and target tables used to be created here.
-    // They are added by DerivedDbStructures now, which reads the same LinkTableRelationshipMap
-    // custom attribute - they never reached ec_, so a file that adopts ec_ rows has to derive them.
+    // The link table's foreign keys to the source and target tables are added by
+    // DerivedDbStructures, which reads the same LinkTableRelationshipMap custom attribute.
 
     Nullable<bool> allowDuplicateRelationships;
     if (ca.IsValid())

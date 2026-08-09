@@ -1098,7 +1098,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasDoesBothSteps)
     const auto schemas = LoadSchemas(*b2, { SharedColumnSchema() });
     ASSERT_TRUE(schemas.IsValid()) << "could not load the schema";
 
-    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
     EXPECT_TRUE(HasSchema(*b2, "UpstreamTest")) << "the briefcase did not adopt what it imported";
@@ -1150,7 +1150,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasWorksOnASyncDbInitialisedFrom
     const auto schemas = LoadSchemas(*b1, { UnrelatedSchema() });
     ASSERT_TRUE(schemas.IsValid());
 
-    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs()))
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs(), SchemaManager::SchemaImportOptions::None))
         << "an import into a sync db made from a non-empty briefcase failed";
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
@@ -1189,7 +1189,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasResolvesReferencesAgainstSync
     // b2 imports a schema that references Machinery, still believing it is at 1.0.0.
     const auto tank = LoadSchemas(*b2, { TankSchema() });
     ASSERT_TRUE(tank.IsValid());
-    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), tank.Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), tank.Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
     EXPECT_TRUE(HasSchema(*b2, "DemoB"));
@@ -1278,12 +1278,12 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasRefusesDataTransform)
     const auto initialSchemas = LoadSchemas(*b2, { initial });
     ASSERT_TRUE(initialSchemas.IsValid());
 
-    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), initialSchemas.Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), initialSchemas.Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
     ASSERT_STREQ("1.0.0", VersionOf(*b2, "RemapTest").c_str());
 
     EXPECT_EQ(SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED,
-              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs()))
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs(), SchemaManager::SchemaImportOptions::None))
         << "a data-moving change was accepted on the additive path";
 
     EXPECT_STREQ("1.0.0", VersionOf(*b2, "RemapTest").c_str()) << "the briefcase was changed by a refused import";
@@ -1317,7 +1317,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasCatchesUpInstancesThatSpillIn
     ASSERT_TRUE(narrow.IsValid());
     ASSERT_TRUE(narrow.IsValid());
 
-    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), narrow.Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), narrow.Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
     ASSERT_TRUE(TableOf(*b2, "UpstreamTest", "Derived", "p1").length() > 0);
 
@@ -1330,7 +1330,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasCatchesUpInstancesThatSpillIn
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
     // Widening the class pushes the later properties into an overflow table.
-    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { SharedColumnSchema("01.00.01", 8) }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { SharedColumnSchema("01.00.01", 8) }).Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
     const auto primaryTable = TableOf(*b2, "UpstreamTest", "Derived", "p1");
@@ -1390,7 +1390,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge
     auto& sync1 = b1->Schemas().GetSchemaSync();
     auto& sync2 = b2->Schemas().GetSchemaSync();
 
-    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { machinery100 }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { machinery100 }).Refs(), SchemaManager::SchemaImportOptions::None));
     ExpectNoForeignKeyViolations(*b1, "b1 after adopting Machinery 1.0.0");
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
@@ -1406,10 +1406,10 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge
     MaterializeAfterMerge(*b2);
 
     // Neither briefcase has seen the other's change; both are additive; both go through the sync db.
-    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { machinery101 }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { machinery101 }).Refs(), SchemaManager::SchemaImportOptions::None));
     ExpectNoForeignKeyViolations(*b1, "b1 after adopting Machinery 1.0.1");
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
-    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { TankSchema() }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { TankSchema() }).Refs(), SchemaManager::SchemaImportOptions::None));
     ExpectNoForeignKeyViolations(*b2, "b2 after adopting DemoB");
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
@@ -1458,7 +1458,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb
     const auto hoisted = RemapSchema("01.00.01", true);
 
     auto& sync2 = b2->Schemas().GetSchemaSync();
-    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { initial }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { initial }).Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
     // Data that predates the move, in both of the columns that are about to be consolidated.
@@ -1484,9 +1484,9 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb
 
     // The additive path must refuse it before the upgrade path is entitled to run.
     ASSERT_EQ(SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED,
-              sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs()));
+              sync2.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs(), SchemaManager::SchemaImportOptions::None));
 
-    ASSERT_EQ(SchemaSync::Status::OK, sync2.UpgradeSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.UpgradeSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs(), SchemaManager::SchemaImportOptions::None));
     ExpectNoForeignKeyViolations(*b2, "b2 after upgrading");
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
@@ -1527,7 +1527,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
     auto& sync2 = b2->Schemas().GetSchemaSync();
 
     // Everyone reaches RemapTest 1.0.0 through the timeline.
-    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { initial }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { initial }).Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     b1->PullMergePush("add RemapTest 1.0.0");
     b2->PullMergePush("pick up RemapTest 1.0.0");
@@ -1535,7 +1535,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
 
     // b1 imports something else and never pushes it. From the timeline's point of view this never
     // happened; from the sync db's point of view it did.
-    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { abandoned }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync1.ImportSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b1, { abandoned }).Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     syncDb.WithReadOnly([&](ECDbR sync) {
         ASSERT_TRUE(HasSchema(sync, "UnrelatedTest")) << "the scenario did not set itself up";
@@ -1543,7 +1543,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
     ASSERT_FALSE(HasSchema(*b2, "UnrelatedTest")) << "b2 was not supposed to learn about it";
 
     // b2 upgrades. It holds the exclusive schema lock, so b1 cannot be holding anything.
-    ASSERT_EQ(SchemaSync::Status::OK, sync2.UpgradeSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.UpgradeSchemas(syncDb.GetSyncDbUri(), LoadSchemas(*b2, { hoisted }).Refs(), SchemaManager::SchemaImportOptions::None));
     ExpectNoForeignKeyViolations(*b2, "b2 after upgrading over abandoned state");
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
@@ -1558,7 +1558,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
     // against it and lands in both places.
     const auto unrelatedAgain = LoadSchemas(*b2, { UnrelatedSchema() });
     ASSERT_TRUE(unrelatedAgain.IsValid());
-    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), unrelatedAgain.Refs()));
+    ASSERT_EQ(SchemaSync::Status::OK, sync2.ImportSchemas(syncDb.GetSyncDbUri(), unrelatedAgain.Refs(), SchemaManager::SchemaImportOptions::None));
     ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
     EXPECT_TRUE(HasSchema(*b2, "UnrelatedTest"));
     syncDb.WithReadOnly([&](ECDbR sync) {
@@ -1604,7 +1604,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
     const auto schemas = LoadSchemas(*b2, { SharedColumnSchema() });
     ASSERT_TRUE(schemas.IsValid());
     EXPECT_EQ(SchemaSync::Status::ERROR_PROFILE_VERSION_MISMATCH,
-              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs()));
+              b2->Schemas().GetSchemaSync().ImportSchemas(syncDb.GetSyncDbUri(), schemas.Refs(), SchemaManager::SchemaImportOptions::None));
     EXPECT_FALSE(HasSchema(*b2, "UpstreamTest")) << "the import was refused but still changed the briefcase";
     }
 
@@ -1619,7 +1619,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
     const auto schemas = LoadSchemas(*b2, { SharedColumnSchema() });
     ASSERT_TRUE(schemas.IsValid());
     EXPECT_EQ(SchemaSync::Status::ERROR_PROFILE_VERSION_MISMATCH,
-              b2->Schemas().GetSchemaSync().UpgradeSchemas(syncDb.GetSyncDbUri(), schemas.Refs()));
+              b2->Schemas().GetSchemaSync().UpgradeSchemas(syncDb.GetSyncDbUri(), schemas.Refs(), SchemaManager::SchemaImportOptions::None));
     EXPECT_FALSE(HasSchema(*b2, "UpstreamTest")) << "the upgrade was refused but still changed the briefcase";
     }
     }

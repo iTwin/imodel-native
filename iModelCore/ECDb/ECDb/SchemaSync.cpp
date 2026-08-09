@@ -1732,6 +1732,14 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
     }
     EndModifiedRowCount();
 
+    // The copied rows carry the sync db's ids, so every id sequence is now behind the file it
+    // describes.
+    if (!m_conn.GetImpl().GetIdFactory().Reset()) {
+        LOG.error("SchemaSync::AdoptSchemas(): Failed to reset the id factory.");
+        m_conn.AbandonChanges();
+        return cleanup(Status::ERROR);
+    }
+
     // Materialise the physical tables and indexes the adopted rows imply. This is the same step a
     // pull ends with, and it is why no DDL has to travel between the two files.
     const auto updateRc = UpdateDbSchema();
@@ -1765,7 +1773,7 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas) {
+SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options) {
     ECDB_PERF_LOG_SCOPE("Importing schemas through the schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::ImportSchemas");
 
@@ -1792,20 +1800,22 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
 
     // Step 1. The import runs in the sync db, which is where ids and physical layout get decided.
     bvector<Utf8String> importedSchemaNames;
-    auto status = ImportIntoSyncDb(effectiveSyncDbUri, schemas, importedSchemaNames, dataVerBeforeImport);
+    auto status = ImportIntoSyncDb(effectiveSyncDbUri, schemas, options, importedSchemaNames, dataVerBeforeImport);
     if (status != Status::OK)
         return status;
-
-    status = UpdateDataVersion(effectiveSyncDbUri);
-    if (status != Status::OK) {
-        LOG.error("SchemaSync::ImportSchemas(): Failed to update the data version.");
-        return status;
-    }
 
     // Step 2. Everything the sync db decided is now taken over verbatim; nothing is decided here.
     status = AdoptSchemas(effectiveSyncDbUri, importedSchemaNames);
     if (status != Status::OK) {
         LOG.error("SchemaSync::ImportSchemas(): Failed to adopt the imported schemas.");
+        return status;
+    }
+
+    // Last, so that a failed adopt does not leave this briefcase claiming to be level with a sync db
+    // whose rows it does not have.
+    status = UpdateDataVersion(effectiveSyncDbUri);
+    if (status != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to update the data version.");
         return status;
     }
 
@@ -1822,7 +1832,7 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
 // implies is the adopting briefcase's job.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport) {
+SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport) {
     ECDb syncConn;
     Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
     ParseQueryParams(openParams, syncDbUri);
@@ -1856,7 +1866,10 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
         importedSchemaNames.push_back(schema->GetName());
     }
 
-    const auto importRc = syncConn.Schemas().ImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
+    // The caller's options come along - DisallowMajorSchemaUpgrade and DoNotFailForDeletionsOrModifications
+    // decide whether the import is legal, and this is the import that decides.
+    const auto syncDbOptions = Enum::Or(options, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables);
+    const auto importRc = syncConn.Schemas().ImportSchemas(schemasToImport, syncDbOptions);
     SS_TRACE("import into sync db: %s -> %d", SchemaSyncHelper::Join(importedSchemaNames, ",").c_str(), (int)(SchemaImportResult::Status)importRc);
     if (importRc == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED) {
         LOG.info("SchemaSync::ImportSchemas(): The import would have to move data, which the additive path does not do.");
@@ -1892,7 +1905,7 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas) {
+SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options) {
     ECDB_PERF_LOG_SCOPE("Upgrading schemas and overwriting the schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::UpgradeSchemas");
 
@@ -1924,7 +1937,7 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
     SchemaImportResult importRc = SchemaImportResult::ERROR;
         {
         DisableSchemaSync();
-        importRc = m_conn.Schemas().ImportSchemas(schemas, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+        importRc = m_conn.Schemas().ImportSchemas(schemas, Enum::Or(options, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
         ReEnableSchemaSync();
         }
 

@@ -20,12 +20,9 @@ void SchemaSyncTestFixture::Test(Utf8CP name, std::function<void()> test){
 }
 
 //=======================================================================================
-// These are guardrails for things the schema sync design relies on everywhere, so a change that
-// quietly breaks one is caught by whichever test happens to run next instead of by the one test
-// that thought to look.
-//
-// All of them are non-fatal, so a violation names itself without hiding what the test was actually
-// asserting.
+// Guardrails for things the schema sync design relies on everywhere, so a change that quietly
+// breaks one is caught by whichever test happens to run next. All non-fatal, so a violation names
+// itself without hiding what the test was asserting.
 //=======================================================================================
 namespace {
 
@@ -69,10 +66,13 @@ bool ReadColumns(DbCR db, Utf8CP alias, Utf8StringCR table, bvector<Utf8String>&
     return !all.empty();
 }
 
+// ec_cache_* is left out: it is derived, every file rebuilds it locally, and neither the adopt nor
+// the overwrite path copies it, so the two files legitimately disagree on every row.
 bvector<Utf8String> ReadECTableNames(DbCR db) {
     bvector<Utf8String> tables;
     Statement stmt;
-    if (stmt.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table' AND name LIKE 'ec\\_%' ESCAPE '\\' ORDER BY name") != BE_SQLITE_OK)
+    if (stmt.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table' AND name LIKE 'ec\\_%' ESCAPE '\\'"
+                         " AND name NOT LIKE 'ec\\_cache\\_%' ESCAPE '\\' ORDER BY name") != BE_SQLITE_OK)
         return tables;
 
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -133,17 +133,10 @@ void SchemaSyncTestFixture::VerifyBriefcaseRowsExistInSyncDb(ECDbR briefcase, Sc
             continue;
         }
 
-        // ec_cache_* is derived locally, so its Id is assigned in whatever order the local rows were
-        // rebuilt and carries no meaning across files. The rest of the row still has to agree.
-        const bool isCache = table.StartsWithIAscii("ec_cache_");
-
         bvector<Utf8String> matchExprs;
         for (auto const& col : localCols) {
-            if (isCache && col.EqualsIAscii("Id"))
-                continue;
-
             // = on the primary key so the lookup uses its index; IS elsewhere so two NULLs match.
-            const bool isKey = !isCache && std::find(localPk.begin(), localPk.end(), col) != localPk.end();
+            const bool isKey = std::find(localPk.begin(), localPk.end(), col) != localPk.end();
             matchExprs.push_back(SqlPrintfString("[s].[%s] %s [t].[%s]", col.c_str(), isKey ? "=" : "IS", col.c_str()).GetUtf8CP());
         }
         if (matchExprs.empty())
@@ -206,14 +199,18 @@ void SchemaSyncTestFixture::VerifySchemaSyncRules(SchemaSyncDb& syncDb, std::vec
         VerifyFileIsSound(sync, context);
     });
 
+    const auto syncDataVer = SchemaSync::SyncDbInfo::From(syncDb.GetSyncDbUri()).GetDataVersion();
     for (auto* briefcase : briefcases) {
         if (briefcase == nullptr || !briefcase->IsDbOpen())
             continue;
 
         VerifyFileIsSound(*briefcase, context);
 
-        // A file that never enabled schema sync owes the sync db nothing.
-        if (briefcase->Schemas().GetSchemaSync().IsEnabled())
+        // Containment only holds while the briefcase is level with the sync db. Once somebody else
+        // has imported - a delete in particular - the sync db no longer has everything this file
+        // still holds, and it will not until this file pulls.
+        auto const& schemaSync = briefcase->Schemas().GetSchemaSync();
+        if (schemaSync.IsEnabled() && schemaSync.GetInfo().GetDataVersion() == syncDataVer)
             VerifyBriefcaseRowsExistInSyncDb(*briefcase, syncDb, context);
     }
 }
@@ -1214,17 +1211,11 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
 #ifdef TRACE_CS
         PrintChangeSet::Print(*this, *changesetToApply);
 #endif
-//         for (auto& ddl : changesetToApply->GetDDLs()) {
-//             auto rc = TryExecuteSql(ddl.c_str());
-//             if (rc != BE_SQLITE_OK && false) {
-//                 m_tracker->EnableTracking(true);
-//                 LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
-// #ifdef TRACE_CS
-//                 cancelTrace();
-// #endif
-//                 return rc;
-//             }
-//         }
+        // DDL first, so a widened table can take the row changes that come with it - the same order
+        // and the same ignore-failures rule as TxnManager::ApplyDdlChanges.
+        for (auto& ddl : changesetToApply->GetDDLs())
+            TryExecuteSql(ddl.c_str());
+
         auto rc = changesetToApply->ApplyChanges(*this, false, true);
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());

@@ -2418,7 +2418,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
-        {        auto& db = GetOpenedDb(info);
+        {
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
 

@@ -2154,8 +2154,7 @@ DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImp
      ncl->GetConstraintsR().SetNotNullConstraint();
 
      overflowTable->AddPrimaryKeyConstraint({npk});
-     // The foreign key to the parent table is added by DerivedDbStructures - it is not persisted
-     // anywhere, so every file has to work it out for itself.
+     // The foreign key to the parent table is added by DerivedDbStructures.
 
      Utf8String indexName("ix_");
      indexName.append(overflowTable->GetName()).append("_ecclassid");

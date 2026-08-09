@@ -612,9 +612,6 @@ private:
     DbTable* LoadTable(Utf8StringCR name) const;
     DbTable* LoadTable(DbTableId) const;
     BentleyStatus LoadColumns(DbTable&) const;
-    // TEMPORARILY DISABLED - see the definition in DbSchema.cpp. Appears to have no callers.
-    // Delete both if the build agrees.
-    //BentleyStatus LoadTableForeignKeyListFromSqliteSchema(DbTable& table) const;
     BentleyStatus InsertTable(DbTable const&) const;
     BentleyStatus InsertColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
     BentleyStatus UpdateColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
