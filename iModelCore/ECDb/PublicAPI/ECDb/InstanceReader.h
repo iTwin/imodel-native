@@ -76,7 +76,9 @@ struct InstanceReader final {
     public:
         InstanceReader(InstanceReader const&) = delete;
         InstanceReader& operator = (InstanceReader&) = delete;
-        ECDB_EXPORT explicit InstanceReader(ECDbCR);
+        //! @param[in] cacheSize maximum number of class readers kept alive. Readers which are
+        //! still in use are never dropped.
+        ECDB_EXPORT explicit InstanceReader(ECDbCR, uint32_t cacheSize = 40);
         ECDB_EXPORT ~InstanceReader();
         ECDB_EXPORT bool Seek(Position const&, RowCallback, Options const& = Options()) const;
         ECDB_EXPORT void Reset();

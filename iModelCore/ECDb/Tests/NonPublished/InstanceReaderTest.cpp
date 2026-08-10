@@ -3157,4 +3157,285 @@ TEST_F(InstanceReaderFixture, LinkTableInstanceQueryWithExternalClassIds) {
     stmt.Finalize();
 }
 
+//---------------------------------------------------------------------------------------
+// Builds a hierarchy of classes sharing columns of a single very wide table so that a
+// single class only maps a small fraction of the columns of its table.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+struct WideTableSchemaHelper final {
+    //! Number of leaf classes in the generated hierarchy.
+    constexpr static int kClassCount = 60;
+    //! Number of properties of each leaf class.
+    constexpr static int kPropsPerClass = 8;
+
+    static Utf8String ClassName(int classIndex) {
+        Utf8String name;
+        name.Sprintf("C%d", classIndex);
+        return name;
+    }
+    static Utf8String PropName(int classIndex, int propIndex) {
+        Utf8String name;
+        name.Sprintf("C%d_P%d", classIndex, propIndex);
+        return name;
+    }
+    static Utf8String ExpectedValue(int classIndex, int propIndex) {
+        Utf8String value;
+        value.Sprintf("v-%d-%d", classIndex, propIndex);
+        return value;
+    }
+    static Utf8String BuildSchema() {
+        Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+              <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                  <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                  </ClassMap>
+                  <ShareColumns xmlns="ECDbMap.02.00">
+                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    <MaxSharedColumnsBeforeOverflow>200</MaxSharedColumnsBeforeOverflow>
+                  </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+              </ECEntityClass>)xml";
+
+        for (int classIndex = 0; classIndex < kClassCount; ++classIndex) {
+            xml.append(SqlPrintfString(R"xml(
+              <ECEntityClass typeName="%s">
+                <BaseClass>Base</BaseClass>)xml", ClassName(classIndex).c_str()).GetUtf8CP());
+            for (int propIndex = 0; propIndex < kPropsPerClass; ++propIndex) {
+                xml.append(SqlPrintfString(R"xml(
+                <ECProperty propertyName="%s" typeName="string" />)xml", PropName(classIndex, propIndex).c_str()).GetUtf8CP());
+            }
+            xml.append("\n              </ECEntityClass>");
+        }
+        xml.append("\n            </ECSchema>");
+        return xml;
+    }
+    //! Inserts one instance per class and returns the resulting keys.
+    static void InsertInstances(ECDbR ecdb, std::vector<ECInstanceKey>& keys) {
+        for (int classIndex = 0; classIndex < kClassCount; ++classIndex) {
+            Utf8String ecsql;
+            ecsql.Sprintf("INSERT INTO ts.%s(Name", ClassName(classIndex).c_str());
+            for (int propIndex = 0; propIndex < kPropsPerClass; ++propIndex) {
+                ecsql.append(",").append(PropName(classIndex, propIndex));
+            }
+            ecsql.append(") VALUES(?");
+            for (int propIndex = 0; propIndex < kPropsPerClass; ++propIndex) {
+                ecsql.append(",?");
+            }
+            ecsql.append(")");
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql;
+            const auto name = ClassName(classIndex);
+            stmt.BindText(1, name.c_str(), IECSqlBinder::MakeCopy::Yes);
+            for (int propIndex = 0; propIndex < kPropsPerClass; ++propIndex) {
+                const auto value = ExpectedValue(classIndex, propIndex);
+                stmt.BindText(propIndex + 2, value.c_str(), IECSqlBinder::MakeCopy::Yes);
+            }
+            ECInstanceKey key;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+            keys.push_back(key);
+        }
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// A class only maps a few of the columns of its (very wide) table. Reading the whole
+// instance must still return exactly the properties of the class with the right values.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, WideTableReadInstance) {
+    ASSERT_EQ(SUCCESS, SetupECDb("wide_table_read_instance.ecdb", SchemaItem(WideTableSchemaHelper::BuildSchema())));
+    std::vector<ECInstanceKey> keys;
+    WideTableSchemaHelper::InsertInstances(m_ecdb, keys);
+    m_ecdb.SaveChanges();
+
+    auto& reader = m_ecdb.GetInstanceReader();
+    for (int classIndex = 0; classIndex < WideTableSchemaHelper::kClassCount; ++classIndex) {
+        auto const& key = keys[classIndex];
+        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+        bool seeked = false;
+        ASSERT_TRUE(reader.Seek(pos, [&](InstanceReader::IRowContext const& row, auto) {
+            seeked = true;
+            BeJsDocument doc;
+            doc.From(row.GetJson());
+            EXPECT_STREQ(WideTableSchemaHelper::ClassName(classIndex).c_str(), doc["Name"].asCString());
+            for (int propIndex = 0; propIndex < WideTableSchemaHelper::kPropsPerClass; ++propIndex) {
+                const auto propName = WideTableSchemaHelper::PropName(classIndex, propIndex);
+                ASSERT_TRUE(doc.hasMember(propName.c_str())) << propName;
+                EXPECT_STREQ(WideTableSchemaHelper::ExpectedValue(classIndex, propIndex).c_str(), doc[propName.c_str()].asCString());
+            }
+            // properties of sibling classes share the same columns but must not show up
+            const auto otherClassIndex = (classIndex + 1) % WideTableSchemaHelper::kClassCount;
+            EXPECT_FALSE(doc.hasMember(WideTableSchemaHelper::PropName(otherClassIndex, 0).c_str()));
+        })) << "seek failed for class " << classIndex;
+        ASSERT_TRUE(seeked);
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// Reading a single property of a class mapped to a very wide table.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, WideTableReadSingleProperty) {
+    ASSERT_EQ(SUCCESS, SetupECDb("wide_table_read_property.ecdb", SchemaItem(WideTableSchemaHelper::BuildSchema())));
+    std::vector<ECInstanceKey> keys;
+    WideTableSchemaHelper::InsertInstances(m_ecdb, keys);
+    m_ecdb.SaveChanges();
+
+    auto& reader = m_ecdb.GetInstanceReader();
+    for (int classIndex = 0; classIndex < WideTableSchemaHelper::kClassCount; ++classIndex) {
+        auto const& key = keys[classIndex];
+        for (int propIndex = 0; propIndex < WideTableSchemaHelper::kPropsPerClass; ++propIndex) {
+            const auto propName = WideTableSchemaHelper::PropName(classIndex, propIndex);
+            InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId(), propName.c_str());
+            bool seeked = false;
+            ASSERT_TRUE(reader.Seek(pos, [&](InstanceReader::IRowContext const& row, auto) {
+                seeked = true;
+                ASSERT_EQ(1, row.GetColumnCount());
+                EXPECT_STREQ(WideTableSchemaHelper::ExpectedValue(classIndex, propIndex).c_str(), row.GetValue(0).GetText());
+            })) << "seek failed for " << propName;
+            ASSERT_TRUE(seeked);
+        }
+        // the inherited property must be readable too
+        InstanceReader::Position namePos(key.GetInstanceId(), key.GetClassId(), "Name");
+        ASSERT_TRUE(reader.Seek(namePos, [&](InstanceReader::IRowContext const& row, auto) {
+            EXPECT_STREQ(WideTableSchemaHelper::ClassName(classIndex).c_str(), row.GetValue(0).GetText());
+        }));
+        // a property of a sibling class is not part of this class
+        InstanceReader::Position foreignPos(key.GetInstanceId(), key.GetClassId(),
+            WideTableSchemaHelper::PropName((classIndex + 1) % WideTableSchemaHelper::kClassCount, 0).c_str());
+        EXPECT_FALSE(reader.Seek(foreignPos, [](InstanceReader::IRowContext const&, auto) {}));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// The same through ECSQL, which routes through the extract_prop/extract_inst functions.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, WideTableExtractProp) {
+    ASSERT_EQ(SUCCESS, SetupECDb("wide_table_extract_prop.ecdb", SchemaItem(WideTableSchemaHelper::BuildSchema())));
+    std::vector<ECInstanceKey> keys;
+    WideTableSchemaHelper::InsertInstances(m_ecdb, keys);
+    m_ecdb.SaveChanges();
+
+    for (int classIndex = 0; classIndex < WideTableSchemaHelper::kClassCount; ++classIndex) {
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT $->%s, $->Name FROM ts.%s",
+            WideTableSchemaHelper::PropName(classIndex, 3).c_str(), WideTableSchemaHelper::ClassName(classIndex).c_str());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        EXPECT_STREQ(WideTableSchemaHelper::ExpectedValue(classIndex, 3).c_str(), stmt.GetValueText(0)) << ecsql;
+        EXPECT_STREQ(WideTableSchemaHelper::ClassName(classIndex).c_str(), stmt.GetValueText(1)) << ecsql;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// The reader caches are bounded. Seeking many more classes than the cache holds must not
+// change the results, and revisiting an evicted class must still work.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, ReaderCacheEviction) {
+    ASSERT_EQ(SUCCESS, SetupECDb("reader_cache_eviction.ecdb", SchemaItem(WideTableSchemaHelper::BuildSchema())));
+    std::vector<ECInstanceKey> keys;
+    WideTableSchemaHelper::InsertInstances(m_ecdb, keys);
+    m_ecdb.SaveChanges();
+
+    // more classes than the default cache size, visited twice so every class is evicted
+    // and recreated at least once
+    auto& reader = m_ecdb.GetInstanceReader();
+    for (int round = 0; round < 2; ++round) {
+        for (int classIndex = 0; classIndex < WideTableSchemaHelper::kClassCount; ++classIndex) {
+            auto const& key = keys[classIndex];
+            const auto propName = WideTableSchemaHelper::PropName(classIndex, 0);
+            InstanceReader::Position propPos(key.GetInstanceId(), key.GetClassId(), propName.c_str());
+            ASSERT_TRUE(reader.Seek(propPos, [&](InstanceReader::IRowContext const& row, auto) {
+                EXPECT_STREQ(WideTableSchemaHelper::ExpectedValue(classIndex, 0).c_str(), row.GetValue(0).GetText());
+            })) << "round " << round << " class " << classIndex;
+
+            InstanceReader::Position instPos(key.GetInstanceId(), key.GetClassId());
+            ASSERT_TRUE(reader.Seek(instPos, [&](InstanceReader::IRowContext const& row, auto) {
+                BeJsDocument doc;
+                doc.From(row.GetJson());
+                EXPECT_STREQ(WideTableSchemaHelper::ClassName(classIndex).c_str(), doc["Name"].asCString());
+            })) << "round " << round << " class " << classIndex;
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// Instances split over a primary and an overflow table must be read completely.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, OverflowTableRead) {
+    ASSERT_EQ(SUCCESS, SetupECDb("overflow_table_read.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+              <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                  <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                  </ClassMap>
+                  <ShareColumns xmlns="ECDbMap.02.00">
+                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                  </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+              </ECEntityClass>
+              <ECEntityClass typeName="Wide">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="P0" typeName="string" />
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="string" />
+                <ECProperty propertyName="P3" typeName="string" />
+                <ECProperty propertyName="P4" typeName="string" />
+                <ECProperty propertyName="P5" typeName="string" />
+                <ECProperty propertyName="P6" typeName="string" />
+                <ECProperty propertyName="P7" typeName="string" />
+              </ECEntityClass>
+            </ECSchema>)xml")));
+
+    ECInstanceKey key;
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+            "INSERT INTO ts.Wide(Name,P0,P1,P2,P3,P4,P5,P6,P7) VALUES('n','v0','v1','v2','v3','v4','v5','v6','v7')"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    m_ecdb.SaveChanges();
+
+    auto& reader = m_ecdb.GetInstanceReader();
+    InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+    ASSERT_TRUE(reader.Seek(pos, [&](InstanceReader::IRowContext const& row, auto) {
+        BeJsDocument doc;
+        doc.From(row.GetJson());
+        EXPECT_STREQ("n", doc["Name"].asCString());
+        for (int i = 0; i < 8; ++i) {
+            Utf8String propName;
+            propName.Sprintf("P%d", i);
+            Utf8String expected;
+            expected.Sprintf("v%d", i);
+            ASSERT_TRUE(doc.hasMember(propName.c_str())) << propName;
+            EXPECT_STREQ(expected.c_str(), doc[propName.c_str()].asCString()) << propName;
+        }
+    }));
+
+    // every single property, including the ones living in the overflow table
+    for (int i = 0; i < 8; ++i) {
+        Utf8String propName;
+        propName.Sprintf("P%d", i);
+        Utf8String expected;
+        expected.Sprintf("v%d", i);
+        InstanceReader::Position propPos(key.GetInstanceId(), key.GetClassId(), propName.c_str());
+        ASSERT_TRUE(reader.Seek(propPos, [&](InstanceReader::IRowContext const& row, auto) {
+            EXPECT_STREQ(expected.c_str(), row.GetValue(0).GetText()) << propName;
+        })) << propName;
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE
