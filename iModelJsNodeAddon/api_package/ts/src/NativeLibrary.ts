@@ -698,8 +698,8 @@ export declare namespace IModelJsNative {
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
-    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
-    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { updated: boolean, rowExists: boolean };
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { deleted: boolean, rowExists: boolean };
     public patchJsonProperties(jsonProps: string): string;
     public newBeGuid(): GuidString;
 
@@ -893,8 +893,8 @@ export declare namespace IModelJsNative {
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
-    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
-    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { updated: boolean, rowExists: boolean };
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean | { deleted: boolean, rowExists: boolean };
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

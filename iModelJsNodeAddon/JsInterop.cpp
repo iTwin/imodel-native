@@ -1033,14 +1033,22 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
         fmt = JsFormat::JsName;
     }
 
-    auto rc = repo.Update(inst, args, fmt);
+    bool rowExists = true;
+    auto rc = repo.Update(inst, args, fmt, rowExists);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to update instance", rc);
         }
         THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
-    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
+    bool updated = db.GetModifiedRowCount() > 0;
+    if (args.isObjectMember("expectedOldValues")) {
+        auto result = Napi::Object::New(info.Env());
+        result.Set("updated", Napi::Value::From(info.Env(), updated));
+        result.Set("rowExists", Napi::Value::From(info.Env(), rowExists));
+        return result;
+    }
+    return Napi::Value::From(info.Env(), updated);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1059,14 +1067,22 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
         fmt = JsFormat::JsName;
     }
 
-    auto rc = repo.Delete(key, args, fmt);
+    bool rowExists = true;
+    auto rc = repo.Delete(key, args, fmt, rowExists);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to delete instance", rc);
         }
         THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
-    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
+    bool deleted = db.GetModifiedRowCount() > 0;
+    if (args.isObjectMember("expectedOldValues")) {
+        auto result = Napi::Object::New(info.Env());
+        result.Set("deleted", Napi::Value::From(info.Env(), deleted));
+        result.Set("rowExists", Napi::Value::From(info.Env(), rowExists));
+        return result;
+    }
+    return Napi::Value::From(info.Env(), deleted);
 }
 
 //---------------------------------------------------------------------------------------

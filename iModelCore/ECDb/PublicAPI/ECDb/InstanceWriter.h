@@ -10,6 +10,7 @@
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/SchemaManager.h>
 #include <list>
+#include <optional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PropertyBinder final {
@@ -96,6 +97,7 @@ public:
     struct UpdateOptions final : public Options {
     private:
         bool m_useIncrementalUpdate = false;
+        std::optional<BeJsConst> m_expectedOldValues;
 
     public:
         UpdateOptions() : Options(WriterOp::Update) {}
@@ -104,6 +106,17 @@ public:
         // the properties that are not specified in the input JSON.
         UpdateOptions& UseIncrementalUpdate(bool v) {
             m_useIncrementalUpdate = v;
+            return *this;
+        }
+        // Optional "expected old values" JSON (same shape as the instance being written; only the properties to be
+        // verified need be present). When set, the row is only updated if its current values still match these
+        // values (a null-safe comparison), so the caller can detect optimistic-concurrency conflicts. Identity
+        // members (id/className/classFullName/ECInstanceId/ECClassId) are ignored if present, since the row is
+        // already located via the primary instance/key argument. Array-valued properties are not supported.
+        bool HasExpectedOldValues() const { return m_expectedOldValues.has_value(); }
+        BeJsConst GetExpectedOldValues() const { return *m_expectedOldValues; }
+        UpdateOptions& CompareBeforeUpdate(BeJsConst expectedOldValues) {
+            m_expectedOldValues.emplace(expectedOldValues);
             return *this;
         }
     };
@@ -129,8 +142,19 @@ public:
     };
 
     struct DeleteOptions final : public Options {
+    private:
+        std::optional<BeJsConst> m_expectedOldValues;
+
     public:
         DeleteOptions() : Options(WriterOp::Delete) {}
+        // See UpdateOptions::CompareBeforeUpdate. When set, the row is only deleted if its current values still
+        // match these values.
+        bool HasExpectedOldValues() const { return m_expectedOldValues.has_value(); }
+        BeJsConst GetExpectedOldValues() const { return *m_expectedOldValues; }
+        DeleteOptions& CompareBeforeDelete(BeJsConst expectedOldValues) {
+            m_expectedOldValues.emplace(expectedOldValues);
+            return *this;
+        }
     };
     struct Impl;
 
@@ -146,8 +170,14 @@ public:
     ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options);
     ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options);
+    //! Like Update(BeJsConst, UpdateOptions const&), but when options.HasExpectedOldValues() and the row was not
+    //! affected (i.e. 0 rows modified), \p rowExists distinguishes "row not found" (false) from "row found but its
+    //! current values no longer match the expected old values" (true). Otherwise \p rowExists is set to true.
+    ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options, bool& rowExists);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);
+    ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options, bool& rowExists);
     ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options);
+    ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options, bool& rowExists);
 
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt = JsFormat::Standard) const;

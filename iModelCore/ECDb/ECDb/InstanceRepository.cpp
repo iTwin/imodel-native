@@ -35,18 +35,29 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsFormat inFmt) const {
+    bool rowExists = true;
+    return Update(in, userOptions, inFmt, rowExists);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const {
+    rowExists = true;
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::UpdateOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
     options.UseIncrementalUpdate(true);
+    if (userOptions.isObjectMember("expectedOldValues"))
+        options.CompareBeforeUpdate(userOptions["expectedOldValues"]);
     ECInstanceKey instKey;
     if (!m_ecdb.GetInstanceWriter().TryGetInstanceKey(instKey, in, inFmt)) {
         m_lastError.Sprintf("Failed to get ECInstanceId/id and ECClassId/className/classFullName");
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_ecdb.GetInstanceWriter().Update(in, options);
+    auto rc = m_ecdb.GetInstanceWriter().Update(in, options, rowExists);
     if (rc != BE_SQLITE_OK) {
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }
@@ -57,11 +68,21 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsFormat inFmt) const {
+    bool rowExists = true;
+    return Delete(in, userOptions, inFmt, rowExists);
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const {
+    rowExists = true;
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::DeleteOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
-    auto rc = m_ecdb.GetInstanceWriter().Delete(in, options);
+    if (userOptions.isObjectMember("expectedOldValues"))
+        options.CompareBeforeDelete(userOptions["expectedOldValues"]);
+    auto rc = m_ecdb.GetInstanceWriter().Delete(in, options, rowExists);
     if (rc != BE_SQLITE_OK) {
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }
@@ -71,11 +92,21 @@ DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsForma
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt) const {
+    bool rowExists = true;
+    return Delete(key, userOptions, inFmt, rowExists);
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const {
+    rowExists = true;
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::DeleteOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
-    auto rc = m_ecdb.GetInstanceWriter().Delete(key, options);
+    if (userOptions.isObjectMember("expectedOldValues"))
+        options.CompareBeforeDelete(userOptions["expectedOldValues"]);
+    auto rc = m_ecdb.GetInstanceWriter().Delete(key, options, rowExists);
     if (rc != BE_SQLITE_OK) {
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }

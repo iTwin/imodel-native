@@ -21,6 +21,111 @@ using CachedWriteStatement = MruStatementCache::CachedWriteStatement;
 using BindContext = Impl::BindContext;
 using CachedBinder = MruStatementCache::CachedBinder;
 
+namespace {
+//---------------------------------------------------------------------------------------
+// True if name identifies the instance/class identity (ECInstanceId/ECClassId, in either canonical or JS-cased
+// form). These locate the row being written and are never valid members of expectedOldValues.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool IsIdentityPropertyName(Utf8CP name) {
+    return BeStringUtilities::StricmpAscii(name, ECDBSYS_PROP_ECInstanceId) == 0 ||
+           BeStringUtilities::StricmpAscii(name, ECDBSYS_PROP_ECClassId) == 0 ||
+           BeStringUtilities::StricmpAscii(name, ECJsonSystemNames::Id()) == 0 ||
+           BeStringUtilities::StricmpAscii(name, ECJsonSystemNames::ClassName()) == 0 ||
+           BeStringUtilities::StricmpAscii(name, ECJsonSystemNames::ClassFullName()) == 0;
+}
+
+//---------------------------------------------------------------------------------------
+// Finds a property on classMap that can be used in an "expected old value" WHERE comparison (i.e. anything
+// other than an array, which ECSQL cannot compare against a bound value at all).
+// Matches either the ECProperty name, or its default JS member name (first letter lower-cased).
+// @bsimethod
+//---------------------------------------------------------------------------------------
+PropertyMap const* FindCheckableProperty(ClassMapCR classMap, Utf8StringCR name) {
+    for (auto prop : classMap.GetPropertyMaps()) {
+        auto type = prop->GetType();
+        if (type == PropertyMap::Type::PrimitiveArray || type == PropertyMap::Type::StructArray)
+            continue;
+        if (prop->GetName().EqualsIAscii(name))
+            return prop;
+        Utf8String jsName = prop->GetName();
+        if (!jsName.empty()) {
+            jsName[0] = (Utf8Char)tolower(jsName[0]);
+            if (jsName.EqualsIAscii(name))
+                return prop;
+        }
+    }
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// Associates a property map that will be compared in a WHERE clause with the member name used to look up its
+// expected old value in the caller-supplied JSON (the two can differ, e.g. ECName vs. JS-cased name).
+// @bsistruct
+//---------------------------------------------------------------------------------------
+struct CheckPropertyBinding final {
+    PropertyMap const* m_propertyMap;
+    Utf8String m_jsonMemberName;
+};
+
+//---------------------------------------------------------------------------------------
+// Resolves the members of expectedOldValues to checkable properties on classMap, sorted by ECProperty name so
+// that repeated calls with the same set of properties reuse the same cached statement. Members naming the
+// instance/class identity (id/className/ECInstanceId/ECClassId) are silently ignored, since the row is already
+// located via the primary instance/key argument. Returns false (and sets ctx's error) if a member does not
+// resolve to a checkable property.
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ResolveCheckProperties(BindContext& ctx, ClassMapCR classMap, BeJsConst expectedOldValues, std::vector<CheckPropertyBinding>& out) {
+    if (!expectedOldValues.isObject()) {
+        ctx.SetError("expectedOldValues must be a JSON object.");
+        return false;
+    }
+
+    bool ok = true;
+    expectedOldValues.ForEachProperty([&](Utf8CP name, BeJsConst) {
+        if (IsIdentityPropertyName(name))
+            return false; // continue; identity properties are ignored, not compared
+
+        auto propMap = FindCheckableProperty(classMap, name);
+        if (propMap == nullptr) {
+            ctx.SetError("Property '%s' cannot be used for an optimistic-concurrency comparison: it does not exist on the class, or is an array property.", name);
+            ok = false;
+            return true; // abort
+        }
+        out.push_back({propMap, Utf8String(name)});
+        return false; // continue
+    });
+
+    if (!ok)
+        return false;
+
+    std::sort(out.begin(), out.end(), [](CheckPropertyBinding const& a, CheckPropertyBinding const& b) {
+        return a.m_propertyMap->GetName() < b.m_propertyMap->GetName();
+    });
+    return true;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool RowExistsById(ECDbCR ecdb, ECClassId classId, ECInstanceId id) {
+    auto cls = ecdb.Schemas().GetClass(classId);
+    if (cls == nullptr)
+        return false;
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT 1 FROM %s WHERE ECInstanceId=?", cls->GetECSqlName().c_str());
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()))
+        return false;
+
+    stmt.BindId(1, id);
+    return stmt.Step() == BE_SQLITE_ROW;
+}
+} // namespace
+
 //******************************BindContext**************************************
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -195,7 +300,7 @@ ECSqlStatus MruStatementCache::PrepareInsert(CachedWriteStatement& cachedStmt) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
+ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt, std::vector<Utf8String> const& checkProps) {
     Utf8String ecsql;
     std::vector<PropertyMap const*> props;
 
@@ -224,6 +329,23 @@ ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
 
     ecsql.append(" WHERE [ECInstanceId] = ?");
 
+    std::vector<PropertyMap const*> checkPropMaps;
+    for (auto const& checkName : checkProps) {
+        auto propMap = FindCheckableProperty(classMap, checkName);
+        if (propMap == nullptr) {
+            BeAssert(false && "checkProps must already be resolved to canonical, checkable property names");
+            return ECSqlStatus::Error;
+        }
+        // ECSQL's IS operator only allows a literal NULL/NOT NULL on the right (parameterized "col IS ?" is
+        // InvalidECSql), and does not allow a bound parameter on the LEFT either ("? IS NULL" is ALSO
+        // InvalidECSql) - so express null-safe equality as "(col = ?) OR (col IS NULL AND ? = 1)", binding an
+        // integer flag (1 when the expected value is null, 0 otherwise) to the second parameter instead of
+        // re-binding the expected value (see the matching bind logic in Impl::Update).
+        Utf8CP colName = propMap->GetName().c_str();
+        ecsql.append(" AND (([").append(colName).append("] = ?) OR ([").append(colName).append("] IS NULL AND ? = 1))");
+        checkPropMaps.push_back(propMap);
+    }
+
     auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
     auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
     if (!rc.IsSuccess()) {
@@ -235,16 +357,36 @@ ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
         cachedStmt.GetBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
     }
 
-    cachedStmt.m_instanceIdIndex = i;
+    cachedStmt.m_instanceIdIndex = i++;
+
+    for (auto prop : checkPropMaps) {
+        cachedStmt.GetCheckBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
+        cachedStmt.GetCheckBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
+    }
     return rc;
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt) {
+ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt, std::vector<Utf8String> const& checkProps) {
     Utf8String ecsql;
     ecsql.append("DELETE FROM ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
+
+    auto& classMap = cachedStmt.GetClassMap();
+    std::vector<PropertyMap const*> checkPropMaps;
+    for (auto const& checkName : checkProps) {
+        auto propMap = FindCheckableProperty(classMap, checkName);
+        if (propMap == nullptr) {
+            BeAssert(false && "checkProps must already be resolved to canonical, checkable property names");
+            return ECSqlStatus::Error;
+        }
+        // See PrepareUpdate: neither "col IS ?" nor "? IS NULL" is valid ECSQL, so use an integer null-flag
+        // bound via "= 1" instead (see the matching bind logic in Impl::Delete).
+        Utf8CP colName = propMap->GetName().c_str();
+        ecsql.append(" AND (([").append(colName).append("] = ?) OR ([").append(colName).append("] IS NULL AND ? = 1))");
+        checkPropMaps.push_back(propMap);
+    }
 
     auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
     auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
@@ -252,13 +394,19 @@ ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt) {
         return rc;
     }
     cachedStmt.m_instanceIdIndex = 1;
+
+    int i = 2;
+    for (auto prop : checkPropMaps) {
+        cachedStmt.GetCheckBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
+        cachedStmt.GetCheckBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
+    }
     return rc;
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key) {
+std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key, std::vector<Utf8String> const& checkProps) {
     auto cls = m_ecdb.Schemas().GetClass(key.GetClassId());
     if (cls == nullptr) {
         return nullptr;
@@ -273,9 +421,9 @@ std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key) {
     if (key.GetOp() == WriterOp::Insert) {
         rc = PrepareInsert(*cachedStmt);
     } else if (key.GetOp() == WriterOp::Update) {
-        rc = PrepareUpdate(*cachedStmt);
+        rc = PrepareUpdate(*cachedStmt, checkProps);
     } else if (key.GetOp() == WriterOp::Delete) {
-        rc = PrepareDelete(*cachedStmt);
+        rc = PrepareDelete(*cachedStmt, checkProps);
     };
 
     if (!rc.IsSuccess()) {
@@ -288,11 +436,11 @@ std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-CachedWriteStatement* MruStatementCache::TryGet(CacheKey key) {
+CachedWriteStatement* MruStatementCache::TryGet(CacheKey key, std::vector<Utf8String> const& checkProps) {
     auto it = m_cache.find(key);
     if (it == m_cache.end()) {
 
-        auto cachedStmt = Prepare(key);
+        auto cachedStmt = Prepare(key, checkProps);
         if (cachedStmt == nullptr)
             return nullptr;
 
@@ -318,7 +466,7 @@ CachedWriteStatement* MruStatementCache::TryGet(CacheKey key) {
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Insert));
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Insert), {});
     if (cachedStmt == nullptr) {
         LOG.errorv("Failed to prepare insert statement for class: %s", classId.ToHexStr().c_str());
         return BE_SQLITE_ERROR;
@@ -329,9 +477,11 @@ DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+DbResult MruStatementCache::WithUpdate(ECClassId classId, std::vector<Utf8String> const& checkProps, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update));
+    Utf8String signature;
+    for (auto const& p : checkProps) signature.append(p).append("|");
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update, signature), checkProps);
     if (cachedStmt == nullptr) {
         LOG.errorv("Failed to prepare update statement for class: %s", classId.ToHexStr().c_str());
         return BE_SQLITE_ERROR;
@@ -342,9 +492,11 @@ DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult MruStatementCache::WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+DbResult MruStatementCache::WithDelete(ECClassId classId, std::vector<Utf8String> const& checkProps, std::function<DbResult(CachedWriteStatement&)> fn) {
     BeMutexHolder _(m_mutex);
-    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete));
+    Utf8String signature;
+    for (auto const& p : checkProps) signature.append(p).append("|");
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete, signature), checkProps);
     if (cachedStmt == nullptr) {
         LOG.errorv("Failed to prepare delete statement for class: %s", classId.ToHexStr().c_str());
         return BE_SQLITE_ERROR;
@@ -1037,6 +1189,14 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
+    bool rowExists = true;
+    return Update(inst, options, rowExists);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options, bool& rowExists) {
+    rowExists = true;
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1060,7 +1220,23 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
+    bool hasCheck = options.HasExpectedOldValues();
+    std::vector<CheckPropertyBinding> checkBindings;
+    std::vector<Utf8String> checkNames;
+    if (hasCheck) {
+        auto cls = m_cache.GetECDb().Schemas().GetClass(classId);
+        auto classMap = cls != nullptr ? m_cache.GetECDb().Schemas().Main().GetClassMap(*cls) : nullptr;
+        if (classMap == nullptr) {
+            ctx.SetError("Failed to resolve class map for expectedOldValues comparison.");
+            return BE_SQLITE_ERROR;
+        }
+        if (!ResolveCheckProperties(ctx, *classMap, options.GetExpectedOldValues(), checkBindings)) {
+            return BE_SQLITE_ERROR;
+        }
+        for (auto const& b : checkBindings) checkNames.push_back(b.m_propertyMap->GetName());
+    }
+
+    auto rc = m_cache.WithUpdate(classId, checkNames, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
         // m_cache.GetECDb().GetInstanceRepository().Read(ECInstanceKey(classId, id), )
         if (options.GetUseIncrementalUpdate()) {
@@ -1123,12 +1299,31 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
         auto& binder = stmt.GetStatement().GetBinder(stmt.GetInstanceIdParameterIndex());
         binder.BindId(id);
+
+        if (hasCheck) {
+            auto const& checkBinders = stmt.GetCheckBinders();
+            for (size_t i = 0; i < checkBindings.size(); ++i) {
+                auto memberVal = options.GetExpectedOldValues()[checkBindings[i].m_jsonMemberName.c_str()];
+                // Each checked property has two binders (see PrepareUpdate): the first is bound to the
+                // expected value itself; the second is an integer flag (1 if that value is null, else 0).
+                bindStatus = BindRootProperty(ctx, checkBinders[2 * i].GetPropertyMap(), checkBinders[2 * i].GetBinder(), memberVal);
+                if (bindStatus.IsSuccess())
+                    bindStatus = checkBinders[2 * i + 1].GetBinder().BindInt(memberVal.isNull() ? 1 : 0);
+                if (!bindStatus.IsSuccess()) {
+                    ctx.PrependError("Failed to bind expected old value.");
+                    return BE_SQLITE_ERROR;
+                }
+            }
+        }
+
         auto rc = stmt.GetStatement().Step();
         if (rc != BE_SQLITE_DONE) {
             ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
             if (!ctx.HasError()) {
                 ctx.SetError("Failed to update instance");
             }
+        } else if (hasCheck && m_cache.GetECDb().GetModifiedRowCount() == 0) {
+            rowExists = RowExistsById(m_cache.GetECDb(), classId, id);
         }
         m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
         return rc;
@@ -1139,20 +1334,64 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options) {
+    bool rowExists = true;
+    return Delete(key, options, rowExists);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options, bool& rowExists) {
+    rowExists = true;
     BindContext ctx = BindContext(*this, BeJsDocument::Null(), options);
     if (m_cache.GetECDb().IsReadonly()) {
         ctx.SetError("Connection is readonly");
         return BE_SQLITE_READONLY;
     }
-    auto rc = m_cache.WithDelete(key.GetClassId(), [&](CachedWriteStatement& stmt) {
+
+    bool hasCheck = options.HasExpectedOldValues();
+    std::vector<CheckPropertyBinding> checkBindings;
+    std::vector<Utf8String> checkNames;
+    if (hasCheck) {
+        auto cls = m_cache.GetECDb().Schemas().GetClass(key.GetClassId());
+        auto classMap = cls != nullptr ? m_cache.GetECDb().Schemas().Main().GetClassMap(*cls) : nullptr;
+        if (classMap == nullptr) {
+            ctx.SetError("Failed to resolve class map for expectedOldValues comparison.");
+            return BE_SQLITE_ERROR;
+        }
+        if (!ResolveCheckProperties(ctx, *classMap, options.GetExpectedOldValues(), checkBindings)) {
+            return BE_SQLITE_ERROR;
+        }
+        for (auto const& b : checkBindings) checkNames.push_back(b.m_propertyMap->GetName());
+    }
+
+    auto rc = m_cache.WithDelete(key.GetClassId(), checkNames, [&](CachedWriteStatement& stmt) {
         auto& binder = stmt.GetStatement().GetBinder(1);
         binder.BindId(key.GetInstanceId());
+
+        if (hasCheck) {
+            auto const& checkBinders = stmt.GetCheckBinders();
+            for (size_t i = 0; i < checkBindings.size(); ++i) {
+                auto memberVal = options.GetExpectedOldValues()[checkBindings[i].m_jsonMemberName.c_str()];
+                // Each checked property has two binders (see PrepareDelete): the first is bound to the
+                // expected value itself; the second is an integer flag (1 if that value is null, else 0).
+                auto bindStatus = BindRootProperty(ctx, checkBinders[2 * i].GetPropertyMap(), checkBinders[2 * i].GetBinder(), memberVal);
+                if (bindStatus.IsSuccess())
+                    bindStatus = checkBinders[2 * i + 1].GetBinder().BindInt(memberVal.isNull() ? 1 : 0);
+                if (!bindStatus.IsSuccess()) {
+                    ctx.PrependError("Failed to bind expected old value.");
+                    return BE_SQLITE_ERROR;
+                }
+            }
+        }
+
         auto rc = stmt.GetStatement().Step();
         if (rc != BE_SQLITE_DONE) {
             ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
             if (!ctx.HasError()) {
                 ctx.SetError("Failed to delete instance");
             }
+        } else if (hasCheck && m_cache.GetECDb().GetModifiedRowCount() == 0) {
+            rowExists = RowExistsById(m_cache.GetECDb(), key.GetClassId(), key.GetInstanceId());
         }
         return rc;
     });
@@ -1163,6 +1402,13 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
+    bool rowExists = true;
+    return Delete(inst, options, rowExists);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options, bool& rowExists) {
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1179,7 +1425,7 @@ DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& optio
         ctx.SetError("Failed to get ECInstanceId/id and ECClassId/className/classFullName.");
         return BE_SQLITE_ERROR;
     }
-    return Delete(key, options);
+    return Delete(key, options, rowExists);
 }
 
 //----------------------------------------------------------------------------------
@@ -1225,14 +1471,33 @@ DbResult InstanceWriter::Update(BeJsConst inst, UpdateOptions const& options) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::Update(BeJsConst inst, UpdateOptions const& options, bool& rowExists) {
+    return m_pImpl->Update(inst, options, rowExists);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
 DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options) {
     return m_pImpl->Delete(inst, options);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options, bool& rowExists) {
+    return m_pImpl->Delete(inst, options, rowExists);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
 DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& options) {
     return m_pImpl->Delete(key, options);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& options, bool& rowExists) {
+    return m_pImpl->Delete(key, options, rowExists);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod

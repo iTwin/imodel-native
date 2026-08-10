@@ -33,27 +33,32 @@ struct InstanceWriter::Impl final {
         private:
             ECClassId m_classId;
             WriterOp m_op;
+            // Empty for Insert, and for Update/Delete calls that don't use "expected old value" comparisons.
+            // Otherwise a stable (sorted) signature of the ECProperty names being compared, so that different
+            // sets of compared properties for the same class/op get their own prepared statement.
+            Utf8String m_checkSignature;
 
         public:
-            CacheKey(ECClassId classId, WriterOp op) : m_classId(classId), m_op(op) {}
+            CacheKey(ECClassId classId, WriterOp op, Utf8String checkSignature = Utf8String()) : m_classId(classId), m_op(op), m_checkSignature(checkSignature) {}
             CacheKey(CacheKey const&) = default;
             CacheKey(CacheKey&&) = default;
             CacheKey& operator=(CacheKey const&) = default;
             CacheKey& operator=(CacheKey&&) = default;
             ECClassId GetClassId() const { return m_classId; }
             WriterOp GetOp() const { return m_op; }
+            Utf8StringCR GetCheckSignature() const { return m_checkSignature; }
 
-            bool operator()(CacheKey const& rhs) const {
-                return m_classId < rhs.m_classId || (m_classId == rhs.m_classId && (int)m_op < (int)rhs.m_op);
-            }
+            bool operator()(CacheKey const& rhs) const { return *this < rhs; }
             bool operator<(CacheKey const& rhs) const {
-                return m_classId < rhs.m_classId || (m_classId == rhs.m_classId && (int)m_op < (int)rhs.m_op);
+                if (m_classId != rhs.m_classId) return m_classId < rhs.m_classId;
+                if (m_op != rhs.m_op) return (int)m_op < (int)rhs.m_op;
+                return m_checkSignature < rhs.m_checkSignature;
             }
             bool operator>(CacheKey const& rhs) const {
-                return m_classId > rhs.m_classId || (m_classId == rhs.m_classId && (int)m_op > (int)rhs.m_op);
+                return rhs < *this;
             }
             bool operator==(CacheKey const& rhs) const {
-                return m_classId == rhs.m_classId && m_op == rhs.m_op;
+                return m_classId == rhs.m_classId && m_op == rhs.m_op && m_checkSignature == rhs.m_checkSignature;
             }
             bool operator<=(CacheKey const& rhs) const {
                 return *this < rhs || *this == rhs;
@@ -95,6 +100,9 @@ struct InstanceWriter::Impl final {
             ClassMap const* m_classMap;
             ECSqlStatement m_stmt;
             BinderList m_propertyBinders = {};
+            // Binders for the optional "AND [prop] IS ?" expected-old-value comparisons appended to the WHERE clause,
+            // in the same order as the property names used to prepare this statement (see CacheKey::m_checkSignature).
+            BinderList m_checkBinders = {};
             int m_instanceIdIndex = -1;
 
             // for now us hash table
@@ -110,6 +118,8 @@ struct InstanceWriter::Impl final {
             const CachedBinder* FindBinder(Utf8StringCR name) const;
             const std::vector<CachedBinder>& GetBinders() const { return m_propertyBinders; }
             std::vector<CachedBinder>& GetBinders() { return m_propertyBinders; }
+            const BinderList& GetCheckBinders() const { return m_checkBinders; }
+            BinderList& GetCheckBinders() { return m_checkBinders; }
             int GetInstanceIdParameterIndex() const { return m_instanceIdIndex; }
         };
 
@@ -121,10 +131,10 @@ struct InstanceWriter::Impl final {
         uint32_t m_maxCache;
         bool m_addSupportForJsName = true;
         ECSqlStatus PrepareInsert(CachedWriteStatement& cachedStmt);
-        ECSqlStatus PrepareUpdate(CachedWriteStatement& cachedStmt);
-        ECSqlStatus PrepareDelete(CachedWriteStatement& cachedStmt);
-        std::unique_ptr<CachedWriteStatement> Prepare(CacheKey key);
-        CachedWriteStatement* TryGet(CacheKey key);
+        ECSqlStatus PrepareUpdate(CachedWriteStatement& cachedStmt, std::vector<Utf8String> const& checkProps);
+        ECSqlStatus PrepareDelete(CachedWriteStatement& cachedStmt, std::vector<Utf8String> const& checkProps);
+        std::unique_ptr<CachedWriteStatement> Prepare(CacheKey key, std::vector<Utf8String> const& checkProps);
+        CachedWriteStatement* TryGet(CacheKey key, std::vector<Utf8String> const& checkProps);
         SnappyToBlob m_snappyToBlob;
         SnappyFromBlob m_snappyFromBlob;
 
@@ -135,8 +145,8 @@ struct InstanceWriter::Impl final {
         void Reset();
         ECDbCR GetECDb() const { return m_ecdb; }
         DbResult WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
-        DbResult WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
-        DbResult WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn);
+        DbResult WithUpdate(ECClassId classId, std::vector<Utf8String> const& checkProps, std::function<DbResult(CachedWriteStatement&)> fn);
+        DbResult WithDelete(ECClassId classId, std::vector<Utf8String> const& checkProps, std::function<DbResult(CachedWriteStatement&)> fn);
     };
     //---------------------------------------------------------------------------------------
     // @bsistruct
@@ -200,8 +210,11 @@ public:
     DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     DbResult Insert(BeJsConst inst, InsertOptions const& options);
     DbResult Update(BeJsConst inst, UpdateOptions const& options);
+    DbResult Update(BeJsConst inst, UpdateOptions const& options, bool& rowExists);
     DbResult Delete(BeJsConst inst, DeleteOptions const& options);
+    DbResult Delete(BeJsConst inst, DeleteOptions const& options, bool& rowExists);
     DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options);
+    DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options, bool& rowExists);
 
     void ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, JsFormat jsFmt) const;
     void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const;

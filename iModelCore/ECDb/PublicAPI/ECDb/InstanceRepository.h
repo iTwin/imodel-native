@@ -28,8 +28,11 @@ public:
     InstanceRepository& operator=(InstanceRepository&&) = delete;
     ECDB_EXPORT DbResult Insert(BeJsValue instance, BeJsConst userOptions, JsFormat inFmt, ECInstanceKeyR key) const;
     ECDB_EXPORT DbResult Update(BeJsValue instance, BeJsConst userOptions, JsFormat inFmt) const;
+    ECDB_EXPORT DbResult Update(BeJsValue instance, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const;
     ECDB_EXPORT DbResult Delete(BeJsConst key, BeJsConst userOptions, JsFormat inFmt) const;
+    ECDB_EXPORT DbResult Delete(BeJsConst key, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const;
     ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt) const;
+    ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const;
     ECDB_EXPORT DbResult Read(BeJsConst key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
     ECDB_EXPORT DbResult Read(ECInstanceKeyCR key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
 
