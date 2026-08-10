@@ -154,6 +154,7 @@ private:
     StatementCache m_sqliteStatementCache;
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
     mutable std::unique_ptr<InstanceWriter> m_instanceWriter;
+    mutable std::unique_ptr<BulkInstanceWriter> m_bulkInstanceWriter;
     mutable std::unique_ptr<InstanceRepository> m_instanceRepo;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
@@ -273,6 +274,15 @@ public:
             }
         }
         return *m_instanceWriter;
+    }
+    BulkInstanceWriter& GetBulkInstanceWriter() const {
+        if (m_bulkInstanceWriter == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_bulkInstanceWriter == nullptr) {
+                m_bulkInstanceWriter = std::make_unique<BulkInstanceWriter>(m_ecdb);
+            }
+        }
+        return *m_bulkInstanceWriter;
     }
     InstanceRepository& GetInstanceRepository() const {
         if (m_instanceRepo == nullptr) {

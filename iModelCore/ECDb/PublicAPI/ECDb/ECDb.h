@@ -13,6 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SchemaManager;
 struct InstanceReader;
 struct InstanceWriter;
+struct BulkInstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
 struct InstanceRepository;
@@ -533,6 +534,9 @@ public:
 
     //! Allow insert, update & delete a instance in ECDb
     ECDB_EXPORT InstanceWriter& GetInstanceWriter() const;
+
+    //! Bulk instance writer is bare metal to insert/update full instances without requiring to prepare ECSqlStatement
+    ECDB_EXPORT BulkInstanceWriter& GetBulkInstanceWriter() const;
 
     ECDB_EXPORT InstanceRepository& GetInstanceRepository() const;
 
