@@ -138,7 +138,6 @@ private:
     int64_t m_modifiedRowCount;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
-    Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
     Status MirrorToSyncDb(SyncDbUri const&, TableList upsertOnlyTables);
     Status OverwriteSyncDbInternal(SyncDbUri const&);
@@ -169,7 +168,6 @@ public:
     ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri);
     ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
-    ECDB_EXPORT Status Push(SyncDbUri const&);
     //! Adopt the given schemas, and everything they transitively reference, from the sync db.
     //!
     //! This is step 2 of the "upstream" flow: the import has already run in the sync

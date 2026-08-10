@@ -354,7 +354,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
         auto rc =  isPull ?
             iModelFile.Schemas().GetSchemaSync().Pull(uri):
-            iModelFile.Schemas().GetSchemaSync().Push(uri);
+            iModelFile.Schemas().GetSchemaSync().OverwriteSyncDb(uri);
         if (rc != SchemaSync::Status::OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
@@ -369,7 +369,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
          auto rc =  isPull ?
             session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Pull(uri):
-            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Push(uri);
+            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().OverwriteSyncDb(uri);
         if ( rc != SchemaSync::Status::OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();

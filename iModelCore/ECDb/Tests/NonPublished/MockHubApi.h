@@ -107,6 +107,8 @@ struct TrackedECDb : ECDb {
         ECDbChangeTracker* GetTracker() { return m_tracker.get(); }
         void SetHub(ECDbHub& hub) { m_hub = &hub; }
         ECDbHub* GetHub() { return m_hub; }
+        //! Stands in for TxnManager::HasPendingTxns() - changes made locally and not pushed yet.
+        bool HasLocalChangesets() const { return m_tracker != nullptr && !m_tracker->GetLocalChangesets().empty(); }
         DbResult PullMergePush(Utf8CP comment);
         virtual ~TrackedECDb();
 };

@@ -424,11 +424,12 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
 
         // Under schema sync, every briefcase gets its ec_ rows from the same authority, so a changeset
         // re-inserting rows this briefcase already holds is the ordinary case rather than a sign of
-        // trouble. Replace is never an option for them: nearly every ec_ foreign key is ON DELETE
-        // CASCADE, so Replace deletes the existing row before inserting the incoming one and silently
-        // takes the row's children with it, while the re-insert restores only the parent. The branch
-        // below already skips these when there are local changes; a briefcase that has already pushed
-        // needs the same treatment, and gets it here.
+        // trouble. Replace is the wrong answer for them: here it deletes the existing row before
+        // inserting the incoming one, and every ec_ child table is ON DELETE CASCADE - so with foreign
+        // key actions live it takes that row's children with it and the re-insert restores only the
+        // parent. TxnManager leaves actions live for a purely additive schema changeset, which is what
+        // an import produces. The branch below already skips these when there are local changes; a
+        // briefcase that has already pushed needs the same treatment, and gets it here.
         if (iter.GetTableName().StartsWithIAscii("ec_") && m_dgndb->Schemas().GetSchemaSync().IsEnabled())
             return ChangeSet::ConflictResolution::Skip;
 

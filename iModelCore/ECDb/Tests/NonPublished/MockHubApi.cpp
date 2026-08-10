@@ -1161,18 +1161,30 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
         if (0 == ::strncmp(tableName, "ec_", 3) && m_ecdb != nullptr && m_ecdb->Schemas().GetSchemaSync().IsEnabled()) {
-            // Replace would DELETE the existing row before re-inserting it, and almost every ec_
-            // foreign key is ON DELETE CASCADE - so the delete takes the row's children with it and
-            // the re-insert restores only the parent. Under schema sync the rows arriving here are
-            // normally ones this briefcase already holds, because every briefcase gets its ids from
-            // the same authority, so skipping keeps what is already correct instead of destroying
-            // dependents.
+            // Replace would DELETE the existing row before re-inserting it, and every ec_ child table
+            // is ON DELETE CASCADE - so the delete takes the row's children with it and the re-insert
+            // restores only the parent. This harness never passes fkNoAction, so actions are always
+            // live here; production turns them off for a schema changeset that updates or deletes
+            // ec_cache_ rows, which an additive import does not produce.
+            // Under schema sync the rows arriving here are normally ones this briefcase already holds,
+            // because every briefcase gets its ids from the same authority, so skipping keeps what is
+            // already correct instead of destroying dependents.
             // Note this does not distinguish an identical row from a genuinely differing one; a
             // differing row is a real conflict and needs a real decision. Mirrors the rule in
             // ChangesetFileReader::_OnConflict.
             return ChangeSet::ConflictResolution::Skip;
         }
         return ChangeSet::ConflictResolution::Replace;
+    }
+    if (cause == ChangeSet::ConflictCause::Data) {
+        // A briefcase holding local changes keeps its own ec_ rows: it got them from the sync db,
+        // which decides them, so an incoming changeset carrying a different "before" value has
+        // nothing to say about them. Mirrors ChangesetFileReader::_OnConflict, which does this in
+        // the HasPendingTxns() branch. Without local changes the conflict falls through to Replace
+        // below, exactly as it does there.
+        auto const* briefcase = dynamic_cast<TrackedECDb const*>(m_ecdb);
+        if (0 == ::strncmp(tableName, "ec_", 3) && briefcase != nullptr && briefcase->HasLocalChangesets())
+            return ChangeSet::ConflictResolution::Skip;
     }
     if (cause == ChangeSet::ConflictCause::ForeignKey) {
         // Note: No current or conflicting row information is provided if it's a FKey conflict

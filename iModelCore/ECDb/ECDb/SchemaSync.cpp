@@ -884,82 +884,6 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableList additionTables, bool isInit) {
-    const auto vrc = VerifySyncDb(syncDbUri, false, isInit);
-    if  (vrc != Status::OK) {
-        LOG.error("SchemaSync::PushInternal(): Failed to verify sync db.");
-        return vrc;
-    }
-
-    const auto syncDbInfo = syncDbUri.GetInfo();
-    const auto localDbInfo = GetInfo();
-    if (syncDbInfo.GetDataVersion() != localDbInfo.GetDataVersion()) {
-        LOG.error("SchemaSync::PushInternal(): Sync db data version is not equal to local db data version.");
-        return Status::ERROR;
-    }
-
-    if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::PushInternal(): Failed to verify alias.");
-        return Status::ERROR;
-    }
-
-    // patch container with thisDb schema changes if any
-    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, true);
-    if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::PushInternal(): Failed to sync profile tables schema.");
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
-            "Unable to attach sync db '%s' as '%s' to primary connection: %s",
-            syncDbUri.GetUri().c_str(),
-            SchemaSyncHelper::ALIAS_SYNC_DB,
-            m_conn.GetLastError().c_str());
-        return Status::ERROR_UNABLE_TO_ATTACH;
-    }
-
-    // pull changes ================================================
-    const auto fromAlias = SchemaSyncHelper::ALIAS_MAIN_DB;
-    const auto toAlias = SchemaSyncHelper::ALIAS_SYNC_DB;
-
-    TableList tables;
-    rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, fromAlias);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    tables.insert(tables.end(), additionTables.begin(), additionTables.end());
-    rc = SchemaSyncHelper::SyncData(m_conn, tables, fromAlias, toAlias);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.SaveChanges();
-    if (rc != BE_SQLITE_OK) {
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-    if (rc != BE_SQLITE_OK) {
-        return Status::ERROR;
-    }
-
-    return Status::OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR containerId, bool overrideContainer) {
     ECDB_PERF_LOG_SCOPE("Initializing schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Init");
@@ -1053,34 +977,6 @@ SchemaSync::Status SchemaSync::UpdateDataVersion(SyncDbUri const& syncDbUri) {
         return rc;
     }
     return Status::OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
-    ECDB_PERF_LOG_SCOPE("Pushing tp schema sync db");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Push");
-    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
-    BeginModifiedRowCount();
-    auto rc = PushInternal(effectiveSyncDbUri, {}, false);
-    EndModifiedRowCount();
-    if (rc == Status::OK && GetModifiedRowCount() > 0) {
-        DbResult sqliteStatus = SchemaSyncHelper::UpdateProfileVersion(m_conn, effectiveSyncDbUri, true);
-        if (sqliteStatus != BE_SQLITE_OK) {
-            LOG.error("SchemaSync::Push() Failed to update profile version in schema sync db");
-            return Status::ERROR;
-        }
-
-        rc = UpdateDataVersion(effectiveSyncDbUri);
-        if (rc != Status::OK) {
-            LOG.error("SchemaSync::Push() Failed to update data version in schema sync db");
-            return rc;
-        }
-    }
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Push");
-    return rc;
 }
 
 //SchemaSyncUpstreamHelper======================================================
