@@ -425,6 +425,7 @@ export declare namespace IModelJsNative {
     classIdsToClassNames?: boolean;
     useJsName?: boolean;
     doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
+    includeNulls?: boolean;
   }
 
   interface EmbeddedFileProps {

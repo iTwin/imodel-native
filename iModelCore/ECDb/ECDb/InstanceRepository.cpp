@@ -130,6 +130,7 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
             adaptor.GetOptions().SetConvertClassIdsToClassNames(fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseJsNames(fmt == JsFormat::JsName);
             adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetIncludeNulls(userOptions["includeNulls"].asBool(false));
             if(!wantGeometry){
                 adaptor.SetSkipPropertyHandler([&](ECN::ECPropertyCR prop) {
                     if(ExtendedTypeHelper::FromProperty(prop) == ExtendedTypeHelper::ExtendedType::GeometryStream)
