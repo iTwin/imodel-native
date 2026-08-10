@@ -1637,7 +1637,8 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
             GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixins);
         }
 
-    if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
+    // Only a file that holds the data tables can reconcile them; the sync db takes the columns as ec_Column has them.
+    if (ctx.MaintainsDataTables() && GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0285, "Synchronizing existing table to which classes are mapped failed.");
         return ERROR;
