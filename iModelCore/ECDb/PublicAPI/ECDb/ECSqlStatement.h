@@ -782,7 +782,7 @@ struct JsReadOptions final {
     static constexpr auto JUseJsName = "useJsName";
     static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
     static constexpr auto JSkipReadOnlyProperties = "skipReadOnlyProperties";
-    static constexpr auto JUseClassFullNameInsteadofClassName = "useClassFullNameInsteadofClassNaem";
+    static constexpr auto JUseClassFullNameInsteadofClassName = "useClassFullNameInsteadofClassName";
     static constexpr auto JIncludeNulls = "includeNulls";
 
     private:
