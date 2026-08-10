@@ -216,11 +216,12 @@ public:
     //! abandoned. It also frees shared column ordinals that nothing else in this design ever frees.
     //!
     //! @param[in] schemas ECSchemas to import. Used as they are - resolved against this briefcase.
+    //! @param[in] token The caller's schema import token. The local import needs it, same as an ordinary one.
     //! @note The caller must hold both the sync db's container write lock and the **exclusive** schema
     //!       lock, must be at the tip of the timeline, and must push the resulting changeset and
     //!       upload the sync db before releasing either. If the changeset is dropped after the sync
     //!       db was uploaded, the two disagree with no way back.
-    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options);
+    ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);

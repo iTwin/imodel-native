@@ -1355,7 +1355,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             // caller says it holds the exclusive schema lock, which is the one case where the
             // briefcase decides instead and the sync db is rebuilt from it.
             const auto syncStatus = Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)
-                ? schemaSync.UpgradeSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions())
+                ? schemaSync.UpgradeSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions(), schemaImportToken)
                 : schemaSync.ImportSchemas(resolvedSyncDbUri, schemas, ctx.GetOptions());
 
             if (syncStatus == SchemaSync::Status::ERROR_DATA_TRANSFORM_REQUIRED)

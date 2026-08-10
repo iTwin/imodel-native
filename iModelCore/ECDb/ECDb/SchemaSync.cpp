@@ -1905,7 +1905,7 @@ SchemaSync::Status SchemaSync::ImportIntoSyncDb(SyncDbUri const& syncDbUri, bvec
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options) {
+SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) {
     ECDB_PERF_LOG_SCOPE("Upgrading schemas and overwriting the schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::UpgradeSchemas");
 
@@ -1937,7 +1937,7 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
     SchemaImportResult importRc = SchemaImportResult::ERROR;
         {
         DisableSchemaSync();
-        importRc = m_conn.Schemas().ImportSchemas(schemas, Enum::Or(options, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+        importRc = m_conn.Schemas().ImportSchemas(schemas, Enum::Or(options, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade), token);
         ReEnableSchemaSync();
         }
 
