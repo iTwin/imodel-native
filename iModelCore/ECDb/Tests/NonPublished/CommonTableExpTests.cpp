@@ -4333,11 +4333,9 @@ TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_CteWithoutColumnLis
     )";
 
     ECSqlStatement stmt;
-    const ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, query); // must not crash
-    if (prepareStatus.IsSuccess()) {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
-        ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
-    }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
 }
 
 //---------------------------------------------------------------------------------------
@@ -4360,11 +4358,9 @@ TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_CteWithColumnList_C
     )";
 
     ECSqlStatement stmt;
-    const ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, query); // must not crash
-    if (prepareStatus.IsSuccess()) {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
-        ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
-    }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
 }
 
 //---------------------------------------------------------------------------------------
@@ -4384,11 +4380,9 @@ TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionRevers
     )";
 
     ECSqlStatement stmt;
-    const ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, query); // must not crash
-    if (prepareStatus.IsSuccess()) {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
-        ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
-    }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
 }
 
 //---------------------------------------------------------------------------------------
@@ -4397,7 +4391,7 @@ TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionRevers
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionRelationshipEndId) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("issue2311_rel_end_id.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
             <ECEntityClass typeName='Model'>
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -4423,11 +4417,9 @@ TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionRelati
     )";
 
     ECSqlStatement stmt;
-    const ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, query); // must not crash
-    if (prepareStatus.IsSuccess()) {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
-        ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
-    }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
 }
 
 END_ECDBUNITTESTS_NAMESPACE
