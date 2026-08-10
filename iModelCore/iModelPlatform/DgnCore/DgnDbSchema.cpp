@@ -18,7 +18,7 @@ bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> AutoHandledPropertiesCollection
 static bool isHardcodedAutoHandledProperty(ECN::ECPropertyCR prop)
     {
     ECN::ECClassCR eclass = prop.GetClass();
-    return 0 == strcmp(eclass.GetSchema().GetName().c_str(), BIS_ECSCHEMA_NAME) && 0 == strcmp(eclass.GetName().c_str(), "DefinitionSet") && 0 == strcmp(prop.GetName().c_str(), "Rank");
+    return 0 == strcmp(eclass.GetName().c_str(), "DefinitionSet") && 0 == strcmp(prop.GetName().c_str(), "Rank") && 0 == strcmp(eclass.GetSchema().GetName().c_str(), BIS_ECSCHEMA_NAME);
     }
 
 /*---------------------------------------------------------------------------------**//**
