@@ -4311,11 +4311,9 @@ TEST_F(CommonTableExpNullPropertyMapTestFixture, BindIdParam_SubqueryUnionNullAl
     )";
 
     ECSqlStatement stmt;
-    const ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, query); // must not crash
-    if (prepareStatus.IsSuccess()) {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
-        ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
-    }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query)) << query;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId((uint64_t) 1))) << query;
+    ASSERT_NE(BE_SQLITE_ERROR, stmt.Step()) << query;
 }
 
 //---------------------------------------------------------------------------------------
