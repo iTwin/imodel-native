@@ -514,7 +514,7 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     SchemaSyncDb schemaSyncDb("sync-db");
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
-    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1397);
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1303);
     b1->SaveChanges();
     b1->PullMergePush("init");
 
@@ -616,7 +616,7 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
         b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", false));
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", true));
-    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1411);
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1315);
 
     syncDb = schemaSyncDbNew.OpenReadOnly();
     ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));

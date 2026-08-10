@@ -220,6 +220,17 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     //! their own briefcases call it themselves.
     static void VerifySchemaSyncRules(SchemaSyncDb& syncDb, std::vector<ECDb*> const& briefcases, Utf8CP context);
 
+    //! Compares every ec_ table between two files and names the rows that differ, rather than only
+    //! reporting that a hash did not match. ec_cache_* is skipped - it is derived and rebuilt locally.
+    static void ExpectECTablesIdentical(ECDbR actual, ECDbR expected, Utf8CP context);
+    //! Compares the physical schema - every table, index and trigger, by the DDL SQLite kept for it.
+    //! ExpectECTablesIdentical cannot see foreign keys or triggers: they are never persisted in ec_,
+    //! only text inside a CREATE statement that DerivedDbStructures works out again per file.
+    static void ExpectPhysicalSchemaIdentical(ECDbR actual, ECDbR expected, Utf8CP context);
+    //! Foreign keys are deferred while rows are copied, so a violation otherwise surfaces at
+    //! SaveChanges with nothing to say about its cause. This names the offending row first.
+    static void ExpectNoForeignKeyViolations(ECDbR db, Utf8CP context);
+
     void TearDown() override;
 
     SchemaSync::SyncDbUri GetSyncDbUri()

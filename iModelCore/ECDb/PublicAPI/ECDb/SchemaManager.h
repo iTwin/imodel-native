@@ -140,7 +140,8 @@ private:
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
-    Status OverwriteSyncDb(SyncDbUri const&);
+    Status MirrorToSyncDb(SyncDbUri const&, TableList upsertOnlyTables);
+    Status OverwriteSyncDbInternal(SyncDbUri const&);
     Status VerifyProfileVersionsMatch(SyncDbUri const&) const;
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
@@ -222,6 +223,16 @@ public:
     //!       upload the sync db before releasing either. If the changeset is dropped after the sync
     //!       db was uploaded, the two disagree with no way back.
     ECDB_EXPORT Status UpgradeSchemas(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token);
+    //! Replace the sync db's ec_ rows, table definitions and profile version with this briefcase's.
+    //!
+    //! For changes this briefcase had to make locally because the sync db cannot make them: a profile
+    //! upgrade, or a domain schema upgrade that came with one. Those run on the file itself, so the sync
+    //! db learns about them only by being rebuilt from the result.
+    //!
+    //! @note Same conditions as UpgradeSchemas. The rows this discards are, under the exclusive schema
+    //!       lock, work somebody abandoned - and the changeset must be pushed before the lock is
+    //!       released, or the sync db describes a layout no briefcase has.
+    ECDB_EXPORT Status OverwriteSyncDb(SyncDbUri const&);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);

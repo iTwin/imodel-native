@@ -594,9 +594,11 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR con
     }
 
     sharedDb.CloseDb();
-    const auto pullResult = PushInternal(syncDbUri, additionTables, true);
-    if (pullResult != Status::OK)
-        return pullResult;
+    // Seeding is the same operation as an upgrade's overwrite, against an empty target. be_Prop is
+    // copied without the delete pass, because the sync db info this Init just wrote lives there.
+    const auto seedResult = MirrorToSyncDb(syncDbUri, additionTables);
+    if (seedResult != Status::OK)
+        return seedResult;
 
     if (std::find(additionTables.begin(),additionTables.end(), SchemaSyncHelper::TABLE_BE_PROP) != additionTables.end()){
         // after BE_PROP pull into syncdb it include JLocalDbInfo which
@@ -1949,16 +1951,9 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
         return Status::ERROR;
     }
 
-    auto status = OverwriteSyncDb(effectiveSyncDbUri);
+    auto status = OverwriteSyncDbInternal(effectiveSyncDbUri);
     if (status != Status::OK) {
         LOG.error("SchemaSync::UpgradeSchemas(): Failed to overwrite the sync db from this briefcase.");
-        m_conn.AbandonChanges();
-        return status;
-    }
-
-    status = UpdateDataVersion(effectiveSyncDbUri);
-    if (status != Status::OK) {
-        LOG.error("SchemaSync::UpgradeSchemas(): Failed to update the data version.");
         m_conn.AbandonChanges();
         return status;
     }
@@ -1974,11 +1969,14 @@ SchemaSync::Status SchemaSync::UpgradeSchemas(SyncDbUri const& syncDbUri, bvecto
 // This is a push without its "am I level with the sync db" precondition, which is the whole
 // point: the sync db may hold rows from an import that was never pushed, and those are what we
 // want gone. The copy itself is a differential mirror rather than an upsert - see MirrorTables.
+//
+// @param upsertOnlyTables tables to copy without the delete pass. Only Init needs this, for be_Prop:
+//        the sync db's own info property lives there and has no counterpart in the briefcase.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
+SchemaSync::Status SchemaSync::MirrorToSyncDb(SyncDbUri const& syncDbUri, TableList upsertOnlyTables) {
     if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to verify alias.");
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to verify alias.");
         return Status::ERROR;
     }
 
@@ -1996,7 +1994,7 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
     TableList tables;
     rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, SchemaSyncHelper::ALIAS_MAIN_DB);
     if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to read the list of meta tables.");
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to read the list of meta tables.");
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
@@ -2012,9 +2010,18 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
 
     rc = SchemaSyncUpstreamHelper::MirrorTables(m_conn, tablesToMirror, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to bring the sync db's ec_ tables in line with this briefcase.");
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to bring the sync db's ec_ tables in line with this briefcase.");
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
+    }
+
+    if (!upsertOnlyTables.empty()) {
+        rc = SchemaSyncHelper::SyncData(m_conn, upsertOnlyTables, SchemaSyncHelper::ALIAS_MAIN_DB, SchemaSyncHelper::ALIAS_SYNC_DB);
+        if (rc != BE_SQLITE_OK) {
+            LOG.error("SchemaSync::MirrorToSyncDb(): Failed to copy the additional tables.");
+            m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+            return Status::ERROR;
+        }
     }
 
 #if SCHEMA_SYNC_UPSTREAM_TRACE
@@ -2035,18 +2042,66 @@ SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
 
     rc = m_conn.SaveChanges();
     if (rc != BE_SQLITE_OK) {
-        LOG.errorv("SchemaSync::OverwriteSyncDb(): Failed to save. %s", BeSQLiteLib::GetErrorString(rc));
+        LOG.errorv("SchemaSync::MirrorToSyncDb(): Failed to save. %s", BeSQLiteLib::GetErrorString(rc));
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
     rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
-        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to detach the sync db.");
+        LOG.error("SchemaSync::MirrorToSyncDb(): Failed to detach the sync db.");
         return Status::ERROR;
     }
 
     return Status::OK;
+}
+
+//---------------------------------------------------------------------------------------
+// The whole overwrite: the sync db's ec_ table definitions, its rows, and the two versions that say
+// what it is. A profile upgrade can add columns to the ec_ tables themselves, so their definitions
+// have to be patched before any row is copied, and the profile version has to follow the briefcase
+// or every later import is refused for skew.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::OverwriteSyncDbInternal(SyncDbUri const& syncDbUri) {
+    auto sqliteRc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, true);
+    if (sqliteRc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::OverwriteSyncDbInternal(): Failed to patch the sync db's profile table definitions.");
+        return Status::ERROR_SYNC_SQL_SCHEMA;
+    }
+
+    auto status = MirrorToSyncDb(syncDbUri, {});
+    if (status != Status::OK)
+        return status;
+
+    sqliteRc = SchemaSyncHelper::UpdateProfileVersion(m_conn, syncDbUri, true);
+    if (sqliteRc != BE_SQLITE_OK) {
+        LOG.error("SchemaSync::OverwriteSyncDbInternal(): Failed to update the sync db's profile version.");
+        return Status::ERROR;
+    }
+
+    return UpdateDataVersion(syncDbUri);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::OverwriteSyncDb(SyncDbUri const& syncDbUri) {
+    ECDB_PERF_LOG_SCOPE("Overwriting the schema sync db from this briefcase");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::OverwriteSyncDb");
+    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+    const auto vrc = VerifySyncDb(effectiveSyncDbUri, false, false);
+    if (vrc != Status::OK) {
+        LOG.error("SchemaSync::OverwriteSyncDb(): Failed to verify sync db.");
+        return vrc;
+    }
+
+    SS_TRACE("overwrite: rebuilding the sync db from this briefcase");
+    const auto status = OverwriteSyncDbInternal(effectiveSyncDbUri);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::OverwriteSyncDb");
+    return status;
 }
 
 //---------------------------------------------------------------------------------------

@@ -92,6 +92,61 @@ Utf8String JoinExprs(bvector<Utf8String> const& exprs, Utf8CP separator) {
     return joined;
 }
 
+// Reads one table as one quoted text line per row, keyed by rowid. quote() keeps NULLs and types
+// visible, which matters because two values that print the same can still hash differently.
+bmap<int64_t, Utf8String> ReadTableRows(ECDbR db, Utf8CP table) {
+    bvector<Utf8String> columns;
+    {
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("pragma main.table_info(%s)", table).GetUtf8CP()) != BE_SQLITE_OK)
+        return {};
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1));
+    }
+
+    bvector<Utf8String> exprs;
+    for (auto const& column : columns)
+        exprs.push_back(SqlPrintfString("'%s='||quote([%s])", column.c_str(), column.c_str()).GetUtf8CP());
+
+    bmap<int64_t, Utf8String> rows;
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("SELECT ROWID, %s FROM main.[%s]", JoinExprs(exprs, " || ' | ' || ").c_str(), table).GetUtf8CP()) != BE_SQLITE_OK)
+        return {};
+    while (stmt.Step() == BE_SQLITE_ROW)
+        rows[stmt.GetValueInt64(0)] = stmt.GetValueText(1);
+    return rows;
+}
+
+// Names the rows that differ, rather than only reporting that a hash did not match. A bare hash
+// mismatch says nothing about which column is wrong, and the interesting ones - a foreign key nulled
+// by a cascade, a type that changed - are invisible in a checksum.
+void ReportRowDifferences(ECDbR actual, ECDbR expected, Utf8CP table, Utf8CP context) {
+    const auto actualRows = ReadTableRows(actual, table);
+    const auto expectedRows = ReadTableRows(expected, table);
+
+    int reported = 0;
+    constexpr int maxReported = 10;
+    for (auto const& entry : expectedRows) {
+        const auto found = actualRows.find(entry.first);
+        if (found == actualRows.end()) {
+            printf("[schemasync-check] %s: %s rowid=%lld only in expected: %s\n", context, table, (long long)entry.first, entry.second.c_str());
+            ++reported;
+        } else if (!entry.second.Equals(found->second)) {
+            printf("[schemasync-check] %s: %s rowid=%lld\n    expected: %s\n      actual: %s\n", context, table, (long long)entry.first, entry.second.c_str(), found->second.c_str());
+            ++reported;
+        }
+        if (reported >= maxReported)
+            return;
+    }
+    for (auto const& entry : actualRows) {
+        if (expectedRows.find(entry.first) != expectedRows.end())
+            continue;
+        printf("[schemasync-check] %s: %s rowid=%lld only in actual: %s\n", context, table, (long long)entry.first, entry.second.c_str());
+        if (++reported >= maxReported)
+            return;
+    }
+}
+
 } // namespace
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,6 +268,87 @@ void SchemaSyncTestFixture::VerifySchemaSyncRules(SchemaSyncDb& syncDb, std::vec
         if (schemaSync.IsEnabled() && schemaSync.GetInfo().GetDataVersion() == syncDataVer)
             VerifyBriefcaseRowsExistInSyncDb(*briefcase, syncDb, context);
     }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::ExpectECTablesIdentical(ECDbR actual, ECDbR expected, Utf8CP context) {
+    const auto tables = ReadECTableNames(expected);
+    ASSERT_FALSE(tables.empty());
+
+    auto rowCount = [](ECDbR db, Utf8CP table) -> int64_t {
+        Statement stmt;
+        if (stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM main.[%s]", table).GetUtf8CP()) != BE_SQLITE_OK)
+            return -1;
+        return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt64(0) : -1;
+    };
+    auto contentHash = [](ECDbR db, Utf8CP table) -> Utf8String {
+        Statement stmt;
+        if (stmt.Prepare(db, SqlPrintfString("SELECT hex(sha3_query('SELECT * FROM [%s] ORDER BY ROWID'))", table).GetUtf8CP()) != BE_SQLITE_OK)
+            return "";
+        return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
+    };
+
+    for (auto const& table : tables) {
+        const auto actualCount = rowCount(actual, table.c_str());
+        const auto expectedCount = rowCount(expected, table.c_str());
+        EXPECT_EQ(expectedCount, actualCount) << context << ": row count differs in " << table.c_str();
+        if (actualCount != expectedCount) {
+            ReportRowDifferences(actual, expected, table.c_str(), context);
+            continue;
+        }
+        if (!contentHash(expected, table.c_str()).Equals(contentHash(actual, table.c_str()))) {
+            ADD_FAILURE() << context << ": row CONTENT differs in " << table.c_str() << " (same count, different values)";
+            ReportRowDifferences(actual, expected, table.c_str(), context);
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::ExpectPhysicalSchemaIdentical(ECDbR actual, ECDbR expected, Utf8CP context) {
+    auto read = [](ECDbR db) {
+        bmap<Utf8String, Utf8String> objects;
+        Statement stmt;
+        if (stmt.Prepare(db, "SELECT type, name, sql FROM main.sqlite_master WHERE sql IS NOT NULL") != BE_SQLITE_OK)
+            return objects;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            objects[Utf8String(stmt.GetValueText(1))] = Utf8PrintfString("%s: %s", stmt.GetValueText(0), stmt.GetValueText(2));
+        return objects;
+    };
+
+    const auto actualObjects = read(actual);
+    const auto expectedObjects = read(expected);
+    ASSERT_FALSE(expectedObjects.empty());
+
+    for (auto const& entry : expectedObjects) {
+        const auto found = actualObjects.find(entry.first);
+        if (found == actualObjects.end())
+            ADD_FAILURE() << context << ": " << entry.first.c_str() << " is missing\n    expected: " << entry.second.c_str();
+        else if (!entry.second.Equals(found->second))
+            ADD_FAILURE() << context << ": " << entry.first.c_str() << " differs\n    expected: " << entry.second.c_str() << "\n      actual: " << found->second.c_str();
+    }
+    for (auto const& entry : actualObjects) {
+        if (expectedObjects.find(entry.first) == expectedObjects.end())
+            ADD_FAILURE() << context << ": " << entry.first.c_str() << " exists only in the file under test\n    " << entry.second.c_str();
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::ExpectNoForeignKeyViolations(ECDbR db, Utf8CP context) {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA main.foreign_key_check"));
+    int violations = 0;
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        ++violations;
+        printf("[schemasync-check] FK violation (%s): table=%s rowid=%lld parent=%s fkid=%d\n",
+            context, stmt.GetValueText(0), stmt.GetValueInt64(1), stmt.GetValueText(2), stmt.GetValueInt(3));
+    }
+    EXPECT_EQ(0, violations) << context << ": rows were copied whose parents are missing";
 }
 
 /*---------------------------------------------------------------------------------**//**

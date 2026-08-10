@@ -11,23 +11,16 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 /**
- * SchemaSync "upstream" spike tests.
+ * A schema import under schema sync runs in the sync db first, which decides ids and physical layout
+ * exactly once; the briefcase then adopts that answer instead of computing its own. These tests
+ * cover the two steps on their own, the entry points that drive them (SchemaSync::ImportSchemas,
+ * UpgradeSchemas and OverwriteSyncDb), and the convergence properties the whole arrangement exists
+ * for - two briefcases ending up with the same ec_ rows AND the same physical schema.
  *
- * The upstream flow inverts the direction of pull and push: a schema import runs in the sync db
- * FIRST, which decides ids
- * and physical layout exactly once, and the briefcase then adopts that answer instead of computing
- * its own. These tests establish whether the two premises that design rests on actually hold:
- *
- *   1. The sync db can run a schema import at all. It is a real ECDb with the full ec_* mirror, but
- *      Init dropped its data tables, and it has never been an import target before.
- *   2. The mapper reaches the SAME answer in the sync db as it would in a briefcase. If the two
- *      disagree, "decide once in the sync db, adopt everywhere" is not a valid substitute for
- *      "every briefcase decides for itself", and the design needs rework.
- *
- * These are spikes, not the final mechanism - they call ImportSchemas directly rather than through
- * any new API, precisely so that they measure the existing behaviour and nothing else.
+ * SchemaSyncTest.cpp covers what the sync db does with a schema once it is there. This file covers
+ * how it gets there.
  */
-struct SchemaSyncUpstreamTestFixture : SchemaSyncTestFixture {};
+struct SchemaSyncImportTestFixture : SchemaSyncTestFixture {};
 
 namespace {
 
@@ -88,103 +81,6 @@ SchemaItem ReferencingSchema(Utf8CP version = "01.00.00") {
     return SchemaItem(xml);
 }
 
-// Reads one table as one quoted text line per row, keyed by rowid. quote() keeps NULLs and types
-// visible, which matters because two values that print the same can still hash differently.
-bmap<int64_t, Utf8String> ReadTableRows(ECDbR db, Utf8CP table) {
-    bvector<Utf8String> columns;
-    {
-    Statement stmt;
-    if (stmt.Prepare(db, SqlPrintfString("pragma main.table_info(%s)", table).GetUtf8CP()) != BE_SQLITE_OK)
-        return {};
-    while (stmt.Step() == BE_SQLITE_ROW)
-        columns.push_back(stmt.GetValueText(1));
-    }
-
-    Utf8String exprs;
-    for (auto const& column : columns) {
-        if (!exprs.empty())
-            exprs.append(" || ' | ' || ");
-        exprs.append(SqlPrintfString("'%s='||quote([%s])", column.c_str(), column.c_str()).GetUtf8CP());
-    }
-
-    bmap<int64_t, Utf8String> rows;
-    Statement stmt;
-    if (stmt.Prepare(db, SqlPrintfString("SELECT ROWID, %s FROM main.[%s]", exprs.c_str(), table).GetUtf8CP()) != BE_SQLITE_OK)
-        return {};
-    while (stmt.Step() == BE_SQLITE_ROW)
-        rows[stmt.GetValueInt64(0)] = stmt.GetValueText(1);
-    return rows;
-}
-
-// Names the rows that differ, rather than only reporting that a hash did not match. Without this a
-// content mismatch says nothing about which column is wrong, and the interesting ones - a foreign
-// key nulled by a cascade, a type that changed - are invisible in a checksum.
-void ReportRowDifferences(ECDbR actual, ECDbR expected, Utf8CP table, Utf8CP context) {
-    const auto actualRows = ReadTableRows(actual, table);
-    const auto expectedRows = ReadTableRows(expected, table);
-
-    int reported = 0;
-    constexpr int maxReported = 10;
-    for (auto const& entry : expectedRows) {
-        const auto found = actualRows.find(entry.first);
-        if (found == actualRows.end()) {
-            printf("[upstream] %s: %s rowid=%lld only in expected: %s\n", context, table, (long long)entry.first, entry.second.c_str());
-            ++reported;
-        } else if (!entry.second.Equals(found->second)) {
-            printf("[upstream] %s: %s rowid=%lld\n    expected: %s\n      actual: %s\n", context, table, (long long)entry.first, entry.second.c_str(), found->second.c_str());
-            ++reported;
-        }
-        if (reported >= maxReported)
-            return;
-    }
-    for (auto const& entry : actualRows) {
-        if (expectedRows.find(entry.first) != expectedRows.end())
-            continue;
-        printf("[upstream] %s: %s rowid=%lld only in actual: %s\n", context, table, (long long)entry.first, entry.second.c_str());
-        if (++reported >= maxReported)
-            return;
-    }
-}
-
-// Compares every ec_ table between two files and reports, per table, where they differ. The point is
-// diagnostic: a single failing run should say WHICH filter rule is wrong, not merely that some hash
-// did not match. ec_cache_* is skipped - it is derived and rebuilt locally.
-void ExpectECTablesIdentical(ECDbR actual, ECDbR expected, Utf8CP context) {
-    bvector<Utf8String> tables;
-    Statement tableStmt;
-    ASSERT_EQ(BE_SQLITE_OK, tableStmt.Prepare(expected, "SELECT name FROM main.sqlite_master WHERE type='table' AND name LIKE 'ec\\_%' ESCAPE '\\' AND name NOT LIKE 'ec\\_cache\\_%' ESCAPE '\\' ORDER BY name"));
-    while (tableStmt.Step() == BE_SQLITE_ROW)
-        tables.push_back(tableStmt.GetValueText(0));
-    ASSERT_FALSE(tables.empty());
-
-    auto rowCount = [](ECDbR db, Utf8CP table) -> int64_t {
-        Statement stmt;
-        if (stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM main.[%s]", table).GetUtf8CP()) != BE_SQLITE_OK)
-            return -1;
-        return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt64(0) : -1;
-    };
-    auto contentHash = [](ECDbR db, Utf8CP table) -> Utf8String {
-        Statement stmt;
-        if (stmt.Prepare(db, SqlPrintfString("SELECT hex(sha3_query('SELECT * FROM [%s] ORDER BY ROWID'))", table).GetUtf8CP()) != BE_SQLITE_OK)
-            return "";
-        return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
-    };
-
-    for (auto const& table : tables) {
-        const auto actualCount = rowCount(actual, table.c_str());
-        const auto expectedCount = rowCount(expected, table.c_str());
-        EXPECT_EQ(expectedCount, actualCount) << context << ": row count differs in " << table.c_str();
-        if (actualCount != expectedCount) {
-            ReportRowDifferences(actual, expected, table.c_str(), context);
-            continue;
-        }
-        if (!contentHash(expected, table.c_str()).Equals(contentHash(actual, table.c_str()))) {
-            ADD_FAILURE() << context << ": row CONTENT differs in " << table.c_str() << " (same count, different values)";
-            ReportRowDifferences(actual, expected, table.c_str(), context);
-        }
-    }
-}
-
 // Does this file know the named schema?
 bool HasSchema(ECDbR db, Utf8CP schemaName) {
     Statement stmt;
@@ -192,6 +88,161 @@ bool HasSchema(ECDbR db, Utf8CP schemaName) {
         return false;
     stmt.BindText(1, schemaName, Statement::MakeCopy::No);
     return stmt.Step() == BE_SQLITE_ROW;
+}
+
+int64_t CountRows(ECDbR db, Utf8CP table) {
+    Statement stmt;
+    if (stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM main.[%s]", table).GetUtf8CP()) != BE_SQLITE_OK)
+        return -1;
+    return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt64(0) : -1;
+}
+
+bool HasTrigger(ECDbR db, Utf8CP triggerName) {
+    Statement stmt;
+    if (stmt.Prepare(db, "SELECT 1 FROM main.sqlite_master WHERE type='trigger' AND name=?") != BE_SQLITE_OK)
+        return false;
+    stmt.BindText(1, triggerName, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW;
+}
+
+// A one-to-many relationship carried by a navigation property, and an M:N relationship mapped to a
+// link table. Between them they cover both of DerivedDbStructures' foreign-key passes, plus the
+// indexes the mapper creates for a nav property. The ForeignKeyConstraint custom attribute is what
+// makes the nav property a physical foreign key - without it the relationship is a logical one and
+// no constraint is emitted.
+SchemaItem RelationshipSchema() {
+    return SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RelTest" alias="rel" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Parent">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+                <ECProperty propertyName="name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child">
+                <ECCustomAttributes><ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap></ECCustomAttributes>
+                <ECProperty propertyName="name" typeName="string" />
+                <ECNavigationProperty propertyName="Owner" relationshipName="ParentOwnsChild" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                            <OnDeleteAction>Cascade</OnDeleteAction>
+                        </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECEntityClass typeName="Tag">
+                <ECProperty propertyName="name" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ParentOwnsChild" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true"><Class class="Parent"/></Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true"><Class class="Child"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ChildHasTags" strength="referencing" modifier="None">
+                <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true"><Class class="Child"/></Source>
+                <Target multiplicity="(0..*)" roleLabel="belongs to" polymorphic="true"><Class class="Tag"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+}
+
+// JoinedTablePerDirectSubclass: each subclass gets its own table, whose foreign key back to the
+// parent table is DerivedDbStructures' child-table pass.
+SchemaItem JoinedTableSchema() {
+    return SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="JoinedTest" alias="jnd" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="baseProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub1">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="sub1Prop" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub2">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="sub2Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+}
+
+// Units, phenomena, a composite format, a kind of quantity and an enumeration - the ec_ tables the
+// rest of these tests never populate, so the adopt filter's rules for them are otherwise unmeasured.
+// Everything is defined in the schema itself rather than referenced from the standard Units schema,
+// so the rows under test belong to the schema being adopted.
+//
+// Two things the schema has to get right or it will not even load. Item names are compared
+// case-insensitively across the whole schema, so the kind of quantity may not be called TestLength
+// next to a phenomenon called TESTLENGTH. And `numerator` scales a unit UP relative to its
+// definition - 1 BIG is 100 SMALL - which a composite needs, since its units go largest first.
+SchemaItem UnitsAndFormatsSchema() {
+    return SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="UnitTest" alias="unt" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <UnitSystem typeName="TESTSYS" displayLabel="Test system" />
+            <Phenomenon typeName="TESTLENGTH" definition="TESTLENGTH" displayLabel="Test length" />
+            <Unit typeName="SMALL" definition="SMALL" phenomenon="TESTLENGTH" unitSystem="TESTSYS" />
+            <Unit typeName="BIG" definition="SMALL" numerator="100.0" phenomenon="TESTLENGTH" unitSystem="TESTSYS" />
+            <Format typeName="BigThenSmall" displayLabel="Big then small" type="Fractional" precision="4"
+                    formatTraits="TrailZeroes|KeepSingleZero" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" includeZero="True">
+                    <Unit label="b">BIG</Unit>
+                    <Unit label="s">SMALL</Unit>
+                </Composite>
+            </Format>
+            <KindOfQuantity typeName="MeasuredLength" description="A length" persistenceUnit="BIG" presentationUnits="BigThenSmall" relativeError="0.001" />
+            <ECEnumeration typeName="Colour" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="Red" value="1" displayLabel="Red" />
+                <ECEnumerator name="Green" value="2" displayLabel="Green" />
+            </ECEnumeration>
+            <ECEntityClass typeName="Measured">
+                <ECProperty propertyName="length" typeName="double" kindOfQuantity="MeasuredLength" />
+                <ECProperty propertyName="colour" typeName="Colour" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+}
+
+// The one custom attribute that makes the mapper emit a trigger.
+SchemaItem TimeStampSchema() {
+    return SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="StampTest" alias="stp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+            <ECEntityClass typeName="Stamped">
+                <ECCustomAttributes>
+                    <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
+                        <PropertyName>LastMod</PropertyName>
+                    </ClassHasCurrentTimeStampProperty>
+                </ECCustomAttributes>
+                <ECProperty propertyName="name" typeName="string" />
+                <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+}
+
+// Two sibling classes under one shared-column pool. Siblings may share a slot, so the same physical
+// column ends up serving both - a decision the sync db makes and the briefcase has to inherit whole.
+SchemaItem SiblingSlotSchema(Utf8CP version, bool withSecondSibling) {
+    Utf8String xml;
+    xml.Sprintf(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="SlotTest" alias="slt" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00"><MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow></ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="First">
+                <BaseClass>Root</BaseClass>
+                <ECProperty propertyName="firstProp" typeName="int" />
+            </ECEntityClass>
+            %s
+        </ECSchema>)xml", version, withSecondSibling ? R"xml(
+            <ECEntityClass typeName="Second">
+                <BaseClass>Root</BaseClass>
+                <ECProperty propertyName="secondProp" typeName="int" />
+            </ECEntityClass>)xml" : "");
+    return SchemaItem(xml);
 }
 
 // A TPH root with a shared-column pool. Two briefcases adding properties under it compete for the
@@ -230,9 +281,9 @@ SchemaItem TankSchema() {
         </ECSchema>)xml");
 }
 
-// Runs one import through the sync db and adopts the result - the two steps of the upstream flow,
-// which the real front door will eventually perform under a single container lock.
-void ImportUpstream(TrackedECDb& briefcase, SchemaSyncDb& syncDb, std::vector<SchemaItem> const& schemas, bvector<Utf8String> const& adopt) {
+// Runs one import through the sync db and adopts the result - the two steps SchemaSync::ImportSchemas
+// performs under a single container lock, driven separately so a failure names which one broke.
+void ImportThroughSyncDb(TrackedECDb& briefcase, SchemaSyncDb& syncDb, std::vector<SchemaItem> const& schemas, bvector<Utf8String> const& adopt) {
     syncDb.WithReadWrite([&](ECDbR sync) {
         ASSERT_EQ(SchemaImportResult::OK, SchemaSyncTestFixture::ImportSchemas(sync, schemas, SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables));
         ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
@@ -284,21 +335,6 @@ Utf8String TableOf(ECDbR db, Utf8CP schemaName, Utf8CP className, Utf8CP accessS
     return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
 }
 
-// Compact per-stage state dump. Used to localise where rows appear or vanish across a multi-step
-// scenario, so one test run can say which step lost them rather than only that the end state is wrong.
-void DumpFingerprint(ECDbR db, Utf8CP label) {
-    Utf8String line;
-    for (auto table : { "ec_Schema", "ec_SchemaReference", "ec_Class", "ec_ClassHasBaseClasses", "ec_Property", "ec_PropertyMap", "ec_Column" }) {
-        Statement stmt;
-        if (stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM main.[%s]", table).GetUtf8CP()) != BE_SQLITE_OK)
-            continue;
-        if (stmt.Step() != BE_SQLITE_ROW)
-            continue;
-        line.append(SqlPrintfString(" %s=%d", table, stmt.GetValueInt(0)).GetUtf8CP());
-    }
-    printf("[upstream] %-40s%s\n", label, line.c_str());
-}
-
 // Holds schemas plus the context that owns them, so the caller can keep both alive with one object.
 struct BriefcaseSchemas final {
     ECSchemaReadContextPtr m_context;
@@ -348,20 +384,6 @@ void SetupSyncedPair(ECDbHub& hub, SchemaSyncDb& syncDb, std::unique_ptr<Tracked
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     b1->PullMergePush("init schema sync");
     b2 = hub.CreateBriefcase();
-}
-
-// Foreign keys are deferred while rows are being copied, so a violation surfaces at SaveChanges with
-// nothing to say about its cause. This names the offending row before the commit swallows it.
-void ExpectNoForeignKeyViolations(ECDbR db, Utf8CP context) {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA main.foreign_key_check"));
-    int violations = 0;
-    while (stmt.Step() == BE_SQLITE_ROW) {
-        ++violations;
-        printf("[upstream] FK violation (%s): table=%s rowid=%lld parent=%s fkid=%d\n",
-            context, stmt.GetValueText(0), stmt.GetValueInt64(1), stmt.GetValueText(2), stmt.GetValueInt(3));
-    }
-    EXPECT_EQ(0, violations) << context << ": rows were copied whose parents are missing";
 }
 
 // Does the physical table exist, as opposed to merely being described by ec_Table?
@@ -418,16 +440,57 @@ Utf8String ReadStringProperty(ECDbR db, Utf8CP ecsql) {
     return Utf8String(stmt.GetValueText(0));
 }
 
+// The CREATE statement SQLite kept for a table, index or trigger.
+Utf8String DdlOf(ECDbR db, Utf8CP objectName) {
+    Statement stmt;
+    if (stmt.Prepare(db, "SELECT sql FROM main.sqlite_master WHERE name=?") != BE_SQLITE_OK)
+        return "";
+    stmt.BindText(1, objectName, Statement::MakeCopy::No);
+    return stmt.Step() == BE_SQLITE_ROW ? Utf8String(stmt.GetValueText(0)) : Utf8String("");
+}
+
+// The shape the scenario tests share: one briefcase imports through the sync db and keeps the result
+// to itself, then a second briefcase imports the same schema. The sync db decided everything on the
+// first import, so the second one changes nothing there - no delta, no changeset, no DDL anywhere.
+// Whatever the second briefcase ends up with, it worked out for itself from the adopted rows.
+//
+// Both files are compared down to their DDL, since foreign keys and triggers exist nowhere else.
+// @param checkAdopted extra assertions against the second briefcase, which is the one that had to
+//        derive everything. Without them a case where BOTH files are wrong still passes.
+void ExpectSchemaConvergesWithNoDeltaToReplay(Utf8CP containerName, std::vector<SchemaItem> const& schemas, Utf8CP context,
+                                              std::function<void(ECDbR)> checkAdopted = nullptr) {
+    ECDbHub hub;
+    SchemaSyncDb syncDb(containerName);
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    for (auto const& schema : schemas) {
+        ASSERT_EQ(SchemaImportResult::OK, SchemaSyncTestFixture::ImportSchema(*b1, schema, SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()))
+            << context << ": the first briefcase could not import the schema at all";
+        ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    }
+    for (auto const& schema : schemas) {
+        ASSERT_EQ(SchemaImportResult::OK, SchemaSyncTestFixture::ImportSchema(*b2, schema, SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+        ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    }
+
+    SchemaSyncTestFixture::ExpectNoForeignKeyViolations(*b2, context);
+    if (checkAdopted != nullptr)
+        checkAdopted(*b2);
+    SchemaSyncTestFixture::ExpectECTablesIdentical(*b2, *b1, context);
+    SchemaSyncTestFixture::ExpectPhysicalSchemaIdentical(*b2, *b1, context);
+}
+
 } // namespace
 
 // ---------------------------------------------------------------------------------------
-// N1 spike, part 1: can the sync db run a schema import at all?
+// The sync db can run a schema import.
 //
-// The sync db is a real ECDb (same EC profile, full ec_* mirror) but holds no data tables. The
-// import therefore runs with DoNotCreateOrUpdateDataTables, writing ec_* rows and nothing else.
+// It is a real ECDb (same EC profile, full ec_* mirror) but holds no data tables, so the import runs
+// with DoNotCreateOrUpdateDataTables and writes ec_* rows and nothing else.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportRunsInsideSyncDb)
+TEST_F(SchemaSyncImportTestFixture, ImportRunsInsideSyncDb)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-import-runs");
@@ -440,9 +503,9 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportRunsInsideSyncDb)
         ASSERT_TRUE(sync.IsDbOpen());
         ASSERT_FALSE(sync.Schemas().GetSchemas(false).empty()) << "sync db should carry the briefcase's schemas after Init";
 
-        // The import that the whole design depends on.
+        // The import that the whole flow depends on.
         ASSERT_EQ(SchemaImportResult::OK, ImportSchema(sync, SharedColumnSchema(), SchemaManager::SchemaImportOptions::DoNotCreateOrUpdateDataTables))
-            << "importing into the sync db failed - the design does not survive this";
+            << "importing into the sync db failed";
         ASSERT_EQ(BE_SQLITE_OK, sync.SaveChanges());
 
         // The schema is really there, as metadata.
@@ -464,20 +527,19 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportRunsInsideSyncDb)
     }
 
 // ---------------------------------------------------------------------------------------
-// N1 spike, part 2: does the sync db's mapper reach the same answer as a briefcase's?
+// The sync db's mapper reaches the same answer a briefcase's does.
 //
-// This is the load-bearing assumption of the whole approach. Both files start from the same ec_*
-// state (Init pushed
+// This is what the whole arrangement rests on. Both files start from the same ec_* state (Init pushed
 // the briefcase's rows into the sync db), so if the mapper is a pure function of that state plus the
 // incoming schema, both must produce identical ec_* content. The ecdb_schema checksum covers the
-// logical rows; ecdb_map covers ids, tables, columns and property maps - the decisions we intend to
-// stop recomputing per briefcase.
+// logical rows; ecdb_map covers ids, tables, columns and property maps - the decisions briefcases
+// stop recomputing for themselves.
 //
 // sqlite_schema is deliberately NOT compared: the sync db has no data tables, so its physical shape
 // differs by construction. That difference is exactly what step 2 of the design reconstructs locally.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, SyncDbMappingMatchesBriefcaseMapping)
+TEST_F(SchemaSyncImportTestFixture, SyncDbMappingMatchesBriefcaseMapping)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-mapping-matches");
@@ -516,7 +578,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbMappingMatchesBriefcaseMapping)
     }
 
 // ---------------------------------------------------------------------------------------
-// N1 spike, part 3: does the agreement survive a second, dependent import?
+// The agreement survives a second, dependent import.
 //
 // One import proves little: both files were pristine. The real question is whether the sync db keeps
 // agreeing once layout decisions accumulate - a second import that spills into an overflow table has
@@ -524,7 +586,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbMappingMatchesBriefcaseMapping)
 // local file state actually bite.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, MappingStillMatchesAfterDependentImport)
+TEST_F(SchemaSyncImportTestFixture, MappingStillMatchesAfterDependentImport)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-mapping-second-import");
@@ -565,14 +627,14 @@ TEST_F(SchemaSyncUpstreamTestFixture, MappingStillMatchesAfterDependentImport)
     }
 
 // ---------------------------------------------------------------------------------------
-// N1 spike, part 4: an import into the sync db creates no data tables.
+// An import into the sync db creates no data tables.
 //
 // The sync db holds ec_ rows and nothing else. That is what DoNotCreateOrUpdateDataTables is for,
 // and it is what keeps the sync db from accumulating tables that a later overwrite of its ec_ rows
 // would leave describing a layout nobody agrees with.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportIntoSyncDbCreatesNoDataTables)
+TEST_F(SchemaSyncImportTestFixture, ImportIntoSyncDbCreatesNoDataTables)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-physical-tables");
@@ -614,7 +676,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportIntoSyncDbCreatesNoDataTables)
 // content differs; the per-table comparison says which rule is at fault.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, AdoptMakesBriefcaseMatchSyncDb)
+TEST_F(SchemaSyncImportTestFixture, AdoptMakesBriefcaseMatchSyncDb)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-adopt-complete");
@@ -652,7 +714,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptMakesBriefcaseMatchSyncDb)
 // up in this briefcase's changeset.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, AdoptLeavesUnrelatedSchemasBehind)
+TEST_F(SchemaSyncImportTestFixture, AdoptLeavesUnrelatedSchemasBehind)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-adopt-filtered");
@@ -694,7 +756,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptLeavesUnrelatedSchemasBehind)
 // referencing another must receive both, or it holds rows pointing at classes it does not have.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, AdoptPullsReferencedSchemas)
+TEST_F(SchemaSyncImportTestFixture, AdoptPullsReferencedSchemas)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-adopt-closure");
@@ -725,14 +787,13 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptPullsReferencedSchemas)
     }
 
 // ---------------------------------------------------------------------------------------
-// The point of the whole exercise: an adopted schema has to be usable.
+// An adopted schema has to be usable.
 //
 // Copying metadata is not enough - the physical tables the adopted rows describe must exist locally
-// and agree with them, or the first insert fails. This is the end-to-end proof that step 2 leaves a
-// working briefcase rather than a plausible-looking one.
+// and agree with them, or the first insert fails.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, AdoptedSchemaAcceptsData)
+TEST_F(SchemaSyncImportTestFixture, AdoptedSchemaAcceptsData)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-adopt-usable");
@@ -773,12 +834,11 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptedSchemaAcceptsData)
     }
 
 //=======================================================================================
-// Does the upstream flow actually fix the failures that killed the earlier designs?
+// Concurrent imports.
 //
-// The reservation design failed on three concurrent-import cases (issue 2192). These tests take the
-// two that a mapping authority is supposed to fix and check that it does. They use no new production
-// code - only the two steps proven above - so a failure here is a finding about the design, not a
-// bug in a helper.
+// Two briefcases importing at once compete for the same shared-column pool. These drive the two
+// steps by hand rather than through the entry point, so a failure points at the mechanism rather
+// than at the orchestration around it.
 //=======================================================================================
 
 // ---------------------------------------------------------------------------------------
@@ -791,7 +851,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, AdoptedSchemaAcceptsData)
 // both values. With the sync db deciding, the second import sees the first one's allocation.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
+TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsDoNotShareAColumn)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-concurrent-columns");
@@ -804,7 +864,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
     auto b2 = hub.CreateBriefcase();
 
     // Common starting point: both briefcases know Machinery 1.0.0.
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
     b1->PullMergePush("add Machinery");
     b2->PullMergePush("pick up Machinery");
     MaterializeAfterMerge(*b2);
@@ -812,12 +872,9 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
 
     // Now the two imports race. Neither briefcase pushes before the other imports, so neither can
     // see the other's change except through the sync db.
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
-    ImportUpstream(*b2, syncDb, { TankSchema() }, { "DemoB" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
+    ImportThroughSyncDb(*b2, syncDb, { TankSchema() }, { "DemoB" });
 
-    DumpFingerprint(*b1, "b1 after adopting Machinery 1.0.1");
-    DumpFingerprint(*b2, "b2 after adopting DemoB");
-    syncDb.WithReadOnly([&](ECDbR sync) { DumpFingerprint(sync, "sync db after both imports"); });
 
     // b2 asked only for DemoB, but DemoB references Machinery, so b2 picks up b1's still-unpushed
     // 1.0.1 through the closure. That is the agreed "updating references is fair game" behaviour.
@@ -889,7 +946,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsDoNotShareAColumn)
 // the conflict policy a correctness concern rather than a tuning detail.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsConvergeAfterExchange)
+TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsConvergeAfterExchange)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-converge-exchange");
@@ -901,13 +958,13 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsConvergeAfterExchange)
 
     auto b2 = hub.CreateBriefcase();
 
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
     b1->PullMergePush("add Machinery");
     b2->PullMergePush("pick up Machinery");
     MaterializeAfterMerge(*b2);
 
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
-    ImportUpstream(*b2, syncDb, { TankSchema() }, { "DemoB" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
+    ImportThroughSyncDb(*b2, syncDb, { TankSchema() }, { "DemoB" });
 
     b1->PullMergePush("b1 pushes rating");
     b2->PullMergePush("b2 merges rating, pushes tank");
@@ -930,7 +987,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsConvergeAfterExchange)
 // something to be checked against - and must be refused rather than quietly accepted.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesConflictingPropertyType)
+TEST_F(SchemaSyncImportTestFixture, SyncDbRefusesConflictingPropertyType)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-conflicting-type");
@@ -940,10 +997,10 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesConflictingPropertyType)
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
     b1->PullMergePush("init schema sync");
 
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
 
     // b1's version of 1.0.1 adds rating as an int, and lands in the sync db.
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
 
     // b2 now tries the same version number with a different type for the same property.
     auto conflicting = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -979,7 +1036,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesConflictingPropertyType)
 // sync db would hold a layout no briefcase could reach without moving its own data.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesImportNeedingDataTransform)
+TEST_F(SchemaSyncImportTestFixture, SyncDbRefusesImportNeedingDataTransform)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-remap-refused");
@@ -1020,14 +1077,14 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesImportNeedingDataTransform)
             </ECEntityClass>
         </ECSchema>)xml");
 
-    ImportUpstream(*b1, syncDb, { initial }, { "RemapTest" });
+    ImportThroughSyncDb(*b1, syncDb, { initial }, { "RemapTest" });
 
     // Confirm the premise before relying on it. If the siblings happened to share a slot, hoisting
     // would move nothing and the rest of the test would prove nothing.
     syncDb.WithReadOnly([&](ECDbR sync) {
         const auto colA = ColumnOf(sync, "RemapTest", "LeafA", "movingProp");
         const auto colB = ColumnOf(sync, "RemapTest", "LeafB", "movingProp");
-        printf("[upstream] LeafA.movingProp=%s LeafB.movingProp=%s\n", colA.c_str(), colB.c_str());
+        printf("[schemasync-test] LeafA.movingProp=%s LeafB.movingProp=%s\n", colA.c_str(), colB.c_str());
         ASSERT_STRNE(colA.c_str(), colB.c_str())
             << "the siblings already share a column, so hoisting cannot force a move - this "
                "scenario no longer tests what it claims to";
@@ -1070,7 +1127,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesImportNeedingDataTransform)
             << "a data-moving change was accepted on the additive path; it must be routed to the "
                "upgrade front door instead";
         // Record which flavour of refusal we get - it decides what the front door has to catch.
-        printf("[upstream] data-transform import returned %d (DataTransformRequired=%d)\n",
+        printf("[schemasync-test] data-transform import returned %d (DataTransformRequired=%d)\n",
                (int)result, (int)SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED);
     });
     }
@@ -1088,7 +1145,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, SyncDbRefusesImportNeedingDataTransform)
 // One call, both steps: the sync db ends up holding the import, and so does the briefcase.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasDoesBothSteps)
+TEST_F(SchemaSyncImportTestFixture, ImportSchemasDoesBothSteps)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-entrypoint");
@@ -1131,7 +1188,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasDoesBothSteps)
 // point rather than in the upgrade section: nothing here is upgrading anything.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasWorksOnASyncDbInitialisedFromABriefcaseWithTables)
+TEST_F(SchemaSyncImportTestFixture, ImportSchemasWorksOnASyncDbInitialisedFromABriefcaseWithTables)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-nonempty-init");
@@ -1169,7 +1226,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasWorksOnASyncDbInitialisedFrom
 // reference auto-update that was agreed on the thread.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasResolvesReferencesAgainstSyncDb)
+TEST_F(SchemaSyncImportTestFixture, ImportSchemasResolvesReferencesAgainstSyncDb)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-entrypoint-refs");
@@ -1177,14 +1234,14 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasResolvesReferencesAgainstSync
     SetupSyncedPair(hub, syncDb, b1, b2);
 
     // Both briefcases reach Machinery 1.0.0 through the timeline.
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.00", false) }, { "Machinery" });
     b1->PullMergePush("add Machinery 1.0.0");
     b2->PullMergePush("pick up Machinery 1.0.0");
     MaterializeAfterMerge(*b2);
     ASSERT_STREQ("1.0.0", VersionOf(*b2, "Machinery").c_str());
 
     // b1 moves the sync db to 1.0.1 and keeps it to itself - no push.
-    ImportUpstream(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
+    ImportThroughSyncDb(*b1, syncDb, { MachinerySchema("01.00.01", true) }, { "Machinery" });
 
     // b2 imports a schema that references Machinery, still believing it is at 1.0.0.
     const auto tank = LoadSchemas(*b2, { TankSchema() });
@@ -1213,7 +1270,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasResolvesReferencesAgainstSync
 // briefcase must be exactly as they were.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasRefusesDataTransform)
+TEST_F(SchemaSyncImportTestFixture, ImportSchemasRefusesDataTransform)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-entrypoint-transform");
@@ -1305,7 +1362,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasRefusesDataTransform)
 // from the insert itself, which is why the earlier adopt tests do not see it.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasCatchesUpInstancesThatSpillIntoOverflow)
+TEST_F(SchemaSyncImportTestFixture, ImportSchemasCatchesUpInstancesThatSpillIntoOverflow)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-entrypoint-overflow");
@@ -1335,7 +1392,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasCatchesUpInstancesThatSpillIn
 
     const auto primaryTable = TableOf(*b2, "UpstreamTest", "Derived", "p1");
     const auto overflowTable = TableOf(*b2, "UpstreamTest", "Derived", "p8");
-    printf("[upstream] p1 -> %s, p8 -> %s\n", primaryTable.c_str(), overflowTable.c_str());
+    printf("[schemasync-test] p1 -> %s, p8 -> %s\n", primaryTable.c_str(), overflowTable.c_str());
     ASSERT_FALSE(overflowTable.empty()) << "p8 was not mapped at all";
     ASSERT_STRNE(primaryTable.c_str(), overflowTable.c_str())
         << "nothing spilled into an overflow table, so this scenario no longer tests what it claims to";
@@ -1377,7 +1434,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ImportSchemasCatchesUpInstancesThatSpillIn
 // actually ship.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge)
+TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsThroughEntryPointConverge)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-entrypoint-converge");
@@ -1447,7 +1504,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, ConcurrentImportsThroughEntryPointConverge
 // two different shared columns, both instances must still read back what was written to them.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb)
+TEST_F(SchemaSyncImportTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-upgrade");
@@ -1512,7 +1569,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasMovesDataAndOverwritesSyncDb
 // the overwrite is what reclaims them, ids and shared column ordinals included.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
+TEST_F(SchemaSyncImportTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-upgrade-cleanup");
@@ -1582,7 +1639,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, UpgradeSchemasDropsAbandonedSyncDbState)
 // one doing the work.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
+TEST_F(SchemaSyncImportTestFixture, EntryPointsRefuseProfileVersionSkew)
     {
     auto shiftSyncDbProfileVersion = [](SchemaSyncDb& syncDb, int by) {
         syncDb.WithReadWrite([&](ECDbR sync) {
@@ -1632,7 +1689,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, EntryPointsRefuseProfileVersionSkew)
 // new layout with its data still in the old columns. That is what the upgrade path exists to fix.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, PlainImportRoutesByTransformOption)
+TEST_F(SchemaSyncImportTestFixture, PlainImportRoutesByTransformOption)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-routing");
@@ -1677,7 +1734,7 @@ TEST_F(SchemaSyncUpstreamTestFixture, PlainImportRoutesByTransformOption)
 // while every briefcase decided its own layout.
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncUpstreamTestFixture, RemapInOneBriefcaseSurvivesInTheOther)
+TEST_F(SchemaSyncImportTestFixture, RemapInOneBriefcaseSurvivesInTheOther)
     {
     ECDbHub hub;
     SchemaSyncDb syncDb("upstream-remap-across-briefcases");
@@ -1735,6 +1792,307 @@ TEST_F(SchemaSyncUpstreamTestFixture, RemapInOneBriefcaseSurvivesInTheOther)
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << "writing through the consolidated column failed";
         ASSERT_EQ(BE_SQLITE_OK, briefcase->SaveChanges());
     }
+    }
+
+//=======================================================================================
+// Scenario coverage carried over from the two earlier v2 prototypes.
+//
+// The reservation prototype asserted that two briefcases hand out the SAME ids for nav-property
+// foreign keys, link tables, joined tables and indexes; the orchestration prototype asserted that
+// two briefcases converge across a matrix of schema features. Under this design both come down to
+// one question - does a briefcase that adopts the sync db's answer end up with the same file as the
+// one that produced it, physical schema included - so they are folded into that shape here.
+//=======================================================================================
+
+// ---------------------------------------------------------------------------------------
+// Navigation-property foreign keys and link tables (reservation prototype's gaps C, D and F).
+//
+// Both foreign keys reach ec_ as nothing more than a column plus an index row. The DDL that carries
+// them is written once, by whichever file builds the table, and never travels - so the adopting
+// briefcase has to arrive at the same constraint from the rows alone.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, RelationshipsConvergeWithNoDeltaToReplay)
+    {
+    ExpectSchemaConvergesWithNoDeltaToReplay("upstream-relationships", { RelationshipSchema() },
+        "a nav property and a link table adopted from the sync db",
+        [](ECDbR adopted) {
+            EXPECT_TRUE(HasPhysicalTable(adopted, "rel_ChildHasTags")) << "the link table was never built";
+            EXPECT_FALSE(ColumnOf(adopted, "RelTest", "Child", "Owner.Id").empty()) << "the nav property was not mapped";
+
+            // Without this the test would also pass with the constraint missing from both files.
+            const auto childDdl = DdlOf(adopted, "rel_Child");
+            EXPECT_TRUE(childDdl.ContainsI("FOREIGN KEY")) << "the nav property's foreign key was not derived: " << childDdl.c_str();
+            const auto linkDdl = DdlOf(adopted, "rel_ChildHasTags");
+            EXPECT_TRUE(linkDdl.ContainsI("FOREIGN KEY")) << "the link table's foreign keys were not derived: " << linkDdl.c_str();
+        });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Joined tables (reservation prototype's gap E). The subclass table's foreign key back to its parent
+// is DerivedDbStructures' child-table pass.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, JoinedTablesConvergeWithNoDeltaToReplay)
+    {
+    ExpectSchemaConvergesWithNoDeltaToReplay("upstream-joined-tables", { JoinedTableSchema() },
+        "a joined-table hierarchy adopted from the sync db",
+        [](ECDbR adopted) {
+            EXPECT_TRUE(HasPhysicalTable(adopted, "jnd_Sub1")) << "the joined table was never built";
+            const auto joinedDdl = DdlOf(adopted, "jnd_Sub1");
+            EXPECT_TRUE(joinedDdl.ContainsI("FOREIGN KEY")) << "the joined table's foreign key was not derived: " << joinedDdl.c_str();
+        });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Units, formats, kinds of quantity and enumerations (orchestration prototype's feature matrix).
+//
+// The adopt filter has a rule for all 23 ec_ tables, but the other tests only ever populate a
+// handful of them. This is what puts rows in the rest.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, UnitsFormatsAndKindsOfQuantityAreAdopted)
+    {
+    ExpectSchemaConvergesWithNoDeltaToReplay("upstream-units", { UnitsAndFormatsSchema() },
+        "units, formats, a kind of quantity and an enumeration adopted from the sync db",
+        [](ECDbR adopted) {
+            for (auto table : { "ec_UnitSystem", "ec_Phenomenon", "ec_Unit", "ec_Format", "ec_FormatCompositeUnit", "ec_KindOfQuantity", "ec_Enumeration" })
+                EXPECT_GT(CountRows(adopted, table), 0) << table << " is empty, so the filter rule for it is still unmeasured";
+        });
+    }
+
+// ---------------------------------------------------------------------------------------
+// Sibling classes share a shared-column slot (reservation prototype's class-hierarchy store case).
+//
+// First and Second are siblings, so their properties may occupy the SAME physical column. The sync
+// db decides that, once; a briefcase that adopts must inherit the decision rather than allocate a
+// second slot - and one that only merges the changeset must land in the same place.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, SiblingClassesShareTheSlotTheSyncDbGaveThem)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-sibling-slots");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SiblingSlotSchema("01.00.00", false), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("SlotTest 1.0.0");
+
+    const auto firstColumn = ColumnOf(*b1, "SlotTest", "First", "firstProp");
+    ASSERT_FALSE(firstColumn.empty()) << "firstProp was not mapped";
+
+    // b2 adds the sibling. Nothing tells it which slot firstProp took except the adopted rows.
+    b2->PullMergePush("pick up SlotTest 1.0.0");
+    MaterializeAfterMerge(*b2);
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, SiblingSlotSchema("01.00.01", true), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+
+    EXPECT_STREQ(firstColumn.c_str(), ColumnOf(*b2, "SlotTest", "First", "firstProp").c_str())
+        << "the property that was already mapped moved";
+    EXPECT_STREQ(firstColumn.c_str(), ColumnOf(*b2, "SlotTest", "Second", "secondProp").c_str())
+        << "the sibling was given a slot of its own instead of reusing the one next to it";
+
+    b2->PullMergePush("SlotTest 1.0.1");
+    b1->PullMergePush("pick up SlotTest 1.0.1");
+    MaterializeAfterMerge(*b1);
+
+    ExpectECTablesIdentical(*b1, *b2, "after a sibling class joined a shared-column pool");
+    ExpectPhysicalSchemaIdentical(*b1, *b2, "after a sibling class joined a shared-column pool");
+    }
+
+// ---------------------------------------------------------------------------------------
+// The current-timestamp trigger, by all three routes a briefcase can learn a schema.
+//
+// Triggers are the second thing the DDL generator emits that ec_ does not describe, and nothing
+// reads them back: a reloaded DbTable always has zero triggers. So each briefcase has to derive its
+// own, whether it imported the schema, merged the changeset, or built itself from the whole timeline.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, CurrentTimeStampTriggerReachesEveryBriefcase)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-timestamp-trigger");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, TimeStampSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    Utf8CP triggerName = "stp_Stamped_CurrentTimeStamp";
+    EXPECT_TRUE(HasTrigger(*b1, triggerName)) << "the briefcase that adopted the schema has no trigger";
+
+    b1->PullMergePush("add StampTest");
+    b2->PullMergePush("pick up StampTest");
+    MaterializeAfterMerge(*b2);
+    EXPECT_TRUE(HasTrigger(*b2, triggerName)) << "a briefcase that merged the schema changeset has no trigger";
+
+    auto b3 = hub.CreateBriefcase();
+    MaterializeAfterMerge(*b3);
+    EXPECT_TRUE(HasTrigger(*b3, triggerName)) << "a briefcase built from the whole timeline has no trigger";
+
+    ExpectPhysicalSchemaIdentical(*b2, *b1, "briefcase that merged the changeset");
+    ExpectPhysicalSchemaIdentical(*b3, *b1, "briefcase built from the timeline");
+    }
+
+// ---------------------------------------------------------------------------------------
+// A briefcase that joins later, from the timeline alone (orchestration prototype's third-briefcase
+// case). It never talks to the sync db, so everything it has came out of changesets carrying ec_
+// rows and no DDL.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, BriefcaseFromTheTimelineConvergesWithTheImporter)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-timeline-briefcase");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    // Two briefcases take turns, so the timeline holds imports from both.
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, RelationshipSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("b1 adds RelTest");
+
+    b2->PullMergePush("b2 picks up RelTest");
+    MaterializeAfterMerge(*b2);
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, UnitsAndFormatsSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    b2->PullMergePush("b2 adds UnitTest");
+
+    b1->PullMergePush("b1 picks up UnitTest");
+    MaterializeAfterMerge(*b1);
+
+    auto b3 = hub.CreateBriefcase();
+    MaterializeAfterMerge(*b3);
+
+    EXPECT_TRUE(HasSchema(*b3, "RelTest"));
+    EXPECT_TRUE(HasSchema(*b3, "UnitTest"));
+    ExpectNoForeignKeyViolations(*b3, "briefcase built from the timeline");
+    ExpectECTablesIdentical(*b3, *b1, "briefcase built from the timeline");
+    ExpectPhysicalSchemaIdentical(*b3, *b1, "briefcase built from the timeline");
+    }
+
+// ---------------------------------------------------------------------------------------
+// Enabling schema sync on a briefcase that has been in use (reservation prototype's init-from-a
+// -non-empty-base case).
+//
+// Init seeds the sync db from this briefcase, so everything it already holds becomes the starting
+// point every later import maps against - while its data tables stay behind, since the sync db holds
+// ec_ rows and nothing else.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, EnablingSchemaSyncOnABriefcaseWithSchemasAndData)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-init-populated");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, MachinerySchema("01.00.00", false)));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO mch.Machine(name) VALUES('pump')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("Machinery, and one machine");
+
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "populated-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("enable schema sync");
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasSchema(sync, "Machinery")) << "the sync db was not seeded with the schemas the briefcase already had";
+        EXPECT_FALSE(HasPhysicalTable(sync, "mch_Machine")) << "the sync db was seeded with a data table";
+    });
+
+    // A briefcase that joins afterwards imports on top of what the seeding left behind.
+    auto b2 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, TankSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ExpectNoForeignKeyViolations(*b2, "b2 after importing on top of a seeded sync db");
+    b2->PullMergePush("add Tank");
+
+    b1->PullMergePush("pick up Tank");
+    MaterializeAfterMerge(*b1);
+
+    EXPECT_STREQ("pump", ReadStringProperty(*b1, "SELECT name FROM mch.Machine").c_str())
+        << "enabling schema sync lost data the briefcase already held";
+    ExpectECTablesIdentical(*b1, *b2, "after schema sync was enabled on a briefcase that already had schemas");
+    ExpectPhysicalSchemaIdentical(*b1, *b2, "after schema sync was enabled on a briefcase that already had schemas");
+    }
+
+// ---------------------------------------------------------------------------------------
+// The overwrite entry point, for changes the sync db cannot make: a profile upgrade.
+//
+// Those run on the briefcase itself with schema sync out of the way, so the sync db hears about them
+// only by being rebuilt from the result. Pushing instead is wrong twice over - it keeps state no
+// briefcase has, and its upsert has no conflict target, so a row whose id changed collides with a
+// surviving row on ec_PropertyMap's unique index and rewrites it rather than inserting.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbFollowsAChangeMadeOnlyOnTheBriefcase)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-overwrite-entrypoint");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, RemapSchema("01.00.00", false), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("RemapTest 1.0.0");
+    b2->PullMergePush("pick up RemapTest 1.0.0");
+    MaterializeAfterMerge(*b2);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*b1, "INSERT INTO rmp.LeafB(baseProp,movingProp) VALUES('b','before the move')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    // Somebody imports and walks away: state the sync db holds that no briefcase has. A briefcase
+    // that KEPT those changes could not be repaired by the overwrite - that is what the exclusive
+    // schema lock is for, since it cannot be acquired while anyone else holds one.
+    {
+    auto abandoned = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*abandoned, UnrelatedSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, abandoned->AbandonChanges());
+    }
+    syncDb.WithReadOnly([&](ECDbR sync) { ASSERT_TRUE(HasSchema(sync, "UnrelatedTest")); });
+
+    // The profile upgrade's shape: the change happens on the file, with schema sync switched off, and
+    // hoisting movingProp gives the same logical property map rows new ids.
+    auto& sync = b1->Schemas().GetSchemaSync();
+    sync.DisableSchemaSync();
+    const auto localResult = ImportSchema(*b1, RemapSchema("01.00.01", true), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    sync.ReEnableSchemaSync();
+    ASSERT_EQ(SchemaImportResult::OK, localResult);
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ASSERT_EQ(SchemaSync::Status::OK, sync.OverwriteSyncDb(syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ExpectNoForeignKeyViolations(*b1, "b1 after overwriting the sync db");
+
+    syncDb.WithReadOnly([&](ECDbR syncConn) {
+        EXPECT_FALSE(HasSchema(syncConn, "UnrelatedTest")) << "the overwrite kept state no briefcase has";
+        EXPECT_STREQ("1.0.1", VersionOf(syncConn, "RemapTest").c_str());
+        ExpectECTablesIdentical(syncConn, *b1, "sync db rebuilt from a briefcase that upgraded locally");
+    });
+
+    EXPECT_STREQ("before the move", ReadStringProperty(*b1, "SELECT movingProp FROM rmp.LeafB").c_str())
+        << "the local upgrade lost its own data";
+
+    // And the sync db is usable again afterwards: b2 imports against the rebuilt state.
+    b1->PullMergePush("hoist movingProp");
+    b2->PullMergePush("pick up the hoist");
+    MaterializeAfterMerge(*b2);
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, UnrelatedSchema(), SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ExpectNoForeignKeyViolations(*b2, "b2 importing against the rebuilt sync db");
     }
 
 END_ECDBUNITTESTS_NAMESPACE
