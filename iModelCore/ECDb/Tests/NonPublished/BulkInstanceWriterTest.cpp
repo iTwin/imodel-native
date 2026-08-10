@@ -879,4 +879,187 @@ TEST_F(BulkInstanceWriterFixture, ManyPropertySetsEvictSpecializations) {
         EXPECT_EQ(200 + p + 1, (*inst)[Utf8PrintfString("P%d", p).c_str()].GetInt()) << "property P" << p;
 }
 
+//---------------------------------------------------------------------------------------
+//! A full update writes every property, so properties the callback does not bind are nulled.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, FullUpdateNullsUnboundProperties) {
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_fullupdate.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="A" typeName="string"/>
+                <ECProperty propertyName="B" typeName="int"/>
+                <ECProperty propertyName="C" typeName="double"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Foo");
+
+    auto insert = [&](ECInstanceKey& key) {
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+            ctx.FindBinder("A")->BindText("a", IECSqlBinder::MakeCopy::Yes);
+            ctx.FindBinder("B")->BindInt(1);
+            ctx.FindBinder("C")->BindDouble(2.5);
+        }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+    };
+
+    ECInstanceKey partialKey, fullKey;
+    insert(partialKey);
+    insert(fullKey);
+
+    // partial: only A is written, B and C survive
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(partialKey, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindText("a2", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+
+    auto inst = ReadInstance(partialKey);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("a2", (*inst)["A"].asCString());
+    EXPECT_EQ(1, (*inst)["B"].GetInt());
+    EXPECT_DOUBLE_EQ(2.5, (*inst)["C"].GetDouble());
+
+    // full: only A is bound, so B and C are nulled
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(fullKey, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindText("a3", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::UpdateOptions().UseFullUpdate())) << writer.GetLastError().c_str();
+
+    inst = ReadInstance(fullKey);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("a3", (*inst)["A"].asCString());
+    EXPECT_TRUE((*inst)["B"].isNull()) << "a full update must null the properties it does not bind";
+    EXPECT_TRUE((*inst)["C"].isNull()) << "a full update must null the properties it does not bind";
+
+    // a full update that binds everything round trips
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(fullKey, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindText("a4", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("B")->BindInt(9);
+        ctx.FindBinder("C")->BindDouble(8.25);
+    }, BulkInstanceWriter::UpdateOptions().UseFullUpdate())) << writer.GetLastError().c_str();
+
+    inst = ReadInstance(fullKey);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("a4", (*inst)["A"].asCString());
+    EXPECT_EQ(9, (*inst)["B"].GetInt());
+    EXPECT_DOUBLE_EQ(8.25, (*inst)["C"].GetDouble());
+}
+
+//---------------------------------------------------------------------------------------
+//! A full update knows its property set up-front, so it never needs a discovery pass. It also
+//! must not disturb the guess the partial updates of the same class rely on.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, FullUpdateAlwaysInvokesCallbackOnce) {
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_fullupdate_cb.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="A" typeName="int"/>
+                <ECProperty propertyName="B" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Foo");
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindInt(0);
+        ctx.FindBinder("B")->BindInt(0);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    int invocations = 0;
+    auto fullUpdate = [&](int v) {
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+            ++invocations;
+            ctx.FindBinder("A")->BindInt(v);
+            ctx.FindBinder("B")->BindInt(v * 2);
+        }, BulkInstanceWriter::UpdateOptions().UseFullUpdate())) << writer.GetLastError().c_str();
+    };
+
+    for (int i = 1; i <= 5; ++i)
+        fullUpdate(i);
+
+    EXPECT_EQ(5, invocations) << "a full update never needs a discovery pass";
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_EQ(5, (*inst)["A"].GetInt());
+    EXPECT_EQ(10, (*inst)["B"].GetInt());
+
+    // interleaving a full update must not cost the partial updates their guess
+    int partialInvocations = 0;
+    auto partialUpdate = [&](int v) {
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+            ++partialInvocations;
+            ctx.FindBinder("A")->BindInt(v);
+        }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+    };
+
+    partialUpdate(100);
+    const auto afterFirstPartial = partialInvocations;
+    fullUpdate(7);
+    partialUpdate(200);
+    EXPECT_EQ(afterFirstPartial + 1, partialInvocations) << "the full update must not invalidate the partial update guess";
+
+    inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_EQ(200, (*inst)["A"].GetInt());
+    EXPECT_EQ(14, (*inst)["B"].GetInt()) << "B keeps the value the full update gave it";
+}
+
+//---------------------------------------------------------------------------------------
+//! A full update must reach every table of a class that spans an overflow table.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, FullUpdateSpansOverflowTable) {
+    const int kProps = 24;
+    Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Base" modifier="Abstract">
+          <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+            </ShareColumns>
+          </ECCustomAttributes>
+          <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Wide">
+          <BaseClass>Base</BaseClass>)xml";
+    for (int p = 0; p < kProps; ++p)
+        xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"string\" />", p).GetUtf8CP());
+    xml.append("</ECEntityClass></ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_fullupdate_overflow.ecdb", SchemaItem(xml)));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Wide");
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [&](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("Name")->BindText("original", IECSqlBinder::MakeCopy::Yes);
+        for (int p = 0; p < kProps; ++p)
+            ctx.FindBinder(Utf8PrintfString("P%d", p).c_str())->BindText(Utf8PrintfString("v%d", p).c_str(), IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    // binds only P0 (shared columns) and P20 (overflow table), everything else must be nulled
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("P0")->BindText("changed0", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("P20")->BindText("changed20", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::UpdateOptions().UseFullUpdate())) << writer.GetLastError().c_str();
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_TRUE((*inst)["Name"].isNull());
+    for (int p = 0; p < kProps; ++p) {
+        Utf8String name = Utf8PrintfString("P%d", p);
+        if (p == 0)
+            EXPECT_STREQ("changed0", (*inst)[name.c_str()].asCString());
+        else if (p == 20)
+            EXPECT_STREQ("changed20", (*inst)[name.c_str()].asCString());
+        else
+            EXPECT_TRUE((*inst)[name.c_str()].isNull()) << "property " << name.c_str() << " should have been nulled";
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

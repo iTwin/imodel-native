@@ -103,6 +103,14 @@ struct BulkInstanceWriter::Impl final {
         int GetPropertyCount() const { return (int)m_propertiesByIndex.size(); }
         size_t GetMaskWordCount() const { return m_maskWordCount; }
         PropertyMask MakeEmptyMask() const { return PropertyMask(m_maskWordCount, 0); }
+        //! Mask with every property selected, used by full updates.
+        PropertyMask MakeFullMask() const {
+            PropertyMask mask(m_maskWordCount, 0);
+            for (int i = 0; i < GetPropertyCount(); ++i)
+                Impl::SetMaskBit(mask, i);
+
+            return mask;
+        }
 
         void Add(PropertyMap const& propMap) {
             m_indexByName.insert(std::make_pair(propMap.GetName().c_str(), (int)m_propertiesByIndex.size()));

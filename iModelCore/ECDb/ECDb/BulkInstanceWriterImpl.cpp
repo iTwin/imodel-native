@@ -793,13 +793,16 @@ DbResult Writer::Update(ECInstanceKeyCR key, BindCallback const& callback, Updat
         return BE_SQLITE_ERROR;
 
     // Statements are specialized for the exact property set that is written, so the set has to be
-    // known before the values can be bound. Callers usually write the very same set on every call,
-    // so the set of the previous update is used as a guess and the callback binds straight into the
-    // matching statement. Only when the guess is wrong (or missing) does the callback run twice:
-    // once to discover the set and once to bind it.
+    // known before the values can be bound. A full update always writes every property, so its set
+    // is known up-front. For a partial update callers usually write the very same set on every
+    // call, so the set of the previous partial update is used as a guess and the callback binds
+    // straight into the matching statement. Only when the guess is wrong (or missing) does the
+    // callback run twice: once to discover the set and once to bind it.
     PropertyMask mask;
     ClassWriter const* classWriter = nullptr;
-    if (const auto lastIt = m_lastUpdateMask.find(classId); lastIt != m_lastUpdateMask.end() && lastIt->second.size() == schema->GetMaskWordCount()) {
+    if (options.IsFullUpdate()) {
+        mask = schema->MakeFullMask();
+    } else if (const auto lastIt = m_lastUpdateMask.find(classId); lastIt != m_lastUpdateMask.end() && lastIt->second.size() == schema->GetMaskWordCount()) {
         classWriter = GetOrAdd(classId, WriterOp::Update, lastIt->second);
         if (classWriter == nullptr)
             return BE_SQLITE_ERROR;
@@ -824,7 +827,8 @@ DbResult Writer::Update(ECInstanceKeyCR key, BindCallback const& callback, Updat
     }
 
     if (Impl::IsMaskEmpty(mask)) {
-        // nothing to do, a partial update without any property is a no-op
+        // nothing to do, a partial update without any property is a no-op. A full update of a class
+        // without any writable property has nothing to write either.
         return BE_SQLITE_DONE;
     }
 
@@ -839,7 +843,9 @@ DbResult Writer::Update(ECInstanceKeyCR key, BindCallback const& callback, Updat
             callback(bindCtx);
     }
 
-    m_lastUpdateMask[classId] = mask;
+    // a full update never guesses, so it must not overwrite the guess of the partial updates
+    if (options.IsPartialUpdate())
+        m_lastUpdateMask[classId] = mask;
 
     if (const auto stat = classWriter->OnBeforeFirstStep(); !stat.IsSuccess()) {
         if (m_error.empty())

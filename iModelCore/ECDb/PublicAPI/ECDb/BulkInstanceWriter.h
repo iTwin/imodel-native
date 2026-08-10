@@ -152,8 +152,18 @@ public:
     //=======================================================================================
     //+===============+===============+===============+===============+===============+======
     struct UpdateOptions final : Options {
+        enum class UpdateMode {
+            //!< only the properties the callback requested a binder for are written, every other
+            //!< column keeps its current value
+            Partial,
+            //!< every property of the class is written. The callback is expected to supply the
+            //!< full instance: properties it does not bind are set to NULL
+            Full,
+        };
+
     private:
         bool m_failIfNoRowChanged = false;
+        UpdateMode m_mode = UpdateMode::Partial;
 
     public:
         UpdateOptions() : Options(WriterOp::Update) {}
@@ -161,6 +171,22 @@ public:
         //! If set, Update() returns BE_SQLITE_NOTFOUND when the instance does not exist.
         UpdateOptions& FailIfNoRowChanged(bool v) {
             m_failIfNoRowChanged = v;
+            return *this;
+        }
+
+        UpdateMode GetUpdateMode() const { return m_mode; }
+        bool IsPartialUpdate() const { return m_mode == UpdateMode::Partial; }
+        bool IsFullUpdate() const { return m_mode == UpdateMode::Full; }
+        //! Writes only the properties the callback binds. This is the default.
+        UpdateOptions& UsePartialUpdate() {
+            m_mode = UpdateMode::Partial;
+            return *this;
+        }
+        //! Writes every property of the class. The callback must supply the full instance, any
+        //! property it does not bind is set to NULL. Never needs a discovery pass, so the
+        //! callback is always invoked exactly once.
+        UpdateOptions& UseFullUpdate() {
+            m_mode = UpdateMode::Full;
             return *this;
         }
     };
@@ -179,14 +205,17 @@ public:
     //! Inserts a new instance of the given class. The callback is invoked to bind the values.
     ECDB_EXPORT DbResult Insert(ECN::ECClassId classId, BindCallback callback, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Insert(ECN::ECClassId classId, BindCallback callback, InsertOptions const& options);
-    //! Partially updates an existing instance. Only properties for which the callback
-    //! requested a binder are written, all other columns keep their current value.
-    //! @note UPDATE statements are specialized for the exact set of properties that is written,
-    //! so the set has to be known before the values can be bound. The set of the previous update
-    //! of the same class is used as a guess, which makes the steady state of a bulk loop a single
-    //! callback invocation. Whenever the guess is wrong (the first update of a class, or a call
-    //! that writes a different set than the previous one) the callback is invoked twice: once to
-    //! discover the set and once to bind it. Callbacks must therefore be free of side effects.
+    //! Updates an existing instance. In the default partial mode only properties for which the
+    //! callback requested a binder are written, all other columns keep their current value. In
+    //! full mode (UpdateOptions::UseFullUpdate) every property is written and the callback must
+    //! supply the full instance, any property it does not bind is set to NULL.
+    //! @note Partial UPDATE statements are specialized for the exact set of properties that is
+    //! written, so the set has to be known before the values can be bound. The set of the previous
+    //! partial update of the same class is used as a guess, which makes the steady state of a bulk
+    //! loop a single callback invocation. Whenever the guess is wrong (the first partial update of
+    //! a class, or a call that writes a different set than the previous one) the callback is
+    //! invoked twice: once to discover the set and once to bind it. Callbacks must therefore be
+    //! free of side effects. Full updates always invoke the callback exactly once.
     ECDB_EXPORT DbResult Update(ECInstanceKeyCR key, BindCallback callback, UpdateOptions const& options);
     ECDB_EXPORT DbResult Update(ECInstanceKeyCR key, BindCallback callback);
 
