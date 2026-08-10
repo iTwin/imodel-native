@@ -181,6 +181,12 @@ public:
     ECDB_EXPORT DbResult Insert(ECN::ECClassId classId, BindCallback callback, InsertOptions const& options);
     //! Partially updates an existing instance. Only properties for which the callback
     //! requested a binder are written, all other columns keep their current value.
+    //! @note UPDATE statements are specialized for the exact set of properties that is written,
+    //! so the set has to be known before the values can be bound. The set of the previous update
+    //! of the same class is used as a guess, which makes the steady state of a bulk loop a single
+    //! callback invocation. Whenever the guess is wrong (the first update of a class, or a call
+    //! that writes a different set than the previous one) the callback is invoked twice: once to
+    //! discover the set and once to bind it. Callbacks must therefore be free of side effects.
     ECDB_EXPORT DbResult Update(ECInstanceKeyCR key, BindCallback callback, UpdateOptions const& options);
     ECDB_EXPORT DbResult Update(ECInstanceKeyCR key, BindCallback callback);
 

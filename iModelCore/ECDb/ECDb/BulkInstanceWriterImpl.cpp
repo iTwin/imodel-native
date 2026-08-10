@@ -13,6 +13,8 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 // ======================================================================================
+using ClassSchema = BulkInstanceWriter::Impl::ClassSchema;
+using PropertyMask = BulkInstanceWriter::Impl::PropertyMask;
 using TableWriter = BulkInstanceWriter::Impl::TableWriter;
 using PropertyWriter = BulkInstanceWriter::Impl::PropertyWriter;
 using ClassWriter = BulkInstanceWriter::Impl::ClassWriter;
@@ -92,25 +94,6 @@ void TableWriter::Reset() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyWriter const* ClassWriter::FindProperty(Utf8CP name) const {
-    if (name == nullptr)
-        return nullptr;
-
-    const auto it = m_propertyMap.find(name);
-    return it == m_propertyMap.end() ? nullptr : it->second;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-int ClassWriter::GetPropertyIndex(Utf8CP name) const {
-    const auto prop = FindProperty(name);
-    return prop == nullptr ? -1 : prop->GetIndex();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 PropertyWriter const* ClassWriter::GetProperty(int index) const {
     if (index < 0 || index >= (int)m_propertiesByIndex.size())
         return nullptr;
@@ -138,17 +121,11 @@ PropertyWriter& ClassWriter::AddProperty(PropertyWriter::Ptr property) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassWriter::BuildIndexes() {
-    m_propertyMap.clear();
     m_propertiesByIndex.clear();
-
-    int maxIndex = -1;
-    for (auto const& prop : m_properties)
-        maxIndex = std::max(maxIndex, prop->GetIndex());
-
-    m_propertiesByIndex.resize((size_t)(maxIndex + 1), nullptr);
+    m_propertiesByIndex.resize((size_t)m_schema->GetPropertyCount(), nullptr);
     for (auto const& prop : m_properties) {
-        m_propertyMap.insert(std::make_pair(prop->GetName().c_str(), prop.get()));
-        m_propertiesByIndex[(size_t)prop->GetIndex()] = prop.get();
+        if (prop->GetIndex() >= 0 && prop->GetIndex() < (int)m_propertiesByIndex.size())
+            m_propertiesByIndex[(size_t)prop->GetIndex()] = prop.get();
     }
 }
 
@@ -202,11 +179,16 @@ void ClassWriter::ResetStatements() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlBinder& WriteContext::_GetBinder(int propertyIndex) const {
-    const auto prop = m_class.GetProperty(propertyIndex);
-    if (prop == nullptr)
+    if (propertyIndex < 0 || propertyIndex >= m_schema.GetPropertyCount())
         return NoopECSqlBinder::Get();
 
     MarkWritten(propertyIndex);
+    const auto prop = m_class == nullptr ? nullptr : m_class->GetProperty(propertyIndex);
+    // no binder means either a discovery pass or a property this specialization does not write.
+    // Both are detected by the caller through the mask, so a no-op binder is safe here.
+    if (prop == nullptr)
+        return NoopECSqlBinder::Get();
+
     return prop->GetBinder();
 }
 
@@ -214,69 +196,19 @@ IECSqlBinder& WriteContext::_GetBinder(int propertyIndex) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlBinder* WriteContext::_FindBinder(Utf8CP propertyName) const {
-    const auto prop = m_class.FindProperty(propertyName);
-    if (prop == nullptr)
+    const auto index = m_schema.GetIndexOf(propertyName);
+    if (index < 0)
         return nullptr;
 
-    MarkWritten(prop->GetIndex());
-    return &prop->GetBinder();
+    return &_GetBinder(index);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECPropertyCP WriteContext::_GetProperty(int propertyIndex) const {
-    const auto prop = m_class.GetProperty(propertyIndex);
-    return prop == nullptr ? nullptr : &prop->GetProperty();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WriteContext::MarkWritten(int propertyIndex) const {
-    if (propertyIndex < 0)
-        return;
-
-    const auto word = (size_t)(propertyIndex / Impl::kMaskBits);
-    if (word >= m_masks.size())
-        return;
-
-    m_masks[word] |= (uint64_t)1 << (uint64_t)(propertyIndex % Impl::kMaskBits);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-bool WriteContext::IsWritten(int propertyIndex) const {
-    if (propertyIndex < 0)
-        return false;
-
-    const auto word = (size_t)(propertyIndex / Impl::kMaskBits);
-    if (word >= m_masks.size())
-        return false;
-
-    return (m_masks[word] & ((uint64_t)1 << (uint64_t)(propertyIndex % Impl::kMaskBits))) != 0;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-bool WriteContext::HasAnyWritten() const {
-    for (auto mask : m_masks) {
-        if (mask != 0)
-            return true;
-    }
-    return false;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8String ClassWriter::Factory::MakeMaskParamName(size_t wordIndex) {
-    Utf8String name;
-    name.Sprintf(":%s%d", Impl::kMaskParamPrefix, (int)wordIndex);
-    return name;
+    const auto propMap = m_schema.GetPropertyMap(propertyIndex);
+    return propMap == nullptr ? nullptr : &propMap->GetProperty();
 }
 
 //---------------------------------------------------------------------------------------
@@ -356,10 +288,36 @@ BentleyStatus ClassWriter::Factory::CollectColumnBindings(std::vector<ColumnBind
 }
 
 //---------------------------------------------------------------------------------------
+//! Root property maps the writer may write, in the order that defines their index. Both the
+//! ClassSchema and every mask specialization run this, so the index space is stable.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, WriterOp op, Utf8StringR error) {
+void ClassWriter::Factory::CollectWritableProperties(ClassMapCR classMap, WriterOp op, std::vector<PropertyMap const*>& propMaps) {
+    Utf8String timestampPropName;
+    if (auto ca = classMap.GetClass().GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty"); ca != nullptr) {
+        ECValue v;
+        if (ECObjectsStatus::Success == ca->GetValue(v, "PropertyName") && !v.IsNull())
+            timestampPropName.assign(v.GetUtf8CP());
+    }
+
+    for (auto propMap : classMap.GetPropertyMaps()) {
+        if (!IsWritable(*propMap, timestampPropName, op))
+            continue;
+
+        auto table = GetPropertyTable(classMap, *propMap);
+        if (table == nullptr || table->GetType() == DbTable::Type::Virtual)
+            continue;
+
+        propMaps.push_back(propMap);
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ClassSchema::Ptr ClassWriter::Factory::CreateSchema(ClassMapCR classMap, WriterOp op, Utf8StringR error) {
     auto const& ecClass = classMap.GetClass();
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable) {
         error.Sprintf("BulkInstanceWriter does not support foreign key (end table) relationship class '%s'. Use ECSQL or InstanceWriter instead.", ecClass.GetFullName());
@@ -371,41 +329,57 @@ ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, 
         return nullptr;
     }
 
-    Utf8String timestampPropName;
-    if (auto ca = ecClass.GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty"); ca != nullptr) {
-        ECValue v;
-        if (ECObjectsStatus::Success == ca->GetValue(v, "PropertyName") && !v.IsNull())
-            timestampPropName.assign(v.GetUtf8CP());
+    std::vector<PropertyMap const*> propMaps;
+    CollectWritableProperties(classMap, op, propMaps);
+
+    auto schema = std::make_shared<ClassSchema>(ecClass.GetId());
+    for (auto propMap : propMaps)
+        schema->Add(*propMap);
+
+    return schema;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, WriterOp op, ClassSchema::Ptr schema, PropertyMask const& mask, Utf8StringR error) {
+    auto const& ecClass = classMap.GetClass();
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable) {
+        error.Sprintf("BulkInstanceWriter does not support foreign key (end table) relationship class '%s'. Use ECSQL or InstanceWriter instead.", ecClass.GetFullName());
+        return nullptr;
     }
 
-    auto classWriter = std::make_unique<ClassWriter>(ecClass.GetId(), op);
+    if (classMap.GetPrimaryTable().GetType() == DbTable::Type::Virtual) {
+        error.Sprintf("Class '%s' is not mapped to a real table and cannot be written.", ecClass.GetFullName());
+        return nullptr;
+    }
 
-    // Assign every writable root property map to the table it is mapped to. Indices are
-    // assigned up-front because they are the bit positions of the update bitmask.
+    auto classWriter = std::make_unique<ClassWriter>(ecClass.GetId(), op, schema, mask);
+
+    // Assign every writable root property map to the table it is mapped to. Indices come from
+    // the shared schema and are also the bit positions of the property mask.
     struct PendingProperty final {
         PropertyMap const* m_propMap = nullptr;
         DbTable const* m_table = nullptr;
         int m_index = -1;
     };
 
-    std::vector<PendingProperty> pendingProps;
-    for (auto propMap : classMap.GetPropertyMaps()) {
-        if (!IsWritable(*propMap, timestampPropName, op))
-            continue;
+    std::vector<PropertyMap const*> writableProps;
+    CollectWritableProperties(classMap, op, writableProps);
 
-        auto table = GetPropertyTable(classMap, *propMap);
-        if (table == nullptr || table->GetType() == DbTable::Type::Virtual)
+    std::vector<PendingProperty> pendingProps;
+    for (size_t i = 0; i < writableProps.size(); ++i) {
+        // an INSERT always writes every column, an UPDATE only the ones the caller asked for
+        if (op == WriterOp::Update && !Impl::IsMaskBitSet(mask, (int)i))
             continue;
 
         PendingProperty pending;
-        pending.m_propMap = propMap;
-        pending.m_table = table;
-        pending.m_index = (int)pendingProps.size();
+        pending.m_propMap = writableProps[i];
+        pending.m_table = GetPropertyTable(classMap, *writableProps[i]);
+        pending.m_index = (int)i;
         pendingProps.push_back(pending);
     }
-
-    const auto maskWordCount = (size_t)((pendingProps.size() + Impl::kMaskBits - 1) / Impl::kMaskBits);
-    classWriter->SetMaskWordCount(maskWordCount);
 
     auto const& systemSchemaHelper = ecdb.Schemas().Main().GetSystemSchemaHelper();
     auto ecInstanceIdPropMap = classMap.GetECInstanceIdPropertyMap();
@@ -495,7 +469,6 @@ ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, 
         idParamName.append(Impl::kInstanceIdParamName);
 
         NativeSqlBuilder builder;
-        std::vector<Utf8String> maskParamNames;
         if (op == WriterOp::Insert) {
             builder.Append("INSERT INTO ").AppendEscaped(table->GetName()).Append(" (");
             builder.AppendEscaped(idPropMap->GetColumn().GetName());
@@ -530,9 +503,9 @@ ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, 
                 continue;
             }
 
-            for (size_t word = 0; word < maskWordCount; ++word)
-                maskParamNames.push_back(MakeMaskParamName(word));
-
+            // the statement is specialized for the caller's property set, so every column it
+            // mentions is one the caller actually writes. Columns of unwritten properties are
+            // left out of the SET clause entirely and keep their current value.
             builder.Append("UPDATE ").AppendEscaped(table->GetName()).Append(" SET ");
             bool isFirst = true;
             for (auto const& tableColumn : tableColumns) {
@@ -540,22 +513,7 @@ ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, 
                     builder.AppendComma();
                 isFirst = false;
 
-                const auto word = (size_t)(tableColumn.m_propertyIndex / Impl::kMaskBits);
-                const uint64_t bit = (uint64_t)1 << (uint64_t)(tableColumn.m_propertyIndex % Impl::kMaskBits);
-
-                Utf8String bitLiteral;
-                bitLiteral.Sprintf("%" PRIu64, bit);
-
-                builder.AppendEscaped(tableColumn.m_column->GetName())
-                    .Append("=IIF(")
-                    .Append(maskParamNames[word])
-                    .Append("&")
-                    .Append(bitLiteral)
-                    .AppendComma()
-                    .Append(tableColumn.m_paramName)
-                    .AppendComma()
-                    .AppendEscaped(tableColumn.m_column->GetName())
-                    .AppendParenRight();
+                builder.AppendEscaped(tableColumn.m_column->GetName()).Append("=").Append(tableColumn.m_paramName);
             }
 
             builder.Append(" WHERE ").AppendEscaped(idPropMap->GetColumn().GetName()).Append("=").Append(idParamName);
@@ -563,7 +521,7 @@ ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, 
 
         // guard against the sqlite parameter limit
         const int paramBudget = ecdb.GetLimit(DbLimits::VariableNumber) / Impl::kParamBudgetDivisor;
-        const int requiredParams = (int)tableColumns.size() + (int)maskParamNames.size() + 1;
+        const int requiredParams = (int)tableColumns.size() + 1;
         if (paramBudget > 0 && requiredParams > paramBudget) {
             error.Sprintf("Class '%s' requires %d SQLite parameters for table '%s' which exceeds the budget of %d.",
                           ecClass.GetFullName(), requiredParams, table->GetName().c_str(), paramBudget);
@@ -579,11 +537,6 @@ ClassWriter::Ptr ClassWriter::Factory::Create(ECDbCR ecdb, ClassMapCR classMap, 
         auto& sqliteStmt = tableWriter.GetSqliteStmt();
         // sqlite3_bind_parameter_index requires the name including its leading ':' prefix.
         tableWriter.SetInstanceIdParamIndex(sqliteStmt.GetParameterIndex(idParamName.c_str()));
-
-        std::vector<int> maskParamIndices;
-        for (auto const& maskParamName : maskParamNames)
-            maskParamIndices.push_back(sqliteStmt.GetParameterIndex(maskParamName.c_str()));
-        tableWriter.SetMaskParamIndices(std::move(maskParamIndices));
 
         classWriter->AddTable(std::move(tableWriterPtr));
         for (auto& tableProperty : tableProperties)
@@ -618,6 +571,9 @@ void Writer::Clear() const {
     BeMutexHolder holder(m_mutex);
     m_cache.clear();
     m_mru.clear();
+    m_schemaCache.clear();
+    m_schemaMru.clear();
+    m_lastUpdateMask.clear();
     m_error.clear();
 }
 
@@ -656,14 +612,7 @@ void Writer::TouchMru(CacheKey const& key) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassWriter const* Writer::GetOrAdd(ECN::ECClassId classId, WriterOp op) const {
-    const CacheKey key(classId, op);
-    const auto it = m_cache.find(key);
-    if (it != m_cache.end()) {
-        TouchMru(key);
-        return it->second.get();
-    }
-
+ClassMap const* Writer::GetClassMap(ECN::ECClassId classId) const {
     auto ecClass = m_conn.Schemas().GetClass(classId);
     if (ecClass == nullptr) {
         SetError("ECClass with id %s does not exist.", classId.ToHexStr().c_str());
@@ -681,8 +630,56 @@ ClassWriter const* Writer::GetOrAdd(ECN::ECClassId classId, WriterOp op) const {
         return nullptr;
     }
 
+    return classMap;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassSchema::Ptr Writer::GetOrAddSchema(ECN::ECClassId classId, ClassMapCR classMap, WriterOp op) const {
+    // Insert and Update select the same property maps, so one schema per class is enough.
+    const auto it = m_schemaCache.find(classId);
+    if (it != m_schemaCache.end())
+        return it->second;
+
     Utf8String error;
-    auto classWriter = ClassWriter::Factory::Create(m_conn, *classMap, op, error);
+    auto schema = ClassWriter::Factory::CreateSchema(classMap, op, error);
+    if (schema == nullptr) {
+        SetError("%s", error.empty() ? "Failed to describe the class." : error.c_str());
+        return nullptr;
+    }
+
+    m_schemaCache[classId] = schema;
+    m_schemaMru.push_back(classId);
+    while (m_schemaMru.size() > (size_t)m_maxCache) {
+        m_schemaCache.erase(m_schemaMru.front());
+        m_lastUpdateMask.erase(m_schemaMru.front());
+        m_schemaMru.erase(m_schemaMru.begin());
+    }
+    return schema;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassWriter const* Writer::GetOrAdd(ECN::ECClassId classId, WriterOp op, PropertyMask const& mask) const {
+    const CacheKey key(classId, op, mask);
+    const auto it = m_cache.find(key);
+    if (it != m_cache.end()) {
+        TouchMru(key);
+        return it->second.get();
+    }
+
+    auto classMap = GetClassMap(classId);
+    if (classMap == nullptr)
+        return nullptr;
+
+    auto schema = GetOrAddSchema(classId, *classMap, op);
+    if (schema == nullptr)
+        return nullptr;
+
+    Utf8String error;
+    auto classWriter = ClassWriter::Factory::Create(m_conn, *classMap, op, schema, mask, error);
     if (classWriter == nullptr) {
         SetError("%s", error.empty() ? "Failed to create the class writer." : error.c_str());
         return nullptr;
@@ -709,37 +706,6 @@ DbResult Writer::CheckWritePermission() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool Writer::IsTableDirty(TableWriter const& table, WriteContext const& ctx) const {
-    for (auto propertyIndex : table.GetPropertyIndices()) {
-        if (ctx.IsWritten(propertyIndex))
-            return true;
-    }
-    return false;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult Writer::BindMasks(TableWriter const& table, WriteContext const& ctx) const {
-    auto const& maskParamIndices = table.GetMaskParamIndices();
-    auto const& masks = ctx.GetMasks();
-    for (size_t i = 0; i < maskParamIndices.size(); ++i) {
-        if (maskParamIndices[i] <= 0)
-            continue; // this mask word is not referenced by this statement
-
-        const uint64_t mask = i < masks.size() ? masks[i] : 0;
-        const auto rc = table.GetSqliteStmt().BindInt64(maskParamIndices[i], (int64_t)mask);
-        if (rc != BE_SQLITE_OK) {
-            SetError("Failed to bind the update bitmask for table '%s'.", table.GetTable().GetName().c_str());
-            return rc;
-        }
-    }
-    return BE_SQLITE_OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 DbResult Writer::Insert(ECN::ECClassId classId, BindCallback const& callback, InsertOptions const& options, ECInstanceKey& key) const {
     BeMutexHolder holder(m_mutex);
     m_error.clear();
@@ -748,7 +714,8 @@ DbResult Writer::Insert(ECN::ECClassId classId, BindCallback const& callback, In
     if (const auto rc = CheckWritePermission(); rc != BE_SQLITE_OK)
         return rc;
 
-    auto classWriter = GetOrAdd(classId, WriterOp::Insert);
+    // an INSERT always writes every column, so it has exactly one specialization per class
+    auto classWriter = GetOrAdd(classId, WriterOp::Insert, PropertyMask());
     if (classWriter == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -764,7 +731,7 @@ DbResult Writer::Insert(ECN::ECClassId classId, BindCallback const& callback, In
         }
     }
 
-    WriteContext ctx(*classWriter);
+    WriteContext ctx(classWriter->GetSchema(), classWriter);
     if (callback != nullptr)
         callback(ctx);
 
@@ -816,20 +783,63 @@ DbResult Writer::Update(ECInstanceKeyCR key, BindCallback const& callback, Updat
     if (const auto rc = CheckWritePermission(); rc != BE_SQLITE_OK)
         return rc;
 
-    auto classWriter = GetOrAdd(key.GetClassId(), WriterOp::Update);
-    if (classWriter == nullptr)
+    const auto classId = key.GetClassId();
+    auto classMap = GetClassMap(classId);
+    if (classMap == nullptr)
         return BE_SQLITE_ERROR;
 
-    classWriter->ResetStatements();
+    auto schema = GetOrAddSchema(classId, *classMap, WriterOp::Update);
+    if (schema == nullptr)
+        return BE_SQLITE_ERROR;
 
-    WriteContext ctx(*classWriter);
-    if (callback != nullptr)
-        callback(ctx);
+    // Statements are specialized for the exact property set that is written, so the set has to be
+    // known before the values can be bound. Callers usually write the very same set on every call,
+    // so the set of the previous update is used as a guess and the callback binds straight into the
+    // matching statement. Only when the guess is wrong (or missing) does the callback run twice:
+    // once to discover the set and once to bind it.
+    PropertyMask mask;
+    ClassWriter const* classWriter = nullptr;
+    if (const auto lastIt = m_lastUpdateMask.find(classId); lastIt != m_lastUpdateMask.end() && lastIt->second.size() == schema->GetMaskWordCount()) {
+        classWriter = GetOrAdd(classId, WriterOp::Update, lastIt->second);
+        if (classWriter == nullptr)
+            return BE_SQLITE_ERROR;
 
-    if (!ctx.HasAnyWritten()) {
+        classWriter->ResetStatements();
+        WriteContext guessCtx(*schema, classWriter);
+        if (callback != nullptr)
+            callback(guessCtx);
+
+        mask = guessCtx.GetMask();
+        if (mask != classWriter->GetMask()) {
+            // the caller wrote a different set than last time, the bound values are unusable
+            classWriter->ResetStatements();
+            classWriter = nullptr;
+        }
+    } else {
+        WriteContext discoveryCtx(*schema);
+        if (callback != nullptr)
+            callback(discoveryCtx);
+
+        mask = discoveryCtx.GetMask();
+    }
+
+    if (Impl::IsMaskEmpty(mask)) {
         // nothing to do, a partial update without any property is a no-op
         return BE_SQLITE_DONE;
     }
+
+    if (classWriter == nullptr) {
+        classWriter = GetOrAdd(classId, WriterOp::Update, mask);
+        if (classWriter == nullptr)
+            return BE_SQLITE_ERROR;
+
+        classWriter->ResetStatements();
+        WriteContext bindCtx(*schema, classWriter);
+        if (callback != nullptr)
+            callback(bindCtx);
+    }
+
+    m_lastUpdateMask[classId] = mask;
 
     if (const auto stat = classWriter->OnBeforeFirstStep(); !stat.IsSuccess()) {
         if (m_error.empty())
@@ -840,16 +850,10 @@ DbResult Writer::Update(ECInstanceKeyCR key, BindCallback const& callback, Updat
     }
 
     int totalModifiedRows = 0;
+    // every table of the specialization writes at least one of the properties the caller wrote,
+    // so unlike the previous bitmask based statements there is no clean table left to skip
     for (auto const& table : classWriter->GetTables()) {
-        if (!IsTableDirty(*table, ctx))
-            continue;
-
         auto& sqliteStmt = table->GetSqliteStmt();
-        if (const auto rc = BindMasks(*table, ctx); rc != BE_SQLITE_OK) {
-            classWriter->ResetStatements();
-            return rc;
-        }
-
         if (table->GetInstanceIdParamIndex() > 0) {
             if (const auto rc = sqliteStmt.BindId(table->GetInstanceIdParamIndex(), key.GetInstanceId()); rc != BE_SQLITE_OK) {
                 SetError("Failed to bind the ECInstanceId for table '%s'.", table->GetTable().GetName().c_str());

@@ -624,4 +624,259 @@ TEST_F(BulkInstanceWriterFixture, BulkInsertDoesNotLeakBindingsBetweenRows) {
     EXPECT_EQ(99, (*last)["I"].GetInt());
 }
 
+//---------------------------------------------------------------------------------------
+//! UPDATE statements are specialized per written property set. Alternating the set between
+//! calls must keep producing correct partial updates.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, PartialUpdateWithAlternatingPropertySets) {
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_alternating.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="A" typeName="string"/>
+                <ECProperty propertyName="B" typeName="string"/>
+                <ECProperty propertyName="C" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Foo");
+    ASSERT_TRUE(classId.IsValid());
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindText("a0", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("B")->BindText("b0", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("C")->BindText("c0", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    auto updateOne = [&](Utf8CP prop, Utf8CP value) {
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+            ctx.FindBinder(prop)->BindText(value, IECSqlBinder::MakeCopy::Yes);
+        }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+    };
+
+    // every switch of the written set invalidates the guessed statement
+    updateOne("A", "a1");
+    updateOne("B", "b1");
+    updateOne("A", "a2");
+    updateOne("C", "c1");
+    updateOne("C", "c2");
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("a2", (*inst)["A"].asCString());
+    EXPECT_STREQ("b1", (*inst)["B"].asCString());
+    EXPECT_STREQ("c2", (*inst)["C"].asCString());
+
+    // two properties at once is yet another specialization
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindText("a3", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("C")->BindText("c3", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+
+    inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("a3", (*inst)["A"].asCString());
+    EXPECT_STREQ("b1", (*inst)["B"].asCString());
+    EXPECT_STREQ("c3", (*inst)["C"].asCString());
+}
+
+//---------------------------------------------------------------------------------------
+//! The property index space a caller sees must not depend on which specialization happens
+//! to back the context, and it must be identical in the discovery and the binding pass.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, PropertyIndexSpaceIsStableAcrossSpecializations) {
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_indexspace.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="A" typeName="string"/>
+                <ECProperty propertyName="B" typeName="int"/>
+                <ECProperty propertyName="C" typeName="double"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Foo");
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindText("a", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    std::vector<int> counts, indexOfB;
+    std::vector<Utf8String> nameOfB;
+    auto record = [&](BulkInstanceWriter::IBindContext const& ctx) {
+        counts.push_back(ctx.GetPropertyCount());
+        const auto ix = ctx.GetPropertyIndex("B");
+        indexOfB.push_back(ix);
+        auto prop = ctx.GetProperty(ix);
+        nameOfB.push_back(prop == nullptr ? "" : prop->GetName());
+    };
+
+    // narrow specialization
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+        record(ctx);
+        ctx.FindBinder("A")->BindText("a1", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+
+    // wide specialization
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+        record(ctx);
+        ctx.FindBinder("A")->BindText("a2", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("B")->BindInt(7);
+        ctx.FindBinder("C")->BindDouble(1.5);
+    }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+
+    ASSERT_FALSE(counts.empty());
+    for (size_t i = 1; i < counts.size(); ++i) {
+        EXPECT_EQ(counts[0], counts[i]) << "property count changed between passes";
+        EXPECT_EQ(indexOfB[0], indexOfB[i]) << "property index changed between passes";
+        EXPECT_STREQ(nameOfB[0].c_str(), nameOfB[i].c_str()) << "property lookup changed between passes";
+    }
+    EXPECT_LE(0, indexOfB[0]);
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("a2", (*inst)["A"].asCString());
+    EXPECT_EQ(7, (*inst)["B"].GetInt());
+    EXPECT_DOUBLE_EQ(1.5, (*inst)["C"].GetDouble());
+}
+
+//---------------------------------------------------------------------------------------
+//! A repeated update of the same property set must run the callback only once per call.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, RepeatedUpdateInvokesCallbackOncePerCall) {
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_callbackcount.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="A" typeName="int"/>
+                <ECProperty propertyName="B" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Foo");
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("A")->BindInt(0);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    int invocations = 0;
+    auto update = [&](int v) {
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+            ++invocations;
+            ctx.FindBinder("A")->BindInt(v);
+        }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+    };
+
+    update(1);
+    const auto afterFirst = invocations;
+    EXPECT_EQ(2, afterFirst) << "the first update of a class needs a discovery pass";
+
+    for (int i = 0; i < 10; ++i)
+        update(i + 2);
+
+    EXPECT_EQ(afterFirst + 10, invocations) << "subsequent updates of the same property set must not re-run the callback";
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_EQ(11, (*inst)["A"].GetInt());
+}
+
+//---------------------------------------------------------------------------------------
+//! A partial update of a wide class must leave every column it does not write untouched,
+//! including columns in the overflow table.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, PartialUpdateOfWideClassLeavesOtherColumnsUntouched) {
+    const int kProps = 24;
+    Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Base" modifier="Abstract">
+          <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+            </ShareColumns>
+          </ECCustomAttributes>
+          <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Wide">
+          <BaseClass>Base</BaseClass>)xml";
+    for (int p = 0; p < kProps; ++p)
+        xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"string\" />", p).GetUtf8CP());
+    xml.append("</ECEntityClass></ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_wide_partial.ecdb", SchemaItem(xml)));
+
+    auto& writer = m_ecdb.GetBulkInstanceWriter();
+    const auto classId = GetClassId("TestSchema", "Wide");
+    ASSERT_TRUE(classId.IsValid());
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [&](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("Name")->BindText("original", IECSqlBinder::MakeCopy::Yes);
+        for (int p = 0; p < kProps; ++p)
+            ctx.FindBinder(Utf8PrintfString("P%d", p).c_str())->BindText(Utf8PrintfString("v%d", p).c_str(), IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    // P0 lives in the shared columns, P20 in the overflow table
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("P0")->BindText("changed0", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("P20")->BindText("changed20", IECSqlBinder::MakeCopy::Yes);
+    }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    EXPECT_STREQ("original", (*inst)["Name"].asCString());
+    for (int p = 0; p < kProps; ++p) {
+        Utf8String name = Utf8PrintfString("P%d", p);
+        Utf8String expected = p == 0 ? "changed0" : (p == 20 ? "changed20" : Utf8PrintfString("v%d", p).c_str());
+        EXPECT_STREQ(expected.c_str(), (*inst)[name.c_str()].asCString()) << "property " << name.c_str();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+//! Many distinct property sets must not corrupt anything when the statement cache evicts.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BulkInstanceWriterFixture, ManyPropertySetsEvictSpecializations) {
+    const int kProps = 12;
+    Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECEntityClass typeName="Foo">)xml";
+    for (int p = 0; p < kProps; ++p)
+        xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"int\" />", p).GetUtf8CP());
+    xml.append("</ECEntityClass></ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_evict.ecdb", SchemaItem(xml)));
+
+    // a tiny cache so that every specialization evicts the previous one
+    BulkInstanceWriter writer(m_ecdb, 2);
+    const auto classId = GetClassId("TestSchema", "Foo");
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+        for (int p = 0; p < 12; ++p)
+            ctx.GetBinder(ctx.GetPropertyIndex(Utf8PrintfString("P%d", p).c_str())).BindInt(0);
+    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+
+    // each round writes a different single property, forcing a new specialization every time
+    for (int round = 0; round < 3; ++round) {
+        for (int p = 0; p < kProps; ++p) {
+            const int value = round * 100 + p + 1;
+            ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
+                ctx.FindBinder(Utf8PrintfString("P%d", p).c_str())->BindInt(value);
+            }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
+        }
+    }
+
+    auto inst = ReadInstance(key);
+    ASSERT_TRUE(inst.has_value());
+    for (int p = 0; p < kProps; ++p)
+        EXPECT_EQ(200 + p + 1, (*inst)[Utf8PrintfString("P%d", p).c_str()].GetInt()) << "property P" << p;
+}
+
 END_ECDBUNITTESTS_NAMESPACE
