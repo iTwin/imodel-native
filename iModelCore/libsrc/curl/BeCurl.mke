@@ -132,10 +132,13 @@ libcaresName = libcares.a
     #   The .def is regenerated on every build because its content comes from the vcpkg-installed
     #   curl headers, whose timestamps are not a reliable prerequisite (a binary-cache hit can
     #   restore older ones). makeCurlDef.py rewrites the file only when the export list actually
-    #   changes, so an unchanged .def does not force a re-link.
+    #   changes, so an unchanged .def does not force a re-link. The dlmlink machinery consumes
+    #   DLM_MODULE_DEF as a linker option rather than as a prerequisite of the DLL, so when the
+    #   export list does change we hand makeCurlDef.py the previously linked DLL to delete; that
+    #   forces exactly this one DLL (and its import lib) to be re-linked from the new .def.
     #----------------------------------------------------------------------------------
     always:
-        $(BBPYTHONCMD) $(curlDir)makeCurlDef.py "$(vcpkgIncludeDir)curl" "$(o)$(appName).def"
+        $(BBPYTHONCMD) $(curlDir)makeCurlDef.py "$(vcpkgIncludeDir)curl" "$(o)$(appName).def" "$(o)$(shlibprefix)$(appName)$(shlibext)"
 
     curlModuleDef = $(o)$(appName).def
 

@@ -12,8 +12,11 @@
 # functions.  Deriving the list from the headers means a curl version bump needs no manual .def
 # maintenance (unlike the hand-maintained OpenSSL .def).
 #
-# Usage: makeCurlDef.py <curl_include_dir> <output.def>
+# Usage: makeCurlDef.py <curl_include_dir> <output.def> [stale_output ...]
 #   <curl_include_dir>  directory containing curl.h, easy.h, multi.h, ... (vcpkg include/curl)
+#   <stale_output>      file (e.g. the previously linked iTwinCurl.dll) to delete when the export
+#                       list changes, since bmake's DLL rule does not treat the .def as a
+#                       prerequisite and would otherwise leave a DLL with the old exports in place
 #---------------------------------------------------------------------------------------------
 import sys
 import os
@@ -22,12 +25,13 @@ import glob
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.stderr.write("Usage: makeCurlDef.py <curl_include_dir> <output.def>\n")
+    if len(sys.argv) < 3:
+        sys.stderr.write("Usage: makeCurlDef.py <curl_include_dir> <output.def> [stale_output ...]\n")
         return 1
 
     include_dir = sys.argv[1]
     out_def = sys.argv[2]
+    stale_outputs = sys.argv[3:]
 
     headers = sorted(glob.glob(os.path.join(include_dir, "*.h")))
     if not headers:
@@ -67,6 +71,11 @@ def main():
 
     with open(out_def, "wb") as f:
         f.write(data)
+
+    # The export list changed, so anything previously linked from the old .def is stale.
+    for stale in stale_outputs:
+        if os.path.exists(stale):
+            os.remove(stale)
 
     return 0
 
