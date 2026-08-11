@@ -1134,7 +1134,7 @@ public:
     //! db serializes imports, so the higher version is the one that saw the other's result.
     void DetermineSchemaSyncPrecedence();
     //! Write the superseding rows an insert conflict had to leave alone. Call after ApplyChanges.
-    DbResult ApplySupersedingRows();
+    BeSQLite::DbResult ApplySupersedingRows();
 };
 
 END_BENTLEY_DGN_NAMESPACE
