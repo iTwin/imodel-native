@@ -1554,7 +1554,7 @@ DbResult SchemaSyncUpstreamHelper::CopyClosure(ECDbR conn, Utf8CP syncAlias, Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<Utf8String> const& schemaNames) {
+SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<Utf8String> const& schemaNames, DataVer adoptedDataVer) {
     ECDB_PERF_LOG_SCOPE("Adopting schemas from schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::AdoptSchemas");
 
@@ -1658,6 +1658,16 @@ SchemaSync::Status SchemaSync::AdoptSchemas(SyncDbUri const& syncDbUri, bvector<
         return cleanup(Status::ERROR);
     }
 
+    if (adoptedDataVer != 0) {
+        auto localDbInfo = GetInfo();
+        localDbInfo.m_dataVer = adoptedDataVer;
+        if (SaveLocalDbInfo(m_conn, localDbInfo) != Status::OK) {
+            LOG.error("SchemaSync::AdoptSchemas(): Failed to stamp the adopted data version.");
+            m_conn.AbandonChanges();
+            return cleanup(Status::ERROR);
+        }
+    }
+
     const auto detachRc = cleanup(Status::OK);
     UNUSED_VARIABLE(detachRc);
 
@@ -1703,17 +1713,19 @@ SchemaSync::Status SchemaSync::ImportSchemas(SyncDbUri const& syncDbUri, bvector
         return status;
 
     // Step 2. Everything the sync db decided is now taken over verbatim; nothing is decided here.
-    status = AdoptSchemas(effectiveSyncDbUri, importedSchemaNames);
-    if (status != Status::OK) {
-        LOG.error("SchemaSync::ImportSchemas(): Failed to adopt the imported schemas.");
-        return status;
+    // The sync db's version moves first so the briefcase can stamp what it adopted inside the same
+    // txn as the rows: attach and detach both commit, and a rebase replays txn by txn, so a stamp
+    // written afterwards would be in a txn that carries no ec_ rows.
+    auto syncDbInfo = SyncDbInfo::From(effectiveSyncDbUri);
+    syncDbInfo.m_dataVer = dataVerBeforeImport + 1;
+    if (SaveSyncDbInfo(effectiveSyncDbUri, syncDbInfo) != Status::OK) {
+        LOG.error("SchemaSync::ImportSchemas(): Failed to update the sync db data version.");
+        return Status::ERROR;
     }
 
-    // Last, so that a failed adopt does not leave this briefcase claiming to be level with a sync db
-    // whose rows it does not have.
-    status = UpdateDataVersion(effectiveSyncDbUri);
+    status = AdoptSchemas(effectiveSyncDbUri, importedSchemaNames, syncDbInfo.GetDataVersion());
     if (status != Status::OK) {
-        LOG.error("SchemaSync::ImportSchemas(): Failed to update the data version.");
+        LOG.error("SchemaSync::ImportSchemas(): Failed to adopt the imported schemas.");
         return status;
     }
 
@@ -2057,10 +2069,10 @@ DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDa
     return BE_SQLITE_OK;
 }
 
-// Column ordinals of be_Prop.
+// Column ordinals of be_Prop: Namespace,Name,Id,SubId,TxnMode,StrData,RawSize,Data.
 #define BE_PROP_COL_NAMESPACE 0
 #define BE_PROP_COL_NAME 1
-#define BE_PROP_COL_STRDATA 7
+#define BE_PROP_COL_STRDATA 5
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

@@ -4508,6 +4508,11 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         else
             PullMergeAbortRebase(txnId, changeset.GetLastErrorMessage(), rc);
     }
+
+    rc = changeset.ApplySupersedingRows();
+    if (rc != BE_SQLITE_OK) {
+        PullMergeAbortRebase(txnId, "failed to write the rows this txn supersedes", rc);
+    }
     TXN_DEBUG(">> PullMergeRebaseReinstateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
 }
 

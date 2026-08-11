@@ -1121,6 +1121,8 @@ private:
     TxnType m_type;
     Utf8String m_descr;
     bool m_ecChangesSupersedeBriefcase = false;
+    BeSQLite::ChangeGroup m_supersedingRows;
+    bool m_hasSupersedingRows = false;
 
 public:
        LocalChangeSet(DgnDbR db, TxnManager::TxnId id, TxnType type, Utf8StringCR description)
@@ -1131,6 +1133,8 @@ public:
     //! holds. Both sides carry the schema sync data version they were produced against, and the sync
     //! db serializes imports, so the higher version is the one that saw the other's result.
     void DetermineSchemaSyncPrecedence();
+    //! Write the superseding rows an insert conflict had to leave alone. Call after ApplyChanges.
+    DbResult ApplySupersedingRows();
 };
 
 END_BENTLEY_DGN_NAMESPACE

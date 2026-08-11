@@ -1741,14 +1741,10 @@ TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbFollowsAChangeMadeOnlyOnTheBr
 // Concurrent edits to the same ec_ row.
 //
 // The sync db resolves concurrent imports by the order it granted the container write lock, so the
-// last briefcase to import wins there. The timeline resolves them by push order: a rebase skips an
-// ec_ row whose incoming counterpart is already present, on both ConflictCause::Data and
-// ConflictCause::Conflict, so the first briefcase to push wins. The two agree only when push order
-// is the reverse of import order - which nothing enforces, since an update takes only a shared lock.
-//
-// The two reversed-order tests below are the case where they agree. The two matching-order tests
-// and the stale-overwrite test are the case where they do not, and are disabled: they characterise
-// the gap rather than a fix.
+// last briefcase to import wins there. Changesets reach the timeline in push order, which nothing
+// ties to import order since an update takes only a shared lock. Both sides carry the sync db data
+// version they were produced against, and the conflict handlers keep the later one, so the sync db's
+// answer survives either push order. These tests run the same edits both ways round.
 //=======================================================================================
 
 // ---------------------------------------------------------------------------------------
@@ -1781,8 +1777,6 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInReversedPushOrde
     scenario.ExpectEverybodyHolds("concurrent edits to a new class, pushed in reverse", "1.0.2", "Added", "labelled by the second importer");
     }
 
-// disabled failing tests by design until we resolve the concurrent edits racing scenario
-#if 0
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
@@ -1816,32 +1810,29 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInPushOrderMatchin
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, StaleBriefcaseWritesItsOlderSchemaBackIntoTheSyncDb)
+TEST_F(SchemaSyncImportTestFixture, UpgradeAfterAConcurrentEditDoesNotRollTheSyncDbBack)
     {
     ConcurrentEditScenario scenario("upstream-stale-overwrite");
     scenario.Start({ MetadataOnlySchema("01.00.00", "before anybody edited it"), RemapSchema("01.00.00", false) });
 
     scenario.ImportConcurrently(MetadataOnlySchema("01.00.01", "relabelled by the first importer"),
                                 MetadataOnlySchema("01.00.02", "relabelled by the second importer"));
-    // Pushing in import order is what leaves the first importer holding 1.0.1 after the exchange.
+    // Import order is the direction in which the exchange has to overrule the first importer's own edit.
     scenario.Exchange(PushOrder::ImportOrder);
 
-    // Read rather than asserted, so this test still says something once the exchange is fixed.
-    auto& stale = *scenario.m_firstImporter;
-    const auto staleLabel = DisplayLabelOf(stale, "LabelTest", "Existing");
+    auto& upgrader = *scenario.m_firstImporter;
 
-    // Any upgrade will do; this one moves data, so it runs on the briefcase.
+    // Any upgrade will do; this one moves data, so it runs on the briefcase and then overwrites the sync db.
     ASSERT_EQ(SchemaImportResult::OK,
-              ImportSchema(stale, RemapSchema("01.00.01", true), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, scenario.m_syncDb.GetSyncDbUri()));
-    ASSERT_EQ(BE_SQLITE_OK, stale.SaveChanges());
+              ImportSchema(upgrader, RemapSchema("01.00.01", true), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, scenario.m_syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, upgrader.SaveChanges());
 
     scenario.m_syncDb.WithReadOnly([&](ECDbR sync) {
         EXPECT_STREQ("1.0.2", VersionOf(sync, "LabelTest").c_str())
-            << "an upgrade run from a briefcase that never received 1.0.2 rolled the sync db back to " << VersionOf(sync, "LabelTest").c_str();
+            << "the upgrade rolled the sync db back to " << VersionOf(sync, "LabelTest").c_str();
         EXPECT_STREQ("relabelled by the second importer", DisplayLabelOf(sync, "LabelTest", "Existing").c_str())
-            << "the overwrite replaced the sync db's label with the stale one the briefcase held (" << staleLabel.c_str() << ")";
+            << "the overwrite replaced the sync db's label with the one the upgrading briefcase held";
     });
     }
-#endif
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -1195,6 +1195,62 @@ void ECDbChangeSet::DetermineSchemaSyncPrecedence() {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* Mirrors ConflictingRowDiffers in ChangesetTxns.cpp: the row being re-inserted under an id this
+* briefcase already holds should be the row it already holds, since one authority produced both.
+* Returns false when the comparison cannot be made.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ConflictingRowDiffers(DbR db, Changes::Change const& change) {
+    const auto tableName = change.GetTableName();
+    const auto columnCount = change.GetColumnCount();
+
+    bvector<Utf8String> columns;
+    if (!db.GetColumns(columns, tableName.c_str()) || (int) columns.size() != columnCount)
+        return false;
+
+    Utf8String sql("SELECT 1 FROM [");
+    sql.append(tableName).append("] WHERE ");
+    for (int i = 0; i < columnCount; ++i) {
+        if (i > 0)
+            sql.append(" AND ");
+
+        sql.append("[").append(columns[i]).append("] IS ?"); // IS rather than = so that nulls compare
+    }
+
+    auto stmt = db.GetCachedStatement(sql.c_str());
+    if (!stmt.IsValid())
+        return false;
+
+    for (int i = 0; i < columnCount; ++i) {
+        const auto val = change.GetValue(i, Changes::Change::Stage::New);
+        if (!val.IsValid() || BE_SQLITE_OK != stmt->BindDbValue(i + 1, val))
+            return false;
+    }
+    return BE_SQLITE_ROW != stmt->Step();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* The rows an insert conflict could not write in place. FKNOACTION covers a whole apply rather than
+* one change, so they go in as an apply of their own: it holds nothing but these rows, so the delete
+* inside Replace has no children to cascade to and the row is back before the deferred check runs.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ECDbChangeSet::ApplySupersedingRows(ECDbR db) {
+    if (!m_hasSupersedingRows)
+        return BE_SQLITE_OK;
+
+    ChangeSet rows;
+    auto rc = rows.FromChangeGroup(m_supersedingRows);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    auto args = ApplyChangesArgs::Default()
+        .SetFkNoAction(true)
+        .SetConflictHandler([](ChangeStream::ConflictCause, Changes::Change) { return ChangeStream::ConflictResolution::Replace; });
+    return rows.ApplyChanges(db, args);
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) {
@@ -1204,6 +1260,7 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
     DbOpcode opcode;
     DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
+    auto const* briefcase = dynamic_cast<TrackedECDb const*>(m_ecdb);
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
         if (0 == ::strncmp(tableName, "ec_", 3) && m_ecdb != nullptr && m_ecdb->Schemas().GetSchemaSync().IsEnabled()) {
@@ -1213,18 +1270,17 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
             // live here; production turns them off for a schema changeset that updates or deletes
             // ec_cache_ rows, which an additive import does not produce.
             // Under schema sync the rows arriving here are normally ones this briefcase already holds,
-            // because every briefcase gets its ids from the same authority, so skipping keeps what is
-            // already correct instead of destroying dependents.
-            // Note this does not distinguish an identical row from a genuinely differing one; a
-            // differing row is a real conflict and needs a real decision. Mirrors the rule in
-            // ChangesetFileReader::_OnConflict.
+            // because every briefcase gets its ids from the same authority. A differing row from a
+            // superseding txn is written afterwards instead, by ApplySupersedingRows.
+            if (briefcase != nullptr && briefcase->IsReplayingLocalChangesets() && m_ecChangesSupersedeBriefcase &&
+                ConflictingRowDiffers(const_cast<ECDb&>(*m_ecdb), iter) && BE_SQLITE_OK == m_supersedingRows.AddChange(iter))
+                m_hasSupersedingRows = true;
+
             return ChangeSet::ConflictResolution::Skip;
         }
         return ChangeSet::ConflictResolution::Replace;
     }
     if (cause == ChangeSet::ConflictCause::Data) {
-        auto const* briefcase = dynamic_cast<TrackedECDb const*>(m_ecdb);
-
         // Changesets reach the timeline in push order, which is not the order the sync db decided
         // things in. Both sides carry the sync db version they were produced against, so keep the
         // later one instead of whichever pushed first. Mirrors LocalChangeSet::_OnConflict, which
@@ -1538,6 +1594,8 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
         local->SetECDb(*this);
         local->DetermineSchemaSyncPrecedence();
         rc = ApplyOneChangeset(*local, *this, false);
+        if (rc == BE_SQLITE_OK)
+            rc = local->ApplySupersedingRows(*this);
         if (rc == BE_SQLITE_OK) {
             m_tracker->CarryDdlIntoNextChangeset(local->GetDDL());
             rc = SaveChanges(local->GetOperation().c_str());

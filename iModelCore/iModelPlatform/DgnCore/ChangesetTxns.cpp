@@ -86,6 +86,27 @@ void LocalChangeSet::DetermineSchemaSyncPrecedence() {
     m_ecChangesSupersedeBriefcase = txnDataVer != 0 && txnDataVer > schemaSync.GetInfo().GetDataVersion();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* The rows an insert conflict could not write in place. FKNOACTION covers a whole apply rather than
+* one change, so they go in as an apply of their own: it holds nothing but these rows, so the delete
+* inside Replace has no children to cascade to and the row is back before the deferred check runs.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult LocalChangeSet::ApplySupersedingRows() {
+    if (!m_hasSupersedingRows)
+        return BE_SQLITE_OK;
+
+    ChangeSet rows;
+    auto rc = rows.FromChangeGroup(m_supersedingRows);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    auto args = ApplyChangesArgs::Default()
+        .SetFkNoAction(true)
+        .SetConflictHandler([](ChangeStream::ConflictCause, Changes::Change) { return ChangeStream::ConflictResolution::Replace; });
+    return rows.ApplyChanges(m_dgndb, args);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -97,14 +118,18 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
         if (cause == ChangeSet::ConflictCause::Data && !iter.IsIndirect())
             return m_ecChangesSupersedeBriefcase ? ChangeSet::ConflictResolution::Replace : ChangeSet::ConflictResolution::Skip;
 
-        // No such choice for an insert conflict. Replace would delete the existing row before
-        // inserting, nearly every ec_ foreign key is ON DELETE CASCADE, and cascades are deliberately
-        // live during rebase - so it would take that row's children and the insert would restore only
-        // the parent. The rows are the same on both sides anyway, since one authority produced them.
+        // An insert conflict cannot take Replace here: it deletes the existing row first, nearly every
+        // ec_ foreign key is ON DELETE CASCADE, and cascades are deliberately live during rebase, so
+        // the delete would take that row's children and the insert would restore only the parent.
+        // A superseding row is written afterwards instead, by ApplySupersedingRows.
         if (cause == ChangeSet::ConflictCause::Conflict) {
             if (iter.GetTableName().StartsWithIAscii("ec_") && ConflictingRowDiffers(m_dgndb, iter)) {
-                LOG.errorv("Schema sync: replayed local row in %s differs from the one this briefcase holds under the same id. Keeping the existing row.", iter.GetTableName().c_str());
-                iter.Dump(m_dgndb, false, 1);
+                if (m_ecChangesSupersedeBriefcase && BE_SQLITE_OK == m_supersedingRows.AddChange(iter))
+                    m_hasSupersedingRows = true;
+                else {
+                    LOG.errorv("Schema sync: replayed local row in %s differs from the one this briefcase holds under the same id. Keeping the existing row.", iter.GetTableName().c_str());
+                    iter.Dump(m_dgndb, false, 1);
+                }
             }
             return ChangeSet::ConflictResolution::Skip;
         }

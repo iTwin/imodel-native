@@ -31,6 +31,8 @@ struct ECDbChangeSet : public BeSQLite::ChangeSet {
         int m_index;
         ECDb const* m_ecdb;
         bool m_ecChangesSupersedeBriefcase = false;
+        BeSQLite::ChangeGroup m_supersedingRows;
+        bool m_hasSupersedingRows = false;
 
     private:
         ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
@@ -49,6 +51,8 @@ struct ECDbChangeSet : public BeSQLite::ChangeSet {
         //! Work out, before replaying this as a local changeset, whether its ec_ rows supersede the
         //! ones the briefcase now holds. Mirrors LocalChangeSet::DetermineSchemaSyncPrecedence.
         void DetermineSchemaSyncPrecedence();
+        //! Write the superseding rows an insert conflict had to leave alone. Call after ApplyChanges.
+        DbResult ApplySupersedingRows(ECDbR db);
         Ptr Clone() const;
         void ToSQL(DbCR db, std::function<void(bool, std::string const&)> cb) const;
         static Ptr From(ECDbChangeTracker& tracker, Utf8CP comment);

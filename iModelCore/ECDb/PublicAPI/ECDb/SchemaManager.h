@@ -181,7 +181,10 @@ public:
     //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
     //! @note Rows inside the closure that the sync db no longer has are deleted locally, since the
     //!       sync db is the record of what those schemas look like.
-    ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames);
+    //! Copy the closure of the named schemas down from the sync db and build what it implies. When
+    //! adoptedDataVer is given it is stamped on the briefcase before the adopt commits, so the
+    //! version and the rows it describes are in one txn - a rebase replays txn by txn.
+    ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames, DataVer adoptedDataVer = 0);
     //! Import schemas the "upstream" way: decide once in the sync db, then adopt.
     //!
     //! The two steps this performs are:
