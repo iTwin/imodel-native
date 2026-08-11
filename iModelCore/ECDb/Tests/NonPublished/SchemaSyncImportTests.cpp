@@ -1738,35 +1738,19 @@ TEST_F(SchemaSyncImportTestFixture, OverwriteSyncDbFollowsAChangeMadeOnlyOnTheBr
     }
 
 //=======================================================================================
-// Concurrent edits to the same ec_ row. KNOWN FAILURES - these characterise a gap, not a fix.
+// Concurrent edits to the same ec_ row.
 //
-// The sync db resolves concurrent imports by the order it granted the container write lock; the
-// timeline resolves them by push order. Nothing ties the two together. Only rows two importers both
-// write are affected, so it shows up on metadata rather than on anything the mapper decides.
+// The sync db resolves concurrent imports by the order it granted the container write lock, so the
+// last briefcase to import wins there. The timeline resolves them by push order: a rebase skips an
+// ec_ row whose incoming counterpart is already present, on both ConflictCause::Data and
+// ConflictCause::Conflict, so the first briefcase to push wins. The two agree only when push order
+// is the reverse of import order - which nothing enforces, since an update takes only a shared lock.
 //
-// The two conflict causes resolve in opposite directions, so which push order loses depends on
-// whether the row was updated or inserted:
-//   ConflictCause::Data     -> falls through to Replace, so the LAST changeset to arrive wins.
-//   ConflictCause::Conflict -> Skip for ec_ under schema sync, so the FIRST one wins.
+// The two reversed-order tests below are the case where they agree. The two matching-order tests
+// and the stale-overwrite test are the case where they do not, and are disabled: they characterise
+// the gap rather than a fix.
 //=======================================================================================
 
-// ---------------------------------------------------------------------------------------
-// @bsitest
-// +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, ConcurrentLabelEditsInPushOrderMatchingImportOrder)
-    {
-    ConcurrentEditScenario scenario("upstream-label-edit-in-order");
-    scenario.Start({ MetadataOnlySchema("01.00.00", "before anybody edited it") });
-
-    scenario.ImportConcurrently(MetadataOnlySchema("01.00.01", "relabelled by the first importer"),
-                                MetadataOnlySchema("01.00.02", "relabelled by the second importer"));
-    scenario.Exchange(PushOrder::ImportOrder);
-
-    scenario.ExpectEverybodyHolds("concurrent relabel, pushed in import order", "1.0.2", "Existing", "relabelled by the second importer");
-    }
-
-// disabled failing tests by design until we resolve the concurrent edits racing scenario
-#if 0
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
@@ -1780,6 +1764,38 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentLabelEditsInReversedPushOrder)
     scenario.Exchange(PushOrder::ReverseImportOrder);
 
     scenario.ExpectEverybodyHolds("concurrent relabel, pushed in reverse", "1.0.2", "Existing", "relabelled by the second importer");
+    }
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInReversedPushOrder)
+    {
+    ConcurrentEditScenario scenario("upstream-new-class-reversed");
+    scenario.Start({ MetadataOnlySchema("01.00.00", "unchanged throughout") });
+
+    scenario.ImportConcurrently(MetadataOnlySchema("01.00.01", "unchanged throughout", "labelled by the first importer"),
+                                MetadataOnlySchema("01.00.02", "unchanged throughout", "labelled by the second importer"));
+    scenario.Exchange(PushOrder::ReverseImportOrder);
+
+    scenario.ExpectEverybodyHolds("concurrent edits to a new class, pushed in reverse", "1.0.2", "Added", "labelled by the second importer");
+    }
+
+// disabled failing tests by design until we resolve the concurrent edits racing scenario
+#if 0
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, ConcurrentLabelEditsInPushOrderMatchingImportOrder)
+    {
+    ConcurrentEditScenario scenario("upstream-label-edit-in-order");
+    scenario.Start({ MetadataOnlySchema("01.00.00", "before anybody edited it") });
+
+    scenario.ImportConcurrently(MetadataOnlySchema("01.00.01", "relabelled by the first importer"),
+                                MetadataOnlySchema("01.00.02", "relabelled by the second importer"));
+    scenario.Exchange(PushOrder::ImportOrder);
+
+    scenario.ExpectEverybodyHolds("concurrent relabel, pushed in import order", "1.0.2", "Existing", "relabelled by the second importer");
     }
 
 // ---------------------------------------------------------------------------------------
@@ -1800,21 +1816,6 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInPushOrderMatchin
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncImportTestFixture, ConcurrentEditsToANewClassInReversedPushOrder)
-    {
-    ConcurrentEditScenario scenario("upstream-new-class-reversed");
-    scenario.Start({ MetadataOnlySchema("01.00.00", "unchanged throughout") });
-
-    scenario.ImportConcurrently(MetadataOnlySchema("01.00.01", "unchanged throughout", "labelled by the first importer"),
-                                MetadataOnlySchema("01.00.02", "unchanged throughout", "labelled by the second importer"));
-    scenario.Exchange(PushOrder::ReverseImportOrder);
-
-    scenario.ExpectEverybodyHolds("concurrent edits to a new class, pushed in reverse", "1.0.2", "Added", "labelled by the second importer");
-    }
-
-// ---------------------------------------------------------------------------------------
-// @bsitest
-// +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, StaleBriefcaseWritesItsOlderSchemaBackIntoTheSyncDb)
     {
     ConcurrentEditScenario scenario("upstream-stale-overwrite");
@@ -1822,7 +1823,8 @@ TEST_F(SchemaSyncImportTestFixture, StaleBriefcaseWritesItsOlderSchemaBackIntoTh
 
     scenario.ImportConcurrently(MetadataOnlySchema("01.00.01", "relabelled by the first importer"),
                                 MetadataOnlySchema("01.00.02", "relabelled by the second importer"));
-    scenario.Exchange(PushOrder::ReverseImportOrder);
+    // Pushing in import order is what leaves the first importer holding 1.0.1 after the exchange.
+    scenario.Exchange(PushOrder::ImportOrder);
 
     // Read rather than asserted, so this test still says something once the exchange is fixed.
     auto& stale = *scenario.m_firstImporter;

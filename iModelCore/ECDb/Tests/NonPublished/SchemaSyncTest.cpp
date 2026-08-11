@@ -204,6 +204,13 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     auto b2 = hub.CreateBriefcase();
     auto b3 = hub.CreateBriefcase();
 
+    // Stands in for the backend's post-merge hook. A merged schema changeset carries ec_ rows but no DDL.
+    auto materializeAfterMerge = [](TrackedECDb& db)
+        {
+        ASSERT_EQ(SchemaSync::Status::OK, db.Schemas().GetSchemaSync().UpdateDbSchema());
+        ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges());
+        };
+
     Test(
         "Check briefcase ids",
         [&]()
@@ -229,11 +236,12 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     const auto SCHEMA1_HASH_ECDB_MAP = "8b1c6d8fa5b29e085bf94fae710527f56fa1c1792bd7404ff5775ed07f86f21f";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "8608aab5fa8a874b3f9140451ab8410c785483a878c8d915f48a26ef20e8241c";
     Test(
-        "import schema into b1",
+        "import schema into b1 and push",
         [&]()
             {
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+            ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 imports TestSchema1"));
 
             ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
             ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
@@ -261,25 +269,19 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     );
 
     Test(
-        "pull changes from sync-db into b2 and verify class, table and index exists",
+        "b2 pulls b1's changeset and verifies class, table and index exists",
         [&]()
             {
-            ASSERT_EQ(
-                SchemaSync::Status::OK,
-                schemaSyncDb.Pull(
-                    *b2,
-                    [&]()
-                        {
-                        auto pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
-                        ASSERT_NE(pipe1, nullptr);
-                        ASSERT_EQ(pipe1->GetPropertyCount(), 2);
-                        ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
-                        ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
-                        CheckHashes(*b2, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-                        ASSERT_TRUE(ForeignkeyCheck(*b2));
-                        }
-                )
-            ) << "Pull changes from schemaSyncDb into b2";
+            ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 picks up TestSchema1")) << "b2->PullMergePush()";
+            materializeAfterMerge(*b2);
+
+            auto pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
+            ASSERT_NE(pipe1, nullptr);
+            ASSERT_EQ(pipe1->GetPropertyCount(), 2);
+            ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
+            ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1])");
+            CheckHashes(*b2, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            ASSERT_TRUE(ForeignkeyCheck(*b2));
             }
     );
 
@@ -287,7 +289,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     const auto SCHEMA2_HASH_ECDB_MAP = "d9bb9b10a0b3745b1878eff131e692e7930d34883ae52506b5be23bd4e8d2b5f";
     const auto SCHEMA2_HASH_SQLITE_SCHEMA = "a5903dad8066700b537ea5f939043e8d8cbfe1297ea6fa0c3e20d7c00e5e3d44";
     Test(
-        "update schema by adding more properties and expand index in b2",
+        "update schema by adding more properties and expand index in b2, then push",
         [&]()
             {
             auto schema2 = SchemaItem(
@@ -321,6 +323,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, schema2, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+            ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 updates TestSchema1"));
 
             ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
             ASSERT_STRCASEEQ(GetIndexDDL(*b2, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
@@ -347,38 +350,19 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     );
 
     Test(
-        "pull changes from sync db into master db and check if schema changes was there and valid",
+        "b1 pulls b2's changeset and ends up with the same file",
         [&]()
             {
-            ASSERT_EQ(
-                SchemaSync::Status::OK,
-                schemaSyncDb.Pull(
-                    *b1,
-                    [&]()
-                        {
-                        auto pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
-                        ASSERT_NE(pipe1, nullptr);
-                        ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+            ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 picks up the update")) << "b1->PullMergePush()";
+            materializeAfterMerge(*b1);
 
-                        ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
-                        ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
-
-                        CheckHashes(*b1, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-                        ASSERT_TRUE(ForeignkeyCheck(*b1));
-                        }
-                )
-            ) << "Pull changes from schemaSyncDb into b1";
-            }
-    );
-
-    Test("PullMergePush for b1", [&]() { ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("b1 import schema")) << "b1->PullMergePush()"; });
-
-    Test(
-        "PullMergePush for b2",
-        [&]()
-            {
-            ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("b2 import schema")) << "b2->PullMergePush()";
-            b2->SaveChanges();
+            auto pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
+            ASSERT_NE(pipe1, nullptr);
+            ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+            ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
+            ASSERT_STRCASEEQ(GetIndexDDL(*b1, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+            CheckHashes(*b1, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            ASSERT_TRUE(ForeignkeyCheck(*b1));
             }
     );
 
@@ -387,6 +371,8 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         [&]()
             {
             ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"))  << "b3->PullMergePush()";
+            materializeAfterMerge(*b3);
+
             auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 4);

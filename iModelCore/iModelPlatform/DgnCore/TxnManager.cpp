@@ -4499,6 +4499,8 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         PullMergeAbortRebase(txnId, "failed to read data changes", rc);
     }
 
+    changeset.DetermineSchemaSyncPrecedence();
+
     rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
     if (rc != BE_SQLITE_OK) {
         if (changeset.GetLastErrorMessage().empty())

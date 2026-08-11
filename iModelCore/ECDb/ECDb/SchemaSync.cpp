@@ -2056,6 +2056,63 @@ DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDa
     }
     return BE_SQLITE_OK;
 }
+
+// Column ordinals of be_Prop.
+#define BE_PROP_COL_NAMESPACE 0
+#define BE_PROP_COL_NAME 1
+#define BE_PROP_COL_STRDATA 7
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+static Utf8CP GetChangeText(Changes::Change const& change, int col, Changes::Change::Stage stage) {
+    const auto val = change.GetValue(col, stage);
+    if (!val.IsValid() || val.IsNull() || val.GetValueType() != DbValueType::TextVal)
+        return nullptr;
+
+    return val.GetValueText();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaSync::IsLocalDbInfoChange(Changes::Change const& change) {
+    if (!change.GetTableName().EqualsIAscii("be_Prop"))
+        return false;
+
+    // An UPDATE carries the primary key in its old values only, an INSERT in its new values.
+    for (auto stage : {Changes::Change::Stage::Old, Changes::Change::Stage::New}) {
+        const auto ns = GetChangeText(change, BE_PROP_COL_NAMESPACE, stage);
+        const auto name = GetChangeText(change, BE_PROP_COL_NAME, stage);
+        if (nullptr != ns && nullptr != name &&
+            0 == BeStringUtilities::StricmpAscii(ns, JsonNames::JNamespaceEC) &&
+            0 == BeStringUtilities::StricmpAscii(name, JsonNames::JLocalDbInfo))
+            return true;
+    }
+    return false;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaSync::TryGetDataVersion(DataVer& dataVer, Changes::Change const& change) {
+    const auto json = GetChangeText(change, BE_PROP_COL_STRDATA, Changes::Change::Stage::New);
+    if (nullptr == json)
+        return false;
+
+    BeJsDocument jsonDoc;
+    jsonDoc.Parse(json);
+    if (jsonDoc.hasParseError())
+        return false;
+
+    const auto info = LocalDbInfo::From(BeJsConst(jsonDoc));
+    if (info.IsEmpty())
+        return false;
+
+    dataVer = info.GetDataVersion();
+    return true;
+}
+
 //=======================================================================================
 //     SchemaSync::LocalDbInfo
 //+===============+===============+===============+===============+===============+======

@@ -232,6 +232,12 @@ public:
     //!       released, or the sync db describes a layout no briefcase has.
     ECDB_EXPORT Status OverwriteSyncDb(SyncDbUri const&);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
+    //! Whether this change is the be_Prop row recording which sync db state a briefcase is on. That
+    //! row is tracked, so it travels in the same changeset as the ec_ rows the import it belongs to
+    //! produced - which is what lets a conflict handler tell which of two sides is the later one.
+    ECDB_EXPORT static bool IsLocalDbInfoChange(BeSQLite::Changes::Change const& change);
+    //! Read the data version out of such a change's new value.
+    ECDB_EXPORT static bool TryGetDataVersion(DataVer& dataVer, BeSQLite::Changes::Change const& change);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
 };
