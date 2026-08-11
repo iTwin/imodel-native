@@ -26,4 +26,3 @@ Libraries built in `iModelCore/libsrc/`.
 | `proxyres` | proxyres | unknown | No |
 | `pugixml` | pugixml | 1.15 | Yes |
 | `rapidjson` | RapidJSON | 1.1.0 | No |
-| `rustls-ffi` | rustls-platform-verifier | 0.6.2 | No |
