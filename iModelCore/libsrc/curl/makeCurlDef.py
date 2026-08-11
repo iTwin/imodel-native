@@ -55,10 +55,18 @@ def main():
         sys.stderr.write("error: no CURL_EXTERN exports found under %s\n" % include_dir)
         return 1
 
-    with open(out_def, "w", encoding="utf-8", newline="\r\n") as f:
-        f.write("EXPORTS\n")
-        for name in sorted(names):
-            f.write("    %s\n" % name)
+    lines = ["EXPORTS"] + ["    %s" % name for name in sorted(names)]
+    data = "".join("%s\r\n" % line for line in lines).encode("utf-8")
+
+    # This runs on every build, so leave an unchanged .def alone rather than re-stamping its
+    # timestamp and forcing a needless re-link of iTwinCurl.dll.
+    if os.path.exists(out_def):
+        with open(out_def, "rb") as f:
+            if f.read() == data:
+                return 0
+
+    with open(out_def, "wb") as f:
+        f.write(data)
 
     return 0
 

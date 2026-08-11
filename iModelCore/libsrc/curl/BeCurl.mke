@@ -128,9 +128,14 @@ libcaresName = libcares.a
     #   dlmlink machinery (via linkLibrary.mki) so versioning, signing, the import library, and
     #   BuildContext delivery behave as before. link.exe pulls the exported objects out of the
     #   static .lib as directed by the .def.
+    #
+    #   The .def is regenerated on every build because its content comes from the vcpkg-installed
+    #   curl headers, whose timestamps are not a reliable prerequisite (a binary-cache hit can
+    #   restore older ones). makeCurlDef.py rewrites the file only when the export list actually
+    #   changes, so an unchanged .def does not force a re-link.
     #----------------------------------------------------------------------------------
-    $(o)$(appName).def : $(curlDir)makeCurlDef.py
-        $(BBPYTHONCMD) $(curlDir)makeCurlDef.py "$(vcpkgIncludeDir)curl" "$@"
+    always:
+        $(BBPYTHONCMD) $(curlDir)makeCurlDef.py "$(vcpkgIncludeDir)curl" "$(o)$(appName).def"
 
     curlModuleDef = $(o)$(appName).def
 
