@@ -11,6 +11,14 @@ set(VCPKG_CMAKE_SYSTEM_VERSION 28)
 set(VCPKG_MAKE_BUILD_TRIPLET "--host=aarch64-linux-android")
 set(VCPKG_CMAKE_CONFIGURE_OPTIONS -DANDROID_ABI=arm64-v8a)
 
+# Android keeps its system trust store as individually hashed files in
+# /system/etc/security/cacerts (there is no CA bundle file), which is what the previous
+# file-by-file build hard-coded via config-android.h. curl's CMake only auto-detects CA
+# locations when not cross-compiling, so point it there explicitly; without this, HTTPS
+# verification would fall back to iTwinOpenSSL's built-in /etc/ssl paths, which do not
+# exist on Android.
+list(APPEND VCPKG_CMAKE_CONFIGURE_OPTIONS "-DCURL_CA_PATH=/system/etc/security/cacerts" "-DCURL_CA_BUNDLE=none")
+
 # vcpkg's android toolchain looks for ANDROID_NDK_HOME, but our build sets ANDROID_NDK_ROOT.
 if(NOT DEFINED ENV{ANDROID_NDK_HOME} AND DEFINED ENV{ANDROID_NDK_ROOT})
     set(ENV{ANDROID_NDK_HOME} $ENV{ANDROID_NDK_ROOT})
