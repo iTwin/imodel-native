@@ -11,7 +11,7 @@ Libraries built in `iModelCore/libsrc/`.
 | `crashpad` | Chromium Crashpad | 2024-04-11#13 | Yes |
 | `csmap` | CS-MAP | rev 2778 | No |
 | `curl` | libcurl | 8.21.0 | Yes |
-| `curl/ares` | c-ares | 1.34.8 | Yes |
+| `curl` | c-ares (macOS/Linux only) | 1.34.8 | Yes |
 | `facebook` | Facebook Folly | 57.0 | No |
 | `flatbuffers` | FlatBuffers | 1.12.0 | No |
 | `freetype2` | FreeType | 2.13.3 | No |

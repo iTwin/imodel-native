@@ -13,10 +13,22 @@
         <!-- LibType="Static": the chain runs static-only; the prewire stages curl headers from the
              static vcpkg install root. -->
         <SubPart PartName="vcpkg_install_curl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
+        <SubPart PartName="CAresNotice" LibType="Static"/>
         <Bindings>
             <VendorAPI Domain="curl" />
             <VendorNotices>Delivery/curl-license.txt</VendorNotices>
-            <VendorNotices>Delivery/c-ares-license.md</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- OnlyPlatforms: vcpkg only installs c-ares on macOS/Linux (see vcpkg.json), which are also
+         the only platforms that merge it into iTwinCurl, so its notice exists (and is only
+         required) there. -->
+    <Part Name="CAresNotice" BentleyBuildMakeFile="BeCares.prewire.mke" OnlyPlatforms="linux*,macos*">
+        <!-- LibType="Static": the chain runs static-only; the notice comes from the static vcpkg
+             install root. -->
+        <SubPart PartName="vcpkg_install_curl" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
+        <Bindings>
+            <VendorNotices>Delivery/c-ares-license.txt</VendorNotices>
         </Bindings>
     </Part>
 

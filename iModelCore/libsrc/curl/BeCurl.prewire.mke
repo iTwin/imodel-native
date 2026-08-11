@@ -30,13 +30,10 @@ always:
     !~@mkdir $(o)
 
 #--------------------------------------------------------------------------------------
-#   Deliver headers (VendorAPI/curl -> vcpkg include/curl) and the license notices.
-#   curl's copyright comes from the vcpkg tree; the c-ares notice still comes from the vendored
-#   ares/ tree (delivered on every platform even though c-ares is only linked on macOS/Linux).
-#   TODO(cleanup): when ares/ is removed, source the c-ares notice from a checked-in copy or from
-#   the vcpkg share/c-ares/copyright (present only on macOS/Linux).
+#   Deliver headers (VendorAPI/curl -> vcpkg include/curl) and curl's license notice, both from
+#   the vcpkg tree.  The c-ares notice is staged separately by BeCares.prewire.mke because it is
+#   only installed on macOS/Linux.
 #--------------------------------------------------------------------------------------
 always:
     ~linkdir "$(BuildContext)VendorAPI/curl=$(vcpkgIncludeDir)curl/"
     ~linkfile "$(BuildContext)Delivery/curl-license.txt=$(vcpkgTripletDir)share/curl/copyright"
-    ~linkfile "$(BuildContext)Delivery/c-ares-license.md=$(curlDir)ares/LICENSE.md"
