@@ -69,13 +69,20 @@ def main():
             if f.read() == data:
                 return 0
 
-    with open(out_def, "wb") as f:
-        f.write(data)
-
-    # The export list changed, so anything previously linked from the old .def is stale.
+    # The export list changed, so anything previously linked from the old .def is stale. Delete
+    # those outputs *before* committing the new .def: on Windows the delete can fail while the
+    # DLL is still loaded by another process, and leaving the old .def in place means the next
+    # build again sees a changed export list and retries the deletion.
     for stale in stale_outputs:
         if os.path.exists(stale):
-            os.remove(stale)
+            try:
+                os.remove(stale)
+            except OSError as ex:
+                sys.stderr.write("error: cannot delete stale output %s: %s\n" % (stale, ex))
+                return 1
+
+    with open(out_def, "wb") as f:
+        f.write(data)
 
     return 0
 
