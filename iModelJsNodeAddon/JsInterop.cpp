@@ -491,7 +491,14 @@ Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, Napi::Object c
 void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Napi::Function callback) {
     ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
         BeJsValue beJsReq(requestObj);
-        auto request = QueryRequest::Deserialize(beJsReq);
+        QueryRequest::Ptr request;
+        try {
+            request = QueryRequest::Deserialize(beJsReq);
+        } catch (std::exception const& ex) {
+            // Deserialize throws for malformed/unsupported requests. Letting the exception escape into
+            // the N-API layer would call std::terminate and take down the process.
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), ex.what(), IModelJsNativeErrorKey::BadArg);
+        }
         if (request->UsePrimaryConnection()) {
             mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
                 auto jsResp = Napi::Object::New(Env());

@@ -84,6 +84,8 @@ namespace connectivity
             // setting the new information before scanning
             const Utf8String& getErrorMessage() const { return m_sErrorMessage; }
             sal_Int32 SQLyygetc(void);
+            // Fills buf with up to maxSize characters, returning the number copied (0 at end of input).
+            size_t SQLyyread(sal_Char* buf, size_t maxSize);
             Utf8String getStatement() const { return m_sStatement; }
             sal_Int32 SQLlex(YYSTYPE* val);
             // set this as scanner for flex
@@ -95,6 +97,9 @@ namespace connectivity
             sal_Int32    GetDATERule() const;
             sal_Int32    GetSTRINGRule() const;
             inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
+            // The position the scanner has actually consumed up to, which trails m_nCurrentPos
+            // because characters are handed to the lexer in blocks.
+            sal_Int32 GetScanPos() const;
 
             OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
             OSQLParseNode* NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);

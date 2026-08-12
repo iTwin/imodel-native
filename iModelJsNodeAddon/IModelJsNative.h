@@ -60,13 +60,13 @@ USING_NAMESPACE_BENTLEY_EC
     }
 
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(i, var, deferred)\
-    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsObject()) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();

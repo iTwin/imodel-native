@@ -305,5 +305,19 @@ describe("concurrent query tests", () => {
     expect(r0.status).eq(DbResponseStatus.Cancel);
     expect(r1.status).eq(DbResponseStatus.Done);
   });
+
+  // Deserializing the request threw a C++ exception for an unknown request kind. The
+  // exception escaped into N-API, which terminated the process instead of reporting it.
+  it("should throw instead of terminating on a malformed request", () => {
+    for (const bad of [{}, { kind: 12345 }, { kind: "nonsense" }, { query: "SELECT 1" }]) {
+      expect(() => conn.concurrentQueryExecute(bad as any, () => { }), JSON.stringify(bad)).to.throw();
+    }
+  });
+
+  it("should throw instead of crashing when concurrentQueryExecute is given a non-object", () => {
+    for (const bad of ["AAAAAAAABBBBBBBB", 42, true, null, undefined]) {
+      expect(() => conn.concurrentQueryExecute(bad as any, () => { }), String(bad)).to.throw();
+    }
+  });
 });
 

@@ -2674,8 +2674,7 @@ static sal_Int32    parseString(yyscan_t yyscanner);
 #define YY_EXTRA_TYPE OSQLScanner*
 #define YY_INPUT(buf,result,max_size) \
 { \
-    int c = yyget_extra(yyscanner)->SQLyygetc(); \
-    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
+    result = (int) yyget_extra(yyscanner)->SQLyyread((buf), (max_size)); \
 }
 #define YY_FATAL_ERROR(msg) \
 { \
@@ -5394,8 +5393,8 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
             {
             Utf8String sStmt = yyget_extra(yyscanner)->getStatement();
             size_t nLength = strlen(text);
-            size_t nPos = yyget_extra(yyscanner)->GetCurrentPos() - nLength - 2;
-            if (sStmt[nPos] == ':')
+            const sal_Int32 nPos = yyget_extra(yyscanner)->GetScanPos() - (sal_Int32) nLength - 1;
+            if (nPos >= 0 && static_cast<size_t>(nPos) < sStmt.size() && sStmt[nPos] == ':')
             {
                 SQL_NEW_NODE(Utf8String(text), SQL_NODE_NAME);
                 nToken = SQL_TOKEN_NAME;
@@ -5439,6 +5438,36 @@ sal_Int32 OSQLScanner::SQLyygetc(void)
     return nPos;
     }
 
+
+//------------------------------------------------------------------------
+// Hands the lexer a block of characters at a time. Feeding flex a single character
+// per YY_INPUT call makes it shift the pending token back to the start of its buffer
+// on every character, which is O(n^2) in the length of a single token (a long
+// identifier or string literal would effectively hang the parser).
+size_t OSQLScanner::SQLyyread(sal_Char* buf, size_t maxSize)
+    {
+    const size_t statementSize = m_sStatement.size();
+    const size_t currentPos = static_cast<size_t>(m_nCurrentPos);
+    if (0 == maxSize || currentPos >= statementSize)
+        return 0;
+
+    const size_t count = std::min(maxSize, statementSize - currentPos);
+    memcpy(buf, m_sStatement.data() + currentPos, count);
+    m_nCurrentPos += (sal_Int32) count;
+    return count;
+    }
+
+//------------------------------------------------------------------------
+sal_Int32 OSQLScanner::GetScanPos() const
+    {
+    struct yyguts_t* yyg = (struct yyguts_t*) yyscanner;
+    if (nullptr == yyg || nullptr == yyg->yy_buffer_stack || nullptr == YY_CURRENT_BUFFER_LVALUE)
+        return m_nCurrentPos;
+
+    // characters delivered to flex that it has not scanned past yet
+    const sal_Int32 unscanned = (sal_Int32) ((YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + yyg->yy_n_chars) - yyg->yy_c_buf_p);
+    return m_nCurrentPos - unscanned;
+    }
 //------------------------------------------------------------------------------
 void OSQLScanner::SQLyyerror(const char *fmt)
     {
