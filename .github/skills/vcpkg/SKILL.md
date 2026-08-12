@@ -19,8 +19,10 @@ All `vcpkg install` calls run through a **single sequential chain** defined in
 vcpkg (bootstrap)
   └─► vcpkg_install_compress
         └─► vcpkg_install_png
-              └─► vcpkg_install_openssl
-                    └─► vcpkg_install_crashpad
+              └─► vcpkg_install_pugixml
+                    └─► vcpkg_install_openssl
+                          └─► vcpkg_install_curl
+                                └─► vcpkg_install_crashpad
 ```
 
 Each link is a separate Part with its own `vcpkg_install_<consumer>.mke` that calls
@@ -81,13 +83,40 @@ always:
 
 ### 3. Extend the chain in `iModelCore/libsrc/vcpkg.PartFile.xml`
 
-Insert a new link into the chain.  Appending at the end is the simplest choice, but the
-chain only needs to stay **linear** — where a link sits does not affect correctness because
-every consumer depends on its own named part.  Prefer placing a more basic/foundational
-library (e.g. a compression or image codec that other libraries build on) earlier in the
-chain, and insert a new link wherever it reads most naturally alongside its peers.
+Insert a new link into the chain.  The chain must stay **linear**, and — with one important
+exception below — where a link sits does not affect correctness because every consumer depends on
+its own named part.  Prefer placing a more basic/foundational library (e.g. a compression or image
+codec that other libraries build on) earlier in the chain, and insert a new link wherever it reads
+most naturally alongside its peers.
 
-To append at the end (after the current last link):
+**Platform-coverage constraint (do not violate).** The real invariant is that the chain must be
+**linear on every individual platform**: no two `vcpkg_install_*` parts that are *both built on a
+given platform* may run without a dependency edge between them, or they race on
+`vcpkg-running.lock` and corrupt the build.  Across platforms the graph may **fork into a tree** —
+only each platform's projection of it has to be a single line.  Consequences:
+
+- A chain link must depend on a predecessor built on **at least the same platforms** as the link
+  itself.  Some links are platform-restricted (e.g. `vcpkg_install_crashpad` carries
+  `OnlyPlatforms="linux*,x*,macos*"` — desktop only).  If an all-platform link were appended after a
+  platform-restricted one, then on the excluded platforms (iOS/Android) its predecessor is skipped,
+  the link loses its chain predecessor, and it can run concurrently with an earlier link.
+- **Keep platform-restricted links at (or near) the tail**, after every all-platform link.  When
+  adding an **all-platform** link, depend it on the last **all-platform** predecessor (not on a
+  platform-restricted one).  If a restricted link currently sits where the new one belongs, insert
+  the new link **before** it and re-parent the restricted link onto the new one.
+- Two links whose platform sets **overlap** must stay linearly ordered (one depends on the other).
+- Two links whose platform sets are **disjoint** never build on the same platform, so they can never
+  run concurrently — they may safely **fork** off a common all-platform predecessor.  This is when
+  the tail becomes a tree: e.g. a hypothetical iOS-only library and desktop-only crashpad would each
+  depend on the last all-platform link (`vcpkg_install_curl`), one branch live on iOS, the other on
+  desktop.  Do **not** instead chain a desktop-only link behind an iOS-only link (or vice-versa):
+  that edge is dead on *both* platforms yet still strands one link without a predecessor.
+
+Example: curl (all platforms) was inserted **before** crashpad (desktop-only) — `curl → openssl`,
+and crashpad was re-parented from openssl onto curl.  On iOS/Android crashpad is skipped and curl
+is the tail, still ordered after openssl.
+
+To append at the end (only when the current last link is built on a superset of your platforms):
 
 ```xml
 <Part Name="vcpkg_install_<mylib>" BentleyBuildMakeFile="vcpkg_install_<mylib>.mke">
