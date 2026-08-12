@@ -626,8 +626,12 @@ TEST_F(ImportTest, ImportMaterialUsesSeededTextureRemapping)
     //  Texture has a different name to ensure the only way it's found is via the id remapping added to the import context. 
     DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
     ASSERT_TRUE(destDb.IsValid());
+    DgnTextureId dummyTextureId = insertTexture(*destDb, "Inserted to ensure seeded texture id is different than source texture id", L"");
+    ASSERT_TRUE(dummyTextureId.IsValid());
     DgnTextureId seededTextureId = insertTexture(*destDb, "PreExistingTexture", L"");
     ASSERT_TRUE(seededTextureId.IsValid());
+    ASSERT_NE(sourceTextureId, seededTextureId) << "The source and destination texture Ids should be different";
+
     int destTextureCountBefore = countTextures(*destDb);
 
     DgnImportContext importContext(*sourceDb, *destDb);
