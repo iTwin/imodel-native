@@ -21,8 +21,6 @@ struct SchemaSyncHelper final {
 
     static int ForeignKeyCheck(DbCR conn, std::vector<std::string> const& tables, Utf8CP dbAlias);
     static DbResult GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias);
-    static DbResult DropDataTables(DbR conn);
-    static DbResult DropMetaTables(DbR conn);
     static DbResult TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn);
     static DbResult VerifyAlias(ECDbR conn);
     static DbResult GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames);

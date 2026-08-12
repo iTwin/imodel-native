@@ -119,6 +119,7 @@ struct TrackedECDb : ECDb {
         virtual void _OnDbClose() override;
         virtual DbResult _OnDbCreated(CreateParams const& params) override;
         virtual DbResult _OnDbOpening() override;
+        virtual bool _IsLevelWithTimeline() override;
 
     public:
         ECDbChangeTracker* GetTracker() { return m_tracker.get(); }
@@ -155,6 +156,8 @@ struct ECDbHub {
         std::unique_ptr<TrackedECDb> CreateBriefcase();
         std::vector<ECDbChangeSet*> Query(int afterChangesetId = 1);
         int PushNewChangeset(ECDbChangeSet::Ptr changeset);
+        //! Index of the newest changeset, or -1 while nothing has been pushed.
+        int GetTipChangesetId() const { return (int)m_changesets.size() - 1; }
 };
 
 //=======================================================================================

@@ -566,6 +566,102 @@ struct ConcurrentEditScenario final {
 } // namespace
 
 // ---------------------------------------------------------------------------------------
+// Init mirrors this briefcase, so this briefcase has to be what everyone else will see. A briefcase
+// behind the tip seeds a sync db missing schemas the others already hold, and the next import into
+// it hands out ids they are using for something else.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, InitRefusesBriefcaseBehindTheTip)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-init-behind-tip");
+
+    auto b1 = hub.CreateBriefcase();
+    auto b2 = hub.CreateBriefcase();
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, UnrelatedSchema()));
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b2->PullMergePush("schema b1 has not seen"));
+
+    ASSERT_FALSE(HasSchema(*b1, "UnrelatedTest")) << "b1 is supposed to be behind for this test to mean anything";
+    ASSERT_EQ(SchemaSync::Status::ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE,
+        b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    EXPECT_FALSE(b1->Schemas().GetSchemaSync().IsEnabled()) << "a refused Init must leave the briefcase alone";
+
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("catch up"));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_TRUE(HasSchema(sync, "UnrelatedTest")) << "the sync db must know every schema the timeline already carries";
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
+// The mirror image: unpushed changes would put the sync db ahead of the timeline, and if the push
+// then never happens no briefcase can ever reach the state it describes.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, InitRefusesBriefcaseHoldingUnpushedChanges)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-init-unpushed");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, UnrelatedSchema()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    ASSERT_EQ(SchemaSync::Status::ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE,
+        b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    EXPECT_FALSE(b1->Schemas().GetSchemaSync().IsEnabled());
+
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("push the schema first"));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    }
+
+// ---------------------------------------------------------------------------------------
+// The sync db mirrors the briefcase's metadata, which includes the profile properties describing
+// the ec_ tables - ec_Db/InitialSchemaVersion among them, which DbMappingManager still branches on
+// when it decides index names. What must not travel is localDbInfo, which would make the sync db
+// look like a schema sync client of itself.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, InitMirrorsProfilePropertiesWithoutLocalSyncState)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-init-profile-props");
+
+    auto b1 = hub.CreateBriefcase();
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+
+    const auto initialVersion = PropertySpec("InitialSchemaVersion", "ec_Db");
+    const auto profileVersion = PropertySpec("SchemaVersion", "ec_Db");
+    const auto localDbInfo = PropertySpec("localDbInfo", "ec_Db");
+    const auto syncDbInfo = PropertySpec("syncDbInfo", "ec_Db");
+
+    Utf8String briefcaseInitial, briefcaseProfile;
+    ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(briefcaseInitial, initialVersion));
+    ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(briefcaseProfile, profileVersion));
+
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        Utf8String value;
+        ASSERT_EQ(BE_SQLITE_ROW, sync.QueryProperty(value, initialVersion))
+            << "the sync db decides the mapping and has to see the same InitialSchemaVersion the briefcase would";
+        EXPECT_STREQ(briefcaseInitial.c_str(), value.c_str());
+
+        ASSERT_EQ(BE_SQLITE_ROW, sync.QueryProperty(value, profileVersion));
+        EXPECT_STREQ(briefcaseProfile.c_str(), value.c_str());
+
+        EXPECT_EQ(BE_SQLITE_ROW, sync.QueryProperty(value, syncDbInfo));
+        EXPECT_NE(BE_SQLITE_ROW, sync.QueryProperty(value, localDbInfo))
+            << "the sync db must not look like a schema sync client";
+        EXPECT_FALSE(sync.Schemas().GetSchemaSync().IsEnabled());
+    });
+    }
+
+// ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncImportTestFixture, SyncDbMappingMatchesBriefcaseMapping)
@@ -1037,6 +1133,7 @@ TEST_F(SchemaSyncImportTestFixture, ImportSchemasWorksOnASyncDbInitialisedFromAB
     auto b1 = hub.CreateBriefcase();
     ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SharedColumnSchema()));
     ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, b1->PullMergePush("schema that predates schema sync"));
     ASSERT_TRUE(HasPhysicalTable(*b1, "ut_Base")) << "the scenario did not set itself up";
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(syncDb.GetSyncDbUri(), "upstream-container", false));

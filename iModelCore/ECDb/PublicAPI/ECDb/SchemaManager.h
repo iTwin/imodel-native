@@ -68,6 +68,9 @@ struct SchemaSync final {
         //! The briefcase and the sync db are on different EC profile versions. Either could then map
         //! the same schema differently, so nothing may be imported until they are aligned.
         ERROR_PROFILE_VERSION_MISMATCH,
+        //! Schema sync was enabled from a briefcase holding unpushed changes or missing pushed ones.
+        //! The sync db would then mirror a state no other briefcase can reach.
+        ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE,
     };
     //=======================================================================================
     // @bsiclass
@@ -136,10 +139,10 @@ private:
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
     int64_t m_modifiedRowCount;
-    Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
+    Status InitInternal(SyncDbUri const&, Utf8StringCR, bool);
     Status PullInternal(SyncDbUri const&, TableList);
     Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
-    Status MirrorToSyncDb(SyncDbUri const&, TableList upsertOnlyTables);
+    Status MirrorToSyncDb(SyncDbUri const&);
     Status OverwriteSyncDbInternal(SyncDbUri const&);
     Status VerifyProfileVersionsMatch(SyncDbUri const&) const;
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;

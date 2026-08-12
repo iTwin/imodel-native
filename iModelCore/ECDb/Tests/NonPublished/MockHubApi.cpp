@@ -1611,6 +1611,18 @@ DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& inco
 }
 
 /*---------------------------------------------------------------------------------**//**
+* The mock hub is in-process, so unlike DgnDb this can answer both halves - whether anything is
+* held back, and whether anything pushed by others is missing.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TrackedECDb::_IsLevelWithTimeline() {
+    if (m_hub == nullptr)
+        return true;
+
+    return !HasLocalChangesets() && m_changesetId == m_hub->GetTipChangesetId();
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
