@@ -7,6 +7,7 @@ import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { DbResult, Guid } from "@itwin/core-bentley";
+import { DbRequestKind } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
 
@@ -300,6 +301,37 @@ describe("ECSqlStatement", () => {
       expect(() => binder.bindInteger(2)).to.not.throw();
       stmt.clearBindings();
       expect(() => binder.bindInteger(3)).to.not.throw();
+    });
+
+    // Preparing an already prepared statement fails natively and leaves the statement prepared.
+    // Tearing down its registration up front therefore left a live statement that the db no
+    // longer finalized on close, and a binder without a lifetime.
+    it("should keep a prepared statement usable after a failed second prepare", () => {
+      const ownDb = createECDb(outDir, "double_prepare.ecdb", testSchema);
+      const ownStmt = new iModelJsNative.ECSqlStatement();
+
+      expect(ownStmt.prepare(ownDb, "SELECT I FROM test.Foo WHERE I=?").status).to.equal(DbResult.BE_SQLITE_OK);
+      expect(ownStmt.prepare(ownDb, "SELECT S FROM test.Foo", false).status).to.not.equal(DbResult.BE_SQLITE_OK);
+
+      // the first statement is still the prepared one and its binders still work
+      expect(() => ownStmt.getBinder(1).bindInteger(1)).to.not.throw();
+      expect(ownStmt.step()).to.equal(DbResult.BE_SQLITE_DONE);
+
+      const binder = ownStmt.getBinder(1);
+      ownDb.closeDb(); // must finalize the statement and invalidate its binders
+
+      expect(() => binder.bindInteger(1)).to.throw();
+      expect(() => ownStmt.step()).to.throw();
+      expect(() => ownStmt.dispose()).to.not.throw();
+    });
+
+    // ConcurrentQueryMgr::WithInstance throws a C++ exception for a closed db, outside of the
+    // request deserialization, so it used to escape into N-API and terminate the process.
+    it("should throw instead of terminating when concurrentQueryExecute runs on a closed db", () => {
+      const ownDb = createECDb(outDir, "cq_closed_ecdb.ecdb", testSchema);
+      ownDb.closeDb();
+
+      expect(() => ownDb.concurrentQueryExecute({ kind: DbRequestKind.ECSql, query: "SELECT 1" } as any, () => { })).to.throw();
     });
 
     // Closing the db force-finalized the underlying sqlite statement, leaving this

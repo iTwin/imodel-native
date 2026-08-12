@@ -146,10 +146,9 @@ TEST_F(ECSqlStatementTestFixture, CompoundSelectWithMismatchingColumnCount) {
         ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
     }
 
-    // A select clause item that resolves to no type at all is folded into a NULL literal,
-    // which discards the subquery before the column counts are ever compared. That happens
-    // for a well formed query too (e.g. "SELECT (SELECT b FROM (SELECT NULL a, NULL b))"),
-    // so preparation is allowed to succeed here. These only have to not crash.
+    // A select clause item that resolves to no type at all is folded into a NULL literal during
+    // preparation, which discards the subquery before its branches are ever prepared. The compound
+    // arity is therefore validated while parsing, so even these must be rejected.
     Utf8CP foldedToNullEcsqls[] = {
         "SELECT (SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1))",
         "SELECT (SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1)) FROM (SELECT 1 z)",
@@ -157,8 +156,76 @@ TEST_F(ECSqlStatementTestFixture, CompoundSelectWithMismatchingColumnCount) {
 
     for (Utf8CP ecsql : foldedToNullEcsqls) {
         ECSqlStatement stmt;
-        stmt.Prepare(m_ecdb, ecsql);
+        ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
     }
+
+    // well formed compound selects must keep preparing, including the NULL folding shapes
+    Utf8CP validEcsqls[] = {
+        "SELECT (SELECT b FROM (SELECT NULL a, NULL b))",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2)",
+        "SELECT * FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2)",
+        "WITH cte AS (SELECT NULL a, NULL b UNION ALL SELECT 1, 2) SELECT b FROM cte",
+        "SELECT b FROM (SELECT NULL a, NULL b UNION ALL SELECT 1, 2 UNION ALL SELECT 3, 4)",
+        };
+
+    for (Utf8CP ecsql : validEcsqls) {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Regression test: the scanner reads the statement in blocks, so the read position usually
+* already sits at the end of the statement while the lexer is still somewhere in the middle.
+* Lexer errors must still report the offending text, which is taken from the scan position.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, InvalidSymbolReportsOffendingText) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("syntax_error_context.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="I" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    // The reported issue is "Failed to parse ECSQL '<ecsql>': <parser error>" and therefore always
+    // repeats the ECSQL itself. Only the parser error after it carries the scanner diagnostic.
+    auto parserError = [&] (Utf8CP ecsql) -> Utf8String {
+        Utf8String message = listener.GetLastMessage();
+        Utf8String echoedEcsql(ecsql);
+        const size_t ecsqlEnd = message.find(echoedEcsql);
+        return ecsqlEnd == Utf8String::npos ? message : Utf8String(message.substr(ecsqlEnd + echoedEcsql.size()));
+        };
+
+    // '#' is not part of the ECSQL grammar, so the lexer reports it as an invalid symbol and
+    // appends the offending text up to the next space. That text is only appended when the
+    // scanner still sees itself inside the statement, which after a block read is only true
+    // for the scan position and no longer for the read position.
+    {
+    Utf8CP ecsql = "SELECT I FROM ts.Foo WHERE I #ZZQQ 1";
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    listener.ClearIssues();
+    {
+    // the offending text sits far from the end of the statement, so the read position and the
+    // scan position differ by a lot
+    Utf8CP ecsql = "SELECT I FROM ts.Foo WHERE I #ZZQQ 1 AND I <> 2 AND I <> 3 AND I <> 4 AND I <> 5";
+    ECSqlStatement stmt;
+    ASSERT_NE(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    Utf8String error = parserError(ecsql);
+    ASSERT_TRUE(error.Contains("Invalid symbol")) << "expected an invalid symbol error, but was: " << listener.GetLastMessage().c_str();
+    ASSERT_TRUE(error.Contains("#ZZQQ")) << "error must name the offending text, but was: " << listener.GetLastMessage().c_str();
+    }
+
+    m_ecdb.RemoveIssueListener();
 }
 
 /*---------------------------------------------------------------------------------**//**

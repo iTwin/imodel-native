@@ -457,7 +457,7 @@ public:
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), requestObj, callback);
     }
     void ClearECDbCache(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -5749,6 +5749,16 @@ public:
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
         IssueListener listener(*ecdb);
+
+        if (m_stmt.IsPrepared()) {
+            // The native statement rejects a second Prepare and stays prepared and usable, so its
+            // registration and binder lifetime must survive the failure. Tearing them down here
+            // would leave a live statement that the db no longer finalizes on close, and binders
+            // without a lifetime.
+            ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+            BeAssert(!status.IsSuccess() && "Preparing an already prepared ECSqlStatement is expected to fail");
+            return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
+        }
 
         InvalidateBinders();
         Unregister();

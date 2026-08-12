@@ -670,7 +670,9 @@ void OSQLScanner::SQLyyerror(const char *fmt)
     IN_SQLyyerror = true;
     OSL_ENSURE(m_pContext, "OSQLScanner::SQLyyerror: No Context set");
     m_sErrorMessage = fmt;
-    if (m_nCurrentPos < (sal_Int32)m_sStatement.size())
+    // m_nCurrentPos is the end of the block last handed to flex, which is typically already the end
+    // of the statement. The offending text is only available where the scanner actually stands.
+    if (GetScanPos() < (sal_Int32)m_sStatement.size())
     {
         m_sErrorMessage.append(": ");
         Utf8String aError;

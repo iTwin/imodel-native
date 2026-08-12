@@ -319,5 +319,16 @@ describe("concurrent query tests", () => {
       expect(() => conn.concurrentQueryExecute(bad as any, () => { }), String(bad)).to.throw();
     }
   });
+
+  // ConcurrentQueryMgr::WithInstance throws a C++ exception for a closed db. That call sits
+  // outside the request deserialization, so it used to escape into N-API and terminate the process.
+  it("should throw instead of terminating when the db is closed", () => {
+    const request = { kind: DbRequestKind.ECSql, query: "SELECT 1" };
+    conn.closeFile();
+
+    expect(() => conn.concurrentQueryExecute(request as any, () => { })).to.throw();
+
+    conn = openDgnDb(dbFileName); // afterEach closes it again
+  });
 });
 
