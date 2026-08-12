@@ -59,16 +59,6 @@ PropertyMap const* FindCheckableProperty(ClassMapCR classMap, Utf8StringCR name)
 }
 
 //---------------------------------------------------------------------------------------
-// Associates a property map that will be compared in a WHERE clause with the member name used to look up its
-// expected old value in the caller-supplied JSON (the two can differ, e.g. ECName vs. JS-cased name).
-// @bsistruct
-//---------------------------------------------------------------------------------------
-struct CheckPropertyBinding final {
-    PropertyMap const* m_propertyMap;
-    Utf8String m_jsonMemberName;
-};
-
-//---------------------------------------------------------------------------------------
 // Resolves the members of expectedOldValues to checkable properties on classMap, sorted by ECProperty name so
 // that repeated calls with the same set of properties reuse the same cached statement. Members naming the
 // instance/class identity (id/className/ECInstanceId/ECClassId) are silently ignored, since the row is already
@@ -107,23 +97,23 @@ bool ResolveCheckProperties(BindContext& ctx, ClassMapCR classMap, BeJsConst exp
 }
 
 //---------------------------------------------------------------------------------------
+// Name of classMap's TimeStampProperty (e.g. LastMod), or an empty string if it has none. Such a property
+// always changes on any write, so it must never gate an optimistic-concurrency check (every conflicting
+// write would then "fail" it), but it should still be reportable via FindConflictingProperties.
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool RowExistsById(ECDbCR ecdb, ECClassId classId, ECInstanceId id) {
-    auto cls = ecdb.Schemas().GetClass(classId);
-    if (cls == nullptr)
-        return false;
+Utf8String GetCurrentTimeStampPropertyName(ClassMapCR classMap) {
+    auto ca = classMap.GetClass().GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
+        return "";
 
-    Utf8String ecsql;
-    ecsql.Sprintf("SELECT 1 FROM %s WHERE ECInstanceId=?", cls->GetECSqlName().c_str());
-
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()))
-        return false;
-
-    stmt.BindId(1, id);
-    return stmt.Step() == BE_SQLITE_ROW;
+    ECValue v;
+    if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName")) {
+        return "";
+    }
+    return v.GetUtf8CP();
 }
+
 } // namespace
 
 //******************************BindContext**************************************
@@ -209,15 +199,7 @@ void CachedWriteStatement::BuildPropertyIndexMap(bool addUseJsNameMap) {
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String CachedWriteStatement::GetCurrentTimeStampProperty() const {
     BeAssert(m_classMap != nullptr);
-    auto ca = m_classMap->GetClass().GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
-    if (ca == nullptr)
-        return "";
-
-    ECValue v;
-    if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName")) {
-        return "";
-    }
-    return v.GetUtf8CP();
+    return GetCurrentTimeStampPropertyName(*m_classMap);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -1186,17 +1168,67 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 }
 
 //----------------------------------------------------------------------------------
+// Reports the (JSON member) names of checkBindings' properties whose current value in the row (classId, id)
+// no longer matches its expected value. An empty result means the row itself does not exist, since a real
+// mismatch always makes at least one UNION ALL branch below produce a row.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+std::vector<Utf8String> Impl::FindConflictingProperties(BindContext& ctx, ECClassId classId, ECInstanceId id, BeJsConst expectedOldValues, std::vector<CheckPropertyBinding> const& checkBindings) {
+    std::vector<Utf8String> conflicts;
+    auto cls = ctx.GetECDb().Schemas().GetClass(classId);
+    if (cls == nullptr || checkBindings.empty())
+        return conflicts;
+
+    Utf8String ecsql;
+    for (auto const& binding : checkBindings) {
+        if (!ecsql.empty())
+            ecsql.append(" UNION ALL ");
+        Utf8CP colName = binding.m_propertyMap->GetName().c_str();
+        // See PrepareUpdate/PrepareDelete for why the null-safe match is expressed this way; a mismatch is
+        // simply the negation of that same expression.
+        ecsql.append("SELECT '").append(colName).append("' FROM ").append(cls->GetECSqlName())
+            .append(" WHERE [ECInstanceId] = ? AND NOT (([").append(colName).append("] = ?) OR ([").append(colName).append("] IS NULL AND ? = 1))");
+    }
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ctx.GetECDb(), ecsql.c_str()))
+        return conflicts;
+
+    int i = 1;
+    for (auto const& binding : checkBindings) {
+        stmt.BindId(i++, id);
+        auto memberVal = expectedOldValues[binding.m_jsonMemberName.c_str()];
+        auto bindStatus = BindRootProperty(ctx, *binding.m_propertyMap, stmt.GetBinder(i++), memberVal);
+        if (bindStatus.IsSuccess())
+            bindStatus = stmt.GetBinder(i++).BindInt(memberVal.isNull() ? 1 : 0);
+        if (!bindStatus.IsSuccess())
+            return conflicts;
+    }
+
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        Utf8CP ecName = stmt.GetValueText(0);
+        for (auto const& binding : checkBindings) {
+            if (binding.m_propertyMap->GetName().EqualsIAscii(ecName)) {
+                conflicts.push_back(binding.m_jsonMemberName);
+                break;
+            }
+        }
+    }
+    return conflicts;
+}
+
+//----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
-    bool rowExists = true;
-    return Update(inst, options, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    return Update(inst, options, conflictingProperties);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options, bool& rowExists) {
-    rowExists = true;
+DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options, std::vector<Utf8String>& conflictingProperties) {
+    conflictingProperties.clear();
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1221,7 +1253,11 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
     }
 
     bool hasCheck = options.HasExpectedOldValues();
+    // checkBindings is the full set of checked properties (used for reporting via FindConflictingProperties);
+    // gateCheckBindings excludes the class's TimeStampProperty, if any, since that property always changes on
+    // any write and so must never gate the conditional UPDATE below (every conflicting write would "fail" it).
     std::vector<CheckPropertyBinding> checkBindings;
+    std::vector<CheckPropertyBinding> gateCheckBindings;
     std::vector<Utf8String> checkNames;
     if (hasCheck) {
         auto cls = m_cache.GetECDb().Schemas().GetClass(classId);
@@ -1233,7 +1269,13 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
         if (!ResolveCheckProperties(ctx, *classMap, options.GetExpectedOldValues(), checkBindings)) {
             return BE_SQLITE_ERROR;
         }
-        for (auto const& b : checkBindings) checkNames.push_back(b.m_propertyMap->GetName());
+        Utf8String timestampProp = GetCurrentTimeStampPropertyName(*classMap);
+        for (auto const& b : checkBindings) {
+            if (!timestampProp.empty() && timestampProp.EqualsIAscii(b.m_propertyMap->GetName()))
+                continue;
+            gateCheckBindings.push_back(b);
+            checkNames.push_back(b.m_propertyMap->GetName());
+        }
     }
 
     auto rc = m_cache.WithUpdate(classId, checkNames, [&](CachedWriteStatement& stmt) {
@@ -1302,8 +1344,8 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
         if (hasCheck) {
             auto const& checkBinders = stmt.GetCheckBinders();
-            for (size_t i = 0; i < checkBindings.size(); ++i) {
-                auto memberVal = options.GetExpectedOldValues()[checkBindings[i].m_jsonMemberName.c_str()];
+            for (size_t i = 0; i < gateCheckBindings.size(); ++i) {
+                auto memberVal = options.GetExpectedOldValues()[gateCheckBindings[i].m_jsonMemberName.c_str()];
                 // Each checked property has two binders (see PrepareUpdate): the first is bound to the
                 // expected value itself; the second is an integer flag (1 if that value is null, else 0).
                 bindStatus = BindRootProperty(ctx, checkBinders[2 * i].GetPropertyMap(), checkBinders[2 * i].GetBinder(), memberVal);
@@ -1323,7 +1365,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                 ctx.SetError("Failed to update instance");
             }
         } else if (hasCheck && m_cache.GetECDb().GetModifiedRowCount() == 0) {
-            rowExists = RowExistsById(m_cache.GetECDb(), classId, id);
+            conflictingProperties = FindConflictingProperties(ctx, classId, id, options.GetExpectedOldValues(), checkBindings);
         }
         m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
         return rc;
@@ -1334,14 +1376,14 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options) {
-    bool rowExists = true;
-    return Delete(key, options, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    return Delete(key, options, conflictingProperties);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options, bool& rowExists) {
-    rowExists = true;
+DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties) {
+    conflictingProperties.clear();
     BindContext ctx = BindContext(*this, BeJsDocument::Null(), options);
     if (m_cache.GetECDb().IsReadonly()) {
         ctx.SetError("Connection is readonly");
@@ -1349,7 +1391,10 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
     }
 
     bool hasCheck = options.HasExpectedOldValues();
+    // See Impl::Update: checkBindings is the full set (for reporting), gateCheckBindings excludes the
+    // class's TimeStampProperty (for the actual conditional DELETE below).
     std::vector<CheckPropertyBinding> checkBindings;
+    std::vector<CheckPropertyBinding> gateCheckBindings;
     std::vector<Utf8String> checkNames;
     if (hasCheck) {
         auto cls = m_cache.GetECDb().Schemas().GetClass(key.GetClassId());
@@ -1361,7 +1406,13 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
         if (!ResolveCheckProperties(ctx, *classMap, options.GetExpectedOldValues(), checkBindings)) {
             return BE_SQLITE_ERROR;
         }
-        for (auto const& b : checkBindings) checkNames.push_back(b.m_propertyMap->GetName());
+        Utf8String timestampProp = GetCurrentTimeStampPropertyName(*classMap);
+        for (auto const& b : checkBindings) {
+            if (!timestampProp.empty() && timestampProp.EqualsIAscii(b.m_propertyMap->GetName()))
+                continue;
+            gateCheckBindings.push_back(b);
+            checkNames.push_back(b.m_propertyMap->GetName());
+        }
     }
 
     auto rc = m_cache.WithDelete(key.GetClassId(), checkNames, [&](CachedWriteStatement& stmt) {
@@ -1370,8 +1421,8 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
 
         if (hasCheck) {
             auto const& checkBinders = stmt.GetCheckBinders();
-            for (size_t i = 0; i < checkBindings.size(); ++i) {
-                auto memberVal = options.GetExpectedOldValues()[checkBindings[i].m_jsonMemberName.c_str()];
+            for (size_t i = 0; i < gateCheckBindings.size(); ++i) {
+                auto memberVal = options.GetExpectedOldValues()[gateCheckBindings[i].m_jsonMemberName.c_str()];
                 // Each checked property has two binders (see PrepareDelete): the first is bound to the
                 // expected value itself; the second is an integer flag (1 if that value is null, else 0).
                 auto bindStatus = BindRootProperty(ctx, checkBinders[2 * i].GetPropertyMap(), checkBinders[2 * i].GetBinder(), memberVal);
@@ -1391,7 +1442,7 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
                 ctx.SetError("Failed to delete instance");
             }
         } else if (hasCheck && m_cache.GetECDb().GetModifiedRowCount() == 0) {
-            rowExists = RowExistsById(m_cache.GetECDb(), key.GetClassId(), key.GetInstanceId());
+            conflictingProperties = FindConflictingProperties(ctx, key.GetClassId(), key.GetInstanceId(), options.GetExpectedOldValues(), checkBindings);
         }
         return rc;
     });
@@ -1402,13 +1453,13 @@ DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
-    bool rowExists = true;
-    return Delete(inst, options, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    return Delete(inst, options, conflictingProperties);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options, bool& rowExists) {
+DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties) {
     BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
@@ -1425,7 +1476,7 @@ DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& optio
         ctx.SetError("Failed to get ECInstanceId/id and ECClassId/className/classFullName.");
         return BE_SQLITE_ERROR;
     }
-    return Delete(key, options, rowExists);
+    return Delete(key, options, conflictingProperties);
 }
 
 //----------------------------------------------------------------------------------
@@ -1471,8 +1522,8 @@ DbResult InstanceWriter::Update(BeJsConst inst, UpdateOptions const& options) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Update(BeJsConst inst, UpdateOptions const& options, bool& rowExists) {
-    return m_pImpl->Update(inst, options, rowExists);
+DbResult InstanceWriter::Update(BeJsConst inst, UpdateOptions const& options, std::vector<Utf8String>& conflictingProperties) {
+    return m_pImpl->Update(inst, options, conflictingProperties);
 }
 
 //----------------------------------------------------------------------------------
@@ -1484,8 +1535,8 @@ DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options, bool& rowExists) {
-    return m_pImpl->Delete(inst, options, rowExists);
+DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties) {
+    return m_pImpl->Delete(inst, options, conflictingProperties);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -1496,8 +1547,8 @@ DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& option
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& options, bool& rowExists) {
-    return m_pImpl->Delete(key, options, rowExists);
+DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties) {
+    return m_pImpl->Delete(key, options, conflictingProperties);
 }
 //----------------------------------------------------------------------------------
 // @bsimethod

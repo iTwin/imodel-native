@@ -11,6 +11,7 @@
 #include <ECDb/SchemaManager.h>
 #include <list>
 #include <optional>
+#include <vector>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PropertyBinder final {
@@ -171,13 +172,15 @@ public:
     ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options);
     //! Like Update(BeJsConst, UpdateOptions const&), but when options.HasExpectedOldValues() and the row was not
-    //! affected (i.e. 0 rows modified), \p rowExists distinguishes "row not found" (false) from "row found but its
-    //! current values no longer match the expected old values" (true). Otherwise \p rowExists is set to true.
-    ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options, bool& rowExists);
+    //! affected (i.e. 0 rows modified), \p conflictingProperties is populated with the JSON member names (as
+    //! given in options.GetExpectedOldValues()) of the properties whose current value no longer matches the
+    //! expected value; an empty \p conflictingProperties then means the row itself does not exist. Otherwise
+    //! (a successful update, or no expected old values were given) \p conflictingProperties is left empty.
+    ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options, std::vector<Utf8String>& conflictingProperties);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);
-    ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options, bool& rowExists);
+    ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties);
     ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options);
-    ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options, bool& rowExists);
+    ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options, std::vector<Utf8String>& conflictingProperties);
 
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt = JsFormat::Standard) const;

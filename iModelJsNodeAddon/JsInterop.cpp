@@ -1033,8 +1033,8 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
         fmt = JsFormat::JsName;
     }
 
-    bool rowExists = true;
-    auto rc = repo.Update(inst, args, fmt, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    auto rc = repo.Update(inst, args, fmt, conflictingProperties);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to update instance", rc);
@@ -1045,7 +1045,10 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     if (args.isObjectMember("expectedOldValues")) {
         auto result = Napi::Object::New(info.Env());
         result.Set("updated", Napi::Value::From(info.Env(), updated));
-        result.Set("rowExists", Napi::Value::From(info.Env(), rowExists));
+        auto conflicts = Napi::Array::New(info.Env(), conflictingProperties.size());
+        for (size_t i = 0; i < conflictingProperties.size(); ++i)
+            conflicts[i] = Napi::Value::From(info.Env(), conflictingProperties[i]);
+        result.Set("conflictingProperties", conflicts);
         return result;
     }
     return Napi::Value::From(info.Env(), updated);
@@ -1067,8 +1070,8 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
         fmt = JsFormat::JsName;
     }
 
-    bool rowExists = true;
-    auto rc = repo.Delete(key, args, fmt, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    auto rc = repo.Delete(key, args, fmt, conflictingProperties);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to delete instance", rc);
@@ -1079,7 +1082,10 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
     if (args.isObjectMember("expectedOldValues")) {
         auto result = Napi::Object::New(info.Env());
         result.Set("deleted", Napi::Value::From(info.Env(), deleted));
-        result.Set("rowExists", Napi::Value::From(info.Env(), rowExists));
+        auto conflicts = Napi::Array::New(info.Env(), conflictingProperties.size());
+        for (size_t i = 0; i < conflictingProperties.size(); ++i)
+            conflicts[i] = Napi::Value::From(info.Env(), conflictingProperties[i]);
+        result.Set("conflictingProperties", conflicts);
         return result;
     }
     return Napi::Value::From(info.Env(), deleted);

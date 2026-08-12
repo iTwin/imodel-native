@@ -35,15 +35,15 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsFormat inFmt) const {
-    bool rowExists = true;
-    return Update(in, userOptions, inFmt, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    return Update(in, userOptions, inFmt, conflictingProperties);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const {
-    rowExists = true;
+DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, std::vector<Utf8String>& conflictingProperties) const {
+    conflictingProperties.clear();
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::UpdateOptions options;
@@ -57,7 +57,7 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_ecdb.GetInstanceWriter().Update(in, options, rowExists);
+    auto rc = m_ecdb.GetInstanceWriter().Update(in, options, conflictingProperties);
     if (rc != BE_SQLITE_OK) {
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }
@@ -68,21 +68,21 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsFormat inFmt) const {
-    bool rowExists = true;
-    return Delete(in, userOptions, inFmt, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    return Delete(in, userOptions, inFmt, conflictingProperties);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const {
-    rowExists = true;
+DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsFormat inFmt, std::vector<Utf8String>& conflictingProperties) const {
+    conflictingProperties.clear();
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::DeleteOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
     if (userOptions.isObjectMember("expectedOldValues"))
         options.CompareBeforeDelete(userOptions["expectedOldValues"]);
-    auto rc = m_ecdb.GetInstanceWriter().Delete(in, options, rowExists);
+    auto rc = m_ecdb.GetInstanceWriter().Delete(in, options, conflictingProperties);
     if (rc != BE_SQLITE_OK) {
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }
@@ -92,21 +92,21 @@ DbResult InstanceRepository::Delete(BeJsConst in, BeJsConst userOptions, JsForma
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt) const {
-    bool rowExists = true;
-    return Delete(key, userOptions, inFmt, rowExists);
+    std::vector<Utf8String> conflictingProperties;
+    return Delete(key, userOptions, inFmt, conflictingProperties);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt, bool& rowExists) const {
-    rowExists = true;
+DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt, std::vector<Utf8String>& conflictingProperties) const {
+    conflictingProperties.clear();
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::DeleteOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
     if (userOptions.isObjectMember("expectedOldValues"))
         options.CompareBeforeDelete(userOptions["expectedOldValues"]);
-    auto rc = m_ecdb.GetInstanceWriter().Delete(key, options, rowExists);
+    auto rc = m_ecdb.GetInstanceWriter().Delete(key, options, conflictingProperties);
     if (rc != BE_SQLITE_OK) {
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }
