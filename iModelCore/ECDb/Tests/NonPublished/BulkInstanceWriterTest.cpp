@@ -87,7 +87,8 @@ TEST_F(BulkInstanceWriterFixture, InsertAndUpdateSimpleClass) {
     EXPECT_TRUE((*inserted)["B"].GetBoolean());
     EXPECT_DOUBLE_EQ(2.0, (*inserted)["P3"]["Y"].GetDouble());
 
-    // partial update: only S is written, everything else must stay as it is
+    // Foo declares every property itself, so the class is a single hierarchy level. Writing S
+    // therefore writes the whole level and nulls every property the callback did not bind.
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("S")->BindText("world", IECSqlBinder::MakeCopy::Yes);
     })) << writer.GetLastError().c_str();
@@ -95,22 +96,47 @@ TEST_F(BulkInstanceWriterFixture, InsertAndUpdateSimpleClass) {
     auto updated = ReadInstance(key);
     ASSERT_TRUE(updated.has_value());
     EXPECT_STREQ("world", (*updated)["S"].asCString());
-    EXPECT_EQ(123, (*updated)["I"].GetInt()) << "I was not bound and must keep its value";
-    EXPECT_DOUBLE_EQ(3.5, (*updated)["D"].GetDouble()) << "D was not bound and must keep its value";
-    EXPECT_TRUE((*updated)["B"].GetBoolean()) << "B was not bound and must keep its value";
-    EXPECT_DOUBLE_EQ(3.0, (*updated)["P3"]["Z"].GetDouble()) << "P3 was not bound and must keep its value";
+    EXPECT_TRUE((*updated)["I"].isNull()) << "I belongs to the written level and was not bound";
+    EXPECT_TRUE((*updated)["D"].isNull()) << "D belongs to the written level and was not bound";
+    EXPECT_TRUE((*updated)["B"].isNull()) << "B belongs to the written level and was not bound";
+
+    // supplying the whole level round trips
+    ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
+        ctx.FindBinder("I")->BindInt(456);
+        ctx.FindBinder("D")->BindDouble(7.5);
+        ctx.FindBinder("S")->BindText("again", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("B")->BindBoolean(false);
+        ctx.FindBinder("P2")->BindPoint2d(DPoint2d::From(9.0, 8.0));
+        ctx.FindBinder("P3")->BindPoint3d(DPoint3d::From(9.0, 8.0, 7.0));
+    })) << writer.GetLastError().c_str();
+
+    auto restored = ReadInstance(key);
+    ASSERT_TRUE(restored.has_value());
+    EXPECT_EQ(456, (*restored)["I"].GetInt());
+    EXPECT_DOUBLE_EQ(7.5, (*restored)["D"].GetDouble());
+    EXPECT_STREQ("again", (*restored)["S"].asCString());
+    EXPECT_DOUBLE_EQ(7.0, (*restored)["P3"]["Z"].GetDouble());
 }
 
 //---------------------------------------------------------------------------------------
 //! Requesting a binder without calling any Bind* is documented to behave like BindNull().
+//! Untouched-ness is a property of a hierarchy level, so A and B are declared by different
+//! classes: writing one level must leave the other one alone.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BulkInstanceWriterFixture, UpdateWithExplicitNullVersusUntouched) {
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_null.ecdb", SchemaItem(R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECEntityClass typeName="Foo">
-                <ECProperty propertyName="A" typeName="int"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
                 <ECProperty propertyName="B" typeName="int"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="A" typeName="int"/>
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -123,7 +149,7 @@ TEST_F(BulkInstanceWriterFixture, UpdateWithExplicitNullVersusUntouched) {
         ctx.FindBinder("B")->BindInt(2);
     }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
 
-    // A is explicitly nulled, B is not touched at all
+    // A is explicitly nulled, B belongs to another level and is not touched at all
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("A")->BindNull();
     })) << writer.GetLastError().c_str();
@@ -194,7 +220,9 @@ TEST_F(BulkInstanceWriterFixture, TablePerHierarchyWithJoinedTable) {
     EXPECT_DOUBLE_EQ(3.0, (*inserted)["S3"].GetDouble());
     EXPECT_EQ(4, (*inserted)["S4"].GetInt64());
 
-    // only update a property in the joined/overflow table
+    // only update a property in the joined/overflow table. S1..S4 are all declared by Sub, so
+    // they form one level and the ones the callback did not bind are nulled. BaseProp is
+    // declared by Base, so its level (and its table) is never touched.
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("S4")->BindInt64(44);
     })) << writer.GetLastError().c_str();
@@ -203,9 +231,9 @@ TEST_F(BulkInstanceWriterFixture, TablePerHierarchyWithJoinedTable) {
     ASSERT_TRUE(updated.has_value());
     EXPECT_EQ(44, (*updated)["S4"].GetInt64());
     EXPECT_STREQ("base", (*updated)["BaseProp"].asCString()) << "the primary table must not be touched";
-    EXPECT_STREQ("one", (*updated)["S1"].asCString());
-    EXPECT_EQ(2, (*updated)["S2"].GetInt());
-    EXPECT_DOUBLE_EQ(3.0, (*updated)["S3"].GetDouble());
+    EXPECT_TRUE((*updated)["S1"].isNull()) << "S1 belongs to the written level and was not bound";
+    EXPECT_TRUE((*updated)["S2"].isNull()) << "S2 belongs to the written level and was not bound";
+    EXPECT_TRUE((*updated)["S3"].isNull()) << "S3 belongs to the written level and was not bound";
 
     // only update a property in the primary table
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
@@ -215,7 +243,7 @@ TEST_F(BulkInstanceWriterFixture, TablePerHierarchyWithJoinedTable) {
     auto updated2 = ReadInstance(key);
     ASSERT_TRUE(updated2.has_value());
     EXPECT_STREQ("base2", (*updated2)["BaseProp"].asCString());
-    EXPECT_EQ(44, (*updated2)["S4"].GetInt64());
+    EXPECT_EQ(44, (*updated2)["S4"].GetInt64()) << "the Sub level must not be touched";
 }
 
 //---------------------------------------------------------------------------------------
@@ -224,6 +252,7 @@ TEST_F(BulkInstanceWriterFixture, TablePerHierarchyWithJoinedTable) {
 TEST_F(BulkInstanceWriterFixture, StructsAndArrays) {
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_struct.ecdb", SchemaItem(R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap"/>
             <ECStructClass typeName="Inner">
                 <ECProperty propertyName="X" typeName="int"/>
                 <ECProperty propertyName="Y" typeName="string"/>
@@ -232,11 +261,17 @@ TEST_F(BulkInstanceWriterFixture, StructsAndArrays) {
                 <ECProperty propertyName="Name" typeName="string"/>
                 <ECStructProperty propertyName="In" typeName="Inner"/>
             </ECStructClass>
-            <ECEntityClass typeName="Foo">
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
                 <ECProperty propertyName="Tag" typeName="string"/>
                 <ECStructProperty propertyName="St" typeName="Outer"/>
-                <ECArrayProperty propertyName="Ints" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
                 <ECStructArrayProperty propertyName="Structs" typeName="Inner" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+                <BaseClass>Base</BaseClass>
+                <ECArrayProperty propertyName="Ints" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -276,7 +311,8 @@ TEST_F(BulkInstanceWriterFixture, StructsAndArrays) {
     ASSERT_EQ(2u, (*inserted)["Structs"].size());
     EXPECT_STREQ("b", (*inserted)["Structs"][1]["Y"].asCString());
 
-    // partial update of the arrays only
+    // partial update of the arrays only. Ints is the only property Foo declares, so its level
+    // consists of Ints alone and everything Base declares survives untouched.
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
         auto& ints = *ctx.FindBinder("Ints");
         ints.AddArrayElement().BindInt(99);
@@ -301,8 +337,14 @@ TEST_F(BulkInstanceWriterFixture, NavigationProperty) {
             <ECEntityClass typeName="Parent">
                 <ECProperty propertyName="Name" typeName="string"/>
             </ECEntityClass>
-            <ECEntityClass typeName="Child">
+            <ECEntityClass typeName="ChildBase" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Child">
+                <BaseClass>ChildBase</BaseClass>
                 <ECNavigationProperty propertyName="MyParent" relationshipName="ParentHasChildren" direction="Backward"/>
             </ECEntityClass>
             <ECRelationshipClass typeName="ParentHasChildren" strength="Referencing" modifier="Sealed">
@@ -329,7 +371,7 @@ TEST_F(BulkInstanceWriterFixture, NavigationProperty) {
     ASSERT_TRUE(inserted.has_value());
     EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), (*inserted)["MyParent"]["Id"].asCString());
 
-    // updating Name must leave the navigation property alone
+    // updating Name must leave the navigation property alone: the two belong to different levels
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(childKey, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("Name")->BindText("c2", IECSqlBinder::MakeCopy::Yes);
     })) << writer.GetLastError().c_str();
@@ -625,16 +667,26 @@ TEST_F(BulkInstanceWriterFixture, BulkInsertDoesNotLeakBindingsBetweenRows) {
 }
 
 //---------------------------------------------------------------------------------------
-//! UPDATE statements are specialized per written property set. Alternating the set between
-//! calls must keep producing correct partial updates.
+//! Partial updates are decomposed by hierarchy level. Alternating the level a call writes
+//! into must keep producing correct partial updates.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BulkInstanceWriterFixture, PartialUpdateWithAlternatingPropertySets) {
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_alternating.ecdb", SchemaItem(R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECEntityClass typeName="Foo">
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
                 <ECProperty propertyName="A" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Mid" modifier="Abstract">
+                <BaseClass>Base</BaseClass>
                 <ECProperty propertyName="B" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+                <BaseClass>Mid</BaseClass>
                 <ECProperty propertyName="C" typeName="string"/>
             </ECEntityClass>
         </ECSchema>)xml")));
@@ -656,7 +708,7 @@ TEST_F(BulkInstanceWriterFixture, PartialUpdateWithAlternatingPropertySets) {
         }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
     };
 
-    // every switch of the written set invalidates the guessed statement
+    // every call writes a different level
     updateOne("A", "a1");
     updateOne("B", "b1");
     updateOne("A", "a2");
@@ -669,7 +721,7 @@ TEST_F(BulkInstanceWriterFixture, PartialUpdateWithAlternatingPropertySets) {
     EXPECT_STREQ("b1", (*inst)["B"].asCString());
     EXPECT_STREQ("c2", (*inst)["C"].asCString());
 
-    // two properties at once is yet another specialization
+    // two levels at once
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("A")->BindText("a3", IECSqlBinder::MakeCopy::Yes);
         ctx.FindBinder("C")->BindText("c3", IECSqlBinder::MakeCopy::Yes);
@@ -745,7 +797,8 @@ TEST_F(BulkInstanceWriterFixture, PropertyIndexSpaceIsStableAcrossSpecialization
 }
 
 //---------------------------------------------------------------------------------------
-//! A repeated update of the same property set must run the callback only once per call.
+//! The UPDATE statements no longer depend on the set of written properties, so the callback
+//! runs exactly once per call, on the very first update as well.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BulkInstanceWriterFixture, RepeatedUpdateInvokesCallbackOncePerCall) {
@@ -775,12 +828,12 @@ TEST_F(BulkInstanceWriterFixture, RepeatedUpdateInvokesCallbackOncePerCall) {
 
     update(1);
     const auto afterFirst = invocations;
-    EXPECT_EQ(2, afterFirst) << "the first update of a class needs a discovery pass";
+    EXPECT_EQ(1, afterFirst) << "no update ever needs a discovery pass";
 
     for (int i = 0; i < 10; ++i)
         update(i + 2);
 
-    EXPECT_EQ(afterFirst + 10, invocations) << "subsequent updates of the same property set must not re-run the callback";
+    EXPECT_EQ(afterFirst + 10, invocations) << "every update must run the callback exactly once";
 
     auto inst = ReadInstance(key);
     ASSERT_TRUE(inst.has_value());
@@ -788,11 +841,14 @@ TEST_F(BulkInstanceWriterFixture, RepeatedUpdateInvokesCallbackOncePerCall) {
 }
 
 //---------------------------------------------------------------------------------------
-//! A partial update of a wide class must leave every column it does not write untouched,
-//! including columns in the overflow table.
+//! A partial update writes exactly the hierarchy levels it touches. Every column of every
+//! other level must stay untouched, including the columns in the overflow table.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BulkInstanceWriterFixture, PartialUpdateOfWideClassLeavesOtherColumnsUntouched) {
+    // Mid declares P0..P11, Wide declares P12..P23. With 8 shared columns, P0..P7 live in the
+    // shared columns of the primary table and everything from P8 on lives in the overflow table.
+    const int kMidProps = 12;
     const int kProps = 24;
     Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -806,9 +862,14 @@ TEST_F(BulkInstanceWriterFixture, PartialUpdateOfWideClassLeavesOtherColumnsUnto
           </ECCustomAttributes>
           <ECProperty propertyName="Name" typeName="string" />
         </ECEntityClass>
-        <ECEntityClass typeName="Wide">
+        <ECEntityClass typeName="Mid" modifier="Abstract">
           <BaseClass>Base</BaseClass>)xml";
-    for (int p = 0; p < kProps; ++p)
+    for (int p = 0; p < kMidProps; ++p)
+        xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"string\" />", p).GetUtf8CP());
+    xml.append(R"xml(</ECEntityClass>
+        <ECEntityClass typeName="Wide">
+          <BaseClass>Mid</BaseClass>)xml");
+    for (int p = kMidProps; p < kProps; ++p)
         xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"string\" />", p).GetUtf8CP());
     xml.append("</ECEntityClass></ECSchema>");
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_wide_partial.ecdb", SchemaItem(xml)));
@@ -824,59 +885,78 @@ TEST_F(BulkInstanceWriterFixture, PartialUpdateOfWideClassLeavesOtherColumnsUnto
             ctx.FindBinder(Utf8PrintfString("P%d", p).c_str())->BindText(Utf8PrintfString("v%d", p).c_str(), IECSqlBinder::MakeCopy::Yes);
     }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
 
-    // P0 lives in the shared columns, P20 in the overflow table
+    // both properties belong to the Mid level: P0 lives in the shared columns, P8 in the overflow
+    // table, so the level's update spans both tables.
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("P0")->BindText("changed0", IECSqlBinder::MakeCopy::Yes);
-        ctx.FindBinder("P20")->BindText("changed20", IECSqlBinder::MakeCopy::Yes);
+        ctx.FindBinder("P8")->BindText("changed8", IECSqlBinder::MakeCopy::Yes);
     }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
 
     auto inst = ReadInstance(key);
     ASSERT_TRUE(inst.has_value());
-    EXPECT_STREQ("original", (*inst)["Name"].asCString());
+    EXPECT_STREQ("original", (*inst)["Name"].asCString()) << "the Base level must not be touched";
     for (int p = 0; p < kProps; ++p) {
         Utf8String name = Utf8PrintfString("P%d", p);
-        Utf8String expected = p == 0 ? "changed0" : (p == 20 ? "changed20" : Utf8PrintfString("v%d", p).c_str());
-        EXPECT_STREQ(expected.c_str(), (*inst)[name.c_str()].asCString()) << "property " << name.c_str();
+        if (p == 0 || p == 8) {
+            EXPECT_STREQ(Utf8PrintfString("changed%d", p).c_str(), (*inst)[name.c_str()].asCString()) << "property " << name.c_str();
+        } else if (p < kMidProps) {
+            EXPECT_TRUE((*inst)[name.c_str()].isNull()) << "property " << name.c_str() << " belongs to the written level and was not bound";
+        } else {
+            EXPECT_STREQ(Utf8PrintfString("v%d", p).c_str(), (*inst)[name.c_str()].asCString()) << "property " << name.c_str() << " belongs to the Wide level and must be untouched";
+        }
     }
 }
 
 //---------------------------------------------------------------------------------------
-//! Many distinct property sets must not corrupt anything when the statement cache evicts.
+//! Many classes must not corrupt anything when the statement cache evicts.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BulkInstanceWriterFixture, ManyPropertySetsEvictSpecializations) {
+    const int kClasses = 4;
     const int kProps = 12;
-    Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECEntityClass typeName="Foo">)xml";
-    for (int p = 0; p < kProps; ++p)
-        xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"int\" />", p).GetUtf8CP());
-    xml.append("</ECEntityClass></ECSchema>");
+    Utf8String xml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">)xml";
+    for (int c = 0; c < kClasses; ++c) {
+        xml.append(SqlPrintfString("<ECEntityClass typeName=\"Foo%d\">", c).GetUtf8CP());
+        for (int p = 0; p < kProps; ++p)
+            xml.append(SqlPrintfString("<ECProperty propertyName=\"P%d\" typeName=\"int\" />", p).GetUtf8CP());
+
+        xml.append("</ECEntityClass>");
+    }
+    xml.append("</ECSchema>");
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_evict.ecdb", SchemaItem(xml)));
 
-    // a tiny cache so that every specialization evicts the previous one
+    // a cache smaller than the number of classes, so that every class evicts a previous one
     BulkInstanceWriter writer(m_ecdb, 2);
-    const auto classId = GetClassId("TestSchema", "Foo");
 
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
-        for (int p = 0; p < 12; ++p)
-            ctx.GetBinder(ctx.GetPropertyIndex(Utf8PrintfString("P%d", p).c_str())).BindInt(0);
-    }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+    std::vector<ECInstanceKey> keys;
+    for (int c = 0; c < kClasses; ++c) {
+        const auto classId = GetClassId("TestSchema", Utf8PrintfString("Foo%d", c).c_str());
+        ASSERT_TRUE(classId.IsValid());
 
-    // each round writes a different single property, forcing a new specialization every time
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(classId, [](BulkInstanceWriter::IBindContext const& ctx) {
+            for (int p = 0; p < kProps; ++p)
+                ctx.GetBinder(ctx.GetPropertyIndex(Utf8PrintfString("P%d", p).c_str())).BindInt(0);
+        }, BulkInstanceWriter::InsertOptions(), key)) << writer.GetLastError().c_str();
+        keys.push_back(key);
+    }
+
+    // each round rewrites every instance, cycling through the classes so that the cache keeps evicting
     for (int round = 0; round < 3; ++round) {
-        for (int p = 0; p < kProps; ++p) {
-            const int value = round * 100 + p + 1;
-            ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
-                ctx.FindBinder(Utf8PrintfString("P%d", p).c_str())->BindInt(value);
+        for (int c = 0; c < kClasses; ++c) {
+            ASSERT_EQ(BE_SQLITE_DONE, writer.Update(keys[(size_t)c], [&](BulkInstanceWriter::IBindContext const& ctx) {
+                for (int p = 0; p < kProps; ++p)
+                    ctx.FindBinder(Utf8PrintfString("P%d", p).c_str())->BindInt(round * 100 + p + 1);
             }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
         }
     }
 
-    auto inst = ReadInstance(key);
-    ASSERT_TRUE(inst.has_value());
-    for (int p = 0; p < kProps; ++p)
-        EXPECT_EQ(200 + p + 1, (*inst)[Utf8PrintfString("P%d", p).c_str()].GetInt()) << "property P" << p;
+    for (int c = 0; c < kClasses; ++c) {
+        auto inst = ReadInstance(keys[(size_t)c]);
+        ASSERT_TRUE(inst.has_value());
+        for (int p = 0; p < kProps; ++p)
+            EXPECT_EQ(200 + p + 1, (*inst)[Utf8PrintfString("P%d", p).c_str()].GetInt()) << "class Foo" << c << " property P" << p;
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -886,10 +966,17 @@ TEST_F(BulkInstanceWriterFixture, ManyPropertySetsEvictSpecializations) {
 TEST_F(BulkInstanceWriterFixture, FullUpdateNullsUnboundProperties) {
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_fullupdate.ecdb", SchemaItem(R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECEntityClass typeName="Foo">
-                <ECProperty propertyName="A" typeName="string"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
                 <ECProperty propertyName="B" typeName="int"/>
                 <ECProperty propertyName="C" typeName="double"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="A" typeName="string"/>
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -908,7 +995,7 @@ TEST_F(BulkInstanceWriterFixture, FullUpdateNullsUnboundProperties) {
     insert(partialKey);
     insert(fullKey);
 
-    // partial: only A is written, B and C survive
+    // partial: only the level of A is written, B and C survive
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(partialKey, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("A")->BindText("a2", IECSqlBinder::MakeCopy::Yes);
     }, BulkInstanceWriter::UpdateOptions())) << writer.GetLastError().c_str();
@@ -919,7 +1006,7 @@ TEST_F(BulkInstanceWriterFixture, FullUpdateNullsUnboundProperties) {
     EXPECT_EQ(1, (*inst)["B"].GetInt());
     EXPECT_DOUBLE_EQ(2.5, (*inst)["C"].GetDouble());
 
-    // full: only A is bound, so B and C are nulled
+    // full: only A is bound, so B and C are nulled even though their level was not touched
     ASSERT_EQ(BE_SQLITE_DONE, writer.Update(fullKey, [](BulkInstanceWriter::IBindContext const& ctx) {
         ctx.FindBinder("A")->BindText("a3", IECSqlBinder::MakeCopy::Yes);
     }, BulkInstanceWriter::UpdateOptions().UseFullUpdate())) << writer.GetLastError().c_str();
@@ -946,15 +1033,22 @@ TEST_F(BulkInstanceWriterFixture, FullUpdateNullsUnboundProperties) {
 
 //---------------------------------------------------------------------------------------
 //! A full update knows its property set up-front, so it never needs a discovery pass. It also
-//! must not disturb the guess the partial updates of the same class rely on.
+//! must not disturb the partial updates of the same class.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BulkInstanceWriterFixture, FullUpdateAlwaysInvokesCallbackOnce) {
     ASSERT_EQ(SUCCESS, SetupECDb("bulkwriter_fullupdate_cb.ecdb", SchemaItem(R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECEntityClass typeName="Foo">
-                <ECProperty propertyName="A" typeName="int"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.04" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.04"><MapStrategy>TablePerHierarchy</MapStrategy></ClassMap>
+                </ECCustomAttributes>
                 <ECProperty propertyName="B" typeName="int"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="A" typeName="int"/>
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -986,7 +1080,7 @@ TEST_F(BulkInstanceWriterFixture, FullUpdateAlwaysInvokesCallbackOnce) {
     EXPECT_EQ(5, (*inst)["A"].GetInt());
     EXPECT_EQ(10, (*inst)["B"].GetInt());
 
-    // interleaving a full update must not cost the partial updates their guess
+    // interleaving a full update must not change what the partial updates cost
     int partialInvocations = 0;
     auto partialUpdate = [&](int v) {
         ASSERT_EQ(BE_SQLITE_DONE, writer.Update(key, [&](BulkInstanceWriter::IBindContext const& ctx) {
@@ -999,7 +1093,7 @@ TEST_F(BulkInstanceWriterFixture, FullUpdateAlwaysInvokesCallbackOnce) {
     const auto afterFirstPartial = partialInvocations;
     fullUpdate(7);
     partialUpdate(200);
-    EXPECT_EQ(afterFirstPartial + 1, partialInvocations) << "the full update must not invalidate the partial update guess";
+    EXPECT_EQ(afterFirstPartial + 1, partialInvocations) << "a partial update always runs the callback exactly once";
 
     inst = ReadInstance(key);
     ASSERT_TRUE(inst.has_value());

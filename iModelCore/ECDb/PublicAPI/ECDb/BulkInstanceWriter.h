@@ -10,6 +10,7 @@
 #include <ECDb/SchemaManager.h>
 #include <functional>
 #include <optional>
+#include <set>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -42,12 +43,26 @@ public:
 //! Values are bound through IECSqlBinder, exactly like InstanceReader exposes values
 //! through IECSqlValue.
 //!
-//! Update supports partial updates: only the properties for which a binder was requested
-//! are written, all other columns retain their current value in the database.
+//! Update supports partial updates at the granularity of a <b>hierarchy level</b>. A level is
+//! the ECClass that declares a property, so the properties of Foo : Goo : Base partition into
+//! a Base, a Goo and a Foo segment, each backed by its own UPDATE statement. Only the levels
+//! the caller actually wrote are executed, so an update that touches derived properties never
+//! rewrites the base columns and never maintains indexes over them. Level statements are
+//! shared between sibling classes, because an inherited property resolves to the same table
+//! and the same column in every subclass of a table per hierarchy mapping.
+//!
+//! A mixin is never a level of its own. A mixin is an interface rather than a storage class:
+//! its properties are merged into the entity class that implements it and are mapped by that
+//! class, so they group with the implementing class's own local properties.
+//!
+//! @warning Partiality is level granular, not property granular. Requesting a binder for any
+//! property of a level executes that level's statement, which writes <b>all</b> of that level's
+//! columns. Properties of a written level that the caller did not bind are set to NULL. Callers
+//! must therefore supply a whole level or none of it.
 //!
 //! Remarks:
-//!  - Requesting a binder marks the property as written. Requesting a binder but never
-//!    calling any Bind* method on it is equivalent to calling BindNull().
+//!  - Requesting a binder marks the property, and therefore its level, as written. Requesting a
+//!    binder but never calling any Bind* method on it is equivalent to calling BindNull().
 //!  - Entity classes and link table relationship classes are supported. Foreign key
 //!    (end table) relationship classes are not supported.
 //!  - The property identified by the ClassHasCurrentTimeStampProperty custom attribute is
@@ -72,6 +87,9 @@ public:
         virtual int _GetPropertyCount() const = 0;
         virtual int _GetPropertyIndex(Utf8CP propertyName) const = 0;
         virtual ECN::ECPropertyCP _GetProperty(int propertyIndex) const = 0;
+        virtual int _GetLevelCount() const = 0;
+        virtual ECN::ECClassCP _GetLevelClass(int levelIndex) const = 0;
+        virtual int _GetPropertyLevel(int propertyIndex) const = 0;
 
     public:
         virtual ~IBindContext() {}
@@ -89,6 +107,16 @@ public:
         //! Binder for the named root property. Marks the property as written.
         //! Returns nullptr if the property does not exist. Lookup is case insensitive.
         IECSqlBinder* FindBinder(Utf8CP propertyName) const { return _FindBinder(propertyName); }
+        //! Number of hierarchy levels the class's writable properties partition into.
+        //! Levels are ordered root -> leaf. Only meaningful during an update.
+        int GetLevelCount() const { return _GetLevelCount(); }
+        //! The ECClass that declares the properties of the given level, or nullptr if the
+        //! index is out of range.
+        ECN::ECClassCP GetLevelClass(int levelIndex) const { return _GetLevelClass(levelIndex); }
+        //! Level of a root property, or -1 if the index is out of range. Writing any property
+        //! of a level writes every property of that level, so this tells a caller exactly
+        //! which other properties it has to supply.
+        int GetPropertyLevel(int propertyIndex) const { return _GetPropertyLevel(propertyIndex); }
         //! Convenience finder with the same shape as InstanceReader's PropertyReader::Finder.
         std::optional<PropertyBinderRef> Find(Utf8CP propertyName) const {
             auto binder = _FindBinder(propertyName);
@@ -153,10 +181,11 @@ public:
     //+===============+===============+===============+===============+===============+======
     struct UpdateOptions final : Options {
         enum class UpdateMode {
-            //!< only the properties the callback requested a binder for are written, every other
-            //!< column keeps its current value
+            //!< only the hierarchy levels the callback requested a binder in are written. Every
+            //!< column of a written level is written, every column of an untouched level keeps
+            //!< its current value
             Partial,
-            //!< every property of the class is written. The callback is expected to supply the
+            //!< every level of the class is written. The callback is expected to supply the
             //!< full instance: properties it does not bind are set to NULL
             Full,
         };
@@ -164,6 +193,8 @@ public:
     private:
         bool m_failIfNoRowChanged = false;
         UpdateMode m_mode = UpdateMode::Partial;
+        bool m_forceAllLevels = false;
+        std::set<ECN::ECClassId> m_forcedLevels;
 
     public:
         UpdateOptions() : Options(WriterOp::Update) {}
@@ -177,17 +208,37 @@ public:
         UpdateMode GetUpdateMode() const { return m_mode; }
         bool IsPartialUpdate() const { return m_mode == UpdateMode::Partial; }
         bool IsFullUpdate() const { return m_mode == UpdateMode::Full; }
-        //! Writes only the properties the callback binds. This is the default.
+        //! Writes only the levels the callback binds into. This is the default.
         UpdateOptions& UsePartialUpdate() {
             m_mode = UpdateMode::Partial;
             return *this;
         }
-        //! Writes every property of the class. The callback must supply the full instance, any
-        //! property it does not bind is set to NULL. Never needs a discovery pass, so the
-        //! callback is always invoked exactly once.
+        //! Writes every level of the class. The callback must supply the full instance, any
+        //! property it does not bind is set to NULL.
         UpdateOptions& UseFullUpdate() {
             m_mode = UpdateMode::Full;
             return *this;
+        }
+
+        bool GetForceAllLevels() const { return m_forceAllLevels; }
+        //! Executes every level's statement even when the callback wrote nothing into it. The
+        //! properties of an untouched level are set to NULL, so this is only meaningful when
+        //! the callback supplies them. Off by default. Its purpose is to fire database triggers
+        //! (for example the ClassHasCurrentTimeStampProperty trigger, whose property the writer
+        //! never writes itself) on a level that would otherwise be skipped.
+        UpdateOptions& ForceLevels() {
+            m_forceAllLevels = true;
+            return *this;
+        }
+        //! Same as ForceLevels() but restricted to the level declared by the given ECClass.
+        UpdateOptions& ForceLevel(ECN::ECClassId levelClassId) {
+            if (levelClassId.IsValid())
+                m_forcedLevels.insert(levelClassId);
+
+            return *this;
+        }
+        bool IsLevelForced(ECN::ECClassId levelClassId) const {
+            return m_forceAllLevels || m_forcedLevels.find(levelClassId) != m_forcedLevels.end();
         }
     };
 
@@ -205,17 +256,16 @@ public:
     //! Inserts a new instance of the given class. The callback is invoked to bind the values.
     ECDB_EXPORT DbResult Insert(ECN::ECClassId classId, BindCallback callback, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Insert(ECN::ECClassId classId, BindCallback callback, InsertOptions const& options);
-    //! Updates an existing instance. In the default partial mode only properties for which the
-    //! callback requested a binder are written, all other columns keep their current value. In
-    //! full mode (UpdateOptions::UseFullUpdate) every property is written and the callback must
-    //! supply the full instance, any property it does not bind is set to NULL.
-    //! @note Partial UPDATE statements are specialized for the exact set of properties that is
-    //! written, so the set has to be known before the values can be bound. The set of the previous
-    //! partial update of the same class is used as a guess, which makes the steady state of a bulk
-    //! loop a single callback invocation. Whenever the guess is wrong (the first partial update of
-    //! a class, or a call that writes a different set than the previous one) the callback is
-    //! invoked twice: once to discover the set and once to bind it. Callbacks must therefore be
-    //! free of side effects. Full updates always invoke the callback exactly once.
+    //! Updates an existing instance. In the default partial mode only the hierarchy levels the
+    //! callback requested a binder in are written; every column of a written level is written and
+    //! every column of an untouched level keeps its current value. In full mode
+    //! (UpdateOptions::UseFullUpdate) every level is written and the callback must supply the
+    //! full instance, any property it does not bind is set to NULL.
+    //! @note Partiality is level granular. Binding one property of a level writes all of that
+    //! level's columns, so properties of that level the callback did not bind become NULL. Use
+    //! IBindContext::GetPropertyLevel to discover which properties belong together.
+    //! @note The bind callback is always invoked exactly once. UPDATE statements no longer depend
+    //! on the set of written properties, so no discovery pass is needed.
     ECDB_EXPORT DbResult Update(ECInstanceKeyCR key, BindCallback callback, UpdateOptions const& options);
     ECDB_EXPORT DbResult Update(ECInstanceKeyCR key, BindCallback callback);
 
