@@ -1232,6 +1232,59 @@ TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsThroughEntryPointConverge)
     });
     }
 
+// ---------------------------------------------------------------------------------------
+// Two briefcases import divergent versions of the same schema through one shared sync db before
+// either pushes. The first takes it to 1.0.2 (two properties). The sync db is written immediately,
+// so the second briefcase's attempt to import the older 1.0.1 (one property) is a downgrade the sync
+// db refuses. After both push, a briefcase built fresh from the timeline holds the surviving 1.0.2.
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncImportTestFixture, ConcurrentImportsThroughSyncDbSameSchemaDivergentVersions)
+    {
+    ECDbHub hub;
+    SchemaSyncDb syncDb("upstream-divergent-versions");
+    std::unique_ptr<TrackedECDb> b1, b2;
+    SetupSyncedPair(hub, syncDb, b1, b2);
+
+    // 1.0.1 has one property (p1); 1.0.2 keeps p1 and adds a second (p2).
+    const auto v101 = SharedColumnSchema("01.00.01", 1);
+    const auto v102 = SharedColumnSchema("01.00.02", 2);
+
+    // 1) The first briefcase imports 1.0.2 through the sync db, without pushing to the timeline.
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, v102, SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    EXPECT_STREQ("1.0.2", VersionOf(*b1, "UpstreamTest").c_str());
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.2", VersionOf(sync, "UpstreamTest").c_str()) << "the import did not reach the sync db";
+    });
+
+    // 2) The second briefcase imports the older 1.0.1 through the same sync db, without pushing. The
+    //    sync db already holds 1.0.2, so this is a downgrade. What happens is b2 gets schema version 1.0.2. Is this a bug?
+    EXPECT_EQ(SchemaImportResult::OK, ImportSchema(*b2, v101, SchemaManager::SchemaImportOptions::None, syncDb.GetSyncDbUri()))
+        << "the sync db accepted an older schema version over a newer one";
+    ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
+    EXPECT_STREQ("1.0.2", VersionOf(*b2, "UpstreamTest").c_str());
+    syncDb.WithReadOnly([&](ECDbR sync) {
+        EXPECT_STREQ("1.0.2", VersionOf(sync, "UpstreamTest").c_str()) << "the import did not reach the sync db";
+    });
+
+    // 3) Both push. b1 carries 1.0.2 to the timeline; b2 has nothing local, so it merely catches up.
+    b1->PullMergePush("push 1.0.2");
+    b2->PullMergePush("b2 just merges 1.0.2");
+    MaterializeAfterMerge(*b2);
+    EXPECT_STREQ("1.0.2", VersionOf(*b2, "UpstreamTest").c_str()) << "b2 did not converge on the surviving version";
+
+    // 4) A briefcase built fresh from the timeline holds 1.0.2, with both properties.
+    auto b3 = hub.CreateBriefcase();
+    MaterializeAfterMerge(*b3);
+    EXPECT_STREQ("1.0.2", VersionOf(*b3, "UpstreamTest").c_str());
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(*b3, "SELECT p1, p2 FROM ut.Derived"))
+        << "the third briefcase is missing a property that 1.0.2 should have";
+    ExpectNoForeignKeyViolations(*b3, "third briefcase built from the timeline");
+    ExpectECTablesIdentical(*b3, *b1, "third briefcase vs the briefcase that imported 1.0.2");
+    }
+
 //=======================================================================================
 // The upgrade path: the import runs on the briefcase, and the sync db is rebuilt from the result.
 // Legal only under the exclusive schema lock, which is what makes the overwrite's deletes safe.
