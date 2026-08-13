@@ -196,12 +196,11 @@ sources under
 Mend's filesystem scan root. Preserving the relative path prevents collisions between nested
 consumers with the same directory name. Binary caching is disabled for these runs.
 
-The Mend script requests these behaviors through explicit wrapper options: `-OnlyDownloads`,
-`-DisableBinaryCache`, and `-DisableCompilerTracking` for `vcpkg_run_install.ps1`, or
-`--only-downloads`, `--disable-binary-cache`, and `--disable-compiler-tracking` for
-`vcpkg_run_install.sh`. The wrappers translate them to vcpkg command
-line options, so the orchestration script does not modify ambient vcpkg environment variables.
-Compiler tracking must be off because vcpkg otherwise probes the target triplet's compiler to hash
+The Mend script requests this behavior through a single explicit wrapper option: `-MendScan` for
+`vcpkg_run_install.ps1`, or `--mend-scan` for `vcpkg_run_install.sh`. The wrappers translate it to
+vcpkg command line options — download-only, no binary cache, and no compiler tracking — so the
+orchestration script does not modify ambient vcpkg environment variables. The three go together:
+compiler tracking must be off because vcpkg otherwise probes the target triplet's compiler to hash
 it into the package ABI, which fails on a host that cannot compile for that triplet (for example
 the `x64-linux` scan run from the Windows Mend agent). The wrappers implement it by generating a
 triplet that includes the repo triplet and sets `VCPKG_DISABLE_COMPILER_TRACKING`, so the scan

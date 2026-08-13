@@ -3,15 +3,15 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # Wrapper for vcpkg install, invoked from .mke build files.
-# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache] [-DisableCompilerTracking]
+# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-MendScan]
+#   -MendScan: materialize sources for a Mend scan instead of building (download only, no binary
+#              cache, no compiler tracking).
 #---------------------------------------------------------------------------------------------
 param(
     [Parameter(Position = 0)] [string] $ManifestDir,
     [Parameter(Position = 1)] [string] $InstallRoot,
     [Parameter(Position = 2)] [string] $Triplet,
-    [switch] $OnlyDownloads,
-    [switch] $DisableBinaryCache,
-    [switch] $DisableCompilerTracking
+    [switch] $MendScan
 )
 
 $ErrorActionPreference = 'Stop'
@@ -168,7 +168,7 @@ function Invoke-NativeProcessInKillOnCloseJob([string] $exePath, [string[]] $arg
 
 try {
     if (-not $ManifestDir -or -not $InstallRoot -or -not $Triplet) {
-        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache] [-DisableCompilerTracking]'
+        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-MendScan]'
     }
 
     $ManifestDir = Normalize-Path $ManifestDir
@@ -268,7 +268,7 @@ try {
     # when the host cannot compile for that triplet (e.g. scanning x64-linux sources on Windows).
     # Shadow the repo triplet with a generated one that opts out; the repo triplet still supplies
     # every build setting, so nothing else about the invocation changes.
-    if ($DisableCompilerTracking) {
+    if ($MendScan) {
         $generatedTriplets = [System.IO.Path]::Combine($InstallRoot, 'generated-triplets')
         if (-not (Ensure-Directory $generatedTriplets)) {
             throw "generated triplet directory '$generatedTriplets' could not be created"
@@ -403,12 +403,10 @@ namespace VcpkgLock {
                 if ([System.IO.Directory]::Exists($overlayPorts)) {
                     $arguments += "--overlay-ports=$overlayPorts"
                 }
-                if ($OnlyDownloads) {
+                if ($MendScan) {
                     $arguments += '--only-downloads'
-                    Write-Output "vcpkg: source download mode enabled; extracted sources will remain under '$InstallRoot\buildtrees'"
-                }
-                if ($DisableBinaryCache) {
                     $arguments += '--binarysource=clear'
+                    Write-Output "vcpkg: source download mode enabled; extracted sources will remain under '$InstallRoot\buildtrees'"
                     Write-Output 'vcpkg: binary cache disabled for this invocation'
                 }
 
