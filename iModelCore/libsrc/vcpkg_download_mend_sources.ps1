@@ -57,11 +57,20 @@ foreach ($manifestFile in @(Get-ChildItem -Path $LibsrcDir -Filter vcpkg.json -F
     $manifestDir = $manifestFile.Directory.FullName
     if ([System.IO.File]::Exists([System.IO.Path]::Combine($manifestDir, 'vcpkg-configuration.json'))) {
         $manifests += $manifestFile
+        continue
     }
-    elseif ($manifestFile.Directory.Parent -and $manifestFile.Directory.Parent.Name -eq 'ports') {
-        # Overlay port manifests live in <consumer>/ports/<port>/ and are not consumers themselves.
+
+    # Port manifests nested under a consumer (ports/, overlay-ports/) are not consumers themselves.
+    $nestedInConsumer = $false
+    for ($ancestor = $manifestFile.Directory.Parent;
+         $ancestor -and $ancestor.FullName.Length -gt $LibsrcDir.Length;
+         $ancestor = $ancestor.Parent) {
+        if ([System.IO.File]::Exists([System.IO.Path]::Combine($ancestor.FullName, 'vcpkg-configuration.json'))) {
+            $nestedInConsumer = $true
+            break
+        }
     }
-    else {
+    if (-not $nestedInConsumer) {
         # Skipping this silently would drop the library out of the Mend scan without any signal.
         throw "'$($manifestFile.FullName)' has no sibling 'vcpkg-configuration.json', so it is not recognized as a vcpkg consumer"
     }
