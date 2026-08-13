@@ -392,6 +392,15 @@ DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
 }
 
 //--------------------------------------------------------------------------------------
+// Only half of the answer: whether this briefcase sits at the tip is an iModelHub fact, so the
+// caller has to have pulled first.
+// @bsimethod
+//--------------------------------------------------------------------------------------
+bool DgnDb::_IsLevelWithTimeline() {
+    return !IsBriefcase() || !Txns().HasPendingTxns();
+}
+
+//--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged)

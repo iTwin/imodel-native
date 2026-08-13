@@ -68,6 +68,9 @@ struct SchemaSync final {
         //! The briefcase and the sync db are on different EC profile versions. Either could then map
         //! the same schema differently, so nothing may be imported until they are aligned.
         ERROR_PROFILE_VERSION_MISMATCH,
+        //! Schema sync was enabled from a briefcase holding unpushed changes or missing pushed ones.
+        //! The sync db would then mirror a state no other briefcase can reach.
+        ERROR_BRIEFCASE_NOT_LEVEL_WITH_TIMELINE,
     };
     //=======================================================================================
     // @bsiclass
@@ -136,10 +139,10 @@ private:
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
     int64_t m_modifiedRowCount;
-    Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
+    Status InitInternal(SyncDbUri const&, Utf8StringCR, bool);
     Status PullInternal(SyncDbUri const&, TableList);
     Status ImportIntoSyncDb(SyncDbUri const&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, bvector<Utf8String>& importedSchemaNames, DataVer dataVerBeforeImport);
-    Status MirrorToSyncDb(SyncDbUri const&, TableList upsertOnlyTables);
+    Status MirrorToSyncDb(SyncDbUri const&);
     Status OverwriteSyncDbInternal(SyncDbUri const&);
     Status VerifyProfileVersionsMatch(SyncDbUri const&) const;
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
@@ -181,7 +184,10 @@ public:
     //! @param[in] schemaNames names of the schemas to adopt. Their references are added automatically.
     //! @note Rows inside the closure that the sync db no longer has are deleted locally, since the
     //!       sync db is the record of what those schemas look like.
-    ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames);
+    //! Copy the closure of the named schemas down from the sync db and build what it implies. When
+    //! adoptedDataVer is given it is stamped on the briefcase before the adopt commits, so the
+    //! version and the rows it describes are in one txn - a rebase replays txn by txn.
+    ECDB_EXPORT Status AdoptSchemas(SyncDbUri const&, bvector<Utf8String> const& schemaNames, DataVer adoptedDataVer = 0);
     //! Import schemas the "upstream" way: decide once in the sync db, then adopt.
     //!
     //! The two steps this performs are:
@@ -232,6 +238,12 @@ public:
     //!       released, or the sync db describes a layout no briefcase has.
     ECDB_EXPORT Status OverwriteSyncDb(SyncDbUri const&);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
+    //! Whether this change is the be_Prop row recording which sync db state a briefcase is on. That
+    //! row is tracked, so it travels in the same changeset as the ec_ rows the import it belongs to
+    //! produced - which is what lets a conflict handler tell which of two sides is the later one.
+    ECDB_EXPORT static bool IsLocalDbInfoChange(BeSQLite::Changes::Change const& change);
+    //! Read the data version out of such a change's new value.
+    ECDB_EXPORT static bool TryGetDataVersion(DataVer& dataVer, BeSQLite::Changes::Change const& change);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
     ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
 };

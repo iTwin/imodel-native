@@ -908,6 +908,15 @@ std::vector<ECDbChangeSet const*> ECDbChangeTracker::GetLocalChangesets() const 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<ECDbChangeSet::Ptr> ECDbChangeTracker::TakeLocalChangesets() {
+    auto taken = std::move(m_localChangesets);
+    m_localChangesets.clear();
+    return taken;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECDbChangeSet::Ptr ECDbChangeTracker::MakeChangeset(bool deleteLocalChangesets, Utf8CP op) {
     bvector<Utf8String> ddlChanges;
     ChangeGroup group;
@@ -944,6 +953,13 @@ ECDbChangeSet::Ptr ECDbChangeTracker::MakeChangeset(bool deleteLocalChangesets, 
 ChangeTracker::OnCommitStatus ECDbChangeTracker::_OnCommit(bool isCommit, Utf8CP operation) {
     if (isCommit) {
         auto changeset = ECDbChangeSet::From(*this, operation);
+        if (!m_carriedDdl.empty()) {
+            if (changeset == nullptr)
+                changeset = ECDbChangeSet::Create((int)(m_localChangesets.size() + 1), operation, m_carriedDdl.c_str(), true);
+            else
+                changeset->PrependDDL(m_carriedDdl);
+            m_carriedDdl.clear();
+        }
         if (changeset != nullptr) {
             m_localChangesets.push_back(std::move(changeset));
         }
@@ -1108,6 +1124,19 @@ bvector<Utf8String> ECDbChangeSet::GetDDLs() const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbChangeSet::PrependDDL(Utf8StringCR ddl) {
+    if (ddl.empty())
+        return;
+    Utf8String combined(ddl);
+    if (!m_ddl.empty())
+        combined.append(";").append(m_ddl);
+    m_ddl = combined;
+    m_hasSchemaChanges = true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECDbChangeSet::Ptr ECDbChangeSet::Clone() const {
     auto changeset = std::make_unique<ECDbChangeSet>(0, m_operation.c_str(), m_ddl.c_str(), m_hasSchemaChanges);
     for (auto& chunk : this->m_data.m_chunks) {
@@ -1151,6 +1180,79 @@ ECDbChangeSet::Ptr ECDbChangeSet::Create(int index, Utf8CP op, Utf8CP ddl, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbChangeSet::DetermineSchemaSyncPrecedence() {
+    m_ecChangesSupersedeBriefcase = false;
+    if (m_ecdb == nullptr || !m_ecdb->Schemas().GetSchemaSync().IsEnabled())
+        return;
+
+    SchemaSync::DataVer txnDataVer = 0;
+    for (auto& change : GetChanges()) {
+        if (SchemaSync::IsLocalDbInfoChange(change) && SchemaSync::TryGetDataVersion(txnDataVer, change))
+            break;
+    }
+
+    m_ecChangesSupersedeBriefcase = txnDataVer != 0 && txnDataVer > m_ecdb->Schemas().GetSchemaSync().GetInfo().GetDataVersion();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Mirrors ConflictingRowDiffers in ChangesetTxns.cpp: the row being re-inserted under an id this
+* briefcase already holds should be the row it already holds, since one authority produced both.
+* Returns false when the comparison cannot be made.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ConflictingRowDiffers(DbR db, Changes::Change const& change) {
+    const auto tableName = change.GetTableName();
+    const auto columnCount = change.GetColumnCount();
+
+    bvector<Utf8String> columns;
+    if (!db.GetColumns(columns, tableName.c_str()) || (int) columns.size() != columnCount)
+        return false;
+
+    Utf8String sql("SELECT 1 FROM [");
+    sql.append(tableName).append("] WHERE ");
+    for (int i = 0; i < columnCount; ++i) {
+        if (i > 0)
+            sql.append(" AND ");
+
+        sql.append("[").append(columns[i]).append("] IS ?"); // IS rather than = so that nulls compare
+    }
+
+    auto stmt = db.GetCachedStatement(sql.c_str());
+    if (!stmt.IsValid())
+        return false;
+
+    for (int i = 0; i < columnCount; ++i) {
+        const auto val = change.GetValue(i, Changes::Change::Stage::New);
+        if (!val.IsValid() || BE_SQLITE_OK != stmt->BindDbValue(i + 1, val))
+            return false;
+    }
+    return BE_SQLITE_ROW != stmt->Step();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* The rows an insert conflict could not write in place. FKNOACTION covers a whole apply rather than
+* one change, so they go in as an apply of their own: it holds nothing but these rows, so the delete
+* inside Replace has no children to cascade to and the row is back before the deferred check runs.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ECDbChangeSet::ApplySupersedingRows(ECDbR db) {
+    if (!m_hasSupersedingRows)
+        return BE_SQLITE_OK;
+
+    ChangeSet rows;
+    auto rc = rows.FromChangeGroup(m_supersedingRows);
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    auto args = ApplyChangesArgs::Default()
+        .SetFkNoAction(true)
+        .SetConflictHandler([](ChangeStream::ConflictCause, Changes::Change) { return ChangeStream::ConflictResolution::Replace; });
+    return rows.ApplyChanges(db, args);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) {
 
     Utf8CP tableName = nullptr;
@@ -1158,6 +1260,7 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
     DbOpcode opcode;
     DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
+    auto const* briefcase = dynamic_cast<TrackedECDb const*>(m_ecdb);
 
     if (cause == ChangeSet::ConflictCause::Conflict) {
         if (0 == ::strncmp(tableName, "ec_", 3) && m_ecdb != nullptr && m_ecdb->Schemas().GetSchemaSync().IsEnabled()) {
@@ -1167,23 +1270,40 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
             // live here; production turns them off for a schema changeset that updates or deletes
             // ec_cache_ rows, which an additive import does not produce.
             // Under schema sync the rows arriving here are normally ones this briefcase already holds,
-            // because every briefcase gets its ids from the same authority, so skipping keeps what is
-            // already correct instead of destroying dependents.
-            // Note this does not distinguish an identical row from a genuinely differing one; a
-            // differing row is a real conflict and needs a real decision. Mirrors the rule in
-            // ChangesetFileReader::_OnConflict.
+            // because every briefcase gets its ids from the same authority. A differing row from a
+            // superseding txn is written afterwards instead, by ApplySupersedingRows.
+            if (briefcase != nullptr && briefcase->IsReplayingLocalChangesets() && m_ecChangesSupersedeBriefcase &&
+                ConflictingRowDiffers(const_cast<ECDb&>(*m_ecdb), iter) && BE_SQLITE_OK == m_supersedingRows.AddChange(iter))
+                m_hasSupersedingRows = true;
+
             return ChangeSet::ConflictResolution::Skip;
         }
         return ChangeSet::ConflictResolution::Replace;
     }
     if (cause == ChangeSet::ConflictCause::Data) {
+        // Changesets reach the timeline in push order, which is not the order the sync db decided
+        // things in. Both sides carry the sync db version they were produced against, so keep the
+        // later one instead of whichever pushed first. Mirrors LocalChangeSet::_OnConflict, which
+        // covers the same ground during rebase, and ChangesetFileReader::_OnConflict for the
+        // be_Prop row itself.
+        const auto isECRow = 0 == ::strncmp(tableName, "ec_", 3);
+        if (briefcase != nullptr && briefcase->IsReplayingLocalChangesets() && (isECRow || SchemaSync::IsLocalDbInfoChange(iter)))
+            return m_ecChangesSupersedeBriefcase ? ChangeSet::ConflictResolution::Replace : ChangeSet::ConflictResolution::Skip;
+
+        if (SchemaSync::IsLocalDbInfoChange(iter) && m_ecdb != nullptr) {
+            SchemaSync::DataVer incomingDataVer = 0;
+            const auto heldDataVer = m_ecdb->Schemas().GetSchemaSync().GetInfo().GetDataVersion();
+            return SchemaSync::TryGetDataVersion(incomingDataVer, iter) && incomingDataVer > heldDataVer
+                ? ChangeSet::ConflictResolution::Replace
+                : ChangeSet::ConflictResolution::Skip;
+        }
+
         // A briefcase holding local changes keeps its own ec_ rows: it got them from the sync db,
         // which decides them, so an incoming changeset carrying a different "before" value has
         // nothing to say about them. Mirrors ChangesetFileReader::_OnConflict, which does this in
         // the HasPendingTxns() branch. Without local changes the conflict falls through to Replace
         // below, exactly as it does there.
-        auto const* briefcase = dynamic_cast<TrackedECDb const*>(m_ecdb);
-        if (0 == ::strncmp(tableName, "ec_", 3) && briefcase != nullptr && briefcase->HasLocalChangesets())
+        if (isECRow && briefcase != nullptr && briefcase->HasLocalChangesets())
             return ChangeSet::ConflictResolution::Skip;
     }
     if (cause == ChangeSet::ConflictCause::ForeignKey) {
@@ -1192,6 +1312,7 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
         int nConflicts = 0;
         result = iter.GetFKeyConflicts(&nConflicts);
         BeAssert(result == BE_SQLITE_OK);
+        printf("[mockhub] %d foreign key conflicts applying a changeset - aborting the merge\n", nConflicts);
         LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
         return ChangeSet::ConflictResolution::Abort ;
     }
@@ -1339,22 +1460,112 @@ struct PrintChangeSet {
 };
 
 /*---------------------------------------------------------------------------------**//**
+* Applies the ec_ part of a changeset in effective opcode order - deletes, then updates, then
+* inserts. A ChangeGroup scrambles operation order within a table, so on an inverted apply an
+* insert can land ahead of the delete that frees its unique name and the conflict handler skips
+* over the collision. Ported from TxnManager's ApplySchemaChangesInOrder; sqlite flips opcodes
+* while inverting, so the raw order has to be the mirror of the wanted one.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
-    if (m_hub == nullptr || m_tracker == nullptr) {
-        return BE_SQLITE_ERROR;
+static DbResult ApplySchemaChangesInOrder(ECDbChangeSet& changeset, ECDbR db, ApplyChangesArgs args) {
+    const bool invert = args.GetInvert();
+
+    ChangeGroup groups[3]; // [0]=Delete, [1]=Update, [2]=Insert
+    for (auto change : Changes(changeset, false)) {
+        if (!ApplyChangesArgs::IsSchemaChange(change))
+            continue;
+        auto rc = BE_SQLITE_OK;
+        switch (change.GetOpcode()) {
+            case DbOpcode::Delete: rc = groups[0].AddChange(change); break;
+            case DbOpcode::Update: rc = groups[1].AddChange(change); break;
+            case DbOpcode::Insert: rc = groups[2].AddChange(change); break;
+            default: break;
+        }
+        if (rc != BE_SQLITE_OK)
+            return rc;
     }
-    auto changesetsToApply = m_hub->Query(m_changesetId + 1);
 
-#ifdef TRACE_CS
-    auto cancelTrace = GetTraceStmtEvent().AddListener([](TraceContext const& ctx, Utf8CP sql) {
-        printf("[STMT] %s\n", ctx.GetExpandedSql().c_str());
+    const int order[] = { invert ? 2 : 0, 1, invert ? 0 : 2 };
 
+    ChangeSet ordered;
+    for (int idx : order) {
+        ChangeSet part;
+        auto rc = part.FromChangeGroup(groups[idx]);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        if (part._IsEmpty())
+            continue;
+        // ReadFrom concatenates raw bytes; ConcatenateWith would run it through a ChangeGroup again.
+        auto reader = part._GetReader();
+        rc = ordered.ReadFrom(*reader);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+    }
+
+    if (ordered._IsEmpty())
+        return BE_SQLITE_OK;
+
+    // ordered is a plain ChangeSet whose own _OnConflict aborts, so hand conflicts back to the
+    // original stream and keep its ec_ rules.
+    args.SetConflictHandler([&changeset](ChangeStream::ConflictCause cause, Changes::Change change) {
+        return changeset.OnConflict(cause, change);
     });
-#endif
+    return ordered.ApplyChanges(db, args);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Applies one changeset the way TxnManager::ApplyChanges does: schema rows first and in opcode
+* order, data rows after.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult ApplyOneChangeset(ECDbChangeSet& changeset, ECDbR db, bool invert) {
+    auto args = [&]() { return ApplyChangesArgs::Default().SetInvert(invert).SetIgnoreNoop(true); };
+    if (!changeset.HasSchemaChanges())
+        return changeset.ApplyChanges(db, args());
+
+    auto rc = ApplySchemaChangesInOrder(changeset, db, args().ApplyOnlySchemaChanges());
+    if (rc != BE_SQLITE_OK)
+        return rc;
+    return changeset.ApplyChanges(db, args().ApplyOnlyDataChanges());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* A rebase failure carries no usable text - a deferred foreign key violation surfaces as a bare
+* BE_SQLITE_CONSTRAINT from the apply - so name the phase and the dangling rows on the way out.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ReportRebaseFailure(ECDbR db, Utf8CP phase, ECDbChangeSet const& changeset, DbResult rc) {
+    printf("[mockhub] rebase failed in %s on '%s': %s (%s)\n", phase, changeset.GetOperation().c_str(),
+        BeSQLiteLib::GetErrorName(rc), db.GetLastError().c_str());
+
+    Statement stmt;
+    if (stmt.Prepare(db, "PRAGMA main.foreign_key_check") != BE_SQLITE_OK)
+        return;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        printf("[mockhub]   dangling: table=%s rowid=%lld parent=%s fkid=%d\n",
+            stmt.GetValueText(0), stmt.GetValueInt64(1), stmt.GetValueText(2), stmt.GetValueInt(3));
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TrackedECDb::RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& incoming) {
+    // Follows TxnManager: reverse the local txns, apply the incoming changesets against a briefcase with
+    // nothing local, then reinstate each local txn and re-record what actually landed. A local changeset's
+    // DDL is left alone throughout - it cannot be reversed, and PullMergeRebaseReinstateTxn skips it too.
+    auto localChangesets = m_tracker->TakeLocalChangesets();
     m_tracker->EnableTracking(false);
-    for (auto& changesetToApply : changesetsToApply) {
+
+    for (auto it = localChangesets.rbegin(); it != localChangesets.rend(); ++it) {
+        (*it)->SetECDb(*this);
+        auto rc = ApplyOneChangeset(**it, *this, true);
+        if (rc != BE_SQLITE_OK) {
+            ReportRebaseFailure(*this, "reverse", **it, rc);
+            return rc;
+        }
+    }
+
+    for (auto& changesetToApply : incoming) {
         changesetToApply->SetECDb(*this);
 #ifdef TRACE_CS
         PrintChangeSet::Print(*this, *changesetToApply);
@@ -1364,29 +1575,85 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
         for (auto& ddl : changesetToApply->GetDDLs())
             TryExecuteSql(ddl.c_str());
 
-        auto rc = changesetToApply->ApplyChanges(*this, false, true);
+        auto rc = ApplyOneChangeset(*changesetToApply, *this, false);
         if (rc != BE_SQLITE_OK) {
-            LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
-#ifdef TRACE_CS
-            cancelTrace();
-#endif
+            ReportRebaseFailure(*this, "apply incoming", *changesetToApply, rc);
             return rc;
         }
     }
-    if (!changesetsToApply.empty()) {
-        auto rc = AfterSchemaChangeSetApplied();
-        if (rc != BE_SQLITE_OK) {
-#ifdef TRACE_CS
-            cancelTrace();
-#endif
-            return rc;
-        }
+
+    auto rc = AfterSchemaChangeSetApplied();
+    if (rc != BE_SQLITE_OK) {
+        printf("[mockhub] rebase failed in AfterSchemaChangeSetApplied: %s (%s)\n", BeSQLiteLib::GetErrorName(rc), GetLastError().c_str());
+        return rc;
     }
+
     m_tracker->EnableTracking(true);
+    m_replayingLocalChangesets = true;
+    for (auto& local : localChangesets) {
+        local->SetECDb(*this);
+        local->DetermineSchemaSyncPrecedence();
+        rc = ApplyOneChangeset(*local, *this, false);
+        if (rc == BE_SQLITE_OK)
+            rc = local->ApplySupersedingRows(*this);
+        if (rc == BE_SQLITE_OK) {
+            m_tracker->CarryDdlIntoNextChangeset(local->GetDDL());
+            rc = SaveChanges(local->GetOperation().c_str());
+        }
+        if (rc != BE_SQLITE_OK) {
+            ReportRebaseFailure(*this, "replay local", *local, rc);
+            m_replayingLocalChangesets = false;
+            return rc;
+        }
+    }
+    m_replayingLocalChangesets = false;
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* The mock hub is in-process, so unlike DgnDb this can answer both halves - whether anything is
+* held back, and whether anything pushed by others is missing.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TrackedECDb::_IsLevelWithTimeline() {
+    if (m_hub == nullptr)
+        return true;
+
+    return !HasLocalChangesets() && m_changesetId == m_hub->GetTipChangesetId();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
+    if (m_hub == nullptr || m_tracker == nullptr) {
+        return BE_SQLITE_ERROR;
+    }
+
+#ifdef TRACE_CS
+    auto cancelTrace = GetTraceStmtEvent().AddListener([](TraceContext const& ctx, Utf8CP sql) {
+        printf("[STMT] %s\n", ctx.GetExpandedSql().c_str());
+
+    });
+#endif
+    SaveChanges(); // a rebase reverses committed changesets, so nothing may be left uncommitted
+
+    auto changesetsToApply = m_hub->Query(m_changesetId + 1);
+    if (!changesetsToApply.empty()) {
+        auto rc = RebaseOntoIncoming(changesetsToApply);
+        if (rc != BE_SQLITE_OK) {
+#ifdef TRACE_CS
+            cancelTrace();
+#endif
+            return rc;
+        }
+        // Query() hands back everything from m_changesetId + 1 to the tip.
+        m_changesetId += (int)changesetsToApply.size();
+    }
+
     if (!m_tracker->GetLocalChangesets().empty()){
         auto changeset = m_tracker->MakeChangeset(true, comment);
         if (changeset == nullptr) {
-            m_tracker->EnableTracking(true);
 #ifdef TRACE_CS
             cancelTrace();
 #endif

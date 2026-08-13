@@ -30,6 +30,9 @@ struct ECDbChangeSet : public BeSQLite::ChangeSet {
         bool m_hasSchemaChanges;
         int m_index;
         ECDb const* m_ecdb;
+        bool m_ecChangesSupersedeBriefcase = false;
+        BeSQLite::ChangeGroup m_supersedingRows;
+        bool m_hasSupersedingRows = false;
 
     private:
         ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
@@ -39,9 +42,17 @@ struct ECDbChangeSet : public BeSQLite::ChangeSet {
             : m_operation(op), m_ddl(ddl), m_hasSchemaChanges(isSchemaChangeset || !Utf8String::IsNullOrEmpty(ddl)), m_index(index), m_ecdb(nullptr) {}
         int GetIndex() const { return m_index; }
         bool HasSchemaChanges() const { return m_hasSchemaChanges; }
+        Utf8StringCR GetOperation() const { return m_operation; }
+        Utf8StringCR GetDDL() const { return m_ddl; }
+        void PrependDDL(Utf8StringCR ddl);
         bvector<Utf8String> GetDDLs() const;
         void SetECDb(ECDbCR ecdb) { m_ecdb = &ecdb; }
         ECDb const* GetECDb() const { return m_ecdb; }
+        //! Work out, before replaying this as a local changeset, whether its ec_ rows supersede the
+        //! ones the briefcase now holds. Mirrors LocalChangeSet::DetermineSchemaSyncPrecedence.
+        void DetermineSchemaSyncPrecedence();
+        //! Write the superseding rows an insert conflict had to leave alone. Call after ApplyChanges.
+        DbResult ApplySupersedingRows(ECDbR db);
         Ptr Clone() const;
         void ToSQL(DbCR db, std::function<void(bool, std::string const&)> cb) const;
         static Ptr From(ECDbChangeTracker& tracker, Utf8CP comment);
@@ -57,6 +68,7 @@ struct ECDbChangeTracker : BeSQLite::ChangeTracker {
 private:
     ECDbR m_mdb;
     std::vector<ECDbChangeSet::Ptr> m_localChangesets;
+    Utf8String m_carriedDdl;
     bset<std::string> m_tableToIgnore;
 
 private:
@@ -78,6 +90,9 @@ public:
     Utf8String GetDDL() const { return m_ddlChanges.ToString(); }
     ECDbChangeSet::Ptr MakeChangeset(bool deleteLocalChangesets, Utf8CP op);
     std::vector<ECDbChangeSet const*> GetLocalChangesets() const;
+    std::vector<ECDbChangeSet::Ptr> TakeLocalChangesets();
+    //! DDL cannot be replayed onto a file that already has it, so a rebased changeset is handed the text to ship.
+    void CarryDdlIntoNextChangeset(Utf8StringCR ddl) { m_carriedDdl = ddl; }
 
     void ToSql(std::function<void(ECDbChangeSet const&, bool, std::string const&)> cb) const {
         for (auto&  cs: m_localChangesets) {
@@ -98,17 +113,24 @@ struct TrackedECDb : ECDb {
         std::unique_ptr<ECDbChangeTracker> m_tracker;
         ECDbHub* m_hub;
         int m_changesetId = -1;
+        bool m_replayingLocalChangesets = false;
         void SetupTracker(std::unique_ptr<ECDbChangeTracker> tracker = nullptr);
+        DbResult RebaseOntoIncoming(std::vector<ECDbChangeSet*> const& incoming);
         virtual void _OnDbClose() override;
         virtual DbResult _OnDbCreated(CreateParams const& params) override;
         virtual DbResult _OnDbOpening() override;
+        virtual bool _IsLevelWithTimeline() override;
 
     public:
         ECDbChangeTracker* GetTracker() { return m_tracker.get(); }
         void SetHub(ECDbHub& hub) { m_hub = &hub; }
         ECDbHub* GetHub() { return m_hub; }
-        //! Stands in for TxnManager::HasPendingTxns() - changes made locally and not pushed yet.
-        bool HasLocalChangesets() const { return m_tracker != nullptr && !m_tracker->GetLocalChangesets().empty(); }
+        //! Stands in for TxnManager::HasPendingTxns(). True while local changesets are being replayed too:
+        //! a rebase reinstates them one at a time, so the txns are pending throughout.
+        bool HasLocalChangesets() const { return m_replayingLocalChangesets || (m_tracker != nullptr && !m_tracker->GetLocalChangesets().empty()); }
+        //! True during the rebase phase that production runs through LocalChangeSet rather than
+        //! ChangesetFileReader, which resolve some conflicts differently.
+        bool IsReplayingLocalChangesets() const { return m_replayingLocalChangesets; }
         DbResult PullMergePush(Utf8CP comment);
         virtual ~TrackedECDb();
 };
@@ -134,6 +156,8 @@ struct ECDbHub {
         std::unique_ptr<TrackedECDb> CreateBriefcase();
         std::vector<ECDbChangeSet*> Query(int afterChangesetId = 1);
         int PushNewChangeset(ECDbChangeSet::Ptr changeset);
+        //! Index of the newest changeset, or -1 while nothing has been pushed.
+        int GetTipChangesetId() const { return (int)m_changesets.size() - 1; }
 };
 
 //=======================================================================================

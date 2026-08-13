@@ -269,6 +269,7 @@ protected:
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
     ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
     ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged);
+    ECDB_EXPORT virtual bool _IsLevelWithTimeline();
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
@@ -313,6 +314,13 @@ public:
 
     //! Gets the version of the ECDb profile of this file.
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
+
+    //! Whether this file's state is shared by everyone editing the same iModel: it holds nothing
+    //! that has not been pushed, and nothing pushed by others is missing from it.
+    //! @note A file with no timeline - standalone, snapshot, the schema sync db itself - is always level.
+    //!       Subclasses answer as far as they can see; only the client that talks to iModelHub knows
+    //!       where the tip is.
+    ECDB_EXPORT bool IsLevelWithTimeline();
 
     //! Gets ECSQL version
     //.@remarks ECSql version description for left to right digit in version string i.e. "Major.Minor.Sub1.Sub2"

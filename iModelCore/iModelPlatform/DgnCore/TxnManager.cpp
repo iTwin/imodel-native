@@ -4499,12 +4499,19 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         PullMergeAbortRebase(txnId, "failed to read data changes", rc);
     }
 
+    changeset.DetermineSchemaSyncPrecedence();
+
     rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
     if (rc != BE_SQLITE_OK) {
         if (changeset.GetLastErrorMessage().empty())
             PullMergeAbortRebase(txnId, "failed to apply changes", rc);
         else
             PullMergeAbortRebase(txnId, changeset.GetLastErrorMessage(), rc);
+    }
+
+    rc = changeset.ApplySupersedingRows();
+    if (rc != BE_SQLITE_OK) {
+        PullMergeAbortRebase(txnId, "failed to write the rows this txn supersedes", rc);
     }
     TXN_DEBUG(">> PullMergeRebaseReinstateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
 }

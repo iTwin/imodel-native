@@ -122,6 +122,16 @@ DbResult ECDb::_AfterSchemaChangeSetApplied() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::_IsLevelWithTimeline() { return true; }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::IsLevelWithTimeline() { return _IsLevelWithTimeline(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
     {
     BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
