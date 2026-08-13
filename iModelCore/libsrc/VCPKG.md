@@ -187,11 +187,23 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 ### Mend source scans
 
 The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
-`libsrc/**/vcpkg.json` that has a sibling `vcpkg-configuration.json` and requires a sibling
-`vcpkg-mend.json`. Requiring the configuration file distinguishes consumer manifests from nested
-overlay-port package manifests. It invokes the normal Windows vcpkg
-wrapper sequentially with `--only-downloads` for each configured triplet and retains extracted
-sources under
+`libsrc/**/vcpkg.json` and classifies it: a manifest with a sibling `vcpkg-configuration.json` is a
+consumer, and a manifest nested under a consumer directory (`ports/`, `overlay-ports/`) is an
+overlay port that the scan ignores. Anything else — a manifest directly under `libsrc/` that is
+missing its `vcpkg-configuration.json` — is an error rather than a silent skip, because skipping it
+would drop that library out of the scan with no signal. Every consumer requires a sibling
+`vcpkg-mend.json`, and a `vcpkg-mend.json` that is not beside a recognized consumer manifest is also
+The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
+`libsrc/**/vcpkg.json` and classifies it: a manifest with a sibling `vcpkg-configuration.json` is a
+consumer, and a manifest nested under a consumer directory (`ports/`, `overlay-ports/`) is an
+overlay port that the scan ignores. Anything else — a manifest directly under `libsrc/` that is
+missing its `vcpkg-configuration.json` — is an error rather than a silent skip, because skipping it
+would drop that library out of the scan with no signal. Every consumer requires a sibling
+`vcpkg-mend.json`, and a `vcpkg-mend.json` that is not beside a recognized consumer manifest is also
+an error.
+
+The script then invokes the normal vcpkg wrapper sequentially for each configured triplet and
+retains extracted sources under
 `$(SrcRoot)vcpkg_scan_sources/<manifest-relative-path>/<triplet>/buildtrees/<port>/src/`, inside
 Mend's filesystem scan root. Preserving the relative path prevents collisions between nested
 consumers with the same directory name. Binary caching is disabled for these runs.
@@ -211,8 +223,12 @@ portfile branches cover the union of upstream source downloads used on supported
 triplet need not match the Mend host because download-only mode resolves and extracts source without
 compiling for the selected target. A single source-superset graph is preferred; otherwise list
 multiple triplets. The script fails when a manifest lacks metadata, a configured overlay triplet
-does not exist, a download fails, or a declared direct dependency has no extracted source in any
-configured graph.
+does not exist, a download fails, or a port named in the manifest's `dependencies` **or**
+`overrides` has no extracted source in any configured graph. Checking `overrides` is what covers
+the transitively resolved ports — curl declares only `curl`, but its overrides pin `openssl`,
+`zlib`, and `c-ares`, so all four must materialize. The corollary is that the configured triplets
+must reach every pinned override: pinning a Windows-only port while listing only `x64-linux` would
+fail this check.
 
 ### Cache locations and environment overrides
 
