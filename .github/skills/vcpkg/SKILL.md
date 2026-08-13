@@ -1,6 +1,6 @@
 ---
 name: vcpkg
-description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, or updating a vcpkg-managed library version. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, and version pinning.
+description: Authoritative guide for vcpkg library integration in imodel-native. USE FOR adding a new vcpkg-managed library, migrating an existing library to vcpkg, updating a vcpkg-managed library version, or diagnosing a failing Mend source scan. Covers the sequential install chain, PartFile wiring, mke patterns, triplet selection, version pinning, and Mend source-scan configuration (`vcpkg-mend.json`).
 ---
 
 # vcpkg Integration in imodel-native
