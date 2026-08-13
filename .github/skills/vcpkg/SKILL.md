@@ -44,7 +44,7 @@ consumer `.mke` runs, its install is already complete.
 Under `iModelCore/libsrc/<mylib>/`:
 - `vcpkg.json` — list dependency with `version>=` under `dependencies` and exact version under `overrides`
 - `vcpkg-configuration.json` — copy from an existing consumer (e.g. `compress/`); update `baseline` if needed
-- `vcpkg-mend.json` — list the triplet graph(s) whose union downloads all upstream source used by the consumer; download-only mode does not compile, so triplets need not match the Mend host; prefer one source-superset graph, and add multiple triplets only for platform-specific downloads
+- `vcpkg-mend.json` — list the triplet graph(s) whose union downloads all upstream source used by the consumer; the scan never compiles for the selected target, so triplets need not match the Mend host; prefer one source-superset graph, and add multiple triplets only for platform-specific downloads
 - `triplets/` — platform-specific triplet files if the defaults in `iModelCore/libsrc/` are not sufficient (see `compress/triplets/` for examples)
 
 > **Check whether the library links cleanly into Windows DEBUG builds.** Some libraries fail to
@@ -131,13 +131,19 @@ the sibling `.mke` comment ("Runs after vcpkg_install_<prev>…") on every link 
 predecessor changed.
 
 Also add the new part to the `vcpkg_install_all` aggregate so the shared binary-cache warmer includes
-it. Mend source scanning recursively discovers consumer manifests (identified by sibling
-`vcpkg.json` and `vcpkg-configuration.json` files) and requires the sibling `vcpkg-mend.json`.
-Every configured triplet must have a matching overlay file. Select the smallest
-triplet set whose manifest and portfile branches cover all upstream downloads. The selected triplet
-does not need to match the Mend host because only source is downloaded and extracted; for example,
-curl's `x64-linux` graph includes its common sources plus conditional c-ares, so no Windows graph is
-needed even though Mend runs on Windows.
+it. Mend source scanning recursively discovers manifests and classifies each one: a sibling
+`vcpkg-configuration.json` marks a consumer, and nesting under a consumer directory (`ports/`,
+`overlay-ports/`) marks an overlay port that is ignored. A manifest that is neither is a hard error,
+so a new consumer that omits `vcpkg-configuration.json` fails the scan instead of silently dropping
+out of it. Every consumer requires a sibling `vcpkg-mend.json`, and every configured triplet must
+have a matching overlay file. Select the smallest triplet set whose manifest and portfile branches
+cover all upstream downloads, and make sure it reaches every port pinned in `overrides` — the scan
+verifies that the ports named in `dependencies` **and** `overrides` all produced extracted source.
+The selected triplet does not need to match the Mend host because nothing is compiled for that
+target; for example, curl's `x64-linux` graph includes its common sources plus conditional c-ares,
+so no Windows graph is needed even though Mend runs on Windows. The host still needs a working
+toolchain of its own, since vcpkg builds host-triplet helper ports (`vcpkg-cmake` and friends)
+either way.
 
 ### 4. Wire the consumer PartFile
 
