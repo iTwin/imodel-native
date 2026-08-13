@@ -143,7 +143,9 @@ The selected triplet does not need to match the Mend host because nothing is com
 target; for example, curl's `x64-linux` graph includes its common sources plus conditional c-ares,
 so no Windows graph is needed even though Mend runs on Windows. The host still needs a working
 toolchain of its own, since vcpkg builds host-triplet helper ports (`vcpkg-cmake` and friends)
-either way.
+either way. Everything except the "did source actually appear" check also runs during Windows
+builds via the `vcpkg_validate_mend` part, so these mistakes fail the PR rather than the Mend
+pipeline.
 
 ### 4. Wire the consumer PartFile
 

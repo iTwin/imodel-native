@@ -193,14 +193,13 @@ overlay port that the scan ignores. Anything else — a manifest directly under 
 missing its `vcpkg-configuration.json` — is an error rather than a silent skip, because skipping it
 would drop that library out of the scan with no signal. Every consumer requires a sibling
 `vcpkg-mend.json`, and a `vcpkg-mend.json` that is not beside a recognized consumer manifest is also
-The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
-`libsrc/**/vcpkg.json` and classifies it: a manifest with a sibling `vcpkg-configuration.json` is a
-consumer, and a manifest nested under a consumer directory (`ports/`, `overlay-ports/`) is an
-overlay port that the scan ignores. Anything else — a manifest directly under `libsrc/` that is
-missing its `vcpkg-configuration.json` — is an error rather than a silent skip, because skipping it
-would drop that library out of the scan with no signal. Every consumer requires a sibling
-`vcpkg-mend.json`, and a `vcpkg-mend.json` that is not beside a recognized consumer manifest is also
 an error.
+
+All of that configuration is checked by the `vcpkg_validate_mend` part, which runs
+`vcpkg_download_mend_sources.ps1 -ValidateOnly` on Windows builds. That mode discovers and validates
+manifests without downloading anything, and it gates the head of the install chain, so a missing or
+malformed `vcpkg-mend.json` fails a PR build. Nothing else in this repository reads these files, so
+without that step the first sign of a mistake would be a failing Mend pipeline run.
 
 The script then invokes the normal vcpkg wrapper sequentially for each configured triplet and
 retains extracted sources under

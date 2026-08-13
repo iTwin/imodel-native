@@ -3,22 +3,28 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # Materialize vcpkg sources for Mend using each consumer's vcpkg-mend.json triplet list.
+# -ValidateOnly checks that configuration and downloads nothing, so the normal build can fail on a
+# missing or malformed vcpkg-mend.json instead of leaving it to the Mend pipeline to discover.
 #---------------------------------------------------------------------------------------------
+[CmdletBinding(DefaultParameterSetName = 'Download')]
 param(
-    [Parameter(Mandatory = $true)] [string] $LibsrcDir,
-    [Parameter(Mandatory = $true)] [string] $ScanRoot
+    [Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'Download')] [string] $ScanRoot,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Validate')] [switch] $ValidateOnly
 )
 
 $ErrorActionPreference = 'Stop'
 
 # Resolves relative input against PowerShell's current location; [System.IO.Path]::GetFullPath
 # would silently use the process working directory instead, which ScanRoot is then deleted from.
+# GetFullPath is safe on the already-absolute result, and is what collapses mixed separators and
+# '.'/'..' segments so that the prefix comparisons below cannot be defeated by spelling.
 function Resolve-InputPath([string] $path) {
-    return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path).TrimEnd('\', '/')
+    $absolute = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
+    return [System.IO.Path]::GetFullPath($absolute).TrimEnd('\', '/')
 }
 
-$LibsrcDir = Resolve-InputPath $LibsrcDir
-$ScanRoot = Resolve-InputPath $ScanRoot
+# The script ships in libsrc, so its own directory is always the tree to scan.
+$LibsrcDir = Resolve-InputPath $PSScriptRoot
 $isWindowsHost = [System.IO.Path]::DirectorySeparatorChar -eq '\'
 $wrapperName = if ($isWindowsHost) { 'vcpkg_run_install.ps1' } else { 'vcpkg_run_install.sh' }
 $wrapper = [System.IO.Path]::Combine($LibsrcDir, $wrapperName)
@@ -27,19 +33,24 @@ if (-not [System.IO.File]::Exists($wrapper)) {
     throw "vcpkg install wrapper not found at '$wrapper'"
 }
 
-# ScanRoot is deleted recursively below, so refuse anything that would take the source tree with it.
-# Compare case-insensitively on every host: whether the filesystem folds case varies by platform and
-# by volume, and for this guard over-matching only costs a loud failure while under-matching deletes.
-if (-not $ScanRoot -or $ScanRoot -eq [System.IO.Path]::GetPathRoot($ScanRoot).TrimEnd('\', '/')) {
-    throw "scan root '$ScanRoot' must not be a filesystem root"
-}
-if ($LibsrcDir.Equals($ScanRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
-    $LibsrcDir.StartsWith($ScanRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "scan root '$ScanRoot' must not contain the libsrc directory '$LibsrcDir'"
-}
-# Manifest discovery below runs before the scan root is emptied, so a nested one would be discovered.
-if ($ScanRoot.StartsWith($LibsrcDir + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "scan root '$ScanRoot' must not be inside the libsrc directory '$LibsrcDir'"
+if (-not $ValidateOnly) {
+    $ScanRoot = Resolve-InputPath $ScanRoot
+
+    # ScanRoot is deleted recursively below, so refuse anything that would take the source tree with
+    # it.  Compare case-insensitively on every host: whether the filesystem folds case varies by
+    # platform and by volume, and for this guard over-matching only costs a loud failure while
+    # under-matching deletes.
+    if (-not $ScanRoot -or $ScanRoot -eq [System.IO.Path]::GetPathRoot($ScanRoot).TrimEnd('\', '/')) {
+        throw "scan root '$ScanRoot' must not be a filesystem root"
+    }
+    if ($LibsrcDir.Equals($ScanRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
+        $LibsrcDir.StartsWith($ScanRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "scan root '$ScanRoot' must not contain the libsrc directory '$LibsrcDir'"
+    }
+    # Manifest discovery below runs before the scan root is emptied, so a nested one would be discovered.
+    if ($ScanRoot.StartsWith($LibsrcDir + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "scan root '$ScanRoot' must not be inside the libsrc directory '$LibsrcDir'"
+    }
 }
 
 $manifests = @()
@@ -121,6 +132,11 @@ foreach ($manifestFile in $manifests) {
         Triplets    = $triplets
         Ports       = $ports
     }
+}
+
+if ($ValidateOnly) {
+    Write-Output "Validated Mend scan configuration for $($plan.Count) vcpkg consumers under '$LibsrcDir'."
+    return
 }
 
 if ([System.IO.Directory]::Exists($ScanRoot)) {

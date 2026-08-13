@@ -8,6 +8,13 @@
         <RequiredRepository>vcpkg</RequiredRepository>
     </Part>
 
+    <!-- OnlyPlatforms: this is a PowerShell script, and the Mend scan itself runs on Windows, so
+         validating there is enough; other platforms have no interpreter to run it with.  It gates
+         the head of the install chain below, which puts it in every normal Windows build: nothing
+         else in this repository reads vcpkg-mend.json, so without this a missing or malformed one
+         would first surface in the Mend pipeline, long after the PR that broke it merged. -->
+    <Part Name="vcpkg_validate_mend" BentleyBuildMakeFile="vcpkg_validate_mend.mke" OnlyPlatforms="x64"/>
+
     <!-- Sequential vcpkg install chain.  Each part runs vcpkg install for one consumer and
          gates the next consumer behind it, so no two vcpkg processes ever run concurrently.
          Order only matters when packages share vcpkg state (binary cache, running.lock, etc.),
@@ -16,6 +23,7 @@
          Consumers depend on their named part here instead of directly on "vcpkg". -->
     <Part Name="vcpkg_install_compress" BentleyBuildMakeFile="vcpkg_install_compress.mke">
         <SubPart PartName="vcpkg"/>
+        <SubPart PartName="vcpkg_validate_mend"/>
     </Part>
     <Part Name="vcpkg_install_png" BentleyBuildMakeFile="vcpkg_install_png.mke">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
