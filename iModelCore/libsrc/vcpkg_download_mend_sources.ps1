@@ -28,6 +28,9 @@ $LibsrcDir = Resolve-InputPath $PSScriptRoot
 $isWindowsHost = [System.IO.Path]::DirectorySeparatorChar -eq '\'
 $wrapperName = if ($isWindowsHost) { 'vcpkg_run_install.ps1' } else { 'vcpkg_run_install.sh' }
 $wrapper = [System.IO.Path]::Combine($LibsrcDir, $wrapperName)
+# Run the wrapper under whichever PowerShell is running this, rather than whatever 'powershell' or
+# 'pwsh' happens to be on PATH, so the two cannot end up on different engines.
+$psHostExe = if ($isWindowsHost) { (Get-Process -Id $PID).Path } else { $null }
 
 if (-not [System.IO.File]::Exists($wrapper)) {
     throw "vcpkg install wrapper not found at '$wrapper'"
@@ -159,8 +162,10 @@ foreach ($consumerPlan in $plan) {
     foreach ($triplet in $consumerPlan.Triplets) {
         $installRoot = [System.IO.Path]::Combine($ScanRoot, $consumer, $triplet)
         Write-Output "Materializing vcpkg sources for $consumer ($triplet)"
+        # A child process, not dot-sourcing: the wrapper calls Add-Type and sets VCPKG_* variables,
+        # neither of which survives a second invocation in one session.
         if ($isWindowsHost) {
-            & powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $wrapper $manifestDir $installRoot $triplet -MendScan
+            & $psHostExe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $wrapper $manifestDir $installRoot $triplet -MendScan
         }
         else {
             & /bin/bash $wrapper $manifestDir $installRoot $triplet --mend-scan
