@@ -148,6 +148,39 @@ either way. The cross-consumer checks the wrappers cannot make — a misplaced `
 a triplet with no overlay file — also run during Windows builds via the `vcpkg_validate_mend` part,
 so those mistakes fail the PR rather than the Mend pipeline.
 
+#### Auditing platform coverage
+
+Every consumer currently lists only `x64-linux`, which is a source-superset claim rather than a
+default. Nothing enforces it: the materialization check only sees ports named in `dependencies` and
+`overrides`, so a download that happens solely on an unlisted platform is skipped in silence. Two
+things put a download there, and both are easy to grep for:
+
+```bash
+# platform-qualified dependency or feature (curl's c-ares is "osx | linux")
+grep -rn --include='vcpkg.json' '"platform"' iModelCore/libsrc/
+# source fetch inside a target branch (crashpad pulls linux-syscall-support on Linux/Android only)
+grep -rn --include='*.cmake' 'VCPKG_TARGET_IS_' iModelCore/libsrc/*/*ports/
+```
+
+Neither grep reaches a port whose portfile we do not vendor, so for those compare the observed
+graphs instead — the ports a real build resolved on a given platform against the ports the scan
+materialized:
+
+```bash
+ls $OutRoot/vcpkg_installed/<consumer>/<triplet>/share/*/vcpkg_abi_info.txt   # per-platform
+ls -d <scan-root>/<consumer>/<triplet>/buildtrees/*/src                       # what Mend saw
+```
+
+Host helper ports (`vcpkg-cmake` and friends) appear only in the first list; ignore them. Anything
+else present on a supported platform but absent from the scan needs a covering triplet added to that
+consumer's `vcpkg-mend.json`.
+
+Pinning a platform-conditional port in `overrides` is worth doing even when its version is already
+correct, because the materialization check then demands that the port appear in some configured
+graph — turning an invisible coverage gap into a scan failure. That lever does nothing for a
+conditional sub-source fetched inside another port's portfile (crashpad's `lss`); only a covering
+triplet helps there.
+
 ### 4. Wire the consumer PartFile
 
 In your library's `.PartFile.xml`, depend on the chain part with **`LibType="Static"`**.
@@ -242,6 +275,8 @@ may not run at all.
 1. Edit `iModelCore/libsrc/<consumer>/vcpkg.json`:
    - Update the `version>=` value under `dependencies`
    - Update the matching entry in `overrides`
+   - Re-run the [platform coverage audit](#auditing-platform-coverage): a new upstream version can
+     add a platform-conditional download that the consumer's `vcpkg-mend.json` triplets miss.
 2. If the new version requires a newer port registry, update `baseline` in
    `iModelCore/libsrc/<consumer>/vcpkg-configuration.json`.
 3. No changes to `.mke` or `.PartFile.xml` files are needed — the next build will pick

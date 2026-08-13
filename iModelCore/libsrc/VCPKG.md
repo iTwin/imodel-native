@@ -232,6 +232,13 @@ the transitively resolved ports — curl declares only `curl`, but its overrides
 must reach every pinned override: pinning a Windows-only port while listing only `x64-linux` would
 fail this check.
 
+Every consumer currently lists only `x64-linux`. That is a deliberate source-superset claim, not a
+default: the only platform-conditional downloads in the tree are curl's c-ares feature
+(`"osx | linux"`) and crashpad's `linux-syscall-support` fetch (Linux and Android only), and that
+graph performs both. Nothing enforces the claim, since the materialization check sees only the ports
+named in `dependencies` and `overrides`, so re-audit it whenever a manifest or a pinned version
+changes — an upstream bump can add a platform branch without any change on our side.
+
 ### Cache locations and environment overrides
 
 The wrappers keep vcpkg's downloads/tools tree, registry git cache, and default binary archive cache in a **persistent, per-user** base directory rather than under `VCPKG_ROOT` or `$OutRoot`. This means the default caches survive a clean build (tools, source archives, and the shallow registry repo are downloaded once and reused) and do **not** require `VCPKG_ROOT`/`IMODEL_VCPKG_ROOT` to be writable — the resolved root may be a protected Program Files location (the Visual Studio bundled copy) or a shared, read-only checkout.
