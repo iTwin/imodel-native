@@ -328,5 +328,5 @@ implementations: `pugixml/triplets/*.cmake` + `pugixml/pugixml.mke`, and
 | `iModelCore/libsrc/vcpkg.PartFile.xml` | Sequential chain — edit to add new install parts |
 | `iModelCore/libsrc/vcpkg_install_*.mke` | One file per consumer; calls `vcpkg_run_install` |
 | `iModelCore/libsrc/vcpkg.mki` | Triplet selection; include from any install or consumer mke |
-| `iModelCore/libsrc/vcpkg_run_install.ps1` / `.sh` | Wrapper that invokes vcpkg; Mend passes explicit only-downloads and disable-binary-cache options rather than ambient environment controls |
+| `iModelCore/libsrc/vcpkg_run_install.ps1` / `.sh` | Wrapper that invokes vcpkg; Mend passes explicit only-downloads, disable-binary-cache, and disable-compiler-tracking options rather than ambient environment controls |
 | `iModelCore/libsrc/VCPKG.md` | Human-facing documentation; keep in sync when changing patterns |

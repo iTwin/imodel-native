@@ -112,10 +112,10 @@ foreach ($manifestFile in $manifests) {
         $installRoot = [System.IO.Path]::Combine($ScanRoot, $consumer, $triplet)
         Write-Output "Materializing vcpkg sources for $consumer ($triplet)"
         if ($isWindowsHost) {
-            & powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $wrapper $manifestDir $installRoot $triplet -OnlyDownloads -DisableBinaryCache
+            & powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $wrapper $manifestDir $installRoot $triplet -OnlyDownloads -DisableBinaryCache -DisableCompilerTracking
         }
         else {
-            & /bin/bash $wrapper $manifestDir $installRoot $triplet --only-downloads --disable-binary-cache
+            & /bin/bash $wrapper $manifestDir $installRoot $triplet --only-downloads --disable-binary-cache --disable-compiler-tracking
         }
         if ($LASTEXITCODE -ne 0) {
             throw "vcpkg source materialization failed for $consumer ($triplet) with exit code $LASTEXITCODE"

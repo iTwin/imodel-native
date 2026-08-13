@@ -6,7 +6,7 @@
 # Wrapper script for vcpkg install, invoked from .mke build files.
 # Customize IMODEL_VCPKG_ROOT for developer or CI environments.
 #
-# Usage: vcpkg_run_install.sh <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]
+# Usage: vcpkg_run_install.sh <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache] [--disable-compiler-tracking]
 #   manifest_dir: Directory containing vcpkg.json
 #   install_root: Where vcpkg_installed/<triplet> output goes (e.g., $OutRoot/vcpkg)
 #   triplet:      vcpkg triplet (e.g., arm64-osx, x64-linux)
@@ -15,7 +15,7 @@
 set -e
 
 if [ "$#" -lt 3 ]; then
-    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]"
+    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache] [--disable-compiler-tracking]"
     exit 1
 fi
 
@@ -26,6 +26,7 @@ shift 3
 
 ONLY_DOWNLOADS=0
 DISABLE_BINARY_CACHE=0
+DISABLE_COMPILER_TRACKING=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --only-downloads)
@@ -34,9 +35,12 @@ while [ "$#" -gt 0 ]; do
         --disable-binary-cache)
             DISABLE_BINARY_CACHE=1
             ;;
+        --disable-compiler-tracking)
+            DISABLE_COMPILER_TRACKING=1
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]"
+            echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache] [--disable-compiler-tracking]"
             exit 1
             ;;
     esac
@@ -44,7 +48,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
-    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache]"
+    echo "Usage: $0 <manifest_dir> <install_root> <triplet> [--only-downloads] [--disable-binary-cache] [--disable-compiler-tracking]"
     exit 1
 fi
 
@@ -178,6 +182,23 @@ if [ ! -f "$OVERLAY_TRIPLET_FILE" ]; then
 fi
 
 OVERLAY_ARGS=(--overlay-triplets="$OVERLAY_TRIPLETS")
+
+# vcpkg probes the target triplet's compiler only to hash it into the package ABI, which fails when
+# the host cannot compile for that triplet (e.g. a source-only scan of a foreign triplet). Shadow
+# the repo triplet with a generated one that opts out; the repo triplet still supplies every build
+# setting, so nothing else about the invocation changes.
+if [ "$DISABLE_COMPILER_TRACKING" -eq 1 ]; then
+    GENERATED_TRIPLETS="$INSTALL_ROOT/generated-triplets"
+    mkdir -p "$GENERATED_TRIPLETS"
+    # include() of a relative path would resolve against the generated file's directory.
+    INCLUDED_TRIPLET_FILE="$(cd "$(dirname "$OVERLAY_TRIPLET_FILE")" && pwd -P)/$(basename "$OVERLAY_TRIPLET_FILE")"
+    {
+        echo "include(\"$INCLUDED_TRIPLET_FILE\")"
+        echo "set(VCPKG_DISABLE_COMPILER_TRACKING ON)"
+    } > "$GENERATED_TRIPLETS/$TRIPLET.cmake"
+    OVERLAY_ARGS=(--overlay-triplets="$GENERATED_TRIPLETS")
+    echo "vcpkg: compiler tracking disabled; using generated triplet under $GENERATED_TRIPLETS"
+fi
 
 # Use custom overlay ports from the manifest directory (if present), mirroring
 # vcpkg_run_install.ps1. This makes Linux/macOS/Android build from the local

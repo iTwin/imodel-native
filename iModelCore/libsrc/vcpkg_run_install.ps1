@@ -3,14 +3,15 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 # Wrapper for vcpkg install, invoked from .mke build files.
-# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache]
+# Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache] [-DisableCompilerTracking]
 #---------------------------------------------------------------------------------------------
 param(
     [Parameter(Position = 0)] [string] $ManifestDir,
     [Parameter(Position = 1)] [string] $InstallRoot,
     [Parameter(Position = 2)] [string] $Triplet,
     [switch] $OnlyDownloads,
-    [switch] $DisableBinaryCache
+    [switch] $DisableBinaryCache,
+    [switch] $DisableCompilerTracking
 )
 
 $ErrorActionPreference = 'Stop'
@@ -167,7 +168,7 @@ function Invoke-NativeProcessInKillOnCloseJob([string] $exePath, [string[]] $arg
 
 try {
     if (-not $ManifestDir -or -not $InstallRoot -or -not $Triplet) {
-        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache]'
+        throw 'Usage: vcpkg_run_install.ps1 <manifest_dir> <install_root> <triplet> [-OnlyDownloads] [-DisableBinaryCache] [-DisableCompilerTracking]'
     }
 
     $ManifestDir = Normalize-Path $ManifestDir
@@ -262,6 +263,23 @@ try {
         throw "no custom overlay triplet '$Triplet' found at '$overlayTripletFile'; vcpkg's built-in triplets must not be used"
     }
     $overlayPorts = [System.IO.Path]::Combine($ManifestDir, 'ports')
+
+    # vcpkg probes the target triplet's compiler only to hash it into the package ABI, which fails
+    # when the host cannot compile for that triplet (e.g. scanning x64-linux sources on Windows).
+    # Shadow the repo triplet with a generated one that opts out; the repo triplet still supplies
+    # every build setting, so nothing else about the invocation changes.
+    if ($DisableCompilerTracking) {
+        $generatedTriplets = [System.IO.Path]::Combine($InstallRoot, 'generated-triplets')
+        if (-not (Ensure-Directory $generatedTriplets)) {
+            throw "generated triplet directory '$generatedTriplets' could not be created"
+        }
+        $includePath = $overlayTripletFile.Replace('\', '/')
+        [System.IO.File]::WriteAllText(
+            [System.IO.Path]::Combine($generatedTriplets, "$Triplet.cmake"),
+            "include(`"$includePath`")`r`nset(VCPKG_DISABLE_COMPILER_TRACKING ON)`r`n")
+        $overlayTriplets = $generatedTriplets
+        Write-Output "vcpkg: compiler tracking disabled; using generated triplet under '$generatedTriplets'"
+    }
 
     Write-Output "vcpkg: installing packages from '$ManifestDir' (triplet=$Triplet, install-root=$InstallRoot)"
     Write-Output "vcpkg: exe='$vcpkgExe'"
