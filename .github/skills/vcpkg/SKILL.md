@@ -131,21 +131,22 @@ the sibling `.mke` comment ("Runs after vcpkg_install_<prev>…") on every link 
 predecessor changed.
 
 Also add the new part to the `vcpkg_install_all` aggregate so the shared binary-cache warmer includes
-it. Mend source scanning recursively discovers manifests and classifies each one: a sibling
-`vcpkg-configuration.json` marks a consumer, and nesting under a consumer directory (`ports/`,
-`overlay-ports/`) marks an overlay port that is ignored. A manifest that is neither is a hard error,
-so a new consumer that omits `vcpkg-configuration.json` fails the scan instead of silently dropping
-out of it. Every consumer requires a sibling `vcpkg-mend.json`, and every configured triplet must
-have a matching overlay file. Select the smallest triplet set whose manifest and portfile branches
+it. Mend source scanning treats a directory as a consumer only when it holds all three of
+`vcpkg.json`, `vcpkg-configuration.json`, and `vcpkg-mend.json`; anything else is skipped, so
+vendored upstream trees that ship their own `vcpkg.json` are harmless. Because an omitted
+`vcpkg-mend.json` would just skip the library, `vcpkg_run_install.ps1` and `vcpkg_run_install.sh`
+refuse to install a manifest directory that has no `vcpkg-mend.json` with a non-empty `triplets`
+array — so the omission fails that library's normal build on every platform. Every configured
+triplet must also have a matching overlay file. Select the smallest triplet set whose manifest and portfile branches
 cover all upstream downloads, and make sure it reaches every port pinned in `overrides` — the scan
 verifies that the ports named in `dependencies` **and** `overrides` all produced extracted source.
 The selected triplet does not need to match the Mend host because nothing is compiled for that
 target; for example, curl's `x64-linux` graph includes its common sources plus conditional c-ares,
 so no Windows graph is needed even though Mend runs on Windows. The host still needs a working
 toolchain of its own, since vcpkg builds host-triplet helper ports (`vcpkg-cmake` and friends)
-either way. Everything except the "did source actually appear" check also runs during Windows
-builds via the `vcpkg_validate_mend` part, so these mistakes fail the PR rather than the Mend
-pipeline.
+either way. The cross-consumer checks the wrappers cannot make — a misplaced `vcpkg-mend.json`, or
+a triplet with no overlay file — also run during Windows builds via the `vcpkg_validate_mend` part,
+so those mistakes fail the PR rather than the Mend pipeline.
 
 ### 4. Wire the consumer PartFile
 

@@ -4,8 +4,8 @@
 #---------------------------------------------------------------------------------------------
 # vcpkg_validate_mend.mke - Check every vcpkg consumer's Mend scan configuration.
 # This downloads nothing; it only reads the manifests, so it is cheap enough to gate the head of
-# the vcpkg install chain.  Without it the only thing that reads vcpkg-mend.json is the Mend
-# pipeline, so a missing or malformed file would not surface until long after the PR merged.
+# the vcpkg install chain.  The install wrappers already reject a consumer whose own
+# vcpkg-mend.json is missing or empty; this adds the cross-consumer checks none of them can make.
 #---------------------------------------------------------------------------------------------
 
 %include mdl.mki

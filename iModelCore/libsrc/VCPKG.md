@@ -187,19 +187,22 @@ This avoids accidental use of the bundled root when `vcvars` or Developer Comman
 ### Mend source scans
 
 The Mend pipeline runs `vcpkg_download_mend_sources.ps1`, which recursively discovers every
-`libsrc/**/vcpkg.json` and classifies it: a manifest with a sibling `vcpkg-configuration.json` is a
-consumer, and a manifest nested under a consumer directory (`ports/`, `overlay-ports/`) is an
-overlay port that the scan ignores. Anything else — a manifest directly under `libsrc/` that is
-missing its `vcpkg-configuration.json` — is an error rather than a silent skip, because skipping it
-would drop that library out of the scan with no signal. Every consumer requires a sibling
-`vcpkg-mend.json`, and a `vcpkg-mend.json` that is not beside a recognized consumer manifest is also
-an error.
+directory under `libsrc/` holding all three of `vcpkg.json`, `vcpkg-configuration.json`, and
+`vcpkg-mend.json`, and treats each one as a consumer. Anything else is skipped, so a vendored
+upstream tree that ships its own `vcpkg.json` cannot break discovery. A `vcpkg-mend.json` that is
+not beside the other two manifests is an error, since it can only be a misplaced copy of ours.
 
-All of that configuration is checked by the `vcpkg_validate_mend` part, which runs
-`vcpkg_download_mend_sources.ps1 -ValidateOnly` on Windows builds. That mode discovers and validates
-manifests without downloading anything, and it gates the head of the install chain, so a missing or
-malformed `vcpkg-mend.json` fails a PR build. Nothing else in this repository reads these files, so
-without that step the first sign of a mistake would be a failing Mend pipeline run.
+A library that omits `vcpkg-mend.json` entirely would simply be skipped here, so the install
+wrappers refuse to run without one: `vcpkg_run_install.ps1` and `vcpkg_run_install.sh` both fail if
+the manifest directory has no `vcpkg-mend.json` with a non-empty `triplets` array. That check runs
+on every platform's normal build, so forgetting the file breaks the build of that library rather
+than silently dropping it from the scan.
+
+The `vcpkg_validate_mend` part additionally runs `vcpkg_download_mend_sources.ps1 -ValidateOnly` on
+Windows builds. That mode discovers and validates every manifest without downloading anything, and
+it gates the head of the install chain, so cross-consumer mistakes the wrappers cannot see — a
+misplaced `vcpkg-mend.json`, or a triplet with no matching `triplets/<triplet>.cmake` — fail a PR
+build instead of a Mend pipeline run.
 
 The script then invokes the normal vcpkg wrapper sequentially for each configured triplet and
 retains extracted sources under

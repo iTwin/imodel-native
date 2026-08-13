@@ -174,6 +174,16 @@ try {
     $ManifestDir = Normalize-Path $ManifestDir
     $InstallRoot = Normalize-Path $InstallRoot
 
+    # Checked on every build so a consumer that omits it fails here, not in the Mend pipeline.
+    $mendConfigPath = [System.IO.Path]::Combine($ManifestDir, 'vcpkg-mend.json')
+    if (-not [System.IO.File]::Exists($mendConfigPath)) {
+        throw "'$mendConfigPath' is required so the Mend scan can materialize this library's sources"
+    }
+    $mendTriplets = @((Get-Content -LiteralPath $mendConfigPath -Raw | ConvertFrom-Json).triplets)
+    if ($mendTriplets.Count -eq 0 -or $mendTriplets.Where({ -not $_ }).Count -ne 0) {
+        throw "'$mendConfigPath' must contain a non-empty 'triplets' array"
+    }
+
     $vsVcpkgRoot = $null
     if ($env:VCINSTALLDIR) {
         $vsVcpkgRoot = Normalize-Path ([System.IO.Path]::Combine($env:VCINSTALLDIR, 'vcpkg'))

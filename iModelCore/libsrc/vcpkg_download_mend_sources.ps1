@@ -56,27 +56,15 @@ if (-not $ValidateOnly) {
     }
 }
 
+# A consumer is a directory holding all three manifests.  Discovery skips anything else rather than
+# erroring, so a vendored upstream tree that ships its own vcpkg.json cannot break the scan; the
+# install wrappers are what fail the build when one of our own consumers omits vcpkg-mend.json.
 $manifests = @()
 foreach ($manifestFile in @(Get-ChildItem -Path $LibsrcDir -Filter vcpkg.json -File -Recurse | Sort-Object FullName)) {
     $manifestDir = $manifestFile.Directory.FullName
-    if ([System.IO.File]::Exists([System.IO.Path]::Combine($manifestDir, 'vcpkg-configuration.json'))) {
+    if ([System.IO.File]::Exists([System.IO.Path]::Combine($manifestDir, 'vcpkg-configuration.json')) -and
+        [System.IO.File]::Exists([System.IO.Path]::Combine($manifestDir, 'vcpkg-mend.json'))) {
         $manifests += $manifestFile
-        continue
-    }
-
-    # Port manifests nested under a consumer (ports/, overlay-ports/) are not consumers themselves.
-    $nestedInConsumer = $false
-    for ($ancestor = $manifestFile.Directory.Parent;
-         $ancestor -and $ancestor.FullName.Length -gt $LibsrcDir.Length;
-         $ancestor = $ancestor.Parent) {
-        if ([System.IO.File]::Exists([System.IO.Path]::Combine($ancestor.FullName, 'vcpkg-configuration.json'))) {
-            $nestedInConsumer = $true
-            break
-        }
-    }
-    if (-not $nestedInConsumer) {
-        # Skipping this silently would drop the library out of the Mend scan without any signal.
-        throw "'$($manifestFile.FullName)' has no sibling 'vcpkg-configuration.json', so it is not recognized as a vcpkg consumer"
     }
 }
 if ($manifests.Count -eq 0) {
@@ -100,9 +88,6 @@ foreach ($manifestFile in $manifests) {
     $manifestDir = $manifestFile.Directory.FullName
     $consumer = $manifestDir.Substring($LibsrcDir.Length).TrimStart('\', '/')
     $mendConfigPath = [System.IO.Path]::Combine($manifestDir, 'vcpkg-mend.json')
-    if (-not [System.IO.File]::Exists($mendConfigPath)) {
-        throw "vcpkg consumer '$consumer' is missing required Mend configuration '$mendConfigPath'"
-    }
 
     $mendConfig = Get-Content -LiteralPath $mendConfigPath -Raw | ConvertFrom-Json
     $triplets = @($mendConfig.triplets)

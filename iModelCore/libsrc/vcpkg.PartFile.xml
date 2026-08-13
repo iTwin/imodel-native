@@ -9,10 +9,10 @@
     </Part>
 
     <!-- OnlyPlatforms: this is a PowerShell script, and the Mend scan itself runs on Windows, so
-         validating there is enough; other platforms have no interpreter to run it with.  It gates
-         the head of the install chain below, which puts it in every normal Windows build: nothing
-         else in this repository reads vcpkg-mend.json, so without this a missing or malformed one
-         would first surface in the Mend pipeline, long after the PR that broke it merged. -->
+         validating there is enough; other platforms have no interpreter to run it with.  The
+         install wrappers already reject a consumer whose own vcpkg-mend.json is missing or empty;
+         this adds the cross-consumer checks none of them can make, such as a misplaced
+         vcpkg-mend.json or a triplet with no matching triplets/<triplet>.cmake. -->
     <Part Name="vcpkg_validate_mend" BentleyBuildMakeFile="vcpkg_validate_mend.mke" OnlyPlatforms="x64"/>
 
     <!-- Sequential vcpkg install chain.  Each part runs vcpkg install for one consumer and

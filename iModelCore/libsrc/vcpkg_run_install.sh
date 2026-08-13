@@ -48,6 +48,18 @@ if [ -z "$MANIFEST_DIR" ] || [ -z "$INSTALL_ROOT" ] || [ -z "$TRIPLET" ]; then
     usage
 fi
 
+# Checked on every build so a consumer that omits it fails here, not in the Mend pipeline.
+MEND_CONFIG="$MANIFEST_DIR/vcpkg-mend.json"
+if [ ! -f "$MEND_CONFIG" ]; then
+    echo "Error: '$MEND_CONFIG' is required so the Mend scan can materialize this library's sources" >&2
+    exit 1
+fi
+# Whitespace-stripped match keeps this dependency-free; the Mend script does the full validation.
+if ! tr -d ' \t\r\n' < "$MEND_CONFIG" | grep -q '"triplets":\["'; then
+    echo "Error: '$MEND_CONFIG' must contain a non-empty 'triplets' array" >&2
+    exit 1
+fi
+
 # For cross-compilation triplets (iOS, Android), vcpkg/CMake manages its own
 # toolchain (Xcode SDK via xcrun for iOS, NDK for Android). Unset any compiler
 # env vars that might have been set at the pipeline level so CMake's platform
